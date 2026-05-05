@@ -3,6 +3,7 @@ import {
   activateCardEffect,
   applyManualBattleDamage,
   applyPendingEffectRoll,
+  createDeckFromCardIds,
   createEffectTestScenarioMatch,
   finishManualBattleSession,
   forceNextDevRolls,
@@ -238,6 +239,50 @@ function moveFirstCreatureToCemetery(match: MatchState, playerId: string, avoidC
   }
 }
 
+function ensureCreatureTypeInCemetery(match: MatchState, playerId: string, creatureTypeText: string, avoidCardId?: string): void {
+  const player = getPlayer(match, playerId);
+  const wanted = creatureTypeText.toLowerCase();
+  const hasTarget = player.cemetery.some(card => {
+    const definition = match.cardCatalog[card.cardId];
+    return definition?.cardType === "CREATURE" && normalizeText(definition.name, definition.creatureType).includes(wanted);
+  });
+
+  if (hasTarget) return;
+
+  const existingIndex = player.deck.findIndex(card => {
+    const definition = match.cardCatalog[card.cardId];
+    return definition?.cardType === "CREATURE" &&
+      card.cardId !== avoidCardId &&
+      normalizeText(definition.name, definition.creatureType).includes(wanted);
+  });
+
+  if (existingIndex >= 0) {
+    const [card] = player.deck.splice(existingIndex, 1);
+    card.zone = "CEMETERY";
+    card.controllerPlayerId = playerId;
+    card.ownerPlayerId = card.ownerPlayerId || playerId;
+    card.currentHp = 0;
+    player.cemetery.push(card);
+    return;
+  }
+
+  const definition = Object.values(match.cardCatalog).find(candidate =>
+    candidate.cardType === "CREATURE" &&
+    candidate.id !== avoidCardId &&
+    normalizeText(candidate.name, candidate.creatureType).includes(wanted)
+  );
+
+  if (!definition) return;
+
+  const [card] = createDeckFromCardIds(playerId, [definition.id], match.cardCatalog);
+  if (!card) return;
+  card.zone = "CEMETERY";
+  card.controllerPlayerId = playerId;
+  card.ownerPlayerId = card.ownerPlayerId || playerId;
+  card.currentHp = 0;
+  player.cemetery.push(card);
+}
+
 function ensureSearchTargetInDeck(match: MatchState, playerId: string, text: string, avoidCardId?: string): void {
   if (!text.includes("search") && !text.includes("deck")) return;
 
@@ -286,7 +331,9 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
     }
   }
 
-  if (text.includes("cemetery") || text.includes("graveyard")) {
+  if ((text.includes("cemetery") || text.includes("graveyard")) && text.includes("undead")) {
+    ensureCreatureTypeInCemetery(match, sourcePlayerId, "undead", plan.card.cardId);
+  } else if (text.includes("cemetery") || text.includes("graveyard")) {
     moveFirstCreatureToCemetery(match, sourcePlayerId, plan.card.cardId);
   }
 
@@ -321,7 +368,7 @@ function ensureSourceOnPlayZone(match: MatchState, plan: LlmEffectTestPlan, effe
 
 function applyPlanAndVariantRolls(match: MatchState, plan: LlmEffectTestPlan, variant: VariantConfig): void {
   const seenLabels = new Set<string>();
-  for (const roll of [...(plan.setup.forcedRolls ?? []), ...variant.forcedRolls]) {
+  for (const roll of [...variant.forcedRolls, ...(plan.setup.forcedRolls ?? [])]) {
     const key = `${roll.kind}:${roll.dice.join(",")}:${roll.label ?? ""}`;
     if (seenLabels.has(key)) continue;
     seenLabels.add(key);
@@ -333,10 +380,33 @@ function applyPlanAndVariantRolls(match: MatchState, plan: LlmEffectTestPlan, va
   }
 }
 
+function getEffectSuccessDice(effect?: WardEngineEffect): number[] {
+  const condition = effect?.condition as { successValues?: unknown } | undefined;
+  const paramsCondition = effect?.params?.condition as { successValues?: unknown } | undefined;
+  const successValues = condition?.successValues ?? paramsCondition?.successValues;
+  if (!Array.isArray(successValues)) return SUCCESS_EFFECT_DICE;
+
+  const dice = successValues
+    .map(value => Number(value))
+    .filter(value => Number.isInteger(value) && value >= 1 && value <= 6);
+
+  return dice.length > 0 ? dice : SUCCESS_EFFECT_DICE;
+}
+
+function getEffectFailureDice(effect?: WardEngineEffect): number[] {
+  const successDice = new Set(getEffectSuccessDice(effect));
+  const failures = [1, 2, 3, 4, 5, 6].filter(value => !successDice.has(value));
+  return failures.length > 0 ? failures : FAIL_EFFECT_DICE;
+}
+
 function buildVariants(plan: LlmEffectTestPlan, effect?: WardEngineEffect): VariantConfig[] {
   const text = normalizeText(planText(plan), effectText(effect));
+  const actionType = normalizeText(effect?.actionType);
   const needsBattle = text.includes("on_hit") || text.includes("hit") || text.includes("battle") || text.includes("attack damage");
   const needsEffectRoll = text.includes("roll_for_effect") || text.includes("effect roll") || text.includes("roll") || Boolean(plan.setup.forcedRolls?.some(roll => roll.kind === "EFFECT_ROLL"));
+  const successEffectDice = getEffectSuccessDice(effect);
+  const failureEffectDice = getEffectFailureDice(effect);
+  const expectedHitDice = actionType.includes("temporary_hit_override") ? LOW_HIT_DICE : needsBattle ? HIGH_HIT_DICE : [4, 4, 4, 4];
 
   const base: VariantConfig = {
     name: "expected-success",
@@ -344,8 +414,8 @@ function buildVariants(plan: LlmEffectTestPlan, effect?: WardEngineEffect): Vari
     targetStrategy: "FIRST_VALID",
     forcedRolls: [
       { kind: "SPEED_TIE_ROLL", dice: [6, 1, 6, 1], label: "Headless speed tie success route" },
-      { kind: "HIT_ROLL", dice: needsBattle ? HIGH_HIT_DICE : [4, 4, 4, 4], label: "Headless hit success route" },
-      { kind: "EFFECT_ROLL", dice: needsEffectRoll ? SUCCESS_EFFECT_DICE : [6], label: "Headless effect success route" },
+      { kind: "HIT_ROLL", dice: expectedHitDice, label: "Headless hit success route" },
+      { kind: "EFFECT_ROLL", dice: needsEffectRoll ? successEffectDice : [successEffectDice[0] ?? 6], label: "Headless effect success route" },
       { kind: "ATTACK_DAMAGE_ROLL", dice: LOW_DAMAGE_DICE, label: "Headless low damage route" },
       { kind: "SELF_DAMAGE_ROLL", dice: [1, 1, 1, 1], label: "Headless low self damage route" },
       { kind: "GENERIC_ROLL", dice: SUCCESS_EFFECT_DICE, label: "Headless generic success route" }
@@ -362,10 +432,10 @@ function buildVariants(plan: LlmEffectTestPlan, effect?: WardEngineEffect): Vari
       forcedRolls: [
         { kind: "SPEED_TIE_ROLL", dice: [6, 1], label: "Headless speed tie control route" },
         { kind: "HIT_ROLL", dice: LOW_HIT_DICE, label: "Headless hit failure control" },
-        { kind: "EFFECT_ROLL", dice: FAIL_EFFECT_DICE, label: "Headless effect failure control" },
+        { kind: "EFFECT_ROLL", dice: failureEffectDice, label: "Headless effect failure control" },
         { kind: "ATTACK_DAMAGE_ROLL", dice: HIGH_DAMAGE_DICE, label: "Headless high damage control" },
         { kind: "SELF_DAMAGE_ROLL", dice: [1, 1, 1, 1], label: "Headless low self damage control" },
-        { kind: "GENERIC_ROLL", dice: FAIL_EFFECT_DICE, label: "Headless generic failure control" }
+        { kind: "GENERIC_ROLL", dice: failureEffectDice, label: "Headless generic failure control" }
       ]
     });
   }
@@ -635,6 +705,17 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   const text = normalizeText(planText(plan), effectText(effect));
   const trigger = normalizeText(effect?.trigger);
   const actionType = normalizeText(effect?.actionType);
+
+  if (plan.effect?.effectId && trigger.includes("activated")) {
+    const next = activateCardEffect(match, {
+      playerId: source.playerId,
+      sourceInstanceId: source.card.instanceId,
+      effectId: plan.effect.effectId
+    });
+    steps.push({ label: "activate field/card effect", ok: true, detail: `${definition.name} ${plan.effect.effectId}` });
+    return next;
+  }
+
   const shouldRunBattle = definition.cardType === "CREATURE" && (
     trigger.includes("on_hit") ||
     trigger.includes("hit") ||
@@ -685,6 +766,30 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   }
 
   throw new Error("No parsed effect id was available for headless testing.");
+}
+
+function runFollowupBattleForTemporaryHitOverride(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
+  const actionType = normalizeText(effect?.actionType);
+  if (!actionType.includes("temporary_hit_override")) return match;
+  if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
+
+  const playerId = plan.setup.activePlayerId ?? "player_1";
+  const player = getPlayer(match, playerId);
+  const attacker = player.field.primaryCreature;
+  const opponent = getPlayer(match, findOpponentPlayerId(match, playerId));
+  const defender = opponent.field.primaryCreature;
+
+  if (!attacker || !defender) return match;
+
+  match.turn.activePlayerId = playerId;
+  match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));
+  match.turn.phase = "COMBAT";
+  match.turn.firstTurnCycleComplete = true;
+
+  let next = startManualBattleSession(match, playerId, attacker.instanceId, defender.instanceId);
+  steps.push({ label: "start follow-up battle", ok: true, detail: `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+  next = runPendingBattle(next, steps);
+  return next;
 }
 
 function classifyVariant(args: {
@@ -886,6 +991,8 @@ function runVariant(args: {
   try {
     applyPlanAndVariantRolls(match, args.plan, args.variant);
     match = runInitialAction(match, args.plan, args.effect, steps);
+    match = drainAllAutomation(match, args.variant, steps);
+    match = runFollowupBattleForTemporaryHitOverride(match, args.plan, args.effect, steps);
     match = drainAllAutomation(match, args.variant, steps);
   } catch (caught) {
     error = caught;

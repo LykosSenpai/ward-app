@@ -121,11 +121,11 @@
       "effectId": "017-E01",
       "trigger": "ON_EQUIP",
       "actionType": "APPLY_STAT_MODIFIER",
-      "status": "UNTESTED",
-      "issueType": "NONE",
-      "notes": "Supported stat modifier route; test focuses duration and battle calculations.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "Headless QA blocked: ON_EQUIP APPLY_STAT_MODIFIER is not routed by Effect Runtime v1 for this Standard Equip timing, so the +5 Modifier and duration cannot be verified yet.",
+      "lastTestedAt": "2026-05-05T19:17:27.107Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_018_wizard:018-E01",
@@ -135,11 +135,11 @@
       "effectId": "018-E01",
       "trigger": "DURING_YOUR_TURN_ACTIVATED",
       "actionType": "ADD_NEXT_ATTACK_SHIELD",
-      "status": "UNTESTED",
-      "issueType": "NONE",
-      "notes": "Partial runtime support, but plan does not prove blocker until tested.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "Headless QA activated the effect with a successful 1-3 roll, but runtime emitted CARD_EFFECT_ACTIVATED_MANUAL_FALLBACK instead of creating/consuming a next-attack shield.",
+      "lastTestedAt": "2026-05-05T19:17:27.107Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_019_giant_spider:019-E01",
@@ -149,11 +149,11 @@
       "effectId": "019-E01",
       "trigger": "ON_HIT",
       "actionType": "APPLY_DAMAGE_OVER_TIME",
-      "status": "UNTESTED",
+      "status": "PARTIAL",
       "issueType": "NONE",
-      "notes": "Supported DOT route; verify duration and non-stack behavior.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Headless QA confirmed ON_HIT registration with EFFECT_RUNTIME_TRACE and BATTLE_RECURRING_EFFECT_APPLIED against a hittable opponent. Still needs turn-advance coverage for DOT ticks, expiry, and non-stacking.",
+      "lastTestedAt": "2026-05-05T19:17:27.107Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_020_eternal_dragon:020-E01",
@@ -345,11 +345,11 @@
       "effectId": "033-E01",
       "trigger": "ON_HIT",
       "actionType": "APPLY_CONDITIONAL_DICE_MODIFIER",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Headless QA confirmed hit trigger, successful 1-3 condition roll, EFFECT_RUNTIME_TRACE, and BATTLE_EFFECT_STAT_MODIFIER_APPLIED; failure-control did not apply the modifier.",
+      "lastTestedAt": "2026-05-05T19:35:00.000Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_034_dark_knight:034-E01",
@@ -359,11 +359,11 @@
       "effectId": "034-E01",
       "trigger": "DURING_YOUR_TURN_ACTIVATED",
       "actionType": "SUMMON_LIMITED_CREATURE",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Headless QA seeded an Undead cemetery target, created the card-effect target prompt, and resolved AUTO_EFFECT_LIMITED_SUMMON_RESOLVED to move the target from cemetery to Limited Summons.",
+      "lastTestedAt": "2026-05-05T19:35:00.000Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_034_dark_knight:034-E02",
@@ -387,11 +387,11 @@
       "effectId": "036-E01",
       "trigger": "ON_PLAY_FIELD",
       "actionType": "APPLY_TEMPORARY_HIT_OVERRIDE",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Headless QA confirmed Magic resolution creates AUTO_HIT_OVERRIDE_EFFECT_APPLIED and follow-up battle damage resolves with low hit dice under the temporary hit override.",
+      "lastTestedAt": "2026-05-05T19:35:00.000Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_037_demon_king:037-E01",
@@ -401,11 +401,11 @@
       "effectId": "037-E01",
       "trigger": "DURING_YOUR_TURN_ACTIVATED",
       "actionType": "DESTROY_MAGIC_CARDS",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Headless QA confirmed successful 1-3 roll destroys opponent-side Magic via AUTO_EFFECT_DESTROY_ALL_MAGIC_RESOLVED; failure-control emits CARD_EFFECT_ROLL_FAILED.",
+      "lastTestedAt": "2026-05-05T19:35:00.000Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_038_demon_knight:038-E01",
@@ -415,11 +415,11 @@
       "effectId": "038-E01",
       "trigger": "DURING_YOUR_TURN_ACTIVATED",
       "actionType": "DEAL_INSTANT_DAMAGE",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Headless QA confirmed successful 4-6 roll creates target prompt and resolves AUTO_EFFECT_DAMAGE_CREATURE_RESOLVED for 15 damage to opponent primary; failure-control emits CARD_EFFECT_ROLL_FAILED.",
+      "lastTestedAt": "2026-05-05T19:35:00.000Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_039_demonic_magic:039-E01",

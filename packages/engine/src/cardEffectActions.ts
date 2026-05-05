@@ -7,7 +7,11 @@ import type {
 } from "@ward/shared";
 import { addEvent, cloneState, getCardName, getOpponentPlayer, getPlayer } from "./engineRuntime.js";
 import { rollD6WithDev } from "./devRolls.js";
-import { getCardEngineEffects } from "./effectResolver.js";
+import {
+  getCardEngineEffects,
+  isAutomaticMagicEffectSupported,
+  tryResolveAutomaticMagicEffect
+} from "./effectResolver.js";
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { createEffectTargetPromptFromChainLink } from "./effectPrompts.js";
 import { inferTargetQueryForEffect } from "./targets.js";
@@ -402,6 +406,20 @@ function activateRollBasedEffect(
 
   if (!success) {
     return nextState;
+  }
+
+  if (isAutomaticMagicEffectSupported(args.effect)) {
+    const resolved = tryResolveAutomaticMagicEffect(nextState, {
+      effect: args.effect,
+      controllerPlayerId: args.playerId,
+      sourceCardName: getCardName(nextState, args.source.card),
+      sourceCardInstanceId: args.source.card.instanceId,
+      addEvent
+    });
+
+    if (resolved) {
+      return nextState;
+    }
   }
 
   const targetQuery = inferTargetQueryForEffect(args.effect);

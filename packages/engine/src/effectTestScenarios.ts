@@ -9,7 +9,7 @@ function cardEffects(definition: CardDefinition): WardEngineEffect[] {
 function findCreatureId(cardCatalog: Record<string, CardDefinition>, preferredNotId?: string): string {
   const candidates = Object.values(cardCatalog)
     .filter((card): card is Extract<CardDefinition, { cardType: "CREATURE" }> => card.cardType === "CREATURE")
-    .sort((a, b) => (b.hp - a.hp) || a.name.localeCompare(b.name));
+    .sort((a, b) => (a.armorLevel - b.armorLevel) || (b.hp - a.hp) || a.name.localeCompare(b.name));
 
   return (candidates.find(card => card.id !== preferredNotId) ?? candidates[0])?.id ?? preferredNotId ?? "";
 }

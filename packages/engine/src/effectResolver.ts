@@ -12,7 +12,7 @@ import type {
 } from "@ward/shared";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
 import { addActiveEffectInstance, syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
-import { getNextRecurringEffectTickSchedule } from "./effectTiming.js";
+import { getNextRecurringEffectTickSchedule, getTurnCycleExpiration } from "./effectTiming.js";
 import { moveAllMagicSlotCardsToCemetery } from "./cardMovement.js";
 import { getRuntimeBlockActionType, getRuntimeBlockDurationText, getRuntimeBlockMultiplier, getRuntimeBlockTargetText, getRuntimeBlockText } from "./effectBlockRuntime.js";
 import { isFringeAutomaticMagicEffectSupported, tryResolveFringeAutomaticMagicEffect } from "./fringeEffectHandlers.js";
@@ -77,7 +77,13 @@ function effectTargetsAllMagicCards(effect: WardEngineEffect): boolean {
     actionType === "DESTROY_ALL_MAGIC" ||
     (
       (actionType === "DESTROY_MAGIC_CARDS" || actionType === "DESTROY_MAGIC") &&
-      (text.includes("destroy all magic") || text.includes("all magic cards") || text.includes("all magic on the field"))
+      (
+        text.includes("destroy all magic") ||
+        text.includes("all magic cards") ||
+        text.includes("all opponent magic") ||
+        text.includes("opponent side magic") ||
+        text.includes("all magic on the field")
+      )
     )
   );
 }
@@ -254,6 +260,85 @@ function applyForcedFirstAutoHitMultiplierEffect(
   return true;
 }
 
+function applyTemporaryHitOverrideEffect(
+  state: MatchState,
+  args: {
+    effect: WardEngineEffect;
+    controllerPlayerId: string;
+    sourceCardName: string;
+    sourceCardInstanceId?: string;
+    addEvent: AddEventFn;
+  }
+): boolean {
+  const controller = getPlayerOrThrow(state, args.controllerPlayerId);
+  const primaryCreature = controller.field.primaryCreature;
+
+  if (!primaryCreature) {
+    args.addEvent(state, "AUTO_HIT_OVERRIDE_EFFECT_SKIPPED", args.controllerPlayerId, {
+      sourceCardName: args.sourceCardName,
+      effectId: args.effect.id,
+      actionType: args.effect.actionType,
+      reason: "Controller has no primary creature to receive the hit override."
+    });
+    return false;
+  }
+
+  const expiration = getTurnCycleExpiration({
+    state,
+    sourcePlayerId: args.controllerPlayerId,
+    targetPlayerId: controller.id,
+    effect: args.effect,
+    fallbackDuration: 1
+  });
+
+  const existing = primaryCreature.activeEffectInstances ?? [];
+  primaryCreature.activeEffectInstances = existing.filter(instance => !(
+    instance.sourceCardInstanceId === args.sourceCardInstanceId &&
+    instance.sourceEffectId === args.effect.id
+  ));
+
+  const activeInstance: ActiveEffectInstance = {
+    id: uuidv4(),
+    kind: "OTHER",
+    sourceEffectId: args.effect.id,
+    sourceCardInstanceId: args.sourceCardInstanceId ?? `${args.effect.id}:source`,
+    sourceCardName: args.sourceCardName,
+    sourcePlayerId: args.controllerPlayerId,
+    targetPlayerId: controller.id,
+    targetCardInstanceId: primaryCreature.instanceId,
+    targetCardName: getCardName(state, primaryCreature),
+    actionType: "APPLY_TEMPORARY_HIT_OVERRIDE",
+    label: "Auto-hit attacks",
+    amount: 1,
+    durationType: "TARGET_PLAYER_TURN_STARTS",
+    durationText: getRuntimeBlockDurationText(args.effect) ?? "1 turn cycle",
+    appliedTurnNumber: state.turn.turnNumber,
+    appliedTurnCycle: state.turn.turnCycleNumber,
+    expiresOnPlayerId: expiration.expiresOnPlayerId,
+    expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount,
+    debug: [
+      "Created when a temporary hit override Magic resolves.",
+      "Battle resolver uses this to force hit success without changing attack damage."
+    ]
+  };
+
+  primaryCreature.activeEffectInstances.push(activeInstance);
+
+  args.addEvent(state, "AUTO_HIT_OVERRIDE_EFFECT_APPLIED", args.controllerPlayerId, {
+    sourceCardName: args.sourceCardName,
+    sourceCardInstanceId: args.sourceCardInstanceId,
+    effectId: args.effect.id,
+    actionType: args.effect.actionType,
+    targetCreatureInstanceId: primaryCreature.instanceId,
+    targetCreatureName: activeInstance.targetCardName,
+    durationType: activeInstance.durationType,
+    expiresOnPlayerId: activeInstance.expiresOnPlayerId,
+    expiresAtPlayerTurnStartCount: activeInstance.expiresAtPlayerTurnStartCount
+  });
+
+  return true;
+}
+
 export function isAutomaticMagicEffectSupported(
   effect: WardEngineEffect
 ): boolean {
@@ -261,6 +346,7 @@ export function isAutomaticMagicEffectSupported(
 
   return actionType === "DRAW_CARDS" ||
     effectTargetsAllMagicCards(effect) ||
+    actionType === "APPLY_TEMPORARY_HIT_OVERRIDE" ||
     actionType === "APPLY_FORCED_FIRST_AUTO_HIT_MULTIPLIER" ||
     actionType === "APPLY_OPPONENT_MAGIC_PLAY_LOCK" ||
     actionType === "APPLY_TURN_CONDITIONAL_OPPONENT_CREATURE_EFFECT_SUPPRESSION" ||
@@ -297,6 +383,10 @@ export function tryResolveAutomaticMagicEffect(
 
   if (actionType === "APPLY_FORCED_FIRST_AUTO_HIT_MULTIPLIER") {
     return applyForcedFirstAutoHitMultiplierEffect(state, args);
+  }
+
+  if (actionType === "APPLY_TEMPORARY_HIT_OVERRIDE") {
+    return applyTemporaryHitOverrideEffect(state, args);
   }
 
   if (actionType === "APPLY_OPPONENT_MAGIC_PLAY_LOCK") {

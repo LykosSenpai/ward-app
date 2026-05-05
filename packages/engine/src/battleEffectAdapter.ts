@@ -308,6 +308,11 @@ function isForcedFirstAutoHitMultiplierAction(actionType: string, text: string):
     (text.includes("attack first") && text.includes("auto") && text.includes("hit") && (text.includes("x atk") || text.includes("× atk")));
 }
 
+function isTemporaryHitOverrideAction(actionType: string, text: string): boolean {
+  return actionType === "APPLY_TEMPORARY_HIT_OVERRIDE" ||
+    (text.includes("auto") && text.includes("hit") && !text.includes("x atk"));
+}
+
 function forcedFirstAutoHitMultiplierSuggestions(
   base: Omit<BattleEffectSuggestion, "kind">,
   creature: BattleCreatureRef,
@@ -350,20 +355,9 @@ function suggestionsFromActiveEffectInstance(
     .join(" ")
     .toLowerCase();
 
-  if (!isForcedFirstAutoHitMultiplierAction(actionType, text)) {
+  if (!isTemporaryHitOverrideAction(actionType, text) && !isForcedFirstAutoHitMultiplierAction(actionType, text)) {
     return [];
   }
-
-  const multiplier = Number.isFinite(instance.amount) && Number(instance.amount) > 0
-    ? Number(instance.amount)
-    : parseMultiplier({
-        id: instance.sourceEffectId,
-        trigger: "CURRENT_BATTLE",
-        actionType: instance.actionType,
-        actionText: instance.label,
-        value: instance.label,
-        params: { valueText: instance.label }
-      }) ?? 3;
 
   const base = {
     id: `${instance.id}:active:${index}:${creature.creatureInstanceId}`,
@@ -384,6 +378,28 @@ function suggestionsFromActiveEffectInstance(
       ...(instance.debug ?? [])
     ].filter(Boolean).join(" ")
   } satisfies Omit<BattleEffectSuggestion, "kind">;
+
+  if (isTemporaryHitOverrideAction(actionType, text)) {
+    return [{
+      ...base,
+      id: `${base.id}:strike`,
+      kind: "STRIKE",
+      strikeModifiers: {
+        forceHitResult: "FORCE_HIT"
+      }
+    }];
+  }
+
+  const multiplier = Number.isFinite(instance.amount) && Number(instance.amount) > 0
+    ? Number(instance.amount)
+    : parseMultiplier({
+        id: instance.sourceEffectId,
+        trigger: "CURRENT_BATTLE",
+        actionType: instance.actionType,
+        actionText: instance.label,
+        value: instance.label,
+        params: { valueText: instance.label }
+      }) ?? 3;
 
   return forcedFirstAutoHitMultiplierSuggestions(base, creature, multiplier);
 }
