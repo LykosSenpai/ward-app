@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.419Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_042_dragon_rage",
+  "effectId": "042-E02",
+  "title": "Dragon Rage destroys all magic after negation",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:53.713Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_042_dragon_rage",
+      "cardName": "Dragon Rage",
+      "cardType": "MAGIC",
+      "cardNumber": "042",
+      "generation": "1",
+      "rawText": "When your opponent plays a magic card or lands an attack, negate the attack/magic card effect, and destroy all magic cards on the field. Both players then draw 3 cards."
+    },
+    "effect": {
+      "effectId": "042-E02",
+      "trigger": "AFTER_NEGATION",
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "target": "All magic cards on field",
+      "value": "Destroy all",
+      "durationText": "Instant",
+      "reusableFunction": "destroyMagicCards"
+    },
+    "title": "Dragon Rage destroys all magic after negation",
+    "summary": "After Dragon Rage negates a triggering effect, verify all magic cards on field are destroyed as the next resolution step.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen1_042_dragon_rage",
+        "gen1_039_demonic_magic"
+      ],
+      "player2Cards": [
+        "gen1_040_dragon_fire",
+        "gen1_044_dragon_s_bane"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Demonic Magic and Dragon’s Bane on field before player_2 plays Dragon Fire.",
+        "Player 1 has Dragon Rage as Lightning response."
+      ]
+    },
+    "steps": [
+      "Player 2 plays Dragon Fire.",
+      "Player 1 responds with Dragon Rage.",
+      "Resolve Dragon Rage negation, then its destroy-all-magic step.",
+      "Inspect active magic slots and cemeteries before draw step if possible."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Player 1 active magic cleared",
+        "path": "players.player_1.magicSlots",
+        "operator": "equals",
+        "value": []
+      },
+      {
+        "label": "Player 2 active magic cleared",
+        "path": "players.player_2.magicSlots",
+        "operator": "equals",
+        "value": []
+      },
+      {
+        "label": "Dragon’s Bane destroyed",
+        "path": "players.player_2.cemetery",
+        "operator": "contains",
+        "value": "gen1_044_dragon_s_bane"
+      },
+      {
+        "label": "Demonic Magic destroyed",
+        "path": "players.player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_039_demonic_magic"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Dragon Rage destruction occurs after negation and before draw 3.",
+      "Confirm all magic includes Infinite, Field, Equip, Standard, and Lightning as applicable on field/chain per engine timing."
+    ],
+    "riskNotes": [
+      "Timing of resolving Lightning card entering cemetery versus field destruction may vary by engine implementation."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported destroy resolver, but chained after-negation timing needs validation."
+    },
+    "regression": {
+      "fixtureName": "dragon-rage-destroys-all-magic-after-negation",
+      "tags": [
+        "magic",
+        "lightning",
+        "destroy",
+        "global"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_042_dragon_rage:042-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

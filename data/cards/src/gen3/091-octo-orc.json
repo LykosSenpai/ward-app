@@ -1,0 +1,19 @@
+{
+  "id": "gen3_091_octo_orc",
+  "name": "Octo-Orc",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "091",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 8,
+  "speed": 11,
+  "hp": 10,
+  "attackName": "Octo-Gone",
+  "attackDice": 8,
+  "modifier": 8
+}

@@ -1,0 +1,98 @@
+{
+  "id": "gen1_034_dark_knight",
+  "name": "Dark Knight",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "034",
+  "text": "During your turn, you may summon 1 Undead-type creature from your cemetery as a Limited Summon (MAX-1). Return the summoned creature to your cemetery if this card leaves the field, changes control, or this effect is negated.",
+  "effects": [
+    {
+      "id": "034-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Undead-type creature in your cemetery"
+      },
+      "actionType": "SUMMON_LIMITED_CREATURE",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon creature from cemetery as Limited Summon",
+      "target": "1 Undead creature",
+      "value": "Limited Summon MAX-1",
+      "duration": {
+        "text": "While source remains valid",
+        "type": "TEXT"
+      },
+      "reusableFunction": "summonLimitedFromZone",
+      "params": {
+        "target": "1 Undead creature",
+        "valueText": "Limited Summon MAX-1",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Undead-type creature in your cemetery"
+        },
+        "duration": {
+          "text": "While source remains valid",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Source-linked return to cemetery on source leaves, control changes, or effect negated.",
+      "needsReview": false
+    },
+    {
+      "id": "034-E02",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "condition": {
+        "type": "SOURCE_INVALIDATED",
+        "text": "Source leaves field, changes control, or effect negated"
+      },
+      "actionType": "RETURN_LINKED_SUMMON",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return limited summon to cemetery",
+      "target": "Summoned creature",
+      "value": "Move to cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedSummon",
+      "params": {
+        "target": "Summoned creature",
+        "valueText": "Move to cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "SOURCE_INVALIDATED",
+          "text": "Source leaves field, changes control, or effect negated"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Linked cleanup function.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 8,
+  "speed": 5,
+  "hp": 90,
+  "attackName": "Shadow Blade",
+  "attackDice": 2,
+  "modifier": 4
+}

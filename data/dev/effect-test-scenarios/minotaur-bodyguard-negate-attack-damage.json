@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.405Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_016_minotaur_bodyguard",
+  "effectId": "016-E01",
+  "title": "Minotaur Bodyguard negates battle attack damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:11:52.834Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_016_minotaur_bodyguard",
+      "cardName": "Minotaur Bodyguard",
+      "cardType": "MAGIC",
+      "cardNumber": "016",
+      "generation": "1",
+      "rawText": "During battle, play this card from your hand. Negate the Atk damage meant for your creature for this battle."
+    },
+    "effect": {
+      "effectId": "016-E01",
+      "trigger": "DURING_BATTLE_FROM_HAND",
+      "actionType": "NEGATE_ATTACK_DAMAGE",
+      "effectGroup": "Negation",
+      "target": "Your creature",
+      "value": "All Atk damage from that battle",
+      "durationText": "Current battle",
+      "reusableFunction": "negateAttackDamage"
+    },
+    "title": "Minotaur Bodyguard negates battle attack damage",
+    "summary": "Verify lightning response from hand prevents Atk damage to your creature for current battle.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_008_minotaur"
+      ],
+      "player2Cards": [
+        "gen1_006_hafling",
+        "gen1_016_minotaur_bodyguard"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Attacker hits defender"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            4,
+            4
+          ],
+          "label": "Incoming attack damage"
+        }
+      ],
+      "notes": [
+        "Put Minotaur Bodyguard in player_2 hand. Player_1 attacks player_2 creature."
+      ]
+    },
+    "steps": [
+      "Declare player_1 creature attacks player_2 creature.",
+      "Resolve successful hit and reach damage response window.",
+      "Player_2 plays Minotaur Bodyguard from hand as lightning response.",
+      "Pass chain priority and resolve.",
+      "Resolve attack damage roll."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Lightning card moved to cemetery",
+        "path": "player_2.cemetery",
+        "operator": "contains",
+        "value": "gen1_016_minotaur_bodyguard"
+      },
+      {
+        "label": "Damage prevention trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "NEGATE_ATTACK_DAMAGE"
+      },
+      {
+        "label": "Defender takes no attack damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 0
+      },
+      {
+        "label": "Prevention scoped to current battle",
+        "path": "player_2.primary.activeEffects.NEGATE_ATTACK_DAMAGE",
+        "operator": "notExists"
+      }
+    ],
+    "manualVerification": [
+      "Confirm response window appears only for defending player when Atk damage would hit their creature.",
+      "Confirm attack still counts as a hit; only Atk damage is negated."
+    ],
+    "riskNotes": [
+      "Runtime support is partial; card-specific condition may fail even if generic prevention works."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate lightning condition, chain resolution, and current-battle cleanup."
+    },
+    "regression": {
+      "fixtureName": "minotaur-bodyguard-negate-attack-damage",
+      "tags": [
+        "lightning",
+        "chain",
+        "damage-prevention",
+        "combat"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_016_minotaur_bodyguard:016-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

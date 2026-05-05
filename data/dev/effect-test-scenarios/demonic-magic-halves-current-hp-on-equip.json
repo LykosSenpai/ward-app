@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.417Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_039_demonic_magic",
+  "effectId": "039-E03",
+  "title": "Demonic Magic halves equipped creature current HP on equip",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:53.713Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_039_demonic_magic",
+      "cardName": "Demonic Magic",
+      "cardType": "MAGIC",
+      "cardNumber": "039",
+      "generation": "1",
+      "rawText": "Hit: +5. Atk: +5. Negate all creature effects on the field. Reduce equipped creature’s remaining HP by 1/2."
+    },
+    "effect": {
+      "effectId": "039-E03",
+      "trigger": "ON_EQUIP",
+      "actionType": "DEAL_PERCENTAGE_DAMAGE",
+      "effectGroup": "HP Reduction",
+      "target": "Equipped creature",
+      "value": "Remaining HP / 2",
+      "durationText": "Instant/on equip",
+      "reusableFunction": "reduceRemainingHpFraction"
+    },
+    "title": "Demonic Magic halves equipped creature current HP on equip",
+    "summary": "Equip Demonic Magic to a damaged creature and verify current remaining HP is reduced by half, rounded up, once on equip.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_039_demonic_magic"
+      ],
+      "player2Cards": [],
+      "forcedRolls": [],
+      "notes": [
+        "Set player_1 primary creature to a legal target with 51 current HP before equip.",
+        "Demonic Magic is Infinite Equip and should remain in a magic slot after resolving."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Demonic Magic and equips it to their primary creature.",
+      "Resolve ON_EQUIP effect.",
+      "Inspect equipped creature current HP and magic slot state."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Current HP halved rounded up",
+        "path": "players.player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 26
+      },
+      {
+        "label": "Demonic Magic remains equipped/on field",
+        "path": "players.player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_039_demonic_magic"
+      }
+    ],
+    "manualVerification": [
+      "Confirm reduction used current HP, not max HP.",
+      "Confirm effect does not repeat on later phase changes without re-equip."
+    ],
+    "riskNotes": [
+      "Runtime support reports no route for DEAL_PERCENTAGE_DAMAGE; test may expose missing resolver."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate unsupported percentage HP damage path manually before marking blocker."
+    },
+    "regression": {
+      "fixtureName": "demonic-magic-halves-current-hp-on-equip",
+      "tags": [
+        "magic",
+        "equip",
+        "percentage-damage",
+        "rounding"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_039_demonic_magic:039-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

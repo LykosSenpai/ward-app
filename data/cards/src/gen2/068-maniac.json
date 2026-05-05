@@ -1,0 +1,126 @@
+{
+  "id": "gen2_068_maniac",
+  "name": "Maniac",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "068",
+  "text": "When this creature rolls to hit, ignore the target's AL. Use the following outcomes instead: 1-7: Critical Fail. 8-12: Critical Hit. 13+: Normal Hit. This card is unaffected by Hit Modifier increases.",
+  "effects": [
+    {
+      "id": "068-E01",
+      "trigger": "DURING_HIT_ROLL",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature rolls to hit"
+      },
+      "actionType": "APPLY_HIT_OUTCOME_OVERRIDE",
+      "effectGroup": "Hit Outcome Override",
+      "actionText": "Resolve hit by custom outcome table",
+      "target": "This creature hit roll",
+      "value": "Ignore target AL; use custom outcome table",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyHitOutcomeOverride",
+      "params": {
+        "target": "This creature hit roll",
+        "valueText": "Ignore target AL; use custom outcome table",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature rolls to hit"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "ignoreTargetAL": true,
+        "ignoreHitModifierIncreases": true,
+        "outcomes": [
+          {
+            "range": [
+              1,
+              7
+            ],
+            "result": "CRITICAL_FAIL"
+          },
+          {
+            "range": [
+              8,
+              12
+            ],
+            "result": "CRITICAL_HIT"
+          },
+          {
+            "range": [
+              13,
+              null
+            ],
+            "result": "NORMAL_HIT"
+          }
+        ]
+      },
+      "notes": "This card is unaffected by Hit Modifier increases.",
+      "needsReview": false
+    },
+    {
+      "id": "068-E02",
+      "trigger": "STATIC_RULE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Hit Modifier increase would apply"
+      },
+      "actionType": "APPLY_IMMUNITY",
+      "effectGroup": "Modifier Immunity",
+      "actionText": "Ignore Hit Modifier increases",
+      "target": "This creature",
+      "value": "Unaffected by Hit Modifier increases",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyImmunity",
+      "params": {
+        "target": "This creature",
+        "valueText": "Unaffected by Hit Modifier increases",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Hit Modifier increase would apply"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "immuneTo": [
+          "HIT_MODIFIER_INCREASES"
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 3,
+  "speed": 1,
+  "hp": 100,
+  "attackName": "Slasher Cut",
+  "attackDice": 3,
+  "modifier": 0
+}

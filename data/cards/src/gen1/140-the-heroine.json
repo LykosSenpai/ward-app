@@ -1,0 +1,72 @@
+{
+  "id": "gen1_140_the_heroine",
+  "name": "The Heroine",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "140",
+  "text": "For every creature in your opponents' cemetery add: Atk Dice Rolls: +1. Modifier: +1.",
+  "effects": [
+    {
+      "id": "140-E01",
+      "trigger": "DURING_DAMAGE_CALC_OR_STATIC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Count creatures in opponents cemetery"
+      },
+      "actionType": "APPLY_SCALING_MODIFIER_FROM_ZONE_COUNT",
+      "effectGroup": "Scaling Modifier",
+      "actionText": "Add Atk Dice Rolls and Modifier per creature",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +1; Modifier +1 per creature",
+      "duration": {
+        "text": "While condition true",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyScalingModifierFromZoneCount",
+      "params": {
+        "target": "This creature",
+        "valueText": "Atk Dice Rolls +1; Modifier +1 per creature",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1,
+            "rounding": null
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD",
+            "value": 1,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Count creatures in opponents cemetery"
+        },
+        "duration": {
+          "text": "While condition true",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Static count from opponents cemetery. Modifier applies to both Hit Roll and Attack Damage Roll.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 7,
+  "speed": 8,
+  "hp": 80,
+  "attackName": "Heroic Thrust",
+  "attackDice": 2,
+  "modifier": 2
+}

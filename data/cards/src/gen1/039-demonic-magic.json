@@ -1,0 +1,188 @@
+{
+  "id": "gen1_039_demonic_magic",
+  "name": "Demonic Magic",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "039",
+  "text": "Hit: +5. Atk: +5. Negate all creature effects on the field. Reduce equipped creature's remaining HP by 1/2.",
+  "effects": [
+    {
+      "id": "039-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Modify Hit and Atk",
+      "target": "Equipped creature",
+      "value": "Hit +5; Atk +5",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Hit +5; Atk +5",
+        "statChanges": [
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 5,
+            "rounding": null
+          },
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 5,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "blockSupportOverride": {
+          "blockStatuses": {
+            "039-E01-condition": "READY"
+          },
+          "tested": true,
+          "updatedAt": "2026-05-04T06:47:38.090Z",
+          "source": "Effect Dev Tool"
+        }
+      },
+      "notes": "Atk is separate from Modifier; Atk changes only Attack Damage Roll. Modifier changes both Hit Roll and Attack Damage Roll.",
+      "needsReview": false
+    },
+    {
+      "id": "039-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_GLOBAL_CREATURE_EFFECT_NEGATION",
+      "effectGroup": "Effect Negation",
+      "actionText": "Negate all creature effects on field",
+      "target": "All creatures",
+      "value": "Creature effects negated",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyGlobalCreatureEffectNegation",
+      "params": {
+        "target": "All creatures",
+        "valueText": "Creature effects negated",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "blockSupportOverride": {
+          "blockStatuses": {
+            "039-E02-action": "READY",
+            "039-E02-visual": "READY",
+            "039-E02-condition": "READY"
+          },
+          "tested": true,
+          "updatedAt": "2026-05-04T06:47:54.185Z",
+          "source": "Effect Dev Tool"
+        }
+      },
+      "notes": "Global continuous effect from equipment.",
+      "needsReview": false
+    },
+    {
+      "id": "039-E03",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "DEAL_PERCENTAGE_DAMAGE",
+      "effectGroup": "HP Reduction",
+      "actionText": "Reduce remaining HP",
+      "target": "Equipped creature",
+      "value": "Remaining HP / 2",
+      "duration": {
+        "text": "Instant/on equip",
+        "type": "TEXT"
+      },
+      "reusableFunction": "reduceRemainingHpFraction",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Remaining HP / 2",
+        "statChanges": [
+          {
+            "stat": "HP",
+            "operation": "MULTIPLY",
+            "value": 2,
+            "rounding": null
+          },
+          {
+            "stat": "CURRENT_HP",
+            "operation": "MULTIPLY",
+            "value": "1/2",
+            "rounding": "CEIL"
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "Instant/on equip",
+          "type": "TEXT"
+        },
+        "damageType": "PERCENTAGE_BASED_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null,
+        "blockSupportOverride": {
+          "blockStatuses": {
+            "039-E03-action": "READY",
+            "039-E03-condition": "READY",
+            "039-E03-duration": "READY"
+          },
+          "tested": true,
+          "updatedAt": "2026-05-04T06:48:03.439Z",
+          "source": "Effect Dev Tool"
+        }
+      },
+      "notes": "Use current remaining HP. Half values always round up.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "artworkTags": []
+}

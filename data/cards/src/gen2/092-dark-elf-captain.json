@@ -1,0 +1,19 @@
+{
+  "id": "gen2_092_dark_elf_captain",
+  "name": "Dark Elf Captain",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "092",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 8,
+  "speed": 8,
+  "hp": 70,
+  "attackName": "Rend Flesh",
+  "attackDice": 3,
+  "modifier": 2
+}

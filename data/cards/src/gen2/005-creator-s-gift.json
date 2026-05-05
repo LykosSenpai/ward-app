@@ -1,0 +1,116 @@
+{
+  "id": "gen2_005_creator_s_gift",
+  "name": "Creator's Gift",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "005",
+  "text": "This card cannot be negated when played. Atk: +6. Hit: +6. Atk Dice Rolls: +2. Hit Dice Rolls: +2.",
+  "effects": [
+    {
+      "id": "005-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is played when played"
+      },
+      "actionType": "SET_CAN_BE_NEGATED",
+      "effectGroup": "Negation Rule",
+      "actionText": "Card cannot be negated",
+      "target": "This card",
+      "value": "Cannot be negated",
+      "duration": {
+        "text": "While resolving",
+        "type": "WHILE_RESOLVING"
+      },
+      "reusableFunction": "setCanBeNegated",
+      "params": {
+        "target": "This card",
+        "valueText": "Cannot be negated",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is played when played"
+        },
+        "duration": {
+          "text": "While resolving",
+          "type": "WHILE_RESOLVING"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "canBeNegated": false
+      },
+      "notes": "Set response flags so this card cannot be negated during its response window.",
+      "needsReview": false
+    },
+    {
+      "id": "005-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifiers",
+      "target": "Equipped creature",
+      "value": "ATK_BONUS ADD 6; HIT_BONUS ADD 6; ATK_DICE_ROLLS ADD 2; HIT_DICE_ROLLS ADD 2",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "ATK_BONUS ADD 6; HIT_BONUS ADD 6; ATK_DICE_ROLLS ADD 2; HIT_DICE_ROLLS ADD 2",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 6
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 6
+          },
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 2
+          },
+          {
+            "stat": "HIT_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 2
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Basic stat/dice modifier.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

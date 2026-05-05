@@ -1,0 +1,59 @@
+{
+  "id": "gen1_041_dragon_fox",
+  "name": "Dragon Fox",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "041",
+  "text": "When this creature hits, your opponent must roll 2 damage die against their primary creature.",
+  "effects": [
+    {
+      "id": "041-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "HIT_LANDS",
+        "text": "Hit lands"
+      },
+      "actionType": "ROLL_DAMAGE_DICE",
+      "effectGroup": "Forced Roll Damage",
+      "actionText": "Opponent rolls damage dice against own primary creature",
+      "target": "Opponent primary creature",
+      "value": "2 damage dice",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "forceDamageDiceRoll",
+      "params": {
+        "target": "Opponent primary creature",
+        "valueText": "2 damage dice",
+        "statChanges": [],
+        "condition": {
+          "type": "HIT_LANDS",
+          "text": "Hit lands"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Damage die means direct D6 effect damage. Do not add Modifier; no critical hit/miss unless card says otherwise.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 5,
+  "speed": 7,
+  "hp": 50,
+  "attackName": "Psychokinesis",
+  "attackDice": 1,
+  "modifier": 2
+}

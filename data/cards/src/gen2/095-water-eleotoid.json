@@ -1,0 +1,19 @@
+{
+  "id": "gen2_095_water_eleotoid",
+  "name": "Water Eleotoid",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "095",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 5,
+  "speed": 7,
+  "hp": 60,
+  "attackName": "Water Spout",
+  "attackDice": 3,
+  "modifier": 1
+}

@@ -1,0 +1,98 @@
+{
+  "id": "gen2_150_future_warrior",
+  "name": "Future Warrior",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "150",
+  "text": "The equipped creature can see the future. Negate opponent's creature Atk damage for a single battle of your choosing. Send this card to the cemetery after negation.",
+  "effects": [
+    {
+      "id": "150-E01",
+      "trigger": "WHEN_CHOSEN_BATTLE_DAMAGE_WOULD_OCCUR",
+      "condition": {
+        "type": "TEXT",
+        "text": "You choose a battle involving equipped creature"
+      },
+      "actionType": "NEGATE_ATTACK_DAMAGE",
+      "effectGroup": "Damage Negation",
+      "actionText": "Negate opponent creature Atk damage for a single battle",
+      "target": "Opponent creature Atk damage",
+      "value": "Negate Atk damage for one chosen battle",
+      "duration": {
+        "text": "Until used",
+        "type": "UNTIL_CONSUMED"
+      },
+      "reusableFunction": "negateAttackDamage",
+      "params": {
+        "target": "Opponent creature Atk damage",
+        "valueText": "Negate Atk damage for one chosen battle",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You choose a battle involving equipped creature"
+        },
+        "duration": {
+          "text": "Until used",
+          "type": "UNTIL_CONSUMED"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "uses": 1,
+        "onUse": [
+          "SEND_THIS_CARD_TO_CEMETERY"
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "150-E02",
+      "trigger": "AFTER_DAMAGE_NEGATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Future Warrior negated Atk damage"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "actionText": "Send this card to cemetery",
+      "target": "This card",
+      "value": "Send to cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "moveCard",
+      "params": {
+        "target": "This card",
+        "valueText": "Send to cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Future Warrior negated Atk damage"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

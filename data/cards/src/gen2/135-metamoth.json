@@ -1,0 +1,19 @@
+{
+  "id": "gen2_135_metamoth",
+  "name": "Metamoth",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "135",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Bug",
+  "armorLevel": 2,
+  "speed": 12,
+  "hp": 20,
+  "attackName": "Dusty Claw",
+  "attackDice": 2,
+  "modifier": 8
+}

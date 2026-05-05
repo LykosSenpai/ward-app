@@ -1,0 +1,61 @@
+{
+  "id": "gen2_129_peddling_partridge",
+  "name": "Peddling Partridge",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "129",
+  "text": "Trade 1 creature in your hand for 1 in your cemetery.",
+  "effects": [
+    {
+      "id": "129-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "You have a creature in hand and creature in cemetery"
+      },
+      "actionType": "TRADE_CARD_WITH_CEMETERY",
+      "effectGroup": "Card Trade",
+      "actionText": "Swap/trade selected creature cards",
+      "target": "Your hand and cemetery",
+      "value": "Trade 1 creature in hand for 1 creature in cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "tradeCardWithCemetery",
+      "params": {
+        "target": "Your hand and cemetery",
+        "valueText": "Trade 1 creature in hand for 1 creature in cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You have a creature in hand and creature in cemetery"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "cardKind": "CREATURE",
+        "fromZone": "HAND",
+        "toZone": "CEMETERY",
+        "takeFromZone": "CEMETERY",
+        "putIntoZone": "HAND",
+        "count": 1
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

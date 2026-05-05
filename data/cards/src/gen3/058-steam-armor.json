@@ -1,0 +1,64 @@
+{
+  "id": "gen3_058_steam_armor",
+  "name": "Steam Armor",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "058",
+  "text": "Equip to a primary creature. For 2 turn cycles, the equipped creature is unaffected by creature and magic card effects. Does not include this card.",
+  "effects": [
+    {
+      "id": "058-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equip to a primary creature. For 2 turn cycles, the equipped creature is unaffected by creature and magic card effects. Does not include this card."
+      },
+      "actionType": "UNAFFECTED_BY_MAGIC",
+      "effectGroup": "Immunity",
+      "actionText": "Apply immunity or unaffected state",
+      "target": "Equipped creature",
+      "value": "Equip to a primary creature. For 2 turn cycles, the equipped creature is unaffected by creature and magic card effects. Does not include this card.",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyImmunity",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Equip to a primary creature. For 2 turn cycles, the equipped creature is unaffected by creature and magic card effects. Does not include this card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equip to a primary creature. For 2 turn cycles, the equipped creature is unaffected by creature and magic card effects. Does not include this card."
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

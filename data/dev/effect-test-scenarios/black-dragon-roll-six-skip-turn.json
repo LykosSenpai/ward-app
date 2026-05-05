@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.411Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_027_black_dragon",
+  "effectId": "027-E01",
+  "title": "Black Dragon roll 6 sets opponent skip-turn flag",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:14.910Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_027_black_dragon",
+      "cardName": "Black Dragon",
+      "cardType": "CREATURE",
+      "cardNumber": "027",
+      "generation": "1",
+      "rawText": "During your turn, roll 1 die. If the result is 6, your opponent must skip their next turn."
+    },
+    "effect": {
+      "effectId": "027-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "APPLY_SKIP_TURN",
+      "effectGroup": "Turn Control",
+      "target": "Opponent",
+      "value": "Skip next turn",
+      "durationText": "Next opponent turn",
+      "reusableFunction": "applySkipTurn"
+    },
+    "title": "Black Dragon roll 6 sets opponent skip-turn flag",
+    "summary": "Force a successful die roll and verify opponent's next turn is skipped once.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_027_black_dragon"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Black Dragon activation roll succeeds"
+        }
+      ],
+      "notes": [
+        "Black Dragon is on player_1 field and can activate during player_1 turn."
+      ]
+    },
+    "steps": [
+      "Activate Black Dragon effect.",
+      "Resolve forced 1d6 result of 6.",
+      "End player_1 turn and attempt to start player_2 turn.",
+      "Advance to next available turn after skip."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Opponent skip flag set",
+        "path": "player_2.pendingTurnSkip",
+        "operator": "equals",
+        "value": true
+      },
+      {
+        "label": "Player 2 next turn skipped",
+        "path": "turnLog",
+        "operator": "contains",
+        "value": "player_2_turn_skipped"
+      },
+      {
+        "label": "Skip flag consumed",
+        "path": "player_2.pendingTurnSkip",
+        "operator": "equals",
+        "value": false
+      },
+      {
+        "label": "Turn returns to player 1 or next legal turn",
+        "path": "activePlayerId",
+        "operator": "equals",
+        "value": "player_1"
+      }
+    ],
+    "manualVerification": [
+      "Run a failure roll of 5 separately to confirm no skip flag."
+    ],
+    "riskNotes": [
+      "Runtime support is partial; final skip action depends on resolver support."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Test success path first, then failure path as regression expansion."
+    },
+    "regression": {
+      "fixtureName": "black-dragon-roll-six-skip-turn",
+      "tags": [
+        "creature",
+        "activated",
+        "roll",
+        "turn-control"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_027_black_dragon:027-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

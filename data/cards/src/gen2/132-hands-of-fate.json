@@ -1,0 +1,63 @@
+{
+  "id": "gen2_132_hands_of_fate",
+  "name": "Hands of Fate",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "132",
+  "text": "You and your opponent may look at the top 5 cards of your opponent's deck. You may rearrange them in any order. Once finished, place them on the top of their deck.",
+  "effects": [
+    {
+      "id": "132-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent deck has cards"
+      },
+      "actionType": "LOOK_AND_REORDER_DECK_TOP",
+      "effectGroup": "Deck Manipulation",
+      "actionText": "Both players may look at top 5; you rearrange them on top of opponent deck",
+      "target": "Top 5 cards of opponent deck",
+      "value": "Look at and rearrange in any order",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "lookAndReorderDeckTop",
+      "params": {
+        "target": "Top 5 cards of opponent deck",
+        "valueText": "Look at and rearrange in any order",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent deck has cards"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "deck": "OPPONENT_DECK",
+        "count": 5,
+        "viewer": [
+          "YOU",
+          "OPPONENT"
+        ],
+        "reorderBy": "YOU",
+        "destination": "TOP_OF_DECK"
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

@@ -1,0 +1,59 @@
+{
+  "id": "gen3_125_gaseous_horror",
+  "name": "Gaseous Horror",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "125",
+  "text": "When this creature is hit, the attacking creature receives 5 damage. If this card is killed in battle, inflict 10 damage to the creature that killed it.",
+  "effects": [
+    {
+      "id": "125-E01",
+      "trigger": "WHEN_THIS_CREATURE_IS_HIT",
+      "condition": {
+        "type": "TEXT",
+        "text": "When this creature is hit, the attacking creature receives 5 damage. If this card is killed in battle, inflict 10 damage to the creature that killed it."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "When this creature is hit, the attacking creature receives 5 damage. If this card is killed in battle, inflict 10 damage to the creature that killed it.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "When this creature is hit, the attacking creature receives 5 damage. If this card is killed in battle, inflict 10 damage to the creature that killed it.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When this creature is hit, the attacking creature receives 5 damage. If this card is killed in battle, inflict 10 damage to the creature that killed it."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 1,
+  "speed": 1,
+  "hp": 50,
+  "attackName": "Poisoned Gas",
+  "attackDice": 2,
+  "modifier": 1
+}

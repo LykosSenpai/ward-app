@@ -1,0 +1,174 @@
+{
+  "id": "gen3_131_close_encounters",
+  "name": "Close Encounters",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "131",
+  "text": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle.",
+  "effects": [
+    {
+      "id": "131-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle."
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Card Movement",
+      "actionText": "Move or return a card between zones",
+      "target": "Equipped creature",
+      "value": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle.",
+      "duration": {
+        "text": "3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "moveCard",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle."
+        },
+        "duration": {
+          "text": "3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "131-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle."
+      },
+      "actionType": "SHUFFLE_DECK",
+      "effectGroup": "Deck",
+      "actionText": "Shuffle deck",
+      "target": "Equipped creature",
+      "value": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle.",
+      "duration": {
+        "text": "3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "shuffleDeck",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle."
+        },
+        "duration": {
+          "text": "3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "131-E03",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle.",
+      "duration": {
+        "text": "3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 4
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 4
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 4
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle."
+        },
+        "duration": {
+          "text": "3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

@@ -1,0 +1,78 @@
+{
+  "id": "gen1_033_dark_elf",
+  "name": "Dark Elf",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "033",
+  "text": "When this creature hits, roll 1 die. If the result is 1-3, this creature may add +4 Atk Dice Rolls this battle.",
+  "effects": [
+    {
+      "id": "033-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2,
+          3
+        ],
+        "text": "Roll 1 die; success 1-3"
+      },
+      "actionType": "APPLY_CONDITIONAL_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "actionText": "Add Atk Dice Rolls",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +4",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDiceModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "Atk Dice Rolls +4",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 4,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            1,
+            2,
+            3
+          ],
+          "text": "Roll 1 die; success 1-3"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Optional \"may\" effect.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 4,
+  "speed": 8,
+  "hp": 40,
+  "attackName": "Dark Essence",
+  "attackDice": 1,
+  "modifier": 0
+}

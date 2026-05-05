@@ -1,0 +1,55 @@
+{
+  "id": "gen2_055_the_iron_range",
+  "name": "The Iron Range",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "055",
+  "text": "Negate all creature effects on the field.",
+  "effects": [
+    {
+      "id": "055-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature effects exist on the field"
+      },
+      "actionType": "NEGATE_CREATURE_EFFECTS",
+      "effectGroup": "Effect Negation",
+      "actionText": "Negate all creature effects on field",
+      "target": "All creatures currently on the field",
+      "value": "Negate all creature effects",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateCreatureEffects",
+      "params": {
+        "target": "All creatures currently on the field",
+        "valueText": "Negate all creature effects",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature effects exist on the field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Duration is not specified on card; modeled as an instant negation of currently active creature effects.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

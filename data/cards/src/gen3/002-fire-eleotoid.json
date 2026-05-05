@@ -1,0 +1,59 @@
+{
+  "id": "gen3_002_fire_eleotoid",
+  "name": "Fire Eleotoid",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "002",
+  "text": "While this card is on the field, the magic card \"Forest Fire\" cannot be destroyed by its own effect.",
+  "effects": [
+    {
+      "id": "002-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "While this card is on the field, the magic card \"Forest Fire\" cannot be destroyed by its own effect."
+      },
+      "actionType": "DESTROY_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "actionText": "Destroy a magic card",
+      "target": "Magic card(s) on the field",
+      "value": "While this card is on the field, the magic card \"Forest Fire\" cannot be destroyed by its own effect.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "destroyMagic",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "While this card is on the field, the magic card \"Forest Fire\" cannot be destroyed by its own effect.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "While this card is on the field, the magic card \"Forest Fire\" cannot be destroyed by its own effect."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Specific named-card interaction with Forest Fire requires exact card reference and self-destruction prevention routing.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Specific named-card interaction with Forest Fire requires exact card reference and self-destruction prevention routing.",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 4,
+  "speed": 7,
+  "hp": 20,
+  "attackName": "Burning Grasp",
+  "attackDice": 1,
+  "modifier": 0
+}

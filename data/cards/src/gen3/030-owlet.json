@@ -1,0 +1,19 @@
+{
+  "id": "gen3_030_owlet",
+  "name": "Owlet",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "030",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 2,
+  "speed": 3,
+  "hp": 10,
+  "attackName": "Baby Peck",
+  "attackDice": 1,
+  "modifier": 0
+}

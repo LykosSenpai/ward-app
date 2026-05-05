@@ -1,0 +1,147 @@
+{
+  "id": "gen2_020_great_white",
+  "name": "Great White",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "020",
+  "text": "This creature can only be summoned by placing \"Sharkling\" under this card on the field. If this card is removed from the field, changes control, or is killed, \"Sharkling\" follows it.",
+  "effects": [
+    {
+      "id": "020-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Sharkling is on the field"
+      },
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Require Sharkling as material",
+      "target": "This card",
+      "value": "Place Sharkling under this card on the field",
+      "duration": {
+        "text": "Before summon",
+        "type": "BEFORE_SUMMON"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "This card",
+        "valueText": "Place Sharkling under this card on the field",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Sharkling is on the field"
+        },
+        "duration": {
+          "text": "Before summon",
+          "type": "BEFORE_SUMMON"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "requiredMaterials": [
+          {
+            "name": "Sharkling",
+            "zone": "FIELD",
+            "count": 1
+          }
+        ]
+      },
+      "notes": "Sharkling is moved under Great White as an attached material.",
+      "needsReview": false
+    },
+    {
+      "id": "020-E02",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon requirement paid"
+      },
+      "actionType": "ATTACH_CARDS_UNDER_SOURCE",
+      "effectGroup": "Attachment/Linked Cards",
+      "actionText": "Attach Sharkling under Great White",
+      "target": "Sharkling",
+      "value": "Attach under this card",
+      "duration": {
+        "text": "While source remains linked",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "attachCardsUnderSource",
+      "params": {
+        "target": "Sharkling",
+        "valueText": "Attach under this card",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon requirement paid"
+        },
+        "duration": {
+          "text": "While source remains linked",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "attachNames": [
+          "Sharkling"
+        ]
+      },
+      "notes": "Attached Sharkling follows this card if removed, changed control, or killed.",
+      "needsReview": false
+    },
+    {
+      "id": "020-E03",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "condition": {
+        "type": "SOURCE_INVALIDATED",
+        "text": "This card is removed from field, changes control, or is killed"
+      },
+      "actionType": "RETURN_LINKED_CARDS",
+      "effectGroup": "Zone Movement",
+      "actionText": "Move attached Sharkling with Great White",
+      "target": "Attached Sharkling",
+      "value": "Follow this card",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedCards",
+      "params": {
+        "target": "Attached Sharkling",
+        "valueText": "Follow this card",
+        "statChanges": [],
+        "condition": {
+          "type": "SOURCE_INVALIDATED",
+          "text": "This card is removed from field, changes control, or is killed"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Exact destination follows the source movement event.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Summon Requirement.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 8,
+  "speed": 10,
+  "hp": 90,
+  "attackName": "Chomp",
+  "attackDice": 4,
+  "modifier": 4
+}

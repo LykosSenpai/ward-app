@@ -1,0 +1,19 @@
+{
+  "id": "gen2_047_undead_tower",
+  "name": "Undead Tower",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "047",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card. Rarity visually unclear; set to Common from visible grey/no rarity marker.",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 12,
+  "speed": 4,
+  "hp": 120,
+  "attackName": "Bone Quake",
+  "attackDice": 7,
+  "modifier": 1
+}

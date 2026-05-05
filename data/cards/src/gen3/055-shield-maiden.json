@@ -1,0 +1,19 @@
+{
+  "id": "gen3_055_shield_maiden",
+  "name": "Shield Maiden",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "055",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 8,
+  "hp": 50,
+  "attackName": "Skol Bash",
+  "attackDice": 3,
+  "modifier": 2
+}

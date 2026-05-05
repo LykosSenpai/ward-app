@@ -1,0 +1,61 @@
+{
+  "id": "gen2_023_common_armor",
+  "name": "Common Armor",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "023",
+  "text": "AL: +3.",
+  "effects": [
+    {
+      "id": "023-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifiers",
+      "target": "Equipped creature",
+      "value": "AL ADD 3",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "AL ADD 3",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 3
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Basic stat/dice modifier.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

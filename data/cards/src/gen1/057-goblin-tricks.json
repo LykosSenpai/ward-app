@@ -1,0 +1,94 @@
+{
+  "id": "gen1_057_goblin_tricks",
+  "name": "Goblin Tricks",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "057",
+  "text": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to the cemetery or destroy 1 magic card on the field.",
+  "effects": [
+    {
+      "id": "057-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC",
+      "condition": {
+        "type": "OPPONENT_PLAYS_MAGIC",
+        "text": "Opponent plays magic card"
+      },
+      "actionType": "NEGATE_MAGIC_AND_SEND_TO_CEMETERY",
+      "effectGroup": "Magic Negation",
+      "actionText": "Negate magic effect and send card to cemetery",
+      "target": "Opponent magic card",
+      "value": "Negate + cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateMagicToCemetery",
+      "params": {
+        "target": "Opponent magic card",
+        "valueText": "Negate + cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_PLAYS_MAGIC",
+          "text": "Opponent plays magic card"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Player may alternatively destroy 1 magic card on field.",
+      "needsReview": false
+    },
+    {
+      "id": "057-E02",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Choose destroy mode instead of negating card"
+      },
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy 1 magic card on field",
+      "target": "1 magic card",
+      "value": "Destroy 1",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyMagicCards",
+      "params": {
+        "target": "1 magic card",
+        "valueText": "Destroy 1",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Choose destroy mode instead of negating card"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Choice branch after activation.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

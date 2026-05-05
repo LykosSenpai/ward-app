@@ -1,0 +1,59 @@
+{
+  "id": "gen1_142_hell_skeleton",
+  "name": "Hell Skeleton",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "142",
+  "text": "This creature inflicts 2x Atk damage to any creature with \"Demon\" in their name, or Demon and Undead-types.",
+  "effects": [
+    {
+      "id": "142-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target has Demon in name, Demon type, or Undead type"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply Atk damage",
+      "target": "Matching target creature",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Matching target creature",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target has Demon in name, Demon type, or Undead type"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Target predicate combines name and type.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 9,
+  "speed": 6,
+  "hp": 100,
+  "attackName": "Hellstrike",
+  "attackDice": 3,
+  "modifier": 2
+}

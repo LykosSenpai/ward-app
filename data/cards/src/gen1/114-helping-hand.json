@@ -1,0 +1,94 @@
+{
+  "id": "gen1_114_helping_hand",
+  "name": "Helping Hand",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "114",
+  "text": "Summon 1 creature from your hand as a Limited Summon and equip this card to it. If this card is removed from the field, destroy the equipped creature and send it to the cemetery.",
+  "effects": [
+    {
+      "id": "114-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature in your hand"
+      },
+      "actionType": "SUMMON_LIMITED_CREATURE_AND_EQUIP",
+      "effectGroup": "Limited Summon/Equip",
+      "actionText": "Summon creature from hand as Limited Summon and equip this card",
+      "target": "Creature from hand",
+      "value": "Limited Summon + equip link",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "summonLimitedFromZoneAndEquip",
+      "params": {
+        "target": "Creature from hand",
+        "valueText": "Limited Summon + equip link",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature in your hand"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Limited summons can come from hand.",
+      "needsReview": false
+    },
+    {
+      "id": "114-E02",
+      "trigger": "ON_CARD_REMOVED_FROM_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card removed from field"
+      },
+      "actionType": "DESTROY_LINKED_SUMMONED_CREATURE",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy equipped creature and send to cemetery",
+      "target": "Equipped creature",
+      "value": "Destroy + cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyLinkedSummonedCreature",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Destroy + cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card removed from field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Source-linked cleanup.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

@@ -1,0 +1,106 @@
+{
+  "id": "gen2_044_summoner",
+  "name": "Summoner",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "044",
+  "text": "During your turn, roll 2 dice. You may summon a creature from your hand with an AL less than or equal to the result of the dice roll as a Limited Summon. Send the summoned creature back to your hand at the end of your turn.",
+  "effects": [
+    {
+      "id": "044-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DICE",
+        "dice": 2,
+        "dieSize": 6,
+        "text": "Roll 2 dice; summoned creature AL <= total"
+      },
+      "actionType": "SUMMON_LIMITED_CREATURE_FROM_HAND",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon from hand as Limited Summon",
+      "target": "Creature from your hand",
+      "value": "Limited Summon creature with AL <= 2D6 result",
+      "duration": {
+        "text": "Until end of your turn",
+        "type": "UNTIL_END_OF_YOUR_TURN"
+      },
+      "reusableFunction": "summonLimitedFromHand",
+      "params": {
+        "target": "Creature from your hand",
+        "valueText": "Limited Summon creature with AL <= 2D6 result",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DICE",
+          "dice": 2,
+          "dieSize": 6,
+          "text": "Roll 2 dice; summoned creature AL <= total"
+        },
+        "duration": {
+          "text": "Until end of your turn",
+          "type": "UNTIL_END_OF_YOUR_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZone": "HAND",
+        "maxCount": 1,
+        "rollDice": 2,
+        "compare": "AL_LE_ROLL_TOTAL"
+      },
+      "notes": "Return the summoned creature to hand at end of turn.",
+      "needsReview": false
+    },
+    {
+      "id": "044-E02",
+      "trigger": "AT_END_OF_YOUR_TURN",
+      "condition": {
+        "type": "ON_SUMMON_CONDITION",
+        "text": "Creature was summoned by Summoner"
+      },
+      "actionType": "SCHEDULE_RETURN_TO_HAND",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return linked Limited Summon to hand",
+      "target": "Summoned creature",
+      "value": "Return to your hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "scheduleReturnToHand",
+      "params": {
+        "target": "Summoned creature",
+        "valueText": "Return to your hand",
+        "statChanges": [],
+        "condition": {
+          "type": "ON_SUMMON_CONDITION",
+          "text": "Creature was summoned by Summoner"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 3,
+  "speed": 9,
+  "hp": 80,
+  "attackName": "Portal Rip",
+  "attackDice": 1,
+  "modifier": 1
+}

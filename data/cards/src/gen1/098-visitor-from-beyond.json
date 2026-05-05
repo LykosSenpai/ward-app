@@ -1,0 +1,55 @@
+{
+  "id": "gen1_098_visitor_from_beyond",
+  "name": "Visitor From Beyond",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "098",
+  "text": "Return 1 magic card from your cemetery to your hand.",
+  "effects": [
+    {
+      "id": "098-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Magic card in your cemetery"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return magic card to hand",
+      "target": "Your cemetery/hand",
+      "value": "1 magic card",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnFromCemeteryToHand",
+      "params": {
+        "target": "Your cemetery/hand",
+        "valueText": "1 magic card",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Magic card in your cemetery"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Magic only.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

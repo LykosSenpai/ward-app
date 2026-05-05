@@ -1,0 +1,55 @@
+{
+  "id": "gen1_091_terrifying_roar",
+  "name": "Terrifying Roar",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "091",
+  "text": "Return opponent's creature back to their hand.",
+  "effects": [
+    {
+      "id": "091-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent creature exists"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return opponent creature to hand",
+      "target": "Opponent creature",
+      "value": "Move to hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnCreatureToHand",
+      "params": {
+        "target": "Opponent creature",
+        "valueText": "Move to hand",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent creature exists"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Text says opponent creature, not necessarily primary.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

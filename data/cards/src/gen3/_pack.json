@@ -1,0 +1,40 @@
+{
+  "id": "ward-gen3",
+  "name": "WARD Generation 3",
+  "version": "1.0.0",
+  "source": "ward_gen3_effects_engine_ready.json",
+  "globalRules": {
+    "wardRulesVersionSource": "Ward Rules Guide 2nd Edition, effective 2026-01-27",
+    "maxArmorLevel": 12,
+    "baseHitDice": 2,
+    "modifierAppliesTo": [
+      "HIT_ROLL",
+      "ATTACK_DAMAGE_ROLL"
+    ],
+    "atkBonusAppliesTo": [
+      "ATTACK_DAMAGE_ROLL"
+    ],
+    "halfRoundingMode": "CEIL",
+    "turnCycleDefinition": "One full round back to the same player; starts at the beginning of a player's turn.",
+    "durationExpirationDefault": "Beginning of the start player's turn after the specified turn cycles complete.",
+    "dotTickTiming": "END_OF_COMBAT_PHASE",
+    "dotStacking": "DO_NOT_STACK",
+    "hotTickTiming": "END_OF_COMBAT_PHASE",
+    "creatureHpCannotGoBelow": 0,
+    "creatureHealingCannotExceedBaseHp": true,
+    "cemeteryHpCanGoBelow": 0,
+    "infiniteMagicSlotLimit": 5,
+    "limitedSummonMaxPerSide": 4,
+    "limitedSummonsCannotReceiveHpDamage": true,
+    "limitedSummonsLoseCreatureEffects": true,
+    "limitedSummonsCannotBeSacrificed": true,
+    "alchemyNotes": [
+      "Modifier is separate from Atk. Modifier adds to both Hit Roll and Attack Damage Roll.",
+      "Atk adds only to Attack Damage Roll.",
+      "Half values round up.",
+      "Field detection is separated from Magic Type. Magic Type is Standard/Infinite/Lightning; Magic Subtype is None/Equip/Field.",
+      "Generation 3 is 1st Edition based on the printed card footer and user confirmation.",
+      "Card 151/150 Eagle Family is included as a bonus card."
+    ]
+  }
+}

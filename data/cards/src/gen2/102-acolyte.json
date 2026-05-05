@@ -1,0 +1,60 @@
+{
+  "id": "gen2_102_acolyte",
+  "name": "Acolyte",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "102",
+  "text": "At the beginning of your turn, heal this creature 5 HP.",
+  "effects": [
+    {
+      "id": "102-E01",
+      "trigger": "AT_BEGINNING_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Beginning of your turn"
+      },
+      "actionType": "APPLY_HEALING_OVER_TIME",
+      "effectGroup": "Healing Over Time",
+      "actionText": "Heal this creature 5 HP",
+      "target": "This creature",
+      "value": "Heal 5 HP",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyHealingOverTime",
+      "params": {
+        "target": "This creature",
+        "valueText": "Heal 5 HP",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Beginning of your turn"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "BEGINNING_OF_YOUR_TURN",
+        "amount": 5
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 4,
+  "speed": 6,
+  "hp": 30,
+  "attackName": "Healing Wave",
+  "attackDice": 1,
+  "modifier": 2
+}

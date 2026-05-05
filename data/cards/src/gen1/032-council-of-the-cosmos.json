@@ -1,0 +1,55 @@
+{
+  "id": "gen1_032_council_of_the_cosmos",
+  "name": "Council of the Cosmos",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "032",
+  "text": "Destroy 1 magic card on the field.",
+  "effects": [
+    {
+      "id": "032-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target magic card exists"
+      },
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy magic card",
+      "target": "1 magic card on field",
+      "value": "Destroy 1",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyMagicCards",
+      "params": {
+        "target": "1 magic card on field",
+        "valueText": "Destroy 1",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target magic card exists"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Target selection required.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

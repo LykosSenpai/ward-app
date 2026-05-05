@@ -1,0 +1,119 @@
+{
+  "id": "gen1_048_epic_loot",
+  "name": "Epic Loot",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "048",
+  "text": "AL: +5. SPD: +5. Atk Dice Rolls: +1. Hit Dice Rolls: +1. On equip, fully heal the equipped creature.",
+  "effects": [
+    {
+      "id": "048-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_MULTI_MODIFIER",
+      "effectGroup": "Stat/Dice Modifier",
+      "actionText": "Modify stats and dice",
+      "target": "Equipped creature",
+      "value": "AL +5; SPD +5; Atk Dice Rolls +1; Hit Dice Rolls +1",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatAndDiceModifiers",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "AL +5; SPD +5; Atk Dice Rolls +1; Hit Dice Rolls +1",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 5,
+            "rounding": null
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 5,
+            "rounding": null
+          },
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1,
+            "rounding": null
+          },
+          {
+            "stat": "HIT_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Multi-stat equipment. Final AL is capped at 12.",
+      "needsReview": false
+    },
+    {
+      "id": "048-E02",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "HEAL_TO_FULL",
+      "effectGroup": "Healing",
+      "actionText": "Fully heal equipped creature",
+      "target": "Equipped creature",
+      "value": "Full HP",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healToFull",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Full HP",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "HEALING",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Use max HP.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

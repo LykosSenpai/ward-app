@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.418Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_041_dragon_fox",
+  "effectId": "041-E01",
+  "title": "Dragon Fox hit forces opponent damage dice on own primary",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:53.713Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_041_dragon_fox",
+      "cardName": "Dragon Fox",
+      "cardType": "CREATURE",
+      "cardNumber": "041",
+      "generation": "1",
+      "rawText": "When this creature hits, your opponent must roll 2 damage die against their primary creature."
+    },
+    "effect": {
+      "effectId": "041-E01",
+      "trigger": "ON_HIT",
+      "actionType": "ROLL_DAMAGE_DICE",
+      "effectGroup": "Forced Roll Damage",
+      "target": "Opponent primary creature",
+      "value": "2 damage dice",
+      "durationText": "Instant",
+      "reusableFunction": "forceDamageDiceRoll"
+    },
+    "title": "Dragon Fox hit forces opponent damage dice on own primary",
+    "summary": "Dragon Fox lands an attack, then opponent rolls 2 direct damage dice against their own primary creature with no modifier or critical rules.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_041_dragon_fox"
+      ],
+      "player2Cards": [],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5,
+            5
+          ],
+          "label": "Dragon Fox hit lands"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            3
+          ],
+          "label": "Normal attack damage"
+        },
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            4,
+            2
+          ],
+          "label": "Forced 2 damage dice"
+        }
+      ],
+      "notes": [
+        "Set Dragon Fox as player_1 primary.",
+        "Set player_2 primary creature with AL low enough for hit to land and 50 HP.",
+        "Ensure not in first turn cycle so damage is allowed."
+      ]
+    },
+    "steps": [
+      "Player 1 attacks player_2 primary with Dragon Fox.",
+      "Resolve hit and normal attack damage.",
+      "Resolve Dragon Fox ON_HIT forced damage dice effect.",
+      "Inspect player_2 primary HP and debug/effect log."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Forced effect roll recorded",
+        "path": "effectLog",
+        "operator": "contains",
+        "value": "gen1_041_dragon_fox"
+      },
+      {
+        "label": "Opponent primary took forced dice damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "lessThan",
+        "value": 50
+      },
+      {
+        "label": "Forced damage equals dice only",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "effectDamage:6"
+      }
+    ],
+    "manualVerification": [
+      "Confirm forced 2D6 damage did not add Dragon Fox modifier.",
+      "Confirm no critical hit or miss behavior applied to forced damage dice."
+    ],
+    "riskNotes": [
+      "Runtime support is partial; trigger may fire without dedicated ROLL_DAMAGE_DICE resolver."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Check whether partial battle trigger actually applies forced damage."
+    },
+    "regression": {
+      "fixtureName": "dragon-fox-on-hit-forced-damage-dice",
+      "tags": [
+        "creature",
+        "combat",
+        "on-hit",
+        "effect-damage"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_041_dragon_fox:041-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

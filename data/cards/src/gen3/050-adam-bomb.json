@@ -1,0 +1,116 @@
+{
+  "id": "gen3_050_adam_bomb",
+  "name": "Adam Bomb",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "050",
+  "text": "When this card is played, destroy all other magic cards on the field. Atk: +3. Hit: +3. AL: +3. SPD: +3.",
+  "effects": [
+    {
+      "id": "050-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "When this card is played, destroy all other magic cards on the field. Atk: +3. Hit: +3. AL: +3. SPD: +3."
+      },
+      "actionType": "DESTROY_ALL_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "actionText": "Destroy all matching magic cards",
+      "target": "Equipped creature",
+      "value": "When this card is played, destroy all other magic cards on the field. Atk: +3. Hit: +3. AL: +3. SPD: +3.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "destroyAllMagic",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "When this card is played, destroy all other magic cards on the field. Atk: +3. Hit: +3. AL: +3. SPD: +3.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When this card is played, destroy all other magic cards on the field. Atk: +3. Hit: +3. AL: +3. SPD: +3."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "050-E02",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "When this card is played, destroy all other magic cards on the field. Atk: +3. Hit: +3. AL: +3. SPD: +3."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "When this card is played, destroy all other magic cards on the field. Atk: +3. Hit: +3. AL: +3. SPD: +3.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "When this card is played, destroy all other magic cards on the field. Atk: +3. Hit: +3. AL: +3. SPD: +3.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 3
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 3
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 3
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 3
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "When this card is played, destroy all other magic cards on the field. Atk: +3. Hit: +3. AL: +3. SPD: +3."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

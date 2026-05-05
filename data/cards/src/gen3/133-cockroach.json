@@ -1,0 +1,19 @@
+{
+  "id": "gen3_133_cockroach",
+  "name": "Cockroach",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "133",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Bug",
+  "armorLevel": 1,
+  "speed": 6,
+  "hp": 10,
+  "attackName": "Pinch",
+  "attackDice": 1,
+  "modifier": 0
+}

@@ -1,0 +1,80 @@
+{
+  "id": "gen3_123_ashen_knight",
+  "name": "Ashen Knight",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "123",
+  "text": "While this creature is below 40 HP, it gains Atk: +10. Hit: +10. AL: +2. SPD: +3.",
+  "effects": [
+    {
+      "id": "123-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "While this creature is below 40 HP, it gains Atk: +10. Hit: +10. AL: +2. SPD: +3."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "This creature",
+      "value": "While this creature is below 40 HP, it gains Atk: +10. Hit: +10. AL: +2. SPD: +3.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "While this creature is below 40 HP, it gains Atk: +10. Hit: +10. AL: +2. SPD: +3.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 10
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 10
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 2
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 3
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "While this creature is below 40 HP, it gains Atk: +10. Hit: +10. AL: +2. SPD: +3."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 10,
+  "speed": 10,
+  "hp": 80,
+  "attackName": "Trample",
+  "attackDice": 3,
+  "modifier": 3
+}

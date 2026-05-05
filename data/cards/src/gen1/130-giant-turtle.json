@@ -1,0 +1,59 @@
+{
+  "id": "gen1_130_giant_turtle",
+  "name": "Giant Turtle",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "130",
+  "text": "Reduce all damage taken to this card by 1/2 if it has a lower SPD stat than your opponent's primary creature.",
+  "effects": [
+    {
+      "id": "130-E01",
+      "trigger": "DAMAGE_CALC_ON_THIS_CARD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card has lower SPD than opponent primary creature"
+      },
+      "actionType": "APPLY_CONDITIONAL_DAMAGE_REDUCTION",
+      "effectGroup": "Damage Reduction",
+      "actionText": "Reduce damage taken",
+      "target": "This card",
+      "value": "Damage taken x 1/2",
+      "duration": {
+        "text": "While condition true",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyConditionalDamageReduction",
+      "params": {
+        "target": "This card",
+        "valueText": "Damage taken x 1/2",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card has lower SPD than opponent primary creature"
+        },
+        "duration": {
+          "text": "While condition true",
+          "type": "TEXT"
+        },
+        "damageType": "DAMAGE_REDUCTION",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Damage type not limited. Half values always round up.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 6,
+  "speed": 1,
+  "hp": 50,
+  "attackName": "Shell Shock",
+  "attackDice": 1,
+  "modifier": 0
+}

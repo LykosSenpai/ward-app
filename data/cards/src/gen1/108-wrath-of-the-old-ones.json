@@ -1,0 +1,94 @@
+{
+  "id": "gen1_108_wrath_of_the_old_ones",
+  "name": "Wrath of the Old Ones",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "108",
+  "text": "Return all primary creatures and magic cards to their original owner's deck (shuffle). Players then draw the same number of cards they sent.",
+  "effects": [
+    {
+      "id": "108-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Primary creatures/magic cards exist"
+      },
+      "actionType": "MOVE_CARDS",
+      "effectGroup": "Mass Return",
+      "actionText": "Return all primary creatures and magic cards to original owner deck",
+      "target": "All primary creatures + magic cards",
+      "value": "Move to owner deck and shuffle",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnCardsToOwnerDeck",
+      "params": {
+        "target": "All primary creatures + magic cards",
+        "valueText": "Move to owner deck and shuffle",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Primary creatures/magic cards exist"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Counts cards sent per player.",
+      "needsReview": false
+    },
+    {
+      "id": "108-E02",
+      "trigger": "AFTER_RETURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Cards sent counted"
+      },
+      "actionType": "DRAW_CARDS_VARIABLE",
+      "effectGroup": "Draw",
+      "actionText": "Players draw same number of cards they sent",
+      "target": "Each player",
+      "value": "Draw countSent",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "drawCardsVariable",
+      "params": {
+        "target": "Each player",
+        "valueText": "Draw countSent",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Cards sent counted"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Draw based on returned count.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

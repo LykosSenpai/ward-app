@@ -1,0 +1,85 @@
+{
+  "id": "gen3_067_gift_of_the_elves",
+  "name": "Gift of the Elves",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "067",
+  "text": "For 1 turn cycle, the equipped creature gains Atk: +3. Hit: +3. SPD: +3. AL: +3.",
+  "effects": [
+    {
+      "id": "067-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "For 1 turn cycle, the equipped creature gains Atk: +3. Hit: +3. SPD: +3. AL: +3."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "For 1 turn cycle, the equipped creature gains Atk: +3. Hit: +3. SPD: +3. AL: +3.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "For 1 turn cycle, the equipped creature gains Atk: +3. Hit: +3. SPD: +3. AL: +3.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 3
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 3
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 3
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 3
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "For 1 turn cycle, the equipped creature gains Atk: +3. Hit: +3. SPD: +3. AL: +3."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

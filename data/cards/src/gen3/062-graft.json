@@ -1,0 +1,56 @@
+{
+  "id": "gen3_062_graft",
+  "name": "Graft",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "062",
+  "text": "Players may equip creatures from their hand to their primary creature as Infinite equip magic cards. Add their base Atk Dice Rolls and Modifier to the equipped card.",
+  "effects": [
+    {
+      "id": "062-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Players may equip creatures from their hand to their primary creature as Infinite equip magic cards. Add their base Atk Dice Rolls and Modifier to the equipped card."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Magic card(s) on the field",
+      "value": "Players may equip creatures from their hand to their primary creature as Infinite equip magic cards. Add their base Atk Dice Rolls and Modifier to the equipped card.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Players may equip creatures from their hand to their primary creature as Infinite equip magic cards. Add their base Atk Dice Rolls and Modifier to the equipped card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Players may equip creatures from their hand to their primary creature as Infinite equip magic cards. Add their base Atk Dice Rolls and Modifier to the equipped card."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Allows creatures in hand to become Infinite Equip cards with stat transfer.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Allows creatures in hand to become Infinite Equip cards with stat transfer.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

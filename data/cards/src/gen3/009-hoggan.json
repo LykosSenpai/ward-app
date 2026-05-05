@@ -1,0 +1,137 @@
+{
+  "id": "gen3_009_hoggan",
+  "name": "Hoggan",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "009",
+  "text": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle.",
+  "effects": [
+    {
+      "id": "009-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle."
+      },
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon or interact with a Limited Summon",
+      "target": "Opponent's primary creature",
+      "value": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "limitedSummon",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "BEGINNING_OF_TURN"
+      },
+      "notes": "Limited Summon can receive damage and redirects battle from primary creature.",
+      "needsReview": true
+    },
+    {
+      "id": "009-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Opponent's primary creature",
+      "value": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "BEGINNING_OF_TURN"
+      },
+      "notes": "Limited Summon can receive damage and redirects battle from primary creature.",
+      "needsReview": true
+    },
+    {
+      "id": "009-E03",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle."
+      },
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "actionText": "Send card to cemetery",
+      "target": "Opponent's primary creature",
+      "value": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "sendToCemetery",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "BEGINNING_OF_TURN"
+      },
+      "notes": "Limited Summon can receive damage and redirects battle from primary creature.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Limited Summon can receive damage and redirects battle from primary creature.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 1,
+  "speed": 2,
+  "hp": 20,
+  "attackName": "Dark Wave",
+  "attackDice": 4,
+  "modifier": 5
+}

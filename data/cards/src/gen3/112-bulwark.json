@@ -1,0 +1,64 @@
+{
+  "id": "gen3_112_bulwark",
+  "name": "Bulwark",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "112",
+  "text": "Increase the equipped creature's AL to 12 for 3 turn cycles.",
+  "effects": [
+    {
+      "id": "112-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Increase the equipped creature's AL to 12 for 3 turn cycles."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "Equipped creature",
+      "value": "Increase the equipped creature's AL to 12 for 3 turn cycles.",
+      "duration": {
+        "text": "3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Increase the equipped creature's AL to 12 for 3 turn cycles.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Increase the equipped creature's AL to 12 for 3 turn cycles."
+        },
+        "duration": {
+          "text": "3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

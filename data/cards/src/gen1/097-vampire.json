@@ -1,0 +1,59 @@
+{
+  "id": "gen1_097_vampire",
+  "name": "Vampire",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "097",
+  "text": "This creature heals for 1/2 of the Atk damage it inflicts during battle.",
+  "effects": [
+    {
+      "id": "097-E01",
+      "trigger": "ON_THIS_CREATURE_DEALS_ATK_DAMAGE",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature inflicts Atk damage during battle"
+      },
+      "actionType": "HEAL_BY_DAMAGE_DEALT",
+      "effectGroup": "Healing",
+      "actionText": "Heal self from damage dealt",
+      "target": "This creature",
+      "value": "Heal 1/2 Atk damage inflicted",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healByDamageDealt",
+      "params": {
+        "target": "This creature",
+        "valueText": "Heal 1/2 Atk damage inflicted",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature inflicts Atk damage during battle"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "HEALING",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Use actual damage inflicted after reductions. Half values always round up.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 4,
+  "speed": 9,
+  "hp": 60,
+  "attackName": "Vampiric Bite",
+  "attackDice": 1,
+  "modifier": 2
+}

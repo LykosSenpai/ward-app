@@ -1,0 +1,19 @@
+{
+  "id": "gen1_003_frost_giant",
+  "name": "Frost Giant",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "003",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 10,
+  "speed": 5,
+  "hp": 110,
+  "attackName": "Ice Slash",
+  "attackDice": 2,
+  "modifier": 4
+}

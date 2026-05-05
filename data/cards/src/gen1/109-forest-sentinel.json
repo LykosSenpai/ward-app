@@ -1,0 +1,55 @@
+{
+  "id": "gen1_109_forest_sentinel",
+  "name": "Forest Sentinel",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "109",
+  "text": "Play this card from your hand when your opponent finishes their attack. Negate the attack and return the damage back at the attacking creature.",
+  "effects": [
+    {
+      "id": "109-E01",
+      "trigger": "ON_OPPONENT_ATTACK_FINISHES_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent finishes attack"
+      },
+      "actionType": "NEGATE_ATTACK_AND_REFLECT_DAMAGE",
+      "effectGroup": "Negation/Reflection",
+      "actionText": "Negate attack and reflect damage to attacker",
+      "target": "Attacking creature",
+      "value": "Damage returned to attacker",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateAttackAndReflectDamage",
+      "params": {
+        "target": "Attacking creature",
+        "valueText": "Damage returned to attacker",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent finishes attack"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs damage preview/resolved amount.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

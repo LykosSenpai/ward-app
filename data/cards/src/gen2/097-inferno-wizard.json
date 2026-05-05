@@ -1,0 +1,19 @@
+{
+  "id": "gen2_097_inferno_wizard",
+  "name": "Inferno Wizard",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "097",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 10,
+  "hp": 50,
+  "attackName": "Fire Storm",
+  "attackDice": 3,
+  "modifier": 3
+}

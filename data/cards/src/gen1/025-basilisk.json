@@ -1,0 +1,63 @@
+{
+  "id": "gen1_025_basilisk",
+  "name": "Basilisk",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "025",
+  "text": "While on the field, the target creature receives 5 damage once per turn cycle, until this card leaves the field.",
+  "effects": [
+    {
+      "id": "025-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Source remains on field"
+      },
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "actionText": "Apply recurring damage",
+      "target": "Target creature",
+      "value": "5 damage per turn cycle",
+      "duration": {
+        "text": "Until this card leaves field",
+        "type": "UNTIL_SOURCE_LEAVES_FIELD",
+        "sourceLinked": true,
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "reusableFunction": "applyDamageOverTimeUntilSourceLeaves",
+      "params": {
+        "target": "Target creature",
+        "valueText": "5 damage per turn cycle",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Source remains on field"
+        },
+        "duration": {
+          "text": "Until this card leaves field",
+          "type": "UNTIL_SOURCE_LEAVES_FIELD",
+          "sourceLinked": true,
+          "tickTiming": "END_OF_COMBAT_PHASE"
+        },
+        "damageType": "DAMAGE_OVER_TIME",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "notes": "Needs source-linked continuous effect. Turn cycle is one full round back to the same player. DOT ticks at end of Combat Phase and does not stack with another active DOT.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 10,
+  "speed": 5,
+  "hp": 100,
+  "attackName": "Toxic Strike",
+  "attackDice": 2,
+  "modifier": 3
+}

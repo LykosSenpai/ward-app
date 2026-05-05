@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.402Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_006_hafling",
+  "effectId": "006-E01",
+  "title": "Hafling triples damage when hitting first",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:11:52.834Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_006_hafling",
+      "cardName": "Hafling",
+      "cardType": "CREATURE",
+      "cardNumber": "006",
+      "generation": "1",
+      "rawText": "If this creature hits first during battle, inflict 3x Atk damage."
+    },
+    "effect": {
+      "effectId": "006-E01",
+      "trigger": "ON_HIT_FIRST",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Attack Damage Multiplier",
+      "target": "This creature attack damage",
+      "value": "3x Attack Damage",
+      "reusableFunction": "applyAttackDamageMultiplier"
+    },
+    "title": "Hafling triples damage when hitting first",
+    "summary": "Verify Hafling damage is multiplied by 3 only when it hits first in battle.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_006_hafling"
+      ],
+      "player2Cards": [
+        "gen1_012_orc"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            4,
+            4
+          ],
+          "label": "Hafling hits"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            5
+          ],
+          "label": "Hafling base damage 5"
+        }
+      ],
+      "notes": [
+        "Use defender with lower SPD or force Hafling as first striker despite default matchup if fixture supports ordering."
+      ]
+    },
+    "steps": [
+      "Set Hafling as player_1 primary and a slower defender as player_2 primary.",
+      "Resolve battle where Hafling is first striker and hits.",
+      "Roll attack damage 5.",
+      "Observe final damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Multiplier trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Final damage is tripled",
+        "path": "battle.lastDamage.amount",
+        "operator": "equals",
+        "value": 15
+      },
+      {
+        "label": "Defender HP reduced by 15",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 15
+      }
+    ],
+    "manualVerification": [
+      "Repeat with Hafling not striking first and confirm no 3x multiplier."
+    ],
+    "riskNotes": [
+      "Card list in setup may need a slower non-effect defender fixture."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported battle damage pipeline; verify HITS_FIRST condition."
+    },
+    "regression": {
+      "fixtureName": "hafling-first-hit-triple-damage",
+      "tags": [
+        "combat",
+        "damage-multiplier",
+        "speed"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_006_hafling:006-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

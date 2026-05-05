@@ -1,0 +1,19 @@
+{
+  "id": "gen2_008_raccoon",
+  "name": "Raccoon",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "008",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 4,
+  "speed": 10,
+  "hp": 20,
+  "attackName": "Scratch",
+  "attackDice": 1,
+  "modifier": 1
+}

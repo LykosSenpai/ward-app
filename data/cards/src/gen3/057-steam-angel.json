@@ -1,0 +1,67 @@
+{
+  "id": "gen3_057_steam_angel",
+  "name": "Steam Angel",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "057",
+  "text": "During your turn, roll 1 die. For 1 turn cycle, the following rarity cards cannot be played: 1-3 Epic/Promo. 4-6 Legendary/Mythic.",
+  "effects": [
+    {
+      "id": "057-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "During your turn, roll 1 die. For 1 turn cycle, the following rarity cards cannot be played: 1-3 Epic/Promo. 4-6 Legendary/Mythic."
+      },
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "actionText": "Resolve a D6 roll table",
+      "target": "This creature",
+      "value": "During your turn, roll 1 die. For 1 turn cycle, the following rarity cards cannot be played: 1-3 Epic/Promo. 4-6 Legendary/Mythic.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "resolveRollTable",
+      "params": {
+        "target": "This creature",
+        "valueText": "During your turn, roll 1 die. For 1 turn cycle, the following rarity cards cannot be played: 1-3 Epic/Promo. 4-6 Legendary/Mythic.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During your turn, roll 1 die. For 1 turn cycle, the following rarity cards cannot be played: 1-3 Epic/Promo. 4-6 Legendary/Mythic."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Roll-table prevents cards by rarity from being played for 1 turn cycle.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Roll-table prevents cards by rarity from being played for 1 turn cycle.",
+  "cardType": "CREATURE",
+  "creatureType": "Mechanical",
+  "armorLevel": 7,
+  "speed": 7,
+  "hp": 70,
+  "attackName": "Steam Sword",
+  "attackDice": 4,
+  "modifier": 4
+}

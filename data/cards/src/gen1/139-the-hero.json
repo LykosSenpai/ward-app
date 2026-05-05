@@ -1,0 +1,72 @@
+{
+  "id": "gen1_139_the_hero",
+  "name": "The Hero",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "139",
+  "text": "While this card is on the field, for every creature sent to your opponents' cemetery add: Atk Dice Rolls: +1. Modifier: +1.",
+  "effects": [
+    {
+      "id": "139-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "For every creature sent to opponents cemetery"
+      },
+      "actionType": "APPLY_CEMETERY_SEND_COUNTER_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "actionText": "Add Atk Dice Rolls and Modifier",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +1; Modifier +1 per qualifying creature",
+      "duration": {
+        "text": "While source on field",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyCemeterySendCounterModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "Atk Dice Rolls +1; Modifier +1 per qualifying creature",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1,
+            "rounding": null
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD",
+            "value": 1,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "For every creature sent to opponents cemetery"
+        },
+        "duration": {
+          "text": "While source on field",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Incremental counter based on future events. Modifier applies to both Hit Roll and Attack Damage Roll.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 7,
+  "speed": 9,
+  "hp": 80,
+  "attackName": "Heroic Strike",
+  "attackDice": 3,
+  "modifier": 3
+}

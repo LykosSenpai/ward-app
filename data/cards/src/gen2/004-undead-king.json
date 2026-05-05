@@ -1,0 +1,116 @@
+{
+  "id": "gen2_004_undead_king",
+  "name": "Undead King",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Mythic",
+  "cardNumber": "004",
+  "text": "During your turn, roll 1 die. If the result is 3-6, you may summon a creature from your cemetery as a Limited Summon. Limited Summon(s) return to the cemetery if this card leaves the field, switches control, or this effect is negated.",
+  "effects": [
+    {
+      "id": "004-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "text": "Roll 1 die; success 3-6"
+      },
+      "actionType": "SUMMON_LIMITED_CREATURE",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon creature from cemetery as Limited Summon",
+      "target": "Creature from your cemetery",
+      "value": "Limited Summon 1 creature from cemetery",
+      "duration": {
+        "text": "While source effect remains active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "summonLimitedFromZone",
+      "params": {
+        "target": "Creature from your cemetery",
+        "valueText": "Limited Summon 1 creature from cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "text": "Roll 1 die; success 3-6"
+        },
+        "duration": {
+          "text": "While source effect remains active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZone": "YOUR_CEMETERY",
+        "maxCount": 1,
+        "summonType": "LIMITED_SUMMON"
+      },
+      "notes": "Limited summon returns to cemetery if Undead King leaves field, switches control, or this effect is negated. Limited summons still obey global limited-summon rules.",
+      "needsReview": false
+    },
+    {
+      "id": "004-E02",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "condition": {
+        "type": "SOURCE_INVALIDATED",
+        "text": "This card leaves field, switches control, or this effect is negated"
+      },
+      "actionType": "RETURN_LINKED_SUMMON",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return linked Limited Summon(s) to cemetery",
+      "target": "Linked Limited Summon(s)",
+      "value": "Return to cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedSummon",
+      "params": {
+        "target": "Linked Limited Summon(s)",
+        "valueText": "Return to cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "SOURCE_INVALIDATED",
+          "text": "This card leaves field, switches control, or this effect is negated"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "toZone": "YOUR_CEMETERY"
+      },
+      "notes": "Source-linked cleanup for Undead King.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 12,
+  "speed": 10,
+  "hp": 100,
+  "attackName": "Undead Army",
+  "attackDice": 4,
+  "modifier": 5
+}

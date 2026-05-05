@@ -1,0 +1,59 @@
+{
+  "id": "gen3_115_shard_titan",
+  "name": "Shard Titan",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "115",
+  "text": "Summon Requirement: Can only be summoned if your primary creature is Cosmic-type and has \"Strange Jewel\" equipped. You may sacrifice it to summon this card as your primary creature. If this card leaves the field, it returns to a magic card.",
+  "effects": [
+    {
+      "id": "115-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon Requirement: Can only be summoned if your primary creature is Cosmic-type and has \"Strange Jewel\" equipped. You may sacrifice it to summon this card as your primary creature. If this card leaves the field, it returns to a magic card."
+      },
+      "actionType": "SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Apply custom summon requirement",
+      "target": "Your primary creature",
+      "value": "Summon Requirement: Can only be summoned if your primary creature is Cosmic-type and has \"Strange Jewel\" equipped. You may sacrifice it to summon this card as your primary creature. If this card leaves the field, it returns to a magic card.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Summon Requirement: Can only be summoned if your primary creature is Cosmic-type and has \"Strange Jewel\" equipped. You may sacrifice it to summon this card as your primary creature. If this card leaves the field, it returns to a magic card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon Requirement: Can only be summoned if your primary creature is Cosmic-type and has \"Strange Jewel\" equipped. You may sacrifice it to summon this card as your primary creature. If this card leaves the field, it returns to a magic card."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Custom summon requirement tied to exact equip and hybrid return-to-magic state.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Custom summon requirement tied to exact equip and hybrid return-to-magic state.",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 7,
+  "speed": 9,
+  "hp": 40,
+  "attackName": "Shatter Shard",
+  "attackDice": 6,
+  "modifier": 4
+}

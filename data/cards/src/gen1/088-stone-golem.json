@@ -1,0 +1,176 @@
+{
+  "id": "gen1_088_stone_golem",
+  "name": "Stone Golem",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "088",
+  "text": "Summon this card to your opponent's side of the field. This card becomes a permanent creature for the game's duration. Return your opponent's primary creature back to their deck (Shuffle). This card loses 10 HP at the beginning of your turn.",
+  "effects": [
+    {
+      "id": "088-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "Card is summoned"
+      },
+      "actionType": "SUMMON_TO_OPPONENT_SIDE",
+      "effectGroup": "Control/Placement",
+      "actionText": "Summon to opponent side",
+      "target": "This card",
+      "value": "Opponent controls/occupies field",
+      "duration": {
+        "text": "Permanent",
+        "type": "TEXT"
+      },
+      "reusableFunction": "summonToOpponentSide",
+      "params": {
+        "target": "This card",
+        "valueText": "Opponent controls/occupies field",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Card is summoned"
+        },
+        "duration": {
+          "text": "Permanent",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Special negative summon.",
+      "needsReview": false
+    },
+    {
+      "id": "088-E02",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "After summon"
+      },
+      "actionType": "APPLY_PERMANENT_CREATURE_FLAG",
+      "effectGroup": "Permanent Creature",
+      "actionText": "Cannot leave due to normal duration",
+      "target": "This card",
+      "value": "Permanent for game duration",
+      "duration": {
+        "text": "Game duration",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyPermanentCreatureFlag",
+      "params": {
+        "target": "This card",
+        "valueText": "Permanent for game duration",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "After summon"
+        },
+        "duration": {
+          "text": "Game duration",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "May still be destroyed by damage unless rules say otherwise.",
+      "needsReview": false
+    },
+    {
+      "id": "088-E03",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent primary creature exists"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return opponent primary creature to deck and shuffle",
+      "target": "Opponent primary creature",
+      "value": "Move to deck",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnCreatureToDeckAndShuffle",
+      "params": {
+        "target": "Opponent primary creature",
+        "valueText": "Move to deck",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent primary creature exists"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Opponent loses current primary.",
+      "needsReview": false
+    },
+    {
+      "id": "088-E04",
+      "trigger": "AT_BEGINNING_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card on opponent side"
+      },
+      "actionType": "APPLY_START_TURN_HP_LOSS",
+      "effectGroup": "HP Loss",
+      "actionText": "Lose HP",
+      "target": "This card",
+      "value": "10 HP",
+      "duration": {
+        "text": "Each of your turns",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyStartTurnHpLoss",
+      "params": {
+        "target": "This card",
+        "valueText": "10 HP",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card on opponent side"
+        },
+        "duration": {
+          "text": "Each of your turns",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Turn owner is original caster, not controller.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 10,
+  "speed": 1,
+  "hp": 100,
+  "attackName": "Stone Fist",
+  "attackDice": 5,
+  "modifier": 5
+}

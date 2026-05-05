@@ -1,0 +1,59 @@
+{
+  "id": "gen2_015_bear_wolf",
+  "name": "Bear Wolf",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "015",
+  "text": "This creature always attacks first during battle.",
+  "effects": [
+    {
+      "id": "015-E01",
+      "trigger": "DURING_BATTLE_PRIORITY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Battle involving this creature"
+      },
+      "actionType": "APPLY_ATTACK_PRIORITY_OVERRIDE",
+      "effectGroup": "Attack Priority",
+      "actionText": "Force this creature to attack first",
+      "target": "This creature",
+      "value": "Always attacks first",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyAttackPriorityOverride",
+      "params": {
+        "target": "This creature",
+        "valueText": "Always attacks first",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Battle involving this creature"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Overrides SPD comparison unless another card effect explicitly changes priority.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 6,
+  "speed": 9,
+  "hp": 50,
+  "attackName": "Quick Maul",
+  "attackDice": 2,
+  "modifier": 4
+}

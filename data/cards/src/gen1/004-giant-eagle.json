@@ -1,0 +1,19 @@
+{
+  "id": "gen1_004_giant_eagle",
+  "name": "Giant Eagle",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "004",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 5,
+  "speed": 12,
+  "hp": 50,
+  "attackName": "Sky Torpedo",
+  "attackDice": 2,
+  "modifier": 0
+}

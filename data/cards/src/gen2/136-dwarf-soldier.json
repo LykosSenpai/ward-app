@@ -1,0 +1,19 @@
+{
+  "id": "gen2_136_dwarf_soldier",
+  "name": "Dwarf Soldier",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "136",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 2,
+  "hp": 50,
+  "attackName": "Power Strike",
+  "attackDice": 1,
+  "modifier": 4
+}

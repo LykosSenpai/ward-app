@@ -1,0 +1,75 @@
+{
+  "id": "gen3_013_steam_powered_girl",
+  "name": "Steam Powered Girl",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "013",
+  "text": "For 1 turn cycle, for every card in your hand, add Hit Dice Rolls +1 and Atk Dice Rolls +1.",
+  "effects": [
+    {
+      "id": "013-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "For 1 turn cycle, for every card in your hand, add Hit Dice Rolls +1 and Atk Dice Rolls +1."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "For 1 turn cycle, for every card in your hand, add Hit Dice Rolls +1 and Atk Dice Rolls +1.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "For 1 turn cycle, for every card in your hand, add Hit Dice Rolls +1 and Atk Dice Rolls +1.",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1
+          },
+          {
+            "stat": "HIT_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "For 1 turn cycle, for every card in your hand, add Hit Dice Rolls +1 and Atk Dice Rolls +1."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

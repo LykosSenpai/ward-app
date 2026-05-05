@@ -1,0 +1,64 @@
+{
+  "id": "gen3_016_exhaustion",
+  "name": "Exhaustion",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "016",
+  "text": "Reduce the target creature's Hit and Atk Modifier to 0 for 1 turn cycle.",
+  "effects": [
+    {
+      "id": "016-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Reduce the target creature's Hit and Atk Modifier to 0 for 1 turn cycle."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "Equipped creature",
+      "value": "Reduce the target creature's Hit and Atk Modifier to 0 for 1 turn cycle.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Reduce the target creature's Hit and Atk Modifier to 0 for 1 turn cycle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Reduce the target creature's Hit and Atk Modifier to 0 for 1 turn cycle."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

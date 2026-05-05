@@ -1,0 +1,95 @@
+{
+  "id": "gen3_082_gnarled_hand",
+  "name": "Gnarled Hand",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "082",
+  "text": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery.",
+  "effects": [
+    {
+      "id": "082-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery."
+      },
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon or interact with a Limited Summon",
+      "target": "Your primary creature",
+      "value": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "limitedSummon",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "082-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery."
+      },
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "actionText": "Send card to cemetery",
+      "target": "Your primary creature",
+      "value": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "sendToCemetery",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

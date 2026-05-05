@@ -1,0 +1,19 @@
+{
+  "id": "gen1_031_cosmic_demon",
+  "name": "Cosmic Demon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "031",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 12,
+  "speed": 6,
+  "hp": 120,
+  "attackName": "Black Hole",
+  "attackDice": 6,
+  "modifier": 6
+}

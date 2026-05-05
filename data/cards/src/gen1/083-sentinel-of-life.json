@@ -1,0 +1,55 @@
+{
+  "id": "gen1_083_sentinel_of_life",
+  "name": "Sentinel of Life",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "083",
+  "text": "When your opponent finishes their attack, play this card. Negate the attack and instead, heal the targeted creature for the damage they would have received.",
+  "effects": [
+    {
+      "id": "083-E01",
+      "trigger": "ON_OPPONENT_ATTACK_FINISHES_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent attack finishes"
+      },
+      "actionType": "NEGATE_ATTACK_AND_HEAL",
+      "effectGroup": "Negation/Healing",
+      "actionText": "Negate attack and heal target for prevented damage",
+      "target": "Targeted creature",
+      "value": "Heal equal to damage they would have received",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateAttackAndHealPreventedDamage",
+      "params": {
+        "target": "Targeted creature",
+        "valueText": "Heal equal to damage they would have received",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent attack finishes"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "HEALING",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs damage preview amount.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

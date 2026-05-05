@@ -1,0 +1,67 @@
+{
+  "id": "gen3_065_skol",
+  "name": "Skol",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "065",
+  "text": "AL: +4. Atk: +4.",
+  "effects": [
+    {
+      "id": "065-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "AL: +4. Atk: +4."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "AL: +4. Atk: +4.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "AL: +4. Atk: +4.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 4
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 4
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "AL: +4. Atk: +4."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

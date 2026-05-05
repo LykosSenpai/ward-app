@@ -1,0 +1,19 @@
+{
+  "id": "gen1_104_manticore",
+  "name": "Manticore",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "104",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 11,
+  "speed": 13,
+  "hp": 110,
+  "attackName": "Inferno Swipe",
+  "attackDice": 3,
+  "modifier": 3
+}

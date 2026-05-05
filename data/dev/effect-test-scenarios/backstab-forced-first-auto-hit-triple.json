@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.409Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_023_backstab",
+  "effectId": "023-E01",
+  "title": "Backstab forces primary creature first, auto-hit, and triple damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:12:37.139Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_023_backstab",
+      "cardName": "Backstab",
+      "cardType": "MAGIC",
+      "cardNumber": "023",
+      "generation": "1",
+      "rawText": "During your turn, this card allows your primary creature to attack first, automatically hit, and inflict 3x Atk damage."
+    },
+    "effect": {
+      "effectId": "023-E01",
+      "trigger": "DURING_YOUR_TURN",
+      "actionType": "APPLY_FORCED_FIRST_AUTO_HIT_MULTIPLIER",
+      "effectGroup": "Battle Override",
+      "target": "Your primary creature",
+      "value": "Attack first; auto-hit; 3x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyForcedFirstAutoHitMultiplier"
+    },
+    "title": "Backstab forces primary creature first, auto-hit, and triple damage",
+    "summary": "Play before battle, verify slower primary attacks first, skips hit miss risk, and applies 3x damage for current battle only.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_023_backstab",
+        "test_slow_primary_attackdice_2_mod_1"
+      ],
+      "player2Cards": [
+        "test_fast_defender_al_12_hp_100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            1,
+            1
+          ],
+          "label": "would miss if auto-hit not active"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            3,
+            4
+          ],
+          "label": "base damage roll 7 plus modifier 1"
+        }
+      ],
+      "notes": [
+        "Use post-first-turn-cycle state.",
+        "Player_1 primary should have lower SPD than defender to prove forced first."
+      ]
+    },
+    "steps": [
+      "Play Backstab during player_1 turn before combat.",
+      "Enter COMBAT and attack with player_1 primary creature.",
+      "Resolve battle with forced rolls.",
+      "Run a second battle without replaying Backstab if possible."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Primary attacks first despite lower SPD",
+        "path": "lastBattle.firstAttacker.ownerId",
+        "operator": "equals",
+        "value": "player_1"
+      },
+      {
+        "label": "Attack auto-hits",
+        "path": "lastBattle.hitResult.source",
+        "operator": "equals",
+        "value": "AUTO_HIT"
+      },
+      {
+        "label": "Triple damage applied",
+        "path": "lastBattle.damageApplied",
+        "operator": "equals",
+        "value": 24
+      },
+      {
+        "label": "Effect expires after current battle",
+        "path": "player_1.primaryCreature.statuses",
+        "operator": "notContains",
+        "value": "BACKSTAB"
+      }
+    ],
+    "manualVerification": [
+      "Expected damage is (3+4+1) x 3 = 24.",
+      "Confirm Backstab goes to cemetery after standard magic resolution."
+    ],
+    "riskNotes": [
+      "Runtime support is partial and may only provide manual battle resolver suggestions."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Plan verifies priority override, auto-hit override, multiplier, and current-battle cleanup."
+    },
+    "regression": {
+      "fixtureName": "backstab-forced-first-auto-hit-triple",
+      "tags": [
+        "magic",
+        "battle-override",
+        "auto-hit",
+        "damage-multiplier"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_023_backstab:023-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

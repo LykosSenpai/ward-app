@@ -1,0 +1,56 @@
+{
+  "id": "gen3_063_old_logging_road",
+  "name": "Old Logging Road",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "063",
+  "text": "Players must inflict 5 damage to their primary creature to play a magic card.",
+  "effects": [
+    {
+      "id": "063-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Players must inflict 5 damage to their primary creature to play a magic card."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Magic card(s) on the field",
+      "value": "Players must inflict 5 damage to their primary creature to play a magic card.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Players must inflict 5 damage to their primary creature to play a magic card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Players must inflict 5 damage to their primary creature to play a magic card."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

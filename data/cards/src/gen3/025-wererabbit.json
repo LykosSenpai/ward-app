@@ -1,0 +1,19 @@
+{
+  "id": "gen3_025_wererabbit",
+  "name": "Wererabbit",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "025",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 6,
+  "speed": 10,
+  "hp": 50,
+  "attackName": "Vicious Bite",
+  "attackDice": 1,
+  "modifier": 7
+}

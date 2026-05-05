@@ -1,0 +1,68 @@
+{
+  "id": "gen1_075_mysterious_traveler",
+  "name": "Mysterious Traveler",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "075",
+  "text": "AL: +3. SPD: +3.",
+  "effects": [
+    {
+      "id": "075-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Modify AL and SPD",
+      "target": "Equipped creature",
+      "value": "AL +3; SPD +3",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "AL +3; SPD +3",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 3,
+            "rounding": null
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 3,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Multi-stat equip modifier. Final AL is capped at 12.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

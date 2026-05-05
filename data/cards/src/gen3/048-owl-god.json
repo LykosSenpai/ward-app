@@ -1,0 +1,59 @@
+{
+  "id": "gen3_048_owl_god",
+  "name": "Owl God",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "048",
+  "text": "Summon Requirement: This creature requires 3 sacrifices to summon. If one of the creatures sacrificed has \"Owl\" in its name, only 2 sacrifices are required.",
+  "effects": [
+    {
+      "id": "048-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon Requirement: This creature requires 3 sacrifices to summon. If one of the creatures sacrificed has \"Owl\" in its name, only 2 sacrifices are required."
+      },
+      "actionType": "SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Apply custom summon requirement",
+      "target": "This creature",
+      "value": "Summon Requirement: This creature requires 3 sacrifices to summon. If one of the creatures sacrificed has \"Owl\" in its name, only 2 sacrifices are required.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "This creature",
+        "valueText": "Summon Requirement: This creature requires 3 sacrifices to summon. If one of the creatures sacrificed has \"Owl\" in its name, only 2 sacrifices are required.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon Requirement: This creature requires 3 sacrifices to summon. If one of the creatures sacrificed has \"Owl\" in its name, only 2 sacrifices are required."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 12,
+  "speed": 2,
+  "hp": 150,
+  "attackName": "Owlagas",
+  "attackDice": 9,
+  "modifier": 9
+}

@@ -1,0 +1,173 @@
+{
+  "id": "gen3_021_possessed_dummy",
+  "name": "Possessed Dummy",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "021",
+  "text": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+  "effects": [
+    {
+      "id": "021-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+      },
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon or interact with a Limited Summon",
+      "target": "Opponent's primary creature",
+      "value": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "limitedSummon",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Opponent-cemetery Limited Summon with source-linked cleanup and opponent ownership.",
+      "needsReview": true
+    },
+    {
+      "id": "021-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+      },
+      "actionType": "NEGATE_CARD_EFFECT",
+      "effectGroup": "Negation",
+      "actionText": "Negate a card effect",
+      "target": "Opponent's primary creature",
+      "value": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "negateCardEffect",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Opponent-cemetery Limited Summon with source-linked cleanup and opponent ownership.",
+      "needsReview": true
+    },
+    {
+      "id": "021-E03",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Card Movement",
+      "actionText": "Move or return a card between zones",
+      "target": "Opponent's primary creature",
+      "value": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "moveCard",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Opponent-cemetery Limited Summon with source-linked cleanup and opponent ownership.",
+      "needsReview": true
+    },
+    {
+      "id": "021-E04",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+      },
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "actionText": "Send card to cemetery",
+      "target": "Opponent's primary creature",
+      "value": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "sendToCemetery",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Opponent-cemetery Limited Summon with source-linked cleanup and opponent ownership.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Opponent-cemetery Limited Summon with source-linked cleanup and opponent ownership.",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

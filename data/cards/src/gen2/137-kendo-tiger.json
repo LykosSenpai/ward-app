@@ -1,0 +1,105 @@
+{
+  "id": "gen2_137_kendo_tiger",
+  "name": "Kendo Tiger",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "137",
+  "text": "When summoned, choose 1 of the following effects: Send 1 card from your opponent's hand back to their deck. Shuffle. Destroy 1 magic card on the field.",
+  "effects": [
+    {
+      "id": "137-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "ON_SUMMON_CONDITION",
+        "text": "Choose this mode when summoned"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Choice Effect",
+      "actionText": "Send 1 opponent hand card back to deck and shuffle",
+      "target": "1 card from opponent hand",
+      "value": "Send back to opponent deck and shuffle",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "moveCard",
+      "params": {
+        "target": "1 card from opponent hand",
+        "valueText": "Send back to opponent deck and shuffle",
+        "statChanges": [],
+        "condition": {
+          "type": "ON_SUMMON_CONDITION",
+          "text": "Choose this mode when summoned"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "choiceGroup": "KENDO_TIGER_ON_SUMMON",
+        "fromZone": "OPPONENT_HAND",
+        "toZone": "OPPONENT_DECK",
+        "count": 1,
+        "shuffleAfter": true
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "137-E02",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "ON_SUMMON_CONDITION",
+        "text": "Choose this mode when summoned"
+      },
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Choice Effect",
+      "actionText": "Destroy selected magic card on field",
+      "target": "1 magic card on the field",
+      "value": "Destroy 1 magic card",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyMagicCards",
+      "params": {
+        "target": "1 magic card on the field",
+        "valueText": "Destroy 1 magic card",
+        "statChanges": [],
+        "condition": {
+          "type": "ON_SUMMON_CONDITION",
+          "text": "Choose this mode when summoned"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "choiceGroup": "KENDO_TIGER_ON_SUMMON",
+        "maxCount": 1
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 4,
+  "speed": 8,
+  "hp": 40,
+  "attackName": "Half Nelson",
+  "attackDice": 1,
+  "modifier": 3
+}

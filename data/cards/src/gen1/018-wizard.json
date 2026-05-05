@@ -1,0 +1,71 @@
+{
+  "id": "gen1_018_wizard",
+  "name": "Wizard",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "018",
+  "text": "During your turn, roll 1 die. If the result is 1-3, this creature negates the next attack against this card.",
+  "effects": [
+    {
+      "id": "018-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2,
+          3
+        ],
+        "text": "Roll 1 die; success 1-3"
+      },
+      "actionType": "ADD_NEXT_ATTACK_SHIELD",
+      "effectGroup": "Shield/Negation",
+      "actionText": "Negate next attack against this card",
+      "target": "This card",
+      "value": "Next attack negated",
+      "duration": {
+        "text": "Until consumed",
+        "type": "UNTIL_CONSUMED"
+      },
+      "reusableFunction": "addNextAttackShield",
+      "params": {
+        "target": "This card",
+        "valueText": "Next attack negated",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            1,
+            2,
+            3
+          ],
+          "text": "Roll 1 die; success 1-3"
+        },
+        "duration": {
+          "text": "Until consumed",
+          "type": "UNTIL_CONSUMED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Store pending shield on creature.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 1,
+  "speed": 10,
+  "hp": 40,
+  "attackName": "Arcane Blast",
+  "attackDice": 2,
+  "modifier": 4
+}

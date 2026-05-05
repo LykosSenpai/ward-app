@@ -1,0 +1,19 @@
+{
+  "id": "gen2_034_bronto",
+  "name": "Bronto",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "034",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Dino",
+  "armorLevel": 11,
+  "speed": 1,
+  "hp": 110,
+  "attackName": "Thunder Stomp",
+  "attackDice": 2,
+  "modifier": 7
+}

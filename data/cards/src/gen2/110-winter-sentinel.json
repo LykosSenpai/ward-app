@@ -1,0 +1,105 @@
+{
+  "id": "gen2_110_winter_sentinel",
+  "name": "Winter Sentinel",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "110",
+  "text": "When your opponent finishes their attack, play this card. Negate the attack and freeze the attacking creature for 1 turn cycle. Frozen creature cannot inflict Atk damage or be sacrificed.",
+  "effects": [
+    {
+      "id": "110-E01",
+      "trigger": "ON_OPPONENT_ATTACK_FINISHES_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent finishes their attack"
+      },
+      "actionType": "NEGATE_ATTACK",
+      "effectGroup": "Negation",
+      "actionText": "Negate the attack",
+      "target": "Opponent attack",
+      "value": "Negate the attack",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateAttack",
+      "params": {
+        "target": "Opponent attack",
+        "valueText": "Negate the attack",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent finishes their attack"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "110-E02",
+      "trigger": "AFTER_NEGATE_ATTACK",
+      "condition": {
+        "type": "TEXT",
+        "text": "Winter Sentinel negated the attack"
+      },
+      "actionType": "APPLY_STATUS",
+      "effectGroup": "Status",
+      "actionText": "Freeze attacking creature for 1 turn cycle",
+      "target": "Attacking creature",
+      "value": "Frozen; cannot inflict Atk damage or be sacrificed",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyConditionalStatus",
+      "params": {
+        "target": "Attacking creature",
+        "valueText": "Frozen; cannot inflict Atk damage or be sacrificed",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Winter Sentinel negated the attack"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "status": "FROZEN",
+        "canInflictAtkDamage": false,
+        "canBeSacrificed": false
+      },
+      "notes": "Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

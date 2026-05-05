@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.404Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_014_smokescreen",
+  "effectId": "014-E01",
+  "title": "Smokescreen caps hit roll to 1 die",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:11:52.834Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_014_smokescreen",
+      "cardName": "Smokescreen",
+      "cardType": "MAGIC",
+      "cardNumber": "014",
+      "generation": "1",
+      "rawText": "The equipped creature can only roll 1 Hit Die for the next 2 turn cycles."
+    },
+    "effect": {
+      "effectId": "014-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "APPLY_DICE_LIMIT",
+      "effectGroup": "Dice Modifier",
+      "target": "Target creature",
+      "value": "Hit Roll limited to 1D6",
+      "durationText": "2 turn cycles",
+      "reusableFunction": "applyDiceLimit"
+    },
+    "title": "Smokescreen caps hit roll to 1 die",
+    "summary": "Verify equipped target can roll only 1 hit die for 2 turn cycles while dice-limit effect is active.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_014_smokescreen",
+        "gen1_006_hafling"
+      ],
+      "player2Cards": [
+        "gen1_012_orc"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5
+          ],
+          "label": "Capped one-die hit roll"
+        }
+      ],
+      "notes": [
+        "Player_1 should have Smokescreen in hand and a creature target in play."
+      ]
+    },
+    "steps": [
+      "Play Smokescreen and target Hafling.",
+      "Advance to Combat while effect is active.",
+      "Declare Hafling attack.",
+      "Open hit roll and verify only 1D6 is used/accepted.",
+      "Advance two turn cycles and verify cap expires."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Dice limit effect exists on target",
+        "path": "player_1.primary.activeEffects",
+        "operator": "contains",
+        "value": "APPLY_DICE_LIMIT"
+      },
+      {
+        "label": "Roll kind is hit roll",
+        "path": "player_1.primary.activeEffects.APPLY_DICE_LIMIT.rollKind",
+        "operator": "equals",
+        "value": "HIT_ROLL"
+      },
+      {
+        "label": "Dice limit value is 1",
+        "path": "player_1.primary.activeEffects.APPLY_DICE_LIMIT.diceLimitValue",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Hit roll dice count capped",
+        "path": "battle.lastHitRoll.dice.length",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Effect removed after duration",
+        "path": "player_1.primary.activeEffects.APPLY_DICE_LIMIT",
+        "operator": "notExists"
+      }
+    ],
+    "manualVerification": [
+      "Confirm standard magic goes to cemetery after resolving and does not occupy an infinite magic slot."
+    ],
+    "riskNotes": [
+      "Equip wording may not create a persistent equipment card; effect is temporary and source-unlinked."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported prompt and battle roll cap; verify duration cleanup."
+    },
+    "regression": {
+      "fixtureName": "smokescreen-hit-roll-cap",
+      "tags": [
+        "magic",
+        "dice-limit",
+        "duration"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_014_smokescreen:014-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

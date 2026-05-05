@@ -1,0 +1,101 @@
+{
+  "id": "gen3_096_demon_blood",
+  "name": "Demon Blood",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "096",
+  "text": "Atk: +3. The equipped creature is changed to Demon-type.",
+  "effects": [
+    {
+      "id": "096-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Atk: +3. The equipped creature is changed to Demon-type."
+      },
+      "actionType": "CHANGE_CREATURE_TYPE",
+      "effectGroup": "Type Change",
+      "actionText": "Change creature type",
+      "target": "Equipped creature",
+      "value": "Atk: +3. The equipped creature is changed to Demon-type.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "changeCreatureType",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Atk: +3. The equipped creature is changed to Demon-type.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Atk: +3. The equipped creature is changed to Demon-type."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "096-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Atk: +3. The equipped creature is changed to Demon-type."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "Atk: +3. The equipped creature is changed to Demon-type.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Atk: +3. The equipped creature is changed to Demon-type.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 3
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Atk: +3. The equipped creature is changed to Demon-type."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

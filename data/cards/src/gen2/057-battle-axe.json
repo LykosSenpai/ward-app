@@ -1,0 +1,96 @@
+{
+  "id": "gen2_057_battle_axe",
+  "name": "Battle Axe",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "057",
+  "text": "Atk: +2. Hit: +2.",
+  "effects": [
+    {
+      "id": "057-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "actionText": "Add 2 ATK_DAMAGE",
+      "target": "Equipped creature",
+      "value": "+2 ATK_DAMAGE",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED",
+        "starts": "EQUIP_RESOLUTION",
+        "expires": "SOURCE_REMOVED_FROM_FIELD"
+      },
+      "reusableFunction": "applyDiceModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "+2 ATK_DAMAGE",
+        "statChanges": [
+          {
+            "stat": "ATK_DAMAGE",
+            "operation": "ADD",
+            "value": 2
+          }
+        ],
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED",
+          "starts": "EQUIP_RESOLUTION",
+          "expires": "SOURCE_REMOVED_FROM_FIELD"
+        },
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "needsReview": false,
+      "notes": "Dice/flat attack modifiers are parsed for review; automation may need a handler."
+    },
+    {
+      "id": "057-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "actionText": "Add 2 HIT",
+      "target": "Equipped creature",
+      "value": "+2 HIT",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED",
+        "starts": "EQUIP_RESOLUTION",
+        "expires": "SOURCE_REMOVED_FROM_FIELD"
+      },
+      "reusableFunction": "applyDiceModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "+2 HIT",
+        "statChanges": [
+          {
+            "stat": "HIT",
+            "operation": "ADD",
+            "value": 2
+          }
+        ],
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED",
+          "starts": "EQUIP_RESOLUTION",
+          "expires": "SOURCE_REMOVED_FROM_FIELD"
+        },
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "needsReview": false,
+      "notes": "Dice/flat attack modifiers are parsed for review; automation may need a handler."
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

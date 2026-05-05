@@ -1,0 +1,152 @@
+{
+  "id": "gen1_093_heroism",
+  "name": "Heroism",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "093",
+  "text": "AL: +2. Hit: +2. Atk: +2. This card and the equipped creature are unaffected by magic cards. This card can only be negated when played.",
+  "effects": [
+    {
+      "id": "093-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Modify AL, Hit, Atk",
+      "target": "Equipped creature",
+      "value": "AL +2; Hit +2; Atk +2",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "AL +2; Hit +2; Atk +2",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 2,
+            "rounding": null
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 2,
+            "rounding": null
+          },
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 2,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Multi-stat equip modifier. Final AL is capped at 12.",
+      "needsReview": false
+    },
+    {
+      "id": "093-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Magic card affects this card/equipped creature"
+      },
+      "actionType": "APPLY_MAGIC_IMMUNITY",
+      "effectGroup": "Immunity",
+      "actionText": "Unaffected by magic cards",
+      "target": "This card and equipped creature",
+      "value": "Magic immunity",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyMagicImmunity",
+      "params": {
+        "target": "This card and equipped creature",
+        "valueText": "Magic immunity",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Magic card affects this card/equipped creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Can only be negated when played.",
+      "needsReview": false
+    },
+    {
+      "id": "093-E03",
+      "trigger": "STATIC_RULE",
+      "condition": {
+        "type": "TEXT",
+        "text": "After successful play"
+      },
+      "actionType": "APPLY_NEGATION_WINDOW_RESTRICTION",
+      "effectGroup": "Negation Restriction",
+      "actionText": "Can only be negated when played",
+      "target": "This card",
+      "value": "No later negation",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyNegationWindowRestriction",
+      "params": {
+        "target": "This card",
+        "valueText": "No later negation",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "After successful play"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Prevent later card/effect negation.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

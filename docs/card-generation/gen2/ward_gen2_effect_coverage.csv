@@ -1,0 +1,151 @@
+﻿card_number,card_name,card_kind,rarity,has_effect_text,effect_count,action_types,reusable_functions,needs_manual_review,notes
+001,All In One,MAGIC,Legendary,TRUE,1,APPLY_DYNAMIC_STAT_MODIFIER,applyDynamicStatModifier,FALSE,
+002,Celestial Power,MAGIC,Legendary,TRUE,2,APPLY_STAT_MODIFIER; SET_CAN_BE_NEGATED,applyStatModifier; setCanBeNegated,FALSE,
+003,Beaver,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+004,Undead King,CREATURE,Mythic,TRUE,2,RETURN_LINKED_SUMMON; SUMMON_LIMITED_CREATURE,returnLinkedSummon; summonLimitedFromZone,FALSE,
+005,Creator's Gift,MAGIC,Legendary,TRUE,2,APPLY_STAT_MODIFIER; SET_CAN_BE_NEGATED,applyStatModifier; setCanBeNegated,FALSE,
+006,Electroloon,CREATURE,Rare,TRUE,2,APPLY_STATUS_AURA; APPLY_STATUS_WITH_ESCAPE_ROLL,applyStatusAura; applyStatusWithEscapeRoll,FALSE,
+007,Absolute Terror,MAGIC,Legendary,TRUE,1,DEAL_DAMAGE_ON_DRAW,dealDamageOnDraw,FALSE,
+008,Raccoon,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+009,Bio-Regeneration,MAGIC,Epic,TRUE,4,APPLY_ATTACK_DAMAGE_MULTIPLIER; APPLY_STAT_MODIFIER; HEAL_CREATURE; VALIDATE_SUMMON_REQUIREMENT,applyConditionalDamageMultiplier; applyStatModifier; healFlat; validateSummonRequirement,FALSE,
+010,Man Owl,CREATURE,Epic,FALSE,0,,,FALSE,No effect text shown on card.
+011,Raccoon Knight,CREATURE,Legendary,TRUE,1,APPLY_SUMMON_REQUIREMENT_OVERRIDE,applySummonRequirementOverride,FALSE,Summon Requirement.
+012,Bull Power,MAGIC,Uncommon,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+013,Bunnysaurus,CREATURE,Uncommon,TRUE,2,ADD_ONCE_PER_FIELD_SHIELD,addOncePerFieldShield,FALSE,
+014,Double Hit,MAGIC,Common,TRUE,2,APPLY_BATTLE_REQUIREMENT,applyBattleRequirement,FALSE,
+015,Bear Wolf,CREATURE,Rare,TRUE,1,APPLY_ATTACK_PRIORITY_OVERRIDE,applyAttackPriorityOverride,FALSE,
+016,Natural Selection,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,Field card.
+017,Squirrel,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+018,Life Sap,MAGIC,Epic,TRUE,2,DEAL_DAMAGE_ON_DRAW; HEAL_CREATURE,dealDamageOnDraw; healFlat,FALSE,
+019,Sharkling,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+020,Great White,CREATURE,Epic,TRUE,3,ATTACH_CARDS_UNDER_SOURCE; RETURN_LINKED_CARDS; VALIDATE_SUMMON_REQUIREMENT,attachCardsUnderSource; returnLinkedCards; validateSummonRequirement,FALSE,Summon Requirement.
+021,Perfect Shark,CREATURE,Legendary,TRUE,3,ATTACH_CARDS_UNDER_SOURCE; RETURN_LINKED_CARDS; VALIDATE_SUMMON_REQUIREMENT,attachCardsUnderSource; returnLinkedCards; validateSummonRequirement,FALSE,Summon Requirement.
+022,Elven Scout,MAGIC,Uncommon,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+023,Common Armor,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+024,Common Sword,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+025,Common Boots,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+026,Common Gloves,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+027,Common Helm,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+028,Legendary Armor,MAGIC,Legendary,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+029,Legendary Gloves,MAGIC,Legendary,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+030,Legendary Helm,MAGIC,Legendary,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+031,Bug Man,CREATURE,Uncommon,FALSE,0,,,FALSE,No effect text shown on card.
+032,Baby Dino,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+033,Trike,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+034,Bronto,CREATURE,Epic,FALSE,0,,,FALSE,No effect text shown on card.
+035,Spino,CREATURE,Rare,TRUE,1,APPLY_ATTACK_DAMAGE_MULTIPLIER,applyConditionalDamageMultiplier,FALSE,
+036,Full Moon,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,Field card.
+037,Exorcism,MAGIC,Common,TRUE,1,APPLY_DAMAGE_MULTIPLIER_AURA,applyConditionalDamageMultiplierAura,FALSE,Field card.
+038,Haunted Tree,MAGIC,Rare,TRUE,1,NEGATE_MAGIC_AND_SEND_TO_CEMETERY,negateMagicToCemetery,FALSE,
+039,Irresistible Love,MAGIC,Uncommon,TRUE,3,APPLY_PLAY_RESTRICTION; APPLY_STATUS_WITH_ESCAPE_ROLL,applyPlayRestriction; applyStatusWithEscapeRoll,FALSE,Field card.
+040,The Career Buccaneer,MAGIC,Uncommon,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+041,Ghost Form,MAGIC,Epic,TRUE,1,APPLY_DAMAGE_IMMUNITY,applyDamageImmunity,FALSE,
+042,Corn Creeper,CREATURE,Uncommon,TRUE,1,APPLY_ATTACK_DAMAGE_MULTIPLIER,applyConditionalDamageMultiplier,FALSE,
+043,Headless Knight,CREATURE,Uncommon,FALSE,0,,,FALSE,No effect text shown on card.
+044,Summoner,CREATURE,Epic,TRUE,2,SCHEDULE_RETURN_TO_HAND; SUMMON_LIMITED_CREATURE_FROM_HAND,scheduleReturnToHand; summonLimitedFromHand,FALSE,
+045,Demon Dragon,CREATURE,Epic,TRUE,1,APPLY_DYNAMIC_STAT_MODIFIER,applyDynamicStatModifier,FALSE,
+046,Alkonost,CREATURE,Epic,TRUE,3,APPLY_DYNAMIC_STAT_MODIFIER; RETURN_LINKED_SUMMON; SUMMON_LIMITED_CREATURE,applyDynamicStatModifier; returnLinkedSummon; summonLimitedFromZone,FALSE,
+047,Undead Tower,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card. Rarity visually unclear; set to Common from visible grey/no rarity marker.
+048,Skeleton Pirate,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+049,Snow Man,CREATURE,Rare,FALSE,0,,,FALSE,No effect text shown on card.
+050,Ignitus,MAGIC,Common,TRUE,1,ROLL_DAMAGE_TABLE,rollDamageTable,FALSE,Rarity visually unclear; set to Common from visible grey/no rarity marker.
+051,Evil Queen,MAGIC,Epic,TRUE,1,DESTROY_MAGIC_CARDS,destroyMagicCards,FALSE,
+052,Magic Eater,MAGIC,Epic,TRUE,1,DESTROY_MAGIC_CARDS,destroyMagicCards,FALSE,
+053,Melody of the Deep,MAGIC,Epic,TRUE,1,NEGATE_ATTACK_OR_MAGIC,negateAttackOrMagic,FALSE,
+054,Hell Hath No Fury,MAGIC,Epic,TRUE,2,DEAL_PERCENTAGE_DAMAGE; SET_CAN_BE_NEGATED,dealPercentageDamage; setCanBeNegated,FALSE,
+055,The Iron Range,MAGIC,Epic,TRUE,1,NEGATE_CREATURE_EFFECTS,negateCreatureEffects,TRUE,Field card.
+056,Knight Helm,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+057,Battle Axe,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+058,Zombie Dog,CREATURE,Rare,TRUE,1,APPLY_ATTACK_DAMAGE_MULTIPLIER,applyConditionalDamageMultiplier,FALSE,
+059,Big Buck,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+060,Vampire Orc,CREATURE,Rare,TRUE,1,APPLY_DYNAMIC_STAT_MODIFIER,applyDynamicStatModifier,FALSE,
+061,Abominable Deer Man,MAGIC,Rare,TRUE,2,APPLY_SOURCE_LINKED_CLEANUP; SUMMON_SELF_AS_LIMITED_CREATURE,applySourceLinkedCleanup; summonSelfAsLimited,TRUE,Creature-like Lightning magic card with attack dice/modifier but no AL/HP/SPD printed.
+062,Martial Arts Man,MAGIC,Rare,TRUE,1,DEAL_INSTANT_DAMAGE,dealDirectDamage,FALSE,
+063,Steam Spider,CREATURE,Epic,TRUE,3,APPLY_PLAY_RESTRICTION,applyPlayRestriction,FALSE,
+064,Steam Rex,CREATURE,Legendary,TRUE,2,APPLY_ATTACK_DAMAGE_MULTIPLIER; APPLY_EFFECT_IMMUNITY,applyConditionalDamageMultiplier; applyEffectImmunity,FALSE,
+065,Steam Golem,CREATURE,Epic,TRUE,2,APPLY_ATTACK_DAMAGE_MULTIPLIER; APPLY_EFFECT_IMMUNITY,applyConditionalDamageMultiplier; applyEffectImmunity,FALSE,
+066,Dawn of the Living Chickens,MAGIC,Legendary,TRUE,2,SCHEDULE_RETURN_TO_HAND; SUMMON_LIMITED_CREATURE_FROM_HAND,scheduleReturnToHand; summonLimitedFromHand,FALSE,
+067,Fallen Crusader,CREATURE,Uncommon,FALSE,0,,,FALSE,No effect text shown on card.
+068,Maniac,CREATURE,Common,TRUE,2,APPLY_HIT_OUTCOME_OVERRIDE; APPLY_IMMUNITY,applyHitOutcomeOverride; applyImmunity,FALSE,
+069,Unicorn Might,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+070,Sacrificial Goat,CREATURE,Legendary,TRUE,1,APPLY_SACRIFICE_VALUE,applySacrificeValue,FALSE,
+071,Sonic Screech,MAGIC,Epic,TRUE,1,APPLY_STATUS_WITH_ESCAPE_ROLL,applyStatusWithEscapeRoll,TRUE,
+072,Moon Cat,CREATURE,Uncommon,TRUE,2,APPLY_ATTACK_DAMAGE_MULTIPLIER; APPLY_STAT_MODIFIER,applyConditionalDamageMultiplier; applyStatModifier,FALSE,
+073,Metallic Bone,MAGIC,Uncommon,TRUE,2,APPLY_DAMAGE_IMMUNITY; DESTROY_SELF,applyDamageImmunity; destroySelf,FALSE,
+074,The Old One,CREATURE,Legendary,TRUE,2,DRAW_CARDS_VARIABLE; MOVE_CARDS,drawCardsVariable; returnCardsToOwnerDeck,FALSE,
+075,Jerry,CREATURE,Legendary,TRUE,1,APPLY_DYNAMIC_STAT_MODIFIER,applyDynamicStatModifier,FALSE,
+076,Lead Boots,MAGIC,Common,TRUE,3,APPLY_PLAY_RESTRICTION; VALIDATE_SUMMON_REQUIREMENT,applyPlayRestriction; validateSummonRequirement,FALSE,
+077,Bound With Chains,MAGIC,Rare,TRUE,1,APPLY_ZONE_RESTRICTION,applyCemeteryRestriction,FALSE,Field card.
+078,Magic Watch,MAGIC,Common,TRUE,1,APPLY_REROLL_PERMISSION,applyRerollPermission,FALSE,
+079,Raging Inferno,MAGIC,Common,TRUE,1,DEAL_INSTANT_DAMAGE,dealDirectDamage,FALSE,
+080,Sticky Goo,MAGIC,Uncommon,TRUE,2,APPLY_STAT_MODIFIER; NEGATE_ATTACK,applyStatModifier; negateAttack,FALSE,
+081,Phoenix Armor,MAGIC,Legendary,TRUE,2,DEAL_INSTANT_DAMAGE; HEAL_CREATURE,dealDirectDamage; healFlat,TRUE,
+082,Poisoned Potion,MAGIC,Uncommon,TRUE,1,NEGATE_HEALING_AND_CONVERT_TO_DAMAGE,negateHealingAndConvertToDamage,FALSE,
+083,Demonic Turtle,CREATURE,Legendary,TRUE,2,APPLY_DAMAGE_REDUCTION; REFLECT_PREVENTED_DAMAGE,applyDamageReduction; reflectPreventedDamage,FALSE,
+084,Vampire Lord,CREATURE,Legendary,TRUE,2,HEAL_BY_SENT_CREATURE_HP; PAY_CARD_COST,healBySentCreatureHp; payCardCost,FALSE,
+085,Equip Knight,CREATURE,Uncommon,TRUE,1,SEARCH_DECK_TO_EQUIP,searchDeckToEquip,FALSE,
+086,Thief,CREATURE,Uncommon,TRUE,2,RETURN_LINKED_CARDS; STEAL_EQUIP_CARD,returnLinkedCards; stealEquipCard,FALSE,
+087,Wild Vampire,CREATURE,Rare,TRUE,2,APPLY_DYNAMIC_STAT_MODIFIER; APPLY_STAT_MODIFIER,applyDynamicStatModifier; applyStatModifier,FALSE,
+088,Skeleton Lord,CREATURE,Rare,TRUE,2,RETURN_LINKED_SUMMON; TAKE_CONTROL_AS_LIMITED_SUMMON,returnLinkedSummon; takeControlAsLimitedSummon,FALSE,
+089,Gnome Dragoon,CREATURE,Uncommon,TRUE,1,APPLY_DYNAMIC_STAT_MODIFIER,applyDynamicStatModifier,FALSE,
+090,Gnome Warrior,CREATURE,Rare,TRUE,1,APPLY_DYNAMIC_STAT_MODIFIER,applyDynamicStatModifier,FALSE,
+091,The Seer,CREATURE,Epic,TRUE,1,APPLY_PLAY_RESTRICTION,applyPlayRestriction,FALSE,
+092,Dark Elf Captain,CREATURE,Uncommon,FALSE,0,,,FALSE,No effect text shown on card.
+093,Subject #4212,CREATURE,Legendary,TRUE,1,APPLY_SACRIFICE_VALUE,applySacrificeValue,FALSE,Summon Requirement.
+094,Giant Snake,CREATURE,Common,TRUE,2,APPLY_STATUS_WITH_ESCAPE_ROLL,applyStatusWithEscapeRoll,FALSE,
+095,Water Eleotoid,CREATURE,Rare,FALSE,0,,,FALSE,No effect text shown on card.
+096,Bomb,MAGIC,Uncommon,TRUE,1,DEAL_INSTANT_DAMAGE,dealDirectDamage,FALSE,
+097,Inferno Wizard,CREATURE,Uncommon,FALSE,0,,,FALSE,No effect text shown on card.
+098,Time Melt,MAGIC,Uncommon,TRUE,1,APPLY_PLAY_RESTRICTION,applyGlobalPlayRestriction,FALSE,Field card.
+099,Time Weaver,CREATURE,Epic,TRUE,1,APPLY_PLAY_RESTRICTION,applyGlobalPlayRestriction,FALSE,
+100,Wolf Knight,CREATURE,Epic,TRUE,2,RETURN_LINKED_SUMMON; SUMMON_LIMITED_CREATURE_FROM_HAND,returnLinkedSummon; summonLimitedFromHand,FALSE,
+101,Attack Beacon,MAGIC,Uncommon,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,Field card.
+102,Acolyte,CREATURE,Uncommon,TRUE,1,APPLY_HEALING_OVER_TIME,applyHealingOverTime,FALSE,
+103,Herbal Poultice,MAGIC,Uncommon,TRUE,1,HEAL_BY_ROLL,healByRoll,FALSE,
+104,Claws of the Beast,MAGIC,Uncommon,TRUE,1,APPLY_DICE_MODIFIER,applyDiceModifier,FALSE,
+105,Nightmare Claw,MAGIC,Epic,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+106,Ancestral Sword,MAGIC,Uncommon,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,Field card.
+107,Reverse Polarity,MAGIC,Uncommon,TRUE,1,APPLY_ATTACK_PRIORITY_OVERRIDE,applyAttackPriorityOverride,FALSE,Field card.
+108,Melt Armor,MAGIC,Epic,TRUE,1,APPLY_DICE_MODIFIER,applyDiceModifier,FALSE,
+109,The Guide,CREATURE,Epic,TRUE,1,HEAL_BY_CEMETERY_EVENT,healByCemeteryEvent,FALSE,
+110,Winter Sentinel,MAGIC,Epic,TRUE,2,APPLY_STATUS; NEGATE_ATTACK,applyConditionalStatus; negateAttack,FALSE,
+111,Icy Breath,MAGIC,Epic,TRUE,1,APPLY_STATUS_WITH_ESCAPE_ROLL,applyStatusWithEscapeRoll,FALSE,
+112,Electro Wizard,CREATURE,Uncommon,TRUE,1,APPLY_DICE_MODIFIER,applyDiceModifier,FALSE,
+113,The Alchemist,CREATURE,Uncommon,TRUE,1,ROLL_DAMAGE_TABLE,rollDamageTable,FALSE,
+114,Forgotten One,CREATURE,Legendary,TRUE,1,APPLY_DYNAMIC_STAT_MODIFIER,applyDynamicStatModifier,FALSE,
+115,Magic Artillery,MAGIC,Uncommon,TRUE,1,ROLL_DAMAGE_TABLE,rollDamageTable,FALSE,Field card.
+116,Ring of Extremes,MAGIC,Uncommon,TRUE,1,APPLY_HIT_OUTCOME_OVERRIDE,applyHitOutcomeOverride,FALSE,
+117,Frenzy,MAGIC,Common,TRUE,2,APPLY_BATTLE_REQUIREMENT; DESTROY_SELF,applyBattleRequirement; destroySelf,FALSE,Field card.
+118,Magic Shield,MAGIC,Rare,TRUE,1,ADD_NEXT_MAGIC_SHIELD,addNextMagicShield,FALSE,
+119,Foggy Night,MAGIC,Common,TRUE,1,APPLY_PLAY_RESTRICTION,applyGlobalPlayRestriction,FALSE,Field card.
+120,Apocalypse,MAGIC,Legendary,TRUE,1,ROLL_DAMAGE_TABLE,rollDamageTable,FALSE,Field card.
+121,Cure Minor Wounds,MAGIC,Common,TRUE,1,HEAL_BY_ROLL,healByRoll,FALSE,
+122,Ignite,MAGIC,Uncommon,TRUE,1,ROLL_DAMAGE_TABLE,rollDamageTable,FALSE,
+123,Sleepy Scent,MAGIC,Uncommon,TRUE,2,APPLY_SOURCE_LINKED_CLEANUP; APPLY_STATUS_WITH_ESCAPE_ROLL,applySourceLinkedCleanup; applyStatusWithEscapeRoll,FALSE,
+124,The First Law,MAGIC,Legendary,TRUE,1,APPLY_DYNAMIC_STAT_MODIFIER,applyDynamicStatModifier,FALSE,
+125,Reduce the Burden,MAGIC,Uncommon,TRUE,1,ADJUST_CEMETERY_HP,reduceCemeteryHp,FALSE,
+126,Warming Glow,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,
+127,Lightning Strike,MAGIC,Epic,TRUE,2,DEAL_INSTANT_DAMAGE; NEGATE_MAGIC_AND_SEND_TO_CEMETERY,dealDirectDamage; negateMagicToCemetery,FALSE,
+128,Frog of Fortune,MAGIC,Epic,TRUE,1,TRADE_CARD_WITH_CEMETERY,tradeCardWithCemetery,FALSE,
+129,Peddling Partridge,MAGIC,Rare,TRUE,1,TRADE_CARD_WITH_CEMETERY,tradeCardWithCemetery,FALSE,
+130,Scroll of Silence,MAGIC,Epic,TRUE,2,NEGATE_LIGHTNING_AND_SEND_TO_CEMETERY; SET_CAN_BE_NEGATED,negateLightningToCemetery; setCanBeNegated,FALSE,
+131,Ignitima,MAGIC,Epic,TRUE,1,ROLL_DAMAGE_TABLE,rollDamageTable,FALSE,
+132,Hands of Fate,MAGIC,Epic,TRUE,1,LOOK_AND_REORDER_DECK_TOP,lookAndReorderDeckTop,FALSE,
+133,Ambush,MAGIC,Rare,TRUE,2,SCHEDULE_RETURN_TO_HAND; SUMMON_LIMITED_CREATURE_FROM_HAND,scheduleReturnToHand; summonLimitedFromHand,FALSE,
+134,Wizard Frog,CREATURE,Rare,TRUE,2,APPLY_ATTACK_DAMAGE_MULTIPLIER; PAY_CARD_COST,applyConditionalDamageMultiplier; payCardCost,FALSE,
+135,Metamoth,CREATURE,Epic,FALSE,0,,,FALSE,No effect text shown on card.
+136,Dwarf Soldier,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+137,Kendo Tiger,CREATURE,Uncommon,TRUE,2,DESTROY_MAGIC_CARDS; MOVE_CARD,destroyMagicCards; moveCard,FALSE,
+138,Werehawk,CREATURE,Epic,FALSE,0,,,FALSE,No effect text shown on card.
+139,Wererat,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+140,Green Dragon,CREATURE,Uncommon,FALSE,0,,,FALSE,No effect text shown on card.
+141,Penguin,CREATURE,Common,FALSE,0,,,FALSE,No effect text shown on card.
+142,Black Jacket,CREATURE,Rare,TRUE,2,RETURN_LINKED_SUMMON; SUMMON_LIMITED_CREATURE_FROM_HAND,returnLinkedSummon; summonLimitedFromHand,FALSE,Summon Requirement.
+143,Elite Angel,CREATURE,Uncommon,FALSE,0,,,FALSE,No effect text shown on card.
+144,Captain Ward,CREATURE,Legendary,FALSE,0,,,FALSE,No effect text shown on card.
+145,Ancient One,CREATURE,Legendary,TRUE,1,FORCE_LIMITED_SUMMONS_TO_BATTLE_PRIMARY,forceLimitedSummonsToBattlePrimary,FALSE,
+146,Steam Wolf,CREATURE,Rare,FALSE,0,,,FALSE,No effect text shown on card.
+147,Super Hornet,CREATURE,Legendary,TRUE,2,RETURN_LINKED_SUMMON; SUMMON_LIMITED_CREATURE_FROM_HAND,returnLinkedSummon; summonLimitedFromHand,FALSE,Summon Requirement.
+148,Bug Spray,MAGIC,Common,TRUE,1,APPLY_DAMAGE_MULTIPLIER_AURA,applyConditionalDamageMultiplierAura,FALSE,Field card.
+149,Subject #149,CREATURE,Rare,FALSE,0,,,FALSE,No effect text shown on card.
+150,Future Warrior,MAGIC,Uncommon,TRUE,2,MOVE_CARD; NEGATE_ATTACK_DAMAGE,moveCard; negateAttackDamage,FALSE,

@@ -1,0 +1,102 @@
+{
+  "id": "gen1_112_cosmic_negation",
+  "name": "Cosmic Negation",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "112",
+  "text": "Destroy all magic cards on the field. Magic cards cannot be played for 3 turn cycles.",
+  "effects": [
+    {
+      "id": "112-E01",
+      "trigger": "ON_PLAY_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Magic cards exist"
+      },
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy all magic cards",
+      "target": "All magic cards on field",
+      "value": "Destroy all",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyMagicCards",
+      "params": {
+        "target": "All magic cards on field",
+        "valueText": "Destroy all",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Magic cards exist"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field card.",
+      "needsReview": false
+    },
+    {
+      "id": "112-E02",
+      "trigger": "AFTER_DESTROY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Cosmic Negation resolved"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "actionText": "Prevent magic card play",
+      "target": "All players",
+      "value": "Cannot play magic cards",
+      "duration": {
+        "text": "3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyGlobalPlayRestriction",
+      "params": {
+        "target": "All players",
+        "valueText": "Cannot play magic cards",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Cosmic Negation resolved"
+        },
+        "duration": {
+          "text": "3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Scope all players unless rules specify otherwise. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

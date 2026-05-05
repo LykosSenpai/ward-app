@@ -1,0 +1,77 @@
+{
+  "id": "gen3_015_the_good_boy",
+  "name": "The Good Boy",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "015",
+  "text": "This card only affects your primary creature. Atk: +1. Hit: +1. SPD: +1. AL: +1.",
+  "effects": [
+    {
+      "id": "015-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card only affects your primary creature. Atk: +1. Hit: +1. SPD: +1. AL: +1."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Your primary creature",
+      "value": "This card only affects your primary creature. Atk: +1. Hit: +1. SPD: +1. AL: +1.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "This card only affects your primary creature. Atk: +1. Hit: +1. SPD: +1. AL: +1.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 1
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 1
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 1
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 1
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card only affects your primary creature. Atk: +1. Hit: +1. SPD: +1. AL: +1."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

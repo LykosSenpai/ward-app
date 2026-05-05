@@ -1,0 +1,115 @@
+{
+  "id": "gen2_006_electroloon",
+  "name": "Electroloon",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "006",
+  "text": "All creatures on the opposing side of the field are stunned and cannot inflict Atk damage. At the beginning of their turn, they may roll 1 die. If the result is 1-2, this effect ends.",
+  "effects": [
+    {
+      "id": "006-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opposing side of field"
+      },
+      "actionType": "APPLY_STATUS_AURA",
+      "effectGroup": "Status Aura",
+      "actionText": "Apply stunned status to opposing creatures",
+      "target": "All opposing creatures",
+      "value": "Stunned; cannot inflict Atk damage",
+      "duration": {
+        "text": "Until escape roll succeeds or source leaves field",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyStatusAura",
+      "params": {
+        "target": "All opposing creatures",
+        "valueText": "Stunned; cannot inflict Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opposing side of field"
+        },
+        "duration": {
+          "text": "Until escape roll succeeds or source leaves field",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "status": "STUNNED",
+        "canInflictAtkDamage": false
+      },
+      "notes": "Affected creatures can attempt an escape roll at the beginning of their controller's turn.",
+      "needsReview": false
+    },
+    {
+      "id": "006-E02",
+      "trigger": "AT_BEGINNING_OF_AFFECTED_PLAYER_TURN",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2
+        ],
+        "text": "Roll 1 die; success 1-2"
+      },
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status Escape Roll",
+      "actionText": "Resolve escape roll and end status",
+      "target": "Affected opposing creatures",
+      "value": "End Electroloon stun on 1-2",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "applyStatusWithEscapeRoll",
+      "params": {
+        "target": "Affected opposing creatures",
+        "valueText": "End Electroloon stun on 1-2",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            1,
+            2
+          ],
+          "text": "Roll 1 die; success 1-2"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2
+        ]
+      },
+      "notes": "If escape succeeds, remove this effect from affected creatures.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 9,
+  "speed": 8,
+  "hp": 60,
+  "attackName": "Feather Shock",
+  "attackDice": 2,
+  "modifier": 3
+}

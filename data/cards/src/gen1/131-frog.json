@@ -1,0 +1,19 @@
+{
+  "id": "gen1_131_frog",
+  "name": "Frog",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "131",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 1,
+  "speed": 6,
+  "hp": 10,
+  "attackName": "Tongue Snap",
+  "attackDice": 1,
+  "modifier": 0
+}

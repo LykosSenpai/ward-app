@@ -1,0 +1,59 @@
+{
+  "id": "gen1_144_phoenix",
+  "name": "Phoenix",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "144",
+  "text": "If this creature is killed by your opponent, return it to your hand.",
+  "effects": [
+    {
+      "id": "144-E01",
+      "trigger": "IF_KILLED_BY_OPPONENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature killed by opponent"
+      },
+      "actionType": "RETURN_SELF_TO_HAND",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return this card to hand",
+      "target": "This card",
+      "value": "Move to hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnSelfToHand",
+      "params": {
+        "target": "This card",
+        "valueText": "Move to hand",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature killed by opponent"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Death replacement/trigger.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 12,
+  "speed": 10,
+  "hp": 90,
+  "attackName": "Fire Dive",
+  "attackDice": 3,
+  "modifier": 4
+}

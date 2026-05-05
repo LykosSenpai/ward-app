@@ -1,0 +1,150 @@
+{
+  "id": "gen1_014_smokescreen",
+  "name": "Smokescreen",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "014",
+  "text": "The equipped creature can only roll 1 Hit Die for the next 2 turn cycles.",
+  "effects": [
+    {
+      "id": "014-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "APPLY_DICE_LIMIT",
+      "effectGroup": "Dice Modifier",
+      "actionText": "Target creature can only roll 1 Hit Die.",
+      "target": "Target creature",
+      "value": "Hit Roll limited to 1D6",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyDiceLimit",
+      "params": {
+        "target": "Target creature",
+        "valueText": "Target creature can only roll 1 Hit Die.",
+        "statChanges": [],
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "rollKind": "HIT_ROLL",
+        "diceLimitMode": "MAX",
+        "diceLimitValue": 1,
+        "visualCue": "Show max dice cap badge on the hit roll panel.",
+        "blockCompilerVersion": 1,
+        "blockCompiledAt": "2026-05-03T22:04:16.099Z",
+        "blockCompiledSource": "Effect Dev Tool",
+        "blockChain": [
+          {
+            "id": "014-E01-trigger",
+            "kind": "TRIGGER",
+            "label": "When",
+            "summary": "ON_PLAY",
+            "status": "READY"
+          },
+          {
+            "id": "014-E01-condition",
+            "kind": "CONDITION",
+            "label": "If",
+            "summary": "No condition",
+            "status": "READY"
+          },
+          {
+            "id": "014-E01-target",
+            "kind": "TARGET",
+            "label": "Target",
+            "summary": "Target creature",
+            "status": "READY",
+            "data": {
+              "target": "Target creature",
+              "paramsTarget": "Target creature"
+            }
+          },
+          {
+            "id": "014-E01-action",
+            "kind": "ACTION",
+            "label": "Do",
+            "summary": "APPLY_DICE_LIMIT -> effectPrompts.applyDiceLimitPromptEffect / battle.rollManualBattleHit",
+            "status": "READY",
+            "handler": "effectPrompts.applyDiceLimitPromptEffect / battle.rollManualBattleHit",
+            "data": {
+              "actionType": "APPLY_DICE_LIMIT",
+              "reusableFunction": "applyDiceLimit"
+            },
+            "notes": "Hit dice caps are materialized on the creature and enforced during hit roll."
+          },
+          {
+            "id": "014-E01-value",
+            "kind": "VALUE",
+            "label": "Value",
+            "summary": "Hit Roll limited to 1D6",
+            "status": "READY",
+            "data": {
+              "value": "Hit Roll limited to 1D6",
+              "valueText": "Target creature can only roll 1 Hit Die.",
+              "statChanges": []
+            }
+          },
+          {
+            "id": "014-E01-duration",
+            "kind": "DURATION",
+            "label": "Duration",
+            "summary": "2 turn cycles",
+            "status": "READY",
+            "data": {
+              "text": "2 turn cycles",
+              "type": "TURN_CYCLES",
+              "amount": 2,
+              "unit": "TURN_CYCLE",
+              "starts": "EFFECT_ACTIVATION",
+              "expires": "BEGINNING_OF_START_PLAYER_TURN"
+            }
+          },
+          {
+            "id": "014-E01-cleanup",
+            "kind": "CLEANUP",
+            "label": "Cleanup",
+            "summary": "No cleanup needed",
+            "status": "READY",
+            "data": {
+              "sourceLinked": false,
+              "usesAnchoring": false,
+              "expires": "BEGINNING_OF_START_PLAYER_TURN"
+            }
+          },
+          {
+            "id": "014-E01-visual",
+            "kind": "VISUAL_CUE",
+            "label": "Show",
+            "summary": "Show max dice cap badge on the hit roll panel.",
+            "status": "READY",
+            "notes": "This is the future tabletop/online-match presentation cue for this block chain."
+          }
+        ],
+        "blockStatus": "READY",
+        "missingHandlers": []
+      },
+      "notes": "Dice-limit effects are static battle modifiers, not DOT/HOT tick effects.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Smokescreen targets a creature on resolution. The source card can resolve to cemetery while the temporary dice-limit instance remains on the target.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

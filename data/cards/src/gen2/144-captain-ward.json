@@ -1,0 +1,19 @@
+{
+  "id": "gen2_144_captain_ward",
+  "name": "Captain Ward",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "144",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 12,
+  "speed": 4,
+  "hp": 100,
+  "attackName": "Ward Force",
+  "attackDice": 6,
+  "modifier": 5
+}

@@ -1,0 +1,59 @@
+{
+  "id": "gen3_059_lumber",
+  "name": "Lumber",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "059",
+  "text": "Creatures in a forest that battle this card have their base Modifier reduced by 1/2.",
+  "effects": [
+    {
+      "id": "059-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creatures in a forest that battle this card have their base Modifier reduced by 1/2."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "This creature",
+      "value": "Creatures in a forest that battle this card have their base Modifier reduced by 1/2.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "This creature",
+        "valueText": "Creatures in a forest that battle this card have their base Modifier reduced by 1/2.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creatures in a forest that battle this card have their base Modifier reduced by 1/2."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 10,
+  "speed": 5,
+  "hp": 70,
+  "attackName": "Red Pine Crash",
+  "attackDice": 2,
+  "modifier": 8
+}

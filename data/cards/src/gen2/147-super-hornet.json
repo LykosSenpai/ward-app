@@ -1,0 +1,100 @@
+{
+  "id": "gen2_147_super_hornet",
+  "name": "Super Hornet",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "147",
+  "text": "You may summon this creature normally, or Limited Summon it if your primary creature is \"Hive Lord\". If \"Hive Lord\" leaves the field or changes control, return this card to your hand.",
+  "effects": [
+    {
+      "id": "147-E01",
+      "trigger": "SUMMON_ALTERNATIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Your primary creature is \"Hive Lord\""
+      },
+      "actionType": "SUMMON_LIMITED_CREATURE_FROM_HAND",
+      "effectGroup": "Limited Summon",
+      "actionText": "Allow normal summon or Limited Summon this creature",
+      "target": "This creature",
+      "value": "May be Limited Summoned if your primary creature is Hive Lord",
+      "duration": {
+        "text": "While Hive Lord remains valid",
+        "type": "TEXT"
+      },
+      "reusableFunction": "summonLimitedFromHand",
+      "params": {
+        "target": "This creature",
+        "valueText": "May be Limited Summoned if your primary creature is Hive Lord",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Your primary creature is \"Hive Lord\""
+        },
+        "duration": {
+          "text": "While Hive Lord remains valid",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "alternativeSummonType": "LIMITED_SUMMON",
+        "requiredPrimaryCreatureName": "Hive Lord"
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "147-E02",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "condition": {
+        "type": "SOURCE_INVALIDATED",
+        "text": "\"Hive Lord\" leaves field or changes control"
+      },
+      "actionType": "RETURN_LINKED_SUMMON",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return this card to hand",
+      "target": "This card",
+      "value": "Return to your hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedSummon",
+      "params": {
+        "target": "This card",
+        "valueText": "Return to your hand",
+        "statChanges": [],
+        "condition": {
+          "type": "SOURCE_INVALIDATED",
+          "text": "\"Hive Lord\" leaves field or changes control"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "Summon Requirement.",
+  "cardType": "CREATURE",
+  "creatureType": "Bug",
+  "armorLevel": 10,
+  "speed": 12,
+  "hp": 80,
+  "attackName": "Heroic Punch",
+  "attackDice": 1,
+  "modifier": 10
+}

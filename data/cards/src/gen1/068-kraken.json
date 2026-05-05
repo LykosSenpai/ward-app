@@ -1,0 +1,110 @@
+{
+  "id": "gen1_068_kraken",
+  "name": "Kraken",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "068",
+  "text": "When this creature hits, the targeted creature is wrapped. During your opponent's turn they must roll 1 die. If the result is 3-5, they are freed, otherwise they receive 10 damage.",
+  "effects": [
+    {
+      "id": "068-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "HIT_LANDS",
+        "text": "Hit lands"
+      },
+      "actionType": "APPLY_STATUS",
+      "effectGroup": "Status",
+      "actionText": "Apply Wrapped status",
+      "target": "Target creature",
+      "value": "Wrapped",
+      "duration": {
+        "text": "Until freed",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyWrappedStatus",
+      "params": {
+        "target": "Target creature",
+        "valueText": "Wrapped",
+        "statChanges": [],
+        "condition": {
+          "type": "HIT_LANDS",
+          "text": "Hit lands"
+        },
+        "duration": {
+          "text": "Until freed",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "During opponent turn target rolls to free.",
+      "needsReview": false
+    },
+    {
+      "id": "068-E02",
+      "trigger": "OPPONENT_TURN_WHILE_WRAPPED",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          3,
+          4,
+          5
+        ],
+        "text": "Roll 1 die; success 3-5 frees, otherwise damage"
+      },
+      "actionType": "RESOLVE_STATUS_TICK",
+      "effectGroup": "Status Check/Damage",
+      "actionText": "Free wrapped creature or deal damage",
+      "target": "Wrapped creature",
+      "value": "Free on 3-5; otherwise 10 damage",
+      "duration": {
+        "text": "Each opponent turn while wrapped",
+        "type": "TEXT"
+      },
+      "reusableFunction": "resolveWrappedTick",
+      "params": {
+        "target": "Wrapped creature",
+        "valueText": "Free on 3-5; otherwise 10 damage",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            3,
+            4,
+            5
+          ],
+          "text": "Roll 1 die; success 3-5 frees, otherwise damage"
+        },
+        "duration": {
+          "text": "Each opponent turn while wrapped",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs periodic status resolver.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 6,
+  "speed": 7,
+  "hp": 100,
+  "attackName": "Tendril Whip",
+  "attackDice": 3,
+  "modifier": 2
+}

@@ -1,0 +1,145 @@
+{
+  "id": "gen3_127_the_merchant",
+  "name": "The Merchant",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "127",
+  "text": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+  "effects": [
+    {
+      "id": "127-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card."
+      },
+      "actionType": "DESTROY_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "actionText": "Destroy a magic card",
+      "target": "Equipped creature",
+      "value": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "destroyMagic",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "127-E02",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card."
+      },
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "actionText": "Heal a creature or apply lifesteal",
+      "target": "Equipped creature",
+      "value": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "heal",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "127-E03",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+        "statChanges": [
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 4
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 4
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

@@ -1,0 +1,55 @@
+{
+  "id": "gen1_023_backstab",
+  "name": "Backstab",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "023",
+  "text": "During your turn, this card allows your primary creature to attack first, automatically hit, and inflict 3x Atk damage.",
+  "effects": [
+    {
+      "id": "023-E01",
+      "trigger": "DURING_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Card played before attack"
+      },
+      "actionType": "APPLY_FORCED_FIRST_AUTO_HIT_MULTIPLIER",
+      "effectGroup": "Battle Override",
+      "actionText": "Primary creature attacks first and automatically hits",
+      "target": "Your primary creature",
+      "value": "Attack first; auto-hit; 3x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyForcedFirstAutoHitMultiplier",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Attack first; auto-hit; 3x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Card played before attack"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Combines priority override, hit override, and damage multiplier.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

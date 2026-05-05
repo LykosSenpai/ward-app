@@ -1,0 +1,133 @@
+{
+  "id": "gen1_116_magic_steal",
+  "name": "Magic Steal",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "116",
+  "text": "Play this card when your opponent plays a magic card. Negate the effect and steal the card. If possible, you must instantly play that card on your side of the field. If you cannot, send it to the original owner's cemetery.",
+  "effects": [
+    {
+      "id": "116-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC",
+      "condition": {
+        "type": "OPPONENT_PLAYS_MAGIC",
+        "text": "Opponent plays magic card"
+      },
+      "actionType": "STEAL_MAGIC_CARD",
+      "effectGroup": "Magic Steal",
+      "actionText": "Negate effect and steal card",
+      "target": "Opponent magic card",
+      "value": "Negate + take control",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "stealMagicCard",
+      "params": {
+        "target": "Opponent magic card",
+        "valueText": "Negate + take control",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_PLAYS_MAGIC",
+          "text": "Opponent plays magic card"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "If possible, must immediately play it.",
+      "needsReview": false
+    },
+    {
+      "id": "116-E02",
+      "trigger": "AFTER_STEAL",
+      "condition": {
+        "type": "TEXT",
+        "text": "Stolen card can be played"
+      },
+      "actionType": "FORCE_PLAY_STOLEN_CARD",
+      "effectGroup": "Forced Play",
+      "actionText": "Immediately play stolen card on your side",
+      "target": "Stolen magic card",
+      "value": "Play under your control",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "forcePlayStolenCard",
+      "params": {
+        "target": "Stolen magic card",
+        "valueText": "Play under your control",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Stolen card can be played"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Need validation by card type/target availability.",
+      "needsReview": true
+    },
+    {
+      "id": "116-E03",
+      "trigger": "AFTER_STEAL",
+      "condition": {
+        "type": "TEXT",
+        "text": "Stolen card cannot be played"
+      },
+      "actionType": "SEND_TO_ORIGINAL_OWNER_CEMETERY",
+      "effectGroup": "Zone Movement",
+      "actionText": "Send stolen card to owner cemetery",
+      "target": "Stolen magic card",
+      "value": "Move to original owner cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "sendToOriginalOwnerCemetery",
+      "params": {
+        "target": "Stolen magic card",
+        "valueText": "Move to original owner cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Stolen card cannot be played"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Fallback branch.",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

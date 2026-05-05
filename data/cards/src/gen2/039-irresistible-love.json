@@ -1,0 +1,155 @@
+{
+  "id": "gen2_039_irresistible_love",
+  "name": "Irresistible Love",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "039",
+  "text": "Your opponent cannot inflict damage or play magic cards. During each player's turn, your opponent may roll 1 die. If the result is 1-3, this effect ends and this card is sent to your cemetery.",
+  "effects": [
+    {
+      "id": "039-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "FIELD_EFFECT_ACTIVE",
+        "text": "Irresistible Love is active"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Damage Prevention",
+      "actionText": "Prevent opponent from inflicting damage",
+      "target": "Opponent",
+      "value": "Cannot inflict damage",
+      "duration": {
+        "text": "Until escape roll succeeds",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "Opponent",
+        "valueText": "Cannot inflict damage",
+        "statChanges": [],
+        "condition": {
+          "type": "FIELD_EFFECT_ACTIVE",
+          "text": "Irresistible Love is active"
+        },
+        "duration": {
+          "text": "Until escape roll succeeds",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "039-E02",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "FIELD_EFFECT_ACTIVE",
+        "text": "Irresistible Love is active"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "actionText": "Prevent opponent from playing magic cards",
+      "target": "Opponent",
+      "value": "Cannot play magic cards",
+      "duration": {
+        "text": "Until escape roll succeeds",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "Opponent",
+        "valueText": "Cannot play magic cards",
+        "statChanges": [],
+        "condition": {
+          "type": "FIELD_EFFECT_ACTIVE",
+          "text": "Irresistible Love is active"
+        },
+        "duration": {
+          "text": "Until escape roll succeeds",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "039-E03",
+      "trigger": "DURING_EACH_PLAYER_TURN",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2,
+          3
+        ],
+        "text": "Roll 1 die; success 1-3"
+      },
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status Escape Roll",
+      "actionText": "Resolve escape roll",
+      "target": "Opponent",
+      "value": "On 1-3 effect ends and this card goes to your cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "applyStatusWithEscapeRoll",
+      "params": {
+        "target": "Opponent",
+        "valueText": "On 1-3 effect ends and this card goes to your cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            1,
+            2,
+            3
+          ],
+          "text": "Roll 1 die; success 1-3"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2,
+          3
+        ],
+        "onSuccess": [
+          "END_EFFECT",
+          "SEND_THIS_CARD_TO_YOUR_CEMETERY"
+        ]
+      },
+      "notes": "Opponent may roll during each player's turn.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

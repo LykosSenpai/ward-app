@@ -1,0 +1,19 @@
+{
+  "id": "gen2_140_green_dragon",
+  "name": "Green Dragon",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "140",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 6,
+  "speed": 10,
+  "hp": 100,
+  "attackName": "Emerald Flame",
+  "attackDice": 1,
+  "modifier": 7
+}

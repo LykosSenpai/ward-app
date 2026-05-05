@@ -1,0 +1,55 @@
+{
+  "id": "gen1_016_minotaur_bodyguard",
+  "name": "Minotaur Bodyguard",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "016",
+  "text": "During battle, play this card from your hand. Negate the Atk damage meant for your creature for this battle.",
+  "effects": [
+    {
+      "id": "016-E01",
+      "trigger": "DURING_BATTLE_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Atk damage would hit your creature"
+      },
+      "actionType": "NEGATE_ATTACK_DAMAGE",
+      "effectGroup": "Negation",
+      "actionText": "Negate Atk damage",
+      "target": "Your creature",
+      "value": "All Atk damage from that battle",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "negateAttackDamage",
+      "params": {
+        "target": "Your creature",
+        "valueText": "All Atk damage from that battle",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Atk damage would hit your creature"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "This does not necessarily negate the attack event itself, only Atk damage.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "BATTLE_LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

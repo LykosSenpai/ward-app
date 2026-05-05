@@ -1,0 +1,98 @@
+{
+  "id": "gen3_147_friend_like_you",
+  "name": "Friend Like You",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "147",
+  "text": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle.",
+  "effects": [
+    {
+      "id": "147-E01",
+      "trigger": "WHEN_THIS_CREATURE_KILLED",
+      "condition": {
+        "type": "TEXT",
+        "text": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Your primary creature",
+      "value": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "147-E02",
+      "trigger": "WHEN_THIS_CREATURE_KILLED",
+      "condition": {
+        "type": "TEXT",
+        "text": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle."
+      },
+      "actionType": "SHUFFLE_DECK",
+      "effectGroup": "Deck",
+      "actionText": "Shuffle deck",
+      "target": "Your primary creature",
+      "value": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "shuffleDeck",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 1,
+  "speed": 12,
+  "hp": 60,
+  "attackName": "False Sneeze",
+  "attackDice": 1,
+  "modifier": 0
+}

@@ -1,0 +1,56 @@
+{
+  "id": "gen3_052_bad_luck_bear",
+  "name": "Bad Luck Bear",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "052",
+  "text": "Equip this card to 1 of your opponent's creatures. You may choose for them to re-roll either their Hit Dice Roll or Atk Dice Roll once per battle.",
+  "effects": [
+    {
+      "id": "052-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equip this card to 1 of your opponent's creatures. You may choose for them to re-roll either their Hit Dice Roll or Atk Dice Roll once per battle."
+      },
+      "actionType": "REROLL_DICE",
+      "effectGroup": "Dice Reroll",
+      "actionText": "Allow or force a dice reroll",
+      "target": "Equipped creature",
+      "value": "Equip this card to 1 of your opponent's creatures. You may choose for them to re-roll either their Hit Dice Roll or Atk Dice Roll once per battle.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "rerollDice",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Equip this card to 1 of your opponent's creatures. You may choose for them to re-roll either their Hit Dice Roll or Atk Dice Roll once per battle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equip this card to 1 of your opponent's creatures. You may choose for them to re-roll either their Hit Dice Roll or Atk Dice Roll once per battle."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

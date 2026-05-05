@@ -1,0 +1,98 @@
+{
+  "id": "gen3_053_the_super_hero",
+  "name": "The Super Hero",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "053",
+  "text": "During your turn, roll 1 die. If the result is 5-6, this creature cannot be damaged this turn.",
+  "effects": [
+    {
+      "id": "053-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "During your turn, roll 1 die. If the result is 5-6, this creature cannot be damaged this turn."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "During your turn, roll 1 die. If the result is 5-6, this creature cannot be damaged this turn.",
+      "duration": {
+        "text": "This turn/battle",
+        "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "During your turn, roll 1 die. If the result is 5-6, this creature cannot be damaged this turn.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During your turn, roll 1 die. If the result is 5-6, this creature cannot be damaged this turn."
+        },
+        "duration": {
+          "text": "This turn/battle",
+          "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "053-E02",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "During your turn, roll 1 die. If the result is 5-6, this creature cannot be damaged this turn."
+      },
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "actionText": "Resolve a D6 roll table",
+      "target": "This creature",
+      "value": "During your turn, roll 1 die. If the result is 5-6, this creature cannot be damaged this turn.",
+      "duration": {
+        "text": "This turn/battle",
+        "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+      },
+      "reusableFunction": "resolveRollTable",
+      "params": {
+        "target": "This creature",
+        "valueText": "During your turn, roll 1 die. If the result is 5-6, this creature cannot be damaged this turn.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During your turn, roll 1 die. If the result is 5-6, this creature cannot be damaged this turn."
+        },
+        "duration": {
+          "text": "This turn/battle",
+          "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 12,
+  "speed": 12,
+  "hp": 120,
+  "attackName": "Heroic Punch",
+  "attackDice": 6,
+  "modifier": 4
+}

@@ -1,0 +1,102 @@
+{
+  "id": "gen1_066_junk_scarecrow",
+  "name": "Junk Scarecrow",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "066",
+  "text": "On hit, play this card from your hand. This card negates the attack and is sent to the cemetery instead. Return this card to your hand after 3 turn cycles.",
+  "effects": [
+    {
+      "id": "066-E01",
+      "trigger": "ON_HIT_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Attack would hit"
+      },
+      "actionType": "NEGATE_ATTACK",
+      "effectGroup": "Negation",
+      "actionText": "Negate attack and send this card to cemetery instead",
+      "target": "Attack against your creature",
+      "value": "Negate attack",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateAttack",
+      "params": {
+        "target": "Attack against your creature",
+        "valueText": "Negate attack",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Attack would hit"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "This card is sent to cemetery as cost/result.",
+      "needsReview": false
+    },
+    {
+      "id": "066-E02",
+      "trigger": "DELAYED_TRIGGER",
+      "condition": {
+        "type": "TEXT",
+        "text": "3 turn cycles after sent to cemetery"
+      },
+      "actionType": "SCHEDULE_RETURN_TO_HAND",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return this card to hand",
+      "target": "This card",
+      "value": "Move cemetery to hand",
+      "duration": {
+        "text": "After 3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "scheduleReturnToHand",
+      "params": {
+        "target": "This card",
+        "valueText": "Move cemetery to hand",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "3 turn cycles after sent to cemetery"
+        },
+        "duration": {
+          "text": "After 3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Delayed self-return. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

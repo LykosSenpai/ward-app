@@ -1,0 +1,64 @@
+{
+  "id": "gen3_028_catcow",
+  "name": "Catcow",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "028",
+  "text": "For 2 turn cycles, all creatures switch their own base Atk Dice Rolls and Modifier.",
+  "effects": [
+    {
+      "id": "028-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "For 2 turn cycles, all creatures switch their own base Atk Dice Rolls and Modifier."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "All creatures matching condition",
+      "value": "For 2 turn cycles, all creatures switch their own base Atk Dice Rolls and Modifier.",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "All creatures matching condition",
+        "valueText": "For 2 turn cycles, all creatures switch their own base Atk Dice Rolls and Modifier.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "For 2 turn cycles, all creatures switch their own base Atk Dice Rolls and Modifier."
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Switches each creature own base attack dice and modifier for 2 turn cycles.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Switches each creature own base attack dice and modifier for 2 turn cycles.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

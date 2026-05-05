@@ -1,0 +1,19 @@
+{
+  "id": "gen1_079_owl",
+  "name": "Owl",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "079",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 3,
+  "speed": 7,
+  "hp": 30,
+  "attackName": "Haunting Gaze",
+  "attackDice": 1,
+  "modifier": 1
+}

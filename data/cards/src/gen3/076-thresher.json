@@ -1,0 +1,137 @@
+{
+  "id": "gen3_076_thresher",
+  "name": "Thresher",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "076",
+  "text": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect.",
+  "effects": [
+    {
+      "id": "076-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Overrides immunity of Mechanical creatures otherwise unaffected by effects.",
+      "needsReview": true
+    },
+    {
+      "id": "076-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect."
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Apply attack damage multiplier",
+      "target": "This creature",
+      "value": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyAttackDamageMultiplier",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Overrides immunity of Mechanical creatures otherwise unaffected by effects.",
+      "needsReview": true
+    },
+    {
+      "id": "076-E03",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect."
+      },
+      "actionType": "UNAFFECTED_BY_MAGIC",
+      "effectGroup": "Immunity",
+      "actionText": "Apply immunity or unaffected state",
+      "target": "This creature",
+      "value": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyImmunity",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature inflicts 3x Atk damage to Mechanical-type creatures. Mechanical-type creatures normally unaffected by creature or magic effects are now affected. This supersedes their own creature effect."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Overrides immunity of Mechanical creatures otherwise unaffected by effects.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Overrides immunity of Mechanical creatures otherwise unaffected by effects.",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 6,
+  "speed": 4,
+  "hp": 60,
+  "attackName": "Chomp",
+  "attackDice": 2,
+  "modifier": 3
+}

@@ -1,0 +1,55 @@
+{
+  "id": "gen2_082_poisoned_potion",
+  "name": "Poisoned Potion",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "082",
+  "text": "Play this card when your opponent intends to heal their creature. Negate the healing and force their creature to take the healing amount as damage instead.",
+  "effects": [
+    {
+      "id": "082-E01",
+      "trigger": "ON_OPPONENT_WOULD_HEAL",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent intends to heal their creature"
+      },
+      "actionType": "NEGATE_HEALING_AND_CONVERT_TO_DAMAGE",
+      "effectGroup": "Healing Negation",
+      "actionText": "Negate healing and convert amount to damage",
+      "target": "Opponent creature being healed",
+      "value": "Take healing amount as damage instead",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateHealingAndConvertToDamage",
+      "params": {
+        "target": "Opponent creature being healed",
+        "valueText": "Take healing amount as damage instead",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent intends to heal their creature"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

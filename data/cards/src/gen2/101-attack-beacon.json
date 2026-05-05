@@ -1,0 +1,61 @@
+{
+  "id": "gen2_101_attack_beacon",
+  "name": "Attack Beacon",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "101",
+  "text": "Creatures with a base AL of 6 or less and no card effect gain the following: Atk Dice Rolls: +1.",
+  "effects": [
+    {
+      "id": "101-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature base AL <= 6 and creature has no card effect"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifiers",
+      "target": "Creatures with base AL 6 or less and no card effect",
+      "value": "ATK_DICE_ROLLS ADD 1",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Creatures with base AL 6 or less and no card effect",
+        "valueText": "ATK_DICE_ROLLS ADD 1",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature base AL <= 6 and creature has no card effect"
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field aura for low-AL non-effect creatures. Card library marks this as Lightning, but image/effect behaves like a field aura; review subtype if needed.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

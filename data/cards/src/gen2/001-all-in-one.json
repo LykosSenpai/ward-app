@@ -1,0 +1,66 @@
+{
+  "id": "gen2_001_all_in_one",
+  "name": "All In One",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "001",
+  "text": "Add your opponent's primary creature's base Atk Dice Rolls and Modifier to the equipped creature. This effect cannot stack.",
+  "effects": [
+    {
+      "id": "001-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature exists and opponent has a primary creature"
+      },
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Dynamic Stat Modifier",
+      "actionText": "Copy opponent primary base Atk Dice Rolls and base Modifier as bonuses",
+      "target": "Equipped creature",
+      "value": "Add opponent primary base Atk Dice Rolls and base Modifier",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyDynamicStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Add opponent primary base Atk Dice Rolls and base Modifier",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD_DYNAMIC",
+            "source": "OPPONENT_PRIMARY_CREATURE.BASE_ATK_DICE_ROLLS"
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD_DYNAMIC",
+            "source": "OPPONENT_PRIMARY_CREATURE.BASE_MODIFIER"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature exists and opponent has a primary creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": null
+      },
+      "notes": "Do not stack multiple copies of this effect. Track source card so recalculation follows opponent primary creature changes.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

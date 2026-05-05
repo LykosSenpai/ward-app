@@ -1,0 +1,19 @@
+{
+  "id": "gen3_023_order_knight",
+  "name": "Order Knight",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "023",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 8,
+  "speed": 8,
+  "hp": 80,
+  "attackName": "Upward Slash",
+  "attackDice": 3,
+  "modifier": 3
+}

@@ -1,0 +1,19 @@
+{
+  "id": "gen3_071_boulderox",
+  "name": "Boulderox",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "071",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 9,
+  "speed": 2,
+  "hp": 80,
+  "attackName": "Seismic Crush",
+  "attackDice": 2,
+  "modifier": 4
+}

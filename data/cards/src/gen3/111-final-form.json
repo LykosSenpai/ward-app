@@ -1,0 +1,95 @@
+{
+  "id": "gen3_111_final_form",
+  "name": "Final Form",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "111",
+  "text": "Equip to a creature below 1/2 its base HP. The creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Mutating Flesh, 6 dice, +6.",
+  "effects": [
+    {
+      "id": "111-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equip to a creature below 1/2 its base HP. The creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Mutating Flesh, 6 dice, +6."
+      },
+      "actionType": "NEGATE_CREATURE_EFFECTS",
+      "effectGroup": "Creature Effect Suppression",
+      "actionText": "Suppress creature effects",
+      "target": "Equipped creature",
+      "value": "Equip to a creature below 1/2 its base HP. The creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Mutating Flesh, 6 dice, +6.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "negateCreatureEffects",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Equip to a creature below 1/2 its base HP. The creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Mutating Flesh, 6 dice, +6.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equip to a creature below 1/2 its base HP. The creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Mutating Flesh, 6 dice, +6."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Conditional equip based on below half HP; replaces attack profile and suppresses creature effect.",
+      "needsReview": true
+    },
+    {
+      "id": "111-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equip to a creature below 1/2 its base HP. The creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Mutating Flesh, 6 dice, +6."
+      },
+      "actionType": "REPLACE_ATTACK_PROFILE",
+      "effectGroup": "Attack Profile",
+      "actionText": "Replace attack name/dice/modifier",
+      "target": "Equipped creature",
+      "value": "Equip to a creature below 1/2 its base HP. The creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Mutating Flesh, 6 dice, +6.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "replaceAttackProfile",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Equip to a creature below 1/2 its base HP. The creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Mutating Flesh, 6 dice, +6.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equip to a creature below 1/2 its base HP. The creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Mutating Flesh, 6 dice, +6."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Conditional equip based on below half HP; replaces attack profile and suppresses creature effect.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Conditional equip based on below half HP; replaces attack profile and suppresses creature effect.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

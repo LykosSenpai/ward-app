@@ -1,0 +1,59 @@
+{
+  "id": "gen3_010_fazard",
+  "name": "Fazard",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "010",
+  "text": "While this card is on the field, Standard magic cards cannot be played.",
+  "effects": [
+    {
+      "id": "010-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "While this card is on the field, Standard magic cards cannot be played."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "Magic card(s) on the field",
+      "value": "While this card is on the field, Standard magic cards cannot be played.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "While this card is on the field, Standard magic cards cannot be played.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "While this card is on the field, Standard magic cards cannot be played."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 12,
+  "speed": 10,
+  "hp": 100,
+  "attackName": "Demi Claw",
+  "attackDice": 4,
+  "modifier": 5
+}

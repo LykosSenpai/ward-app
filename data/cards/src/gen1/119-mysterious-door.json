@@ -1,0 +1,141 @@
+{
+  "id": "gen1_119_mysterious_door",
+  "name": "Mysterious Door",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "119",
+  "text": "Play this card when your opponent plays a magic card. Inflict 10 damage to your primary creature to negate the card effect and instead send it to the cemetery. Return this card to your hand after 3 turn cycles.",
+  "effects": [
+    {
+      "id": "119-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC",
+      "condition": {
+        "type": "OPPONENT_PLAYS_MAGIC",
+        "text": "Opponent plays magic card"
+      },
+      "actionType": "PAY_DAMAGE_COST",
+      "effectGroup": "Cost/Damage",
+      "actionText": "Inflict damage to your primary creature",
+      "target": "Your primary creature",
+      "value": "10 damage",
+      "duration": {
+        "text": "Instant/cost",
+        "type": "TEXT"
+      },
+      "reusableFunction": "dealCostDamage",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "10 damage",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_PLAYS_MAGIC",
+          "text": "Opponent plays magic card"
+        },
+        "duration": {
+          "text": "Instant/cost",
+          "type": "TEXT"
+        },
+        "damageType": "COST_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Cost to negate magic.",
+      "needsReview": false
+    },
+    {
+      "id": "119-E02",
+      "trigger": "AFTER_COST_PAID",
+      "condition": {
+        "type": "TEXT",
+        "text": "Cost paid"
+      },
+      "actionType": "NEGATE_MAGIC_AND_SEND_TO_CEMETERY",
+      "effectGroup": "Magic Negation",
+      "actionText": "Negate magic effect and send card to cemetery",
+      "target": "Opponent magic card",
+      "value": "Negate + cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateMagicToCemetery",
+      "params": {
+        "target": "Opponent magic card",
+        "valueText": "Negate + cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Cost paid"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Lightning response.",
+      "needsReview": false
+    },
+    {
+      "id": "119-E03",
+      "trigger": "DELAYED_TRIGGER",
+      "condition": {
+        "type": "TEXT",
+        "text": "3 turn cycles after use"
+      },
+      "actionType": "SCHEDULE_RETURN_TO_HAND",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return this card to your hand",
+      "target": "This card",
+      "value": "Move cemetery to hand",
+      "duration": {
+        "text": "After 3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "scheduleReturnToHand",
+      "params": {
+        "target": "This card",
+        "valueText": "Move cemetery to hand",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "3 turn cycles after use"
+        },
+        "duration": {
+          "text": "After 3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Delayed self-return. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

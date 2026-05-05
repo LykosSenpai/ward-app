@@ -1,0 +1,95 @@
+{
+  "id": "gen3_139_last_goodbye",
+  "name": "Last Goodbye",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "139",
+  "text": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery.",
+  "effects": [
+    {
+      "id": "139-E01",
+      "trigger": "END_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery."
+      },
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon or interact with a Limited Summon",
+      "target": "Equipped creature",
+      "value": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "limitedSummon",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "END_OF_TURN"
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "139-E02",
+      "trigger": "END_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery."
+      },
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "actionText": "Send card to cemetery",
+      "target": "Equipped creature",
+      "value": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "sendToCemetery",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "END_OF_TURN"
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

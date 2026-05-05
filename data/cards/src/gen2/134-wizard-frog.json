@@ -1,0 +1,103 @@
+{
+  "id": "gen2_134_wizard_frog",
+  "name": "Wizard Frog",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "134",
+  "text": "During your turn, you may send a card from your hand back to your deck (shuffle). This creature then inflicts 2x Atk damage for this turn.",
+  "effects": [
+    {
+      "id": "134-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "You choose a card in hand"
+      },
+      "actionType": "PAY_CARD_COST",
+      "effectGroup": "Cost",
+      "actionText": "Send card from hand back to deck and shuffle",
+      "target": "1 card from your hand",
+      "value": "Return to your deck and shuffle",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "payCardCost",
+      "params": {
+        "target": "1 card from your hand",
+        "valueText": "Return to your deck and shuffle",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You choose a card in hand"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZone": "HAND",
+        "toZone": "DECK",
+        "count": 1,
+        "shuffleAfter": true
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "134-E02",
+      "trigger": "AFTER_COST_PAID",
+      "condition": {
+        "type": "TEXT",
+        "text": "Wizard Frog paid card-to-deck cost this turn"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply Atk damage",
+      "target": "This creature attack",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "Current turn",
+        "type": "CURRENT_TURN"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "This creature attack",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Wizard Frog paid card-to-deck cost this turn"
+        },
+        "duration": {
+          "text": "Current turn",
+          "type": "CURRENT_TURN"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 2
+      },
+      "notes": "Applies after sending a card from hand back to deck.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 4,
+  "speed": 10,
+  "hp": 50,
+  "attackName": "Magical Hop",
+  "attackDice": 2,
+  "modifier": 3
+}

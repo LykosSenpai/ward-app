@@ -1,0 +1,59 @@
+{
+  "id": "gen3_049_gremlin",
+  "name": "Gremlin",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "049",
+  "text": "If your primary creature is removed from the field, you may play this card as your primary creature. This card returns to being a magic card if it leaves the field.",
+  "effects": [
+    {
+      "id": "049-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "If your primary creature is removed from the field, you may play this card as your primary creature. This card returns to being a magic card if it leaves the field."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "Your primary creature",
+      "value": "If your primary creature is removed from the field, you may play this card as your primary creature. This card returns to being a magic card if it leaves the field.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "If your primary creature is removed from the field, you may play this card as your primary creature. This card returns to being a magic card if it leaves the field.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "If your primary creature is removed from the field, you may play this card as your primary creature. This card returns to being a magic card if it leaves the field."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Hybrid magic/creature behavior; app may require hybrid cardKind support.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Hybrid magic/creature card visually uses a magic frame but has creature stats.; Hybrid magic/creature behavior; app may require hybrid cardKind support.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 1,
+  "speed": 6,
+  "hp": 10,
+  "attackName": "Giggle",
+  "attackDice": 1,
+  "modifier": 1
+}

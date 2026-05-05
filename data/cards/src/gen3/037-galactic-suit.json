@@ -1,0 +1,56 @@
+{
+  "id": "gen3_037_galactic_suit",
+  "name": "Galactic Suit",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "037",
+  "text": "If your opponent misses their Hit Roll against the equipped creature, they must roll their Atk Roll against their primary creature.",
+  "effects": [
+    {
+      "id": "037-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "If your opponent misses their Hit Roll against the equipped creature, they must roll their Atk Roll against their primary creature."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "Opponent's primary creature",
+      "value": "If your opponent misses their Hit Roll against the equipped creature, they must roll their Atk Roll against their primary creature.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "If your opponent misses their Hit Roll against the equipped creature, they must roll their Atk Roll against their primary creature.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "If your opponent misses their Hit Roll against the equipped creature, they must roll their Atk Roll against their primary creature."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Redirects missed attack roll to opponent primary creature.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Redirects missed attack roll to opponent primary creature.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

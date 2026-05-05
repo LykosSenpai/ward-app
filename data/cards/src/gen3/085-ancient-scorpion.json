@@ -1,0 +1,71 @@
+{
+  "id": "gen3_085_ancient_scorpion",
+  "name": "Ancient Scorpion",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "085",
+  "text": "When this creature hits, the targeted creature receives 20 damage, once per turn cycle, for 3 turn cycles.",
+  "effects": [
+    {
+      "id": "085-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "TEXT",
+        "text": "When this creature hits, the targeted creature receives 20 damage, once per turn cycle, for 3 turn cycles."
+      },
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "actionText": "Apply recurring damage",
+      "target": "This creature",
+      "value": "When this creature hits, the targeted creature receives 20 damage, once per turn cycle, for 3 turn cycles.",
+      "duration": {
+        "text": "3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN",
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "reusableFunction": "applyDamageOverTime",
+      "params": {
+        "target": "This creature",
+        "valueText": "When this creature hits, the targeted creature receives 20 damage, once per turn cycle, for 3 turn cycles.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When this creature hits, the targeted creature receives 20 damage, once per turn cycle, for 3 turn cycles."
+        },
+        "duration": {
+          "text": "3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN",
+          "tickTiming": "END_OF_COMBAT_PHASE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": "END_OF_COMBAT_PHASE",
+        "damageAmount": 20,
+        "durationAmount": 3
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Bug",
+  "armorLevel": 10,
+  "speed": 10,
+  "hp": 60,
+  "attackName": "Vice Grip",
+  "attackDice": 1,
+  "modifier": 2
+}

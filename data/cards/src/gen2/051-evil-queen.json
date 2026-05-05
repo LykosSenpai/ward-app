@@ -1,0 +1,56 @@
+{
+  "id": "gen2_051_evil_queen",
+  "name": "Evil Queen",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "051",
+  "text": "Destroy 1 magic card on the field.",
+  "effects": [
+    {
+      "id": "051-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Magic card exists on the field"
+      },
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy selected magic card",
+      "target": "1 magic card on the field",
+      "value": "Destroy 1",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyMagicCards",
+      "params": {
+        "target": "1 magic card on the field",
+        "valueText": "Destroy 1",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Magic card exists on the field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "maxCount": 1
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

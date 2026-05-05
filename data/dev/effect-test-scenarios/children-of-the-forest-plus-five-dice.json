@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.412Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_030_children_of_the_forest",
+  "effectId": "030-E01",
+  "title": "Children of the Forest adds 5 attack dice after hit",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:14.910Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_030_children_of_the_forest",
+      "cardName": "Children of the Forest",
+      "cardType": "MAGIC",
+      "cardNumber": "030",
+      "generation": "1",
+      "rawText": "When you hit, play this card from your hand. Your creature gains +5 Atk Dice Rolls for this battle."
+    },
+    "effect": {
+      "effectId": "030-E01",
+      "trigger": "ON_HIT_FROM_HAND",
+      "actionType": "APPLY_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "target": "Your creature",
+      "value": "Atk Dice Rolls +5",
+      "durationText": "Current battle",
+      "reusableFunction": "applyDiceModifier"
+    },
+    "title": "Children of the Forest adds 5 attack dice after hit",
+    "summary": "After a successful hit, play Lightning to add five attack damage dice for the current battle only.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_030_children_of_the_forest",
+        "test_attacker_2dice_mod0"
+      ],
+      "player2Cards": [
+        "test_defender_al5_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            4,
+            4
+          ],
+          "label": "Hit succeeds"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "label": "Seven attack dice after modifier"
+        }
+      ],
+      "notes": [
+        "Children of the Forest is in player_1 hand before combat."
+      ]
+    },
+    "steps": [
+      "Attack with player_1 primary creature.",
+      "Resolve forced successful hit.",
+      "In post-hit Lightning window, play Children of the Forest.",
+      "Resolve damage roll using base 2 dice plus 5 added dice.",
+      "End battle and inspect attacker dice next battle setup."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Temporary attack dice modifier applied",
+        "path": "battle.attacker.effectiveAttackDice",
+        "operator": "equals",
+        "value": 7
+      },
+      {
+        "label": "Damage used seven dice",
+        "path": "battle.damageRoll.dice",
+        "operator": "equals",
+        "value": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "label": "Defender HP reduced by 7",
+        "path": "player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 93
+      },
+      {
+        "label": "Modifier cleaned up after battle",
+        "path": "player_1.primaryCreature.effectiveStats.ATK_DICE_ROLLS",
+        "operator": "equals",
+        "value": 2
+      }
+    ],
+    "manualVerification": [
+      "Confirm card cannot be played before hit or after battle damage window closes."
+    ],
+    "riskNotes": [
+      "Lightning timing after hit but before damage must be exact."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported modifier pipeline; verify current-battle cleanup."
+    },
+    "regression": {
+      "fixtureName": "children-of-the-forest-plus-five-dice",
+      "tags": [
+        "magic",
+        "lightning",
+        "combat",
+        "dice-modifier"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_030_children_of_the_forest:030-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

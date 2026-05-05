@@ -1,0 +1,158 @@
+{
+  "id": "gen3_113_sasquatch",
+  "name": "Sasquatch",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "113",
+  "text": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle.",
+  "effects": [
+    {
+      "id": "113-E01",
+      "trigger": "WHEN_OPPONENT_PLAYS_MAGIC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle."
+      },
+      "actionType": "NEGATE_CARD_EFFECT",
+      "effectGroup": "Negation",
+      "actionText": "Negate a card effect",
+      "target": "Magic card(s) on the field",
+      "value": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "negateCardEffect",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "113-E02",
+      "trigger": "WHEN_OPPONENT_PLAYS_MAGIC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle."
+      },
+      "actionType": "PREVENT_CARD_PLAY",
+      "effectGroup": "Play Restriction",
+      "actionText": "Prevent one or more card types from being played",
+      "target": "Magic card(s) on the field",
+      "value": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "preventCardPlay",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "113-E03",
+      "trigger": "WHEN_OPPONENT_PLAYS_MAGIC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle."
+      },
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "actionText": "Send card to cemetery",
+      "target": "Magic card(s) on the field",
+      "value": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "sendToCemetery",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

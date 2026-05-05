@@ -1,0 +1,64 @@
+{
+  "id": "gen3_035_dark_moon",
+  "name": "Dark Moon",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "035",
+  "text": "For 1 turn cycle your opponents' creatures can only roll 1 Hit Die.",
+  "effects": [
+    {
+      "id": "035-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "For 1 turn cycle your opponents' creatures can only roll 1 Hit Die."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "Target creature",
+      "value": "For 1 turn cycle your opponents' creatures can only roll 1 Hit Die.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "Target creature",
+        "valueText": "For 1 turn cycle your opponents' creatures can only roll 1 Hit Die.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "For 1 turn cycle your opponents' creatures can only roll 1 Hit Die."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

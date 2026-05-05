@@ -1,0 +1,19 @@
+{
+  "id": "gen1_100_werecroc",
+  "name": "Werecroc",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "100",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 9,
+  "speed": 2,
+  "hp": 90,
+  "attackName": "100 Teeth",
+  "attackDice": 3,
+  "modifier": 1
+}

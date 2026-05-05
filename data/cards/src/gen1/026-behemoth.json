@@ -1,0 +1,19 @@
+{
+  "id": "gen1_026_behemoth",
+  "name": "Behemoth",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "026",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 10,
+  "speed": 6,
+  "hp": 100,
+  "attackName": "Quake",
+  "attackDice": 3,
+  "modifier": 5
+}

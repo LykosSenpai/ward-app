@@ -1,0 +1,114 @@
+{
+  "id": "gen3_114_carus_demon",
+  "name": "Carus Demon",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "114",
+  "text": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice.",
+  "effects": [
+    {
+      "id": "114-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "All creatures matching condition",
+      "value": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice.",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "All creatures matching condition",
+        "valueText": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice."
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "114-E02",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice."
+      },
+      "actionType": "APPLY_STATUS",
+      "effectGroup": "Status",
+      "actionText": "Apply status condition",
+      "target": "All creatures matching condition",
+      "value": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice.",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyStatus",
+      "params": {
+        "target": "All creatures matching condition",
+        "valueText": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice."
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 4,
+  "speed": 5,
+  "hp": 40,
+  "attackName": "Paralysis",
+  "attackDice": 2,
+  "modifier": 1
+}

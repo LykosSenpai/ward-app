@@ -1,0 +1,55 @@
+{
+  "id": "gen1_061_health_potion",
+  "name": "Health Potion",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "061",
+  "text": "Heal your creature for 30 HP.",
+  "effects": [
+    {
+      "id": "061-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Your creature is damaged or below max HP"
+      },
+      "actionType": "HEAL_CREATURE",
+      "effectGroup": "Healing",
+      "actionText": "Heal creature",
+      "target": "Your creature",
+      "value": "30 HP",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healFlat",
+      "params": {
+        "target": "Your creature",
+        "valueText": "30 HP",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Your creature is damaged or below max HP"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "HEALING",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Cannot exceed max HP.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

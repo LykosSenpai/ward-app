@@ -1,0 +1,56 @@
+{
+  "id": "gen2_096_bomb",
+  "name": "Bomb",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "096",
+  "text": "If this card is removed from the field, deal 30 damage to the equipped creature.",
+  "effects": [
+    {
+      "id": "096-E01",
+      "trigger": "ON_CARD_REMOVED_FROM_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is removed from the field"
+      },
+      "actionType": "DEAL_INSTANT_DAMAGE",
+      "effectGroup": "Triggered Damage",
+      "actionText": "Deal 30 damage to equipped creature",
+      "target": "Equipped creature",
+      "value": "30 damage",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "dealDirectDamage",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "30 damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is removed from the field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 30
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

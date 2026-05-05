@@ -1,0 +1,65 @@
+{
+  "id": "gen2_114_forgotten_one",
+  "name": "Forgotten One",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "114",
+  "text": "Add +1 to this creature's Modifier for each point in this card's SPD stat over 12.",
+  "effects": [
+    {
+      "id": "114-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card's SPD is over 12"
+      },
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "actionText": "Scale Modifier from SPD over 12",
+      "target": "This creature",
+      "value": "Modifier +1 for each point of SPD over 12",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyDynamicStatModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "Modifier +1 for each point of SPD over 12",
+        "statChanges": [
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD_FORMULA",
+            "formula": "max(0, CURRENT_SPD - 12)"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card's SPD is over 12"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 12,
+  "speed": 12,
+  "hp": 80,
+  "attackName": "Red Lightning",
+  "attackDice": 4,
+  "modifier": 0
+}

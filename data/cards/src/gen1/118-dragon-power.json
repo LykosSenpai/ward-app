@@ -1,0 +1,107 @@
+{
+  "id": "gen1_118_dragon_power",
+  "name": "Dragon Power",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "118",
+  "text": "Hit: +5. Atk: +10. Increase AL to 12. The equipped card must do damage during your turn, or this card is destroyed.",
+  "effects": [
+    {
+      "id": "118-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature/card"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier/Set",
+      "actionText": "Modify Hit, Atk, AL",
+      "target": "Equipped card",
+      "value": "Hit +5; Atk +10; AL set/increase to 12",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped card",
+        "valueText": "Hit +5; Atk +10; AL set/increase to 12",
+        "statChanges": [
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 5,
+            "rounding": null
+          },
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 10,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature/card"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Need decide if AL set to 12 or minimum 12. Text says Increase AL to 12. Final AL is capped at 12.",
+      "needsReview": true
+    },
+    {
+      "id": "118-E02",
+      "trigger": "AT_END_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped card did not do damage during your turn"
+      },
+      "actionType": "DESTROY_IF_NO_DAMAGE_THIS_TURN",
+      "effectGroup": "Self Destroy",
+      "actionText": "Destroy this card",
+      "target": "This equip card",
+      "value": "Destroy",
+      "duration": {
+        "text": "End of your turn",
+        "type": "TEXT"
+      },
+      "reusableFunction": "destroyIfNoDamageThisTurn",
+      "params": {
+        "target": "This equip card",
+        "valueText": "Destroy",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped card did not do damage during your turn"
+        },
+        "duration": {
+          "text": "End of your turn",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Track per-turn damage caused by equipped card.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

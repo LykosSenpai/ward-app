@@ -1,0 +1,94 @@
+{
+  "id": "gen1_105_twister",
+  "name": "Twister",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "105",
+  "text": "Destroy all magic cards on the field. All players then draw 2 cards.",
+  "effects": [
+    {
+      "id": "105-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Magic cards exist"
+      },
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy all magic cards",
+      "target": "All magic cards on field",
+      "value": "Destroy all",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyMagicCards",
+      "params": {
+        "target": "All magic cards on field",
+        "valueText": "Destroy all",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Magic cards exist"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Global scope.",
+      "needsReview": false
+    },
+    {
+      "id": "105-E02",
+      "trigger": "AFTER_DESTROY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Twister resolved"
+      },
+      "actionType": "DRAW_CARDS",
+      "effectGroup": "Draw",
+      "actionText": "All players draw cards",
+      "target": "All players",
+      "value": "Draw 2",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "drawCards",
+      "params": {
+        "target": "All players",
+        "valueText": "Draw 2",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Twister resolved"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Draw after magic destroyed.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

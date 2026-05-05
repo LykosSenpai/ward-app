@@ -1,0 +1,56 @@
+{
+  "id": "gen3_106_last_hope_hero",
+  "name": "Last Hope Hero",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "106",
+  "text": "Play this from your hand when your primary creature is killed. Roll its base Atk Dice Rolls and Modifier against the creature that killed it. This attack is treated as a Critical Hit.",
+  "effects": [
+    {
+      "id": "106-E01",
+      "trigger": "WHEN_YOUR_PRIMARY_CREATURE_KILLED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this from your hand when your primary creature is killed. Roll its base Atk Dice Rolls and Modifier against the creature that killed it. This attack is treated as a Critical Hit."
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Apply attack damage multiplier",
+      "target": "Your primary creature",
+      "value": "Play this from your hand when your primary creature is killed. Roll its base Atk Dice Rolls and Modifier against the creature that killed it. This attack is treated as a Critical Hit.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyAttackDamageMultiplier",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Play this from your hand when your primary creature is killed. Roll its base Atk Dice Rolls and Modifier against the creature that killed it. This attack is treated as a Critical Hit.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this from your hand when your primary creature is killed. Roll its base Atk Dice Rolls and Modifier against the creature that killed it. This attack is treated as a Critical Hit."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Reactive after primary death, using killed creature base attack as critical hit.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Reactive after primary death, using killed creature base attack as critical hit.",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

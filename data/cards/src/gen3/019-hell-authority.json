@@ -1,0 +1,64 @@
+{
+  "id": "gen3_019_hell_authority",
+  "name": "Hell Authority",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "019",
+  "text": "Your opponent cannot play magic cards for 1 turn cycle.",
+  "effects": [
+    {
+      "id": "019-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Your opponent cannot play magic cards for 1 turn cycle."
+      },
+      "actionType": "PREVENT_CARD_PLAY",
+      "effectGroup": "Play Restriction",
+      "actionText": "Prevent one or more card types from being played",
+      "target": "Magic card(s) on the field",
+      "value": "Your opponent cannot play magic cards for 1 turn cycle.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "preventCardPlay",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Your opponent cannot play magic cards for 1 turn cycle.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Your opponent cannot play magic cards for 1 turn cycle."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

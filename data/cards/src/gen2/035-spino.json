@@ -1,0 +1,60 @@
+{
+  "id": "gen2_035_spino",
+  "name": "Spino",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "035",
+  "text": "This creature inflicts 2x Atk damage to any creature in or near water.",
+  "effects": [
+    {
+      "id": "035-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Attack target is in or near water"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply Atk damage",
+      "target": "Creature in or near water",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Creature in or near water",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Attack target is in or near water"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 2
+      },
+      "notes": "Requires board/location tag for in or near water.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dino",
+  "armorLevel": 8,
+  "speed": 10,
+  "hp": 80,
+  "attackName": "Razor Claw",
+  "attackDice": 2,
+  "modifier": 5
+}

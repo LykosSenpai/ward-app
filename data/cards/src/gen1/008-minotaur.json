@@ -1,0 +1,70 @@
+{
+  "id": "gen1_008_minotaur",
+  "name": "Minotaur",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "008",
+  "text": "When this creature hits, roll 1 die. If the result is 5-6, the target creature cannot inflict Atk damage for 1 turn cycle.",
+  "effects": [
+    {
+      "id": "008-E01",
+      "trigger": "ON_HIT",
+      "actionType": "ROLL_FOR_EFFECT",
+      "effectGroup": "Effect Roll",
+      "actionText": "When this creature hits, roll 1 die. If the result is 5-6, the target creature cannot inflict Atk damage for 1 turn cycle.",
+      "target": "TARGET_CREATURE_HIT",
+      "value": "1D6; success on 5-6",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "rollForEffect",
+      "params": {
+        "roll": {
+          "kind": "EFFECT_ROLL",
+          "diceCount": 1,
+          "successRanges": [
+            {
+              "min": 5,
+              "max": 6
+            }
+          ]
+        },
+        "onSuccess": {
+          "actionType": "APPLY_STATUS",
+          "status": "STUNNED",
+          "label": "Cannot inflict Atk damage",
+          "flags": {
+            "canInflictAtkDamage": false
+          },
+          "duration": {
+            "text": "1 turn cycle",
+            "type": "TURN_CYCLES",
+            "amount": 1,
+            "unit": "TURN_CYCLE",
+            "starts": "EFFECT_ACTIVATION",
+            "expires": "BEGINNING_OF_START_PLAYER_TURN"
+          }
+        },
+        "sourceLinked": false,
+        "usesAnchoring": false
+      },
+      "notes": "Effect roll pattern. Roll 1D6 after this creature hits. On 5-6, apply cannot-inflict-Atk-damage status to the hit target.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 6,
+  "speed": 5,
+  "hp": 90,
+  "attackName": "Bull Charge",
+  "attackDice": 2,
+  "modifier": 2
+}

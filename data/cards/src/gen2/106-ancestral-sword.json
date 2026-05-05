@@ -1,0 +1,61 @@
+{
+  "id": "gen2_106_ancestral_sword",
+  "name": "Ancestral Sword",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "106",
+  "text": "This card only affects your primary creature. Atk: +2.",
+  "effects": [
+    {
+      "id": "106-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "You control a primary creature"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifiers",
+      "target": "Your primary creature",
+      "value": "ATK_BONUS ADD 2",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "ATK_BONUS ADD 2",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 2
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "You control a primary creature"
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field aura only affects your primary creature.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

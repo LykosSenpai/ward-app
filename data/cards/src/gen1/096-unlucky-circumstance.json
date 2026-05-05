@@ -1,0 +1,70 @@
+{
+  "id": "gen1_096_unlucky_circumstance",
+  "name": "Unlucky Circumstance",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "096",
+  "text": "Reduce target creature's AL to 1 for 1 turn cycle.",
+  "effects": [
+    {
+      "id": "096-E01",
+      "trigger": "ON_EQUIP_OR_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target creature selected"
+      },
+      "actionType": "APPLY_TEMPORARY_STAT_SET",
+      "effectGroup": "Stat Set",
+      "actionText": "Reduce AL to 1",
+      "target": "Target creature",
+      "value": "AL = 1",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyTemporaryStatSet",
+      "params": {
+        "target": "Target creature",
+        "valueText": "AL = 1",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "SET",
+            "value": 1,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target creature selected"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Temporary set modifier. Turn cycle is one full round back to the same player. Final AL is capped at 12.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

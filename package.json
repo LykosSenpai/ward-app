@@ -1,0 +1,22 @@
+{
+  "name": "ward-app",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:client": "pnpm --filter @ward/client dev",
+    "dev:server": "pnpm --filter @ward/server dev",
+    "build": "pnpm -r build",
+    "cards:build": "node tools/card-generation/build-card-packs.mjs",
+    "cards:check": "node tools/card-generation/build-card-packs.mjs --check",
+    "check": "node tools/workspace-check.mjs",
+    "check:css": "node tools/check-css-braces.mjs",
+    "check:exports": "node tools/check-engine-exports.mjs",
+    "check:files": "node tools/check-project-files.mjs",
+    "check:types": "pnpm --filter @ward/shared check && pnpm --filter @ward/engine check && pnpm --filter @ward/server check && pnpm --filter @ward/client check",
+    "effects:audit": "node tools/card-generation/audit-effect-runtime-coverage.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

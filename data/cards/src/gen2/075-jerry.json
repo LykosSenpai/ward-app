@@ -1,0 +1,85 @@
+{
+  "id": "gen2_075_jerry",
+  "name": "Jerry",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "075",
+  "text": "This creature copies the base stats of your opponent's primary creature. This includes: AL, SPD, Atk Dice Rolls, Modifier, and Type. Switch stats if a new primary creature enters the field.",
+  "effects": [
+    {
+      "id": "075-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent has a primary creature"
+      },
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Dynamic Stat Copy",
+      "actionText": "Copy opponent primary creature base stats and type",
+      "target": "This creature",
+      "value": "Copy opponent primary base AL, SPD, Atk Dice Rolls, Modifier, and Type",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyDynamicStatModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "Copy opponent primary base AL, SPD, Atk Dice Rolls, Modifier, and Type",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "COPY",
+            "source": "OPPONENT_PRIMARY_CREATURE.BASE_AL"
+          },
+          {
+            "stat": "SPD",
+            "operation": "COPY",
+            "source": "OPPONENT_PRIMARY_CREATURE.BASE_SPD"
+          },
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "COPY",
+            "source": "OPPONENT_PRIMARY_CREATURE.BASE_ATK_DICE_ROLLS"
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "COPY",
+            "source": "OPPONENT_PRIMARY_CREATURE.BASE_MODIFIER"
+          },
+          {
+            "stat": "TYPE",
+            "operation": "COPY",
+            "source": "OPPONENT_PRIMARY_CREATURE.TYPE"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent has a primary creature"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Switch stats whenever a new opposing primary creature enters the field.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Unknown",
+  "armorLevel": 1,
+  "speed": 1,
+  "hp": 50,
+  "attackName": "Morph",
+  "attackDice": 1,
+  "modifier": 0
+}

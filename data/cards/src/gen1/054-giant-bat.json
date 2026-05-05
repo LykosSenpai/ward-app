@@ -1,0 +1,19 @@
+{
+  "id": "gen1_054_giant_bat",
+  "name": "Giant Bat",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "054",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 2,
+  "speed": 7,
+  "hp": 20,
+  "attackName": "Diving Bite",
+  "attackDice": 1,
+  "modifier": 0
+}

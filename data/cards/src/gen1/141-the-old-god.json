@@ -1,0 +1,59 @@
+{
+  "id": "gen1_141_the_old_god",
+  "name": "The Old God",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "141",
+  "text": "Requires 3 sacrifices to summon.",
+  "effects": [
+    {
+      "id": "141-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature would be summoned"
+      },
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Requires sacrifices",
+      "target": "This card",
+      "value": "3 sacrifices",
+      "duration": {
+        "text": "Before summon",
+        "type": "TEXT"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "This card",
+        "valueText": "3 sacrifices",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature would be summoned"
+        },
+        "duration": {
+          "text": "Before summon",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Generic sacrifice requirement.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Summon Requirement.",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 12,
+  "speed": 11,
+  "hp": 130,
+  "attackName": "Sekhmet Hail",
+  "attackDice": 8,
+  "modifier": 8
+}

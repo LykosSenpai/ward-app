@@ -1,0 +1,98 @@
+{
+  "id": "gen2_081_phoenix_armor",
+  "name": "Phoenix Armor",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "081",
+  "text": "The equipped creature receives 10 damage at the beginning of their turns. If the equipped creature is killed, send this card to the cemetery and restore equipped creature's HP to 50%.",
+  "effects": [
+    {
+      "id": "081-E01",
+      "trigger": "AT_BEGINNING_OF_EQUIPPED_CREATURE_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Beginning of equipped creature controller's turn"
+      },
+      "actionType": "DEAL_INSTANT_DAMAGE",
+      "effectGroup": "Recurring Damage",
+      "actionText": "Deal 10 damage to equipped creature",
+      "target": "Equipped creature",
+      "value": "10 damage",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "dealDirectDamage",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "10 damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Beginning of equipped creature controller's turn"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "BEGINNING_OF_EQUIPPED_CREATURE_TURN",
+        "amount": 10
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "081-E02",
+      "trigger": "IF_EQUIPPED_CREATURE_KILLED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature is killed"
+      },
+      "actionType": "HEAL_CREATURE",
+      "effectGroup": "Replacement/Healing",
+      "actionText": "Send this card to cemetery and restore equipped creature HP to 50%",
+      "target": "Equipped creature",
+      "value": "Restore HP to 50%",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healFlat",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Restore HP to 50%",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature is killed"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null,
+        "restoreHpPercent": 50,
+        "rounding": "CEIL",
+        "alsoSendThisCardTo": "CEMETERY"
+      },
+      "notes": "Half values round up. Needs engine decision whether this replaces the kill or restores after kill before cemetery move.",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

@@ -1,0 +1,66 @@
+{
+  "id": "gen2_085_equip_knight",
+  "name": "Equip Knight",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "085",
+  "text": "When summoned, you may search your deck for 2 equip magic cards. Equip them to this creature. Shuffle.",
+  "effects": [
+    {
+      "id": "085-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "ON_SUMMON_CONDITION",
+        "text": "This creature is summoned"
+      },
+      "actionType": "SEARCH_DECK_TO_EQUIP",
+      "effectGroup": "Deck Search",
+      "actionText": "Search deck for 2 equip magic cards, equip to this creature, shuffle",
+      "target": "Your deck",
+      "value": "Search for 2 equip magic cards and equip them to this creature",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "searchDeckToEquip",
+      "params": {
+        "target": "Your deck",
+        "valueText": "Search for 2 equip magic cards and equip them to this creature",
+        "statChanges": [],
+        "condition": {
+          "type": "ON_SUMMON_CONDITION",
+          "text": "This creature is summoned"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "count": 2,
+        "match": {
+          "cardKind": "MAGIC",
+          "magicSubtype": "EQUIP"
+        },
+        "destination": "EQUIPPED_TO_THIS_CREATURE",
+        "shuffleAfter": true
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 1,
+  "speed": 1,
+  "hp": 50,
+  "attackName": "Thrust",
+  "attackDice": 1,
+  "modifier": 0
+}

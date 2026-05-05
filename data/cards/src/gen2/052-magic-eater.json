@@ -1,0 +1,55 @@
+{
+  "id": "gen2_052_magic_eater",
+  "name": "Magic Eater",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "052",
+  "text": "Destroy all magic cards on opponents side of the field.",
+  "effects": [
+    {
+      "id": "052-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent controls magic cards"
+      },
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy all opponent-side magic cards",
+      "target": "All magic cards on opponent's side of the field",
+      "value": "Destroy all",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyMagicCards",
+      "params": {
+        "target": "All magic cards on opponent's side of the field",
+        "valueText": "Destroy all",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent controls magic cards"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

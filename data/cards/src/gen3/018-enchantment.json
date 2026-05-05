@@ -1,0 +1,56 @@
+{
+  "id": "gen3_018_enchantment",
+  "name": "Enchantment",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "018",
+  "text": "If you miss your Hit Roll, play this card from your hand. Inflict 10 damage to the missed creature.",
+  "effects": [
+    {
+      "id": "018-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "If you miss your Hit Roll, play this card from your hand. Inflict 10 damage to the missed creature."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Target creature",
+      "value": "If you miss your Hit Roll, play this card from your hand. Inflict 10 damage to the missed creature.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Target creature",
+        "valueText": "If you miss your Hit Roll, play this card from your hand. Inflict 10 damage to the missed creature.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "If you miss your Hit Roll, play this card from your hand. Inflict 10 damage to the missed creature."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

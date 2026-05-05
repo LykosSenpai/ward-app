@@ -1,0 +1,45 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# build output
+dist/
+build/
+coverage/
+.vite/
+.vite-temp/
+*.tsbuildinfo
+
+# local env
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# generated/local game state
+data/matches/*.json
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# local archives / exported batches
+*.zip
+
+# old pasted/refactor artifact files with spaces in their names
+apps/client/src/client App.tsx
+apps/server/src/server index.ts
+packages/engine/src/engine actions.ts
+packages/engine/src/engine index.ts
+packages/engine/src/shared index.ts
+packages/shared/src/shared index.ts
+apps/server/src/apps__server__src__dataStore.ts
+gitignore

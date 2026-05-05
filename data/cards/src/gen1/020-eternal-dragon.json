@@ -1,0 +1,98 @@
+{
+  "id": "gen1_020_eternal_dragon",
+  "name": "Eternal Dragon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "020",
+  "text": "Requires 2 \"Dragon\" named or Dragon-type creatures to summon. Place the sacrificed cards under this card while on the field. If this card leaves the field or changes control, the cards under follow it.",
+  "effects": [
+    {
+      "id": "020-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Requires 2 Dragon-named or Dragon-type sacrifices"
+      },
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Require typed sacrifices",
+      "target": "This card",
+      "value": "2 sacrifices",
+      "duration": {
+        "text": "Before summon",
+        "type": "TEXT"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "This card",
+        "valueText": "2 sacrifices",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Requires 2 Dragon-named or Dragon-type sacrifices"
+        },
+        "duration": {
+          "text": "Before summon",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Sacrifices must match name/type Dragon.",
+      "needsReview": false
+    },
+    {
+      "id": "020-E02",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon requirement paid"
+      },
+      "actionType": "ATTACH_CARDS_UNDER_SOURCE",
+      "effectGroup": "Attachment/Linked Cards",
+      "actionText": "Place sacrificed cards under this card",
+      "target": "Sacrificed cards",
+      "value": "Attach under source card",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "attachCardsUnderSource",
+      "params": {
+        "target": "Sacrificed cards",
+        "valueText": "Attach under source card",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon requirement paid"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Attached cards should move with source if control changes or source leaves field.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 12,
+  "speed": 3,
+  "hp": 120,
+  "attackName": "Ultimania",
+  "attackDice": 5,
+  "modifier": 5
+}

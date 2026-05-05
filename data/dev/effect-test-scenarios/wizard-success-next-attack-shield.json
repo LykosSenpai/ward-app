@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.406Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_018_wizard",
+  "effectId": "018-E01",
+  "title": "Wizard successful roll adds next attack shield",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:12:37.138Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_018_wizard",
+      "cardName": "Wizard",
+      "cardType": "CREATURE",
+      "cardNumber": "018",
+      "generation": "1",
+      "rawText": "During your turn, roll 1 die. If the result is 1-3, this creature negates the next attack against this card."
+    },
+    "effect": {
+      "effectId": "018-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "ADD_NEXT_ATTACK_SHIELD",
+      "effectGroup": "Shield/Negation",
+      "target": "This card",
+      "value": "Next attack negated",
+      "durationText": "Until consumed",
+      "reusableFunction": "addNextAttackShield"
+    },
+    "title": "Wizard successful roll adds next attack shield",
+    "summary": "Activate Wizard during controller turn, force success roll, verify next incoming attack is negated and shield is consumed.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_018_wizard"
+      ],
+      "player2Cards": [
+        "test_attacker_creature"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            2
+          ],
+          "label": "Wizard shield success"
+        },
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "incoming attack would hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "incoming damage would be positive"
+        }
+      ],
+      "notes": [
+        "Set Wizard as player_1 primary creature.",
+        "Use post-first-turn-cycle state."
+      ]
+    },
+    "steps": [
+      "Activate Wizard effect during player_1 turn.",
+      "Resolve forced effect roll of 2.",
+      "Advance to player_2 COMBAT.",
+      "Attack Wizard with player_2 primary creature.",
+      "Resolve hit and damage rolls."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Shield created",
+        "path": "player_1.primaryCreature.statuses",
+        "operator": "contains",
+        "value": "NEXT_ATTACK_SHIELD"
+      },
+      {
+        "label": "Incoming attack negated",
+        "path": "lastBattle.damageApplied",
+        "operator": "equals",
+        "value": 0
+      },
+      {
+        "label": "Shield consumed",
+        "path": "player_1.primaryCreature.statuses",
+        "operator": "notContains",
+        "value": "NEXT_ATTACK_SHIELD"
+      },
+      {
+        "label": "Wizard HP unchanged",
+        "path": "player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": "preAttackHp"
+      }
+    ],
+    "manualVerification": [
+      "Also run a failure roll 4-6 as a negative check if time permits."
+    ],
+    "riskNotes": [
+      "Runtime support is partial; final shield application may depend on target resolver support."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Plan tests supported roll flow plus pending shield consumption."
+    },
+    "regression": {
+      "fixtureName": "wizard-success-next-attack-shield",
+      "tags": [
+        "creature",
+        "activated",
+        "shield",
+        "roll"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_018_wizard:018-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

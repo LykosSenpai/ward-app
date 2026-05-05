@@ -1,0 +1,95 @@
+{
+  "id": "gen3_110_chain_lightning",
+  "name": "Chain Lightning",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "110",
+  "text": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature.",
+  "effects": [
+    {
+      "id": "110-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature."
+      },
+      "actionType": "DESTROY_ALL_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "actionText": "Destroy all matching magic cards",
+      "target": "Opponent's primary creature",
+      "value": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "destroyAllMagic",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "110-E02",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Opponent's primary creature",
+      "value": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

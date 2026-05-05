@@ -1,0 +1,19 @@
+{
+  "id": "gen1_138_shadow_demon",
+  "name": "Shadow Demon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "138",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 6,
+  "speed": 8,
+  "hp": 60,
+  "attackName": "Shadow Pulse",
+  "attackDice": 3,
+  "modifier": 1
+}

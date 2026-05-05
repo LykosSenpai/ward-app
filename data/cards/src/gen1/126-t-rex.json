@@ -1,0 +1,19 @@
+{
+  "id": "gen1_126_t_rex",
+  "name": "T-Rex",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "126",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Dino",
+  "armorLevel": 11,
+  "speed": 4,
+  "hp": 100,
+  "attackName": "Tyrant Chomp",
+  "attackDice": 4,
+  "modifier": 3
+}

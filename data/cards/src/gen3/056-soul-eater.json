@@ -1,0 +1,95 @@
+{
+  "id": "gen3_056_soul_eater",
+  "name": "Soul Eater",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "056",
+  "text": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it.",
+  "effects": [
+    {
+      "id": "056-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it."
+      },
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon or interact with a Limited Summon",
+      "target": "Limited Summon card(s)",
+      "value": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "limitedSummon",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "056-E02",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it."
+      },
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "actionText": "Send card to cemetery",
+      "target": "Limited Summon card(s)",
+      "value": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "sendToCemetery",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

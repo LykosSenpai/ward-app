@@ -1,0 +1,19 @@
+{
+  "id": "gen1_145_rodent",
+  "name": "Rodent",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "145",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 2,
+  "speed": 5,
+  "hp": 20,
+  "attackName": "Scratch",
+  "attackDice": 1,
+  "modifier": 0
+}

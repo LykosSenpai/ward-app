@@ -1,0 +1,279 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #101014;
+  color: #f4f4f5;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #facc15;
+  color: #18181b;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #fde047;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 32px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.panel {
+  width: 100%;
+  max-width: 1400px;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 36px;
+}
+
+h2,
+h3 {
+  margin-top: 0;
+}
+
+.subtitle {
+  color: #a1a1aa;
+  margin: 6px 0 0;
+}
+
+.server-pill {
+  border: 1px solid #34343d;
+  background: #18181f;
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #d4d4d8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border-radius: 50%;
+}
+
+.socket-id {
+  color: #a1a1aa;
+  margin-bottom: 24px;
+}
+
+.socket-id span {
+  color: #facc15;
+}
+
+.card {
+  border: 1px solid #34343d;
+  background: #18181f;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.label {
+  display: block;
+  color: #a1a1aa;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+strong {
+  color: #f4f4f5;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.player-stat {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid #27272f;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.player-stat span {
+  color: #a1a1aa;
+}
+
+.zone-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  color: #d4d4d8;
+  margin-bottom: 16px;
+}
+
+.zone-box {
+  border: 1px solid #27272f;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.empty-zone {
+  color: #71717a;
+  margin-bottom: 0;
+}
+
+.hand-list {
+  display: grid;
+  gap: 10px;
+}
+
+.mini-card {
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  padding: 12px;
+  background: #101014;
+  display: grid;
+  gap: 8px;
+}
+
+.creature-card {
+  border-color: #facc15;
+}
+
+.cemetery-list {
+  display: grid;
+  gap: 6px;
+  color: #d4d4d8;
+}
+
+.error-box {
+  border: 1px solid #ef4444;
+  background: #2a1111;
+  color: #fecaca;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.warning-box {
+  border: 1px solid #f97316;
+  background: #2c1608;
+  color: #fed7aa;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .app-header {
+    flex-direction: column;
+  }
+
+  .grid,
+  .players-grid,
+  .zone-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+button:disabled {
+  background: #52525b;
+  color: #a1a1aa;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  background: #52525b;
+}
+
+.setup-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  border: 1px solid #27272f;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 20px;
+}
+
+.validation-box {
+  border: 1px solid #27272f;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.validation-summary {
+  display: grid;
+  gap: 6px;
+  color: #d4d4d8;
+  margin-bottom: 12px;
+}
+
+.issue-list {
+  display: grid;
+  gap: 8px;
+}
+
+
+
+/* Patch: full-width app shell */
+body {
+  overflow-x: hidden;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  padding: 16px 20px;
+  display: block;
+}
+
+.panel {
+  width: 100%;
+  max-width: none;
+}

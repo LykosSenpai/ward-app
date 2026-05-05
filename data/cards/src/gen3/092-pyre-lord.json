@@ -1,0 +1,59 @@
+{
+  "id": "gen3_092_pyre_lord",
+  "name": "Pyre Lord",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "092",
+  "text": "This creature receives 5 damage when it inflicts Atk damage.",
+  "effects": [
+    {
+      "id": "092-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature receives 5 damage when it inflicts Atk damage."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "This creature receives 5 damage when it inflicts Atk damage.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature receives 5 damage when it inflicts Atk damage.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature receives 5 damage when it inflicts Atk damage."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 8,
+  "speed": 7,
+  "hp": 60,
+  "attackName": "Incinerate",
+  "attackDice": 6,
+  "modifier": 4
+}

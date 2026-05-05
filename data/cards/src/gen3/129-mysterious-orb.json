@@ -1,0 +1,127 @@
+{
+  "id": "gen3_129_mysterious_orb",
+  "name": "Mysterious Orb",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "129",
+  "text": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6.",
+  "effects": [
+    {
+      "id": "129-E01",
+      "trigger": "BEGINNING_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6."
+      },
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "actionText": "Resolve a D6 roll table",
+      "target": "Equipped creature",
+      "value": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "resolveRollTable",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "BEGINNING_OF_TURN"
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "129-E02",
+      "trigger": "BEGINNING_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 6
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 6
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 6
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "BEGINNING_OF_TURN"
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

@@ -1,0 +1,95 @@
+{
+  "id": "gen3_007_steam_knight_blaster",
+  "name": "Steam Knight Blaster",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "007",
+  "text": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3.",
+  "effects": [
+    {
+      "id": "007-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3."
+      },
+      "actionType": "NEGATE_CREATURE_EFFECTS",
+      "effectGroup": "Creature Effect Suppression",
+      "actionText": "Suppress creature effects",
+      "target": "Equipped creature",
+      "value": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "negateCreatureEffects",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Replaces base attack profile and suppresses equipped creature effect.",
+      "needsReview": true
+    },
+    {
+      "id": "007-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3."
+      },
+      "actionType": "REPLACE_ATTACK_PROFILE",
+      "effectGroup": "Attack Profile",
+      "actionText": "Replace attack name/dice/modifier",
+      "target": "Equipped creature",
+      "value": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "replaceAttackProfile",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Replaces base attack profile and suppresses equipped creature effect.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Replaces base attack profile and suppresses equipped creature effect.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

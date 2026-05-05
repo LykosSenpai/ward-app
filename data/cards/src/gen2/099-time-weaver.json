@@ -1,0 +1,60 @@
+{
+  "id": "gen2_099_time_weaver",
+  "name": "Time Weaver",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "099",
+  "text": "While this card is on the field, Lightning cards cannot be played.",
+  "effects": [
+    {
+      "id": "099-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is on the field"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "actionText": "Prevent Lightning cards from being played",
+      "target": "All players",
+      "value": "Lightning cards cannot be played",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyGlobalPlayRestriction",
+      "params": {
+        "target": "All players",
+        "valueText": "Lightning cards cannot be played",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is on the field"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "blockedMagicType": "LIGHTNING"
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 7,
+  "speed": 12,
+  "hp": 60,
+  "attackName": "Time Spike",
+  "attackDice": 2,
+  "modifier": 5
+}

@@ -1,0 +1,19 @@
+{
+  "id": "gen3_081_hive_queen",
+  "name": "Hive Queen",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "081",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Bug",
+  "armorLevel": 12,
+  "speed": 12,
+  "hp": 130,
+  "attackName": "Dominate",
+  "attackDice": 5,
+  "modifier": 7
+}

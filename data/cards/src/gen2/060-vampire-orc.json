@@ -1,0 +1,65 @@
+{
+  "id": "gen2_060_vampire_orc",
+  "name": "Vampire Orc",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "060",
+  "text": "Add your opponent's current primary creature's base Modifier to this card.",
+  "effects": [
+    {
+      "id": "060-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent has current primary creature"
+      },
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Dynamic Stat Modifier",
+      "actionText": "Copy opponent primary base Modifier as bonus",
+      "target": "This card",
+      "value": "Add opponent current primary creature's base Modifier",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyDynamicStatModifier",
+      "params": {
+        "target": "This card",
+        "valueText": "Add opponent current primary creature's base Modifier",
+        "statChanges": [
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD_DYNAMIC",
+            "source": "OPPONENT_PRIMARY_CREATURE.BASE_MODIFIER"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent has current primary creature"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Recalculate if opponent primary creature changes.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 6,
+  "speed": 6,
+  "hp": 30,
+  "attackName": "Siphon Claw",
+  "attackDice": 1,
+  "modifier": 4
+}

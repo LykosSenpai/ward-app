@@ -1,0 +1,71 @@
+{
+  "id": "gen1_059_grizzly_bear",
+  "name": "Grizzly Bear",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "059",
+  "text": "When this creature hits, the targeted creature receives 10 damage once per turn cycle, for 2 turn cycles.",
+  "effects": [
+    {
+      "id": "059-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "HIT_LANDS",
+        "text": "Hit lands"
+      },
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "actionText": "Apply recurring damage",
+      "target": "Target creature",
+      "value": "10 damage per turn cycle",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN",
+        "tickTiming": "END_OF_COMBAT_PHASE",
+        "stackRule": "DO_NOT_STACK"
+      },
+      "reusableFunction": "applyDamageOverTime",
+      "params": {
+        "target": "Target creature",
+        "valueText": "10 damage per turn cycle",
+        "statChanges": [],
+        "condition": {
+          "type": "HIT_LANDS",
+          "text": "Hit lands"
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN",
+          "tickTiming": "END_OF_COMBAT_PHASE",
+          "stackRule": "DO_NOT_STACK"
+        },
+        "damageType": "DAMAGE_OVER_TIME",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "notes": "Shared DoT pattern. Turn cycle is one full round back to the same player. DOT ticks at end of Combat Phase and does not stack with another active DOT.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 7,
+  "speed": 8,
+  "hp": 70,
+  "attackName": "Maul",
+  "attackDice": 2,
+  "modifier": 5
+}

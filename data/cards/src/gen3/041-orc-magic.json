@@ -1,0 +1,56 @@
+{
+  "id": "gen3_041_orc_magic",
+  "name": "Orc Magic",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "041",
+  "text": "Destroy 1 magic card on the field.",
+  "effects": [
+    {
+      "id": "041-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Destroy 1 magic card on the field."
+      },
+      "actionType": "DESTROY_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "actionText": "Destroy a magic card",
+      "target": "Magic card(s) on the field",
+      "value": "Destroy 1 magic card on the field.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "destroyMagic",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Destroy 1 magic card on the field.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Destroy 1 magic card on the field."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

@@ -1,0 +1,101 @@
+{
+  "id": "gen1_024_ball_and_chain",
+  "name": "Ball and Chain",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "024",
+  "text": "SPD: -6. Negate other SPD increases to the equipped creature.",
+  "effects": [
+    {
+      "id": "024-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Modify SPD",
+      "target": "Equipped creature",
+      "value": "SPD -6",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "SPD -6",
+        "statChanges": [
+          {
+            "stat": "SPD",
+            "operation": "SUBTRACT",
+            "value": 6,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Also blocks other SPD increases.",
+      "needsReview": false
+    },
+    {
+      "id": "024-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "SUPPRESS_MODIFIER_LAYER",
+      "effectGroup": "Stat Lock",
+      "actionText": "Negate SPD increases",
+      "target": "Equipped creature",
+      "value": "Ignore positive SPD modifiers",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyModifierSuppression",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Ignore positive SPD modifiers",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs modifier-layer priority.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

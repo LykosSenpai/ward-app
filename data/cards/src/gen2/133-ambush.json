@@ -1,0 +1,96 @@
+{
+  "id": "gen2_133_ambush",
+  "name": "Ambush",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "133",
+  "text": "During battle, play this card from your hand. Summon 1 creature from your hand as a Limited Summon. Return it back to your hand at the end of the battle.",
+  "effects": [
+    {
+      "id": "133-E01",
+      "trigger": "DURING_BATTLE_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "During battle"
+      },
+      "actionType": "SUMMON_LIMITED_CREATURE_FROM_HAND",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon 1 creature from hand as Limited Summon",
+      "target": "1 creature from your hand",
+      "value": "Limited Summon until end of battle",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "summonLimitedFromHand",
+      "params": {
+        "target": "1 creature from your hand",
+        "valueText": "Limited Summon until end of battle",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During battle"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZone": "HAND",
+        "maxCount": 1
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "133-E02",
+      "trigger": "AT_END_OF_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Battle ends"
+      },
+      "actionType": "SCHEDULE_RETURN_TO_HAND",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return Ambush Limited Summon to hand",
+      "target": "Creature summoned by Ambush",
+      "value": "Return to your hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "scheduleReturnToHand",
+      "params": {
+        "target": "Creature summoned by Ambush",
+        "valueText": "Return to your hand",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Battle ends"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

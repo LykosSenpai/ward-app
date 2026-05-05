@@ -1,0 +1,103 @@
+{
+  "id": "gen2_074_the_old_one",
+  "name": "The Old One",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "074",
+  "text": "When summoned, return all cards aside from this card on the field back to their original owner's deck. All players then shuffle and draw the same number of cards they sent to their deck.",
+  "effects": [
+    {
+      "id": "074-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "ON_SUMMON_CONDITION",
+        "text": "This card is summoned"
+      },
+      "actionType": "MOVE_CARDS",
+      "effectGroup": "Mass Return",
+      "actionText": "Return all cards aside from this card to owners' decks",
+      "target": "All other cards on the field",
+      "value": "Return to original owner's deck",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnCardsToOwnerDeck",
+      "params": {
+        "target": "All other cards on the field",
+        "valueText": "Return to original owner's deck",
+        "statChanges": [],
+        "condition": {
+          "type": "ON_SUMMON_CONDITION",
+          "text": "This card is summoned"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "excludeSource": true,
+        "zones": [
+          "FIELD"
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "074-E02",
+      "trigger": "AFTER_RETURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Cards were returned by The Old One"
+      },
+      "actionType": "DRAW_CARDS_VARIABLE",
+      "effectGroup": "Shuffle/Draw",
+      "actionText": "Each player shuffles and draws the same number of cards they sent",
+      "target": "All players",
+      "value": "Shuffle and draw same number sent to deck",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "drawCardsVariable",
+      "params": {
+        "target": "All players",
+        "valueText": "Shuffle and draw same number sent to deck",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Cards were returned by The Old One"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "drawCountSource": "CARDS_SENT_TO_DECK_BY_PLAYER"
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 12,
+  "speed": 4,
+  "hp": 100,
+  "attackName": "Rage Typhoon",
+  "attackDice": 5,
+  "modifier": 4
+}

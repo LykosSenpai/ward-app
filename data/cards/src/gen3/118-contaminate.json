@@ -1,0 +1,58 @@
+{
+  "id": "gen3_118_contaminate",
+  "name": "Contaminate",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "118",
+  "text": "Equip this card to your primary creature. Once per turn cycle the equipped creature receives 5 damage. When the equipped creature is killed by Atk damage, equip this card to the creature that killed it.",
+  "effects": [
+    {
+      "id": "118-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equip this card to your primary creature. Once per turn cycle the equipped creature receives 5 damage. When the equipped creature is killed by Atk damage, equip this card to the creature that killed it."
+      },
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "actionText": "Apply recurring damage",
+      "target": "Your primary creature",
+      "value": "Equip this card to your primary creature. Once per turn cycle the equipped creature receives 5 damage. When the equipped creature is killed by Atk damage, equip this card to the creature that killed it.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED",
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "reusableFunction": "applyDamageOverTime",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Equip this card to your primary creature. Once per turn cycle the equipped creature receives 5 damage. When the equipped creature is killed by Atk damage, equip this card to the creature that killed it.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equip this card to your primary creature. Once per turn cycle the equipped creature receives 5 damage. When the equipped creature is killed by Atk damage, equip this card to the creature that killed it."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED",
+          "tickTiming": "END_OF_COMBAT_PHASE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "notes": "Attach transfers when equipped creature is killed by attack damage.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Attach transfers when equipped creature is killed by attack damage.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

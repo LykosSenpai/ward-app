@@ -1,0 +1,101 @@
+{
+  "id": "gen1_049_curse",
+  "name": "Curse",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "049",
+  "text": "All creatures on your opponent's side of the field have their AL reduced to 1. This card supersedes other AL increases.",
+  "effects": [
+    {
+      "id": "049-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent controls creatures"
+      },
+      "actionType": "APPLY_STAT_SET_AURA",
+      "effectGroup": "Stat Set Aura",
+      "actionText": "Set AL to 1",
+      "target": "Opponent creatures",
+      "value": "AL = 1",
+      "duration": {
+        "text": "While field active",
+        "type": "WHILE_FIELD_ACTIVE"
+      },
+      "reusableFunction": "applyStatSetAura",
+      "params": {
+        "target": "Opponent creatures",
+        "valueText": "AL = 1",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "SET",
+            "value": 1,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent controls creatures"
+        },
+        "duration": {
+          "text": "While field active",
+          "type": "WHILE_FIELD_ACTIVE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Supersedes other AL increases. Final AL is capped at 12.",
+      "needsReview": false
+    },
+    {
+      "id": "049-E02",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "AL modifiers exist"
+      },
+      "actionType": "SUPPRESS_MODIFIER_LAYER",
+      "effectGroup": "Modifier Suppression",
+      "actionText": "Ignore other AL increases",
+      "target": "Opponent creatures",
+      "value": "Suppress AL increases",
+      "duration": {
+        "text": "While field active",
+        "type": "WHILE_FIELD_ACTIVE"
+      },
+      "reusableFunction": "applyModifierSuppression",
+      "params": {
+        "target": "Opponent creatures",
+        "valueText": "Suppress AL increases",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "AL modifiers exist"
+        },
+        "duration": {
+          "text": "While field active",
+          "type": "WHILE_FIELD_ACTIVE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs priority/layer system.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

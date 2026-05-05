@@ -1,0 +1,66 @@
+{
+  "id": "gen2_120_apocalypse",
+  "name": "Apocalypse",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "120",
+  "text": "All players must roll 1 die each turn. If the result of all dice match, all primary creatures receive 100 damage. If this effect occurs, send this card to the cemetery.",
+  "effects": [
+    {
+      "id": "120-E01",
+      "trigger": "EACH_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "All players roll 1 die each turn"
+      },
+      "actionType": "ROLL_DAMAGE_TABLE",
+      "effectGroup": "Apocalypse Roll",
+      "actionText": "Compare all player dice and resolve matching result",
+      "target": "All primary creatures",
+      "value": "If all players' D6 results match, all primary creatures receive 100 damage and this card goes to cemetery",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "rollDamageTable",
+      "params": {
+        "target": "All primary creatures",
+        "valueText": "If all players' D6 results match, all primary creatures receive 100 damage and this card goes to cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "All players roll 1 die each turn"
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "allPlayersRoll": true,
+        "ifAllMatch": [
+          {
+            "damageTo": "ALL_PRIMARY_CREATURES",
+            "amount": 100
+          },
+          {
+            "sendThisCardTo": "CEMETERY"
+          }
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

@@ -1,0 +1,55 @@
+{
+  "id": "gen1_029_blood_of_the_bat",
+  "name": "Blood of the Bat",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "029",
+  "text": "Heal the equipped creature for 1/2 of the Atk damage it inflicts.",
+  "effects": [
+    {
+      "id": "029-E01",
+      "trigger": "ON_EQUIPPED_CREATURE_DEALS_ATK_DAMAGE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature inflicts Atk damage"
+      },
+      "actionType": "HEAL_BY_DAMAGE_DEALT",
+      "effectGroup": "Healing",
+      "actionText": "Heal equipped creature from damage dealt",
+      "target": "Equipped creature",
+      "value": "Heal 1/2 Atk damage inflicted",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healByDamageDealt",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Heal 1/2 Atk damage inflicted",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature inflicts Atk damage"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "HEALING",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Use actual damage inflicted after reductions. Half values always round up.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

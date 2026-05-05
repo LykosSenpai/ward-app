@@ -1,0 +1,94 @@
+{
+  "id": "gen1_086_foolish_tricks",
+  "name": "Foolish Tricks",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "086",
+  "text": "Your opponent must return their primary creature and all of their magic cards on the field back to their hand. Your opponent must summon an AL 6 or lower creature to the field.",
+  "effects": [
+    {
+      "id": "086-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent has primary creature/magic cards"
+      },
+      "actionType": "MOVE_CARDS",
+      "effectGroup": "Mass Return",
+      "actionText": "Return opponent primary creature and magic cards to hand",
+      "target": "Opponent primary creature + opponent field magic",
+      "value": "Move to hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnCardsToHand",
+      "params": {
+        "target": "Opponent primary creature + opponent field magic",
+        "valueText": "Move to hand",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent has primary creature/magic cards"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "This clears opponent field state.",
+      "needsReview": false
+    },
+    {
+      "id": "086-E02",
+      "trigger": "AFTER_RETURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent must summon replacement"
+      },
+      "actionType": "FORCE_SUMMON_FROM_HAND",
+      "effectGroup": "Forced Summon",
+      "actionText": "Opponent summons AL 6 or lower creature",
+      "target": "Opponent hand/field",
+      "value": "Creature AL <= 6",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "forceSummonFromHand",
+      "params": {
+        "target": "Opponent hand/field",
+        "valueText": "Creature AL <= 6",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent must summon replacement"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Need handle no valid creature.",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

@@ -1,0 +1,94 @@
+{
+  "id": "gen1_113_judgement",
+  "name": "Judgement",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "113",
+  "text": "Return all primary creatures on the field to their original owner's hand. Each player must summon a creature of AL 6 or lower to the field.",
+  "effects": [
+    {
+      "id": "113-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Primary creatures on field"
+      },
+      "actionType": "MOVE_CARDS",
+      "effectGroup": "Mass Return",
+      "actionText": "Return all primary creatures to owner hand",
+      "target": "All primary creatures",
+      "value": "Move to owner hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnCardsToHand",
+      "params": {
+        "target": "All primary creatures",
+        "valueText": "Move to owner hand",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Primary creatures on field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "All players affected.",
+      "needsReview": false
+    },
+    {
+      "id": "113-E02",
+      "trigger": "AFTER_RETURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Players need replacement"
+      },
+      "actionType": "FORCE_SUMMON_FROM_HAND",
+      "effectGroup": "Forced Summon",
+      "actionText": "Each player summons creature AL 6 or lower",
+      "target": "Each player hand/field",
+      "value": "Creature AL <= 6",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "forceSummonFromHand",
+      "params": {
+        "target": "Each player hand/field",
+        "valueText": "Creature AL <= 6",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Players need replacement"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Need handle no valid creature.",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

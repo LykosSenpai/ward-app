@@ -1,0 +1,19 @@
+{
+  "id": "gen3_148_enhanced_orc",
+  "name": "Enhanced Orc",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "148",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Mechanical",
+  "armorLevel": 10,
+  "speed": 1,
+  "hp": 70,
+  "attackName": "Hell Cannon",
+  "attackDice": 4,
+  "modifier": 1
+}

@@ -1,0 +1,55 @@
+{
+  "id": "gen1_053_ghost_of_the_past",
+  "name": "Ghost of the Past",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "053",
+  "text": "Return a creature from your cemetery back to your hand.",
+  "effects": [
+    {
+      "id": "053-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature in your cemetery"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return creature to hand",
+      "target": "Your cemetery/hand",
+      "value": "1 creature",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnFromCemeteryToHand",
+      "params": {
+        "target": "Your cemetery/hand",
+        "valueText": "1 creature",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature in your cemetery"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Creature only.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

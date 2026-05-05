@@ -1,0 +1,123 @@
+{
+  "id": "gen2_094_giant_snake",
+  "name": "Giant Snake",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "094",
+  "text": "When this creature hits, the targeted creature cannot inflict Atk damage. Once per turn, they may roll 1 die. If the result is 3-6, this effect ends.",
+  "effects": [
+    {
+      "id": "094-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "HIT_LANDS",
+        "text": "This creature hits"
+      },
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status",
+      "actionText": "Prevent target from inflicting Atk damage",
+      "target": "Targeted creature",
+      "value": "Cannot inflict Atk damage until escape roll succeeds",
+      "duration": {
+        "text": "Until escape roll succeeds",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyStatusWithEscapeRoll",
+      "params": {
+        "target": "Targeted creature",
+        "valueText": "Cannot inflict Atk damage until escape roll succeeds",
+        "statChanges": [],
+        "condition": {
+          "type": "HIT_LANDS",
+          "text": "This creature hits"
+        },
+        "duration": {
+          "text": "Until escape roll succeeds",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "status": "CANNOT_INFLICT_ATK_DAMAGE",
+        "escapeRoll": {
+          "frequency": "ONCE_PER_TURN",
+          "dieSize": 6,
+          "successValues": [
+            3,
+            4,
+            5,
+            6
+          ]
+        }
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "094-E02",
+      "trigger": "ONCE_PER_TURN",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "text": "Roll 1 die; success 3-6"
+      },
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status Escape Roll",
+      "actionText": "Resolve affected creature escape roll",
+      "target": "Affected creature",
+      "value": "End effect on 3-6",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "applyStatusWithEscapeRoll",
+      "params": {
+        "target": "Affected creature",
+        "valueText": "End effect on 3-6",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "text": "Roll 1 die; success 3-6"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 5,
+  "speed": 12,
+  "hp": 60,
+  "attackName": "Bind",
+  "attackDice": 1,
+  "modifier": 2
+}

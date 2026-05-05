@@ -1,0 +1,95 @@
+{
+  "id": "gen3_146_constructed_pylon",
+  "name": "Constructed Pylon",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "146",
+  "text": "Play this card to your side of the field. This card fills 3 empty Infinite magic slots on your opponents side of the field. On your turn your opponent may roll 1 die, if 4-6 destroy this card.",
+  "effects": [
+    {
+      "id": "146-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this card to your side of the field. This card fills 3 empty Infinite magic slots on your opponents side of the field. On your turn your opponent may roll 1 die, if 4-6 destroy this card."
+      },
+      "actionType": "DESTROY_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "actionText": "Destroy a magic card",
+      "target": "Magic card(s) on the field",
+      "value": "Play this card to your side of the field. This card fills 3 empty Infinite magic slots on your opponents side of the field. On your turn your opponent may roll 1 die, if 4-6 destroy this card.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "destroyMagic",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Play this card to your side of the field. This card fills 3 empty Infinite magic slots on your opponents side of the field. On your turn your opponent may roll 1 die, if 4-6 destroy this card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this card to your side of the field. This card fills 3 empty Infinite magic slots on your opponents side of the field. On your turn your opponent may roll 1 die, if 4-6 destroy this card."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Occupies opponent empty Infinite slots while played to your side.",
+      "needsReview": true
+    },
+    {
+      "id": "146-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Play this card to your side of the field. This card fills 3 empty Infinite magic slots on your opponents side of the field. On your turn your opponent may roll 1 die, if 4-6 destroy this card."
+      },
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "actionText": "Resolve a D6 roll table",
+      "target": "Target / controller as specified by card text",
+      "value": "Play this card to your side of the field. This card fills 3 empty Infinite magic slots on your opponents side of the field. On your turn your opponent may roll 1 die, if 4-6 destroy this card.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "resolveRollTable",
+      "params": {
+        "target": "Target / controller as specified by card text",
+        "valueText": "Play this card to your side of the field. This card fills 3 empty Infinite magic slots on your opponents side of the field. On your turn your opponent may roll 1 die, if 4-6 destroy this card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Play this card to your side of the field. This card fills 3 empty Infinite magic slots on your opponents side of the field. On your turn your opponent may roll 1 die, if 4-6 destroy this card."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Occupies opponent empty Infinite slots while played to your side.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Occupies opponent empty Infinite slots while played to your side.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

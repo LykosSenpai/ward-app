@@ -1,0 +1,63 @@
+{
+  "id": "gen2_041_ghost_form",
+  "name": "Ghost Form",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "041",
+  "text": "The equipped creature cannot be damaged for 2 turn cycles.",
+  "effects": [
+    {
+      "id": "041-E01",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_DAMAGE_IMMUNITY",
+      "effectGroup": "Damage Immunity",
+      "actionText": "Prevent all damage to equipped creature",
+      "target": "Equipped creature",
+      "value": "Cannot be damaged",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyDamageImmunity",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Cannot be damaged",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Does not say this prevents non-damage effects. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

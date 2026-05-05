@@ -1,0 +1,19 @@
+{
+  "id": "gen1_128_giga",
+  "name": "Giga",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "128",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Dino",
+  "armorLevel": 12,
+  "speed": 10,
+  "hp": 130,
+  "attackName": "Giga Bite",
+  "attackDice": 5,
+  "modifier": 6
+}

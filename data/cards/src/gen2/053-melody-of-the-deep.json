@@ -1,0 +1,59 @@
+{
+  "id": "gen2_053_melody_of_the_deep",
+  "name": "Melody of the Deep",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "053",
+  "text": "Play this card from your hand when your opponent plays a magic card or lands a hit. Negate the magic card effect and send it to the cemetery, or negate the attack.",
+  "effects": [
+    {
+      "id": "053-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC_OR_ATTACK_HITS",
+      "condition": {
+        "type": "OPPONENT_PLAYS_MAGIC",
+        "text": "Opponent plays a magic card or lands a hit"
+      },
+      "actionType": "NEGATE_ATTACK_OR_MAGIC",
+      "effectGroup": "Negation",
+      "actionText": "Negate magic card effect and send it to cemetery, or negate the attack",
+      "target": "Opponent magic card or attack",
+      "value": "Negate selected legal event",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateAttackOrMagic",
+      "params": {
+        "target": "Opponent magic card or attack",
+        "valueText": "Negate selected legal event",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_PLAYS_MAGIC",
+          "text": "Opponent plays a magic card or lands a hit"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "modes": [
+          "NEGATE_MAGIC_TO_CEMETERY",
+          "NEGATE_ATTACK"
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

@@ -1,0 +1,95 @@
+{
+  "id": "gen3_109_negative",
+  "name": "Negative",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "109",
+  "text": "Discard 1 magic card from your hand and destroy 1 magic card on the field.",
+  "effects": [
+    {
+      "id": "109-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Discard 1 magic card from your hand and destroy 1 magic card on the field."
+      },
+      "actionType": "DESTROY_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "actionText": "Destroy a magic card",
+      "target": "Magic card(s) on the field",
+      "value": "Discard 1 magic card from your hand and destroy 1 magic card on the field.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "destroyMagic",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Discard 1 magic card from your hand and destroy 1 magic card on the field.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Discard 1 magic card from your hand and destroy 1 magic card on the field."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "109-E02",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Discard 1 magic card from your hand and destroy 1 magic card on the field."
+      },
+      "actionType": "DISCARD_CARD",
+      "effectGroup": "Discard",
+      "actionText": "Discard card as cost or effect",
+      "target": "Magic card(s) on the field",
+      "value": "Discard 1 magic card from your hand and destroy 1 magic card on the field.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "discardCard",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Discard 1 magic card from your hand and destroy 1 magic card on the field.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Discard 1 magic card from your hand and destroy 1 magic card on the field."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

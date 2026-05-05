@@ -1,0 +1,95 @@
+{
+  "id": "gen2_117_frenzy",
+  "name": "Frenzy",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "117",
+  "text": "All players must declare battle during their turn. If any player's creature is unable to battle due to another card effect, this card is destroyed.",
+  "effects": [
+    {
+      "id": "117-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Player has a turn"
+      },
+      "actionType": "APPLY_BATTLE_REQUIREMENT",
+      "effectGroup": "Battle Requirement",
+      "actionText": "Require battle declaration",
+      "target": "All players",
+      "value": "Must declare battle during their turn",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyBattleRequirement",
+      "params": {
+        "target": "All players",
+        "valueText": "Must declare battle during their turn",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Player has a turn"
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "mustDeclareBattle": true
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "117-E02",
+      "trigger": "WHEN_PLAYER_CANNOT_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Any player's creature is unable to battle due to another card effect"
+      },
+      "actionType": "DESTROY_SELF",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy this card",
+      "target": "This card",
+      "value": "Destroyed if a creature cannot battle due to another card effect",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroySelf",
+      "params": {
+        "target": "This card",
+        "valueText": "Destroyed if a creature cannot battle due to another card effect",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Any player's creature is unable to battle due to another card effect"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

@@ -1,0 +1,60 @@
+{
+  "id": "gen2_091_the_seer",
+  "name": "The Seer",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "091",
+  "text": "While this card is on the field, your opponent must show you their hand whenever you request.",
+  "effects": [
+    {
+      "id": "091-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "You request to see opponent hand"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Hand Reveal",
+      "actionText": "Reveal opponent hand to you",
+      "target": "Opponent hand",
+      "value": "Opponent must show hand on request",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "Opponent hand",
+        "valueText": "Opponent must show hand on request",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You request to see opponent hand"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "requestBased": true
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 11,
+  "speed": 3,
+  "hp": 50,
+  "attackName": "Piercing Gaze",
+  "attackDice": 2,
+  "modifier": 3
+}

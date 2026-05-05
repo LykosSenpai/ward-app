@@ -1,0 +1,66 @@
+{
+  "id": "gen2_016_natural_selection",
+  "name": "Natural Selection",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "016",
+  "text": "Only affects non-effect creatures of AL 5 or less. Atk: +7. Hit: +7.",
+  "effects": [
+    {
+      "id": "016-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature has no card effect and AL <= 5"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifiers",
+      "target": "Non-effect creatures with base/current AL 5 or less",
+      "value": "ATK_BONUS ADD 7; HIT_BONUS ADD 7",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Non-effect creatures with base/current AL 5 or less",
+        "valueText": "ATK_BONUS ADD 7; HIT_BONUS ADD 7",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 7
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 7
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature has no card effect and AL <= 5"
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field aura only applies to non-effect creatures of AL 5 or less.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

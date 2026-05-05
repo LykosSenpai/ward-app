@@ -1,0 +1,70 @@
+{
+  "id": "gen3_144_the_wither",
+  "name": "The Wither",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "144",
+  "text": "If this card attacks a creature that has the magic card \"Fear\" equipped to it, add Atk Dice Rolls +2 and Modifier +2.",
+  "effects": [
+    {
+      "id": "144-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "If this card attacks a creature that has the magic card \"Fear\" equipped to it, add Atk Dice Rolls +2 and Modifier +2."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Magic card(s) on the field",
+      "value": "If this card attacks a creature that has the magic card \"Fear\" equipped to it, add Atk Dice Rolls +2 and Modifier +2.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "If this card attacks a creature that has the magic card \"Fear\" equipped to it, add Atk Dice Rolls +2 and Modifier +2.",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 2
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD",
+            "value": 2
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "If this card attacks a creature that has the magic card \"Fear\" equipped to it, add Atk Dice Rolls +2 and Modifier +2."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 9,
+  "speed": 11,
+  "hp": 70,
+  "attackName": "Terror Gaze",
+  "attackDice": 3,
+  "modifier": 3
+}

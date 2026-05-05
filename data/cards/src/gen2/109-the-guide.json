@@ -1,0 +1,63 @@
+{
+  "id": "gen2_109_the_guide",
+  "name": "The Guide",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "109",
+  "text": "When a creature is sent to the cemetery, heal this card for 1/2 of the total HP of the sent creature.",
+  "effects": [
+    {
+      "id": "109-E01",
+      "trigger": "ON_CREATURE_SENT_TO_CEMETERY",
+      "condition": {
+        "type": "TEXT",
+        "text": "A creature is sent to the cemetery"
+      },
+      "actionType": "HEAL_BY_CEMETERY_EVENT",
+      "effectGroup": "Healing",
+      "actionText": "Heal this card by half of sent creature total HP",
+      "target": "This card",
+      "value": "Heal for 1/2 total HP of sent creature",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healByCemeteryEvent",
+      "params": {
+        "target": "This card",
+        "valueText": "Heal for 1/2 total HP of sent creature",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "A creature is sent to the cemetery"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null,
+        "fractionNumerator": 1,
+        "fractionDenominator": 2,
+        "rounding": "CEIL",
+        "basis": "SENT_CREATURE_TOTAL_HP"
+      },
+      "notes": "Half values round up per global rules.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 5,
+  "speed": 8,
+  "hp": 60,
+  "attackName": "Guiding Flame",
+  "attackDice": 2,
+  "modifier": 2
+}

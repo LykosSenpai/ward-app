@@ -1,0 +1,125 @@
+{
+  "id": "gen1_085_flame_of_the_infinite",
+  "name": "Flame of the Infinite",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "085",
+  "text": "All creatures under your control: AL: +5. SPD: +5. Atk: +5. Atk Dice Rolls: +1. Hit Dice Rolls: +1. If destroyed, +50 HP to your cemetery.",
+  "effects": [
+    {
+      "id": "085-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "All creatures under your control"
+      },
+      "actionType": "APPLY_FIELD_AURA_MODIFIERS",
+      "effectGroup": "Field Aura Stat/Dice Modifier",
+      "actionText": "Apply aura modifiers",
+      "target": "Your creatures",
+      "value": "AL +5; SPD +5; Atk +5; Atk Dice Rolls +1; Hit Dice Rolls +1",
+      "duration": {
+        "text": "While field active",
+        "type": "WHILE_FIELD_ACTIVE"
+      },
+      "reusableFunction": "applyFieldAuraModifiers",
+      "params": {
+        "target": "Your creatures",
+        "valueText": "AL +5; SPD +5; Atk +5; Atk Dice Rolls +1; Hit Dice Rolls +1",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 5,
+            "rounding": null
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 5,
+            "rounding": null
+          },
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 5,
+            "rounding": null
+          },
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1,
+            "rounding": null
+          },
+          {
+            "stat": "HIT_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "All creatures under your control"
+        },
+        "duration": {
+          "text": "While field active",
+          "type": "WHILE_FIELD_ACTIVE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Owner-scope field aura. Final AL is capped at 12.",
+      "needsReview": false
+    },
+    {
+      "id": "085-E02",
+      "trigger": "IF_DESTROYED",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card destroyed"
+      },
+      "actionType": "ADD_CEMETERY_HP_ADJUSTMENT",
+      "effectGroup": "Cemetery Bonus/Healing",
+      "actionText": "Add HP to your cemetery",
+      "target": "Your cemetery",
+      "value": "+50 HP",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "addCemeteryHpBonus",
+      "params": {
+        "target": "Your cemetery",
+        "valueText": "+50 HP",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card destroyed"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "HEALING",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Rule decision needed: cemetery HP as resource or heal all cemetery cards?",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card. Last sentence wording is unusual; verify against card if needed.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

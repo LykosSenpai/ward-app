@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.420Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_042_dragon_rage",
+  "effectId": "042-E03",
+  "title": "Dragon Rage makes both players draw 3 after destruction",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:53.713Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_042_dragon_rage",
+      "cardName": "Dragon Rage",
+      "cardType": "MAGIC",
+      "cardNumber": "042",
+      "generation": "1",
+      "rawText": "When your opponent plays a magic card or lands an attack, negate the attack/magic card effect, and destroy all magic cards on the field. Both players then draw 3 cards."
+    },
+    "effect": {
+      "effectId": "042-E03",
+      "trigger": "AFTER_DESTROY",
+      "actionType": "DRAW_CARDS",
+      "effectGroup": "Draw",
+      "target": "Both players",
+      "value": "Draw 3",
+      "durationText": "Instant",
+      "reusableFunction": "drawCards"
+    },
+    "title": "Dragon Rage makes both players draw 3 after destruction",
+    "summary": "After Dragon Rage negates and destroys magic, both players draw exactly 3 cards.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen1_042_dragon_rage"
+      ],
+      "player2Cards": [
+        "gen1_040_dragon_fire"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Ensure each player has at least 3 cards remaining in deck.",
+        "Record both players' hand and deck counts immediately before Dragon Rage resolves."
+      ]
+    },
+    "steps": [
+      "Player 2 plays Dragon Fire or another magic to trigger Dragon Rage.",
+      "Player 1 responds with Dragon Rage.",
+      "Resolve negation, destroy magic, then draw step.",
+      "Compare both players' hand and deck counts to pre-resolution counts."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Player 1 hand increased by 3",
+        "path": "players.player_1.hand.countDelta",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Player 2 hand increased by 3",
+        "path": "players.player_2.hand.countDelta",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Player 1 deck decreased by 3",
+        "path": "players.player_1.deck.countDelta",
+        "operator": "equals",
+        "value": -3
+      },
+      {
+        "label": "Player 2 deck decreased by 3",
+        "path": "players.player_2.deck.countDelta",
+        "operator": "equals",
+        "value": -3
+      }
+    ],
+    "manualVerification": [
+      "Confirm draw occurs after all magic destruction, not before.",
+      "Confirm both players draw even if triggering magic was negated."
+    ],
+    "riskNotes": [
+      "Count deltas require fixture/log support; otherwise compare snapshots manually."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported draw resolver; validate sequencing within multi-effect Lightning."
+    },
+    "regression": {
+      "fixtureName": "dragon-rage-both-players-draw-three",
+      "tags": [
+        "magic",
+        "lightning",
+        "draw",
+        "multi-effect"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_042_dragon_rage:042-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

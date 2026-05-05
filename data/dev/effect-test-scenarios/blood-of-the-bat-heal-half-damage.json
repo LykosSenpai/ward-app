@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.412Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_029_blood_of_the_bat",
+  "effectId": "029-E01",
+  "title": "Blood of the Bat heals half actual attack damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:14.910Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_029_blood_of_the_bat",
+      "cardName": "Blood of the Bat",
+      "cardType": "MAGIC",
+      "cardNumber": "029",
+      "generation": "1",
+      "rawText": "Heal the equipped creature for 1/2 of the Atk damage it inflicts."
+    },
+    "effect": {
+      "effectId": "029-E01",
+      "trigger": "ON_EQUIPPED_CREATURE_DEALS_ATK_DAMAGE",
+      "actionType": "HEAL_BY_DAMAGE_DEALT",
+      "effectGroup": "Healing",
+      "target": "Equipped creature",
+      "value": "Heal 1/2 Atk damage inflicted",
+      "durationText": "Instant",
+      "reusableFunction": "healByDamageDealt"
+    },
+    "title": "Blood of the Bat heals half actual attack damage",
+    "summary": "Equipped attacker deals deterministic damage and heals half actual inflicted damage rounded up.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_029_blood_of_the_bat",
+        "test_attacker_2dice_mod3_hp100"
+      ],
+      "player2Cards": [
+        "test_defender_al5_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            4,
+            4
+          ],
+          "label": "Attacker hits defender"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            3,
+            4
+          ],
+          "label": "Attack damage 7 plus modifier 3 equals 10"
+        }
+      ],
+      "notes": [
+        "Set equipped attacker current HP to 80 before battle. Equip Blood of the Bat to attacker."
+      ]
+    },
+    "steps": [
+      "Start combat with equipped attacker attacking defender.",
+      "Resolve forced hit and damage rolls.",
+      "Apply 10 actual attack damage to defender.",
+      "Resolve Blood of the Bat healing trigger."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Defender loses actual damage",
+        "path": "player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 90
+      },
+      {
+        "label": "Equipped attacker heals half rounded up",
+        "path": "player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 85
+      },
+      {
+        "label": "Heal does not exceed max HP",
+        "path": "player_1.primaryCreature.currentHp",
+        "operator": "lessThan",
+        "value": 101
+      }
+    ],
+    "manualVerification": [
+      "Repeat with odd actual damage 9 to confirm CEIL heals 5."
+    ],
+    "riskNotes": [
+      "No registered runtime route for HEAL_BY_DAMAGE_DEALT."
+    ],
+    "coverageSuggestion": {
+      "status": "BLOCKED_RUNTIME",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "Action type HEAL_BY_DAMAGE_DEALT currently has no runtime route."
+    },
+    "regression": {
+      "fixtureName": "blood-of-the-bat-heal-half-damage",
+      "tags": [
+        "magic",
+        "equip",
+        "healing",
+        "damage-dealt",
+        "blocked-runtime"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_029_blood_of_the_bat:029-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

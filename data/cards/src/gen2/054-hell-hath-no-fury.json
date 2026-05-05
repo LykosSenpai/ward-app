@@ -1,0 +1,99 @@
+{
+  "id": "gen2_054_hell_hath_no_fury",
+  "name": "Hell Hath No Fury",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "054",
+  "text": "Play this card from your hand when your opponent plays a Lightning card. Take away 1/2 of the remaining HP of their primary creature. This card cannot be negated.",
+  "effects": [
+    {
+      "id": "054-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is played when played"
+      },
+      "actionType": "SET_CAN_BE_NEGATED",
+      "effectGroup": "Negation Rule",
+      "actionText": "Card cannot be negated",
+      "target": "This card",
+      "value": "Cannot be negated",
+      "duration": {
+        "text": "While resolving",
+        "type": "WHILE_RESOLVING"
+      },
+      "reusableFunction": "setCanBeNegated",
+      "params": {
+        "target": "This card",
+        "valueText": "Cannot be negated",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is played when played"
+        },
+        "duration": {
+          "text": "While resolving",
+          "type": "WHILE_RESOLVING"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "canBeNegated": false
+      },
+      "notes": "Set response flags so this card cannot be negated during its response window.",
+      "needsReview": false
+    },
+    {
+      "id": "054-E02",
+      "trigger": "ON_OPPONENT_PLAYS_LIGHTNING",
+      "condition": {
+        "type": "OPPONENT_PLAYS_LIGHTNING",
+        "text": "Opponent plays a Lightning card"
+      },
+      "actionType": "DEAL_PERCENTAGE_DAMAGE",
+      "effectGroup": "HP Reduction",
+      "actionText": "Take away half of remaining HP",
+      "target": "Opponent primary creature",
+      "value": "Remove 1/2 remaining HP",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "dealPercentageDamage",
+      "params": {
+        "target": "Opponent primary creature",
+        "valueText": "Remove 1/2 remaining HP",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_PLAYS_LIGHTNING",
+          "text": "Opponent plays a Lightning card"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null,
+        "fractionNumerator": 1,
+        "fractionDenominator": 2,
+        "rounding": "CEIL",
+        "basis": "REMAINING_HP"
+      },
+      "notes": "Half values always round up per global rules.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

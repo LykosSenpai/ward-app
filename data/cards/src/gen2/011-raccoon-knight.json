@@ -1,0 +1,60 @@
+{
+  "id": "gen2_011_raccoon_knight",
+  "name": "Raccoon Knight",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "011",
+  "text": "This creature does not require a sacrifice to summon.",
+  "effects": [
+    {
+      "id": "011-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "ON_SUMMON_CONDITION",
+        "text": "This creature would be summoned"
+      },
+      "actionType": "APPLY_SUMMON_REQUIREMENT_OVERRIDE",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Override sacrifice requirement",
+      "target": "This creature",
+      "value": "No sacrifice required",
+      "duration": {
+        "text": "Before summon",
+        "type": "BEFORE_SUMMON"
+      },
+      "reusableFunction": "applySummonRequirementOverride",
+      "params": {
+        "target": "This creature",
+        "valueText": "No sacrifice required",
+        "statChanges": [],
+        "condition": {
+          "type": "ON_SUMMON_CONDITION",
+          "text": "This creature would be summoned"
+        },
+        "duration": {
+          "text": "Before summon",
+          "type": "BEFORE_SUMMON"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "requiredSacrifices": 0
+      },
+      "notes": "Raccoon Knight ignores normal AL sacrifice requirement.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Summon Requirement.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 12,
+  "speed": 12,
+  "hp": 30,
+  "attackName": "Scratch",
+  "attackDice": 4,
+  "modifier": 4
+}

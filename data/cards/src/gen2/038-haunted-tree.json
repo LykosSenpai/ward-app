@@ -1,0 +1,55 @@
+{
+  "id": "gen2_038_haunted_tree",
+  "name": "Haunted Tree",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "038",
+  "text": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and instead send it to the cemetery.",
+  "effects": [
+    {
+      "id": "038-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC",
+      "condition": {
+        "type": "OPPONENT_PLAYS_MAGIC",
+        "text": "Opponent plays a magic card"
+      },
+      "actionType": "NEGATE_MAGIC_AND_SEND_TO_CEMETERY",
+      "effectGroup": "Magic Negation",
+      "actionText": "Negate magic card effect and send it to cemetery",
+      "target": "Opponent magic card",
+      "value": "Negate effect and send to cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateMagicToCemetery",
+      "params": {
+        "target": "Opponent magic card",
+        "valueText": "Negate effect and send to cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_PLAYS_MAGIC",
+          "text": "Opponent plays a magic card"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

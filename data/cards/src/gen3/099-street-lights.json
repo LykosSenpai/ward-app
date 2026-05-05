@@ -1,0 +1,95 @@
+{
+  "id": "gen3_099_street_lights",
+  "name": "Street Lights",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "099",
+  "text": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field.",
+  "effects": [
+    {
+      "id": "099-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field."
+      },
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon or interact with a Limited Summon",
+      "target": "Limited Summon card(s)",
+      "value": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "limitedSummon",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs original-zone tracking and Limited Summon prevention while active.",
+      "needsReview": true
+    },
+    {
+      "id": "099-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field."
+      },
+      "actionType": "PREVENT_CARD_PLAY",
+      "effectGroup": "Play Restriction",
+      "actionText": "Prevent one or more card types from being played",
+      "target": "Limited Summon card(s)",
+      "value": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "preventCardPlay",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs original-zone tracking and Limited Summon prevention while active.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Needs original-zone tracking and Limited Summon prevention while active.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

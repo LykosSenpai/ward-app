@@ -1,0 +1,19 @@
+{
+  "id": "gen3_034_kappa_king",
+  "name": "Kappa King",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "034",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dinosaur",
+  "armorLevel": 11,
+  "speed": 1,
+  "hp": 100,
+  "attackName": "Shell Bash",
+  "attackDice": 4,
+  "modifier": 2
+}

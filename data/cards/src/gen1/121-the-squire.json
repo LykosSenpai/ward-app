@@ -1,0 +1,98 @@
+{
+  "id": "gen1_121_the_squire",
+  "name": "The Squire",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "121",
+  "text": "Summon this card to your side of the field as a Limited Summon creature. This card returns to being a magic card if it leaves the field.",
+  "effects": [
+    {
+      "id": "121-E01",
+      "trigger": "ON_PLAY_OR_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is used as limited summon creature"
+      },
+      "actionType": "SUMMON_SELF_AS_LIMITED_CREATURE",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon this card to your side as Limited Summon creature",
+      "target": "This card",
+      "value": "Limited Summon creature",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "summonSelfAsLimitedCreature",
+      "params": {
+        "target": "This card",
+        "valueText": "Limited Summon creature",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is used as limited summon creature"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Hybrid card behavior.",
+      "needsReview": true
+    },
+    {
+      "id": "121-E02",
+      "trigger": "ON_LEAVES_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card leaves field"
+      },
+      "actionType": "SET_CARD_TYPE",
+      "effectGroup": "Card Type Conversion",
+      "actionText": "Return to being magic card",
+      "target": "This card",
+      "value": "Magic card behavior restored",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "setCardType",
+      "params": {
+        "target": "This card",
+        "valueText": "Magic card behavior restored",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card leaves field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Hybrid card cleanup.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Card has creature stats, but effect states it returns to being a magic card if it leaves the field.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 5,
+  "speed": 5,
+  "hp": 10,
+  "attackName": "Rookie Swing",
+  "attackDice": 1,
+  "modifier": 1
+}

@@ -1,0 +1,98 @@
+{
+  "id": "gen3_051_deercrow",
+  "name": "Deercrow",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "051",
+  "text": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD.",
+  "effects": [
+    {
+      "id": "051-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD."
+      },
+      "actionType": "SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Apply custom summon requirement",
+      "target": "Magic card(s) on the field",
+      "value": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Custom summon handling and doubled rarity-based magic effects by stat category.",
+      "needsReview": true
+    },
+    {
+      "id": "051-E02",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD."
+      },
+      "actionType": "SHUFFLE_DECK",
+      "effectGroup": "Deck",
+      "actionText": "Shuffle deck",
+      "target": "Magic card(s) on the field",
+      "value": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "shuffleDeck",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Custom summon handling and doubled rarity-based magic effects by stat category.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Custom summon handling and doubled rarity-based magic effects by stat category.",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 12,
+  "speed": 6,
+  "hp": 120,
+  "attackName": "Antler Slice",
+  "attackDice": 6,
+  "modifier": 5
+}

@@ -1,0 +1,19 @@
+{
+  "id": "gen3_060_fish_boy",
+  "name": "Fish Boy",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "060",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 4,
+  "speed": 3,
+  "hp": 20,
+  "attackName": "Trident Impale",
+  "attackDice": 1,
+  "modifier": 3
+}

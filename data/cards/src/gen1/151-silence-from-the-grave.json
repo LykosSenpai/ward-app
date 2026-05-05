@@ -1,0 +1,202 @@
+{
+  "id": "gen1_151_silence_from_the_grave",
+  "name": "Silence From The Grave",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "151",
+  "text": "Discard 1 magic card to the cemetery to play this card. Destroy all magic cards on the field. For 2 turn cycles, your opponent cannot play magic cards and their creature effects are negated during your turn. The opponent may still respond with a valid Lightning card before this card resolves.",
+  "effects": [
+    {
+      "id": "151-E01",
+      "trigger": "ON_PLAY_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Discard 1 magic card to cemetery as cost"
+      },
+      "actionType": "PAY_DISCARD_MAGIC_COST",
+      "effectGroup": "Cost",
+      "actionText": "Discard magic card",
+      "target": "Your hand/cemetery",
+      "value": "Discard 1 magic card",
+      "duration": {
+        "text": "Before play",
+        "type": "TEXT"
+      },
+      "reusableFunction": "payDiscardMagicCost",
+      "params": {
+        "target": "Your hand/cemetery",
+        "valueText": "Discard 1 magic card",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Discard 1 magic card to cemetery as cost"
+        },
+        "duration": {
+          "text": "Before play",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Cost requirement.",
+      "needsReview": false
+    },
+    {
+      "id": "151-E02",
+      "trigger": "ON_PLAY_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Cost paid"
+      },
+      "actionType": "DESTROY_ALL_MAGIC",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy all magic cards",
+      "target": "All magic cards on field",
+      "value": "Destroy all",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyAllMagicCards",
+      "params": {
+        "target": "All magic cards on field",
+        "valueText": "Destroy all",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Cost paid"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Destroy all Magic cards on the field. Automated as all Magic Slot cleanup.",
+      "needsReview": false
+    },
+    {
+      "id": "151-E03",
+      "trigger": "ON_PLAY_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Silence From The Grave resolved"
+      },
+      "actionType": "APPLY_OPPONENT_MAGIC_PLAY_LOCK",
+      "effectGroup": "Play Restriction",
+      "actionText": "Opponent cannot play magic cards",
+      "target": "Opponent player",
+      "value": "Cannot play Standard, Infinite, Equip, Field, or Lightning Magic for 2 turn cycles after this card resolves",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyOpponentMagicPlayLock",
+      "params": {
+        "target": "Opponent player",
+        "valueText": "Cannot play Standard, Infinite, Equip, Field, or Lightning Magic for 2 turn cycles after this card resolves",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Silence From The Grave resolved"
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "allowInitialLightningResponseBeforeResolution": true,
+        "blockedMagicTypes": [
+          "STANDARD",
+          "INFINITE",
+          "LIGHTNING"
+        ],
+        "blockedMagicSubTypes": [
+          "EQUIP",
+          "FIELD",
+          "NONE"
+        ]
+      },
+      "notes": "Split handler. Opponent may respond before Silence resolves. After resolution, opponent cannot play any Magic cards, including Lightning, until the 2-turn-cycle lock expires.",
+      "needsReview": false
+    },
+    {
+      "id": "151-E04",
+      "trigger": "ON_PLAY_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Silence effect active"
+      },
+      "actionType": "APPLY_TURN_CONDITIONAL_OPPONENT_CREATURE_EFFECT_SUPPRESSION",
+      "effectGroup": "Effect Negation",
+      "actionText": "Negate opponent creature effects during your turns only",
+      "target": "Opponent creatures",
+      "value": "Opponent creature effects negated only during the activating player turns",
+      "duration": {
+        "text": "2 turn cycles during your turns",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyTurnConditionalOpponentCreatureEffectSuppression",
+      "params": {
+        "target": "Opponent creatures",
+        "valueText": "Opponent creature effects negated only during the activating player turns",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Silence effect active"
+        },
+        "duration": {
+          "text": "2 turn cycles during your turns",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "activeOnlyWhenSourcePlayerIsActive": true,
+        "unaffectedByMagicCreaturesIgnore": true,
+        "replacementDuringCombatSuppressedUntilOwnerTurnStart": true
+      },
+      "notes": "Split handler. Suppression turns on during the Silence controller turns and off during the opponent turns. Creatures already unaffected by Magic ignore it. Replacement creatures brought in during the Silence controller combat are suppressed until their owner Draw/start turn.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card. Printed card number is 151/150.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

@@ -1,0 +1,19 @@
+{
+  "id": "gen3_047_conqueror",
+  "name": "Conqueror",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "047",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 12,
+  "speed": 6,
+  "hp": 110,
+  "attackName": "Mighty Heave",
+  "attackDice": 4,
+  "modifier": 3
+}

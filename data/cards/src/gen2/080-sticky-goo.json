@@ -1,0 +1,108 @@
+{
+  "id": "gen2_080_sticky_goo",
+  "name": "Sticky Goo",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "080",
+  "text": "Play this card from your hand when your opponent lands a hit. Negate the attack and reduce the attacking creature's Modifier to +0 for 1 turn cycle.",
+  "effects": [
+    {
+      "id": "080-E01",
+      "trigger": "ON_OPPONENT_LANDS_HIT",
+      "condition": {
+        "type": "OPPONENT_LANDS_HIT",
+        "text": "Opponent lands a hit"
+      },
+      "actionType": "NEGATE_ATTACK",
+      "effectGroup": "Negation",
+      "actionText": "Negate the attack",
+      "target": "Opponent attack",
+      "value": "Negate the attack",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateAttack",
+      "params": {
+        "target": "Opponent attack",
+        "valueText": "Negate the attack",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_LANDS_HIT",
+          "text": "Opponent lands a hit"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "080-E02",
+      "trigger": "AFTER_NEGATE_ATTACK",
+      "condition": {
+        "type": "TEXT",
+        "text": "Sticky Goo negated an attack"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Set",
+      "actionText": "Set attacking creature Modifier to 0",
+      "target": "Attacking creature",
+      "value": "Modifier set to +0",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Attacking creature",
+        "valueText": "Modifier set to +0",
+        "statChanges": [
+          {
+            "stat": "MODIFIER",
+            "operation": "SET",
+            "value": 0
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Sticky Goo negated an attack"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Temporary stat set. Expires after 1 turn cycle. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

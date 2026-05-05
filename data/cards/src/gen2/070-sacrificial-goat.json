@@ -1,0 +1,64 @@
+{
+  "id": "gen2_070_sacrificial_goat",
+  "name": "Sacrificial Goat",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "070",
+  "text": "This creature counts as 2 sacrifices while on the field or in your hand.",
+  "effects": [
+    {
+      "id": "070-E01",
+      "trigger": "STATIC_RULE",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature is used as a sacrifice"
+      },
+      "actionType": "APPLY_SACRIFICE_VALUE",
+      "effectGroup": "Sacrifice Value",
+      "actionText": "Treat as 2 sacrifices",
+      "target": "This creature",
+      "value": "Counts as 2 sacrifices",
+      "duration": {
+        "text": "While on field or in hand",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applySacrificeValue",
+      "params": {
+        "target": "This creature",
+        "valueText": "Counts as 2 sacrifices",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature is used as a sacrifice"
+        },
+        "duration": {
+          "text": "While on field or in hand",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "sacrificeValue": 2,
+        "zones": [
+          "FIELD",
+          "HAND"
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 1,
+  "speed": 1,
+  "hp": 30,
+  "attackName": "Bleat",
+  "attackDice": 1,
+  "modifier": 0
+}

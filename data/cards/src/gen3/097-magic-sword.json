@@ -1,0 +1,106 @@
+{
+  "id": "gen3_097_magic_sword",
+  "name": "Magic Sword",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "097",
+  "text": "On equip, heal this creature 10 HP. Atk: +2. Hit: +2.",
+  "effects": [
+    {
+      "id": "097-E01",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "TEXT",
+        "text": "On equip, heal this creature 10 HP. Atk: +2. Hit: +2."
+      },
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "actionText": "Heal a creature or apply lifesteal",
+      "target": "Equipped creature",
+      "value": "On equip, heal this creature 10 HP. Atk: +2. Hit: +2.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "heal",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "On equip, heal this creature 10 HP. Atk: +2. Hit: +2.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "On equip, heal this creature 10 HP. Atk: +2. Hit: +2."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "097-E02",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "TEXT",
+        "text": "On equip, heal this creature 10 HP. Atk: +2. Hit: +2."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "On equip, heal this creature 10 HP. Atk: +2. Hit: +2.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "On equip, heal this creature 10 HP. Atk: +2. Hit: +2.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 2
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 2
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "On equip, heal this creature 10 HP. Atk: +2. Hit: +2."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

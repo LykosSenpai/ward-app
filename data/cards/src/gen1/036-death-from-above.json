@@ -1,0 +1,63 @@
+{
+  "id": "gen1_036_death_from_above",
+  "name": "Death From Above",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "036",
+  "text": "For 1 turn cycle, this card allows you to hit your target, regardless of dice roll.",
+  "effects": [
+    {
+      "id": "036-E01",
+      "trigger": "ON_PLAY_FIELD",
+      "condition": {
+        "type": "FIELD_CARD_RESOLVES",
+        "text": "Field card resolves"
+      },
+      "actionType": "APPLY_TEMPORARY_HIT_OVERRIDE",
+      "effectGroup": "Hit Override",
+      "actionText": "Allow hit regardless of dice roll",
+      "target": "Your target/your attacks",
+      "value": "Auto-hit target",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyTemporaryHitOverride",
+      "params": {
+        "target": "Your target/your attacks",
+        "valueText": "Auto-hit target",
+        "statChanges": [],
+        "condition": {
+          "type": "FIELD_CARD_RESOLVES",
+          "text": "Field card resolves"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs duration and owner scope. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

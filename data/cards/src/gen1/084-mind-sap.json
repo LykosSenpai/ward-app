@@ -1,0 +1,94 @@
+{
+  "id": "gen1_084_mind_sap",
+  "name": "Mind Sap",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "084",
+  "text": "At any point during the game, play this card from your hand. Negate the equipped creature's effects. While equipped, this card acts as an Infinite equip magic card.",
+  "effects": [
+    {
+      "id": "084-E01",
+      "trigger": "ANY_TIME_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Any point during game"
+      },
+      "actionType": "APPLY_CREATURE_EFFECT_NEGATION",
+      "effectGroup": "Effect Negation",
+      "actionText": "Negate equipped creature effects",
+      "target": "Equipped creature",
+      "value": "Effects negated",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyCreatureEffectNegation",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Effects negated",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Any point during game"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Becomes infinite equip magic card while equipped.",
+      "needsReview": false
+    },
+    {
+      "id": "084-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "After activation"
+      },
+      "actionType": "SET_TEMPORARY_CARD_BEHAVIOR",
+      "effectGroup": "Card Type Conversion",
+      "actionText": "Acts as Infinite equip magic card",
+      "target": "This card",
+      "value": "Infinite equip behavior",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "setTemporaryCardBehavior",
+      "params": {
+        "target": "This card",
+        "valueText": "Infinite equip behavior",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "After activation"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Card starts lightning but becomes equip.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Lightning card that becomes/acts as an Infinite equip magic card while equipped.",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

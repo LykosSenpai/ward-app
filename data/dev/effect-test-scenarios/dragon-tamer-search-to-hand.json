@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.404Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_015_dragon_tamer",
+  "effectId": "015-E01",
+  "title": "Dragon Tamer searches Dragon to hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:11:52.834Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_015_dragon_tamer",
+      "cardName": "Dragon Tamer",
+      "cardType": "MAGIC",
+      "cardNumber": "015",
+      "generation": "1",
+      "rawText": "Search your deck for 1 creature that has “Dragon” in its name or is Dragon-type. Place it into your hand (Shuffle)."
+    },
+    "effect": {
+      "effectId": "015-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SEARCH_DECK_TO_HAND",
+      "effectGroup": "Deck Search",
+      "target": "Your deck/hand",
+      "value": "1 creature with Dragon in name or Dragon type",
+      "durationText": "Instant",
+      "reusableFunction": "searchDeckToHand"
+    },
+    "title": "Dragon Tamer searches Dragon to hand",
+    "summary": "Verify standard magic searches deck for one Dragon name/type creature, adds to hand, and shuffles deck.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_015_dragon_tamer",
+        "gen1_001_blue_dragon"
+      ],
+      "player2Cards": [
+        "gen1_006_hafling"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place Dragon Tamer in player_1 hand and Blue Dragon in player_1 deck before play. Include non-Dragon cards in deck to confirm filtering."
+      ]
+    },
+    "steps": [
+      "Play Dragon Tamer from hand.",
+      "When prompted, select Blue Dragon from deck.",
+      "Resolve search.",
+      "Inspect hand, deck, cemetery, and shuffle marker/order if exposed."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Blue Dragon moved to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "gen1_001_blue_dragon"
+      },
+      {
+        "label": "Blue Dragon removed from deck",
+        "path": "player_1.deck",
+        "operator": "notEquals",
+        "value": "gen1_001_blue_dragon"
+      },
+      {
+        "label": "Dragon Tamer in cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_015_dragon_tamer"
+      },
+      {
+        "label": "Deck was shuffled",
+        "path": "game.events",
+        "operator": "contains",
+        "value": "SHUFFLE_DECK"
+      }
+    ],
+    "manualVerification": [
+      "Confirm prompt filters by creature with Dragon in name or Dragon type only.",
+      "Test no-match deck case separately if supported."
+    ],
+    "riskNotes": [
+      "Shuffle may be non-deterministic; assert event rather than exact deck order."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported prompted resolver; validate filtering and zone moves."
+    },
+    "regression": {
+      "fixtureName": "dragon-tamer-search-to-hand",
+      "tags": [
+        "magic",
+        "deck-search",
+        "zone-move"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_015_dragon_tamer:015-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

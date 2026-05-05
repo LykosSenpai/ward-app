@@ -1,0 +1,56 @@
+{
+  "id": "gen3_086_frost_wyrms",
+  "name": "Frost Wyrms",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "086",
+  "text": "The equipped creature's SPD and base Modifier are changed to 0. The equipped creature cannot be used as a sacrifice.",
+  "effects": [
+    {
+      "id": "086-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "The equipped creature's SPD and base Modifier are changed to 0. The equipped creature cannot be used as a sacrifice."
+      },
+      "actionType": "CHANGE_CREATURE_TYPE",
+      "effectGroup": "Type Change",
+      "actionText": "Change creature type",
+      "target": "Equipped creature",
+      "value": "The equipped creature's SPD and base Modifier are changed to 0. The equipped creature cannot be used as a sacrifice.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "changeCreatureType",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "The equipped creature's SPD and base Modifier are changed to 0. The equipped creature cannot be used as a sacrifice.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "The equipped creature's SPD and base Modifier are changed to 0. The equipped creature cannot be used as a sacrifice."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

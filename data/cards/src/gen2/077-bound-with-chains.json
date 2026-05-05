@@ -1,0 +1,57 @@
+{
+  "id": "gen2_077_bound_with_chains",
+  "name": "Bound With Chains",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "077",
+  "text": "Players cannot remove cards from their cemetery.",
+  "effects": [
+    {
+      "id": "077-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "A player would remove a card from cemetery"
+      },
+      "actionType": "APPLY_ZONE_RESTRICTION",
+      "effectGroup": "Zone Restriction",
+      "actionText": "Prevent cemetery removal",
+      "target": "All players' cemeteries",
+      "value": "Players cannot remove cards from cemetery",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyCemeteryRestriction",
+      "params": {
+        "target": "All players' cemeteries",
+        "valueText": "Players cannot remove cards from cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "A player would remove a card from cemetery"
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "zone": "CEMETERY",
+        "allowedRemoval": false
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

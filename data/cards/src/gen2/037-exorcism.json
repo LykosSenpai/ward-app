@@ -1,0 +1,56 @@
+{
+  "id": "gen2_037_exorcism",
+  "name": "Exorcism",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "037",
+  "text": "All creatures inflict 2x Atk damage to Demon-type creatures, or creatures with \"Demon\" in their name on the field.",
+  "effects": [
+    {
+      "id": "037-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target is Demon-type or name contains \"Demon\""
+      },
+      "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
+      "effectGroup": "Damage Multiplier Aura",
+      "actionText": "Multiply Atk damage",
+      "target": "Demon-type creatures or creatures with \"Demon\" in name",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplierAura",
+      "params": {
+        "target": "Demon-type creatures or creatures with \"Demon\" in name",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target is Demon-type or name contains \"Demon\""
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 2
+      },
+      "notes": "Field aura damage multiplier.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

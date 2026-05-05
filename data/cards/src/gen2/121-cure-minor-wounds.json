@@ -1,0 +1,58 @@
+{
+  "id": "gen2_121_cure_minor_wounds",
+  "name": "Cure Minor Wounds",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "121",
+  "text": "During battle, play this card from your hand. Roll 2 dice and heal a creature the result of the dice.",
+  "effects": [
+    {
+      "id": "121-E01",
+      "trigger": "DURING_BATTLE_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "During battle"
+      },
+      "actionType": "HEAL_BY_ROLL",
+      "effectGroup": "Healing",
+      "actionText": "Play from hand, roll 2 dice, heal a creature by total",
+      "target": "A creature",
+      "value": "Roll 2 dice and heal result",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healByRoll",
+      "params": {
+        "target": "A creature",
+        "valueText": "Roll 2 dice and heal result",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During battle"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dice": 2,
+        "dieSize": 6,
+        "healAmount": "ROLL_TOTAL"
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

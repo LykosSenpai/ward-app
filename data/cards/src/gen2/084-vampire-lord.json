@@ -1,0 +1,104 @@
+{
+  "id": "gen2_084_vampire_lord",
+  "name": "Vampire Lord",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "084",
+  "text": "During your turn, you may send 1 creature from your hand to your cemetery. Heal this card 2x the amount of the total HP of the sent creature.",
+  "effects": [
+    {
+      "id": "084-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "You choose creature in hand"
+      },
+      "actionType": "PAY_CARD_COST",
+      "effectGroup": "Cost",
+      "actionText": "Send selected creature from hand to cemetery",
+      "target": "1 creature from your hand",
+      "value": "Send to your cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "payCardCost",
+      "params": {
+        "target": "1 creature from your hand",
+        "valueText": "Send to your cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You choose creature in hand"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZone": "HAND",
+        "toZone": "CEMETERY",
+        "cardKind": "CREATURE",
+        "count": 1
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "084-E02",
+      "trigger": "AFTER_COST_PAID",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature sent to cemetery by Life Drain"
+      },
+      "actionType": "HEAL_BY_SENT_CREATURE_HP",
+      "effectGroup": "Healing",
+      "actionText": "Heal this card based on sent creature HP",
+      "target": "This card",
+      "value": "Heal 2x sent creature total HP",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healBySentCreatureHp",
+      "params": {
+        "target": "This card",
+        "valueText": "Heal 2x sent creature total HP",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature sent to cemetery by Life Drain"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 2,
+        "basis": "SENT_CREATURE_TOTAL_HP"
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 10,
+  "speed": 11,
+  "hp": 100,
+  "attackName": "Life Drain",
+  "attackDice": 4,
+  "modifier": 4
+}

@@ -1,0 +1,133 @@
+{
+  "id": "gen1_042_dragon_rage",
+  "name": "Dragon Rage",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "042",
+  "text": "When your opponent plays a magic card or lands an attack, negate the attack/magic card effect, and destroy all magic cards on the field. Both players then draw 3 cards.",
+  "effects": [
+    {
+      "id": "042-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC_OR_ATTACK_HITS",
+      "condition": {
+        "type": "OPPONENT_PLAYS_MAGIC",
+        "text": "Opponent plays magic or lands attack"
+      },
+      "actionType": "NEGATE_ATTACK_OR_MAGIC",
+      "effectGroup": "Negation",
+      "actionText": "Negate attack or magic effect",
+      "target": "Triggering attack/magic",
+      "value": "Negated",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateAttackOrMagic",
+      "params": {
+        "target": "Triggering attack/magic",
+        "valueText": "Negated",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_PLAYS_MAGIC",
+          "text": "Opponent plays magic or lands attack"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Lightning response.",
+      "needsReview": false
+    },
+    {
+      "id": "042-E02",
+      "trigger": "AFTER_NEGATION",
+      "condition": {
+        "type": "TEXT",
+        "text": "Dragon Rage resolved"
+      },
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy all magic cards",
+      "target": "All magic cards on field",
+      "value": "Destroy all",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyMagicCards",
+      "params": {
+        "target": "All magic cards on field",
+        "valueText": "Destroy all",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Dragon Rage resolved"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Applies after negation.",
+      "needsReview": false
+    },
+    {
+      "id": "042-E03",
+      "trigger": "AFTER_DESTROY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Dragon Rage resolved"
+      },
+      "actionType": "DRAW_CARDS",
+      "effectGroup": "Draw",
+      "actionText": "Both players draw cards",
+      "target": "Both players",
+      "value": "Draw 3",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "drawCards",
+      "params": {
+        "target": "Both players",
+        "valueText": "Draw 3",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Dragon Rage resolved"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Draw after all magic destroyed.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

@@ -1,0 +1,71 @@
+{
+  "id": "gen2_028_legendary_armor",
+  "name": "Legendary Armor",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "028",
+  "text": "Atk: +6. AL: +6. Hit Dice Rolls: +1.",
+  "effects": [
+    {
+      "id": "028-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifiers",
+      "target": "Equipped creature",
+      "value": "ATK_BONUS ADD 6; AL ADD 6; HIT_DICE_ROLLS ADD 1",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "ATK_BONUS ADD 6; AL ADD 6; HIT_DICE_ROLLS ADD 1",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 6
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 6
+          },
+          {
+            "stat": "HIT_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Basic stat/dice modifier.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

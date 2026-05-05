@@ -1,0 +1,103 @@
+{
+  "id": "gen2_100_wolf_knight",
+  "name": "Wolf Knight",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "100",
+  "text": "During your turn, you may summon a creature with \"Were\" in its name from your hand as a Limited Summon. Return them to your hand if this card leaves the field, changes control, or this effect is negated.",
+  "effects": [
+    {
+      "id": "100-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature in hand has \"Were\" in its name"
+      },
+      "actionType": "SUMMON_LIMITED_CREATURE_FROM_HAND",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon Were-named creature as Limited Summon from hand",
+      "target": "Creature with \"Were\" in name from your hand",
+      "value": "Limited Summon",
+      "duration": {
+        "text": "While source remains active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "summonLimitedFromHand",
+      "params": {
+        "target": "Creature with \"Were\" in name from your hand",
+        "valueText": "Limited Summon",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature in hand has \"Were\" in its name"
+        },
+        "duration": {
+          "text": "While source remains active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZone": "HAND",
+        "match": {
+          "nameContains": "Were"
+        },
+        "maxCount": 1
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "100-E02",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "condition": {
+        "type": "SOURCE_INVALIDATED",
+        "text": "This card leaves field, changes control, or effect is negated"
+      },
+      "actionType": "RETURN_LINKED_SUMMON",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return linked Limited Summon to hand",
+      "target": "Linked Limited Summon",
+      "value": "Return to your hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedSummon",
+      "params": {
+        "target": "Linked Limited Summon",
+        "valueText": "Return to your hand",
+        "statChanges": [],
+        "condition": {
+          "type": "SOURCE_INVALIDATED",
+          "text": "This card leaves field, changes control, or effect is negated"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 11,
+  "speed": 11,
+  "hp": 50,
+  "attackName": "Howling Slice",
+  "attackDice": 2,
+  "modifier": 4
+}

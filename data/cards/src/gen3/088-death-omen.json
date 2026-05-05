@@ -1,0 +1,56 @@
+{
+  "id": "gen3_088_death_omen",
+  "name": "Death Omen",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "088",
+  "text": "The primary creature with the lowest HP receives 5 damage at the beginning of each player's turn.",
+  "effects": [
+    {
+      "id": "088-E01",
+      "trigger": "BEGINNING_OF_EACH_PLAYER_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "The primary creature with the lowest HP receives 5 damage at the beginning of each player's turn."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Target creature",
+      "value": "The primary creature with the lowest HP receives 5 damage at the beginning of each player's turn.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Target creature",
+        "valueText": "The primary creature with the lowest HP receives 5 damage at the beginning of each player's turn.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "The primary creature with the lowest HP receives 5 damage at the beginning of each player's turn."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "BEGINNING_OF_TURN"
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

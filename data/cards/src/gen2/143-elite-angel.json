@@ -1,0 +1,19 @@
+{
+  "id": "gen2_143_elite_angel",
+  "name": "Elite Angel",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "143",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 7,
+  "speed": 7,
+  "hp": 70,
+  "attackName": "Angelic Smite",
+  "attackDice": 2,
+  "modifier": 4
+}

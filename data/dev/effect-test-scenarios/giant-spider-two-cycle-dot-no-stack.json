@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.407Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_019_giant_spider",
+  "effectId": "019-E01",
+  "title": "Giant Spider hit applies non-stacking 2-cycle DOT",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:12:37.138Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_019_giant_spider",
+      "cardName": "Giant Spider",
+      "cardType": "CREATURE",
+      "cardNumber": "019",
+      "generation": "1",
+      "rawText": "When this creature hits, the targeted creature receives 10 damage once per turn cycle, for 2 turn cycles."
+    },
+    "effect": {
+      "effectId": "019-E01",
+      "trigger": "ON_HIT",
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "target": "Target creature",
+      "value": "10 damage per turn cycle",
+      "durationText": "2 turn cycles",
+      "reusableFunction": "applyDamageOverTime"
+    },
+    "title": "Giant Spider hit applies non-stacking 2-cycle DOT",
+    "summary": "On hit, target receives 10 DOT at end of Combat for two turn cycles and duplicate DOT should not stack.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_019_giant_spider"
+      ],
+      "player2Cards": [
+        "test_defender_al_4_hp_60"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            2
+          ],
+          "label": "Spider hit lands"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "normal attack damage"
+        }
+      ],
+      "notes": [
+        "Use post-first-turn-cycle state.",
+        "Player_1 Giant Spider attacks player_2 primary creature."
+      ]
+    },
+    "steps": [
+      "Resolve Spider attack with forced hit.",
+      "Verify DOT status is applied to target.",
+      "Advance to end of Combat and process DOT tick.",
+      "Advance one full turn cycle and process second DOT tick.",
+      "Attempt another Spider hit while first DOT is active to verify no duplicate stack if supported."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "DOT applied",
+        "path": "player_2.primaryCreature.statuses",
+        "operator": "contains",
+        "value": "DAMAGE_OVER_TIME:10"
+      },
+      {
+        "label": "First DOT tick deals 10",
+        "path": "combatEndEffects.damageApplied",
+        "operator": "contains",
+        "value": "10"
+      },
+      {
+        "label": "Second DOT tick deals 10",
+        "path": "subsequentCombatEndEffects.damageApplied",
+        "operator": "contains",
+        "value": "10"
+      },
+      {
+        "label": "DOT removed after duration",
+        "path": "player_2.primaryCreature.statuses",
+        "operator": "notContains",
+        "value": "DAMAGE_OVER_TIME:10"
+      },
+      {
+        "label": "DOT does not stack",
+        "path": "player_2.primaryCreature.activeDotCount",
+        "operator": "equals",
+        "value": 1
+      }
+    ],
+    "manualVerification": [
+      "Confirm DOT tick timing is end of Combat Phase, not immediately on hit unless the engine intentionally logs the first tick there."
+    ],
+    "riskNotes": [
+      "If duplicate hit setup is cumbersome, record non-stack check as manual."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported route; validates trigger, tick timing, duration, and stack rule."
+    },
+    "regression": {
+      "fixtureName": "giant-spider-two-cycle-dot-no-stack",
+      "tags": [
+        "creature",
+        "on-hit",
+        "dot",
+        "duration"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_019_giant_spider:019-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

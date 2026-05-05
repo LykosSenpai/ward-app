@@ -1,0 +1,74 @@
+{
+  "id": "gen2_050_ignitus",
+  "name": "Ignitus",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "050",
+  "text": "Roll 1 die to inflict damage on a creature. If the result is: 1-5: 15 damage. 6: 30 damage.",
+  "effects": [
+    {
+      "id": "050-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Roll 1 die"
+      },
+      "actionType": "ROLL_DAMAGE_TABLE",
+      "effectGroup": "Direct Damage",
+      "actionText": "Roll die and deal table damage",
+      "target": "Target creature",
+      "value": "Roll damage table",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "rollDamageTable",
+      "params": {
+        "target": "Target creature",
+        "valueText": "Roll damage table",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Roll 1 die"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "table": [
+          {
+            "results": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "damage": 15
+          },
+          {
+            "results": [
+              6
+            ],
+            "damage": 30
+          }
+        ]
+      },
+      "notes": "Damage table uses a D6 result.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Rarity visually unclear; set to Common from visible grey/no rarity marker.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

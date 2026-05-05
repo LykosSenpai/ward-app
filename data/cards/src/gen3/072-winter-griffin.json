@@ -1,0 +1,59 @@
+{
+  "id": "gen3_072_winter_griffin",
+  "name": "Winter Griffin",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "072",
+  "text": "Once per battle, this creature may re-roll 1 of its Atk Dice Rolls and 1 of its Hit Dice Rolls.",
+  "effects": [
+    {
+      "id": "072-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Once per battle, this creature may re-roll 1 of its Atk Dice Rolls and 1 of its Hit Dice Rolls."
+      },
+      "actionType": "REROLL_DICE",
+      "effectGroup": "Dice Reroll",
+      "actionText": "Allow or force a dice reroll",
+      "target": "This creature",
+      "value": "Once per battle, this creature may re-roll 1 of its Atk Dice Rolls and 1 of its Hit Dice Rolls.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "rerollDice",
+      "params": {
+        "target": "This creature",
+        "valueText": "Once per battle, this creature may re-roll 1 of its Atk Dice Rolls and 1 of its Hit Dice Rolls.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Once per battle, this creature may re-roll 1 of its Atk Dice Rolls and 1 of its Hit Dice Rolls."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 8,
+  "speed": 8,
+  "hp": 80,
+  "attackName": "Frost Bite",
+  "attackDice": 2,
+  "modifier": 5
+}

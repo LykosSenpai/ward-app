@@ -1,0 +1,19 @@
+{
+  "id": "gen3_068_stego",
+  "name": "Stego",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "068",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dinosaur",
+  "armorLevel": 6,
+  "speed": 3,
+  "hp": 50,
+  "attackName": "Spiked Tail",
+  "attackDice": 1,
+  "modifier": 5
+}

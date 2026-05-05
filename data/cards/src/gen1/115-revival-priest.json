@@ -1,0 +1,133 @@
+{
+  "id": "gen1_115_revival_priest",
+  "name": "Revival Priest",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "115",
+  "text": "Summon a creature from your cemetery to the field. If this card is removed from the field, send the creature back to the cemetery. If you have a creature on the field already, send it back to your hand.",
+  "effects": [
+    {
+      "id": "115-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature in your cemetery"
+      },
+      "actionType": "SUMMON_FROM_CEMETERY_AND_EQUIP",
+      "effectGroup": "Summon/Equip",
+      "actionText": "Summon creature from cemetery and equip this card",
+      "target": "Creature from cemetery",
+      "value": "Summon + equip link",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "summonFromCemeteryAndEquip",
+      "params": {
+        "target": "Creature from cemetery",
+        "valueText": "Summon + equip link",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature in your cemetery"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "If you have a creature already, send it to hand first.",
+      "needsReview": false
+    },
+    {
+      "id": "115-E02",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "You already have a creature on field"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return your existing creature to hand",
+      "target": "Your current creature",
+      "value": "Move to hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnCreatureToHand",
+      "params": {
+        "target": "Your current creature",
+        "valueText": "Move to hand",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You already have a creature on field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Pre-summon cleanup.",
+      "needsReview": false
+    },
+    {
+      "id": "115-E03",
+      "trigger": "ON_CARD_REMOVED_FROM_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card removed from field"
+      },
+      "actionType": "RETURN_LINKED_SUMMON",
+      "effectGroup": "Zone Movement",
+      "actionText": "Send summoned creature back to cemetery",
+      "target": "Linked summoned creature",
+      "value": "Move to cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedSummon",
+      "params": {
+        "target": "Linked summoned creature",
+        "valueText": "Move to cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card removed from field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Source-linked cleanup.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

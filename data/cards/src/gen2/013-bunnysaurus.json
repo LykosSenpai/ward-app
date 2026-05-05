@@ -1,0 +1,100 @@
+{
+  "id": "gen2_013_bunnysaurus",
+  "name": "Bunnysaurus",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "013",
+  "text": "While on the field, negate an attack against this card, or negate a magic card when it is played. This effect can only be used once while this card is on the field.",
+  "effects": [
+    {
+      "id": "013-E01",
+      "trigger": "ON_ATTACK_TARGETS_THIS_CARD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is on the field and has not used its once-per-field effect"
+      },
+      "actionType": "ADD_ONCE_PER_FIELD_SHIELD",
+      "effectGroup": "Once Per Field Negation",
+      "actionText": "Negate attack against this card",
+      "target": "This card",
+      "value": "Negate 1 attack against this card",
+      "duration": {
+        "text": "Until used",
+        "type": "UNTIL_CONSUMED"
+      },
+      "reusableFunction": "addOncePerFieldShield",
+      "params": {
+        "target": "This card",
+        "valueText": "Negate 1 attack against this card",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is on the field and has not used its once-per-field effect"
+        },
+        "duration": {
+          "text": "Until used",
+          "type": "UNTIL_CONSUMED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "sharedUseKey": "BUNNYSAURUS_ONCE_PER_FIELD"
+      },
+      "notes": "Shares the same once-per-field use counter with the magic negation option.",
+      "needsReview": false
+    },
+    {
+      "id": "013-E02",
+      "trigger": "ON_MAGIC_CARD_PLAYED",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is on the field and has not used its once-per-field effect"
+      },
+      "actionType": "ADD_ONCE_PER_FIELD_SHIELD",
+      "effectGroup": "Once Per Field Negation",
+      "actionText": "Negate magic card when played",
+      "target": "Magic card being played",
+      "value": "Negate 1 magic card when played",
+      "duration": {
+        "text": "Until used",
+        "type": "UNTIL_CONSUMED"
+      },
+      "reusableFunction": "addOncePerFieldShield",
+      "params": {
+        "target": "Magic card being played",
+        "valueText": "Negate 1 magic card when played",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is on the field and has not used its once-per-field effect"
+        },
+        "duration": {
+          "text": "Until used",
+          "type": "UNTIL_CONSUMED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "sharedUseKey": "BUNNYSAURUS_ONCE_PER_FIELD"
+      },
+      "notes": "Shares the same once-per-field use counter with the attack negation option.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dino",
+  "armorLevel": 5,
+  "speed": 6,
+  "hp": 40,
+  "attackName": "Hop Strike",
+  "attackDice": 1,
+  "modifier": 3
+}

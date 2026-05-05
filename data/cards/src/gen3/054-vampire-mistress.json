@@ -1,0 +1,95 @@
+{
+  "id": "gen3_054_vampire_mistress",
+  "name": "Vampire Mistress",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "054",
+  "text": "Inflict 10 damage to a creature and heal a creature 10 HP.",
+  "effects": [
+    {
+      "id": "054-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Inflict 10 damage to a creature and heal a creature 10 HP."
+      },
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "actionText": "Heal a creature or apply lifesteal",
+      "target": "Target creature",
+      "value": "Inflict 10 damage to a creature and heal a creature 10 HP.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "heal",
+      "params": {
+        "target": "Target creature",
+        "valueText": "Inflict 10 damage to a creature and heal a creature 10 HP.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Inflict 10 damage to a creature and heal a creature 10 HP."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "054-E02",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Inflict 10 damage to a creature and heal a creature 10 HP."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Target creature",
+      "value": "Inflict 10 damage to a creature and heal a creature 10 HP.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Target creature",
+        "valueText": "Inflict 10 damage to a creature and heal a creature 10 HP.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Inflict 10 damage to a creature and heal a creature 10 HP."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

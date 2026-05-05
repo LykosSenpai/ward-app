@@ -1,0 +1,19 @@
+{
+  "id": "gen3_101_bestial_champion",
+  "name": "Bestial Champion",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "101",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 11,
+  "speed": 6,
+  "hp": 50,
+  "attackName": "Moonlit Strike",
+  "attackDice": 3,
+  "modifier": 2
+}

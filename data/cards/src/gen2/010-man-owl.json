@@ -1,0 +1,19 @@
+{
+  "id": "gen2_010_man_owl",
+  "name": "Man Owl",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "010",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 10,
+  "speed": 11,
+  "hp": 100,
+  "attackName": "Night Claw",
+  "attackDice": 3,
+  "modifier": 5
+}

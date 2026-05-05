@@ -1,0 +1,55 @@
+{
+  "id": "gen1_044_dragon_s_bane",
+  "name": "Dragon's Bane",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "044",
+  "text": "All creatures inflict 2x Atk damage to Dragon-type creatures, or creatures with \"Dragon\" in their name on the field.",
+  "effects": [
+    {
+      "id": "044-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target is Dragon-type or name contains Dragon"
+      },
+      "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
+      "effectGroup": "Damage Multiplier Aura",
+      "actionText": "All creatures deal increased Atk damage to matching target",
+      "target": "All creatures attacking Dragon targets",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "While field active",
+        "type": "WHILE_FIELD_ACTIVE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplierAura",
+      "params": {
+        "target": "All creatures attacking Dragon targets",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target is Dragon-type or name contains Dragon"
+        },
+        "duration": {
+          "text": "While field active",
+          "type": "WHILE_FIELD_ACTIVE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field aura. Target predicate based on type/name.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

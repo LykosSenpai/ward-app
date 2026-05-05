@@ -1,0 +1,94 @@
+{
+  "id": "gen1_110_turncoat",
+  "name": "Turncoat",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "110",
+  "text": "Switch primary creatures with your opponent. Equipped cards are destroyed.",
+  "effects": [
+    {
+      "id": "110-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Both players have primary creatures"
+      },
+      "actionType": "SWAP_PRIMARY_CREATURES",
+      "effectGroup": "Control Swap",
+      "actionText": "Switch primary creatures",
+      "target": "Your/opponent primary creatures",
+      "value": "Swap control/field positions",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "swapPrimaryCreatures",
+      "params": {
+        "target": "Your/opponent primary creatures",
+        "valueText": "Swap control/field positions",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Both players have primary creatures"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Destroy equipped cards after switch.",
+      "needsReview": false
+    },
+    {
+      "id": "110-E02",
+      "trigger": "AFTER_SWAP",
+      "condition": {
+        "type": "TEXT",
+        "text": "Primary creatures had equipped cards"
+      },
+      "actionType": "DESTROY_EQUIPPED_CARDS",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy equipped cards",
+      "target": "Equipped cards on swapped creatures",
+      "value": "Destroy all",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyEquippedCards",
+      "params": {
+        "target": "Equipped cards on swapped creatures",
+        "valueText": "Destroy all",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Primary creatures had equipped cards"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Cleanup after swap.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

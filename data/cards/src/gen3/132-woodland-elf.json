@@ -1,0 +1,137 @@
+{
+  "id": "gen3_132_woodland_elf",
+  "name": "Woodland Elf",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "132",
+  "text": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5.",
+  "effects": [
+    {
+      "id": "132-E01",
+      "trigger": "BEFORE_HIT_ROLL",
+      "condition": {
+        "type": "TEXT",
+        "text": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "132-E02",
+      "trigger": "BEFORE_HIT_ROLL",
+      "condition": {
+        "type": "TEXT",
+        "text": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5."
+      },
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "actionText": "Resolve a D6 roll table",
+      "target": "This creature",
+      "value": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "resolveRollTable",
+      "params": {
+        "target": "This creature",
+        "valueText": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "132-E03",
+      "trigger": "BEFORE_HIT_ROLL",
+      "condition": {
+        "type": "TEXT",
+        "text": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "This creature",
+      "value": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 5,
+  "speed": 7,
+  "hp": 50,
+  "attackName": "Aimed Shot",
+  "attackDice": 1,
+  "modifier": 4
+}

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.403Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_008_minotaur",
+  "effectId": "008-E01",
+  "title": "Minotaur hit stuns on 5-6",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:11:52.834Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_008_minotaur",
+      "cardName": "Minotaur",
+      "cardType": "CREATURE",
+      "cardNumber": "008",
+      "generation": "1",
+      "rawText": "When this creature hits, roll 1 die. If the result is 5-6, the target creature cannot inflict Atk damage for 1 turn cycle."
+    },
+    "effect": {
+      "effectId": "008-E01",
+      "trigger": "ON_HIT",
+      "actionType": "ROLL_FOR_EFFECT",
+      "effectGroup": "Effect Roll",
+      "target": "TARGET_CREATURE_HIT",
+      "value": "1D6; success on 5-6",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "rollForEffect"
+    },
+    "title": "Minotaur hit stuns on 5-6",
+    "summary": "Verify ON_HIT effect roll succeeds on 5 and applies cannot-inflict-Atk-damage status for 1 turn cycle.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_008_minotaur"
+      ],
+      "player2Cards": [
+        "gen1_012_orc"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Minotaur hits"
+        },
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            5
+          ],
+          "label": "Stun succeeds"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Attack damage"
+        }
+      ],
+      "notes": [
+        "Advance past first turn cycle damage prevention."
+      ]
+    },
+    "steps": [
+      "Put Minotaur as player_1 primary and Orc as player_2 primary.",
+      "Attack and resolve successful hit.",
+      "Resolve pending effect roll with 5.",
+      "Check target status and flags."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Target has stunned status",
+        "path": "player_2.primary.statuses",
+        "operator": "contains",
+        "value": "STUNNED"
+      },
+      {
+        "label": "Target cannot inflict attack damage",
+        "path": "player_2.primary.flags.canInflictAtkDamage",
+        "operator": "equals",
+        "value": false
+      },
+      {
+        "label": "Duration is one turn cycle",
+        "path": "player_2.primary.statuses.STUNNED.duration.amount",
+        "operator": "equals",
+        "value": 1
+      }
+    ],
+    "manualVerification": [
+      "Confirm a roll of 4 fails and does not apply status in a separate negative case.",
+      "Advance one turn cycle and verify cleanup."
+    ],
+    "riskNotes": [
+      "Runtime label may be Cannot inflict Atk damage rather than STUNNED."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported route; test success threshold and duration."
+    },
+    "regression": {
+      "fixtureName": "minotaur-stun-on-hit",
+      "tags": [
+        "combat",
+        "on-hit",
+        "effect-roll",
+        "status"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_008_minotaur:008-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

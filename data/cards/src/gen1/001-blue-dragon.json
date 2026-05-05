@@ -1,0 +1,75 @@
+{
+  "id": "gen1_001_blue_dragon",
+  "name": "Blue Dragon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "001",
+  "text": "When this creature hits, roll 1 die. If the result is 4-6, your target is frozen for 1 turn cycle and cannot inflict Atk damage or be sacrificed.",
+  "effects": [
+    {
+      "id": "001-E01",
+      "trigger": "ON_HIT",
+      "actionType": "ROLL_FOR_EFFECT",
+      "effectGroup": "Effect Roll",
+      "actionText": "When this creature hits, roll 1 die. If the result is 4-6, your target is frozen for 1 turn cycle and cannot inflict Atk damage or be sacrificed.",
+      "target": "TARGET_CREATURE_HIT",
+      "value": "1D6; success on 4-6",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "rollForEffect",
+      "params": {
+        "roll": {
+          "kind": "EFFECT_ROLL",
+          "diceCount": 1,
+          "successRanges": [
+            {
+              "min": 4,
+              "max": 6
+            }
+          ]
+        },
+        "onSuccess": {
+          "actionType": "APPLY_STATUS",
+          "status": "FROZEN",
+          "label": "Frozen",
+          "flags": {
+            "canInflictAtkDamage": false,
+            "canBeSacrificed": false
+          },
+          "duration": {
+            "text": "1 turn cycle",
+            "type": "TURN_CYCLES",
+            "amount": 1,
+            "unit": "TURN_CYCLE",
+            "starts": "EFFECT_ACTIVATION",
+            "expires": "BEGINNING_OF_START_PLAYER_TURN"
+          }
+        },
+        "sourceLinked": false,
+        "usesAnchoring": false
+      },
+      "notes": "Effect roll pattern. Roll 1D6 after this creature hits. On 4-6, apply Frozen to the hit target.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 9,
+  "speed": 9,
+  "hp": 90,
+  "attackName": "Subzero Blast",
+  "attackDice": 2,
+  "modifier": 3,
+  "artworkTags": [
+    "WINGS",
+    "SNOW"
+  ]
+}

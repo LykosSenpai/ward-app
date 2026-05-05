@@ -1,0 +1,67 @@
+{
+  "id": "gen1_027_black_dragon",
+  "name": "Black Dragon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "027",
+  "text": "During your turn, roll 1 die. If the result is 6, your opponent must skip their next turn.",
+  "effects": [
+    {
+      "id": "027-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DIE_VALUES",
+        "dieSize": 6,
+        "successValues": [
+          6
+        ],
+        "text": "Roll 1 die; success 6"
+      },
+      "actionType": "APPLY_SKIP_TURN",
+      "effectGroup": "Turn Control",
+      "actionText": "Opponent skips next turn",
+      "target": "Opponent",
+      "value": "Skip next turn",
+      "duration": {
+        "text": "Next opponent turn",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applySkipTurn",
+      "params": {
+        "target": "Opponent",
+        "valueText": "Skip next turn",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_VALUES",
+          "dieSize": 6,
+          "successValues": [
+            6
+          ],
+          "text": "Roll 1 die; success 6"
+        },
+        "duration": {
+          "text": "Next opponent turn",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Store pending skip-turn flag.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 10,
+  "speed": 9,
+  "hp": 100,
+  "attackName": "Dragon Beam",
+  "attackDice": 2,
+  "modifier": 5
+}

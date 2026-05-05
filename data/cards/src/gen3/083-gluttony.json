@@ -1,0 +1,137 @@
+{
+  "id": "gen3_083_gluttony",
+  "name": "Gluttony",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "083",
+  "text": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases.",
+  "effects": [
+    {
+      "id": "083-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases."
+      },
+      "actionType": "DESTROY_ALL_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "actionText": "Destroy all matching magic cards",
+      "target": "Magic card(s) on the field",
+      "value": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "destroyAllMagic",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "On-summon destroy-all-magic plus dynamic modifier count and future buff immunity.",
+      "needsReview": true
+    },
+    {
+      "id": "083-E02",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases."
+      },
+      "actionType": "UNAFFECTED_BY_MAGIC",
+      "effectGroup": "Immunity",
+      "actionText": "Apply immunity or unaffected state",
+      "target": "Magic card(s) on the field",
+      "value": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyImmunity",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "On-summon destroy-all-magic plus dynamic modifier count and future buff immunity.",
+      "needsReview": true
+    },
+    {
+      "id": "083-E03",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Magic card(s) on the field",
+      "value": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "On-summon destroy-all-magic plus dynamic modifier count and future buff immunity.",
+      "needsReview": true
+    }
+  ],
+  "notes": "On-summon destroy-all-magic plus dynamic modifier count and future buff immunity.",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 7,
+  "speed": 5,
+  "hp": 100,
+  "attackName": "Devour",
+  "attackDice": 7,
+  "modifier": 0
+}

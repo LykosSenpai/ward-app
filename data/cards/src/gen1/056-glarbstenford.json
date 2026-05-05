@@ -1,0 +1,66 @@
+{
+  "id": "gen1_056_glarbstenford",
+  "name": "Glarbstenford",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "056",
+  "text": "Add +2 Atk Dice Rolls if your opponent's primary creature has less AL than this card.",
+  "effects": [
+    {
+      "id": "056-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent primary creature has less AL than this card"
+      },
+      "actionType": "APPLY_CONDITIONAL_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "actionText": "Add Atk Dice Rolls",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +2",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDiceModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "Atk Dice Rolls +2",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 2,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent primary creature has less AL than this card"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "AL comparison at damage/attack time.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 7,
+  "speed": 9,
+  "hp": 70,
+  "attackName": "Rusted Swing",
+  "attackDice": 2,
+  "modifier": 3
+}

@@ -1,0 +1,19 @@
+{
+  "id": "gen1_094_undead_dragon",
+  "name": "Undead Dragon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "094",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 11,
+  "speed": 5,
+  "hp": 80,
+  "attackName": "Rotten Flame",
+  "attackDice": 4,
+  "modifier": 4
+}

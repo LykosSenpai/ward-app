@@ -1,0 +1,26 @@
+﻿reusable_function,engine_action_type,primary_effect_group,effect_count,sample_cards,needs_manual_review_in_samples,implementation_notes
+applyAttackDamageMultiplier,APPLY_ATTACK_DAMAGE_MULTIPLIER,Damage Multiplier,7,029 Earth Eleotoid; 031 Orcs VS Apes; 043 The Villain; 070 Hydogon; 076 Thresher,TRUE,Create/route an engine handler for applyAttackDamageMultiplier.
+applyDamageOverTime,APPLY_DAMAGE_OVER_TIME,Damage Over Time,3,085 Ancient Scorpion; 118 Contaminate; 138 Flame Sentinel,TRUE,Create/route an engine handler for applyDamageOverTime.
+applyImmunity,UNAFFECTED_BY_MAGIC,Immunity,5,058 Steam Armor; 076 Thresher; 083 Gluttony; 095 Fog; 120 Ooze Weaver,TRUE,Create/route an engine handler for applyImmunity.
+applyStatModifier,APPLY_STAT_MODIFIER,Stat Modifier,38,006 Ball Demon; 008 Cybernetic Upgrade; 011 Mr. Evil; 013 Steam Powered Girl; 014 Monster Armor,TRUE,Create/route an engine handler for applyStatModifier.
+applyStatus,APPLY_STATUS,Status,1,114 Carus Demon,TRUE,Create/route an engine handler for applyStatus.
+changeCreatureType,CHANGE_CREATURE_TYPE,Type Change,2,086 Frost Wyrms; 096 Demon Blood,TRUE,Create/route an engine handler for changeCreatureType.
+damage,DAMAGE,Damage,34,006 Ball Demon; 009 Hoggan; 017 Shield of Light; 018 Enchantment; 024 Mosquito Man,TRUE,Create/route an engine handler for damage.
+destroyAllMagic,DESTROY_ALL_MAGIC,Magic Destruction,3,050 Adam Bomb; 083 Gluttony; 110 Chain Lightning,TRUE,Create/route an engine handler for destroyAllMagic.
+destroyMagic,DESTROY_MAGIC,Magic Destruction,6,002 Fire Eleotoid; 017 Shield of Light; 041 Orc Magic; 109 Negative; 127 The Merchant,TRUE,Create/route an engine handler for destroyMagic.
+discardCard,DISCARD_CARD,Discard,2,104 Bait; 109 Negative,TRUE,Create/route an engine handler for discardCard.
+heal,HEAL,Healing,8,004 Repair Bear; 017 Shield of Light; 024 Mosquito Man; 054 Vampire Mistress; 097 Magic Sword,TRUE,Create/route an engine handler for heal.
+limitedSummon,LIMITED_SUMMON,Limited Summon,10,009 Hoggan; 012 Crow; 021 Possessed Dummy; 039 M.O.O.N. Sgt.; 056 Soul Eater,TRUE,Create/route an engine handler for limitedSummon.
+manualFallback,MANUAL_FALLBACK,Manual Fallback,21,001 Dark Angel; 003 Enlightened Soul; 010 Fazard; 016 Exhaustion; 020 Witch’s Cabin,TRUE,Create/route an engine handler for manualFallback.
+moveCard,MOVE_CARD,Card Movement,6,012 Crow; 021 Possessed Dummy; 039 M.O.O.N. Sgt.; 064 Frog Bard; 087 Orc Hunter,TRUE,Create/route an engine handler for moveCard.
+negateAttack,NEGATE_ATTACK,Negation,1,138 Flame Sentinel,TRUE,Create/route an engine handler for negateAttack.
+negateCardEffect,NEGATE_CARD_EFFECT,Negation,5,021 Possessed Dummy; 039 M.O.O.N. Sgt.; 042 Orc Mischief; 087 Orc Hunter; 113 Sasquatch,TRUE,Create/route an engine handler for negateCardEffect.
+negateCreatureEffects,NEGATE_CREATURE_EFFECTS,Creature Effect Suppression,2,007 Steam Knight Blaster; 111 Final Form,TRUE,Create/route an engine handler for negateCreatureEffects.
+preventCardPlay,PREVENT_CARD_PLAY,Play Restriction,3,019 Hell Authority; 099 Street Lights; 113 Sasquatch,TRUE,Create/route an engine handler for preventCardPlay.
+preventDamage,PREVENT_DAMAGE,Damage Prevention,2,120 Ooze Weaver; 145 Eagle Knight,TRUE,Create/route an engine handler for preventDamage.
+replaceAttackProfile,REPLACE_ATTACK_PROFILE,Attack Profile,2,007 Steam Knight Blaster; 111 Final Form,TRUE,Create/route an engine handler for replaceAttackProfile.
+rerollDice,REROLL_DICE,Dice Reroll,3,052 Bad Luck Bear; 072 Winter Griffin; 100 Advantage,TRUE,Create/route an engine handler for rerollDice.
+resolveRollTable,ROLL_TABLE,Roll Table,6,017 Shield of Light; 053 The Super Hero; 057 Steam Angel; 129 Mysterious Orb; 132 Woodland Elf,TRUE,Create/route an engine handler for resolveRollTable.
+sendToCemetery,SEND_TO_CEMETERY,Card Movement,10,008 Cybernetic Upgrade; 009 Hoggan; 021 Possessed Dummy; 042 Orc Mischief; 056 Soul Eater,TRUE,Create/route an engine handler for sendToCemetery.
+shuffleDeck,SHUFFLE_DECK,Deck,4,051 Deercrow; 094 Shuffling Bones; 131 Close Encounters; 147 Friend Like You,TRUE,Create/route an engine handler for shuffleDeck.
+validateSummonRequirement,SUMMON_REQUIREMENT,Summon Requirement,5,012 Crow; 048 Owl God; 051 Deercrow; 075 Orc Champion; 115 Shard Titan,TRUE,Create/route an engine handler for validateSummonRequirement.

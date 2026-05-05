@@ -1,0 +1,59 @@
+{
+  "id": "gen1_089_swamp_dragon",
+  "name": "Swamp Dragon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "089",
+  "text": "This creature can only be damaged by Atk damage.",
+  "effects": [
+    {
+      "id": "089-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Damage would be dealt to this creature"
+      },
+      "actionType": "APPLY_DAMAGE_TYPE_IMMUNITY",
+      "effectGroup": "Damage Filter",
+      "actionText": "Only Atk damage can damage this creature",
+      "target": "This creature",
+      "value": "Ignore non-Atk damage",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyDamageTypeImmunity",
+      "params": {
+        "target": "This creature",
+        "valueText": "Ignore non-Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Damage would be dealt to this creature"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Requires damageType system.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 8,
+  "speed": 5,
+  "hp": 80,
+  "attackName": "Claw Swipe",
+  "attackDice": 2,
+  "modifier": 4
+}

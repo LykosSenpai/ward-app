@@ -1,0 +1,19 @@
+{
+  "id": "gen1_007_knight",
+  "name": "Knight",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "007",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 8,
+  "speed": 5,
+  "hp": 50,
+  "attackName": "Holy Smite",
+  "attackDice": 2,
+  "modifier": 3
+}

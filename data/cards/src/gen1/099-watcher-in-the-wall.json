@@ -1,0 +1,133 @@
+{
+  "id": "gen1_099_watcher_in_the_wall",
+  "name": "Watcher in the Wall",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "099",
+  "text": "Your opponent must reveal their hand to you. Choose 1 of their cards: Magic: Discard it to their cemetery. Creature: Send it to the bottom of their deck.",
+  "effects": [
+    {
+      "id": "099-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent has cards in hand"
+      },
+      "actionType": "REVEAL_HAND_AND_CHOOSE_CARD",
+      "effectGroup": "Hand Reveal/Choice",
+      "actionText": "Reveal opponent hand and choose card",
+      "target": "Opponent hand",
+      "value": "Choose 1 card",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "revealHandAndChooseCard",
+      "params": {
+        "target": "Opponent hand",
+        "valueText": "Choose 1 card",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent has cards in hand"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Card type determines destination.",
+      "needsReview": false
+    },
+    {
+      "id": "099-E02",
+      "trigger": "AFTER_CHOOSE_CARD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Chosen card is Magic"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Discard",
+      "actionText": "Discard chosen card to cemetery",
+      "target": "Chosen magic card",
+      "value": "Move to cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "discardCardToCemetery",
+      "params": {
+        "target": "Chosen magic card",
+        "valueText": "Move to cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Chosen card is Magic"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Branch effect.",
+      "needsReview": false
+    },
+    {
+      "id": "099-E03",
+      "trigger": "AFTER_CHOOSE_CARD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Chosen card is Creature"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Deck Bottom",
+      "actionText": "Send chosen card to bottom of deck",
+      "target": "Chosen creature card",
+      "value": "Move to bottom of deck",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "sendCardToBottomOfDeck",
+      "params": {
+        "target": "Chosen creature card",
+        "valueText": "Move to bottom of deck",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Chosen card is Creature"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Branch effect.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

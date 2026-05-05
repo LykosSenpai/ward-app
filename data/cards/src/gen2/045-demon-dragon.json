@@ -1,0 +1,72 @@
+{
+  "id": "gen2_045_demon_dragon",
+  "name": "Demon Dragon",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "045",
+  "text": "For every card in your opponents' hand add: Atk Dice Rolls: +1. Modifier: +1.",
+  "effects": [
+    {
+      "id": "045-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent hand size changes"
+      },
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "actionText": "Scale stats by opponent hand card count",
+      "target": "This creature",
+      "value": "For every card in opponents' hand: Atk Dice Rolls +1; Modifier +1",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyDynamicStatModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "For every card in opponents' hand: Atk Dice Rolls +1; Modifier +1",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD_PER_COUNT",
+            "valuePerCount": 1,
+            "countSource": "OPPONENTS_HAND_CARD_COUNT"
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD_PER_COUNT",
+            "valuePerCount": 1,
+            "countSource": "OPPONENTS_HAND_CARD_COUNT"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent hand size changes"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Use total cards in all opponents' hands for multiplayer; in 1v1 this is opponent hand size.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 4,
+  "speed": 3,
+  "hp": 30,
+  "attackName": "Hell Flame",
+  "attackDice": 1,
+  "modifier": 1
+}

@@ -1,0 +1,98 @@
+{
+  "id": "gen3_043_the_villain",
+  "name": "The Villain",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "043",
+  "text": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures.",
+  "effects": [
+    {
+      "id": "043-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Opponent's primary creature",
+      "value": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Opponent magic play cost plus named-card incoming damage multiplier.",
+      "needsReview": true
+    },
+    {
+      "id": "043-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Apply attack damage multiplier",
+      "target": "Opponent's primary creature",
+      "value": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyAttackDamageMultiplier",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Opponent magic play cost plus named-card incoming damage multiplier.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Opponent magic play cost plus named-card incoming damage multiplier.",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 12,
+  "speed": 5,
+  "hp": 120,
+  "attackName": "Ultimaga",
+  "attackDice": 5,
+  "modifier": 4
+}

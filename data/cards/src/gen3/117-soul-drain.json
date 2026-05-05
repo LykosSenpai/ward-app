@@ -1,0 +1,67 @@
+{
+  "id": "gen3_117_soul_drain",
+  "name": "Soul Drain",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "117",
+  "text": "Atk Dice Rolls: -1. Modifier: -1. Atk Dice Rolls cannot be reduced to 0.",
+  "effects": [
+    {
+      "id": "117-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Atk Dice Rolls: -1. Modifier: -1. Atk Dice Rolls cannot be reduced to 0."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "Atk Dice Rolls: -1. Modifier: -1. Atk Dice Rolls cannot be reduced to 0.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Atk Dice Rolls: -1. Modifier: -1. Atk Dice Rolls cannot be reduced to 0.",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": -1
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD",
+            "value": -1
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Atk Dice Rolls: -1. Modifier: -1. Atk Dice Rolls cannot be reduced to 0."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

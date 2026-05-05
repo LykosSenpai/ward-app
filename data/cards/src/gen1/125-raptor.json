@@ -1,0 +1,19 @@
+{
+  "id": "gen1_125_raptor",
+  "name": "Raptor",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "125",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Dino",
+  "armorLevel": 6,
+  "speed": 12,
+  "hp": 40,
+  "attackName": "Jump Strike",
+  "attackDice": 3,
+  "modifier": 4
+}

@@ -1,0 +1,86 @@
+{
+  "id": "gen2_071_sonic_screech",
+  "name": "Sonic Screech",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "071",
+  "text": "Prior to each battle, the equipped creature must roll 1 die. If the result is: 1-2: The effect ends. Destroy this card. 3-6: Equipped creature receives 5 damage, and cannot cause Atk damage.",
+  "effects": [
+    {
+      "id": "071-E01",
+      "trigger": "PRIOR_TO_EACH_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Prior to each battle involving equipped creature"
+      },
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Pre-Battle Roll Gate",
+      "actionText": "Resolve Sonic Screech pre-battle roll",
+      "target": "Equipped creature",
+      "value": "Roll: 1-2 destroy this card; 3-6 take 5 damage and cannot cause Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyStatusWithEscapeRoll",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Roll: 1-2 destroy this card; 3-6 take 5 damage and cannot cause Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Prior to each battle involving equipped creature"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "outcomes": [
+          {
+            "results": [
+              1,
+              2
+            ],
+            "actions": [
+              "END_EFFECT",
+              "DESTROY_THIS_CARD"
+            ]
+          },
+          {
+            "results": [
+              3,
+              4,
+              5,
+              6
+            ],
+            "actions": [
+              {
+                "dealDamageTo": "EQUIPPED_CREATURE",
+                "amount": 5
+              },
+              {
+                "applyStatus": "CANNOT_CAUSE_ATK_DAMAGE",
+                "duration": "CURRENT_BATTLE"
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "Modeled no-Atk-damage clause as lasting for the current battle caused by the 3-6 roll.",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

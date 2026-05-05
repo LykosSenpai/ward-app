@@ -1,0 +1,137 @@
+{
+  "id": "gen2_063_steam_spider",
+  "name": "Steam Spider",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "063",
+  "text": "This creature cannot be removed from the field unless killed. It cannot be used as a sacrifice from the field. It cannot change control.",
+  "effects": [
+    {
+      "id": "063-E01",
+      "trigger": "STATIC_RULE",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature would leave the field without being killed"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Restriction",
+      "actionText": "Prevent non-kill removal",
+      "target": "This creature",
+      "value": "Cannot be removed from field unless killed",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "This creature",
+        "valueText": "Cannot be removed from field unless killed",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature would leave the field without being killed"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "063-E02",
+      "trigger": "STATIC_RULE",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature would be sacrificed from field"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Sacrifice Restriction",
+      "actionText": "Prevent sacrifice from field",
+      "target": "This creature",
+      "value": "Cannot be used as a sacrifice from the field",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "This creature",
+        "valueText": "Cannot be used as a sacrifice from the field",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature would be sacrificed from field"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "063-E03",
+      "trigger": "STATIC_RULE",
+      "condition": {
+        "type": "TEXT",
+        "text": "An effect would change this creature's control"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Control Restriction",
+      "actionText": "Prevent control change",
+      "target": "This creature",
+      "value": "Cannot change control",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "This creature",
+        "valueText": "Cannot change control",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "An effect would change this creature's control"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Mech",
+  "armorLevel": 6,
+  "speed": 11,
+  "hp": 100,
+  "attackName": "Mining Beam",
+  "attackDice": 3,
+  "modifier": 3
+}

@@ -1,0 +1,64 @@
+﻿reusable_function,engine_action_type,primary_effect_group,effect_count,sample_cards,needs_manual_review_in_samples,implementation_notes
+addNextMagicShield,ADD_NEXT_MAGIC_SHIELD,Magic Shield,1,118 Magic Shield,FALSE,Create/route an engine handler for this reusable function.
+addOncePerFieldShield,ADD_ONCE_PER_FIELD_SHIELD,Once Per Field Negation,2,013 Bunnysaurus; 013 Bunnysaurus,FALSE,Create/route an engine handler for this reusable function.
+applyAttackPriorityOverride,APPLY_ATTACK_PRIORITY_OVERRIDE,Attack Priority,2,015 Bear Wolf; 107 Reverse Polarity,FALSE,Create/route an engine handler for this reusable function.
+applyBattleRequirement,APPLY_BATTLE_REQUIREMENT,Battle Permission,3,014 Double Hit; 014 Double Hit; 117 Frenzy,FALSE,Create/route an engine handler for this reusable function.
+applyCemeteryRestriction,APPLY_ZONE_RESTRICTION,Zone Restriction,1,077 Bound With Chains,FALSE,Create/route an engine handler for this reusable function.
+applyConditionalDamageMultiplier,APPLY_ATTACK_DAMAGE_MULTIPLIER,Damage Multiplier,8,009 Bio-Regeneration; 035 Spino; 042 Corn Creeper; 058 Zombie Dog; 064 Steam Rex,FALSE,Create/route an engine handler for this reusable function.
+applyConditionalDamageMultiplierAura,APPLY_DAMAGE_MULTIPLIER_AURA,Damage Multiplier Aura,2,037 Exorcism; 148 Bug Spray,FALSE,Create/route an engine handler for this reusable function.
+applyConditionalStatus,APPLY_STATUS,Status,1,110 Winter Sentinel,FALSE,Create/route an engine handler for this reusable function.
+applyDamageImmunity,APPLY_DAMAGE_IMMUNITY,Damage Immunity,2,041 Ghost Form; 073 Metallic Bone,FALSE,Create/route an engine handler for this reusable function.
+applyDamageReduction,APPLY_DAMAGE_REDUCTION,Damage Reduction,1,083 Demonic Turtle,FALSE,Create/route an engine handler for this reusable function.
+applyDiceModifier,APPLY_DICE_MODIFIER,Dice Modifier,3,104 Claws of the Beast; 108 Melt Armor; 112 Electro Wizard,FALSE,Create/route an engine handler for this reusable function.
+applyDynamicStatModifier,APPLY_DYNAMIC_STAT_MODIFIER,Scaling Modifier,10,001 All In One; 045 Demon Dragon; 046 Alkonost; 060 Vampire Orc; 075 Jerry,FALSE,Create/route an engine handler for this reusable function.
+applyEffectImmunity,APPLY_EFFECT_IMMUNITY,Immunity,2,064 Steam Rex; 065 Steam Golem,FALSE,Create/route an engine handler for this reusable function.
+applyGlobalPlayRestriction,APPLY_PLAY_RESTRICTION,Play Restriction,3,098 Time Melt; 099 Time Weaver; 119 Foggy Night,FALSE,Create/route an engine handler for this reusable function.
+applyHealingOverTime,APPLY_HEALING_OVER_TIME,Healing Over Time,1,102 Acolyte,FALSE,Create/route an engine handler for this reusable function.
+applyHitOutcomeOverride,APPLY_HIT_OUTCOME_OVERRIDE,Hit Outcome Override,2,068 Maniac; 116 Ring of Extremes,FALSE,Create/route an engine handler for this reusable function.
+applyImmunity,APPLY_IMMUNITY,Modifier Immunity,1,068 Maniac,FALSE,Create/route an engine handler for this reusable function.
+applyPlayRestriction,APPLY_PLAY_RESTRICTION,Damage Prevention,8,039 Irresistible Love; 039 Irresistible Love; 063 Steam Spider; 063 Steam Spider; 063 Steam Spider,FALSE,Create/route an engine handler for this reusable function.
+applyRerollPermission,APPLY_REROLL_PERMISSION,Reroll Permission,1,078 Magic Watch,FALSE,Create/route an engine handler for this reusable function.
+applySacrificeValue,APPLY_SACRIFICE_VALUE,Sacrifice Value,2,070 Sacrificial Goat; 093 Subject #4212,FALSE,Create/route an engine handler for this reusable function.
+applySourceLinkedCleanup,APPLY_SOURCE_LINKED_CLEANUP,Self Cleanup,2,061 Abominable Deer Man; 123 Sleepy Scent,FALSE,Create/route an engine handler for this reusable function.
+applyStatModifier,APPLY_STAT_MODIFIER,Stat Modifier,26,002 Celestial Power; 005 Creator's Gift; 009 Bio-Regeneration; 012 Bull Power; 016 Natural Selection,FALSE,Create/route an engine handler for this reusable function.
+applyStatusAura,APPLY_STATUS_AURA,Status Aura,1,006 Electroloon,FALSE,Create/route an engine handler for this reusable function.
+applyStatusWithEscapeRoll,APPLY_STATUS_WITH_ESCAPE_ROLL,Status Escape Roll,7,006 Electroloon; 039 Irresistible Love; 071 Sonic Screech; 094 Giant Snake; 094 Giant Snake,TRUE,Create/route an engine handler for this reusable function.
+applySummonRequirementOverride,APPLY_SUMMON_REQUIREMENT_OVERRIDE,Summon Requirement,1,011 Raccoon Knight,FALSE,Create/route an engine handler for this reusable function.
+attachCardsUnderSource,ATTACH_CARDS_UNDER_SOURCE,Attachment/Linked Cards,2,020 Great White; 021 Perfect Shark,FALSE,Create/route an engine handler for this reusable function.
+dealDamageOnDraw,DEAL_DAMAGE_ON_DRAW,Triggered Damage,2,007 Absolute Terror; 018 Life Sap,FALSE,Create/route an engine handler for this reusable function.
+dealDirectDamage,DEAL_INSTANT_DAMAGE,Triggered Damage,5,062 Martial Arts Man; 079 Raging Inferno; 081 Phoenix Armor; 096 Bomb; 127 Lightning Strike,FALSE,Create/route an engine handler for this reusable function.
+dealPercentageDamage,DEAL_PERCENTAGE_DAMAGE,HP Reduction,1,054 Hell Hath No Fury,FALSE,Create/route an engine handler for this reusable function.
+destroyMagicCards,DESTROY_MAGIC_CARDS,Destroy,3,051 Evil Queen; 052 Magic Eater; 137 Kendo Tiger,FALSE,Create/route an engine handler for this reusable function.
+destroySelf,DESTROY_SELF,Escape Roll/Destroy,2,073 Metallic Bone; 117 Frenzy,FALSE,Create/route an engine handler for this reusable function.
+drawCardsVariable,DRAW_CARDS_VARIABLE,Shuffle/Draw,1,074 The Old One,FALSE,Create/route an engine handler for this reusable function.
+forceLimitedSummonsToBattlePrimary,FORCE_LIMITED_SUMMONS_TO_BATTLE_PRIMARY,Forced Battle,1,145 Ancient One,FALSE,Create/route an engine handler for this reusable function.
+healByCemeteryEvent,HEAL_BY_CEMETERY_EVENT,Healing,1,109 The Guide,FALSE,Create/route an engine handler for this reusable function.
+healByRoll,HEAL_BY_ROLL,Healing,2,103 Herbal Poultice; 121 Cure Minor Wounds,FALSE,Create/route an engine handler for this reusable function.
+healBySentCreatureHp,HEAL_BY_SENT_CREATURE_HP,Healing,1,084 Vampire Lord,FALSE,Create/route an engine handler for this reusable function.
+healFlat,HEAL_CREATURE,Healing,3,009 Bio-Regeneration; 018 Life Sap; 081 Phoenix Armor,TRUE,Create/route an engine handler for this reusable function.
+lookAndReorderDeckTop,LOOK_AND_REORDER_DECK_TOP,Deck Manipulation,1,132 Hands of Fate,FALSE,Create/route an engine handler for this reusable function.
+moveCard,MOVE_CARD,Choice Effect,2,137 Kendo Tiger; 150 Future Warrior,FALSE,Create/route an engine handler for this reusable function.
+negateAttack,NEGATE_ATTACK,Negation,2,080 Sticky Goo; 110 Winter Sentinel,FALSE,Create/route an engine handler for this reusable function.
+negateAttackDamage,NEGATE_ATTACK_DAMAGE,Damage Negation,1,150 Future Warrior,FALSE,Create/route an engine handler for this reusable function.
+negateAttackOrMagic,NEGATE_ATTACK_OR_MAGIC,Negation,1,053 Melody of the Deep,FALSE,Create/route an engine handler for this reusable function.
+negateCreatureEffects,NEGATE_CREATURE_EFFECTS,Effect Negation,1,055 The Iron Range,TRUE,Create/route an engine handler for this reusable function.
+negateHealingAndConvertToDamage,NEGATE_HEALING_AND_CONVERT_TO_DAMAGE,Healing Negation,1,082 Poisoned Potion,FALSE,Create/route an engine handler for this reusable function.
+negateLightningToCemetery,NEGATE_LIGHTNING_AND_SEND_TO_CEMETERY,Lightning Negation,1,130 Scroll of Silence,FALSE,Create/route an engine handler for this reusable function.
+negateMagicToCemetery,NEGATE_MAGIC_AND_SEND_TO_CEMETERY,Magic Negation,2,038 Haunted Tree; 127 Lightning Strike,FALSE,Create/route an engine handler for this reusable function.
+payCardCost,PAY_CARD_COST,Cost,2,084 Vampire Lord; 134 Wizard Frog,FALSE,Create/route an engine handler for this reusable function.
+reduceCemeteryHp,ADJUST_CEMETERY_HP,Cemetery HP Adjustment,1,125 Reduce the Burden,FALSE,Create/route an engine handler for this reusable function.
+reflectPreventedDamage,REFLECT_PREVENTED_DAMAGE,Damage Reflection,1,083 Demonic Turtle,FALSE,Create/route an engine handler for this reusable function.
+returnCardsToOwnerDeck,MOVE_CARDS,Mass Return,1,074 The Old One,FALSE,Create/route an engine handler for this reusable function.
+returnLinkedCards,RETURN_LINKED_CARDS,Zone Movement,3,020 Great White; 021 Perfect Shark; 086 Thief,FALSE,Create/route an engine handler for this reusable function.
+returnLinkedSummon,RETURN_LINKED_SUMMON,Zone Movement,6,004 Undead King; 046 Alkonost; 088 Skeleton Lord; 100 Wolf Knight; 142 Black Jacket,FALSE,Create/route an engine handler for this reusable function.
+rollDamageTable,ROLL_DAMAGE_TABLE,Direct Damage,6,050 Ignitus; 113 The Alchemist; 115 Magic Artillery; 120 Apocalypse; 122 Ignite,FALSE,Create/route an engine handler for this reusable function.
+scheduleReturnToHand,SCHEDULE_RETURN_TO_HAND,Zone Movement,3,044 Summoner; 066 Dawn of the Living Chickens; 133 Ambush,FALSE,Create/route an engine handler for this reusable function.
+searchDeckToEquip,SEARCH_DECK_TO_EQUIP,Deck Search,1,085 Equip Knight,FALSE,Create/route an engine handler for this reusable function.
+setCanBeNegated,SET_CAN_BE_NEGATED,Negation Rule,4,002 Celestial Power; 005 Creator's Gift; 054 Hell Hath No Fury; 130 Scroll of Silence,FALSE,Create/route an engine handler for this reusable function.
+stealEquipCard,STEAL_EQUIP_CARD,Control/Equip Steal,1,086 Thief,FALSE,Create/route an engine handler for this reusable function.
+summonLimitedFromHand,SUMMON_LIMITED_CREATURE_FROM_HAND,Limited Summon,6,044 Summoner; 066 Dawn of the Living Chickens; 100 Wolf Knight; 133 Ambush; 142 Black Jacket,FALSE,Create/route an engine handler for this reusable function.
+summonLimitedFromZone,SUMMON_LIMITED_CREATURE,Limited Summon,2,004 Undead King; 046 Alkonost,FALSE,Create/route an engine handler for this reusable function.
+summonSelfAsLimited,SUMMON_SELF_AS_LIMITED_CREATURE,Limited Summon,1,061 Abominable Deer Man,TRUE,Create/route an engine handler for this reusable function.
+takeControlAsLimitedSummon,TAKE_CONTROL_AS_LIMITED_SUMMON,Limited Summon/Control,1,088 Skeleton Lord,FALSE,Create/route an engine handler for this reusable function.
+tradeCardWithCemetery,TRADE_CARD_WITH_CEMETERY,Card Trade,2,128 Frog of Fortune; 129 Peddling Partridge,FALSE,Create/route an engine handler for this reusable function.
+validateSummonRequirement,VALIDATE_SUMMON_REQUIREMENT,Equip Requirement,4,009 Bio-Regeneration; 020 Great White; 021 Perfect Shark; 076 Lead Boots,FALSE,Create/route an engine handler for this reusable function.

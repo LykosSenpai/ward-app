@@ -1,0 +1,68 @@
+{
+  "id": "gen2_124_the_first_law",
+  "name": "The First Law",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "124",
+  "text": "For every card in your opponents hand the equipped creature receives: Atk Dice Rolls: +1. Modifier: +1.",
+  "effects": [
+    {
+      "id": "124-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent hand size changes"
+      },
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "actionText": "Scale equipped creature by opponent hand card count",
+      "target": "Equipped creature",
+      "value": "For every card in opponents' hand: Atk Dice Rolls +1; Modifier +1",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyDynamicStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "For every card in opponents' hand: Atk Dice Rolls +1; Modifier +1",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD_PER_COUNT",
+            "valuePerCount": 1,
+            "countSource": "OPPONENTS_HAND_CARD_COUNT"
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD_PER_COUNT",
+            "valuePerCount": 1,
+            "countSource": "OPPONENTS_HAND_CARD_COUNT"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent hand size changes"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

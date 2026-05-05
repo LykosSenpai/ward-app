@@ -1,0 +1,19 @@
+{
+  "id": "gen1_035_dark_lord",
+  "name": "Dark Lord",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "035",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 12,
+  "speed": 5,
+  "hp": 120,
+  "attackName": "Abyss Slash",
+  "attackDice": 4,
+  "modifier": 4
+}

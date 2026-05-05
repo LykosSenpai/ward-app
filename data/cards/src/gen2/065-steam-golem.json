@@ -1,0 +1,103 @@
+{
+  "id": "gen2_065_steam_golem",
+  "name": "Steam Golem",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "065",
+  "text": "This creature is unaffected by creature effects and magic cards. This creature inflicts 3x Atk damage to any creature with an AL of 12. This includes equip cards.",
+  "effects": [
+    {
+      "id": "065-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature or magic effect would affect this creature"
+      },
+      "actionType": "APPLY_EFFECT_IMMUNITY",
+      "effectGroup": "Immunity",
+      "actionText": "Ignore creature effects and magic cards",
+      "target": "This creature",
+      "value": "Unaffected by creature effects and magic cards",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyEffectImmunity",
+      "params": {
+        "target": "This creature",
+        "valueText": "Unaffected by creature effects and magic cards",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature or magic effect would affect this creature"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "immuneTo": [
+          "CREATURE_EFFECTS",
+          "MAGIC_CARDS"
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "065-E02",
+      "trigger": "DURING_DAMAGE_CALC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target creature has AL 12 including equip cards"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply Atk damage",
+      "target": "Creature with AL 12",
+      "value": "3x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Creature with AL 12",
+        "valueText": "3x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target creature has AL 12 including equip cards"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 3
+      },
+      "notes": "AL check includes equip card modifications.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Mech",
+  "armorLevel": 12,
+  "speed": 2,
+  "hp": 120,
+  "attackName": "Gods Bane",
+  "attackDice": 3,
+  "modifier": 5
+}

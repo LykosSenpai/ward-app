@@ -1,0 +1,110 @@
+{
+  "id": "gen1_101_wings_of_the_beast",
+  "name": "Wings of the Beast",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "101",
+  "text": "Take flight for 1 turn cycle. The equipped creature cannot be damaged by any creature without wings.",
+  "effects": [
+    {
+      "id": "101-E01",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STATUS",
+      "effectGroup": "Status",
+      "actionText": "Take flight",
+      "target": "Equipped creature",
+      "value": "Flying/Flight",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyFlightStatus",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Flying/Flight",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Temporary flight status. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    },
+    {
+      "id": "101-E02",
+      "trigger": "WHILE_FLIGHT_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Attacker/creature lacks wings"
+      },
+      "actionType": "APPLY_CONDITIONAL_DAMAGE_IMMUNITY",
+      "effectGroup": "Damage Prevention",
+      "actionText": "Cannot be damaged by creatures without wings",
+      "target": "Equipped creature",
+      "value": "Prevent damage from non-winged creatures",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyConditionalDamageImmunity",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Prevent damage from non-winged creatures",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Attacker/creature lacks wings"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Requires hasWings tag. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

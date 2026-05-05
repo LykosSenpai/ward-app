@@ -1,0 +1,59 @@
+{
+  "id": "gen3_122_dart_frog",
+  "name": "Dart Frog",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "122",
+  "text": "If this card is killed by a creature that is not holding a weapon, equip it to that creature as an Infinite equip magic card. The equipped creature receives 5 damage at the end of your turn.",
+  "effects": [
+    {
+      "id": "122-E01",
+      "trigger": "WHEN_THIS_CREATURE_KILLED",
+      "condition": {
+        "type": "TEXT",
+        "text": "If this card is killed by a creature that is not holding a weapon, equip it to that creature as an Infinite equip magic card. The equipped creature receives 5 damage at the end of your turn."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Equipped creature",
+      "value": "If this card is killed by a creature that is not holding a weapon, equip it to that creature as an Infinite equip magic card. The equipped creature receives 5 damage at the end of your turn.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "If this card is killed by a creature that is not holding a weapon, equip it to that creature as an Infinite equip magic card. The equipped creature receives 5 damage at the end of your turn.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "If this card is killed by a creature that is not holding a weapon, equip it to that creature as an Infinite equip magic card. The equipped creature receives 5 damage at the end of your turn."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "END_OF_TURN"
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 1,
+  "speed": 11,
+  "hp": 30,
+  "attackName": "Tongue Snap",
+  "attackDice": 1,
+  "modifier": 0
+}

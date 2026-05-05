@@ -1,0 +1,55 @@
+{
+  "id": "gen1_117_holy_water",
+  "name": "Holy Water",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "117",
+  "text": "All creatures inflict 2x Atk damage to Undead-type creatures on the field.",
+  "effects": [
+    {
+      "id": "117-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target is Undead-type"
+      },
+      "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
+      "effectGroup": "Damage Multiplier Aura",
+      "actionText": "All creatures deal increased Atk damage to Undead targets",
+      "target": "All creatures attacking Undead targets",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "While field active",
+        "type": "WHILE_FIELD_ACTIVE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplierAura",
+      "params": {
+        "target": "All creatures attacking Undead targets",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target is Undead-type"
+        },
+        "duration": {
+          "text": "While field active",
+          "type": "WHILE_FIELD_ACTIVE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field aura. Target predicate type Undead.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

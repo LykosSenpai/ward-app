@@ -1,0 +1,59 @@
+{
+  "id": "gen3_137_gnometheon",
+  "name": "Gnometheon",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "137",
+  "text": "Gain +1 Atk Dice Rolls and +1 Modifier for each \"Gnome\" named card in your hand. Gnomes sacrificed to summon this card are placed under it and count as cards in your hand. If this card leaves the field or changes control, the cards under follow it.",
+  "effects": [
+    {
+      "id": "137-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Gain +1 Atk Dice Rolls and +1 Modifier for each \"Gnome\" named card in your hand. Gnomes sacrificed to summon this card are placed under it and count as cards in your hand. If this card leaves the field or changes control, the cards under follow it."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "This creature",
+      "value": "Gain +1 Atk Dice Rolls and +1 Modifier for each \"Gnome\" named card in your hand. Gnomes sacrificed to summon this card are placed under it and count as cards in your hand. If this card leaves the field or changes control, the cards under follow it.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "This creature",
+        "valueText": "Gain +1 Atk Dice Rolls and +1 Modifier for each \"Gnome\" named card in your hand. Gnomes sacrificed to summon this card are placed under it and count as cards in your hand. If this card leaves the field or changes control, the cards under follow it.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Gain +1 Atk Dice Rolls and +1 Modifier for each \"Gnome\" named card in your hand. Gnomes sacrificed to summon this card are placed under it and count as cards in your hand. If this card leaves the field or changes control, the cards under follow it."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Cards placed under source count as hand cards and follow source.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Cards placed under source count as hand cards and follow source.",
+  "cardType": "CREATURE",
+  "creatureType": "Mechanical",
+  "armorLevel": 12,
+  "speed": 3,
+  "hp": 100,
+  "attackName": "Orbital Blow",
+  "attackDice": 3,
+  "modifier": 3
+}

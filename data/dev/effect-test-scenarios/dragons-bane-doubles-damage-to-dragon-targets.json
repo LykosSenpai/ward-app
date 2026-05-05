@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.420Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_044_dragon_s_bane",
+  "effectId": "044-E01",
+  "title": "Dragon’s Bane doubles attack damage to Dragon targets",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:53.713Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_044_dragon_s_bane",
+      "cardName": "Dragon’s Bane",
+      "cardType": "MAGIC",
+      "cardNumber": "044",
+      "generation": "1",
+      "rawText": "All creatures inflict 2x Atk damage to Dragon-type creatures, or creatures with “Dragon” in their name on the field."
+    },
+    "effect": {
+      "effectId": "044-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
+      "effectGroup": "Damage Multiplier Aura",
+      "target": "All creatures attacking Dragon targets",
+      "value": "2x Atk damage",
+      "durationText": "While field active",
+      "reusableFunction": "applyConditionalDamageMultiplierAura"
+    },
+    "title": "Dragon’s Bane doubles attack damage to Dragon targets",
+    "summary": "With Dragon’s Bane active as field magic, a creature attacking a Dragon-type or Dragon-named target deals 2x attack damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_044_dragon_s_bane"
+      ],
+      "player2Cards": [
+        "gen1_041_dragon_fox"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            4
+          ],
+          "label": "Attacker hit lands"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            3
+          ],
+          "label": "Base attack damage"
+        }
+      ],
+      "notes": [
+        "Pre-place Dragon’s Bane in an active field magic slot.",
+        "Use a player_1 primary attacker with 1 attack die and +0 modifier if available, or account for printed modifier in expected damage.",
+        "Set Dragon Fox as player_2 primary Dragon target.",
+        "Ensure not in first turn cycle."
+      ]
+    },
+    "steps": [
+      "Player 1 attacks Dragon Fox while Dragon’s Bane is field-active.",
+      "Resolve hit and damage calculation.",
+      "Inspect damage event multiplier and defender HP loss."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Damage multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      },
+      {
+        "label": "Dragon target took doubled attack damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 44
+      },
+      {
+        "label": "Field magic remains active",
+        "path": "players.player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_044_dragon_s_bane"
+      }
+    ],
+    "manualVerification": [
+      "Confirm predicate matches Dragon creature type and also names containing Dragon in a separate variant.",
+      "Confirm non-Dragon targets are not doubled."
+    ],
+    "riskNotes": [
+      "Runtime support reports no route for APPLY_DAMAGE_MULTIPLIER_AURA; may not affect damage pipeline."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate unsupported field aura before marking runtime blocker."
+    },
+    "regression": {
+      "fixtureName": "dragons-bane-doubles-damage-to-dragon-targets",
+      "tags": [
+        "magic",
+        "field",
+        "damage-multiplier",
+        "dragon"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_044_dragon_s_bane:044-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

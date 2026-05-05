@@ -1,0 +1,59 @@
+{
+  "id": "gen1_106_hive_lord",
+  "name": "Hive Lord",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "106",
+  "text": "When summoned, destroy 1 magic card on the field.",
+  "effects": [
+    {
+      "id": "106-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "Magic card exists on field"
+      },
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "actionText": "Destroy 1 magic card",
+      "target": "1 magic card on field",
+      "value": "Destroy 1",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroyMagicCards",
+      "params": {
+        "target": "1 magic card on field",
+        "valueText": "Destroy 1",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Magic card exists on field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Target selection required.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 5,
+  "speed": 7,
+  "hp": 50,
+  "attackName": "Swarm",
+  "attackDice": 2,
+  "modifier": 1
+}

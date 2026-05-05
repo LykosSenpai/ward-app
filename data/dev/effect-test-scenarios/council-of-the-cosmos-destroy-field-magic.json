@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.413Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_032_council_of_the_cosmos",
+  "effectId": "032-E01",
+  "title": "Council of the Cosmos destroys one field magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:14.910Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_032_council_of_the_cosmos",
+      "cardName": "Council of the Cosmos",
+      "cardType": "MAGIC",
+      "cardNumber": "032",
+      "generation": "1",
+      "rawText": "Destroy 1 magic card on the field."
+    },
+    "effect": {
+      "effectId": "032-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "target": "1 magic card on field",
+      "value": "Destroy 1",
+      "durationText": "Instant",
+      "reusableFunction": "destroyMagicCards"
+    },
+    "title": "Council of the Cosmos destroys one field magic",
+    "summary": "Target one magic card on the field and verify it moves to cemetery while Council resolves as standard magic.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_032_council_of_the_cosmos",
+        "test_creature_primary"
+      ],
+      "player2Cards": [
+        "gen1_024_ball_and_chain",
+        "test_creature_primary"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Player_2 has Ball and Chain equipped/in a field magic slot as the target."
+      ]
+    },
+    "steps": [
+      "Player_1 plays Council of the Cosmos.",
+      "Select player_2 field magic Ball and Chain as target.",
+      "Resolve effect."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Target magic destroyed",
+        "path": "player_2.cemetery",
+        "operator": "contains",
+        "value": "gen1_024_ball_and_chain"
+      },
+      {
+        "label": "Target removed from magic slot",
+        "path": "player_2.magicSlots",
+        "operator": "notContains",
+        "value": "gen1_024_ball_and_chain"
+      },
+      {
+        "label": "Council goes to cemetery after resolution",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_032_council_of_the_cosmos"
+      },
+      {
+        "label": "Former equip stat effect cleaned up",
+        "path": "player_2.primaryCreature.attachedMagic",
+        "operator": "notContains",
+        "value": "gen1_024_ball_and_chain"
+      }
+    ],
+    "manualVerification": [
+      "Confirm prompt only lists magic cards on field, not hand/deck/cemetery."
+    ],
+    "riskNotes": [
+      "Destroying equip magic must also clean attached continuous modifiers."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported destroy magic route; verify target prompt and cleanup."
+    },
+    "regression": {
+      "fixtureName": "council-of-the-cosmos-destroy-field-magic",
+      "tags": [
+        "magic",
+        "standard",
+        "destroy",
+        "targeting"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_032_council_of_the_cosmos:032-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

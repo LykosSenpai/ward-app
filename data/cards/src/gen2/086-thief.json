@@ -1,0 +1,104 @@
+{
+  "id": "gen2_086_thief",
+  "name": "Thief",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "086",
+  "text": "When summoned, steal 1 equip card from your opponent's side of the field and equip it to this card. Send the stolen card to its original owner's cemetery if this card leaves the field, changes control, or this effect is negated.",
+  "effects": [
+    {
+      "id": "086-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent controls an equip card"
+      },
+      "actionType": "STEAL_EQUIP_CARD",
+      "effectGroup": "Control/Equip Steal",
+      "actionText": "Take control of opponent equip and equip to this card",
+      "target": "1 opponent equip card",
+      "value": "Steal and equip to this card",
+      "duration": {
+        "text": "While source remains active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "stealEquipCard",
+      "params": {
+        "target": "1 opponent equip card",
+        "valueText": "Steal and equip to this card",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent controls an equip card"
+        },
+        "duration": {
+          "text": "While source remains active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "count": 1,
+        "from": "OPPONENT_FIELD",
+        "match": {
+          "magicSubtype": "EQUIP"
+        },
+        "destination": "EQUIPPED_TO_THIS_CARD"
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "086-E02",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "condition": {
+        "type": "SOURCE_INVALIDATED",
+        "text": "This card leaves field, changes control, or this effect is negated"
+      },
+      "actionType": "RETURN_LINKED_CARDS",
+      "effectGroup": "Zone Movement",
+      "actionText": "Send stolen equip to original owner's cemetery",
+      "target": "Stolen equip card",
+      "value": "Send to original owner's cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedCards",
+      "params": {
+        "target": "Stolen equip card",
+        "valueText": "Send to original owner's cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "SOURCE_INVALIDATED",
+          "text": "This card leaves field, changes control, or this effect is negated"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 3,
+  "speed": 11,
+  "hp": 50,
+  "attackName": "Gouge",
+  "attackDice": 1,
+  "modifier": 1
+}

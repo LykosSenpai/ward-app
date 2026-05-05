@@ -1,0 +1,56 @@
+{
+  "id": "gen3_142_inversion",
+  "name": "Inversion",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "142",
+  "text": "Players must play with their decks flipped upside down. Their bottom card will be showing face up.",
+  "effects": [
+    {
+      "id": "142-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Players must play with their decks flipped upside down. Their bottom card will be showing face up."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "Target / controller as specified by card text",
+      "value": "Players must play with their decks flipped upside down. Their bottom card will be showing face up.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "Target / controller as specified by card text",
+        "valueText": "Players must play with their decks flipped upside down. Their bottom card will be showing face up.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Players must play with their decks flipped upside down. Their bottom card will be showing face up."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

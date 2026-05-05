@@ -1,0 +1,71 @@
+{
+  "id": "gen1_146_warg",
+  "name": "Warg",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "146",
+  "text": "When this creature hits, the target creature receives 10 damage once per turn cycle, for 1 turn cycle.",
+  "effects": [
+    {
+      "id": "146-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "HIT_LANDS",
+        "text": "Hit lands"
+      },
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "actionText": "Apply recurring damage",
+      "target": "Target creature",
+      "value": "10 damage per turn cycle",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN",
+        "tickTiming": "END_OF_COMBAT_PHASE",
+        "stackRule": "DO_NOT_STACK"
+      },
+      "reusableFunction": "applyDamageOverTime",
+      "params": {
+        "target": "Target creature",
+        "valueText": "10 damage per turn cycle",
+        "statChanges": [],
+        "condition": {
+          "type": "HIT_LANDS",
+          "text": "Hit lands"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN",
+          "tickTiming": "END_OF_COMBAT_PHASE",
+          "stackRule": "DO_NOT_STACK"
+        },
+        "damageType": "DAMAGE_OVER_TIME",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "notes": "Shared DoT pattern. Turn cycle is one full round back to the same player. DOT ticks at end of Combat Phase and does not stack with another active DOT.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 4,
+  "speed": 8,
+  "hp": 40,
+  "attackName": "Rip and Tear",
+  "attackDice": 1,
+  "modifier": 2
+}

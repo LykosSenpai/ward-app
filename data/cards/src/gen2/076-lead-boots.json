@@ -1,0 +1,134 @@
+{
+  "id": "gen2_076_lead_boots",
+  "name": "Lead Boots",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "076",
+  "text": "Can only be equipped to a primary creature. The equipped creature cannot leave the field or change control unless killed. This card cannot be removed from the field unless destroyed.",
+  "effects": [
+    {
+      "id": "076-E01",
+      "trigger": "EQUIP_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target is a primary creature"
+      },
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Equip Requirement",
+      "actionText": "Validate equip target",
+      "target": "Target creature",
+      "value": "Must be a primary creature",
+      "duration": {
+        "text": "Before equip",
+        "type": "BEFORE_EQUIP"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "Target creature",
+        "valueText": "Must be a primary creature",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target is a primary creature"
+        },
+        "duration": {
+          "text": "Before equip",
+          "type": "BEFORE_EQUIP"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "targetMustBePrimaryCreature": true
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "076-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature would leave field or change control without being killed"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Zone Restriction",
+      "actionText": "Prevent non-kill removal or control change",
+      "target": "Equipped creature",
+      "value": "Cannot leave field or change control unless killed",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Cannot leave field or change control unless killed",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature would leave field or change control without being killed"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "076-E03",
+      "trigger": "STATIC_RULE",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card would be removed without being destroyed"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Self Removal Restriction",
+      "actionText": "Prevent non-destroy removal",
+      "target": "This card",
+      "value": "Cannot be removed from field unless destroyed",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "This card",
+        "valueText": "Cannot be removed from field unless destroyed",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card would be removed without being destroyed"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

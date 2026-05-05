@@ -1,0 +1,61 @@
+{
+  "id": "gen2_128_frog_of_fortune",
+  "name": "Frog of Fortune",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "128",
+  "text": "Trade 1 magic card in your hand for 1 in your cemetery.",
+  "effects": [
+    {
+      "id": "128-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "You have a magic card in hand and magic card in cemetery"
+      },
+      "actionType": "TRADE_CARD_WITH_CEMETERY",
+      "effectGroup": "Card Trade",
+      "actionText": "Swap/trade selected magic cards",
+      "target": "Your hand and cemetery",
+      "value": "Trade 1 magic card in hand for 1 magic card in cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "tradeCardWithCemetery",
+      "params": {
+        "target": "Your hand and cemetery",
+        "valueText": "Trade 1 magic card in hand for 1 magic card in cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You have a magic card in hand and magic card in cemetery"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "cardKind": "MAGIC",
+        "fromZone": "HAND",
+        "toZone": "CEMETERY",
+        "takeFromZone": "CEMETERY",
+        "putIntoZone": "HAND",
+        "count": 1
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

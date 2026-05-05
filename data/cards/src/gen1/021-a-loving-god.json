@@ -1,0 +1,63 @@
+{
+  "id": "gen1_021_a_loving_god",
+  "name": "A Loving God",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "021",
+  "text": "Creatures cannot battle for 3 turn cycles.",
+  "effects": [
+    {
+      "id": "021-E01",
+      "trigger": "ON_PLAY_FIELD",
+      "condition": {
+        "type": "FIELD_CARD_RESOLVES",
+        "text": "Field card resolves"
+      },
+      "actionType": "APPLY_BATTLE_LOCK",
+      "effectGroup": "Battle Lock",
+      "actionText": "Prevent all creature battles",
+      "target": "All creatures",
+      "value": "Cannot battle",
+      "duration": {
+        "text": "3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyGlobalBattleLock",
+      "params": {
+        "target": "All creatures",
+        "valueText": "Cannot battle",
+        "statChanges": [],
+        "condition": {
+          "type": "FIELD_CARD_RESOLVES",
+          "text": "Field card resolves"
+        },
+        "duration": {
+          "text": "3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field-duration effect even though Magic Type column says Single Use. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

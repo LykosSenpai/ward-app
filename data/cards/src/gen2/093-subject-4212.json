@@ -1,0 +1,61 @@
+{
+  "id": "gen2_093_subject_4212",
+  "name": "Subject #4212",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "093",
+  "text": "If \"Pumpkin Man\" is used as a sacrifice, it counts as 2 sacrifices for this card.",
+  "effects": [
+    {
+      "id": "093-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "\"Pumpkin Man\" is used as sacrifice for Subject #4212"
+      },
+      "actionType": "APPLY_SACRIFICE_VALUE",
+      "effectGroup": "Sacrifice Value",
+      "actionText": "Treat Pumpkin Man as 2 sacrifices for this summon",
+      "target": "Pumpkin Man used for this card",
+      "value": "Counts as 2 sacrifices",
+      "duration": {
+        "text": "Before summon",
+        "type": "BEFORE_SUMMON"
+      },
+      "reusableFunction": "applySacrificeValue",
+      "params": {
+        "target": "Pumpkin Man used for this card",
+        "valueText": "Counts as 2 sacrifices",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "\"Pumpkin Man\" is used as sacrifice for Subject #4212"
+        },
+        "duration": {
+          "text": "Before summon",
+          "type": "BEFORE_SUMMON"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "specificCardName": "Pumpkin Man",
+        "sacrificeValue": 2
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "Summon Requirement.",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 12,
+  "speed": 8,
+  "hp": 110,
+  "attackName": "Smash Pumpkin",
+  "attackDice": 5,
+  "modifier": 5
+}

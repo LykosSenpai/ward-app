@@ -1,0 +1,98 @@
+{
+  "id": "gen3_143_succubus",
+  "name": "Succubus",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "143",
+  "text": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage.",
+  "effects": [
+    {
+      "id": "143-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage."
+      },
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "actionText": "Heal a creature or apply lifesteal",
+      "target": "This creature",
+      "value": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "heal",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "143-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 2,
+  "speed": 4,
+  "hp": 40,
+  "attackName": "Lure",
+  "attackDice": 2,
+  "modifier": 1
+}

@@ -1,0 +1,80 @@
+{
+  "id": "gen2_116_ring_of_extremes",
+  "name": "Ring of Extremes",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "116",
+  "text": "When the equipped creature rolls to hit, ignore its Hit Modifier and the target's AL. Use the following outcomes instead: 1-8: Critical Fail. 9-12: Critical Hit. 13+: Normal Hit.",
+  "effects": [
+    {
+      "id": "116-E01",
+      "trigger": "DURING_HIT_ROLL",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature rolls to hit"
+      },
+      "actionType": "APPLY_HIT_OUTCOME_OVERRIDE",
+      "effectGroup": "Hit Outcome Override",
+      "actionText": "Resolve hit by custom outcome table",
+      "target": "Equipped creature hit roll",
+      "value": "Ignore Hit Modifier and target AL; use custom outcome table",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyHitOutcomeOverride",
+      "params": {
+        "target": "Equipped creature hit roll",
+        "valueText": "Ignore Hit Modifier and target AL; use custom outcome table",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature rolls to hit"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "ignoreHitModifier": true,
+        "ignoreTargetAL": true,
+        "outcomes": [
+          {
+            "range": [
+              1,
+              8
+            ],
+            "result": "CRITICAL_FAIL"
+          },
+          {
+            "range": [
+              9,
+              12
+            ],
+            "result": "CRITICAL_HIT"
+          },
+          {
+            "range": [
+              13,
+              null
+            ],
+            "result": "NORMAL_HIT"
+          }
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

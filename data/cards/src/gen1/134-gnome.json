@@ -1,0 +1,66 @@
+{
+  "id": "gen1_134_gnome",
+  "name": "Gnome",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "134",
+  "text": "For every card in your hand with \"Gnome\" in its name, add: Atk Dice Rolls: +1. Modifier: +1.",
+  "effects": [
+    {
+      "id": "134-E01",
+      "trigger": "DURING_DAMAGE_CALC_OR_WHILE_IN_HAND_COUNT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Count cards in hand with Gnome in name"
+      },
+      "actionType": "APPLY_SCALING_MODIFIER_FROM_ZONE_COUNT",
+      "effectGroup": "Scaling Modifier",
+      "actionText": "Add Atk Dice Rolls and Modifier per matching hand card",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +1 and Modifier +1 per Gnome card",
+      "duration": {
+        "text": "Current battle/while condition true",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyScalingModifierFromZoneCount",
+      "params": {
+        "target": "This creature",
+        "valueText": "Atk Dice Rolls +1 and Modifier +1 per Gnome card",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Count cards in hand with Gnome in name"
+        },
+        "duration": {
+          "text": "Current battle/while condition true",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Need decide timing; text says for every card in hand. Modifier applies to both Hit Roll and Attack Damage Roll.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Card appears to spell Haflings and moral this way.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 3,
+  "speed": 1,
+  "hp": 20,
+  "attackName": "Slap",
+  "attackDice": 1,
+  "modifier": 1
+}

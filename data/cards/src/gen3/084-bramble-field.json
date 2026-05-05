@@ -1,0 +1,56 @@
+{
+  "id": "gen3_084_bramble_field",
+  "name": "Bramble Field",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "084",
+  "text": "At the beginning of your turn, inflict 5 damage to all creatures that do not have wings.",
+  "effects": [
+    {
+      "id": "084-E01",
+      "trigger": "BEGINNING_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "At the beginning of your turn, inflict 5 damage to all creatures that do not have wings."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "All creatures matching condition",
+      "value": "At the beginning of your turn, inflict 5 damage to all creatures that do not have wings.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "All creatures matching condition",
+        "valueText": "At the beginning of your turn, inflict 5 damage to all creatures that do not have wings.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "At the beginning of your turn, inflict 5 damage to all creatures that do not have wings."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "BEGINNING_OF_TURN"
+      },
+      "notes": "Requires wings trait tagging.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Requires wings trait tagging.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

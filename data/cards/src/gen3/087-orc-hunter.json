@@ -1,0 +1,137 @@
+{
+  "id": "gen3_087_orc_hunter",
+  "name": "Orc Hunter",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "087",
+  "text": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+  "effects": [
+    {
+      "id": "087-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+      },
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon or interact with a Limited Summon",
+      "target": "Limited Summon card(s)",
+      "value": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "limitedSummon",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Limited Summon with rarity/type filter and source-linked return cleanup.",
+      "needsReview": true
+    },
+    {
+      "id": "087-E02",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+      },
+      "actionType": "NEGATE_CARD_EFFECT",
+      "effectGroup": "Negation",
+      "actionText": "Negate a card effect",
+      "target": "Limited Summon card(s)",
+      "value": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "negateCardEffect",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Limited Summon with rarity/type filter and source-linked return cleanup.",
+      "needsReview": true
+    },
+    {
+      "id": "087-E03",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Card Movement",
+      "actionText": "Move or return a card between zones",
+      "target": "Limited Summon card(s)",
+      "value": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "moveCard",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Limited Summon with rarity/type filter and source-linked return cleanup.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Limited Summon with rarity/type filter and source-linked return cleanup.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 3,
+  "speed": 9,
+  "hp": 60,
+  "attackName": "Steadfast Shot",
+  "attackDice": 1,
+  "modifier": 3
+}

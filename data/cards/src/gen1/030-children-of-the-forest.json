@@ -1,0 +1,62 @@
+{
+  "id": "gen1_030_children_of_the_forest",
+  "name": "Children of the Forest",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "030",
+  "text": "When you hit, play this card from your hand. Your creature gains +5 Atk Dice Rolls for this battle.",
+  "effects": [
+    {
+      "id": "030-E01",
+      "trigger": "ON_HIT_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Your creature hits"
+      },
+      "actionType": "APPLY_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "actionText": "Add Atk Dice Rolls",
+      "target": "Your creature",
+      "value": "Atk Dice Rolls +5",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyDiceModifier",
+      "params": {
+        "target": "Your creature",
+        "valueText": "Atk Dice Rolls +5",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 5,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Your creature hits"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Lightning response after hit.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

@@ -1,0 +1,19 @@
+{
+  "id": "gen3_093_forest_guardian",
+  "name": "Forest Guardian",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "093",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 7,
+  "speed": 3,
+  "hp": 100,
+  "attackName": "Oaken Crush",
+  "attackDice": 6,
+  "modifier": 0
+}

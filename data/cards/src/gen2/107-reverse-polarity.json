@@ -1,0 +1,56 @@
+{
+  "id": "gen2_107_reverse_polarity",
+  "name": "Reverse Polarity",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "107",
+  "text": "While this card is active on the field, the creature with lower SPD attacks first.",
+  "effects": [
+    {
+      "id": "107-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Two creatures compare battle priority"
+      },
+      "actionType": "APPLY_ATTACK_PRIORITY_OVERRIDE",
+      "effectGroup": "Attack Priority",
+      "actionText": "Invert speed priority so lower SPD attacks first",
+      "target": "All battles",
+      "value": "Creature with lower SPD attacks first",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyAttackPriorityOverride",
+      "params": {
+        "target": "All battles",
+        "valueText": "Creature with lower SPD attacks first",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Two creatures compare battle priority"
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "priority": "LOWER_SPD_FIRST"
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

@@ -1,0 +1,19 @@
+{
+  "id": "gen3_073_big_mouth_bass",
+  "name": "Big Mouth Bass",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "073",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 1,
+  "speed": 5,
+  "hp": 20,
+  "attackName": "Gulp",
+  "attackDice": 1,
+  "modifier": 1
+}

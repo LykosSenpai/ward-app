@@ -1,0 +1,19 @@
+{
+  "id": "gen1_011_werewolf",
+  "name": "Werewolf",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "011",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 6,
+  "speed": 8,
+  "hp": 70,
+  "attackName": "Fury Assault",
+  "attackDice": 2,
+  "modifier": 3
+}

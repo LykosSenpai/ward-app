@@ -1,0 +1,96 @@
+{
+  "id": "gen2_014_double_hit",
+  "name": "Double Hit",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "014",
+  "text": "Equipped creature can initiate battle twice during their turn. Your opponent can only return attack for 1 of these battles.",
+  "effects": [
+    {
+      "id": "014-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature is able to battle"
+      },
+      "actionType": "APPLY_BATTLE_REQUIREMENT",
+      "effectGroup": "Battle Permission",
+      "actionText": "Allow second initiated battle",
+      "target": "Equipped creature",
+      "value": "May initiate battle twice during controller's turn",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyBattleRequirement",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "May initiate battle twice during controller's turn",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature is able to battle"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "extraInitiatedBattles": 1
+      },
+      "notes": "Opponent may only return attack during one of the two battles.",
+      "needsReview": false
+    },
+    {
+      "id": "014-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature initiated two battles using Double Hit"
+      },
+      "actionType": "APPLY_BATTLE_REQUIREMENT",
+      "effectGroup": "Return Attack Restriction",
+      "actionText": "Limit return attacks",
+      "target": "Opponent creature",
+      "value": "Can return attack for only 1 of those battles",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyBattleRequirement",
+      "params": {
+        "target": "Opponent creature",
+        "valueText": "Can return attack for only 1 of those battles",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature initiated two battles using Double Hit"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "maxReturnAttacksAgainstThisEffect": 1
+      },
+      "notes": "Track whether opponent returned attack for one Double Hit battle.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

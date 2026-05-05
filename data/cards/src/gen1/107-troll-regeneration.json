@@ -1,0 +1,69 @@
+{
+  "id": "gen1_107_troll_regeneration",
+  "name": "Troll Regeneration",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "107",
+  "text": "Equip to a creature. Immediately heal the equipped creature 5 HP. At the start of your turn, when you draw your card, heal the equipped creature 5 HP while this card remains equipped. This regenerating heal starts with 2 counters. At the end of the source owner's turn, add 1 counter while this card remains equipped.",
+  "effects": [
+    {
+      "id": "107-E01",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "EQUIPPED_CREATURE_EXISTS",
+        "text": "Equipped creature exists"
+      },
+      "actionType": "APPLY_REGENERATING_HEAL",
+      "effectGroup": "Regenerating Heal",
+      "actionText": "Apply Troll Regeneration-style healing to equipped creature",
+      "target": "Equipped creature",
+      "value": "5 HP immediately, then 5 HP at the start of your turn when you draw",
+      "duration": {
+        "text": "Persistent while equipped; heals immediately; starts with 2 counters; ticks at the start of source owner turn; refreshes +1 at the end of source owner turn",
+        "type": "SOURCE_LINKED_COUNTER",
+        "amount": 2,
+        "unit": "COUNTER",
+        "starts": "ON_EQUIP",
+        "expires": "WHEN_SOURCE_LEAVES_FIELD"
+      },
+      "reusableFunction": "applyRegeneratingHeal",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "5 HP per tick",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_CREATURE_EXISTS",
+          "text": "Equipped creature exists"
+        },
+        "duration": {
+          "text": "Persistent while equipped; heals immediately; starts with 2 counters; ticks at the start of source owner turn; refreshes +1 at the end of source owner turn",
+          "type": "SOURCE_LINKED_COUNTER",
+          "amount": 2,
+          "unit": "COUNTER",
+          "starts": "ON_EQUIP",
+          "expires": "WHEN_SOURCE_LEAVES_FIELD"
+        },
+        "damageType": "REGENERATING_HEAL",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": "BEGINNING_OF_TURN",
+        "healImmediatelyOnApply": true,
+        "startingTicks": 2,
+        "refreshAtEndOfSourceOwnerTurn": true,
+        "refreshAmount": 1,
+        "maxRefreshCounter": null,
+        "expiresWhenSourceLeaves": true
+      },
+      "notes": "Uses a separate Troll Regeneration-style healing handler, not the generic HOT/DOT runtime. Heals immediately when equipped, then heals 5 HP at the start of the source owner's turn during the Draw/start-turn window. Starts with 2 removable counters and refreshes +1 at the end of the source owner's turn while equipped. Cannot exceed max HP.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Troll Regeneration uses APPLY_REGENERATING_HEAL, a separate runtime from normal HOT.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

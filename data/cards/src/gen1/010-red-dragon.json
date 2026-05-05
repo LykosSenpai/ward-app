@@ -1,0 +1,19 @@
+{
+  "id": "gen1_010_red_dragon",
+  "name": "Red Dragon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "010",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 10,
+  "speed": 10,
+  "hp": 100,
+  "attackName": "Fire Breath",
+  "attackDice": 2,
+  "modifier": 7
+}

@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.402Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_002_dire_wolf",
+  "effectId": "002-E01",
+  "title": "Dire Wolf applies 10 DOT for 3 cycles",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:11:52.834Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_002_dire_wolf",
+      "cardName": "Dire Wolf",
+      "cardType": "CREATURE",
+      "cardNumber": "002",
+      "generation": "1",
+      "rawText": "When this creature hits, the targeted creature receives 10 damage once per turn cycle, for the next 3 turn cycles."
+    },
+    "effect": {
+      "effectId": "002-E01",
+      "trigger": "ON_HIT",
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "target": "Target creature",
+      "value": "10 damage per turn cycle",
+      "durationText": "3 turn cycles",
+      "reusableFunction": "applyDamageOverTime"
+    },
+    "title": "Dire Wolf applies 10 DOT for 3 cycles",
+    "summary": "Verify hit applies non-stacking 10 damage DOT ticking at end of Combat for 3 turn cycles.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_002_dire_wolf"
+      ],
+      "player2Cards": [
+        "gen1_012_orc"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5,
+            5
+          ],
+          "label": "Dire Wolf hits"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2
+          ],
+          "label": "Base damage"
+        }
+      ],
+      "notes": [
+        "Use a target with enough HP to survive multiple DOT ticks."
+      ]
+    },
+    "steps": [
+      "Put Dire Wolf as player_1 primary and Orc as player_2 primary.",
+      "Attack and resolve a successful hit.",
+      "Confirm DOT is applied to target.",
+      "End Combat Phase and observe first DOT tick.",
+      "Advance to subsequent combat ends until three ticks resolve."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "DOT effect exists",
+        "path": "player_2.primary.activeEffects",
+        "operator": "contains",
+        "value": "DAMAGE_OVER_TIME"
+      },
+      {
+        "label": "DOT value is 10",
+        "path": "player_2.primary.activeEffects.DAMAGE_OVER_TIME.value",
+        "operator": "equals",
+        "value": 10
+      },
+      {
+        "label": "DOT duration is 3 cycles",
+        "path": "player_2.primary.activeEffects.DAMAGE_OVER_TIME.duration.amount",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "DOT tick timing end combat",
+        "path": "player_2.primary.activeEffects.DAMAGE_OVER_TIME.tickTiming",
+        "operator": "equals",
+        "value": "END_OF_COMBAT_PHASE"
+      },
+      {
+        "label": "DOT removed after third tick",
+        "path": "player_2.primary.activeEffects.DAMAGE_OVER_TIME",
+        "operator": "notExists"
+      }
+    ],
+    "manualVerification": [
+      "Attempt a second Dire Wolf hit before expiration and verify DOT does not stack unless refreshed by engine policy."
+    ],
+    "riskNotes": [
+      "Exact tick count display may decrement immediately after first end-combat tick."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported resolver; focus on DOT timing and non-stack rule."
+    },
+    "regression": {
+      "fixtureName": "dire-wolf-dot-three-cycles",
+      "tags": [
+        "combat",
+        "on-hit",
+        "dot",
+        "duration"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_002_dire_wolf:002-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

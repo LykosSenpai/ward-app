@@ -1,0 +1,19 @@
+{
+  "id": "gen1_077_ogre",
+  "name": "Ogre",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "077",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 8,
+  "speed": 4,
+  "hp": 90,
+  "attackName": "Savage Smash",
+  "attackDice": 3,
+  "modifier": 3
+}

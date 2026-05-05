@@ -1,0 +1,19 @@
+{
+  "id": "gen1_136_demon",
+  "name": "Demon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "136",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 4,
+  "speed": 8,
+  "hp": 40,
+  "attackName": "Torture",
+  "attackDice": 2,
+  "modifier": 1
+}

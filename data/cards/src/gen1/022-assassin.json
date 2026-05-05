@@ -1,0 +1,59 @@
+{
+  "id": "gen1_022_assassin",
+  "name": "Assassin",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "022",
+  "text": "If this creature hits first during battle, inflict 3x Atk damage.",
+  "effects": [
+    {
+      "id": "022-E01",
+      "trigger": "ON_HIT_FIRST",
+      "condition": {
+        "type": "HITS_FIRST",
+        "text": "This creature hits first during battle"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply Atk damage",
+      "target": "Attack target",
+      "value": "3x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Attack target",
+        "valueText": "3x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "HITS_FIRST",
+          "text": "This creature hits first during battle"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Shared with Hafling and Rogue.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 1,
+  "speed": 12,
+  "hp": 10,
+  "attackName": "Ambush Blade",
+  "attackDice": 3,
+  "modifier": 5
+}

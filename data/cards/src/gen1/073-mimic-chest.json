@@ -1,0 +1,107 @@
+{
+  "id": "gen1_073_mimic_chest",
+  "name": "Mimic Chest",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "073",
+  "text": "During battle, play this card from your hand. Negate an attack and take away 1/2 of the attacking creature's remaining HP.",
+  "effects": [
+    {
+      "id": "073-E01",
+      "trigger": "DURING_BATTLE_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Attack would occur/hit"
+      },
+      "actionType": "NEGATE_ATTACK",
+      "effectGroup": "Negation",
+      "actionText": "Negate attack",
+      "target": "Attacking creature attack",
+      "value": "Negate attack",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateAttack",
+      "params": {
+        "target": "Attacking creature attack",
+        "valueText": "Negate attack",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Attack would occur/hit"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Lightning battle response.",
+      "needsReview": false
+    },
+    {
+      "id": "073-E02",
+      "trigger": "AFTER_NEGATE_ATTACK",
+      "condition": {
+        "type": "TEXT",
+        "text": "Mimic Chest attack negated"
+      },
+      "actionType": "DEAL_PERCENTAGE_DAMAGE",
+      "effectGroup": "HP Reduction",
+      "actionText": "Take away 1/2 remaining HP",
+      "target": "Attacking creature",
+      "value": "Remaining HP / 2 damage or reduction",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "reduceRemainingHpFraction",
+      "params": {
+        "target": "Attacking creature",
+        "valueText": "Remaining HP / 2 damage or reduction",
+        "statChanges": [
+          {
+            "stat": "HP",
+            "operation": "MULTIPLY",
+            "value": 2,
+            "rounding": null
+          },
+          {
+            "stat": "CURRENT_HP",
+            "operation": "MULTIPLY",
+            "value": "1/2",
+            "rounding": "CEIL"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Mimic Chest attack negated"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "PERCENTAGE_BASED_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Need decide if this is damage or direct HP loss. Half values always round up.",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

@@ -1,0 +1,94 @@
+{
+  "id": "gen1_064_hourglass_of_time",
+  "name": "Hourglass of Time",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "064",
+  "text": "Play this card at any time to reset the current player's turn. This includes all events that occurred. This card cannot be removed from the cemetery.",
+  "effects": [
+    {
+      "id": "064-E01",
+      "trigger": "ANY_TIME_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Any point during game"
+      },
+      "actionType": "RESET_CURRENT_TURN",
+      "effectGroup": "Turn Control",
+      "actionText": "Reset current player turn including all events",
+      "target": "Current turn state",
+      "value": "Rollback/reset turn",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "resetCurrentTurn",
+      "params": {
+        "target": "Current turn state",
+        "valueText": "Rollback/reset turn",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Any point during game"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Requires turn snapshot/event log.",
+      "needsReview": false
+    },
+    {
+      "id": "064-E02",
+      "trigger": "STATIC_RULE",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is in cemetery"
+      },
+      "actionType": "APPLY_ZONE_LOCK",
+      "effectGroup": "Restriction",
+      "actionText": "Cannot remove this card from cemetery",
+      "target": "This card",
+      "value": "Cannot be removed",
+      "duration": {
+        "text": "Always",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyZoneLock",
+      "params": {
+        "target": "This card",
+        "valueText": "Cannot be removed",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is in cemetery"
+        },
+        "duration": {
+          "text": "Always",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Prevents movement from cemetery.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

@@ -1,0 +1,63 @@
+{
+  "id": "gen1_123_allosaurus",
+  "name": "Allosaurus",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "123",
+  "text": "When this creature hits, the targeted creature receives 10 damage once per turn cycle, until this card leaves the field.",
+  "effects": [
+    {
+      "id": "123-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "HIT_LANDS",
+        "text": "Hit lands"
+      },
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "actionText": "Apply recurring damage",
+      "target": "Target creature",
+      "value": "10 damage per turn cycle",
+      "duration": {
+        "text": "Until this card leaves field",
+        "type": "UNTIL_SOURCE_LEAVES_FIELD",
+        "sourceLinked": true,
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "reusableFunction": "applyDamageOverTimeUntilSourceLeaves",
+      "params": {
+        "target": "Target creature",
+        "valueText": "10 damage per turn cycle",
+        "statChanges": [],
+        "condition": {
+          "type": "HIT_LANDS",
+          "text": "Hit lands"
+        },
+        "duration": {
+          "text": "Until this card leaves field",
+          "type": "UNTIL_SOURCE_LEAVES_FIELD",
+          "sourceLinked": true,
+          "tickTiming": "END_OF_COMBAT_PHASE"
+        },
+        "damageType": "DAMAGE_OVER_TIME",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "notes": "Source-linked DoT pattern. Turn cycle is one full round back to the same player. DOT ticks at end of Combat Phase and does not stack with another active DOT.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dino",
+  "armorLevel": 9,
+  "speed": 10,
+  "hp": 80,
+  "attackName": "Bloody Chomp",
+  "attackDice": 1,
+  "modifier": 3
+}

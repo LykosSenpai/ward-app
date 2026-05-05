@@ -1,0 +1,60 @@
+{
+  "id": "gen2_118_magic_shield",
+  "name": "Magic Shield",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "118",
+  "text": "Negate the effect of the next magic card that targets the equipped creature. Once used, send the negated magic card and this card to the cemetery.",
+  "effects": [
+    {
+      "id": "118-E01",
+      "trigger": "WHEN_EQUIPPED_CREATURE_TARGETED_BY_MAGIC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Magic card targets the equipped creature"
+      },
+      "actionType": "ADD_NEXT_MAGIC_SHIELD",
+      "effectGroup": "Magic Shield",
+      "actionText": "Negate next targeting magic card and send both cards to cemetery",
+      "target": "Next magic card targeting equipped creature",
+      "value": "Negate effect, send magic and this card to cemetery",
+      "duration": {
+        "text": "Until used",
+        "type": "UNTIL_CONSUMED"
+      },
+      "reusableFunction": "addNextMagicShield",
+      "params": {
+        "target": "Next magic card targeting equipped creature",
+        "valueText": "Negate effect, send magic and this card to cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Magic card targets the equipped creature"
+        },
+        "duration": {
+          "text": "Until used",
+          "type": "UNTIL_CONSUMED"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "uses": 1,
+        "onUse": [
+          "SEND_NEGATED_MAGIC_TO_CEMETERY",
+          "SEND_THIS_CARD_TO_CEMETERY"
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

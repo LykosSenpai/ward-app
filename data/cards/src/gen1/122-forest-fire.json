@@ -1,0 +1,55 @@
+{
+  "id": "gen1_122_forest_fire",
+  "name": "Forest Fire",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "122",
+  "text": "At the end of your turn, your opponent(s) must roll 1 die. If the result is: 1-3: Opponent(s) primary creature receives 10 damage. 4-6: Destroy this.",
+  "effects": [
+    {
+      "id": "122-E01",
+      "trigger": "AT_END_OF_YOUR_TURN_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent rolls 1 die"
+      },
+      "actionType": "RESOLVE_FIELD_ROLL_OUTCOME",
+      "effectGroup": "Roll Outcome Damage/Destroy",
+      "actionText": "Damage opponent primary or destroy this card",
+      "target": "Opponent primary / this card",
+      "value": "1-3: 10 damage; 4-6: destroy this",
+      "duration": {
+        "text": "End of each your turn",
+        "type": "TEXT"
+      },
+      "reusableFunction": "resolveFieldRollOutcome",
+      "params": {
+        "target": "Opponent primary / this card",
+        "valueText": "1-3: 10 damage; 4-6: destroy this",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent rolls 1 die"
+        },
+        "duration": {
+          "text": "End of each your turn",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field recurring roll effect.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

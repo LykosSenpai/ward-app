@@ -1,0 +1,59 @@
+{
+  "id": "gen3_075_orc_champion",
+  "name": "Orc Champion",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "075",
+  "text": "Summon Requirement: If you have 2 creatures in your hand with \"Orc\" in their name, you may summon this creature without a sacrifice. This creature may be summoned as normal.",
+  "effects": [
+    {
+      "id": "075-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon Requirement: If you have 2 creatures in your hand with \"Orc\" in their name, you may summon this creature without a sacrifice. This creature may be summoned as normal."
+      },
+      "actionType": "SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Apply custom summon requirement",
+      "target": "This creature",
+      "value": "Summon Requirement: If you have 2 creatures in your hand with \"Orc\" in their name, you may summon this creature without a sacrifice. This creature may be summoned as normal.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "This creature",
+        "valueText": "Summon Requirement: If you have 2 creatures in your hand with \"Orc\" in their name, you may summon this creature without a sacrifice. This creature may be summoned as normal.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon Requirement: If you have 2 creatures in your hand with \"Orc\" in their name, you may summon this creature without a sacrifice. This creature may be summoned as normal."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 12,
+  "speed": 5,
+  "hp": 70,
+  "attackName": "Pulverize",
+  "attackDice": 1,
+  "modifier": 12
+}

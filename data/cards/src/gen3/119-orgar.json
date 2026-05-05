@@ -1,0 +1,70 @@
+{
+  "id": "gen3_119_orgar",
+  "name": "Orgar",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "119",
+  "text": "Apply the following to this card during battle: Atk Dice Rolls +2 against Humanoid-type creatures. Atk Dice Rolls -2 against Beast-type creatures.",
+  "effects": [
+    {
+      "id": "119-E01",
+      "trigger": "DURING_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Apply the following to this card during battle: Atk Dice Rolls +2 against Humanoid-type creatures. Atk Dice Rolls -2 against Beast-type creatures."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "This creature",
+      "value": "Apply the following to this card during battle: Atk Dice Rolls +2 against Humanoid-type creatures. Atk Dice Rolls -2 against Beast-type creatures.",
+      "duration": {
+        "text": "This turn/battle",
+        "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "Apply the following to this card during battle: Atk Dice Rolls +2 against Humanoid-type creatures. Atk Dice Rolls -2 against Beast-type creatures.",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 2
+          },
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": -2
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Apply the following to this card during battle: Atk Dice Rolls +2 against Humanoid-type creatures. Atk Dice Rolls -2 against Beast-type creatures."
+        },
+        "duration": {
+          "text": "This turn/battle",
+          "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 7,
+  "speed": 6,
+  "hp": 70,
+  "attackName": "Pummel",
+  "attackDice": 4,
+  "modifier": 4
+}

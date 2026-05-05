@@ -1,0 +1,94 @@
+{
+  "id": "gen1_102_winter_chill",
+  "name": "Winter Chill",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "102",
+  "text": "The equipped creature is frozen and cannot inflict Atk Damage or be sacrificed. During your opponent's turn they may roll 1 die. If the result is 5-6, unfreeze their creature and destroy this card.",
+  "effects": [
+    {
+      "id": "102-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STATUS",
+      "effectGroup": "Status",
+      "actionText": "Apply Frozen status; cannot inflict Atk damage; cannot be sacrificed",
+      "target": "Equipped creature",
+      "value": "Frozen",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatus",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Frozen",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Persistent until unfreezed/destroyed.",
+      "needsReview": false
+    },
+    {
+      "id": "102-E02",
+      "trigger": "OPPONENT_TURN_WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent rolls 1 die; success 5-6"
+      },
+      "actionType": "RESOLVE_STATUS_ESCAPE_ROLL",
+      "effectGroup": "Status Removal",
+      "actionText": "Unfreeze creature and destroy this card",
+      "target": "Equipped creature / this card",
+      "value": "Remove Frozen; destroy equip",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "resolveFrozenEquipEscapeRoll",
+      "params": {
+        "target": "Equipped creature / this card",
+        "valueText": "Remove Frozen; destroy equip",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent rolls 1 die; success 5-6"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Roll during opponent turn.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

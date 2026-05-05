@@ -1,0 +1,59 @@
+{
+  "id": "gen3_108_lava_golem",
+  "name": "Lava Golem",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "108",
+  "text": "If your opponent does not battle on their turn, inflict 5 damage to their primary creature.",
+  "effects": [
+    {
+      "id": "108-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "If your opponent does not battle on their turn, inflict 5 damage to their primary creature."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Opponent's primary creature",
+      "value": "If your opponent does not battle on their turn, inflict 5 damage to their primary creature.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "If your opponent does not battle on their turn, inflict 5 damage to their primary creature.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "If your opponent does not battle on their turn, inflict 5 damage to their primary creature."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 11,
+  "speed": 3,
+  "hp": 100,
+  "attackName": "Molten Grasp",
+  "attackDice": 2,
+  "modifier": 2
+}

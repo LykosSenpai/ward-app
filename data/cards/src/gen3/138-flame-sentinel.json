@@ -1,0 +1,115 @@
+{
+  "id": "gen3_138_flame_sentinel",
+  "name": "Flame Sentinel",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "138",
+  "text": "When your opponent finishes their attack, play this card. Negate the attack and equip this card to the attacking creature. The equipped creature receives 10 damage once per turn cycle for 2 turn cycles.",
+  "effects": [
+    {
+      "id": "138-E01",
+      "trigger": "WHEN_OPPONENT_FINISHES_ATTACK",
+      "condition": {
+        "type": "TEXT",
+        "text": "When your opponent finishes their attack, play this card. Negate the attack and equip this card to the attacking creature. The equipped creature receives 10 damage once per turn cycle for 2 turn cycles."
+      },
+      "actionType": "NEGATE_ATTACK",
+      "effectGroup": "Negation",
+      "actionText": "Negate an attack",
+      "target": "Equipped creature",
+      "value": "When your opponent finishes their attack, play this card. Negate the attack and equip this card to the attacking creature. The equipped creature receives 10 damage once per turn cycle for 2 turn cycles.",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "negateAttack",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "When your opponent finishes their attack, play this card. Negate the attack and equip this card to the attacking creature. The equipped creature receives 10 damage once per turn cycle for 2 turn cycles.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When your opponent finishes their attack, play this card. Negate the attack and equip this card to the attacking creature. The equipped creature receives 10 damage once per turn cycle for 2 turn cycles."
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "138-E02",
+      "trigger": "WHEN_OPPONENT_FINISHES_ATTACK",
+      "condition": {
+        "type": "TEXT",
+        "text": "When your opponent finishes their attack, play this card. Negate the attack and equip this card to the attacking creature. The equipped creature receives 10 damage once per turn cycle for 2 turn cycles."
+      },
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "actionText": "Apply recurring damage",
+      "target": "Equipped creature",
+      "value": "When your opponent finishes their attack, play this card. Negate the attack and equip this card to the attacking creature. The equipped creature receives 10 damage once per turn cycle for 2 turn cycles.",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN",
+        "tickTiming": "END_OF_COMBAT_PHASE"
+      },
+      "reusableFunction": "applyDamageOverTime",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "When your opponent finishes their attack, play this card. Negate the attack and equip this card to the attacking creature. The equipped creature receives 10 damage once per turn cycle for 2 turn cycles.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When your opponent finishes their attack, play this card. Negate the attack and equip this card to the attacking creature. The equipped creature receives 10 damage once per turn cycle for 2 turn cycles."
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN",
+          "tickTiming": "END_OF_COMBAT_PHASE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": "END_OF_COMBAT_PHASE",
+        "damageAmount": 10,
+        "durationAmount": 2
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

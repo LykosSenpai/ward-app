@@ -1,0 +1,79 @@
+{
+  "id": "gen2_103_herbal_poultice",
+  "name": "Herbal Poultice",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "103",
+  "text": "Roll 1 die to heal a creature. If the result is: 1-3: 10 HP. 4-5: 20 HP. 6: 30 HP.",
+  "effects": [
+    {
+      "id": "103-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Roll 1 die"
+      },
+      "actionType": "HEAL_BY_ROLL",
+      "effectGroup": "Healing",
+      "actionText": "Roll die and heal by result table",
+      "target": "Target creature",
+      "value": "Heal by D6 table",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healByRoll",
+      "params": {
+        "target": "Target creature",
+        "valueText": "Heal by D6 table",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Roll 1 die"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "table": [
+          {
+            "results": [
+              1,
+              2,
+              3
+            ],
+            "heal": 10
+          },
+          {
+            "results": [
+              4,
+              5
+            ],
+            "heal": 20
+          },
+          {
+            "results": [
+              6
+            ],
+            "heal": 30
+          }
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

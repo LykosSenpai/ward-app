@@ -1,0 +1,77 @@
+{
+  "id": "gen1_050_eternal_titan",
+  "name": "Eternal Titan",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "050",
+  "text": "During your turn, roll 1 die. If the result is 5-6, your opponent cannot play magic cards for 1 turn cycle.",
+  "effects": [
+    {
+      "id": "050-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          5,
+          6
+        ],
+        "text": "Roll 1 die; success 5-6"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "actionText": "Opponent cannot play magic cards",
+      "target": "Opponent",
+      "value": "Cannot play magic",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "Opponent",
+        "valueText": "Cannot play magic",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            5,
+            6
+          ],
+          "text": "Roll 1 die; success 5-6"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Duration status on player. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 12,
+  "speed": 8,
+  "hp": 100,
+  "attackName": "Judgement",
+  "attackDice": 5,
+  "modifier": 3
+}

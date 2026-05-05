@@ -1,0 +1,19 @@
+{
+  "id": "gen2_031_bug_man",
+  "name": "Bug Man",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "031",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Bug",
+  "armorLevel": 7,
+  "speed": 6,
+  "hp": 70,
+  "attackName": "Super Bug Jab",
+  "attackDice": 3,
+  "modifier": 3
+}

@@ -1,0 +1,98 @@
+{
+  "id": "gen3_070_hydogon",
+  "name": "Hydogon",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "070",
+  "text": "This creature inflicts 2x Atk damage to any creature in or near fire.",
+  "effects": [
+    {
+      "id": "070-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature inflicts 2x Atk damage to any creature in or near fire."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "This creature inflicts 2x Atk damage to any creature in or near fire.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature inflicts 2x Atk damage to any creature in or near fire.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature inflicts 2x Atk damage to any creature in or near fire."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "070-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature inflicts 2x Atk damage to any creature in or near fire."
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Apply attack damage multiplier",
+      "target": "This creature",
+      "value": "This creature inflicts 2x Atk damage to any creature in or near fire.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyAttackDamageMultiplier",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature inflicts 2x Atk damage to any creature in or near fire.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature inflicts 2x Atk damage to any creature in or near fire."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 10,
+  "speed": 6,
+  "hp": 90,
+  "attackName": "Hydro Jet",
+  "attackDice": 2,
+  "modifier": 5
+}

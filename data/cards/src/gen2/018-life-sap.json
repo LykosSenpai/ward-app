@@ -1,0 +1,96 @@
+{
+  "id": "gen2_018_life_sap",
+  "name": "Life Sap",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "018",
+  "text": "Equip this card to your opponent's creature. Whenever your opponent draws a card, inflict 5 damage to the equipped creature and heal your creature 5 HP.",
+  "effects": [
+    {
+      "id": "018-E01",
+      "trigger": "ON_OPPONENT_DRAW_CARD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent draws a card"
+      },
+      "actionType": "DEAL_DAMAGE_ON_DRAW",
+      "effectGroup": "Triggered Damage",
+      "actionText": "Deal 5 damage to equipped creature",
+      "target": "Equipped creature",
+      "value": "5 damage",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "dealDamageOnDraw",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "5 damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent draws a card"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 5
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "018-E02",
+      "trigger": "ON_OPPONENT_DRAW_CARD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent draws a card"
+      },
+      "actionType": "HEAL_CREATURE",
+      "effectGroup": "Healing",
+      "actionText": "Heal your creature",
+      "target": "Your creature",
+      "value": "Heal 5 HP",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "healFlat",
+      "params": {
+        "target": "Your creature",
+        "valueText": "Heal 5 HP",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent draws a card"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 5
+      },
+      "notes": "Healing cannot exceed base HP.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

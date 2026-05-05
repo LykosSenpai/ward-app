@@ -1,0 +1,56 @@
+{
+  "id": "gen2_007_absolute_terror",
+  "name": "Absolute Terror",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "007",
+  "text": "Equip to opponent's creature. Every time your opponent draws a card, inflict 10 damage to their primary creature.",
+  "effects": [
+    {
+      "id": "007-E01",
+      "trigger": "ON_OPPONENT_DRAW_CARD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent draws a card"
+      },
+      "actionType": "DEAL_DAMAGE_ON_DRAW",
+      "effectGroup": "Triggered Damage",
+      "actionText": "Deal damage to opponent primary creature",
+      "target": "Opponent primary creature",
+      "value": "10 damage",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "dealDamageOnDraw",
+      "params": {
+        "target": "Opponent primary creature",
+        "valueText": "10 damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent draws a card"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 10
+      },
+      "notes": "Card is equipped to opponent's creature, but damage is dealt to opponent's current primary creature.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

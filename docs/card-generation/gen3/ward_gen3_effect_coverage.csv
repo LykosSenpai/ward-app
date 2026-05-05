@@ -1,0 +1,152 @@
+﻿card_number,card_name,card_kind,rarity,has_effect_text,effect_count,action_types,reusable_functions,needs_manual_review,is_bonus_card,notes
+001,Dark Angel,CREATURE,Epic,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+002,Fire Eleotoid,CREATURE,Common,TRUE,1,DESTROY_MAGIC,destroyMagic,TRUE,FALSE,Specific named-card interaction with Forest Fire requires exact card reference and self-destruction prevention routing.
+003,Enlightened Soul,CREATURE,Legendary,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,Cemetery HP reduction is an exception to normal inactive cemetery effects.
+004,Repair Bear,MAGIC,Common,TRUE,1,HEAL,heal,FALSE,FALSE,
+005,Comodo,CREATURE,Common,FALSE,0,,,FALSE,FALSE,
+006,Ball Demon,MAGIC,Uncommon,TRUE,2,APPLY_STAT_MODIFIER; DAMAGE,applyStatModifier; damage,TRUE,FALSE,End-turn recurring damage from an Infinite Equip requires turn trigger while equipped.
+007,Steam Knight Blaster,MAGIC,Uncommon,TRUE,2,NEGATE_CREATURE_EFFECTS; REPLACE_ATTACK_PROFILE,negateCreatureEffects; replaceAttackProfile,TRUE,FALSE,Replaces base attack profile and suppresses equipped creature effect.
+008,Cybernetic Upgrade,MAGIC,Legendary,TRUE,2,APPLY_STAT_MODIFIER; SEND_TO_CEMETERY,applyStatModifier; sendToCemetery,TRUE,FALSE,Lightning Equip with battle timing and automatic end-of-battle cleanup.
+009,Hoggan,CREATURE,Rare,TRUE,3,DAMAGE; LIMITED_SUMMON; SEND_TO_CEMETERY,damage; limitedSummon; sendToCemetery,TRUE,FALSE,Limited Summon can receive damage and redirects battle from primary creature.
+010,Fazard,CREATURE,Epic,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+011,Mr. Evil,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+012,Crow,CREATURE,Common,TRUE,3,LIMITED_SUMMON; MOVE_CARD; SUMMON_REQUIREMENT,limitedSummon; moveCard; validateSummonRequirement,TRUE,FALSE,Conditional Limited Summon and cleanup tied to primary creature state.
+013,Steam Powered Girl,MAGIC,Epic,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,
+014,Monster Armor,MAGIC,Rare,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+015,The Good Boy,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+016,Exhaustion,MAGIC,Common,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+017,Shield of Light,MAGIC,Epic,TRUE,4,DAMAGE; DESTROY_MAGIC; HEAL; ROLL_TABLE,damage; destroyMagic; heal; resolveRollTable,TRUE,FALSE,Damage replacement roll table before any damage.
+018,Enchantment,MAGIC,Uncommon,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+019,Hell Authority,MAGIC,Uncommon,TRUE,1,PREVENT_CARD_PLAY,preventCardPlay,FALSE,FALSE,
+020,Witch’s Cabin,MAGIC,Uncommon,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+021,Possessed Dummy,MAGIC,Epic,TRUE,4,LIMITED_SUMMON; MOVE_CARD; NEGATE_CARD_EFFECT; SEND_TO_CEMETERY,limitedSummon; moveCard; negateCardEffect; sendToCemetery,TRUE,FALSE,Opponent-cemetery Limited Summon with source-linked cleanup and opponent ownership.
+022,Shapeshifter,CREATURE,Legendary,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+023,Order Knight,CREATURE,Uncommon,FALSE,0,,,FALSE,FALSE,
+024,Mosquito Man,CREATURE,Rare,TRUE,2,DAMAGE; HEAL,damage; heal,TRUE,FALSE,
+025,Wererabbit,CREATURE,Uncommon,FALSE,0,,,FALSE,FALSE,
+026,Cabal Warchief,CREATURE,Mythic,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,Multiple battles and partial return-attack restriction need custom combat support.
+027,Doppelganger,MAGIC,Epic,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+028,Catcow,MAGIC,Rare,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,Switches each creature own base attack dice and modifier for 2 turn cycles.
+029,Earth Eleotoid,CREATURE,Rare,TRUE,2,APPLY_ATTACK_DAMAGE_MULTIPLIER; DAMAGE,applyAttackDamageMultiplier; damage,TRUE,FALSE,Uses environment/art-context conditions: in or near fire/water.
+030,Owlet,CREATURE,Common,FALSE,0,,,FALSE,FALSE,
+031,Orcs VS Apes,MAGIC,Common,TRUE,2,APPLY_ATTACK_DAMAGE_MULTIPLIER; DAMAGE,applyAttackDamageMultiplier; damage,FALSE,FALSE,
+032,Evolved Ape,CREATURE,Epic,FALSE,0,,,FALSE,FALSE,
+033,Armored Assault,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+034,Kappa King,CREATURE,Epic,FALSE,0,,,FALSE,FALSE,
+035,Dark Moon,MAGIC,Common,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+036,Ptera Man,CREATURE,Uncommon,FALSE,0,,,FALSE,FALSE,
+037,Galactic Suit,MAGIC,Legendary,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,Redirects missed attack roll to opponent primary creature.
+038,Army of the Orcs,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+039,M.O.O.N. Sgt.,CREATURE,Epic,TRUE,3,LIMITED_SUMMON; MOVE_CARD; NEGATE_CARD_EFFECT,limitedSummon; moveCard; negateCardEffect,TRUE,FALSE,
+040,M.O.O.N. Soldier,CREATURE,Common,FALSE,0,,,FALSE,FALSE,
+041,Orc Magic,MAGIC,Rare,TRUE,1,DESTROY_MAGIC,destroyMagic,FALSE,FALSE,
+042,Orc Mischief,MAGIC,Rare,TRUE,2,NEGATE_CARD_EFFECT; SEND_TO_CEMETERY,negateCardEffect; sendToCemetery,FALSE,FALSE,
+043,The Villain,CREATURE,Epic,TRUE,2,APPLY_ATTACK_DAMAGE_MULTIPLIER; DAMAGE,applyAttackDamageMultiplier; damage,TRUE,FALSE,Opponent magic play cost plus named-card incoming damage multiplier.
+044,Wood Axe,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+045,Wooden Shield,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+046,Warrior Sword,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+047,Conqueror,CREATURE,Rare,FALSE,0,,,FALSE,FALSE,
+048,Owl God,CREATURE,Legendary,TRUE,1,SUMMON_REQUIREMENT,validateSummonRequirement,TRUE,FALSE,
+049,Gremlin,CREATURE,Rare,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,Hybrid magic/creature card visually uses a magic frame but has creature stats.; Hybrid magic/creature behavior; app may require hybrid cardKind support.
+050,Adam Bomb,MAGIC,Rare,TRUE,2,APPLY_STAT_MODIFIER; DESTROY_ALL_MAGIC,applyStatModifier; destroyAllMagic,TRUE,FALSE,
+051,Deercrow,CREATURE,Legendary,TRUE,2,SHUFFLE_DECK; SUMMON_REQUIREMENT,shuffleDeck; validateSummonRequirement,TRUE,FALSE,Custom summon handling and doubled rarity-based magic effects by stat category.
+052,Bad Luck Bear,MAGIC,Common,TRUE,1,REROLL_DICE,rerollDice,TRUE,FALSE,
+053,The Super Hero,CREATURE,Legendary,TRUE,2,DAMAGE; ROLL_TABLE,damage; resolveRollTable,TRUE,FALSE,
+054,Vampire Mistress,MAGIC,Common,TRUE,2,DAMAGE; HEAL,damage; heal,FALSE,FALSE,
+055,Shield Maiden,CREATURE,Uncommon,FALSE,0,,,FALSE,FALSE,
+056,Soul Eater,MAGIC,Legendary,TRUE,2,LIMITED_SUMMON; SEND_TO_CEMETERY,limitedSummon; sendToCemetery,TRUE,FALSE,
+057,Steam Angel,CREATURE,Epic,TRUE,1,ROLL_TABLE,resolveRollTable,TRUE,FALSE,Roll-table prevents cards by rarity from being played for 1 turn cycle.
+058,Steam Armor,MAGIC,Uncommon,TRUE,1,UNAFFECTED_BY_MAGIC,applyImmunity,TRUE,FALSE,
+059,Lumber,CREATURE,Rare,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+060,Fish Boy,CREATURE,Common,FALSE,0,,,FALSE,FALSE,
+061,Moose,CREATURE,Common,FALSE,0,,,FALSE,FALSE,
+062,Graft,MAGIC,Legendary,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,Allows creatures in hand to become Infinite Equip cards with stat transfer.
+063,Old Logging Road,MAGIC,Uncommon,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+064,Frog Bard,CREATURE,Common,TRUE,1,MOVE_CARD,moveCard,TRUE,FALSE,Creature can be played from hand as Infinite Equip magic and return to hand.
+065,Skol,MAGIC,Rare,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+066,Arzulian,CREATURE,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,Dynamic Modifier depends on effective SPD over 12.
+067,Gift of the Elves,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+068,Stego,CREATURE,Common,FALSE,0,,,FALSE,FALSE,
+069,Mountain Lion,CREATURE,Rare,FALSE,0,,,TRUE,FALSE,Attack name was unavailable from the table screenshot; card effect creature flag = N.; Attack name is unknown from source table.
+070,Hydogon,CREATURE,Rare,TRUE,2,APPLY_ATTACK_DAMAGE_MULTIPLIER; DAMAGE,applyAttackDamageMultiplier; damage,TRUE,FALSE,
+071,Boulderox,CREATURE,Uncommon,FALSE,0,,,FALSE,FALSE,
+072,Winter Griffin,CREATURE,Rare,TRUE,1,REROLL_DICE,rerollDice,TRUE,FALSE,
+073,Big Mouth Bass,CREATURE,Common,FALSE,0,,,FALSE,FALSE,
+074,Ancient Book,MAGIC,Legendary,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,Lightning that becomes an Infinite Equip after trigger resolution.
+075,Orc Champion,CREATURE,Legendary,TRUE,1,SUMMON_REQUIREMENT,validateSummonRequirement,TRUE,FALSE,
+076,Thresher,CREATURE,Uncommon,TRUE,3,APPLY_ATTACK_DAMAGE_MULTIPLIER; DAMAGE; UNAFFECTED_BY_MAGIC,applyAttackDamageMultiplier; applyImmunity; damage,TRUE,FALSE,Overrides immunity of Mechanical creatures otherwise unaffected by effects.
+077,Possession,MAGIC,Rare,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,Self-battle requires special battle target handling.
+078,Lurking Slime,CREATURE,Rare,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+079,Living Trap,MAGIC,Epic,TRUE,2,DAMAGE; SEND_TO_CEMETERY,damage; sendToCemetery,TRUE,FALSE,Field self-removes after triggered damage.
+080,Into Madness,MAGIC,Uncommon,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+081,Hive Queen,CREATURE,Legendary,FALSE,0,,,FALSE,FALSE,
+082,Gnarled Hand,MAGIC,Epic,TRUE,2,LIMITED_SUMMON; SEND_TO_CEMETERY,limitedSummon; sendToCemetery,TRUE,FALSE,
+083,Gluttony,CREATURE,Epic,TRUE,3,APPLY_STAT_MODIFIER; DESTROY_ALL_MAGIC; UNAFFECTED_BY_MAGIC,applyImmunity; applyStatModifier; destroyAllMagic,TRUE,FALSE,On-summon destroy-all-magic plus dynamic modifier count and future buff immunity.
+084,Bramble Field,MAGIC,Common,TRUE,1,DAMAGE,damage,TRUE,FALSE,Requires wings trait tagging.
+085,Ancient Scorpion,CREATURE,Legendary,TRUE,1,APPLY_DAMAGE_OVER_TIME,applyDamageOverTime,TRUE,FALSE,
+086,Frost Wyrms,MAGIC,Legendary,TRUE,1,CHANGE_CREATURE_TYPE,changeCreatureType,TRUE,FALSE,
+087,Orc Hunter,CREATURE,Common,TRUE,3,LIMITED_SUMMON; MOVE_CARD; NEGATE_CARD_EFFECT,limitedSummon; moveCard; negateCardEffect,TRUE,FALSE,Limited Summon with rarity/type filter and source-linked return cleanup.
+088,Death Omen,MAGIC,Epic,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+089,Orc Warrior,CREATURE,Uncommon,FALSE,0,,,FALSE,FALSE,
+090,Polydactyly,MAGIC,Uncommon,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+091,Octo-Orc,CREATURE,Epic,FALSE,0,,,FALSE,FALSE,
+092,Pyre Lord,CREATURE,Legendary,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+093,Forest Guardian,CREATURE,Rare,FALSE,0,,,FALSE,FALSE,
+094,Shuffling Bones,MAGIC,Common,TRUE,1,SHUFFLE_DECK,shuffleDeck,FALSE,FALSE,
+095,Fog,CREATURE,Rare,TRUE,1,UNAFFECTED_BY_MAGIC,applyImmunity,TRUE,FALSE,Skips Hit Roll and has opponent-magic immunity.
+096,Demon Blood,MAGIC,Uncommon,TRUE,2,APPLY_STAT_MODIFIER; CHANGE_CREATURE_TYPE,applyStatModifier; changeCreatureType,FALSE,FALSE,
+097,Magic Sword,MAGIC,Uncommon,TRUE,2,APPLY_STAT_MODIFIER; HEAL,applyStatModifier; heal,TRUE,FALSE,
+098,Mage Buff,MAGIC,Epic,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+099,Street Lights,MAGIC,Rare,TRUE,2,LIMITED_SUMMON; PREVENT_CARD_PLAY,limitedSummon; preventCardPlay,TRUE,FALSE,Needs original-zone tracking and Limited Summon prevention while active.
+100,Advantage,MAGIC,Common,TRUE,1,REROLL_DICE,rerollDice,TRUE,FALSE,
+101,Bestial Champion,CREATURE,Uncommon,FALSE,0,,,FALSE,FALSE,
+102,Monkey Duck,CREATURE,Epic,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+103,Bio-Dino,CREATURE,Legendary,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,Sacrifice-source stats are captured and added to this creature.
+104,Bait,MAGIC,Legendary,TRUE,1,DISCARD_CARD,discardCard,TRUE,FALSE,
+105,Bound Fate,MAGIC,Epic,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+106,Last Hope Hero,MAGIC,Legendary,TRUE,1,APPLY_ATTACK_DAMAGE_MULTIPLIER,applyAttackDamageMultiplier,TRUE,FALSE,"Reactive after primary death, using killed creature base attack as critical hit."
+107,Missile-Toad,CREATURE,Rare,TRUE,2,LIMITED_SUMMON; SEND_TO_CEMETERY,limitedSummon; sendToCemetery,TRUE,FALSE,
+108,Lava Golem,CREATURE,Common,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+109,Negative,MAGIC,Common,TRUE,2,DESTROY_MAGIC; DISCARD_CARD,destroyMagic; discardCard,FALSE,FALSE,
+110,Chain Lightning,MAGIC,Rare,TRUE,2,DAMAGE; DESTROY_ALL_MAGIC,damage; destroyAllMagic,TRUE,FALSE,
+111,Final Form,MAGIC,Legendary,TRUE,2,NEGATE_CREATURE_EFFECTS; REPLACE_ATTACK_PROFILE,negateCreatureEffects; replaceAttackProfile,TRUE,FALSE,Conditional equip based on below half HP; replaces attack profile and suppresses creature effect.
+112,Bulwark,MAGIC,Uncommon,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+113,Sasquatch,MAGIC,Epic,TRUE,3,NEGATE_CARD_EFFECT; PREVENT_CARD_PLAY; SEND_TO_CEMETERY,negateCardEffect; preventCardPlay; sendToCemetery,TRUE,FALSE,
+114,Carus Demon,CREATURE,Common,TRUE,2,APPLY_STATUS; DAMAGE,applyStatus; damage,TRUE,FALSE,
+115,Shard Titan,CREATURE,Legendary,TRUE,1,SUMMON_REQUIREMENT,validateSummonRequirement,TRUE,FALSE,Custom summon requirement tied to exact equip and hybrid return-to-magic state.
+116,Strange Jewel,MAGIC,Common,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+117,Soul Drain,MAGIC,Uncommon,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,
+118,Contaminate,MAGIC,Epic,TRUE,1,APPLY_DAMAGE_OVER_TIME,applyDamageOverTime,TRUE,FALSE,Attach transfers when equipped creature is killed by attack damage.
+119,Orgar,CREATURE,Epic,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,
+120,Ooze Weaver,CREATURE,Epic,TRUE,3,DAMAGE; PREVENT_DAMAGE; UNAFFECTED_BY_MAGIC,applyImmunity; damage; preventDamage,TRUE,FALSE,Choice-based self-damage negation/replacement plus magic immunity.
+121,Ancient Sentinel,CREATURE,Rare,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,
+122,Dart Frog,CREATURE,Rare,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+123,Ashen Knight,CREATURE,Legendary,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,
+124,Titan’s Amulet,MAGIC,Common,TRUE,2,APPLY_STAT_MODIFIER; DAMAGE,applyStatModifier; damage,TRUE,FALSE,
+125,Gaseous Horror,CREATURE,Epic,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+126,Arcane Power,MAGIC,Rare,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+127,The Merchant,MAGIC,Rare,TRUE,3,APPLY_STAT_MODIFIER; DESTROY_MAGIC; HEAL,applyStatModifier; destroyMagic; heal,TRUE,FALSE,
+128,Eye For An Eye,MAGIC,Rare,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+129,Mysterious Orb,MAGIC,Common,TRUE,2,APPLY_STAT_MODIFIER; ROLL_TABLE,applyStatModifier; resolveRollTable,TRUE,FALSE,
+130,Tarantula,CREATURE,Uncommon,FALSE,0,,,FALSE,FALSE,
+131,Close Encounters,MAGIC,Legendary,TRUE,3,APPLY_STAT_MODIFIER; MOVE_CARD; SHUFFLE_DECK,applyStatModifier; moveCard; shuffleDeck,TRUE,FALSE,
+132,Woodland Elf,CREATURE,Uncommon,TRUE,3,APPLY_STAT_MODIFIER; DAMAGE; ROLL_TABLE,applyStatModifier; damage; resolveRollTable,TRUE,FALSE,
+133,Cockroach,CREATURE,Common,FALSE,0,,,FALSE,FALSE,
+134,Orc Berserker,CREATURE,Rare,TRUE,1,HEAL,heal,TRUE,FALSE,
+135,Ironfist Dwarf,CREATURE,Rare,TRUE,1,DAMAGE,damage,TRUE,FALSE,
+136,Chaos Demon,CREATURE,Uncommon,TRUE,2,APPLY_STAT_MODIFIER; DAMAGE,applyStatModifier; damage,TRUE,FALSE,
+137,Gnometheon,CREATURE,Legendary,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,Cards placed under source count as hand cards and follow source.
+138,Flame Sentinel,MAGIC,Epic,TRUE,2,APPLY_DAMAGE_OVER_TIME; NEGATE_ATTACK,applyDamageOverTime; negateAttack,TRUE,FALSE,
+139,Last Goodbye,MAGIC,Epic,TRUE,2,LIMITED_SUMMON; SEND_TO_CEMETERY,limitedSummon; sendToCemetery,TRUE,FALSE,
+140,Might of the Shaman,MAGIC,Epic,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,FALSE,FALSE,
+141,The Iron Man,MAGIC,Epic,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+142,Inversion,MAGIC,Common,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,
+143,Succubus,CREATURE,Uncommon,TRUE,2,DAMAGE; HEAL,damage; heal,TRUE,FALSE,
+144,The Wither,CREATURE,Rare,TRUE,1,APPLY_STAT_MODIFIER,applyStatModifier,TRUE,FALSE,
+145,Eagle Knight,MAGIC,Common,TRUE,2,DAMAGE; PREVENT_DAMAGE,damage; preventDamage,TRUE,FALSE,
+146,Constructed Pylon,MAGIC,Epic,TRUE,2,DESTROY_MAGIC; ROLL_TABLE,destroyMagic; resolveRollTable,TRUE,FALSE,Occupies opponent empty Infinite slots while played to your side.
+147,Friend Like You,CREATURE,Legendary,TRUE,2,DAMAGE; SHUFFLE_DECK,damage; shuffleDeck,TRUE,FALSE,
+148,Enhanced Orc,CREATURE,Uncommon,FALSE,0,,,FALSE,FALSE,
+149,Sprite,CREATURE,Common,TRUE,1,MANUAL_FALLBACK,manualFallback,TRUE,FALSE,Hit validity depends on individual die values.
+150,Tri-Dragon,CREATURE,Uncommon,TRUE,2,APPLY_ATTACK_DAMAGE_MULTIPLIER; DAMAGE,applyAttackDamageMultiplier; damage,TRUE,FALSE,Matching Hit Dice multiplier and critical suppression.
+151,Eagle Family,CREATURE,Legendary,TRUE,1,DAMAGE,damage,TRUE,TRUE,Bonus card printed as 151/150; included as a bonus Gen 3 card by user request.; Bonus card outside 001-150 numbering.

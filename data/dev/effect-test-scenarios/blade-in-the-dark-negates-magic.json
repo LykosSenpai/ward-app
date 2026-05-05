@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.411Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_028_blade_in_the_dark",
+  "effectId": "028-E01",
+  "title": "Blade in the Dark negates opponent magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:14.910Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_028_blade_in_the_dark",
+      "cardName": "Blade in the Dark",
+      "cardType": "MAGIC",
+      "cardNumber": "028",
+      "generation": "1",
+      "rawText": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and instead send it to the cemetery."
+    },
+    "effect": {
+      "effectId": "028-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC",
+      "actionType": "NEGATE_MAGIC_AND_SEND_TO_CEMETERY",
+      "effectGroup": "Magic Negation",
+      "target": "Opponent magic card",
+      "value": "Negate + cemetery",
+      "durationText": "Instant",
+      "reusableFunction": "negateMagicToCemetery"
+    },
+    "title": "Blade in the Dark negates opponent magic",
+    "summary": "Respond to opponent magic with Lightning and verify original magic effect is negated and sent to cemetery.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen1_028_blade_in_the_dark",
+        "test_creature_primary"
+      ],
+      "player2Cards": [
+        "test_standard_magic_draw_or_buff",
+        "test_creature_primary"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Blade in the Dark is in player_1 hand. Player_2 plays a standard magic with visible effect."
+      ]
+    },
+    "steps": [
+      "Player_2 plays target standard magic.",
+      "Open Lightning response window for player_1.",
+      "Player_1 plays Blade in the Dark targeting the chain magic.",
+      "Resolve chain in reverse order."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Opponent magic sent to cemetery",
+        "path": "player_2.cemetery",
+        "operator": "contains",
+        "value": "test_standard_magic_draw_or_buff"
+      },
+      {
+        "label": "Opponent magic effect did not resolve",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "magic_negated"
+      },
+      {
+        "label": "Blade in the Dark sent to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_028_blade_in_the_dark"
+      },
+      {
+        "label": "No illegal self-response",
+        "path": "chain.validationErrors",
+        "operator": "notExists"
+      }
+    ],
+    "manualVerification": [
+      "Confirm response is only offered when opponent plays magic, not own latest chain link."
+    ],
+    "riskNotes": [
+      "Card-specific negate condition may not be fully validated by chain runtime."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Partial Lightning support; verify negate condition and cemetery movement."
+    },
+    "regression": {
+      "fixtureName": "blade-in-the-dark-negates-magic",
+      "tags": [
+        "magic",
+        "lightning",
+        "chain",
+        "negation"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_028_blade_in_the_dark:028-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

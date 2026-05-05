@@ -1,0 +1,65 @@
+{
+  "id": "gen2_112_electro_wizard",
+  "name": "Electro Wizard",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "112",
+  "text": "If this card does not battle during your turn, you may add +4 Atk Dice Rolls during your next turn. This effect does not stack.",
+  "effects": [
+    {
+      "id": "112-E01",
+      "trigger": "IF_NO_BATTLE_DURING_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card does not battle during your turn"
+      },
+      "actionType": "APPLY_DICE_MODIFIER",
+      "effectGroup": "Delayed Dice Modifier",
+      "actionText": "Add +4 Atk Dice Rolls during your next turn",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +4 during your next turn",
+      "duration": {
+        "text": "Next turn",
+        "type": "NEXT_TURN"
+      },
+      "reusableFunction": "applyDiceModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "Atk Dice Rolls +4 during your next turn",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 4
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card does not battle during your turn"
+        },
+        "duration": {
+          "text": "Next turn",
+          "type": "NEXT_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": "DO_NOT_STACK",
+        "tickTiming": null
+      },
+      "notes": "Track a delayed non-stacking buff for the next turn only.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 10,
+  "hp": 50,
+  "attackName": "Electro Fist",
+  "attackDice": 1,
+  "modifier": 5
+}

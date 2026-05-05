@@ -1,0 +1,95 @@
+{
+  "id": "gen3_145_eagle_knight",
+  "name": "Eagle Knight",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "145",
+  "text": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn.",
+  "effects": [
+    {
+      "id": "145-E01",
+      "trigger": "DURING_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn."
+      },
+      "actionType": "PREVENT_DAMAGE",
+      "effectGroup": "Damage Prevention",
+      "actionText": "Negate or prevent damage",
+      "target": "Target creature",
+      "value": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn.",
+      "duration": {
+        "text": "This turn/battle",
+        "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+      },
+      "reusableFunction": "preventDamage",
+      "params": {
+        "target": "Target creature",
+        "valueText": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn."
+        },
+        "duration": {
+          "text": "This turn/battle",
+          "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "145-E02",
+      "trigger": "DURING_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Target creature",
+      "value": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn.",
+      "duration": {
+        "text": "This turn/battle",
+        "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Target creature",
+        "valueText": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn."
+        },
+        "duration": {
+          "text": "This turn/battle",
+          "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

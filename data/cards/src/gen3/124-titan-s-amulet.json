@@ -1,0 +1,117 @@
+{
+  "id": "gen3_124_titan_s_amulet",
+  "name": "Titan's Amulet",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "124",
+  "text": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10.",
+  "effects": [
+    {
+      "id": "124-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Your primary creature",
+      "value": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "124-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Your primary creature",
+      "value": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10.",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10.",
+        "statChanges": [
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD",
+            "value": 10
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

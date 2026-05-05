@@ -1,0 +1,19 @@
+{
+  "id": "gen3_040_m_o_o_n_soldier",
+  "name": "M.O.O.N. Soldier",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "040",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 6,
+  "hp": 40,
+  "attackName": "10-23",
+  "attackDice": 1,
+  "modifier": 4
+}

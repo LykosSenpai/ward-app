@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.408Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_021_a_loving_god",
+  "effectId": "021-E01",
+  "title": "A Loving God prevents creature battles for three turn cycles",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:12:37.139Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_021_a_loving_god",
+      "cardName": "A Loving God",
+      "cardType": "MAGIC",
+      "cardNumber": "021",
+      "generation": "1",
+      "rawText": "Creatures cannot battle for 3 turn cycles."
+    },
+    "effect": {
+      "effectId": "021-E01",
+      "trigger": "ON_PLAY_FIELD",
+      "actionType": "APPLY_BATTLE_LOCK",
+      "effectGroup": "Battle Lock",
+      "target": "All creatures",
+      "value": "Cannot battle",
+      "durationText": "3 turn cycles",
+      "reusableFunction": "applyGlobalBattleLock"
+    },
+    "title": "A Loving God prevents creature battles for three turn cycles",
+    "summary": "Resolve field magic and verify combat attacks are blocked for all creatures until duration expires.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_021_a_loving_god",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_primary_creature"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            5
+          ],
+          "label": "LLM test: force hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            4,
+            4,
+            3,
+            3
+          ],
+          "label": "LLM test: stable attack damage"
+        }
+      ],
+      "notes": [
+        "Use post-first-turn-cycle state to avoid confusing with normal first-turn battle lock.",
+        "Action type currently has no registered runtime route."
+      ]
+    },
+    "steps": [
+      "Play A Loving God as field magic.",
+      "Advance to COMBAT and attempt player_1 creature battle.",
+      "Advance through player_2 turns and subsequent cycles, attempting battles while lock is active.",
+      "At beginning of player_1 turn after three full turn cycles, attempt battle again."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Battle lock status exists",
+        "path": "globalEffects",
+        "operator": "contains",
+        "value": "BATTLE_LOCK"
+      },
+      {
+        "label": "Player 1 battle blocked while active",
+        "path": "battleAttemptDuringLock.result",
+        "operator": "equals",
+        "value": "REJECTED"
+      },
+      {
+        "label": "Player 2 battle blocked while active",
+        "path": "opponentBattleAttemptDuringLock.result",
+        "operator": "equals",
+        "value": "REJECTED"
+      },
+      {
+        "label": "Battle lock removed after three cycles",
+        "path": "globalEffects",
+        "operator": "notContains",
+        "value": "BATTLE_LOCK"
+      },
+      {
+        "label": "Battle allowed after expiry",
+        "path": "battleAttemptAfterExpiry.result",
+        "operator": "notEquals",
+        "value": "REJECTED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm field-duration magic remains tracked for duration even though it is standard magic."
+    ],
+    "riskNotes": [
+      "Unsupported action type may mean no play button, no global effect, or no combat prevention."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "No runtime route registered for global battle lock."
+    },
+    "regression": {
+      "fixtureName": "a-loving-god-three-cycle-battle-lock",
+      "tags": [
+        "magic",
+        "field",
+        "battle-lock",
+        "duration",
+        "unsupported"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_021_a_loving_god:021-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

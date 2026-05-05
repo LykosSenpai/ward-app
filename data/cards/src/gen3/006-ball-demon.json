@@ -1,0 +1,101 @@
+{
+  "id": "gen3_006_ball_demon",
+  "name": "Ball Demon",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "006",
+  "text": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2.",
+  "effects": [
+    {
+      "id": "006-E01",
+      "trigger": "END_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Opponent's primary creature",
+      "value": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "END_OF_TURN"
+      },
+      "notes": "End-turn recurring damage from an Infinite Equip requires turn trigger while equipped.",
+      "needsReview": true
+    },
+    {
+      "id": "006-E02",
+      "trigger": "END_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Opponent's primary creature",
+      "value": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 2
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": "END_OF_TURN"
+      },
+      "notes": "End-turn recurring damage from an Infinite Equip requires turn trigger while equipped.",
+      "needsReview": true
+    }
+  ],
+  "notes": "End-turn recurring damage from an Infinite Equip requires turn trigger while equipped.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

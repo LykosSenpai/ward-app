@@ -1,0 +1,19 @@
+{
+  "id": "gen3_089_orc_warrior",
+  "name": "Orc Warrior",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "089",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 2,
+  "hp": 50,
+  "attackName": "Brutal Slash",
+  "attackDice": 3,
+  "modifier": 3
+}

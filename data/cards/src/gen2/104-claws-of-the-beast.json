@@ -1,0 +1,71 @@
+{
+  "id": "gen2_104_claws_of_the_beast",
+  "name": "Claws of the Beast",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "104",
+  "text": "Equipped creature gains +2 Atk Dice Rolls for 1 turn cycle. If \"Wings of the Beast\" is also equipped to this creature, it gains +3 Atk Dice Rolls instead.",
+  "effects": [
+    {
+      "id": "104-E01",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature; check if Wings of the Beast is also equipped"
+      },
+      "actionType": "APPLY_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "actionText": "Apply conditional temporary Atk Dice Rolls bonus",
+      "target": "Equipped creature",
+      "value": "Atk Dice Rolls +2 for 1 turn cycle; +3 instead if Wings of the Beast also equipped",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyDiceModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Atk Dice Rolls +2 for 1 turn cycle; +3 instead if Wings of the Beast also equipped",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD_CONDITIONAL",
+            "defaultValue": 2,
+            "conditionalValue": 3,
+            "condition": "EQUIPPED_WITH_WINGS_OF_THE_BEAST"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature; check if Wings of the Beast is also equipped"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Non-stacking replacement: +3 instead of +2 when Wings of the Beast is also equipped. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

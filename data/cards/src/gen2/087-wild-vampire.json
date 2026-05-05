@@ -1,0 +1,110 @@
+{
+  "id": "gen2_087_wild_vampire",
+  "name": "Wild Vampire",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "087",
+  "text": "When this creature hits, reduce your opponent's primary creature's AL to 0. Increase this card's Modifier by the number decreased. This effect resets if this card or the affected creature leaves the field, switches control, or this effect is negated.",
+  "effects": [
+    {
+      "id": "087-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "HIT_LANDS",
+        "text": "This creature hits"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Set",
+      "actionText": "Reduce opponent primary AL to 0",
+      "target": "Opponent primary creature",
+      "value": "AL set to 0",
+      "duration": {
+        "text": "Until source/target leaves, switches control, or effect negated",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Opponent primary creature",
+        "valueText": "AL set to 0",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "SET",
+            "value": 0
+          }
+        ],
+        "condition": {
+          "type": "HIT_LANDS",
+          "text": "This creature hits"
+        },
+        "duration": {
+          "text": "Until source/target leaves, switches control, or effect negated",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "087-E02",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "HIT_LANDS",
+        "text": "This creature hits"
+      },
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Dynamic Stat Modifier",
+      "actionText": "Add AL decrease amount to this card's Modifier",
+      "target": "This card",
+      "value": "Increase Modifier by amount opponent AL decreased",
+      "duration": {
+        "text": "Until source/target leaves, switches control, or effect negated",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyDynamicStatModifier",
+      "params": {
+        "target": "This card",
+        "valueText": "Increase Modifier by amount opponent AL decreased",
+        "statChanges": [
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD_DYNAMIC",
+            "source": "AL_DECREASE_AMOUNT_FROM_EFFECT"
+          }
+        ],
+        "condition": {
+          "type": "HIT_LANDS",
+          "text": "This creature hits"
+        },
+        "duration": {
+          "text": "Until source/target leaves, switches control, or effect negated",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 5,
+  "speed": 9,
+  "hp": 60,
+  "attackName": "Gorge",
+  "attackDice": 2,
+  "modifier": 1
+}

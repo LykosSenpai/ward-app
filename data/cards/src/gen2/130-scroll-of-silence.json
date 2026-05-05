@@ -1,0 +1,95 @@
+{
+  "id": "gen2_130_scroll_of_silence",
+  "name": "Scroll of Silence",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "130",
+  "text": "Play this card from your hand if your opponent plays a Lightning card. Negate the Lightning card effect and send it to the cemetery. This card cannot be negated.",
+  "effects": [
+    {
+      "id": "130-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is played when played"
+      },
+      "actionType": "SET_CAN_BE_NEGATED",
+      "effectGroup": "Negation Rule",
+      "actionText": "Card cannot be negated",
+      "target": "This card",
+      "value": "Cannot be negated",
+      "duration": {
+        "text": "While resolving",
+        "type": "WHILE_RESOLVING"
+      },
+      "reusableFunction": "setCanBeNegated",
+      "params": {
+        "target": "This card",
+        "valueText": "Cannot be negated",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is played when played"
+        },
+        "duration": {
+          "text": "While resolving",
+          "type": "WHILE_RESOLVING"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "canBeNegated": false
+      },
+      "notes": "Set response flags so this card cannot be negated during its response window.",
+      "needsReview": false
+    },
+    {
+      "id": "130-E02",
+      "trigger": "ON_OPPONENT_PLAYS_LIGHTNING",
+      "condition": {
+        "type": "OPPONENT_PLAYS_LIGHTNING",
+        "text": "Opponent plays a Lightning card"
+      },
+      "actionType": "NEGATE_LIGHTNING_AND_SEND_TO_CEMETERY",
+      "effectGroup": "Lightning Negation",
+      "actionText": "Negate Lightning card effect and send to cemetery",
+      "target": "Opponent Lightning card",
+      "value": "Negate effect and send to cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "negateLightningToCemetery",
+      "params": {
+        "target": "Opponent Lightning card",
+        "valueText": "Negate effect and send to cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_PLAYS_LIGHTNING",
+          "text": "Opponent plays a Lightning card"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

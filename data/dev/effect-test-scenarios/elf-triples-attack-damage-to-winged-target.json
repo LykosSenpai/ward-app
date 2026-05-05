@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.420Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_046_elf",
+  "effectId": "046-E01",
+  "title": "Elf deals triple attack damage to winged target",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:53.713Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_046_elf",
+      "cardName": "Elf",
+      "cardType": "CREATURE",
+      "cardNumber": "046",
+      "generation": "1",
+      "rawText": "This creature inflicts 3x Atk damage to any creature with wings."
+    },
+    "effect": {
+      "effectId": "046-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Target creature with wings",
+      "value": "3x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Elf deals triple attack damage to winged target",
+    "summary": "Elf attacks a creature tagged with wings and its attack damage is multiplied by 3 during damage calculation.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_046_elf"
+      ],
+      "player2Cards": [],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5,
+            5
+          ],
+          "label": "Elf hit lands"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            4
+          ],
+          "label": "Elf attack damage die"
+        }
+      ],
+      "notes": [
+        "Set Elf as player_1 primary.",
+        "Set player_2 primary to a creature with hasWings tag, AL low enough for hit to land, and 50 HP.",
+        "Ensure not in first turn cycle. Elf base modifier +1 makes base attack damage 5 before multiplier."
+      ]
+    },
+    "steps": [
+      "Player 1 attacks winged primary with Elf.",
+      "Resolve hit and damage calculation.",
+      "Inspect damage event and defender HP."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Elf multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:3"
+      },
+      {
+        "label": "Winged target took 15 damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 35
+      },
+      {
+        "label": "No critical flag",
+        "path": "damageEvents",
+        "operator": "notContains",
+        "value": "critical"
+      }
+    ],
+    "manualVerification": [
+      "Confirm multiplier applies to final attack damage after attack die plus modifier.",
+      "Confirm same attack against non-winged target does not multiply."
+    ],
+    "riskNotes": [
+      "Requires canonical target card has hasWings tag; missing data tag would look like effect failure."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported damage pipeline; verify target tag and multiplier ordering."
+    },
+    "regression": {
+      "fixtureName": "elf-triples-attack-damage-to-winged-target",
+      "tags": [
+        "creature",
+        "combat",
+        "damage-multiplier",
+        "wings"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_046_elf:046-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

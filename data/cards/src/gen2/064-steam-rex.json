@@ -1,0 +1,103 @@
+{
+  "id": "gen2_064_steam_rex",
+  "name": "Steam Rex",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "064",
+  "text": "This creature is unaffected by creature effects and magic cards. If your opponent plays a Lightning card, this creature inflicts 2x Atk damage the turn it was used.",
+  "effects": [
+    {
+      "id": "064-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature or magic effect would affect this creature"
+      },
+      "actionType": "APPLY_EFFECT_IMMUNITY",
+      "effectGroup": "Immunity",
+      "actionText": "Ignore creature effects and magic cards",
+      "target": "This creature",
+      "value": "Unaffected by creature effects and magic cards",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyEffectImmunity",
+      "params": {
+        "target": "This creature",
+        "valueText": "Unaffected by creature effects and magic cards",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature or magic effect would affect this creature"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "immuneTo": [
+          "CREATURE_EFFECTS",
+          "MAGIC_CARDS"
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "064-E02",
+      "trigger": "ON_OPPONENT_PLAYS_LIGHTNING",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent played a Lightning card this turn"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply Atk damage",
+      "target": "This creature attack",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "Current turn",
+        "type": "CURRENT_TURN"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "This creature attack",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent played a Lightning card this turn"
+        },
+        "duration": {
+          "text": "Current turn",
+          "type": "CURRENT_TURN"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 2
+      },
+      "notes": "Applies for the turn the opponent used the Lightning card.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Mech",
+  "armorLevel": 11,
+  "speed": 3,
+  "hp": 110,
+  "attackName": "Iron Chomp",
+  "attackDice": 1,
+  "modifier": 10
+}

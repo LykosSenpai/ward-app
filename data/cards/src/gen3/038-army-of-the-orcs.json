@@ -1,0 +1,72 @@
+{
+  "id": "gen3_038_army_of_the_orcs",
+  "name": "Army of the Orcs",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "038",
+  "text": "All creatures with \"Orc\" in their name: SPD: +3. Atk: +6. Atk Dice Rolls: +1.",
+  "effects": [
+    {
+      "id": "038-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "All creatures with \"Orc\" in their name: SPD: +3. Atk: +6. Atk Dice Rolls: +1."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "All creatures matching condition",
+      "value": "All creatures with \"Orc\" in their name: SPD: +3. Atk: +6. Atk Dice Rolls: +1.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "All creatures matching condition",
+        "valueText": "All creatures with \"Orc\" in their name: SPD: +3. Atk: +6. Atk Dice Rolls: +1.",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1
+          },
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 6
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 3
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "All creatures with \"Orc\" in their name: SPD: +3. Atk: +6. Atk Dice Rolls: +1."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

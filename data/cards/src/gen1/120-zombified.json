@@ -1,0 +1,140 @@
+{
+  "id": "gen1_120_zombified",
+  "name": "Zombified",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "120",
+  "text": "Equipped creature loses 2 AL per turn cycle. Creature's AL returns to normal if this card is removed from the field. Negates other AL increases on the equipped creature.",
+  "effects": [
+    {
+      "id": "120-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_RECURRING_STAT_MODIFIER",
+      "effectGroup": "Stat Decay",
+      "actionText": "Lose AL over time",
+      "target": "Equipped creature",
+      "value": "AL -2 per turn cycle",
+      "duration": {
+        "text": "Each turn cycle while equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyRecurringStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "AL -2 per turn cycle",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "SUBTRACT",
+            "value": 2,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "Each turn cycle while equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "AL returns to normal when removed. Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    },
+    {
+      "id": "120-E02",
+      "trigger": "ON_CARD_REMOVED_FROM_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card removed"
+      },
+      "actionType": "CLEAR_SOURCE_LINKED_MODIFIERS",
+      "effectGroup": "Stat Restore",
+      "actionText": "Restore AL to normal",
+      "target": "Equipped creature",
+      "value": "Clear Zombified AL reductions",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "clearSourceLinkedModifiers",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Clear Zombified AL reductions",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card removed"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Remove accumulated source modifiers.",
+      "needsReview": false
+    },
+    {
+      "id": "120-E03",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "AL increases would apply"
+      },
+      "actionType": "SUPPRESS_MODIFIER_LAYER",
+      "effectGroup": "Modifier Suppression",
+      "actionText": "Negate other AL increases",
+      "target": "Equipped creature",
+      "value": "Ignore positive AL modifiers",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyModifierSuppression",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Ignore positive AL modifiers",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "AL increases would apply"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs modifier-layer priority.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

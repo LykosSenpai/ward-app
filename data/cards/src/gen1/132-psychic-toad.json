@@ -1,0 +1,98 @@
+{
+  "id": "gen1_132_psychic_toad",
+  "name": "Psychic Toad",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "132",
+  "text": "When summoned, take control of your opponent's creature as a Limited Summon. Return the controlled creature to the original owner's hand if this card leaves the field, changes control, or this effect is negated.",
+  "effects": [
+    {
+      "id": "132-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent has creature"
+      },
+      "actionType": "TAKE_CONTROL_AS_LIMITED_SUMMON",
+      "effectGroup": "Limited Control",
+      "actionText": "Take control as Limited Summon",
+      "target": "Opponent creature",
+      "value": "Control as Limited Summon",
+      "duration": {
+        "text": "While source remains valid",
+        "type": "TEXT"
+      },
+      "reusableFunction": "takeControlAsLimitedSummon",
+      "params": {
+        "target": "Opponent creature",
+        "valueText": "Control as Limited Summon",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent has creature"
+        },
+        "duration": {
+          "text": "While source remains valid",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Source-linked return to original owner hand.",
+      "needsReview": false
+    },
+    {
+      "id": "132-E02",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "condition": {
+        "type": "SOURCE_INVALIDATED",
+        "text": "Source leaves field, changes control, or effect negated"
+      },
+      "actionType": "RETURN_LINKED_CONTROLLED_CREATURE",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return controlled creature to original owner hand",
+      "target": "Controlled creature",
+      "value": "Move to original owner hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedControlledCreature",
+      "params": {
+        "target": "Controlled creature",
+        "valueText": "Move to original owner hand",
+        "statChanges": [],
+        "condition": {
+          "type": "SOURCE_INVALIDATED",
+          "text": "Source leaves field, changes control, or effect negated"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Linked cleanup function.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 1,
+  "speed": 3,
+  "hp": 20,
+  "attackName": "Hypnotic Stare",
+  "attackDice": 1,
+  "modifier": 2
+}

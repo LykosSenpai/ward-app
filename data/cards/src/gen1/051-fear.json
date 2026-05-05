@@ -1,0 +1,55 @@
+{
+  "id": "gen1_051_fear",
+  "name": "Fear",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "051",
+  "text": "The equipped creature must roll 1 die prior to battle. If the result is 1-4: Creature may battle as normal. If the result is 5-6: Creature cannot cause damage.",
+  "effects": [
+    {
+      "id": "051-E01",
+      "trigger": "PRIOR_TO_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature would battle; roll 1 die"
+      },
+      "actionType": "APPLY_PRE_BATTLE_ROLL_GATE",
+      "effectGroup": "Battle Gate",
+      "actionText": "Allow/deny damage caused by creature",
+      "target": "Equipped creature",
+      "value": "1-4 normal; 5-6 cannot cause damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyPreBattleRollGate",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "1-4 normal; 5-6 cannot cause damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature would battle; roll 1 die"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Must occur before each battle.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

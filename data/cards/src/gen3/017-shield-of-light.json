@@ -1,0 +1,173 @@
+{
+  "id": "gen3_017_shield_of_light",
+  "name": "Shield of Light",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "017",
+  "text": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+  "effects": [
+    {
+      "id": "017-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+      },
+      "actionType": "DESTROY_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "actionText": "Destroy a magic card",
+      "target": "Equipped creature",
+      "value": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "destroyMagic",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Damage replacement roll table before any damage.",
+      "needsReview": true
+    },
+    {
+      "id": "017-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+      },
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "actionText": "Heal a creature or apply lifesteal",
+      "target": "Equipped creature",
+      "value": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "heal",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Damage replacement roll table before any damage.",
+      "needsReview": true
+    },
+    {
+      "id": "017-E03",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Equipped creature",
+      "value": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Damage replacement roll table before any damage.",
+      "needsReview": true
+    },
+    {
+      "id": "017-E04",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+      },
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "actionText": "Resolve a D6 roll table",
+      "target": "Equipped creature",
+      "value": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "resolveRollTable",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Damage replacement roll table before any damage.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Damage replacement roll table before any damage.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

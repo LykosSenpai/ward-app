@@ -1,0 +1,59 @@
+{
+  "id": "gen3_078_lurking_slime",
+  "name": "Lurking Slime",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "078",
+  "text": "During your turn, reduce all damage to this creature by 1/2.",
+  "effects": [
+    {
+      "id": "078-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "During your turn, reduce all damage to this creature by 1/2."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "During your turn, reduce all damage to this creature by 1/2.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "During your turn, reduce all damage to this creature by 1/2.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During your turn, reduce all damage to this creature by 1/2."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 6,
+  "speed": 1,
+  "hp": 60,
+  "attackName": "Lurching Bite",
+  "attackDice": 3,
+  "modifier": 1
+}

@@ -1,0 +1,101 @@
+{
+  "id": "gen2_088_skeleton_lord",
+  "name": "Skeleton Lord",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "088",
+  "text": "When summoned, take control of 1 of your opponent's creatures in their cemetery as your Limited Summon. Return it back to your opponent's cemetery if this creature leaves the field, changes control, or this effect is negated.",
+  "effects": [
+    {
+      "id": "088-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent has creature in cemetery"
+      },
+      "actionType": "TAKE_CONTROL_AS_LIMITED_SUMMON",
+      "effectGroup": "Limited Summon/Control",
+      "actionText": "Take control of opponent cemetery creature as Limited Summon",
+      "target": "1 opponent creature in their cemetery",
+      "value": "Take control as your Limited Summon",
+      "duration": {
+        "text": "While source remains active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "takeControlAsLimitedSummon",
+      "params": {
+        "target": "1 opponent creature in their cemetery",
+        "valueText": "Take control as your Limited Summon",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent has creature in cemetery"
+        },
+        "duration": {
+          "text": "While source remains active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZone": "OPPONENT_CEMETERY",
+        "count": 1,
+        "summonType": "LIMITED_SUMMON"
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "088-E02",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "condition": {
+        "type": "SOURCE_INVALIDATED",
+        "text": "This creature leaves field, changes control, or effect is negated"
+      },
+      "actionType": "RETURN_LINKED_SUMMON",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return linked summon to opponent cemetery",
+      "target": "Linked Limited Summon",
+      "value": "Return to opponent's cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedSummon",
+      "params": {
+        "target": "Linked Limited Summon",
+        "valueText": "Return to opponent's cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "SOURCE_INVALIDATED",
+          "text": "This creature leaves field, changes control, or effect is negated"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 7,
+  "speed": 9,
+  "hp": 70,
+  "attackName": "Marrow Slice",
+  "attackDice": 2,
+  "modifier": 1
+}

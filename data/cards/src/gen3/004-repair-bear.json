@@ -1,0 +1,56 @@
+{
+  "id": "gen3_004_repair_bear",
+  "name": "Repair Bear",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "004",
+  "text": "Heal a creature on the field 15 HP.",
+  "effects": [
+    {
+      "id": "004-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Heal a creature on the field 15 HP."
+      },
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "actionText": "Heal a creature or apply lifesteal",
+      "target": "Target creature",
+      "value": "Heal a creature on the field 15 HP.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "heal",
+      "params": {
+        "target": "Target creature",
+        "valueText": "Heal a creature on the field 15 HP.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Heal a creature on the field 15 HP."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

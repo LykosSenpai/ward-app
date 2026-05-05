@@ -1,0 +1,59 @@
+{
+  "id": "gen3_064_frog_bard",
+  "name": "Frog Bard",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "064",
+  "text": "You may play this card from your hand as an Infinite equip magic card to your primary creature. The equipped creature gains this card's Atk Dice Rolls and Modifier. If that creature is removed from the field, return this card to your hand.",
+  "effects": [
+    {
+      "id": "064-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "You may play this card from your hand as an Infinite equip magic card to your primary creature. The equipped creature gains this card's Atk Dice Rolls and Modifier. If that creature is removed from the field, return this card to your hand."
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Card Movement",
+      "actionText": "Move or return a card between zones",
+      "target": "Your primary creature",
+      "value": "You may play this card from your hand as an Infinite equip magic card to your primary creature. The equipped creature gains this card's Atk Dice Rolls and Modifier. If that creature is removed from the field, return this card to your hand.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "moveCard",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "You may play this card from your hand as an Infinite equip magic card to your primary creature. The equipped creature gains this card's Atk Dice Rolls and Modifier. If that creature is removed from the field, return this card to your hand.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You may play this card from your hand as an Infinite equip magic card to your primary creature. The equipped creature gains this card's Atk Dice Rolls and Modifier. If that creature is removed from the field, return this card to your hand."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Creature can be played from hand as Infinite Equip magic and return to hand.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Creature can be played from hand as Infinite Equip magic and return to hand.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 1,
+  "speed": 1,
+  "hp": 10,
+  "attackName": "Folk Music",
+  "attackDice": 1,
+  "modifier": 1
+}

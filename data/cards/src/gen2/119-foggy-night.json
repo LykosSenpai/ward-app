@@ -1,0 +1,68 @@
+{
+  "id": "gen2_119_foggy_night",
+  "name": "Foggy Night",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "119",
+  "text": "For 3 turn cycles, only creatures and equip cards can be played.",
+  "effects": [
+    {
+      "id": "119-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Foggy Night resolves"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "actionText": "Restrict playable cards to creatures and equip cards",
+      "target": "All players",
+      "value": "Only creatures and equip cards can be played",
+      "duration": {
+        "text": "3 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 3,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyGlobalPlayRestriction",
+      "params": {
+        "target": "All players",
+        "valueText": "Only creatures and equip cards can be played",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Foggy Night resolves"
+        },
+        "duration": {
+          "text": "3 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 3,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "allowed": [
+          "CREATURE",
+          "MAGIC_EQUIP"
+        ],
+        "durationTurnCycles": 3
+      },
+      "notes": "Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

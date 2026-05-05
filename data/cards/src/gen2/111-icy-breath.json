@@ -1,0 +1,71 @@
+{
+  "id": "gen2_111_icy_breath",
+  "name": "Icy Breath",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "111",
+  "text": "Play this card when your opponent summons a creature. That creature is frozen and cannot inflict Atk damage or be sacrificed. During their turn they may roll 1 die. If 5-6, this effect ends and this card is sent to the cemetery.",
+  "effects": [
+    {
+      "id": "111-E01",
+      "trigger": "ON_OPPONENT_SUMMONS_CREATURE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent summons a creature"
+      },
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status",
+      "actionText": "Freeze summoned creature",
+      "target": "Summoned creature",
+      "value": "Frozen; cannot inflict Atk damage or be sacrificed",
+      "duration": {
+        "text": "Until escape roll succeeds",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyStatusWithEscapeRoll",
+      "params": {
+        "target": "Summoned creature",
+        "valueText": "Frozen; cannot inflict Atk damage or be sacrificed",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent summons a creature"
+        },
+        "duration": {
+          "text": "Until escape roll succeeds",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "status": "FROZEN",
+        "canInflictAtkDamage": false,
+        "canBeSacrificed": false,
+        "escapeRoll": {
+          "controller": "AFFECTED_CREATURE_CONTROLLER",
+          "timing": "DURING_THEIR_TURN",
+          "dieSize": 6,
+          "successValues": [
+            5,
+            6
+          ],
+          "onSuccess": [
+            "END_EFFECT",
+            "SEND_THIS_CARD_TO_CEMETERY"
+          ]
+        }
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

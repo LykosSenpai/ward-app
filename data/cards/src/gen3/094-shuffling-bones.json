@@ -1,0 +1,56 @@
+{
+  "id": "gen3_094_shuffling_bones",
+  "name": "Shuffling Bones",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "094",
+  "text": "Shuffle your deck.",
+  "effects": [
+    {
+      "id": "094-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Shuffle your deck."
+      },
+      "actionType": "SHUFFLE_DECK",
+      "effectGroup": "Deck",
+      "actionText": "Shuffle deck",
+      "target": "Target / controller as specified by card text",
+      "value": "Shuffle your deck.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "shuffleDeck",
+      "params": {
+        "target": "Target / controller as specified by card text",
+        "valueText": "Shuffle your deck.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Shuffle your deck."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

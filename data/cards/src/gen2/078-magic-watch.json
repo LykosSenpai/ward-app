@@ -1,0 +1,60 @@
+{
+  "id": "gen2_078_magic_watch",
+  "name": "Magic Watch",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "078",
+  "text": "The equipped creature may re-roll either their Hit Dice Roll or Atk Dice Roll once per battle.",
+  "effects": [
+    {
+      "id": "078-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature is in battle"
+      },
+      "actionType": "APPLY_REROLL_PERMISSION",
+      "effectGroup": "Reroll Permission",
+      "actionText": "Allow one reroll choice per battle",
+      "target": "Equipped creature",
+      "value": "May re-roll Hit Dice Roll or Atk Dice Roll once per battle",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyRerollPermission",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "May re-roll Hit Dice Roll or Atk Dice Roll once per battle",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature is in battle"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "usesPerBattle": 1,
+        "choices": [
+          "HIT_DICE_ROLL",
+          "ATK_DICE_ROLL"
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

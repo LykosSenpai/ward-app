@@ -1,0 +1,19 @@
+{
+  "id": "gen3_069_mountain_lion",
+  "name": "Mountain Lion",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "069",
+  "text": "",
+  "effects": [],
+  "notes": "Attack name was unavailable from the table screenshot; card effect creature flag = N.; Attack name is unknown from source table.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 4,
+  "speed": 10,
+  "hp": 50,
+  "attackName": "Unknown",
+  "attackDice": 3,
+  "modifier": 4
+}

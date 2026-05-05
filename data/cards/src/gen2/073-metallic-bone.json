@@ -1,0 +1,100 @@
+{
+  "id": "gen2_073_metallic_bone",
+  "name": "Metallic Bone",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "073",
+  "text": "The equipped creature cannot receive damage. During your opponent's turn they may roll 1 die. If the result is 1-3, this card is destroyed.",
+  "effects": [
+    {
+      "id": "073-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_DAMAGE_IMMUNITY",
+      "effectGroup": "Damage Immunity",
+      "actionText": "Prevent all damage to equipped creature",
+      "target": "Equipped creature",
+      "value": "Cannot receive damage",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyDamageImmunity",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Cannot receive damage",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "073-E02",
+      "trigger": "DURING_OPPONENT_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent rolls 1 die; success 1-3"
+      },
+      "actionType": "DESTROY_SELF",
+      "effectGroup": "Escape Roll/Destroy",
+      "actionText": "Destroy this card",
+      "target": "This card",
+      "value": "Destroyed on opponent roll 1-3",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "destroySelf",
+      "params": {
+        "target": "This card",
+        "valueText": "Destroyed on opponent roll 1-3",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent rolls 1 die; success 1-3"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2,
+          3
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

@@ -1,0 +1,137 @@
+{
+  "id": "gen3_120_ooze_weaver",
+  "name": "Ooze Weaver",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "120",
+  "text": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards.",
+  "effects": [
+    {
+      "id": "120-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+      },
+      "actionType": "PREVENT_DAMAGE",
+      "effectGroup": "Damage Prevention",
+      "actionText": "Negate or prevent damage",
+      "target": "Magic card(s) on the field",
+      "value": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "preventDamage",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Choice-based self-damage negation/replacement plus magic immunity.",
+      "needsReview": true
+    },
+    {
+      "id": "120-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Magic card(s) on the field",
+      "value": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Choice-based self-damage negation/replacement plus magic immunity.",
+      "needsReview": true
+    },
+    {
+      "id": "120-E03",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+      },
+      "actionType": "UNAFFECTED_BY_MAGIC",
+      "effectGroup": "Immunity",
+      "actionText": "Apply immunity or unaffected state",
+      "target": "Magic card(s) on the field",
+      "value": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyImmunity",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Choice-based self-damage negation/replacement plus magic immunity.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Choice-based self-damage negation/replacement plus magic immunity.",
+  "cardType": "CREATURE",
+  "creatureType": "Mechanical",
+  "armorLevel": 2,
+  "speed": 8,
+  "hp": 30,
+  "attackName": "Oozed",
+  "attackDice": 1,
+  "modifier": 0
+}

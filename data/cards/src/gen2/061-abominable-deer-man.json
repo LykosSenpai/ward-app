@@ -1,0 +1,97 @@
+{
+  "id": "gen2_061_abominable_deer_man",
+  "name": "Abominable Deer Man",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "061",
+  "text": "If your opponent uses a Lightning card, play this card from your hand to your side of the field as a Limited Summon. This card is sent to the cemetery if you have no primary creature on the field.",
+  "effects": [
+    {
+      "id": "061-E01",
+      "trigger": "ON_OPPONENT_PLAYS_LIGHTNING",
+      "condition": {
+        "type": "OPPONENT_PLAYS_LIGHTNING",
+        "text": "Opponent uses a Lightning card"
+      },
+      "actionType": "SUMMON_SELF_AS_LIMITED_CREATURE",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon this card from hand as a Limited Summon",
+      "target": "This card",
+      "value": "Play from hand to your side as a Limited Summon",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "summonSelfAsLimited",
+      "params": {
+        "target": "This card",
+        "valueText": "Play from hand to your side as a Limited Summon",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_PLAYS_LIGHTNING",
+          "text": "Opponent uses a Lightning card"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZone": "HAND",
+        "summonSelf": true,
+        "summonType": "LIMITED_SUMMON"
+      },
+      "notes": "Card is typed as Magic but effect turns it into a Limited Summon. Stats are not present in CSV, so implementation needs a token/creature definition if it can battle.",
+      "needsReview": true
+    },
+    {
+      "id": "061-E02",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "You have no primary creature on the field"
+      },
+      "actionType": "APPLY_SOURCE_LINKED_CLEANUP",
+      "effectGroup": "Self Cleanup",
+      "actionText": "Send this card to cemetery",
+      "target": "This card",
+      "value": "Send to cemetery if you have no primary creature",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applySourceLinkedCleanup",
+      "params": {
+        "target": "This card",
+        "valueText": "Send to cemetery if you have no primary creature",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You have no primary creature on the field"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "Creature-like Lightning magic card with attack dice/modifier but no AL/HP/SPD printed.",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

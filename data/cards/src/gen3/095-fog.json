@@ -1,0 +1,59 @@
+{
+  "id": "gen3_095_fog",
+  "name": "Fog",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "095",
+  "text": "This card does not perform a Hit Dice Roll when in battle. It moves directly to its Atk Dice Roll. This card is not affected by your opponents' magic cards.",
+  "effects": [
+    {
+      "id": "095-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card does not perform a Hit Dice Roll when in battle. It moves directly to its Atk Dice Roll. This card is not affected by your opponents' magic cards."
+      },
+      "actionType": "UNAFFECTED_BY_MAGIC",
+      "effectGroup": "Immunity",
+      "actionText": "Apply immunity or unaffected state",
+      "target": "Magic card(s) on the field",
+      "value": "This card does not perform a Hit Dice Roll when in battle. It moves directly to its Atk Dice Roll. This card is not affected by your opponents' magic cards.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyImmunity",
+      "params": {
+        "target": "Magic card(s) on the field",
+        "valueText": "This card does not perform a Hit Dice Roll when in battle. It moves directly to its Atk Dice Roll. This card is not affected by your opponents' magic cards.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card does not perform a Hit Dice Roll when in battle. It moves directly to its Atk Dice Roll. This card is not affected by your opponents' magic cards."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Skips Hit Roll and has opponent-magic immunity.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Skips Hit Roll and has opponent-magic immunity.",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 2,
+  "speed": 9,
+  "hp": 50,
+  "attackName": "Vapor Strike",
+  "attackDice": 2,
+  "modifier": 2
+}

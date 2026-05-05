@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.419Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_042_dragon_rage",
+  "effectId": "042-E01",
+  "title": "Dragon Rage negates opponent magic as lightning response",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:53.713Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_042_dragon_rage",
+      "cardName": "Dragon Rage",
+      "cardType": "MAGIC",
+      "cardNumber": "042",
+      "generation": "1",
+      "rawText": "When your opponent plays a magic card or lands an attack, negate the attack/magic card effect, and destroy all magic cards on the field. Both players then draw 3 cards."
+    },
+    "effect": {
+      "effectId": "042-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC_OR_ATTACK_HITS",
+      "actionType": "NEGATE_ATTACK_OR_MAGIC",
+      "effectGroup": "Negation",
+      "target": "Triggering attack/magic",
+      "value": "Negated",
+      "durationText": "Instant",
+      "reusableFunction": "negateAttackOrMagic"
+    },
+    "title": "Dragon Rage negates opponent magic as lightning response",
+    "summary": "Opponent plays a magic card, Dragon Rage responds, and the triggering magic effect is negated before its effect applies.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen1_042_dragon_rage"
+      ],
+      "player2Cards": [
+        "gen1_040_dragon_fire",
+        "gen1_044_dragon_s_bane"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            5
+          ],
+          "label": "LLM test: force hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            4,
+            4,
+            3,
+            3
+          ],
+          "label": "LLM test: stable attack damage"
+        }
+      ],
+      "notes": [
+        "Pre-place Dragon’s Bane or another magic on field so Dragon Fire would have a visible effect if not negated.",
+        "Player 1 holds Dragon Rage available as Lightning."
+      ]
+    },
+    "steps": [
+      "Player 2 plays Dragon Fire.",
+      "Open lightning response window for player_1.",
+      "Player 1 plays Dragon Rage in response.",
+      "Resolve chain in reverse order.",
+      "Inspect that Dragon Fire's destroy effect did not resolve independently."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Dragon Rage chain link resolved",
+        "path": "chain.resolvedCards",
+        "operator": "contains",
+        "value": "gen1_042_dragon_rage"
+      },
+      {
+        "label": "Triggering magic negated",
+        "path": "effectLog",
+        "operator": "contains",
+        "value": "negated:gen1_040_dragon_fire"
+      },
+      {
+        "label": "Dragon Fire no destroy resolution",
+        "path": "effectLog",
+        "operator": "notContains",
+        "value": "resolved:gen1_040_dragon_fire:040-E01"
+      }
+    ],
+    "manualVerification": [
+      "Confirm player cannot respond to their own latest chain link.",
+      "Confirm Dragon Rage can be played only by opponent of triggering magic/attack."
+    ],
+    "riskNotes": [
+      "Card-specific negate condition is partial runtime support; chain window may exist but condition matching may fail."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate lightning condition and negation of triggering magic."
+    },
+    "regression": {
+      "fixtureName": "dragon-rage-negates-opponent-magic",
+      "tags": [
+        "magic",
+        "lightning",
+        "negation",
+        "chain"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_042_dragon_rage:042-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "id": "gen2_079_raging_inferno",
+  "name": "Raging Inferno",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "079",
+  "text": "If the equipped creature is damaged in battle, inflict 5 damage to the attacking creature.",
+  "effects": [
+    {
+      "id": "079-E01",
+      "trigger": "ON_EQUIPPED_CREATURE_DAMAGED_IN_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature is damaged in battle"
+      },
+      "actionType": "DEAL_INSTANT_DAMAGE",
+      "effectGroup": "Triggered Damage",
+      "actionText": "Inflict 5 damage to attacking creature",
+      "target": "Attacking creature",
+      "value": "5 damage",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "dealDirectDamage",
+      "params": {
+        "target": "Attacking creature",
+        "valueText": "5 damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature is damaged in battle"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 5
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

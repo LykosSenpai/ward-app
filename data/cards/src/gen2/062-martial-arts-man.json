@@ -1,0 +1,56 @@
+{
+  "id": "gen2_062_martial_arts_man",
+  "name": "Martial Arts Man",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "062",
+  "text": "On hit, play this card from your hand. Inflict 20 damage to the creature you are battling.",
+  "effects": [
+    {
+      "id": "062-E01",
+      "trigger": "ON_HIT_FROM_HAND",
+      "condition": {
+        "type": "TEXT",
+        "text": "Your creature hits during battle"
+      },
+      "actionType": "DEAL_INSTANT_DAMAGE",
+      "effectGroup": "Direct Damage",
+      "actionText": "Play from hand and deal 20 damage to battling creature",
+      "target": "Creature you are battling",
+      "value": "20 damage",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "dealDirectDamage",
+      "params": {
+        "target": "Creature you are battling",
+        "valueText": "20 damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Your creature hits during battle"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 20
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

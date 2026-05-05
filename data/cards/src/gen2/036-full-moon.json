@@ -1,0 +1,71 @@
+{
+  "id": "gen2_036_full_moon",
+  "name": "Full Moon",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "036",
+  "text": "All creatures with \"Were\" in their name gain: AL: +5. Hit Dice Rolls: +1. Atk Dice Rolls: +1.",
+  "effects": [
+    {
+      "id": "036-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature name contains \"Were\""
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifiers",
+      "target": "All creatures with \"Were\" in their name",
+      "value": "AL ADD 5; HIT_DICE_ROLLS ADD 1; ATK_DICE_ROLLS ADD 1",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "All creatures with \"Were\" in their name",
+        "valueText": "AL ADD 5; HIT_DICE_ROLLS ADD 1; ATK_DICE_ROLLS ADD 1",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 5
+          },
+          {
+            "stat": "HIT_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1
+          },
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature name contains \"Were\""
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field aura for Were-named creatures.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

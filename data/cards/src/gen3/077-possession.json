@@ -1,0 +1,56 @@
+{
+  "id": "gen3_077_possession",
+  "name": "Possession",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "077",
+  "text": "The target creature must battle itself this turn. All standard combat rules apply. Other creatures cannot battle this turn.",
+  "effects": [
+    {
+      "id": "077-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "The target creature must battle itself this turn. All standard combat rules apply. Other creatures cannot battle this turn."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "Target creature",
+      "value": "The target creature must battle itself this turn. All standard combat rules apply. Other creatures cannot battle this turn.",
+      "duration": {
+        "text": "This turn/battle",
+        "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "Target creature",
+        "valueText": "The target creature must battle itself this turn. All standard combat rules apply. Other creatures cannot battle this turn.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "The target creature must battle itself this turn. All standard combat rules apply. Other creatures cannot battle this turn."
+        },
+        "duration": {
+          "text": "This turn/battle",
+          "type": "UNTIL_END_OF_TURN_OR_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Self-battle requires special battle target handling.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Self-battle requires special battle target handling.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

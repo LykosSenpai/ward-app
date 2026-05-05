@@ -1,0 +1,113 @@
+{
+  "id": "gen2_066_dawn_of_the_living_chickens",
+  "name": "Dawn of the Living Chickens",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "066",
+  "text": "Summon up to 4 creatures from your hand as Limited Summons. Return them back to your hand after 1 turn cycle.",
+  "effects": [
+    {
+      "id": "066-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "You have creatures in hand"
+      },
+      "actionType": "SUMMON_LIMITED_CREATURE_FROM_HAND",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon up to 4 creatures from hand as Limited Summons",
+      "target": "Up to 4 creatures from your hand",
+      "value": "Limited Summon up to 4 creatures",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "summonLimitedFromHand",
+      "params": {
+        "target": "Up to 4 creatures from your hand",
+        "valueText": "Limited Summon up to 4 creatures",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "You have creatures in hand"
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZone": "HAND",
+        "maxCount": 4,
+        "summonType": "LIMITED_SUMMON"
+      },
+      "notes": "Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    },
+    {
+      "id": "066-E02",
+      "trigger": "DELAYED_TRIGGER",
+      "condition": {
+        "type": "TEXT",
+        "text": "Dawn of the Living Chickens duration expires"
+      },
+      "actionType": "SCHEDULE_RETURN_TO_HAND",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return linked Limited Summons to hand",
+      "target": "Creatures summoned by this card",
+      "value": "Return to your hand after 1 turn cycle",
+      "duration": {
+        "text": "After 1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "scheduleReturnToHand",
+      "params": {
+        "target": "Creatures summoned by this card",
+        "valueText": "Return to your hand after 1 turn cycle",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Dawn of the Living Chickens duration expires"
+        },
+        "duration": {
+          "text": "After 1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

@@ -1,0 +1,111 @@
+{
+  "id": "gen3_008_cybernetic_upgrade",
+  "name": "Cybernetic Upgrade",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "008",
+  "text": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12.",
+  "effects": [
+    {
+      "id": "008-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12."
+      },
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "actionText": "Send card to cemetery",
+      "target": "Equipped creature",
+      "value": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "sendToCemetery",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Lightning Equip with battle timing and automatic end-of-battle cleanup.",
+      "needsReview": true
+    },
+    {
+      "id": "008-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 30
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 10
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 12
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Lightning Equip with battle timing and automatic end-of-battle cleanup.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Lightning Equip with battle timing and automatic end-of-battle cleanup.",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

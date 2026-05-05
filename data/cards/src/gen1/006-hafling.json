@@ -1,0 +1,60 @@
+{
+  "id": "gen1_006_hafling",
+  "name": "Hafling",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "006",
+  "text": "If this creature hits first during battle, inflict 3x Atk damage.",
+  "effects": [
+    {
+      "id": "006-E01",
+      "trigger": "ON_HIT_FIRST",
+      "condition": {
+        "type": "HITS_FIRST",
+        "text": "This creature hits first during battle"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Attack Damage Multiplier",
+      "actionText": "If this creature hits first during battle, inflict 3x Atk damage.",
+      "target": "This creature attack damage",
+      "value": "3x Attack Damage",
+      "reusableFunction": "applyAttackDamageMultiplier",
+      "params": {
+        "target": "This creature attack damage",
+        "valueText": "3x Attack Damage",
+        "statChanges": [],
+        "condition": {
+          "type": "HITS_FIRST",
+          "text": "This creature hits first during battle"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 3,
+        "blockSupportOverride": {
+          "blockStatuses": {
+            "006-E01-condition": "READY"
+          },
+          "tested": true,
+          "updatedAt": "2026-05-03T19:15:42.897Z",
+          "source": "Effect Dev Tool"
+        }
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "Card appears to spell name as Hafling.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 3,
+  "speed": 4,
+  "hp": 30,
+  "attackName": "Sneak Attack",
+  "attackDice": 1,
+  "modifier": 0
+}

@@ -1,0 +1,129 @@
+{
+  "id": "gen1_137_forest_demon",
+  "name": "Forest Demon",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "137",
+  "text": "If killed in battle, equip this card to the attacking creature. Reduce the equipped creature's AL, SPD, Atk Dice Rolls, and Modifier by 1/2. While equipped, this card acts as an Infinite equip magic card.",
+  "effects": [
+    {
+      "id": "137-E01",
+      "trigger": "IF_KILLED_IN_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card killed in battle"
+      },
+      "actionType": "CONVERT_CREATURE_TO_EQUIP_ON_DEATH",
+      "effectGroup": "Equip Conversion",
+      "actionText": "Equip this card to attacking creature",
+      "target": "This card/attacking creature",
+      "value": "Become Infinite equip magic card",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "convertCreatureToEquipOnDeath",
+      "params": {
+        "target": "This card/attacking creature",
+        "valueText": "Become Infinite equip magic card",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card killed in battle"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Creature-to-equip transformation.",
+      "needsReview": false
+    },
+    {
+      "id": "137-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "After death equip conversion"
+      },
+      "actionType": "APPLY_STAT_AND_DICE_MULTIPLIER",
+      "effectGroup": "Stat/Dice Reduction",
+      "actionText": "Reduce equipped creature stats/dice",
+      "target": "Equipped attacking creature",
+      "value": "AL, SPD, Atk Dice Rolls, Modifier x 1/2",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatAndDiceMultiplier",
+      "params": {
+        "target": "Equipped attacking creature",
+        "valueText": "AL, SPD, Atk Dice Rolls, Modifier x 1/2",
+        "statChanges": [
+          {
+            "stat": "MODIFIER",
+            "operation": "MULTIPLY",
+            "value": "1/2",
+            "rounding": "CEIL"
+          },
+          {
+            "stat": "AL",
+            "operation": "MULTIPLY",
+            "value": "1/2",
+            "rounding": "CEIL"
+          },
+          {
+            "stat": "SPD",
+            "operation": "MULTIPLY",
+            "value": "1/2",
+            "rounding": "CEIL"
+          },
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "MULTIPLY",
+            "value": "1/2",
+            "rounding": "CEIL"
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "MULTIPLY",
+            "value": "1/2",
+            "rounding": "CEIL"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "After death equip conversion"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": "CEIL",
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Half modifiers need rounding rule. Half values always round up. Modifier applies to both Hit Roll and Attack Damage Roll.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 3,
+  "speed": 7,
+  "hp": 30,
+  "attackName": "Possession",
+  "attackDice": 1,
+  "modifier": 1
+}

@@ -1,0 +1,92 @@
+{
+  "id": "gen2_115_magic_artillery",
+  "name": "Magic Artillery",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "115",
+  "text": "At the beginning of your turn, you may roll 1 die. If the result is: 6: Opponent must discard 1 Magic card. 2-5: Nothing happens. 1: Destroy this card.",
+  "effects": [
+    {
+      "id": "115-E01",
+      "trigger": "AT_BEGINNING_OF_YOUR_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "At beginning of your turn, you may roll 1 die"
+      },
+      "actionType": "ROLL_DAMAGE_TABLE",
+      "effectGroup": "Random Field Effect",
+      "actionText": "Resolve Magic Artillery D6 table",
+      "target": "Opponent or this card",
+      "value": "D6: 6 opponent discards 1 Magic; 2-5 nothing; 1 destroy this card",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "rollDamageTable",
+      "params": {
+        "target": "Opponent or this card",
+        "valueText": "D6: 6 opponent discards 1 Magic; 2-5 nothing; 1 destroy this card",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "At beginning of your turn, you may roll 1 die"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "optional": true,
+        "table": [
+          {
+            "results": [
+              6
+            ],
+            "actions": [
+              {
+                "discardFrom": "OPPONENT_HAND",
+                "match": {
+                  "cardKind": "MAGIC"
+                },
+                "count": 1
+              }
+            ]
+          },
+          {
+            "results": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "actions": [
+              "NO_EFFECT"
+            ]
+          },
+          {
+            "results": [
+              1
+            ],
+            "actions": [
+              "DESTROY_THIS_CARD"
+            ]
+          }
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

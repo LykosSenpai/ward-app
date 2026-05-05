@@ -1,0 +1,65 @@
+{
+  "id": "gen3_066_arzulian",
+  "name": "Arzulian",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "066",
+  "text": "For each point in this card's SPD stat over 12, gain Modifier +1.",
+  "effects": [
+    {
+      "id": "066-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "For each point in this card's SPD stat over 12, gain Modifier +1."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "This creature",
+      "value": "For each point in this card's SPD stat over 12, gain Modifier +1.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "For each point in this card's SPD stat over 12, gain Modifier +1.",
+        "statChanges": [
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD",
+            "value": 1
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "For each point in this card's SPD stat over 12, gain Modifier +1."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Dynamic Modifier depends on effective SPD over 12.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Dynamic Modifier depends on effective SPD over 12.",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 9,
+  "speed": 12,
+  "hp": 70,
+  "attackName": "Discharge",
+  "attackDice": 1,
+  "modifier": 2
+}

@@ -1,0 +1,59 @@
+{
+  "id": "gen3_103_bio_dino",
+  "name": "Bio-Dino",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "103",
+  "text": "Creatures used as sacrifice for this card have their base Atk Dice Rolls and base Modifier added to this creature.",
+  "effects": [
+    {
+      "id": "103-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creatures used as sacrifice for this card have their base Atk Dice Rolls and base Modifier added to this creature."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "This creature",
+      "value": "Creatures used as sacrifice for this card have their base Atk Dice Rolls and base Modifier added to this creature.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "This creature",
+        "valueText": "Creatures used as sacrifice for this card have their base Atk Dice Rolls and base Modifier added to this creature.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creatures used as sacrifice for this card have their base Atk Dice Rolls and base Modifier added to this creature."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Sacrifice-source stats are captured and added to this creature.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Sacrifice-source stats are captured and added to this creature.",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 12,
+  "speed": 4,
+  "hp": 100,
+  "attackName": "Absorb",
+  "attackDice": 1,
+  "modifier": 1
+}

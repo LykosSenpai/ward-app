@@ -1,0 +1,98 @@
+{
+  "id": "gen3_029_earth_eleotoid",
+  "name": "Earth Eleotoid",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "029",
+  "text": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water.",
+  "effects": [
+    {
+      "id": "029-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Uses environment/art-context conditions: in or near fire/water.",
+      "needsReview": true
+    },
+    {
+      "id": "029-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water."
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Apply attack damage multiplier",
+      "target": "This creature",
+      "value": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyAttackDamageMultiplier",
+      "params": {
+        "target": "This creature",
+        "valueText": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Uses environment/art-context conditions: in or near fire/water.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Uses environment/art-context conditions: in or near fire/water.",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 7,
+  "speed": 4,
+  "hp": 60,
+  "attackName": "Stone Slide",
+  "attackDice": 2,
+  "modifier": 3
+}

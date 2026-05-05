@@ -1,0 +1,59 @@
+{
+  "id": "gen1_080_ranger",
+  "name": "Ranger",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "080",
+  "text": "Your opponent must roll 1 die prior to each battle with this creature. If the result is: 1-2: This card cannot receive damage. 3-6: This card receives damage as normal.",
+  "effects": [
+    {
+      "id": "080-E01",
+      "trigger": "PRIOR_TO_EACH_BATTLE_WITH_THIS_CREATURE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent rolls 1 die"
+      },
+      "actionType": "APPLY_PRE_BATTLE_ROLL_DEFENSE",
+      "effectGroup": "Damage Prevention",
+      "actionText": "Prevent damage to this card on 1-2",
+      "target": "This card",
+      "value": "Cannot receive damage on 1-2",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyPreBattleRollDefense",
+      "params": {
+        "target": "This card",
+        "valueText": "Cannot receive damage on 1-2",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent rolls 1 die"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "3-6 normal damage.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 5,
+  "speed": 5,
+  "hp": 40,
+  "attackName": "Stealth Arrow",
+  "attackDice": 1,
+  "modifier": 2
+}

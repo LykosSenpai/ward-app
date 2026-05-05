@@ -1,0 +1,19 @@
+{
+  "id": "gen3_130_tarantula",
+  "name": "Tarantula",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "130",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Bug",
+  "armorLevel": 10,
+  "speed": 10,
+  "hp": 80,
+  "attackName": "Crunch",
+  "attackDice": 3,
+  "modifier": 3
+}

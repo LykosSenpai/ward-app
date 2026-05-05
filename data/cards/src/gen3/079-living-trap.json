@@ -1,0 +1,95 @@
+{
+  "id": "gen3_079_living_trap",
+  "name": "Living Trap",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "079",
+  "text": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery.",
+  "effects": [
+    {
+      "id": "079-E01",
+      "trigger": "WHEN_OPPONENT_DECLARES_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "Opponent's primary creature",
+      "value": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field self-removes after triggered damage.",
+      "needsReview": true
+    },
+    {
+      "id": "079-E02",
+      "trigger": "WHEN_OPPONENT_DECLARES_BATTLE",
+      "condition": {
+        "type": "TEXT",
+        "text": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery."
+      },
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "actionText": "Send card to cemetery",
+      "target": "Opponent's primary creature",
+      "value": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "sendToCemetery",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Field self-removes after triggered damage.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Field self-removes after triggered damage.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

@@ -1,0 +1,72 @@
+{
+  "id": "gen2_089_gnome_dragoon",
+  "name": "Gnome Dragoon",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "089",
+  "text": "For every card in your hand with \"Gnome\" in its name, add: Atk Dice Rolls: +1. Modifier: +1.",
+  "effects": [
+    {
+      "id": "089-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Each card in your hand with \"Gnome\" in its name"
+      },
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "actionText": "Scale by Gnome cards in hand",
+      "target": "This creature",
+      "value": "For every card in your hand with Gnome in its name: Atk Dice Rolls +1; Modifier +1",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyDynamicStatModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "For every card in your hand with Gnome in its name: Atk Dice Rolls +1; Modifier +1",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD_PER_COUNT",
+            "valuePerCount": 1,
+            "countSource": "YOUR_HAND_NAME_CONTAINS_GNOME"
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD_PER_COUNT",
+            "valuePerCount": 1,
+            "countSource": "YOUR_HAND_NAME_CONTAINS_GNOME"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Each card in your hand with \"Gnome\" in its name"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 10,
+  "hp": 60,
+  "attackName": "Charge",
+  "attackDice": 3,
+  "modifier": 1
+}

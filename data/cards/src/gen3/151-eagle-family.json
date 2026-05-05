@@ -1,0 +1,59 @@
+{
+  "id": "gen3_151_eagle_family",
+  "name": "Eagle Family",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "151",
+  "text": "Whenever this creature is damaged, your opponent(s) must roll 2 dice of damage against themselves.",
+  "effects": [
+    {
+      "id": "151-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "Whenever this creature is damaged, your opponent(s) must roll 2 dice of damage against themselves."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "This creature",
+      "value": "Whenever this creature is damaged, your opponent(s) must roll 2 dice of damage against themselves.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "This creature",
+        "valueText": "Whenever this creature is damaged, your opponent(s) must roll 2 dice of damage against themselves.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Whenever this creature is damaged, your opponent(s) must roll 2 dice of damage against themselves."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Bonus card outside 001-150 numbering.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Bonus card printed as 151/150; included as a bonus Gen 3 card by user request.; Bonus card outside 001-150 numbering.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 12,
+  "speed": 12,
+  "hp": 90,
+  "attackName": "Proud Wing",
+  "attackDice": 4,
+  "modifier": 4
+}

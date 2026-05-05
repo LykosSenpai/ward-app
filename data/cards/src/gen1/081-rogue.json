@@ -1,0 +1,59 @@
+{
+  "id": "gen1_081_rogue",
+  "name": "Rogue",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "081",
+  "text": "If this creature hits first during battle, inflict 3x Atk damage.",
+  "effects": [
+    {
+      "id": "081-E01",
+      "trigger": "ON_HIT_FIRST",
+      "condition": {
+        "type": "HITS_FIRST",
+        "text": "This creature hits first during battle"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply Atk damage",
+      "target": "Attack target",
+      "value": "3x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Attack target",
+        "valueText": "3x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "HITS_FIRST",
+          "text": "This creature hits first during battle"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Shared first-hit pattern.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 2,
+  "speed": 9,
+  "hp": 40,
+  "attackName": "Triple Strike",
+  "attackDice": 2,
+  "modifier": 0
+}

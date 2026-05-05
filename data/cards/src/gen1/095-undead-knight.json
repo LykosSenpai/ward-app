@@ -1,0 +1,19 @@
+{
+  "id": "gen1_095_undead_knight",
+  "name": "Undead Knight",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "095",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 10,
+  "speed": 3,
+  "hp": 90,
+  "attackName": "Cold Snap",
+  "attackDice": 3,
+  "modifier": 2
+}

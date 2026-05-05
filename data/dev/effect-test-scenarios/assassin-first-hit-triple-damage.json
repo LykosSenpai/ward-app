@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.409Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_022_assassin",
+  "effectId": "022-E01",
+  "title": "Assassin first hit deals triple attack damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:12:37.139Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_022_assassin",
+      "cardName": "Assassin",
+      "cardType": "CREATURE",
+      "cardNumber": "022",
+      "generation": "1",
+      "rawText": "If this creature hits first during battle, inflict 3x Atk damage."
+    },
+    "effect": {
+      "effectId": "022-E01",
+      "trigger": "ON_HIT_FIRST",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Attack target",
+      "value": "3x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Assassin first hit deals triple attack damage",
+    "summary": "Assassin has higher SPD, hits first, and damage applied equals final attack damage times 3.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_022_assassin"
+      ],
+      "player2Cards": [
+        "test_slow_defender_al_1_hp_80"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Assassin hit succeeds with modifier"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            3,
+            4
+          ],
+          "label": "base attack roll 9 plus modifier 5"
+        }
+      ],
+      "notes": [
+        "Use post-first-turn-cycle state.",
+        "Defender speed must be lower than Assassin SPD 12."
+      ]
+    },
+    "steps": [
+      "Declare Assassin attack against slower defender.",
+      "Resolve hit and damage using forced rolls.",
+      "Inspect battle damage trace for first-hit multiplier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Assassin strikes first",
+        "path": "lastBattle.firstAttacker.cardId",
+        "operator": "equals",
+        "value": "gen1_022_assassin"
+      },
+      {
+        "label": "Hit lands",
+        "path": "lastBattle.hitResult.hit",
+        "operator": "equals",
+        "value": true
+      },
+      {
+        "label": "Triple damage applied",
+        "path": "lastBattle.damageApplied",
+        "operator": "equals",
+        "value": 42
+      },
+      {
+        "label": "Multiplier trace present",
+        "path": "lastBattle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      }
+    ],
+    "manualVerification": [
+      "Base final damage before multiplier should be 14 from roll 9 + modifier 5; expected 42."
+    ],
+    "riskNotes": [
+      "Critical hits could alter expected value; forced hit dice avoid all sixes."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported battle damage pipeline; validate first-hit condition and multiplier ordering."
+    },
+    "regression": {
+      "fixtureName": "assassin-first-hit-triple-damage",
+      "tags": [
+        "creature",
+        "battle",
+        "damage-multiplier",
+        "speed"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_022_assassin:022-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

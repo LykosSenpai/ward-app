@@ -1,0 +1,56 @@
+{
+  "id": "gen2_148_bug_spray",
+  "name": "Bug Spray",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "148",
+  "text": "All creatures inflict 2x Atk damage to Bug-type creatures on the field.",
+  "effects": [
+    {
+      "id": "148-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target is Bug-type"
+      },
+      "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
+      "effectGroup": "Damage Multiplier Aura",
+      "actionText": "Multiply Atk damage",
+      "target": "Bug-type creatures",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "While field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplierAura",
+      "params": {
+        "target": "Bug-type creatures",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target is Bug-type"
+        },
+        "duration": {
+          "text": "While field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 2
+      },
+      "notes": "Field aura damage multiplier against Bug-type creatures.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Field card.",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "FIELD",
+  "isEquip": false
+}

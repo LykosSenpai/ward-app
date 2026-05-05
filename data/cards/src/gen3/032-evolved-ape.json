@@ -1,0 +1,19 @@
+{
+  "id": "gen3_032_evolved_ape",
+  "name": "Evolved Ape",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "032",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 7,
+  "speed": 5,
+  "hp": 100,
+  "attackName": "Pummel",
+  "attackDice": 4,
+  "modifier": 3
+}

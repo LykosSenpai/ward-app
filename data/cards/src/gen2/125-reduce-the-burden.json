@@ -1,0 +1,58 @@
+{
+  "id": "gen2_125_reduce_the_burden",
+  "name": "Reduce the Burden",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "125",
+  "text": "Play this card to the field. When it is played to the field send it to your cemetery. Reduce your overall cemetery by 30 HP.",
+  "effects": [
+    {
+      "id": "125-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is played to the field"
+      },
+      "actionType": "ADJUST_CEMETERY_HP",
+      "effectGroup": "Cemetery HP Adjustment",
+      "actionText": "Send this card to your cemetery and reduce your overall cemetery by 30 HP",
+      "target": "Your cemetery score",
+      "value": "Reduce by 30 HP",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "reduceCemeteryHp",
+      "params": {
+        "target": "Your cemetery score",
+        "valueText": "Reduce by 30 HP",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is played to the field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": -30,
+        "zone": "YOUR_CEMETERY",
+        "alsoSendThisCardTo": "YOUR_CEMETERY"
+      },
+      "notes": "Cemetery HP can go below zero per global rules.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

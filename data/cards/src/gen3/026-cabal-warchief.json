@@ -1,0 +1,59 @@
+{
+  "id": "gen3_026_cabal_warchief",
+  "name": "Cabal Warchief",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Mythic",
+  "cardNumber": "026",
+  "text": "This creature may initiate battle twice during your turn. Your opponent can only return attack for 1 of these battles. This creature cannot change control, or be removed from the field unless killed.",
+  "effects": [
+    {
+      "id": "026-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature may initiate battle twice during your turn. Your opponent can only return attack for 1 of these battles. This creature cannot change control, or be removed from the field unless killed."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "This creature",
+      "value": "This creature may initiate battle twice during your turn. Your opponent can only return attack for 1 of these battles. This creature cannot change control, or be removed from the field unless killed.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature may initiate battle twice during your turn. Your opponent can only return attack for 1 of these battles. This creature cannot change control, or be removed from the field unless killed.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature may initiate battle twice during your turn. Your opponent can only return attack for 1 of these battles. This creature cannot change control, or be removed from the field unless killed."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Multiple battles and partial return-attack restriction need custom combat support.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Multiple battles and partial return-attack restriction need custom combat support.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 12,
+  "speed": 12,
+  "hp": 130,
+  "attackName": "Carnage",
+  "attackDice": 5,
+  "modifier": 5
+}

@@ -1,0 +1,59 @@
+{
+  "id": "gen3_134_orc_berserker",
+  "name": "Orc Berserker",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "134",
+  "text": "If this card is killed, instead, heal it to 5 HP. This effect can only occur once while this card is on the field.",
+  "effects": [
+    {
+      "id": "134-E01",
+      "trigger": "WHEN_THIS_CREATURE_KILLED",
+      "condition": {
+        "type": "TEXT",
+        "text": "If this card is killed, instead, heal it to 5 HP. This effect can only occur once while this card is on the field."
+      },
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "actionText": "Heal a creature or apply lifesteal",
+      "target": "This creature",
+      "value": "If this card is killed, instead, heal it to 5 HP. This effect can only occur once while this card is on the field.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "heal",
+      "params": {
+        "target": "This creature",
+        "valueText": "If this card is killed, instead, heal it to 5 HP. This effect can only occur once while this card is on the field.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "If this card is killed, instead, heal it to 5 HP. This effect can only occur once while this card is on the field."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 4,
+  "speed": 8,
+  "hp": 60,
+  "attackName": "Rabid",
+  "attackDice": 2,
+  "modifier": 3
+}

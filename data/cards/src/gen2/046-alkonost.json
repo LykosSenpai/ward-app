@@ -1,0 +1,161 @@
+{
+  "id": "gen2_046_alkonost",
+  "name": "Alkonost",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "046",
+  "text": "During your turn, you may summon a 'Harpy' or 'Alkonost' from your deck or hand as a Limited Summon. For each, add +1 Atk Dice and +1 Modifier to this card. Return Limited Summons to your hand if this creature leaves the field or this effect is negated.",
+  "effects": [
+    {
+      "id": "046-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Matching \"Harpy\" or \"Alkonost\" exists in your deck or hand"
+      },
+      "actionType": "SUMMON_LIMITED_CREATURE",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon Harpy or Alkonost as Limited Summon",
+      "target": "Harpy or Alkonost from deck or hand",
+      "value": "Limited Summon matching creature(s)",
+      "duration": {
+        "text": "While source effect remains active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "summonLimitedFromZone",
+      "params": {
+        "target": "Harpy or Alkonost from deck or hand",
+        "valueText": "Limited Summon matching creature(s)",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Matching \"Harpy\" or \"Alkonost\" exists in your deck or hand"
+        },
+        "duration": {
+          "text": "While source effect remains active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "fromZones": [
+          "DECK",
+          "HAND"
+        ],
+        "match": {
+          "nameIn": [
+            "Harpy",
+            "Alkonost"
+          ]
+        },
+        "summonType": "LIMITED_SUMMON"
+      },
+      "notes": "Source-linked; returned to hand if Alkonost leaves field or effect is negated.",
+      "needsReview": false
+    },
+    {
+      "id": "046-E02",
+      "trigger": "WHILE_LIMITED_SUMMON_LINKED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Limited Summon created by this effect exists"
+      },
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "actionText": "Scale this card by linked Limited Summons",
+      "target": "This card",
+      "value": "For each linked Limited Summon: Atk Dice Rolls +1; Modifier +1",
+      "duration": {
+        "text": "While source effect remains active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyDynamicStatModifier",
+      "params": {
+        "target": "This card",
+        "valueText": "For each linked Limited Summon: Atk Dice Rolls +1; Modifier +1",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD_PER_COUNT",
+            "valuePerCount": 1,
+            "countSource": "LINKED_LIMITED_SUMMON_COUNT"
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD_PER_COUNT",
+            "valuePerCount": 1,
+            "countSource": "LINKED_LIMITED_SUMMON_COUNT"
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Limited Summon created by this effect exists"
+        },
+        "duration": {
+          "text": "While source effect remains active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "046-E03",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "condition": {
+        "type": "SOURCE_INVALIDATED",
+        "text": "This creature leaves field or this effect is negated"
+      },
+      "actionType": "RETURN_LINKED_SUMMON",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return linked Limited Summons to hand",
+      "target": "Linked Limited Summon(s)",
+      "value": "Return to your hand",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnLinkedSummon",
+      "params": {
+        "target": "Linked Limited Summon(s)",
+        "valueText": "Return to your hand",
+        "statChanges": [],
+        "condition": {
+          "type": "SOURCE_INVALIDATED",
+          "text": "This creature leaves field or this effect is negated"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 4,
+  "speed": 11,
+  "hp": 80,
+  "attackName": "Shriek",
+  "attackDice": 1,
+  "modifier": 1
+}

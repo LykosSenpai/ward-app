@@ -1,0 +1,60 @@
+{
+  "id": "gen2_058_zombie_dog",
+  "name": "Zombie Dog",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Rare",
+  "cardNumber": "058",
+  "text": "If this creature hits first during battle, inflict 3x Atk damage.",
+  "effects": [
+    {
+      "id": "058-E01",
+      "trigger": "ON_HIT_FIRST",
+      "condition": {
+        "type": "HITS_FIRST",
+        "text": "This creature hits first during battle"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply Atk damage",
+      "target": "Attack target",
+      "value": "3x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Attack target",
+        "valueText": "3x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "HITS_FIRST",
+          "text": "This creature hits first during battle"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 3
+      },
+      "notes": "Shared with Gen1 Rogue/Hafling/Zombie Dog pattern.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 2,
+  "speed": 10,
+  "hp": 40,
+  "attackName": "Rotting Bite",
+  "attackDice": 1,
+  "modifier": 1
+}

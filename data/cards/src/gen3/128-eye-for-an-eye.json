@@ -1,0 +1,56 @@
+{
+  "id": "gen3_128_eye_for_an_eye",
+  "name": "Eye For An Eye",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "128",
+  "text": "All players may each exchange 1 card from their hand with 1 card in their cemetery. Creature for a Creature. Magic for a Magic.",
+  "effects": [
+    {
+      "id": "128-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "All players may each exchange 1 card from their hand with 1 card in their cemetery. Creature for a Creature. Magic for a Magic."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "Target creature",
+      "value": "All players may each exchange 1 card from their hand with 1 card in their cemetery. Creature for a Creature. Magic for a Magic.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "Target creature",
+        "valueText": "All players may each exchange 1 card from their hand with 1 card in their cemetery. Creature for a Creature. Magic for a Magic.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "All players may each exchange 1 card from their hand with 1 card in their cemetery. Creature for a Creature. Magic for a Magic."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false,
+  "isField": false
+}

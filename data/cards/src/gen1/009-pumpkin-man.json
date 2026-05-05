@@ -1,0 +1,19 @@
+{
+  "id": "gen1_009_pumpkin_man",
+  "name": "Pumpkin Man",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "009",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 3,
+  "speed": 5,
+  "hp": 60,
+  "attackName": "Axe Swing",
+  "attackDice": 3,
+  "modifier": 1
+}

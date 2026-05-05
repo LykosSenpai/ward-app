@@ -1,0 +1,137 @@
+{
+  "id": "gen3_012_crow",
+  "name": "Crow",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "012",
+  "text": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand.",
+  "effects": [
+    {
+      "id": "012-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand."
+      },
+      "actionType": "SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Apply custom summon requirement",
+      "target": "Your primary creature",
+      "value": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Conditional Limited Summon and cleanup tied to primary creature state.",
+      "needsReview": true
+    },
+    {
+      "id": "012-E02",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand."
+      },
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon or interact with a Limited Summon",
+      "target": "Your primary creature",
+      "value": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "limitedSummon",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Conditional Limited Summon and cleanup tied to primary creature state.",
+      "needsReview": true
+    },
+    {
+      "id": "012-E03",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand."
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Card Movement",
+      "actionText": "Move or return a card between zones",
+      "target": "Your primary creature",
+      "value": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "moveCard",
+      "params": {
+        "target": "Your primary creature",
+        "valueText": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Conditional Limited Summon and cleanup tied to primary creature state.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Conditional Limited Summon and cleanup tied to primary creature state.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 1,
+  "speed": 11,
+  "hp": 10,
+  "attackName": "Corvus Caw",
+  "attackDice": 1,
+  "modifier": 1
+}

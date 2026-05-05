@@ -1,0 +1,181 @@
+{
+  "id": "gen2_009_bio_regeneration",
+  "name": "Bio-Regeneration",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Epic",
+  "cardNumber": "009",
+  "text": "Can only be equipped to a creature with 9 or less remaining HP. Heal 30 HP. 2x Hit Roll results for this creature. 2x Atk Damage for this creature.",
+  "effects": [
+    {
+      "id": "009-E01",
+      "trigger": "EQUIP_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target creature has 9 or less remaining HP"
+      },
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Equip Requirement",
+      "actionText": "Validate equip target",
+      "target": "Target creature",
+      "value": "Remaining HP must be 9 or less",
+      "duration": {
+        "text": "Before equip",
+        "type": "BEFORE_EQUIP"
+      },
+      "reusableFunction": "validateSummonRequirement",
+      "params": {
+        "target": "Target creature",
+        "valueText": "Remaining HP must be 9 or less",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target creature has 9 or less remaining HP"
+        },
+        "duration": {
+          "text": "Before equip",
+          "type": "BEFORE_EQUIP"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "remainingHpMax": 9
+      },
+      "notes": "This is an equip restriction, not a summon restriction.",
+      "needsReview": false
+    },
+    {
+      "id": "009-E02",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "HEAL_CREATURE",
+      "effectGroup": "Healing",
+      "actionText": "Heal equipped creature",
+      "target": "Equipped creature",
+      "value": "Heal 30 HP",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healFlat",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Heal 30 HP",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 30
+      },
+      "notes": "Healing cannot exceed base HP.",
+      "needsReview": false
+    },
+    {
+      "id": "009-E03",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Roll Result Multiplier",
+      "actionText": "Double Hit Roll results",
+      "target": "Equipped creature",
+      "value": "2x Hit Roll results",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "2x Hit Roll results",
+        "statChanges": [
+          {
+            "stat": "HIT_ROLL_RESULT_MULTIPLIER",
+            "operation": "MULTIPLY",
+            "value": 2
+          }
+        ],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Multiply the final Hit Roll result by 2 after dice and modifiers unless engine decides otherwise.",
+      "needsReview": false
+    },
+    {
+      "id": "009-E04",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature inflicts Atk damage"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Double Atk damage",
+      "target": "Equipped creature attack",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Equipped creature attack",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature inflicts Atk damage"
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 2
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

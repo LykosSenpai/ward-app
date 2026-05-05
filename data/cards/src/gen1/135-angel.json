@@ -1,0 +1,98 @@
+{
+  "id": "gen1_135_angel",
+  "name": "Angel",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "135",
+  "text": "When summoned, return a creature from your cemetery to your hand. This card cannot be returned from the cemetery.",
+  "effects": [
+    {
+      "id": "135-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "Creature in your cemetery"
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return creature to hand",
+      "target": "Your cemetery/hand",
+      "value": "1 creature",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnFromCemeteryToHand",
+      "params": {
+        "target": "Your cemetery/hand",
+        "valueText": "1 creature",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Creature in your cemetery"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Summon trigger.",
+      "needsReview": false
+    },
+    {
+      "id": "135-E02",
+      "trigger": "STATIC_RULE",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is in cemetery"
+      },
+      "actionType": "APPLY_ZONE_RETURN_RESTRICTION",
+      "effectGroup": "Restriction",
+      "actionText": "Cannot return this card from cemetery",
+      "target": "This card",
+      "value": "Cannot be returned",
+      "duration": {
+        "text": "Always",
+        "type": "TEXT"
+      },
+      "reusableFunction": "applyZoneReturnRestriction",
+      "params": {
+        "target": "This card",
+        "valueText": "Cannot be returned",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is in cemetery"
+        },
+        "duration": {
+          "text": "Always",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Self-exclusion from cemetery recursion.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 7,
+  "speed": 7,
+  "hp": 70,
+  "attackName": "Angelic Light",
+  "attackDice": 2,
+  "modifier": 2
+}

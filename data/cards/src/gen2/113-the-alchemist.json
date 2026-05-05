@@ -1,0 +1,98 @@
+{
+  "id": "gen2_113_the_alchemist",
+  "name": "The Alchemist",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "113",
+  "text": "During your turn, roll 1 die. If the result is: 1-2: Heal this creature 5 HP. 3-4: Inflict 10 damage to opponent's creature. 5-6: Inflict 5 damage to this card.",
+  "effects": [
+    {
+      "id": "113-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Roll 1 die"
+      },
+      "actionType": "ROLL_DAMAGE_TABLE",
+      "effectGroup": "Random Effect",
+      "actionText": "Resolve Alchemist D6 table",
+      "target": "This creature or opponent creature",
+      "value": "D6: 1-2 heal self 5; 3-4 deal 10 to opponent; 5-6 deal 5 to self",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "rollDamageTable",
+      "params": {
+        "target": "This creature or opponent creature",
+        "valueText": "D6: 1-2 heal self 5; 3-4 deal 10 to opponent; 5-6 deal 5 to self",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Roll 1 die"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "table": [
+          {
+            "results": [
+              1,
+              2
+            ],
+            "actions": [
+              {
+                "heal": "THIS_CREATURE",
+                "amount": 5
+              }
+            ]
+          },
+          {
+            "results": [
+              3,
+              4
+            ],
+            "actions": [
+              {
+                "damage": "OPPONENT_CREATURE",
+                "amount": 10
+              }
+            ]
+          },
+          {
+            "results": [
+              5,
+              6
+            ],
+            "actions": [
+              {
+                "damage": "THIS_CARD",
+                "amount": 5
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 1,
+  "speed": 7,
+  "hp": 30,
+  "attackName": "Broken Glass",
+  "attackDice": 1,
+  "modifier": 0
+}

@@ -1,0 +1,98 @@
+{
+  "id": "gen1_047_ent_tree",
+  "name": "Ent Tree",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "047",
+  "text": "This creature is unaffected by creature effects and magic cards. This creature inflicts 2x Atk damage to any creature holding a weapon.",
+  "effects": [
+    {
+      "id": "047-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature is affected by creature effect or magic card"
+      },
+      "actionType": "APPLY_IMMUNITY",
+      "effectGroup": "Immunity",
+      "actionText": "Unaffected by creature effects and magic cards",
+      "target": "This creature",
+      "value": "Immune",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyImmunity",
+      "params": {
+        "target": "This creature",
+        "valueText": "Immune",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature is affected by creature effect or magic card"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Continuous immunity.",
+      "needsReview": false
+    },
+    {
+      "id": "047-E02",
+      "trigger": "DURING_DAMAGE_CALC",
+      "condition": {
+        "type": "TEXT",
+        "text": "Target is holding a weapon"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply Atk damage",
+      "target": "Target creature holding weapon",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Target creature holding weapon",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Target is holding a weapon"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Requires hasWeapon tag.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Elemental",
+  "armorLevel": 5,
+  "speed": 1,
+  "hp": 40,
+  "attackName": "Brush Blast",
+  "attackDice": 1,
+  "modifier": 6
+}

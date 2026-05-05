@@ -1,0 +1,59 @@
+{
+  "id": "gen1_055_giant_rat",
+  "name": "Giant Rat",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Rare",
+  "cardNumber": "055",
+  "text": "If this card is sacrificed, return it back to your deck (Shuffle).",
+  "effects": [
+    {
+      "id": "055-E01",
+      "trigger": "ON_SACRIFICED",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card is sacrificed"
+      },
+      "actionType": "RETURN_SELF_TO_DECK_AND_SHUFFLE",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return to deck and shuffle",
+      "target": "This card",
+      "value": "Move to deck",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnSelfToDeckAndShuffle",
+      "params": {
+        "target": "This card",
+        "valueText": "Move to deck",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card is sacrificed"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Overrides cemetery destination after sacrifice.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 1,
+  "speed": 7,
+  "hp": 30,
+  "attackName": "Bite",
+  "attackDice": 1,
+  "modifier": 0
+}

@@ -1,0 +1,61 @@
+{
+  "id": "gen2_145_ancient_one",
+  "name": "Ancient One",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Legendary",
+  "cardNumber": "145",
+  "text": "During your opponents' turn, if they control Limited Summons, they must use their Limited Summons to battle their primary creature. Normal battle rules apply.",
+  "effects": [
+    {
+      "id": "145-E01",
+      "trigger": "DURING_OPPONENT_TURN",
+      "condition": {
+        "type": "TEXT",
+        "text": "Opponent controls Limited Summons during their turn"
+      },
+      "actionType": "FORCE_LIMITED_SUMMONS_TO_BATTLE_PRIMARY",
+      "effectGroup": "Forced Battle",
+      "actionText": "Force opponent Limited Summons to battle their primary creature",
+      "target": "Opponent Limited Summons",
+      "value": "Must battle opponent primary creature",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "forceLimitedSummonsToBattlePrimary",
+      "params": {
+        "target": "Opponent Limited Summons",
+        "valueText": "Must battle opponent primary creature",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Opponent controls Limited Summons during their turn"
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "battleTarget": "CONTROLLERS_PRIMARY_CREATURE",
+        "appliesTo": "OPPONENT_LIMITED_SUMMONS"
+      },
+      "notes": "Normal battle rules apply.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 12,
+  "speed": 3,
+  "hp": 130,
+  "attackName": "Abyss Horror",
+  "attackDice": 4,
+  "modifier": 5
+}

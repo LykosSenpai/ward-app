@@ -1,0 +1,59 @@
+{
+  "id": "gen3_121_ancient_sentinel",
+  "name": "Ancient Sentinel",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "121",
+  "text": "This card's Modifier is equal to your opponent's current primary creature's base SPD stat.",
+  "effects": [
+    {
+      "id": "121-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "This card's Modifier is equal to your opponent's current primary creature's base SPD stat."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Opponent's primary creature",
+      "value": "This card's Modifier is equal to your opponent's current primary creature's base SPD stat.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Opponent's primary creature",
+        "valueText": "This card's Modifier is equal to your opponent's current primary creature's base SPD stat.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This card's Modifier is equal to your opponent's current primary creature's base SPD stat."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Mechanical",
+  "armorLevel": 9,
+  "speed": 6,
+  "hp": 70,
+  "attackName": "Iron Blow",
+  "attackDice": 3,
+  "modifier": 0
+}

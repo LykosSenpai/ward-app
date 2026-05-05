@@ -1,0 +1,67 @@
+{
+  "id": "gen3_140_might_of_the_shaman",
+  "name": "Might of the Shaman",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "140",
+  "text": "SPD: +6. Atk Dice Rolls: +2.",
+  "effects": [
+    {
+      "id": "140-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "SPD: +6. Atk Dice Rolls: +2."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "SPD: +6. Atk Dice Rolls: +2.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "SPD: +6. Atk Dice Rolls: +2.",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 2
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 6
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "SPD: +6. Atk Dice Rolls: +2."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

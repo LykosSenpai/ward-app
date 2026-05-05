@@ -1,0 +1,77 @@
+{
+  "id": "gen3_074_ancient_book",
+  "name": "Ancient Book",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "074",
+  "text": "When your opponent plays a Lightning card, you may equip this card to a creature as an Infinite magic card. Atk: +15. Hit: +5. AL: +8. SPD: +5.",
+  "effects": [
+    {
+      "id": "074-E01",
+      "trigger": "WHEN_OPPONENT_PLAYS_LIGHTNING",
+      "condition": {
+        "type": "TEXT",
+        "text": "When your opponent plays a Lightning card, you may equip this card to a creature as an Infinite magic card. Atk: +15. Hit: +5. AL: +8. SPD: +5."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "When your opponent plays a Lightning card, you may equip this card to a creature as an Infinite magic card. Atk: +15. Hit: +5. AL: +8. SPD: +5.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "When your opponent plays a Lightning card, you may equip this card to a creature as an Infinite magic card. Atk: +15. Hit: +5. AL: +8. SPD: +5.",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 15
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 5
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 8
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 5
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "When your opponent plays a Lightning card, you may equip this card to a creature as an Infinite magic card. Atk: +15. Hit: +5. AL: +8. SPD: +5."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Lightning that becomes an Infinite Equip after trigger resolution.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Lightning that becomes an Infinite Equip after trigger resolution.",
+  "cardType": "MAGIC",
+  "magicType": "LIGHTNING",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

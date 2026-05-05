@@ -1,0 +1,59 @@
+{
+  "id": "gen3_003_enlightened_soul",
+  "name": "Enlightened Soul",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Legendary",
+  "cardNumber": "003",
+  "text": "While this card is in your cemetery, reduce your cemetery by 40 HP.",
+  "effects": [
+    {
+      "id": "003-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "While this card is in your cemetery, reduce your cemetery by 40 HP."
+      },
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "actionText": "Manual effect resolution needed",
+      "target": "This creature",
+      "value": "While this card is in your cemetery, reduce your cemetery by 40 HP.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "manualFallback",
+      "params": {
+        "target": "This creature",
+        "valueText": "While this card is in your cemetery, reduce your cemetery by 40 HP.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "While this card is in your cemetery, reduce your cemetery by 40 HP."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Cemetery HP reduction is an exception to normal inactive cemetery effects.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Cemetery HP reduction is an exception to normal inactive cemetery effects.",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 1,
+  "speed": 1,
+  "hp": 20,
+  "attackName": "Upon High",
+  "attackDice": 1,
+  "modifier": 1
+}

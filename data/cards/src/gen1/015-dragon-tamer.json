@@ -1,0 +1,55 @@
+{
+  "id": "gen1_015_dragon_tamer",
+  "name": "Dragon Tamer",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "015",
+  "text": "Search your deck for 1 creature that has \"Dragon\" in its name or is Dragon-type. Place it into your hand (Shuffle).",
+  "effects": [
+    {
+      "id": "015-E01",
+      "trigger": "ON_PLAY",
+      "condition": {
+        "type": "TEXT",
+        "text": "Deck has matching card"
+      },
+      "actionType": "SEARCH_DECK_TO_HAND",
+      "effectGroup": "Deck Search",
+      "actionText": "Search deck and add card to hand",
+      "target": "Your deck/hand",
+      "value": "1 creature with Dragon in name or Dragon type",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "searchDeckToHand",
+      "params": {
+        "target": "Your deck/hand",
+        "valueText": "1 creature with Dragon in name or Dragon type",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Deck has matching card"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Shuffle deck after search.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "NONE",
+  "isEquip": false
+}

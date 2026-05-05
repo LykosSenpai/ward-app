@@ -1,0 +1,19 @@
+{
+  "id": "gen1_082_scarecrow",
+  "name": "Scarecrow",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "082",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 4,
+  "speed": 3,
+  "hp": 60,
+  "attackName": "Wicked Slice",
+  "attackDice": 1,
+  "modifier": 2
+}

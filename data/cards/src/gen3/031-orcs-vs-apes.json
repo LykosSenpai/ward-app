@@ -1,0 +1,95 @@
+{
+  "id": "gen3_031_orcs_vs_apes",
+  "name": "Orcs VS Apes",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Common",
+  "cardNumber": "031",
+  "text": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field.",
+  "effects": [
+    {
+      "id": "031-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field."
+      },
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "actionText": "Inflict damage",
+      "target": "All creatures matching condition",
+      "value": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "damage",
+      "params": {
+        "target": "All creatures matching condition",
+        "valueText": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "031-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TEXT",
+        "text": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field."
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Apply attack damage multiplier",
+      "target": "All creatures matching condition",
+      "value": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field.",
+      "duration": {
+        "text": "While on field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyAttackDamageMultiplier",
+      "params": {
+        "target": "All creatures matching condition",
+        "valueText": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field."
+        },
+        "duration": {
+          "text": "While on field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true
+}

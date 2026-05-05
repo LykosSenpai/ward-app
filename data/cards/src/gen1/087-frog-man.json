@@ -1,0 +1,59 @@
+{
+  "id": "gen1_087_frog_man",
+  "name": "Frog Man",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "087",
+  "text": "This creature does not require a sacrifice to summon.",
+  "effects": [
+    {
+      "id": "087-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature would be summoned"
+      },
+      "actionType": "OVERRIDE_SUMMON_SACRIFICE_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "actionText": "No sacrifice required",
+      "target": "This card",
+      "value": "Ignore sacrifice requirement",
+      "duration": {
+        "text": "Before summon",
+        "type": "TEXT"
+      },
+      "reusableFunction": "overrideSummonSacrificeRequirement",
+      "params": {
+        "target": "This card",
+        "valueText": "Ignore sacrifice requirement",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature would be summoned"
+        },
+        "duration": {
+          "text": "Before summon",
+          "type": "TEXT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Static summon rule.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Summon Requirement.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 10,
+  "speed": 3,
+  "hp": 30,
+  "attackName": "Tongue Snap",
+  "attackDice": 1,
+  "modifier": 1
+}

@@ -1,0 +1,19 @@
+{
+  "id": "gen1_133_kobold",
+  "name": "Kobold",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "133",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 4,
+  "speed": 7,
+  "hp": 40,
+  "attackName": "Wild Swing",
+  "attackDice": 2,
+  "modifier": 2
+}

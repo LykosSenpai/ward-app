@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.411Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_025_basilisk",
+  "effectId": "025-E01",
+  "title": "Basilisk applies source-linked 5 DOT per turn cycle",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:13:14.910Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_025_basilisk",
+      "cardName": "Basilisk",
+      "cardType": "CREATURE",
+      "cardNumber": "025",
+      "generation": "1",
+      "rawText": "While on the field, the target creature receives 5 damage once per turn cycle, until this card leaves the field."
+    },
+    "effect": {
+      "effectId": "025-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "target": "Target creature",
+      "value": "5 damage per turn cycle",
+      "durationText": "Until this card leaves field",
+      "reusableFunction": "applyDamageOverTimeUntilSourceLeaves"
+    },
+    "title": "Basilisk applies source-linked 5 DOT per turn cycle",
+    "summary": "Apply Basilisk DOT to a target and verify end-of-combat tick and cleanup when Basilisk leaves field.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_025_basilisk"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Basilisk is on player_1 field. Target player_2 primary creature with 100 HP."
+      ]
+    },
+    "steps": [
+      "Activate/apply Basilisk effect targeting player_2 primary creature.",
+      "Advance to end of Combat Phase for the relevant tick window.",
+      "Record target HP.",
+      "Remove Basilisk from field.",
+      "Advance another turn cycle to end of Combat Phase."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "DOT status exists and is source-linked",
+        "path": "player_2.primaryCreature.statusEffects",
+        "operator": "contains",
+        "value": "BASILISK_DOT_SOURCE_LINKED"
+      },
+      {
+        "label": "Target takes 5 DOT damage",
+        "path": "player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 95
+      },
+      {
+        "label": "DOT removed after Basilisk leaves",
+        "path": "player_2.primaryCreature.statusEffects",
+        "operator": "notContains",
+        "value": "BASILISK_DOT_SOURCE_LINKED"
+      },
+      {
+        "label": "No further DOT damage after cleanup",
+        "path": "player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 95
+      }
+    ],
+    "manualVerification": [
+      "Confirm duplicate Basilisk DOT does not stack unless previous source is gone."
+    ],
+    "riskNotes": [
+      "Turn-cycle timing and end-of-combat trigger may be implemented differently."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Supported DOT route; focus on source-linked cleanup and non-stacking."
+    },
+    "regression": {
+      "fixtureName": "basilisk-source-linked-dot",
+      "tags": [
+        "creature",
+        "dot",
+        "source-linked",
+        "combat-end"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_025_basilisk:025-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

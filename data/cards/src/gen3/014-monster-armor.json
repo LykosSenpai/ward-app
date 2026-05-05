@@ -1,0 +1,82 @@
+{
+  "id": "gen3_014_monster_armor",
+  "name": "Monster Armor",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Rare",
+  "cardNumber": "014",
+  "text": "Atk: +3. Hit: +3. AL: +3. SPD: +3. Atk Dice Rolls: +1.",
+  "effects": [
+    {
+      "id": "014-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Atk: +3. Hit: +3. AL: +3. SPD: +3. Atk Dice Rolls: +1."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Apply stat modifier or stat rule",
+      "target": "Equipped creature",
+      "value": "Atk: +3. Hit: +3. AL: +3. SPD: +3. Atk Dice Rolls: +1.",
+      "duration": {
+        "text": "While equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Atk: +3. Hit: +3. AL: +3. SPD: +3. Atk Dice Rolls: +1.",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 1
+          },
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 3
+          },
+          {
+            "stat": "HIT_BONUS",
+            "operation": "ADD",
+            "value": 3
+          },
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": 3
+          },
+          {
+            "stat": "SPD",
+            "operation": "ADD",
+            "value": 3
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "Atk: +3. Hit: +3. AL: +3. SPD: +3. Atk Dice Rolls: +1."
+        },
+        "duration": {
+          "text": "While equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "EQUIP",
+  "isEquip": true,
+  "isField": false
+}

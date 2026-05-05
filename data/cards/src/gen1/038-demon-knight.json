@@ -1,0 +1,71 @@
+{
+  "id": "gen1_038_demon_knight",
+  "name": "Demon Knight",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Epic",
+  "cardNumber": "038",
+  "text": "During your turn, roll 1 die. If the result is 4-6, inflict 15 damage to your opponent's primary creature.",
+  "effects": [
+    {
+      "id": "038-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          4,
+          5,
+          6
+        ],
+        "text": "Roll 1 die; success 4-6"
+      },
+      "actionType": "DEAL_INSTANT_DAMAGE",
+      "effectGroup": "Direct Damage",
+      "actionText": "Inflict fixed damage",
+      "target": "Opponent primary creature",
+      "value": "15 damage",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "dealDirectDamage",
+      "params": {
+        "target": "Opponent primary creature",
+        "valueText": "15 damage",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            4,
+            5,
+            6
+          ],
+          "text": "Roll 1 die; success 4-6"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "INSTANT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Not Atk damage unless rules say otherwise.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 9,
+  "speed": 7,
+  "hp": 70,
+  "attackName": "Searing Blade",
+  "attackDice": 2,
+  "modifier": 2
+}

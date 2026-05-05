@@ -1,0 +1,137 @@
+{
+  "id": "gen3_039_m_o_o_n_sgt",
+  "name": "M.O.O.N. Sgt.",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Epic",
+  "cardNumber": "039",
+  "text": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+  "effects": [
+    {
+      "id": "039-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated."
+      },
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "actionText": "Summon or interact with a Limited Summon",
+      "target": "Limited Summon card(s)",
+      "value": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "limitedSummon",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "039-E02",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated."
+      },
+      "actionType": "NEGATE_CARD_EFFECT",
+      "effectGroup": "Negation",
+      "actionText": "Negate a card effect",
+      "target": "Limited Summon card(s)",
+      "value": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "negateCardEffect",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    },
+    {
+      "id": "039-E03",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated."
+      },
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Card Movement",
+      "actionText": "Move or return a card between zones",
+      "target": "Limited Summon card(s)",
+      "value": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+      "duration": {
+        "text": "Immediate",
+        "type": "IMMEDIATE"
+      },
+      "reusableFunction": "moveCard",
+      "params": {
+        "target": "Limited Summon card(s)",
+        "valueText": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated."
+        },
+        "duration": {
+          "text": "Immediate",
+          "type": "IMMEDIATE"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": true
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 7,
+  "speed": 9,
+  "hp": 60,
+  "attackName": "10-88",
+  "attackDice": 2,
+  "modifier": 5
+}

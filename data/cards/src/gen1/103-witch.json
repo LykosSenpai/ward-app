@@ -1,0 +1,68 @@
+{
+  "id": "gen1_103_witch",
+  "name": "Witch",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "103",
+  "text": "When summoned, your opponents' creatures AL is reduced to 1 until this creature leaves the field or this effect is negated.",
+  "effects": [
+    {
+      "id": "103-E01",
+      "trigger": "ON_SUMMON",
+      "condition": {
+        "type": "TEXT",
+        "text": "This creature summoned"
+      },
+      "actionType": "APPLY_SOURCE_LINKED_STAT_SET_AURA",
+      "effectGroup": "Stat Set Aura",
+      "actionText": "Reduce opponents creatures AL to 1",
+      "target": "Opponents creatures",
+      "value": "AL = 1",
+      "duration": {
+        "text": "Until source leaves/negated",
+        "type": "UNTIL_SOURCE_LEAVES_FIELD",
+        "sourceLinked": true
+      },
+      "reusableFunction": "applySourceLinkedStatSetAura",
+      "params": {
+        "target": "Opponents creatures",
+        "valueText": "AL = 1",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "SET",
+            "value": 1,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TEXT",
+          "text": "This creature summoned"
+        },
+        "duration": {
+          "text": "Until source leaves/negated",
+          "type": "UNTIL_SOURCE_LEAVES_FIELD",
+          "sourceLinked": true
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Source-linked aura. Final AL is capped at 12.",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 1,
+  "speed": 4,
+  "hp": 50,
+  "attackName": "Hex",
+  "attackDice": 1,
+  "modifier": 0
+}

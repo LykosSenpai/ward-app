@@ -1,0 +1,19 @@
+{
+  "id": "gen2_032_baby_dino",
+  "name": "Baby Dino",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Common",
+  "cardNumber": "032",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Dino",
+  "armorLevel": 4,
+  "speed": 6,
+  "hp": 40,
+  "attackName": "Stomp",
+  "attackDice": 1,
+  "modifier": 3
+}

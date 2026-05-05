@@ -1,0 +1,19 @@
+{
+  "id": "gen1_127_mythosaurus",
+  "name": "Mythosaurus",
+  "generation": "1",
+  "edition": "3rd Edition",
+  "rarity": "Common",
+  "cardNumber": "127",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Dino",
+  "armorLevel": 3,
+  "speed": 9,
+  "hp": 30,
+  "attackName": "Wing Strike",
+  "attackDice": 1,
+  "modifier": 2
+}

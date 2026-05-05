@@ -1,0 +1,109 @@
+{
+  "id": "gen2_123_sleepy_scent",
+  "name": "Sleepy Scent",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "123",
+  "text": "Equipped creature is put to sleep for 2 turn cycles. It cannot initiate battle, but also heals 10 HP per turn cycle. Any damage wakes the sleeping creature and sends this card to your cemetery.",
+  "effects": [
+    {
+      "id": "123-E01",
+      "trigger": "ON_EQUIP",
+      "condition": {
+        "type": "EQUIPPED_TO_CREATURE",
+        "text": "Equipped to creature"
+      },
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status",
+      "actionText": "Put equipped creature to sleep",
+      "target": "Equipped creature",
+      "value": "Sleep for 2 turn cycles; cannot initiate battle; heals 10 HP per turn cycle",
+      "duration": {
+        "text": "2 turn cycles",
+        "type": "TURN_CYCLES",
+        "amount": 2,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyStatusWithEscapeRoll",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Sleep for 2 turn cycles; cannot initiate battle; heals 10 HP per turn cycle",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_TO_CREATURE",
+          "text": "Equipped to creature"
+        },
+        "duration": {
+          "text": "2 turn cycles",
+          "type": "TURN_CYCLES",
+          "amount": 2,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "status": "SLEEP",
+        "canInitiateBattle": false,
+        "healingPerTurnCycle": 10,
+        "wakesOnDamage": true,
+        "onWake": [
+          "SEND_THIS_CARD_TO_YOUR_CEMETERY"
+        ]
+      },
+      "notes": "Turn cycle is one full round back to the same player.",
+      "needsReview": false
+    },
+    {
+      "id": "123-E02",
+      "trigger": "ON_EQUIPPED_CREATURE_DAMAGED",
+      "condition": {
+        "type": "TEXT",
+        "text": "Equipped creature takes any damage"
+      },
+      "actionType": "APPLY_SOURCE_LINKED_CLEANUP",
+      "effectGroup": "Status Cleanup",
+      "actionText": "End sleep and send this card to cemetery",
+      "target": "Equipped creature and this card",
+      "value": "Wake creature and send this card to your cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "applySourceLinkedCleanup",
+      "params": {
+        "target": "Equipped creature and this card",
+        "valueText": "Wake creature and send this card to your cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "TEXT",
+          "text": "Equipped creature takes any damage"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "",
+      "needsReview": false
+    }
+  ],
+  "notes": "",
+  "cardType": "MAGIC",
+  "magicType": "STANDARD",
+  "magicSubType": "EQUIP",
+  "isEquip": true
+}

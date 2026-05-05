@@ -1,0 +1,19 @@
+{
+  "id": "gen3_036_ptera_man",
+  "name": "Ptera Man",
+  "generation": "3",
+  "edition": "1st Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "036",
+  "text": "",
+  "effects": [],
+  "notes": "",
+  "cardType": "CREATURE",
+  "creatureType": "Dinosaur",
+  "armorLevel": 7,
+  "speed": 11,
+  "hp": 60,
+  "attackName": "Primal Dive",
+  "attackDice": 1,
+  "modifier": 9
+}

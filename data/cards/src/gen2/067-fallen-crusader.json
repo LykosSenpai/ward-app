@@ -1,0 +1,19 @@
+{
+  "id": "gen2_067_fallen_crusader",
+  "name": "Fallen Crusader",
+  "generation": "2",
+  "edition": "2nd Edition",
+  "rarity": "Uncommon",
+  "cardNumber": "067",
+  "text": "",
+  "effects": [],
+  "notes": "No effect text shown on card.",
+  "cardType": "CREATURE",
+  "creatureType": "Undead",
+  "armorLevel": 10,
+  "speed": 4,
+  "hp": 80,
+  "attackName": "Necrotic Blade",
+  "attackDice": 2,
+  "modifier": 4
+}
