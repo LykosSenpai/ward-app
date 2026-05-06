@@ -230,12 +230,13 @@ function ensurePlanSetupCards(match: MatchState, plan: LlmEffectTestPlan): void 
     }
   };
 
-  const player2TriggerMagic = new Set(
-    (plan.setup.player2Cards ?? []).filter((cardId, index) => {
+  const sourceDefinition = match.cardCatalog[plan.card.cardId];
+  const player2TriggerMagic = sourceDefinition?.cardType === "MAGIC" && sourceDefinition.magicType === "LIGHTNING"
+    ? new Set((plan.setup.player2Cards ?? []).filter((cardId, index) => {
       const definition = match.cardCatalog[cardId];
       return index === 0 && definition?.cardType === "MAGIC";
-    })
-  );
+    }))
+    : new Set<string>();
 
   placeSupportMagic("player_1", plan.setup.player1Cards, new Set([plan.card.cardId]));
   placeSupportMagic("player_2", plan.setup.player2Cards, player2TriggerMagic);
