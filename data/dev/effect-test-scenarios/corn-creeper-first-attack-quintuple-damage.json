@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_042_corn_creeper",
+  "effectId": "042-E01",
+  "title": "Corn Creeper deals five times attack damage on first attack",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_042_corn_creeper",
+      "cardName": "Corn Creeper",
+      "cardType": "CREATURE",
+      "cardNumber": "042",
+      "generation": "2",
+      "rawText": "Inflict 5x Atk damage during this card's first attack. This effect can only occur 1 time while this card is on the field."
+    },
+    "effect": {
+      "effectId": "042-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Attack target",
+      "value": "5x Atk damage",
+      "durationText": "Current attack",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Corn Creeper deals five times attack damage on first attack",
+    "summary": "Verify Corn Creeper's first attack while on field multiplies its attack damage by 5.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_042_corn_creeper"
+      ],
+      "player2Cards": [
+        "test_defender_al5_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5,
+            5
+          ],
+          "label": "Corn Creeper hits"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            3,
+            3
+          ],
+          "label": "Corn Creeper base damage 8"
+        }
+      ],
+      "notes": [
+        "Corn Creeper has not attacked yet this field instance."
+      ]
+    },
+    "steps": [
+      "Set Corn Creeper as player_1 primary and test defender as player_2 primary.",
+      "Resolve its first attack while on field.",
+      "Roll attack damage 3 and 3 plus modifier 2.",
+      "Observe final damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Multiplier trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Final damage is multiplied by five",
+        "path": "battle.lastDamage.amount",
+        "operator": "equals",
+        "value": 40
+      },
+      {
+        "label": "Defender HP reduced by 40",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 40
+      }
+    ],
+    "manualVerification": [
+      "Repeat a second attack with the same field instance and confirm the 5x multiplier does not repeat."
+    ],
+    "riskNotes": [
+      "This fixture covers the first-attack success path; one-per-field-instance consumption should get a separate negative fixture."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Corn Creeper first-attack damage multiplier."
+    },
+    "regression": {
+      "fixtureName": "corn-creeper-first-attack-quintuple-damage",
+      "tags": [
+        "creature",
+        "combat",
+        "damage-multiplier",
+        "first-attack"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

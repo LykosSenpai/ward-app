@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_058_zombie_dog",
+  "effectId": "058-E01",
+  "title": "Zombie Dog triples damage when hitting first",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_058_zombie_dog",
+      "cardName": "Zombie Dog",
+      "cardType": "CREATURE",
+      "cardNumber": "058",
+      "generation": "2",
+      "rawText": "If this creature hits first during battle, inflict 3x Atk damage."
+    },
+    "effect": {
+      "effectId": "058-E01",
+      "trigger": "ON_HIT_FIRST",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Attack target",
+      "value": "3x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Zombie Dog triples damage when hitting first",
+    "summary": "Verify Zombie Dog damage is multiplied by 3 when it is the first striker and hits.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_058_zombie_dog"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5,
+            5
+          ],
+          "label": "Zombie Dog hits"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            5
+          ],
+          "label": "Zombie Dog base damage 6"
+        }
+      ],
+      "notes": [
+        "Zombie Dog has SPD 10 and should strike before the test defender."
+      ]
+    },
+    "steps": [
+      "Set Zombie Dog as player_1 primary and test defender as player_2 primary.",
+      "Resolve battle where Zombie Dog is first striker and hits.",
+      "Roll attack damage 5 plus modifier 1.",
+      "Observe final damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Multiplier trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Final damage is tripled",
+        "path": "battle.lastDamage.amount",
+        "operator": "equals",
+        "value": 18
+      },
+      {
+        "label": "Defender HP reduced by 18",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 18
+      }
+    ],
+    "manualVerification": [
+      "Repeat with Zombie Dog not striking first and confirm no 3x multiplier."
+    ],
+    "riskNotes": [
+      "Uses the same HITS_FIRST multiplier route as Hafling/Rogue."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Zombie Dog's first-hit damage multiplier."
+    },
+    "regression": {
+      "fixtureName": "zombie-dog-first-hit-triple-damage",
+      "tags": [
+        "creature",
+        "combat",
+        "damage-multiplier",
+        "speed"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
