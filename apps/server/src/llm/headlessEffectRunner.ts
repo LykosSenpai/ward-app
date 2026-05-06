@@ -230,6 +230,18 @@ const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "C
     modifier: 0,
     text: "Synthetic headless QA Demon-type creature."
   },
+  test_mechanical_type_creature: {
+    id: "test_mechanical_type_creature",
+    name: "Test Mechanical Guardian",
+    cardType: "CREATURE",
+    creatureType: "MECHANICAL",
+    armorLevel: 10,
+    speed: 1,
+    hp: 100,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA Mechanical-type creature."
+  },
   test_attacker_2dice_mod0: {
     id: "test_attacker_2dice_mod0",
     name: "Test Attacker 2D +0",
