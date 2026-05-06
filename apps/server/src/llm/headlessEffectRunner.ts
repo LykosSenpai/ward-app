@@ -922,6 +922,7 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
   const sourcePlayerId = plan.setup.activePlayerId ?? "player_1";
   const opponentPlayerId = findOpponentPlayerId(match, sourcePlayerId);
   const text = normalizeText(planText(plan), plan.setup.notes, plan.steps, effectText(effect));
+  const currentHpToMatch = text.match(/\bcurrent hp to (\d+)\b/);
   const syntheticAttackerId = plan.setup.player1Cards?.find(cardId => SYNTHETIC_CREATURES[cardId]);
   const syntheticDefenderId = plan.setup.player2Cards?.find(cardId => SYNTHETIC_CREATURES[cardId]);
 
@@ -985,6 +986,10 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
     if (definition?.cardType === "MAGIC" && definition.magicSubType === "EQUIP" && !magic.attachedToInstanceId && sourcePlayer.field.primaryCreature) {
       magic.attachedToInstanceId = sourcePlayer.field.primaryCreature.instanceId;
     }
+  }
+
+  if (currentHpToMatch && sourcePlayer.field.primaryCreature) {
+    setScenarioPrimaryCurrentHp(match, sourcePlayerId, Number(currentHpToMatch[1]));
   }
 
   if (sourceDefinition?.cardType === "MAGIC" && text.includes("51 current hp") && sourcePlayer.field.primaryCreature) {

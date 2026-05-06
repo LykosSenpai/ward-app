@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_097_vampire",
+  "effectId": "097-E01",
+  "title": "Vampire heals half attack damage dealt",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_097_vampire",
+      "cardName": "Vampire",
+      "cardType": "CREATURE",
+      "cardNumber": "097",
+      "generation": "1",
+      "rawText": "This creature heals for 1/2 of the Atk damage it inflicts during battle."
+    },
+    "effect": {
+      "effectId": "097-E01",
+      "trigger": "ON_THIS_CREATURE_DEALS_ATK_DAMAGE",
+      "actionType": "HEAL_BY_DAMAGE_DEALT",
+      "effectGroup": "Healing",
+      "target": "This creature",
+      "value": "Heal 1/2 Atk damage inflicted",
+      "durationText": "Instant",
+      "reusableFunction": "healByDamageDealt"
+    },
+    "title": "Vampire heals half attack damage dealt",
+    "summary": "Vampire starts damaged, deals deterministic attack damage, then heals half of the actual attack damage rounded up.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_097_vampire"
+      ],
+      "player2Cards": [
+        "test_defender_al5_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5,
+            5
+          ],
+          "label": "Vampire hits defender"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Attack damage 6 plus modifier 2 equals 8"
+        }
+      ],
+      "notes": [
+        "Set Vampire current HP to 50 before battle.",
+        "Vampire has SPD 9 and should strike before the test defender."
+      ]
+    },
+    "steps": [
+      "Set Vampire as player_1 primary and test defender as player_2 primary.",
+      "Resolve battle where Vampire hits with forced rolls.",
+      "Apply 8 actual attack damage to the defender.",
+      "Resolve Vampire healing for half of the attack damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Defender loses actual damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 92
+      },
+      {
+        "label": "Vampire heals above damaged starting HP",
+        "path": "players.player_1.primaryCreature.currentHp",
+        "operator": "greaterThan",
+        "value": 50
+      },
+      {
+        "label": "Healing trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "HEAL_BY_DAMAGE_DEALT"
+      }
+    ],
+    "manualVerification": [
+      "Repeat with odd actual damage to confirm CEIL rounding."
+    ],
+    "riskNotes": [
+      "Uses the same damage-dealt heal route as Blood of the Bat, but with the source creature as the healer."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Vampire's self-heal from attack damage dealt."
+    },
+    "regression": {
+      "fixtureName": "vampire-heals-half-attack-damage",
+      "tags": [
+        "creature",
+        "combat",
+        "healing",
+        "damage-dealt"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_097_vampire:097-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
