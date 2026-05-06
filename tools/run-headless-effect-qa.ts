@@ -92,19 +92,43 @@ const results = plans.map(({ fileName, plan }) => {
 });
 
 let updated = 0;
+let created = 0;
 
 for (const item of results) {
   const status = toStatus(item.result.status);
   const issueType = item.result.issueType ?? "NONE";
   const key = item.result.key;
   const existing = recordsByKey.get(key);
+  const notes = `${item.result.summary} ${summarizeEvidence(item.result.evidence)}`.trim();
 
-  if (shouldUpdate && existing) {
-    existing.status = status;
-    existing.issueType = issueType;
-    existing.notes = `${item.result.summary} ${summarizeEvidence(item.result.evidence)}`.trim();
-    existing.lastTestedAt = item.result.generatedAt;
-    existing.testedBy = "Headless Engine QA";
+  if (shouldUpdate) {
+    const record = existing ?? {
+      key,
+      packId: item.plan.card.packId,
+      cardId: item.result.cardId,
+      cardName: item.result.cardName,
+      effectId: item.result.effectId,
+      trigger: item.plan.effect?.trigger,
+      actionType: item.plan.effect?.actionType,
+      status,
+      issueType,
+      notes,
+      lastTestedAt: item.result.generatedAt,
+      testedBy: "Headless Engine QA"
+    };
+
+    record.status = status;
+    record.issueType = issueType;
+    record.notes = notes;
+    record.lastTestedAt = item.result.generatedAt;
+    record.testedBy = "Headless Engine QA";
+
+    if (!existing) {
+      statusFile.records.push(record);
+      recordsByKey.set(key, record);
+      created += 1;
+    }
+
     updated += 1;
   }
 
@@ -136,8 +160,11 @@ for (const item of results) {
 }
 
 if (shouldUpdate) {
+  statusFile.records.sort((a, b) =>
+    `${a.packId}:${a.cardId}:${a.effectId ?? ""}`.localeCompare(`${b.packId}:${b.cardId}:${b.effectId ?? ""}`)
+  );
   writeJson(statusPath, statusFile);
 }
 
 console.log("");
-console.log(`Headless QA complete: ${results.length} scenario(s), ${updated} status record(s) updated.`);
+console.log(`Headless QA complete: ${results.length} scenario(s), ${updated} status record(s) updated, ${created} created.`);

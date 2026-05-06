@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_105_twister",
+  "effectId": "105-E02",
+  "title": "Twister makes all players draw 2 cards",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_105_twister",
+      "cardName": "Twister",
+      "cardType": "MAGIC",
+      "cardNumber": "105",
+      "generation": "1",
+      "rawText": "Destroy all magic cards on the field. All players then draw 2 cards."
+    },
+    "effect": {
+      "effectId": "105-E02",
+      "trigger": "AFTER_DESTROY",
+      "actionType": "DRAW_CARDS",
+      "effectGroup": "Draw",
+      "target": "All players",
+      "value": "Draw 2",
+      "durationText": "Instant",
+      "reusableFunction": "drawCards"
+    },
+    "title": "Twister makes all players draw 2 cards",
+    "summary": "Play Twister and verify the after-destroy follow-up makes both players draw exactly 2 cards.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_105_twister",
+        "test_primary_creature",
+        "test_magic_spd_plus4"
+      ],
+      "player2Cards": [
+        "test_primary_creature",
+        "gen1_062_hero_shield"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place field magic on both sides so Twister has magic to destroy before the draw follow-up."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Twister.",
+      "Resolve destroy-all-magic.",
+      "Resolve the all-players draw 2 follow-up."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Player 1 drew two cards",
+        "path": "players.player_1.hand.countDelta",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Player 2 drew two cards",
+        "path": "players.player_2.hand.countDelta",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Draw event emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_DRAW_CARDS_RESOLVED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm draw happens after magic destruction, not before."
+    ],
+    "riskNotes": [
+      "This fixture depends on Twister's AFTER_DESTROY follow-up resolving in the same chain resolution."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate all-players draw follow-up."
+    },
+    "regression": {
+      "fixtureName": "twister-all-players-draw-two",
+      "tags": [
+        "magic",
+        "draw",
+        "follow-up"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

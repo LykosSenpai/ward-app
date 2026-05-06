@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_069_healing_tree",
+  "effectId": "069-E01",
+  "title": "Healing Tree heals your creature for fifty",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_069_healing_tree",
+      "cardName": "Healing Tree",
+      "cardType": "MAGIC",
+      "cardNumber": "069",
+      "generation": "1",
+      "rawText": "Heal your creature for 50 HP."
+    },
+    "effect": {
+      "effectId": "069-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "HEAL_CREATURE",
+      "effectGroup": "Healing",
+      "target": "Your creature",
+      "value": "50 HP",
+      "durationText": "Instant",
+      "reusableFunction": "healFlat"
+    },
+    "title": "Healing Tree heals your creature for fifty",
+    "summary": "Play Healing Tree targeting a damaged friendly primary creature and verify it heals by 50 without exceeding max HP.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_069_healing_tree",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_creature_hp100 on player_1 field as primary.",
+        "Set current HP to 51 before play."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Healing Tree.",
+      "Choose player_1 primary creature as target.",
+      "Resolve healing and inspect current HP."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Creature healed by 50 capped at max HP",
+        "path": "players.player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 100
+      },
+      {
+        "label": "Healing Tree went to cemetery",
+        "path": "players.player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_069_healing_tree"
+      }
+    ],
+    "manualVerification": [
+      "Confirm healing cannot exceed printed max HP."
+    ],
+    "riskNotes": [
+      "Target prompt should only include friendly creatures."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate standard heal prompt path."
+    },
+    "regression": {
+      "fixtureName": "healing-tree-heals-fifty",
+      "tags": [
+        "magic",
+        "healing"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

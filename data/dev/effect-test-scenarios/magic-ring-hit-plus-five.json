@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_071_magic_ring",
+  "effectId": "071-E01",
+  "title": "Magic Ring applies Hit +5 while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_071_magic_ring",
+      "cardName": "Magic Ring",
+      "cardType": "MAGIC",
+      "cardNumber": "071",
+      "generation": "1",
+      "rawText": "Hit: +5."
+    },
+    "effect": {
+      "effectId": "071-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Hit +5",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Magic Ring applies Hit +5 while equipped",
+    "summary": "Equip Magic Ring to a modifier-zero primary creature, run a follow-up battle, and verify the hit roll receives +5.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_071_magic_ring",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature_mod_0 on player_1 field as primary so the hit modifier comes only from Magic Ring."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Magic Ring and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the resolved hit roll modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hit roll modifier increased by 5",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Magic Ring remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_071_magic_ring"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the bonus applies only while Magic Ring remains equipped."
+    ],
+    "riskNotes": [
+      "Hit bonuses are battle-roll modifiers and are verified through lastBattle strike output."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate basic Hit equip modifier through a resolved battle roll."
+    },
+    "regression": {
+      "fixtureName": "magic-ring-hit-plus-five",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "hit"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

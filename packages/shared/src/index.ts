@@ -811,6 +811,7 @@ export type MagicChainLink = {
   text: string;
   isLightningResponse: boolean;
   respondsToLinkId?: string;
+  selectedEffectId?: string;
   status: MagicChainLinkStatus;
   battleResponse?: {
     battleSessionId: string;

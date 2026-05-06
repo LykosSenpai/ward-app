@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_057_goblin_tricks",
+  "effectId": "057-E02",
+  "title": "Goblin Tricks destroys one field magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_057_goblin_tricks",
+      "cardName": "Goblin Tricks",
+      "cardType": "MAGIC",
+      "cardNumber": "057",
+      "generation": "1",
+      "rawText": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to the cemetery or destroy 1 magic card on the field."
+    },
+    "effect": {
+      "effectId": "057-E02",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC",
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "target": "1 magic card",
+      "value": "Destroy 1",
+      "durationText": "Instant",
+      "reusableFunction": "destroyMagicCards"
+    },
+    "title": "Goblin Tricks destroys one field magic",
+    "summary": "Respond to opponent magic with Goblin Tricks, choose the destroy branch, and verify a field magic card is destroyed.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen1_057_goblin_tricks",
+        "test_primary_creature",
+        "test_magic_spd_plus4"
+      ],
+      "player2Cards": [
+        "test_standard_magic_draw_or_buff",
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Goblin Tricks is in player_1 hand. Player_2 plays a standard magic to open the Lightning response window.",
+        "Pre-place test_magic_spd_plus4 on field as the destroy-mode target."
+      ]
+    },
+    "steps": [
+      "Player_2 plays target standard magic.",
+      "Open Lightning response window for player_1.",
+      "Player_1 plays Goblin Tricks.",
+      "Resolve the destroy-one-magic target prompt.",
+      "Confirm the triggering magic card was not negated by this branch."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Field magic destroyed",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "test_magic_spd_plus4"
+      },
+      {
+        "label": "Destroy event emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_DESTROY_MAGIC_CARD_RESOLVED"
+      },
+      {
+        "label": "Triggering magic was not negated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "magic_negated"
+      },
+      {
+        "label": "Triggering magic resolved its draw effect",
+        "path": "players.player_2.hand.countDelta",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Goblin Tricks sent to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_057_goblin_tricks"
+      }
+    ],
+    "manualVerification": [
+      "Confirm UI lets the player choose between negating the triggering magic and destroying one magic on field."
+    ],
+    "riskNotes": [
+      "This fixture covers the destroy-mode choice branch, not the already-covered negation branch."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Lightning destroy-one-magic branch."
+    },
+    "regression": {
+      "fixtureName": "goblin-tricks-destroys-field-magic",
+      "tags": [
+        "magic",
+        "lightning",
+        "chain",
+        "destroy"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

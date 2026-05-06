@@ -15,6 +15,7 @@ import {
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { createEffectTargetPromptFromChainLink } from "./effectPrompts.js";
 import { inferTargetQueryForEffect } from "./targets.js";
+import { moveMagicSlotCardToCemetery } from "./cardMovement.js";
 
 export type CardEffectSourceZone = "PRIMARY_CREATURE" | "LIMITED_SUMMON" | "MAGIC_SLOT";
 
@@ -63,6 +64,7 @@ function getEffectDescription(effect: WardEngineEffect): string | undefined {
 
 function isManualFieldTrigger(effect: WardEngineEffect): boolean {
   const trigger = (effect.trigger ?? "").trim().toUpperCase();
+  if (isStatusEscapeRollEffect(effect)) return true;
 
   return [
     "WHILE_ON_FIELD",
@@ -96,7 +98,12 @@ function isRevealOpponentHandEffect(effect: WardEngineEffect): boolean {
 
 function isActivatedRollEffect(effect: WardEngineEffect): boolean {
   const trigger = (effect.trigger ?? "").trim().toUpperCase();
-  return ["DURING_YOUR_TURN_ACTIVATED", "ONCE_PER_TURN_ACTIVATED", "ACTIVATED", "DURING_YOUR_TURN"].includes(trigger);
+  return ["DURING_YOUR_TURN_ACTIVATED", "ONCE_PER_TURN_ACTIVATED", "ACTIVATED", "DURING_YOUR_TURN"].includes(trigger) ||
+    isStatusEscapeRollEffect(effect);
+}
+
+function isStatusEscapeRollEffect(effect: WardEngineEffect): boolean {
+  return effect.actionType === "RESOLVE_STATUS_ESCAPE_ROLL";
 }
 
 function isSupportedCardEffect(effect: WardEngineEffect): boolean {
@@ -143,7 +150,50 @@ function getRollConditionValue(effect: WardEngineEffect): RollCondition | undefi
     }
   }
 
+  const text = normalizeText(effect.condition, effect.actionText, effect.value, effect.params?.condition, effect.params?.valueText);
+  const range = text.match(/(\d+)\s*[-–—]\s*(\d+)/);
+  if (range) {
+    const min = Number(range[1]);
+    const max = Number(range[2]);
+    if (Number.isInteger(min) && Number.isInteger(max)) {
+      const low = Math.max(1, Math.min(6, Math.min(min, max)));
+      const high = Math.max(1, Math.min(6, Math.max(min, max)));
+      return {
+        dieSize: 6,
+        successValues: Array.from({ length: high - low + 1 }, (_, index) => low + index),
+        text
+      };
+    }
+  }
+
   return undefined;
+}
+
+function getAttachedCreatureControlledByPlayer(
+  state: MatchState,
+  magicCard: CardInstance,
+  playerId: string
+): CardInstance | undefined {
+  if (!magicCard.attachedToInstanceId) return undefined;
+  const player = getPlayer(state, playerId);
+  return [
+    player.field.primaryCreature,
+    ...player.field.limitedSummons
+  ].find((card): card is CardInstance => !!card && card.instanceId === magicCard.attachedToInstanceId);
+}
+
+function canPlayerUseStatusEscapeRoll(
+  state: MatchState,
+  source: FieldEffectSource,
+  playerId: string
+): boolean {
+  const attached = getAttachedCreatureControlledByPlayer(state, source.card, playerId);
+  if (!attached) return false;
+  return (attached.activeStatuses ?? []).some(status =>
+    status.status === "FROZEN" &&
+    status.sourceCardInstanceId === source.card.instanceId &&
+    status.flags.canInflictAtkDamage === false
+  );
 }
 
 function getEffectLabel(effect: WardEngineEffect): string {
@@ -169,7 +219,9 @@ function sourceDisabledReason(
     return "Match is complete.";
   }
 
-  if (source.card.controllerPlayerId !== playerId) {
+  if (source.card.controllerPlayerId !== playerId && !(
+    isStatusEscapeRollEffect(effect) && canPlayerUseStatusEscapeRoll(state, source, playerId)
+  )) {
     return "You do not control this card.";
   }
 
@@ -208,15 +260,18 @@ function collectFieldEffectSources(state: MatchState, playerId?: string): FieldE
   const sources: FieldEffectSource[] = [];
 
   for (const player of state.players) {
-    if (playerId && player.id !== playerId) {
-      continue;
-    }
-
     const add = (card: CardInstance | undefined, zone: CardEffectSourceZone) => {
       if (!card) return;
 
       const definition = state.cardCatalog[card.cardId];
       if (!definition) return;
+
+      if (playerId && player.id !== playerId) {
+        const isEscapableAttachedMagic = definition.cardType === "MAGIC" &&
+          getCardEngineEffects(definition).some(isStatusEscapeRollEffect) &&
+          !!getAttachedCreatureControlledByPlayer(state, card, playerId);
+        if (!isEscapableAttachedMagic) return;
+      }
 
       sources.push({ player, card, definition, zone });
     };
@@ -408,6 +463,45 @@ function activateRollBasedEffect(
     return nextState;
   }
 
+  if (isStatusEscapeRollEffect(args.effect)) {
+    const attached = getAttachedCreatureControlledByPlayer(nextState, args.source.card, args.playerId);
+    if (!attached) {
+      throw new Error("The frozen creature is no longer attached to this effect.");
+    }
+
+    const beforeStatusCount = attached.activeStatuses?.length ?? 0;
+    attached.activeStatuses = (attached.activeStatuses ?? []).filter(status =>
+      !(status.status === "FROZEN" && status.sourceCardInstanceId === args.source.card.instanceId)
+    );
+    attached.activeEffectInstances = (attached.activeEffectInstances ?? []).filter(instance =>
+      instance.sourceCardInstanceId !== args.source.card.instanceId
+    );
+
+    const destroyed = moveMagicSlotCardToCemetery(
+      nextState,
+      args.source.player.id,
+      args.source.card.instanceId,
+      addEvent,
+      "STATUS_ESCAPE_ROLL_SUCCEEDED"
+    );
+
+    addEvent(nextState, "STATUS_ESCAPE_ROLL_RESOLVED", args.playerId, {
+      sourceCardInstanceId: args.source.card.instanceId,
+      sourceCardId: args.source.card.cardId,
+      sourceCardName: getCardName(nextState, args.source.card),
+      effectId: args.effect.id,
+      actionType: args.effect.actionType,
+      targetPlayerId: args.playerId,
+      targetCreatureInstanceId: attached.instanceId,
+      removedStatusCount: beforeStatusCount - (attached.activeStatuses?.length ?? 0),
+      destroyedCardName: destroyed.destroyedCardName,
+      destroyedCardInstanceId: destroyed.magicCard.instanceId,
+      roll
+    });
+
+    return nextState;
+  }
+
   if (isAutomaticMagicEffectSupported(args.effect)) {
     const resolved = tryResolveAutomaticMagicEffect(nextState, {
       effect: args.effect,
@@ -475,16 +569,17 @@ export function activateCardEffect(
     throw new Error("The source card is no longer on the field.");
   }
 
-  if (source.card.controllerPlayerId !== args.playerId) {
-    throw new Error("You can only activate effects from cards you control.");
-  }
-
   const effect = getCardEngineEffects(source.definition).find(
     candidate => candidate.id === args.effectId
   );
 
   if (!effect) {
     throw new Error("The selected effect was not found on the source card.");
+  }
+
+  const isStatusEscape = isStatusEscapeRollEffect(effect);
+  if (source.card.controllerPlayerId !== args.playerId && !(isStatusEscape && canPlayerUseStatusEscapeRoll(state, source, args.playerId))) {
+    throw new Error("You can only activate effects from cards you control.");
   }
 
   if (!isSupportedCardEffect(effect)) {

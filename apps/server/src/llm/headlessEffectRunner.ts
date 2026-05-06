@@ -1,4 +1,4 @@
-import type { CardDefinition, CardInstance, DevRollKind, MatchState, WardEngineEffect } from "@ward/shared";
+import type { ActiveCreatureStatus, CardDefinition, CardInstance, DevRollKind, MatchState, WardEngineEffect } from "@ward/shared";
 import {
   activateCardEffect,
   applyManualBattleDamage,
@@ -846,6 +846,27 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
     source.card.attachedToInstanceId = sourcePlayer.field.primaryCreature.instanceId;
   }
 
+  if (
+    source?.card &&
+    sourceDefinition?.id === "gen1_102_winter_chill" &&
+    source.zone === "MAGIC_SLOT" &&
+    text.includes("attach winter chill to player_2")
+  ) {
+    const target = getPlayer(match, "player_2").field.primaryCreature;
+    if (target) {
+      source.card.attachedToInstanceId = target.instanceId;
+      const freezeEffect = sourceDefinition.effects?.find(item => item.id === "102-E01");
+      const status = statusForStaticEquipEffect(match, source, sourceDefinition, freezeEffect);
+      if (status) {
+        target.activeStatuses ??= [];
+        target.activeStatuses = target.activeStatuses.filter(item =>
+          !(item.sourceCardInstanceId === source.card.instanceId && item.sourceEffectId === status.sourceEffectId)
+        );
+        target.activeStatuses.push(status);
+      }
+    }
+  }
+
   for (const magic of sourcePlayer.field.magicSlots) {
     const definition = match.cardCatalog[magic.cardId];
     if (definition?.cardType === "MAGIC" && definition.magicSubType === "EQUIP" && !magic.attachedToInstanceId && sourcePlayer.field.primaryCreature) {
@@ -1083,6 +1104,10 @@ function readDerivedPath(root: unknown, path: string): unknown {
     return match.eventLog.some(event => event.type === "HEADLESS_BATTLE_LOCK_APPLIED") ? "ALLOWED" : undefined;
   }
 
+  if (path === "battleAttemptWithFrozenAttacker.result") {
+    return match.eventLog.some(event => event.type === "BATTLE_TURN_SKIPPED_BY_STATUS") ? "REJECTED" : undefined;
+  }
+
   if (path === "effectLog") {
     const semanticEntries = match.eventLog.flatMap(event => {
       const payload = event.payload as Record<string, unknown> | undefined;
@@ -1247,6 +1272,17 @@ function readDerivedPath(root: unknown, path: string): unknown {
     });
     const dice = (hitRoll?.payload as { dice?: unknown } | undefined)?.dice;
     return Array.isArray(dice) ? dice.length : undefined;
+  }
+
+  const lastBattleHitRollPath = path.match(/^battle\.lastHitRoll\.(modifier|total|hit|dice)$/);
+  if (lastBattleHitRollPath) {
+    const [, field] = lastBattleHitRollPath;
+    const strike = match.lastBattle?.strikes.find(candidate => candidate.hitRollDice.length > 0);
+    if (!strike) return undefined;
+    if (field === "modifier") return strike.hitRollModifier;
+    if (field === "total") return strike.hitRollTotal;
+    if (field === "hit") return strike.hit;
+    if (field === "dice") return strike.hitRollDice;
   }
 
   const activeEffectsAliasPath = path.match(/^(player_\d+)\.(?:primary|primaryCreature)\.activeEffects(?:\.(.+))?$/);
@@ -1592,9 +1628,12 @@ function choosePromptOption(match: MatchState, strategy: VariantConfig["targetSt
   const sourcePlayerId = prompt.controllerPlayerId;
   const opponentId = findOpponentPlayerId(match, sourcePlayerId);
   const text = normalizeText(prompt.promptText, prompt.actionType, prompt.effectGroup, prompt.actionText, prompt.effectValue);
+  const actionType = normalizeText(prompt.actionType);
 
   const options = [...prompt.options];
-  const preferred = options.find(option => text.includes("opponent") && option.playerId === opponentId) ??
+  const preferred = options.find(option => actionType.includes("damage") && option.playerId === opponentId) ??
+    options.find(option => actionType.includes("heal") && option.playerId === sourcePlayerId) ??
+    options.find(option => text.includes("opponent") && option.playerId === opponentId) ??
     options.find(option => !text.includes("opponent") && option.playerId === sourcePlayerId) ??
     options.find(option => option.zone === "PRIMARY_CREATURE" && option.playerId === opponentId) ??
     options.find(option => option.zone === "MAGIC_SLOT" && option.playerId === opponentId) ??
@@ -1846,6 +1885,48 @@ function drainAllAutomation(match: MatchState, variant: VariantConfig, steps: Ru
   return next;
 }
 
+function statusForStaticEquipEffect(
+  match: MatchState,
+  source: LocatedCard,
+  definition: CardDefinition,
+  effect?: WardEngineEffect
+): ActiveCreatureStatus | undefined {
+  const text = normalizeText(effectText(effect));
+  if (!text.includes("frozen") && !text.includes("freeze") && !text.includes("cannot inflict")) return undefined;
+
+  return {
+    id: `headless-status-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    sourceEffectId: effect?.id ?? "UNKNOWN",
+    sourceCardInstanceId: source.card.instanceId,
+    sourceCardName: definition.name,
+    sourcePlayerId: source.playerId,
+    status: text.includes("frozen") || text.includes("freeze") ? "FROZEN" : "STATUS",
+    label: effect?.value ?? effect?.params?.valueText ?? effect?.actionText ?? "Status",
+    flags: {
+      canInflictAtkDamage: false,
+      canBeSacrificed: text.includes("sacrific")
+        ? false
+        : undefined
+    },
+    durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+    appliedTurnNumber: match.turn.turnNumber,
+    appliedTurnCycle: match.turn.turnCycleNumber
+  };
+}
+
+function shouldSelectSingleLightningBranch(plan: LlmEffectTestPlan, effect?: WardEngineEffect): boolean {
+  const text = normalizeText(plan.card.rawText, plan.summary, plan.setup.notes, plan.manualVerification, effectText(effect));
+  const actionType = normalizeText(effect?.actionType);
+  const conditionText = normalizeText((effect?.condition as { text?: unknown; type?: unknown } | undefined)?.text);
+
+  return (
+    text.includes(" or destroy") ||
+    text.includes("choose destroy") ||
+    conditionText.includes("choose") ||
+    (actionType.includes("destroy_magic") && text.includes("negate") && text.includes(" or "))
+  );
+}
+
 function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
   const definition = match.cardCatalog[plan.card.cardId];
   if (!definition) throw new Error(`Card definition was not found for ${plan.card.cardId}.`);
@@ -1963,6 +2044,17 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return next;
   }
 
+  if (plan.effect?.effectId && actionType.includes("resolve_status_escape_roll")) {
+    const playerId = plan.setup.activePlayerId ?? "player_2";
+    const next = activateCardEffect(match, {
+      playerId,
+      sourceInstanceId: source.card.instanceId,
+      effectId: plan.effect.effectId
+    });
+    steps.push({ label: "activate status escape roll", ok: true, detail: `${definition.name} ${plan.effect.effectId}` });
+    return next;
+  }
+
   const shouldRunBattle = definition.cardType === "CREATURE" && (
     trigger.includes("on_hit") ||
     trigger.includes("hit") ||
@@ -2032,7 +2124,10 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       throw new Error(`No Lightning response card instance was found for ${plan.card.cardId}.`);
     }
 
-    next = playLightningResponseFromHand(next, response.playerId, response.card.instanceId);
+    const selectedEffectId = shouldSelectSingleLightningBranch(plan, effect) ? effect?.id : undefined;
+    next = playLightningResponseFromHand(next, response.playerId, response.card.instanceId, {
+      selectedEffectId
+    });
     steps.push({ label: "play lightning response from hand", ok: true, detail: definition.name });
     return next;
   }
@@ -2050,8 +2145,10 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     source.zone === "MAGIC_SLOT" &&
     (
       actionType.includes("apply_stat_modifier") ||
+      actionType.includes("apply_dynamic_stat_modifier") ||
       actionType.includes("apply_multi_modifier") ||
       actionType.includes("apply_stat_set_aura") ||
+      actionType.includes("apply_status") ||
       actionType.includes("suppress_modifier_layer") ||
       actionType.includes("deal_percentage_damage") ||
       actionType.includes("heal_to_full") ||
@@ -2104,6 +2201,15 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           appliedTurnNumber: match.turn.turnNumber,
           appliedTurnCycle: match.turn.turnCycleNumber
         });
+      } else if (actionType.includes("apply_status") && attachedTarget?.card) {
+        const status = statusForStaticEquipEffect(match, source, definition, effect);
+        if (status) {
+          attachedTarget.card.activeStatuses ??= [];
+          attachedTarget.card.activeStatuses = attachedTarget.card.activeStatuses.filter(item =>
+            !(item.sourceCardInstanceId === source.card.instanceId && item.sourceEffectId === status.sourceEffectId)
+          );
+          attachedTarget.card.activeStatuses.push(status);
+        }
       }
       match.eventLog.push({
         id: `headless-static-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -2113,7 +2219,9 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           ? "HEADLESS_STATIC_MODIFIER_SUPPRESSION_AVAILABLE"
           : actionType.includes("global_creature_effect_negation")
             ? "HEADLESS_STATIC_CREATURE_EFFECT_NEGATION_AVAILABLE"
-            : "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE",
+            : actionType.includes("apply_status")
+              ? "HEADLESS_STATIC_STATUS_AVAILABLE"
+              : "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE",
         playerId: source.playerId,
         payload: {
           sourceCardInstanceId: source.card.instanceId,
@@ -2325,8 +2433,8 @@ function runFollowupForFieldDamageOverTime(match: MatchState, plan: LlmEffectTes
 function runFollowupBattleForStatModifier(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
   const actionType = normalizeText(effect?.actionType);
   const text = normalizeText(planText(plan), effectText(effect));
-  if (!actionType.includes("apply_stat_modifier")) return match;
-  if (!text.includes("hit") && !text.includes("damage")) return match;
+  if (!actionType.includes("apply_stat_modifier") && !actionType.includes("apply_dynamic_stat_modifier")) return match;
+  if (!text.includes("hit") && !text.includes("damage") && !text.includes("atk") && !text.includes("modifier")) return match;
   if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
 
   const playerId = plan.setup.activePlayerId ?? "player_1";
@@ -2371,6 +2479,40 @@ function runFollowupBattleForNextAttackShield(match: MatchState, plan: LlmEffect
   let next = startManualBattleSession(match, attackerPlayerId, attacker.instanceId, defender.instanceId);
   steps.push({ label: "start shield follow-up battle", ok: true, detail: `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
   next = runPendingBattle(next, steps);
+  return next;
+}
+
+function runFollowupBattleForStatusRestriction(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
+  const actionType = normalizeText(effect?.actionType);
+  const text = normalizeText(planText(plan), effectText(effect));
+  if (!actionType.includes("apply_status")) return match;
+  if (!text.includes("cannot inflict") && !text.includes("frozen")) return match;
+  if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
+
+  const playerId = plan.setup.activePlayerId ?? "player_1";
+  const player = getPlayer(match, playerId);
+  const attacker = player.field.primaryCreature;
+  const defender = getPlayer(match, findOpponentPlayerId(match, playerId)).field.primaryCreature;
+  if (!attacker || !defender) return match;
+
+  match.turn.activePlayerId = playerId;
+  match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));
+  match.turn.phase = "COMBAT";
+  match.turn.firstTurnCycleComplete = true;
+
+  let next = startManualBattleSession(match, playerId, attacker.instanceId, defender.instanceId);
+  next = runPendingBattle(next, steps);
+  const turnSkipped = next.eventLog.some(event => event.type === "BATTLE_TURN_SKIPPED_BY_STATUS");
+  const strikeSkipped = next.eventLog.some(event => event.type === "BATTLE_STRIKE_SKIPPED_BY_STATUS");
+  const expectsDamagePrevention = text.includes("cannot inflict");
+  const ok = expectsDamagePrevention ? strikeSkipped : turnSkipped;
+  steps.push({
+    label: expectsDamagePrevention ? "verify status prevents attack damage" : "attempt status-restricted battle",
+    ok,
+    detail: ok
+      ? `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} was restricted by status`
+      : "status restriction was not observed"
+  });
   return next;
 }
 
@@ -2592,6 +2734,7 @@ function runVariant(args: {
     match = runFollowupForFieldDamageOverTime(match, args.plan, args.effect, steps);
     match = runFollowupBattleForStatModifier(match, args.plan, args.effect, steps);
     match = runFollowupBattleForNextAttackShield(match, args.plan, args.effect, steps);
+    match = runFollowupBattleForStatusRestriction(match, args.plan, args.effect, steps);
     match = runFollowupTurnsForSkipTurn(match, args.effect, steps);
     match = drainAllAutomation(match, args.variant, steps);
   } catch (caught) {

@@ -119,7 +119,7 @@ function effectNegatesMagicChainLink(effect: WardEngineEffect): boolean {
     actionType.includes("PREVENT_DAMAGE") ||
     actionType.includes("NEGATE_CREATURE_EFFECT")
   ) {
-    return false;
+    return actionType.includes("MAGIC") || text.includes("magic card") || text.includes("magic effect");
   }
 
   if (
@@ -139,12 +139,25 @@ function effectNegatesMagicChainLink(effect: WardEngineEffect): boolean {
   );
 }
 
-function linkHasNegateEffect(state: MatchState, link: { cardId: string; text?: string }): boolean {
+function getLinkEffects(state: MatchState, link: { cardId: string; selectedEffectId?: string }): WardEngineEffect[] {
   const definition = state.cardCatalog[link.cardId];
   const effects = getCardEngineEffects(definition);
 
-  if (effects.some(effectNegatesMagicChainLink)) {
-    return true;
+  if (!link.selectedEffectId) {
+    return effects;
+  }
+
+  const selected = effects.find(effect => effect.id === link.selectedEffectId);
+  return selected ? [selected] : effects;
+}
+
+function linkHasNegateEffect(state: MatchState, link: { cardId: string; text?: string; selectedEffectId?: string }): boolean {
+  const effects = getLinkEffects(state, link);
+
+  if (effects.length > 0) {
+    return link.selectedEffectId
+      ? effects.some(effectNegatesMagicChainLink)
+      : effects.some(effectNegatesMagicChainLink);
   }
 
   const rawText = String(link.text ?? "").toLowerCase();
@@ -205,10 +218,9 @@ function orderImmediateEffectsForResolution(effects: WardEngineEffect[]): WardEn
   return [...effects].sort((left, right) => priority(left) - priority(right));
 }
 
-function shouldSkipResolvedLightningEffect(state: MatchState, link: { cardId: string; isLightningResponse: boolean; text?: string }): boolean {
+function shouldSkipResolvedLightningEffect(state: MatchState, link: { cardId: string; isLightningResponse: boolean; text?: string; selectedEffectId?: string }): boolean {
   if (!link.isLightningResponse) return false;
-  const definition = state.cardCatalog[link.cardId];
-  const effects = getCardEngineEffects(definition);
+  const effects = getLinkEffects(state, link);
 
   if (effects.length === 0) {
     return linkHasNegateEffect(state, link);
@@ -227,6 +239,17 @@ function isDragonRageLink(state: MatchState, link: { cardId: string; cardName?: 
     id.includes("dragon-rage") ||
     name === "dragon rage" ||
     (cardNumber === "042" && name.includes("dragon") && name.includes("rage"));
+}
+
+function isTwisterLink(state: MatchState, link: { cardId: string; cardName?: string }): boolean {
+  const definition = state.cardCatalog[link.cardId];
+  const id = String(definition?.id ?? link.cardId).trim().toLowerCase();
+  const name = String(definition?.name ?? link.cardName ?? "").trim().toLowerCase();
+  const cardNumber = String(definition?.cardNumber ?? "").trim();
+
+  return id.includes("twister") ||
+    name === "twister" ||
+    (cardNumber === "105" && name.includes("twister"));
 }
 
 function resolveDragonRageFollowupEffects(
@@ -266,12 +289,49 @@ function resolveDragonRageFollowupEffects(
   }
 }
 
+function resolveTwisterFollowupEffects(
+  state: MatchState,
+  link: {
+    cardInstanceId: string;
+    cardId: string;
+    cardName: string;
+    playerId: string;
+  }
+): void {
+  if (!isTwisterLink(state, link)) return;
+
+  const definition = state.cardCatalog[link.cardId];
+  const followupEffects = getCardEngineEffects(definition).filter(effect =>
+    getNormalizedActionType(effect) === "DRAW_CARDS"
+  );
+
+  for (const effect of followupEffects) {
+    const resolved = tryResolveAutomaticMagicEffect(state, {
+      effect,
+      controllerPlayerId: link.playerId,
+      sourceCardName: link.cardName,
+      sourceCardInstanceId: link.cardInstanceId,
+      addEvent
+    });
+
+    if (!resolved) {
+      state.manualEffectQueue.push(createManualEffectRequestFromChainLink({
+        ...link,
+        magicType: "STANDARD",
+        magicSubType: "NONE",
+        text: definition?.text ?? ""
+      }, effect));
+    }
+  }
+}
+
 export function createMagicChainLink(
   state: MatchState,
   playerId: string,
   card: CardInstance,
   isLightningResponse: boolean,
-  respondsToLinkId?: string
+  respondsToLinkId?: string,
+  selectedEffectId?: string
 ): MagicChainLink {
   const definition = getCardDefinition(state, card);
 
@@ -290,6 +350,7 @@ export function createMagicChainLink(
     text: definition.text ?? "",
     isLightningResponse,
     respondsToLinkId,
+    selectedEffectId,
     status: "PENDING" as const
   };
 }
@@ -307,6 +368,7 @@ export function resolveOrQueueResolvedMagicEffects(
     text: string;
     status: "PENDING" | "RESOLVED" | "NEGATED";
     isLightningResponse: boolean;
+    selectedEffectId?: string;
   }
 ): void {
   if (link.status !== "RESOLVED") {
@@ -314,7 +376,7 @@ export function resolveOrQueueResolvedMagicEffects(
   }
 
   const definition = state.cardCatalog[link.cardId];
-  const effects = getCardEngineEffects(definition);
+  const effects = getLinkEffects(state, link);
 
   if (shouldSkipResolvedLightningEffect(state, link)) {
     return;
@@ -624,7 +686,8 @@ export function playMagicFromHand(
 export function playLightningResponseFromHand(
   state: MatchState,
   playerId: string,
-  cardInstanceId: string
+  cardInstanceId: string,
+  options: { selectedEffectId?: string } = {}
 ): MatchState {
   if (state.pendingPrompt) {
     throw new Error("Resolve the pending prompt before playing a Lightning response.");
@@ -684,7 +747,8 @@ export function playLightningResponseFromHand(
     playerId,
     card,
     true,
-    previousLink.id
+    previousLink.id,
+    options.selectedEffectId
   );
 
   chain.links.push(chainLink);
@@ -834,6 +898,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
       // Silence From The Grave uses this to attach its Magic lock and turn-conditional creature suppression.
       resolveOrQueueResolvedMagicEffects(nextState, link);
       resolveDragonRageFollowupEffects(nextState, link);
+      resolveTwisterFollowupEffects(nextState, link);
     }
 
     nextState.chainZone.splice(chainCardIndex, 1);

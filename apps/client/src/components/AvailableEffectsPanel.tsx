@@ -60,11 +60,33 @@ function isRevealOpponentHandEffect(effect: WardEngineEffect): boolean {
 }
 
 function isActivatedRollEffect(effect: WardEngineEffect): boolean {
-  return (effect.trigger ?? "").trim().toUpperCase() === "DURING_YOUR_TURN_ACTIVATED";
+  return (effect.trigger ?? "").trim().toUpperCase() === "DURING_YOUR_TURN_ACTIVATED" ||
+    effect.actionType === "RESOLVE_STATUS_ESCAPE_ROLL";
 }
 
 function isSupportedEffect(effect: WardEngineEffect): boolean {
   return isRevealOpponentHandEffect(effect) || isActivatedRollEffect(effect);
+}
+
+function isStatusEscapeRollEffect(effect: WardEngineEffect): boolean {
+  return effect.actionType === "RESOLVE_STATUS_ESCAPE_ROLL";
+}
+
+function canPlayerUseStatusEscapeRoll(
+  player: PlayerState,
+  source: EffectSource
+): boolean {
+  if (!source.card.attachedToInstanceId) return false;
+  const attachedCreature = [
+    player.field.primaryCreature,
+    ...player.field.limitedSummons
+  ].find(card => card?.instanceId === source.card.attachedToInstanceId);
+
+  return !!attachedCreature?.activeStatuses?.some(status =>
+    status.status === "FROZEN" &&
+    status.sourceCardInstanceId === source.card.instanceId &&
+    status.flags.canInflictAtkDamage === false
+  );
 }
 
 function getEffectLabel(effect: WardEngineEffect): string {
@@ -85,7 +107,9 @@ function getEffectDisabledReason(
     return "Match is complete.";
   }
 
-  if (source.card.controllerPlayerId !== player.id) {
+  if (source.card.controllerPlayerId !== player.id && !(
+    isStatusEscapeRollEffect(effect) && canPlayerUseStatusEscapeRoll(player, source)
+  )) {
     return "You do not control this card.";
   }
 
@@ -144,6 +168,27 @@ function getFieldEffectSources(match: AppMatchState, player: PlayerState): Effec
 
   for (const magic of player.field.magicSlots) {
     addSource(magic, "MAGIC_SLOT");
+  }
+
+  for (const otherPlayer of match.players) {
+    if (otherPlayer.id === player.id) continue;
+    for (const magic of otherPlayer.field.magicSlots) {
+      const definition = match.cardCatalog[magic.cardId];
+      const effects = definition?.effects as WardEngineEffect[] | undefined;
+      if (!effects?.some(isStatusEscapeRollEffect)) continue;
+      if (!magic.attachedToInstanceId) continue;
+      const attachedCreature = [
+        player.field.primaryCreature,
+        ...player.field.limitedSummons
+      ].find(card => card?.instanceId === magic.attachedToInstanceId);
+      if (!attachedCreature) continue;
+      sources.push({
+        card: magic,
+        sourceZone: "MAGIC_SLOT",
+        sourceName: getCardName(match, magic),
+        effects
+      });
+    }
   }
 
   return sources;

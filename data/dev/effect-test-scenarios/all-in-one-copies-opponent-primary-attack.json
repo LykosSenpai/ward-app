@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_001_all_in_one",
+  "effectId": "001-E01",
+  "title": "All In One copies opponent primary attack dice and modifier",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_001_all_in_one",
+      "cardName": "All In One",
+      "cardType": "MAGIC",
+      "cardNumber": "001",
+      "generation": "2",
+      "rawText": "Add your opponent's primary creature's base Atk Dice Rolls and Modifier to the equipped creature. This effect cannot stack."
+    },
+    "effect": {
+      "effectId": "001-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Dynamic Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Add opponent primary base Atk Dice Rolls and base Modifier",
+      "durationText": "While equipped",
+      "reusableFunction": "applyDynamicStatModifier"
+    },
+    "title": "All In One copies opponent primary attack dice and modifier",
+    "summary": "Equip All In One to a 1-die, modifier-zero creature while the opponent primary has 2 base Atk Dice Rolls and +1 Modifier, then verify a follow-up hit roll uses 3 dice and +1 modifier.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_001_all_in_one",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature_mod_0 on player_1 field as primary.",
+        "Place test_primary_creature on player_2 field as primary so its base Atk Dice Rolls are 2 and its base Modifier is 1."
+      ]
+    },
+    "steps": [
+      "Player 1 plays All In One and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the resolved hit roll dice count and modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hit roll gained opponent primary base modifier",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Hit roll gained opponent primary base attack dice",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "All In One remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_001_all_in_one"
+      }
+    ],
+    "manualVerification": [
+      "Confirm multiple copies of this effect do not stack."
+    ],
+    "riskNotes": [
+      "This covers dynamic recalculation against the current opponent primary's base attack stats."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate dynamic while-equipped stat modifier."
+    },
+    "regression": {
+      "fixtureName": "all-in-one-copies-opponent-primary-attack",
+      "tags": [
+        "magic",
+        "equip",
+        "dynamic-stat-modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

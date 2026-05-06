@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_102_winter_chill",
+  "effectId": "102-E02",
+  "title": "Winter Chill escape roll unfreezes creature and destroys equip",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_102_winter_chill",
+      "cardName": "Winter Chill",
+      "cardType": "MAGIC",
+      "cardNumber": "102",
+      "generation": "1",
+      "rawText": "The equipped creature is frozen and cannot inflict Atk Damage or be sacrificed. During your opponent's turn they may roll 1 die. If the result is 5-6, unfreeze their creature and destroy this card."
+    },
+    "effect": {
+      "effectId": "102-E02",
+      "trigger": "OPPONENT_TURN_WHILE_EQUIPPED",
+      "actionType": "RESOLVE_STATUS_ESCAPE_ROLL",
+      "effectGroup": "Status Removal",
+      "target": "Equipped creature / this card",
+      "value": "Remove Frozen; destroy equip",
+      "durationText": "Instant",
+      "reusableFunction": "resolveFrozenEquipEscapeRoll"
+    },
+    "title": "Winter Chill escape roll unfreezes creature and destroys equip",
+    "summary": "During the frozen creature controller's turn, roll 1D6 for Winter Chill; on 5-6 remove Frozen from that creature and destroy Winter Chill.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen1_102_winter_chill",
+        "test_creature_defender"
+      ],
+      "player2Cards": [
+        "test_primary_creature"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            5
+          ],
+          "label": "Winter Chill escape succeeds"
+        }
+      ],
+      "notes": [
+        "Attach Winter Chill to player_2 primary and start with that creature Frozen by Winter Chill.",
+        "It is player_2's turn; player_2 may make this roll at any point during their turn."
+      ]
+    },
+    "steps": [
+      "Player 2 activates Winter Chill's escape roll during their turn.",
+      "Resolve the forced roll as 5.",
+      "Inspect player_2 primary status and player_1 cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Frozen was removed",
+        "path": "player_2.primaryCreature.statuses",
+        "operator": "notContains",
+        "value": "FROZEN"
+      },
+      {
+        "label": "Winter Chill destroyed",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_102_winter_chill"
+      },
+      {
+        "label": "Escape roll resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "STATUS_ESCAPE_ROLL_RESOLVED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the action is available to the frozen creature's controller during their turn, not to the Winter Chill controller on the opponent's turn."
+    ],
+    "riskNotes": [
+      "This covers the successful 5-6 branch. A failed 1-4 roll should leave Frozen and Winter Chill in place."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate opponent-turn escape roll success branch."
+    },
+    "regression": {
+      "fixtureName": "winter-chill-escape-roll-destroys-equip",
+      "tags": [
+        "magic",
+        "equip",
+        "status",
+        "escape-roll"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_063_holy_light",
+  "effectId": "063-E01",
+  "title": "Holy Light returns a cemetery card to hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_063_holy_light",
+      "cardName": "Holy Light",
+      "cardType": "MAGIC",
+      "cardNumber": "063",
+      "generation": "1",
+      "rawText": "Return any card from your cemetery to your hand. This card cannot be returned from the cemetery."
+    },
+    "effect": {
+      "effectId": "063-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "target": "Your cemetery/hand",
+      "value": "1 card",
+      "durationText": "Instant",
+      "reusableFunction": "returnFromCemeteryToHand"
+    },
+    "title": "Holy Light returns a cemetery card to hand",
+    "summary": "Play Holy Light with a card in player_1 cemetery and verify that card moves to hand.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_063_holy_light",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place one player_1 card in cemetery before play."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Holy Light.",
+      "Choose a card from player_1 cemetery.",
+      "Resolve the move to hand."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Card returned to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "test_primary_creature"
+      },
+      {
+        "label": "Returned card no longer in cemetery",
+        "path": "player_1.cemetery",
+        "operator": "notContains",
+        "value": "test_primary_creature"
+      },
+      {
+        "label": "Holy Light went to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_063_holy_light"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Holy Light itself cannot be selected from cemetery by this effect."
+    ],
+    "riskNotes": [
+      "This fixture covers a normal card return, not the self-exclusion static rule."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate cemetery-to-hand movement for any card."
+    },
+    "regression": {
+      "fixtureName": "holy-light-return-card-to-hand",
+      "tags": [
+        "magic",
+        "zone-movement",
+        "cemetery"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

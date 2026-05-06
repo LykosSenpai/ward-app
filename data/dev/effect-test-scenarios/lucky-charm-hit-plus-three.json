@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_070_lucky_charm",
+  "effectId": "070-E01",
+  "title": "Lucky Charm applies Hit +3 while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_070_lucky_charm",
+      "cardName": "Lucky Charm",
+      "cardType": "MAGIC",
+      "cardNumber": "070",
+      "generation": "1",
+      "rawText": "Hit: +3."
+    },
+    "effect": {
+      "effectId": "070-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Hit +3",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Lucky Charm applies Hit +3 while equipped",
+    "summary": "Equip Lucky Charm to a modifier-zero primary creature, run a follow-up battle, and verify the hit roll receives +3.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_070_lucky_charm",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature_mod_0 on player_1 field as primary so the hit modifier comes only from Lucky Charm."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Lucky Charm and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the resolved hit roll modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hit roll modifier increased by 3",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Lucky Charm remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_070_lucky_charm"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the bonus applies only while Lucky Charm remains equipped."
+    ],
+    "riskNotes": [
+      "Hit bonuses are battle-roll modifiers and are verified through lastBattle strike output."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate basic Hit equip modifier through a resolved battle roll."
+    },
+    "regression": {
+      "fixtureName": "lucky-charm-hit-plus-three",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "hit"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_054_vampire_mistress",
+  "effectId": "054-E02",
+  "title": "Vampire Mistress damages one creature and heals one creature",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_054_vampire_mistress",
+      "cardName": "Vampire Mistress",
+      "cardType": "MAGIC",
+      "cardNumber": "054",
+      "generation": "3",
+      "rawText": "Inflict 10 damage to a creature and heal a creature 10 HP."
+    },
+    "effect": {
+      "effectId": "054-E02",
+      "trigger": "ON_PLAY",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "A creature",
+      "value": "10 damage",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Vampire Mistress damages one creature and heals one creature",
+    "summary": "Play Vampire Mistress, choose the opponent's primary creature for the 10 damage prompt and your damaged primary creature for the 10 HP heal prompt.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_054_vampire_mistress",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_creature_hp100 on player_1 field as primary.",
+        "Set current HP to 80 before play.",
+        "Choose player_2 primary for damage and player_1 primary for healing."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Vampire Mistress.",
+      "Resolve the damage target prompt against player_2 primary.",
+      "Resolve the healing target prompt against player_1 primary.",
+      "Inspect both primary creatures' current HP."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Opponent creature took 10 damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 40
+      },
+      {
+        "label": "Friendly creature healed 10 HP",
+        "path": "players.player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 90
+      },
+      {
+        "label": "Vampire Mistress went to cemetery",
+        "path": "players.player_1.cemetery",
+        "operator": "contains",
+        "value": "gen3_054_vampire_mistress"
+      }
+    ],
+    "manualVerification": [
+      "Confirm both prompts allow any creature unless another card-specific restriction is introduced."
+    ],
+    "riskNotes": [
+      "This covers the deterministic friendly-heal and opponent-damage routing for the combined card text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate the damage half and combined prompt routing."
+    },
+    "regression": {
+      "fixtureName": "vampire-mistress-damage-and-heal",
+      "tags": [
+        "magic",
+        "damage",
+        "healing"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}
