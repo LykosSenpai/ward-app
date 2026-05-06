@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_093_heroism",
+  "effectId": "093-E01",
+  "title": "Heroism applies AL Hit and Atk plus two while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_093_heroism",
+      "cardName": "Heroism",
+      "cardType": "MAGIC",
+      "cardNumber": "093",
+      "generation": "1",
+      "rawText": "AL: +2. Hit: +2. Atk: +2. This card and the equipped creature are unaffected by magic cards. This card can only be negated when played."
+    },
+    "effect": {
+      "effectId": "093-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "AL +2; Hit +2; Atk +2",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Heroism applies AL Hit and Atk plus two while equipped",
+    "summary": "Equip Heroism to a modifier-zero primary creature, verify AL gains +2, and run a battle to verify Hit and Atk gains +2.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_093_heroism",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Hit and Atk bonuses come only from Heroism."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Heroism and equips it to their primary creature.",
+      "Read equipped creature effective AL.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the resolved hit roll modifier and damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 2",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Hit roll modifier increased by 2",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Attack damage includes the +2 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Heroism remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_093_heroism"
+      }
+    ],
+    "manualVerification": [
+      "Confirm 093-E02 and 093-E03 separately: magic immunity and only-negatable-when-played are not covered by this stat fixture."
+    ],
+    "riskNotes": [
+      "This fixture covers only Heroism's printed AL, Hit, and Atk bonuses."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Heroism equipped stat suite."
+    },
+    "regression": {
+      "fixtureName": "heroism-stat-suite",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "hit",
+        "atk",
+        "al"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

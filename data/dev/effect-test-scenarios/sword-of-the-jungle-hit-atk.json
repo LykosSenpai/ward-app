@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_111_sword_of_the_jungle",
+  "effectId": "111-E01",
+  "title": "Sword of the Jungle applies Atk plus three and Hit plus five while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_111_sword_of_the_jungle",
+      "cardName": "Sword of the Jungle",
+      "cardType": "MAGIC",
+      "cardNumber": "111",
+      "generation": "1",
+      "rawText": "Atk: +3. Hit: +5."
+    },
+    "effect": {
+      "effectId": "111-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +3; Hit +5",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Sword of the Jungle applies Atk plus three and Hit plus five while equipped",
+    "summary": "Equip Sword of the Jungle to a modifier-zero primary creature, run a battle, and verify the printed Hit and Atk bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_111_sword_of_the_jungle",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Hit and Atk bonuses come only from Sword of the Jungle."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Sword of the Jungle and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the resolved hit roll modifier and damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hit roll modifier increased by 5",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Attack damage includes the +3 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 4
+      },
+      {
+        "label": "Sword of the Jungle remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_111_sword_of_the_jungle"
+      }
+    ],
+    "manualVerification": [
+      "Confirm both modifiers apply only while Sword of the Jungle remains equipped."
+    ],
+    "riskNotes": [
+      "Uses battle output for Hit and Atk bonuses."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Sword of the Jungle Hit/Atk equip modifier."
+    },
+    "regression": {
+      "fixtureName": "sword-of-the-jungle-hit-atk",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "hit",
+        "atk"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
