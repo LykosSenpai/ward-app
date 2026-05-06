@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_045_wooden_shield",
+  "effectId": "045-E01",
+  "title": "Wooden Shield applies AL plus three while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_045_wooden_shield",
+      "cardName": "Wooden Shield",
+      "cardType": "MAGIC",
+      "cardNumber": "045",
+      "generation": "3",
+      "rawText": "AL: +3."
+    },
+    "effect": {
+      "effectId": "045-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "AL +3",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Wooden Shield applies AL plus three while equipped",
+    "summary": "Equip Wooden Shield to a primary creature and verify the printed AL bonus.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_045_wooden_shield",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the AL bonus comes only from Wooden Shield."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Wooden Shield and equips it to their primary creature.",
+      "Read equipped creature effective AL."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 3",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 6
+      },
+      {
+        "label": "Wooden Shield remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_045_wooden_shield"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the AL bonus applies only while Wooden Shield remains equipped."
+    ],
+    "riskNotes": [
+      "Uses effective stat output for AL."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Wooden Shield AL equip modifier."
+    },
+    "regression": {
+      "fixtureName": "wooden-shield-al-plus-three",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "al"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

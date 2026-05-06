@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_044_wood_axe",
+  "effectId": "044-E01",
+  "title": "Wood Axe applies Atk plus three while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_044_wood_axe",
+      "cardName": "Wood Axe",
+      "cardType": "MAGIC",
+      "cardNumber": "044",
+      "generation": "3",
+      "rawText": "Atk: +3."
+    },
+    "effect": {
+      "effectId": "044-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +3",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Wood Axe applies Atk plus three while equipped",
+    "summary": "Equip Wood Axe to a modifier-zero primary creature and verify the printed Atk bonus through battle damage.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_044_wood_axe",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Atk bonus comes only from Wood Axe."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Wood Axe and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Attack damage includes the +3 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 4
+      },
+      {
+        "label": "Wood Axe remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_044_wood_axe"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the Atk bonus applies only while Wood Axe remains equipped."
+    ],
+    "riskNotes": [
+      "Uses battle damage as the observable Atk modifier output."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Wood Axe Atk equip modifier."
+    },
+    "regression": {
+      "fixtureName": "wood-axe-atk-plus-three",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

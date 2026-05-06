@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_014_monster_armor",
+  "effectId": "014-E01",
+  "title": "Monster Armor applies Atk Hit AL SPD and attack dice bonuses",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_014_monster_armor",
+      "cardName": "Monster Armor",
+      "cardType": "MAGIC",
+      "cardNumber": "014",
+      "generation": "3",
+      "rawText": "Atk: +3. Hit: +3. AL: +3. SPD: +3. Atk Dice Rolls: +1."
+    },
+    "effect": {
+      "effectId": "014-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +3; Hit +3; AL +3; SPD +3; Atk Dice Rolls +1",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Monster Armor applies Atk Hit AL SPD and attack dice bonuses",
+    "summary": "Equip Monster Armor to a modifier-zero primary creature and verify its printed multi-stat suite.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_014_monster_armor",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so all bonuses come only from Monster Armor."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Monster Armor and equips it to their primary creature.",
+      "Read equipped creature effective AL, SPD, and attack dice.",
+      "Run a follow-up battle and inspect Hit and Atk output."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 3",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 6
+      },
+      {
+        "label": "SPD increased by 3",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 13
+      },
+      {
+        "label": "Attack dice increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Hit roll modifier increased by 3",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Attack damage includes the +3 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 6
+      },
+      {
+        "label": "Monster Armor remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_014_monster_armor"
+      }
+    ],
+    "manualVerification": [
+      "Confirm all printed bonuses apply only while Monster Armor remains equipped."
+    ],
+    "riskNotes": [
+      "Attack damage includes the extra attack die path used by other stat-suite fixtures."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Monster Armor equipped stat suite."
+    },
+    "regression": {
+      "fixtureName": "monster-armor-stat-suite",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk",
+        "hit",
+        "al",
+        "spd",
+        "dice"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

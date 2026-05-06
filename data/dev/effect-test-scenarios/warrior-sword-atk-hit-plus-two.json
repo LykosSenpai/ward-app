@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_046_warrior_sword",
+  "effectId": "046-E01",
+  "title": "Warrior Sword applies Atk and Hit plus two while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_046_warrior_sword",
+      "cardName": "Warrior Sword",
+      "cardType": "MAGIC",
+      "cardNumber": "046",
+      "generation": "3",
+      "rawText": "Atk: +2. Hit: +2."
+    },
+    "effect": {
+      "effectId": "046-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +2; Hit +2",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Warrior Sword applies Atk and Hit plus two while equipped",
+    "summary": "Equip Warrior Sword to a modifier-zero primary creature and verify the printed Atk and Hit bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_046_warrior_sword",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the bonuses come only from Warrior Sword."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Warrior Sword and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect hit roll modifier and damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hit roll modifier increased by 2",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Attack damage includes the +2 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Warrior Sword remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_046_warrior_sword"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the Atk and Hit bonuses apply only while Warrior Sword remains equipped."
+    ],
+    "riskNotes": [
+      "Uses battle output for both printed bonuses."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Warrior Sword equipped stat modifier."
+    },
+    "regression": {
+      "fixtureName": "warrior-sword-atk-hit-plus-two",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk",
+        "hit"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
