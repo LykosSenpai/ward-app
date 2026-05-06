@@ -224,6 +224,10 @@ function sourceCanResolveForTiming(source: ActiveEffectSource, effect: WardEngin
     return sourceControlsStrikeAttacker(source, strike) || sourceControlsStrikeDefender(source, strike);
   }
 
+  if (timing === "AFTER_DAMAGE_APPLIED" && actionType === "HEAL_BY_DAMAGE_DEALT") {
+    return sourceControlsStrikeAttacker(source, strike);
+  }
+
   if (timing === "ON_HIT" || timing === "ON_HIT_FIRST" || timing === "BEFORE_DAMAGE_ROLL" || timing === "DURING_DAMAGE_CALC") {
     return sourceControlsStrikeAttacker(source, strike);
   }

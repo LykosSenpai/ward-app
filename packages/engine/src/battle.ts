@@ -2032,6 +2032,13 @@ export function applyManualBattleDamage(
     addEvent
   });
 
+  resolveBattleTriggeredRuntimeEffects(nextState, {
+    timing: "AFTER_DAMAGE_APPLIED",
+    battleSession: session,
+    strike,
+    addEvent
+  });
+
   if (strike.defenderKilled || strike.attackerKilledByCriticalMiss) {
     runBattleTimingTriggers(nextState, {
       timing: "WHEN_CREATURE_KILLED_IN_BATTLE",

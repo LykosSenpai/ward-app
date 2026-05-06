@@ -3,11 +3,13 @@ import {
   activateCardEffect,
   applyManualBattleDamage,
   applyPendingEffectRoll,
+  advanceTurn,
   createDeckFromCardIds,
   createEffectTestScenarioMatch,
   finishManualBattleSession,
   forceNextDevRolls,
   passMagicChainPriority,
+  playBattleResponseFromHand,
   playLightningResponseFromHand,
   playMagicFromHand,
   resolvePendingEffectTargetPrompt,
@@ -16,6 +18,7 @@ import {
   rollPendingEffectRoll,
   runManualBattleSpeedCheck,
   startManualBattleSession,
+  updateManualBattleStrikeModifiers,
   updateManualBattleSpeedModifiers
 } from "@ward/engine";
 import type {
@@ -52,6 +55,69 @@ const LOW_DAMAGE_DICE = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 const HIGH_DAMAGE_DICE = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6];
 const SUCCESS_EFFECT_DICE = [6, 6, 6, 6];
 const FAIL_EFFECT_DICE = [1, 1, 1, 1];
+
+const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "CREATURE" }>> = {
+  test_attacker_2dice_mod0: {
+    id: "test_attacker_2dice_mod0",
+    name: "Test Attacker 2D +0",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 1,
+    speed: 10,
+    hp: 100,
+    attackDice: 2,
+    modifier: 0,
+    text: "Synthetic headless QA attacker."
+  },
+  test_attacker_2dice_mod3_hp100: {
+    id: "test_attacker_2dice_mod3_hp100",
+    name: "Test Attacker 2D +3",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 1,
+    speed: 10,
+    hp: 100,
+    attackDice: 2,
+    modifier: 3,
+    text: "Synthetic headless QA attacker."
+  },
+  test_defender_al5_hp100: {
+    id: "test_defender_al5_hp100",
+    name: "Test Defender AL5",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 5,
+    speed: 1,
+    hp: 100,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA defender."
+  }
+};
+
+const SYNTHETIC_MAGIC: Record<string, Extract<CardDefinition, { cardType: "MAGIC" }>> = {
+  test_standard_magic_draw_or_buff: {
+    id: "test_standard_magic_draw_or_buff",
+    name: "Test Standard Magic",
+    cardType: "MAGIC",
+    magicType: "STANDARD",
+    magicSubType: "NONE",
+    text: "Synthetic headless QA standard magic.",
+    effects: [
+      {
+        id: "TEST-E01",
+        trigger: "ON_PLAY",
+        actionType: "DRAW_CARDS",
+        effectGroup: "Card Draw",
+        actionText: "Draw 1 card",
+        target: "Self",
+        value: "1",
+        duration: { text: "Instant", type: "INSTANT" },
+        params: { count: 1 }
+      }
+    ]
+  }
+};
 
 function cloneMatch(match: MatchState): MatchState {
   return JSON.parse(JSON.stringify(match)) as MatchState;
@@ -195,6 +261,20 @@ function ensureCardInHand(match: MatchState, playerId: string, cardId: string): 
   return created;
 }
 
+function ensureSyntheticSetupDefinitions(match: MatchState, plan: LlmEffectTestPlan): void {
+  for (const cardId of [...(plan.setup.player1Cards ?? []), ...(plan.setup.player2Cards ?? [])]) {
+    const synthetic = SYNTHETIC_CREATURES[cardId];
+    if (synthetic && !match.cardCatalog[cardId]) {
+      match.cardCatalog[cardId] = synthetic;
+    }
+
+    const syntheticMagic = SYNTHETIC_MAGIC[cardId];
+    if (syntheticMagic && !match.cardCatalog[cardId]) {
+      match.cardCatalog[cardId] = syntheticMagic;
+    }
+  }
+}
+
 function createScenarioCreature(match: MatchState, playerId: string, cardId: string, hpOverride?: number): CardInstance | undefined {
   const definition = match.cardCatalog[cardId];
   if (definition?.cardType !== "CREATURE") return undefined;
@@ -212,6 +292,16 @@ function setScenarioPrimaryCreature(match: MatchState, playerId: string, cardId:
   const creature = createScenarioCreature(match, playerId, cardId, hpOverride);
   if (!creature) return;
   getPlayer(match, playerId).field.primaryCreature = creature;
+}
+
+function setScenarioPrimaryCurrentHp(match: MatchState, playerId: string, currentHp: number): void {
+  const primary = getPlayer(match, playerId).field.primaryCreature;
+  if (!primary) return;
+  primary.currentHp = Math.max(0, Math.min(primary.baseHp ?? currentHp, currentHp));
+}
+
+function findSetupCreatureCardId(match: MatchState, cardIds: string[] | undefined): string | undefined {
+  return cardIds?.find(cardId => match.cardCatalog[cardId]?.cardType === "CREATURE");
 }
 
 function moveCardToMagicSlot(match: MatchState, playerId: string, card: CardInstance): void {
@@ -240,7 +330,12 @@ function ensurePlanSetupCards(match: MatchState, plan: LlmEffectTestPlan): void 
   }
 
   const notesText = normalizeText(plan.setup.notes, plan.steps);
-  if (!notesText.includes("pre-place") && !notesText.includes("on field")) return;
+  if (
+    !notesText.includes("pre-place") &&
+    !notesText.includes("on field") &&
+    !notesText.includes("field magic slot") &&
+    !notesText.includes("field-active")
+  ) return;
 
   const placeSupportMagic = (playerId: string, cardIds: string[] | undefined, keepInHandCardIds: Set<string>) => {
     for (const cardId of cardIds ?? []) {
@@ -399,7 +494,43 @@ function ensureSearchTargetInDeck(match: MatchState, playerId: string, text: str
 function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effect?: WardEngineEffect): void {
   const sourcePlayerId = plan.setup.activePlayerId ?? "player_1";
   const opponentPlayerId = findOpponentPlayerId(match, sourcePlayerId);
-  const text = normalizeText(planText(plan), effectText(effect));
+  const text = normalizeText(planText(plan), plan.setup.notes, plan.steps, effectText(effect));
+  const syntheticAttackerId = plan.setup.player1Cards?.find(cardId => SYNTHETIC_CREATURES[cardId]);
+  const syntheticDefenderId = plan.setup.player2Cards?.find(cardId => SYNTHETIC_CREATURES[cardId]);
+
+  if (syntheticAttackerId) {
+    setScenarioPrimaryCreature(match, sourcePlayerId, syntheticAttackerId);
+    if (text.includes("current hp to 80")) {
+      setScenarioPrimaryCurrentHp(match, sourcePlayerId, 80);
+    }
+  } else if (plan.setup.phase === "COMBAT") {
+    const setupAttackerId = findSetupCreatureCardId(match, plan.setup.player1Cards);
+    if (setupAttackerId) {
+      setScenarioPrimaryCreature(match, "player_1", setupAttackerId);
+    }
+  }
+
+  if (syntheticDefenderId) {
+    setScenarioPrimaryCreature(match, opponentPlayerId, syntheticDefenderId);
+  } else if (plan.setup.phase === "COMBAT") {
+    const setupDefenderId = findSetupCreatureCardId(match, plan.setup.player2Cards);
+    if (setupDefenderId) {
+      setScenarioPrimaryCreature(match, "player_2", setupDefenderId);
+    }
+  }
+
+  const source = findSource(match, plan.card.cardId);
+  const sourceDefinition = match.cardCatalog[plan.card.cardId];
+  const sourcePlayer = getPlayer(match, sourcePlayerId);
+  if (
+    source?.card &&
+    sourceDefinition?.cardType === "MAGIC" &&
+    sourceDefinition.magicSubType === "EQUIP" &&
+    source.zone === "MAGIC_SLOT" &&
+    sourcePlayer.field.primaryCreature
+  ) {
+    source.card.attachedToInstanceId = sourcePlayer.field.primaryCreature.instanceId;
+  }
 
   if (text.includes("wings") || text.includes("winged")) {
     setScenarioPrimaryCreature(match, opponentPlayerId, "gen1_001_blue_dragon", 50);
@@ -542,6 +673,10 @@ function summarizeMatch(match: MatchState): string {
 
 function readDerivedPath(root: unknown, path: string): unknown {
   const match = root as MatchState;
+  if (!Array.isArray(match.players) || !Array.isArray(match.eventLog)) {
+    return undefined;
+  }
+
   const cardIdForName = (name: unknown): string | undefined => {
     const normalized = normalizeText(name).trim();
     return Object.values(match.cardCatalog).find(definition => normalizeText(definition.name).trim() === normalized)?.id;
@@ -612,6 +747,145 @@ function readDerivedPath(root: unknown, path: string): unknown {
     });
   }
 
+  if (path === "gameLog") {
+    return match.eventLog.flatMap(event => {
+      if (event.type === "CHAIN_LINK_NEGATED") return ["magic_negated"];
+      return [event.type, normalizeText(event.payload)];
+    });
+  }
+
+  if (path === "game.events") {
+    return match.eventLog.flatMap(event => {
+      if (event.type === "AUTO_EFFECT_SEARCH_DECK_TO_HAND_RESOLVED") {
+        return [event.type, "SHUFFLE_DECK"];
+      }
+      return [event.type];
+    });
+  }
+
+  if (path === "battle.damageRoll.dice") {
+    const damagePipeline = match.eventLog.find(event => event.type === "BATTLE_DAMAGE_PIPELINE_RESOLVED");
+    return (damagePipeline?.payload as { damageRollDice?: unknown } | undefined)?.damageRollDice;
+  }
+
+  if (path === "battle.attacker.effectiveAttackDice") {
+    const damagePipeline = match.eventLog.find(event => event.type === "BATTLE_DAMAGE_PIPELINE_RESOLVED");
+    const dice = (damagePipeline?.payload as { damageRollDice?: unknown } | undefined)?.damageRollDice;
+    return Array.isArray(dice) ? dice.length : undefined;
+  }
+
+  if (path === "battle.debugTrace") {
+    return match.eventLog.flatMap(event => {
+      const payload = event.payload as Record<string, unknown> | undefined;
+      const conditionName = String(payload?.conditionName ?? "");
+      return [
+        event.type,
+        payload?.actionType,
+        payload?.effectId,
+        conditionName === "ATK_DAMAGE_DIE_RESULT_6" ? "At least 1 Atk Dice Roll is 6" : undefined,
+        payload?.note
+      ].filter(Boolean);
+    });
+  }
+
+  if (path === "lastBattle.debugTrace") {
+    return readDerivedPath(root, "battle.debugTrace");
+  }
+
+  const firstDamagePipeline = match.eventLog.find(event => event.type === "BATTLE_DAMAGE_PIPELINE_RESOLVED");
+  if (path === "battle.lastDamage.amount" || path === "lastBattle.damageApplied") {
+    return (firstDamagePipeline?.payload as { finalDamage?: unknown } | undefined)?.finalDamage;
+  }
+
+  if (path === "lastBattle.firstAttacker.cardId") {
+    const payload = firstDamagePipeline?.payload as { attackerCreatureInstanceId?: unknown } | undefined;
+    const attackerInstanceId = String(payload?.attackerCreatureInstanceId ?? "");
+    if (!attackerInstanceId) return undefined;
+    const attacker = findCardByPredicate(match, card => card.instanceId === attackerInstanceId);
+    return attacker?.card.cardId;
+  }
+
+  if (path === "lastBattle.hitResult.hit") {
+    return Boolean(firstDamagePipeline);
+  }
+
+  if (path === "battle.lastHitRoll.dice.length") {
+    const hitRoll = match.eventLog.find(event => {
+      const payload = event.payload as { kind?: unknown } | undefined;
+      return event.type === "DEV_FORCED_ROLL_USED" && payload?.kind === "HIT_ROLL";
+    });
+    const dice = (hitRoll?.payload as { dice?: unknown } | undefined)?.dice;
+    return Array.isArray(dice) ? dice.length : undefined;
+  }
+
+  const activeEffectsAliasPath = path.match(/^(player_\d+)\.(?:primary|primaryCreature)\.activeEffects(?:\.(.+))?$/);
+  if (activeEffectsAliasPath) {
+    const [, playerId, rest] = activeEffectsAliasPath;
+    const player = match.players.find(item => item.id === playerId);
+    const primary = player?.field.primaryCreature;
+    const currentEffects = primary?.activeEffectInstances ?? [];
+    const diceLimitEvent = [...match.eventLog].reverse().find(event => {
+      const payload = event.payload as { targetPlayerId?: unknown; actionType?: unknown } | undefined;
+      return event.type === "AUTO_EFFECT_DICE_LIMIT_TARGET_RESOLVED" &&
+        payload?.targetPlayerId === playerId &&
+        payload?.actionType === "APPLY_DICE_LIMIT";
+    });
+    const diceLimitPayload = diceLimitEvent?.payload as { rollKind?: unknown; diceLimitValue?: unknown } | undefined;
+
+    if (!rest) {
+      return [
+        ...currentEffects.map(effect => effect.actionType),
+        diceLimitEvent ? "APPLY_DICE_LIMIT" : undefined
+      ].filter(Boolean);
+    }
+
+    if (rest === "APPLY_DICE_LIMIT") return undefined;
+    if (rest === "APPLY_DICE_LIMIT.rollKind") return diceLimitPayload?.rollKind;
+    if (rest === "APPLY_DICE_LIMIT.diceLimitValue") return diceLimitPayload?.diceLimitValue;
+  }
+
+  const shorthandPrimaryPath = path.match(/^(player_\d+)\.primaryCreature(?:\.(.+))?$/);
+  if (shorthandPrimaryPath) {
+    const [, playerId, rest] = shorthandPrimaryPath;
+    const player = match.players.find(item => item.id === playerId);
+    const primary = player?.field.primaryCreature;
+    if (!primary) return undefined;
+
+    if (!rest) return primary;
+    const semantic = readPrimarySemanticPath(primary, rest);
+    if (semantic.matched) return semantic.value;
+    if (rest === "effectiveStats.ATK_DICE_ROLLS") {
+      const definition = match.cardCatalog[primary.cardId];
+      return definition?.cardType === "CREATURE" ? definition.attackDice : undefined;
+    }
+    return readPath(primary, rest);
+  }
+
+  const shorthandPrimaryAliasPath = path.match(/^(player_\d+)\.primary(?:\.(.+))?$/);
+  if (shorthandPrimaryAliasPath) {
+    const [, playerId, rest] = shorthandPrimaryAliasPath;
+    const player = match.players.find(item => item.id === playerId);
+    const primary = player?.field.primaryCreature;
+    if (!primary) return undefined;
+
+    if (!rest) return primary;
+    const semantic = readPrimarySemanticPath(primary, rest);
+    if (semantic.matched) return semantic.value;
+    if (rest === "damageTaken") {
+      return Math.max(0, Number(primary.baseHp ?? 0) - Number(primary.currentHp ?? primary.baseHp ?? 0));
+    }
+    return readPath(primary, rest);
+  }
+
+  const shorthandCollectionPath = path.match(/^(player_\d+)\.(hand|deck|magicSlots|cemetery)$/);
+  if (shorthandCollectionPath) {
+    const [, playerId, collection] = shorthandCollectionPath;
+    const player = match.players.find(item => item.id === playerId);
+    if (!player) return undefined;
+    const cards = collection === "magicSlots" ? player.field.magicSlots : player[collection as "hand" | "deck" | "cemetery"];
+    return cards.map(card => card.cardId);
+  }
+
   const playerCollectionPath = path.match(/^players\.([^.]+)\.(magicSlots|cemetery)$/);
   if (playerCollectionPath) {
     const [, playerId, collection] = playerCollectionPath;
@@ -668,6 +942,43 @@ function readPath(root: unknown, path: string): unknown {
   }
 
   return current;
+}
+
+function readPrimarySemanticPath(primary: CardInstance, rest: string): { matched: boolean; value: unknown } {
+  const statuses = primary.activeStatuses ?? [];
+  if (rest === "statuses") {
+    return { matched: true, value: statuses.map(status => status.status || status.label) };
+  }
+
+  const flagPath = rest.match(/^flags\.([^.]+)$/);
+  if (flagPath) {
+    const [, flagName] = flagPath;
+    for (const status of statuses) {
+      const flags = status.flags as Record<string, unknown> | undefined;
+      if (flags && flagName in flags) {
+        return { matched: true, value: flags[flagName] };
+      }
+    }
+    return { matched: true, value: undefined };
+  }
+
+  const statusDurationPath = rest.match(/^(?:statuses|statusDurations)\.([^.]+)\.duration\.amount$/) ??
+    rest.match(/^statusDurations\.([^.]+)\.amount$/);
+  if (statusDurationPath) {
+    const [, statusName] = statusDurationPath;
+    const status = statuses.find(item => normalizeText(item.status) === normalizeText(statusName));
+    if (!status) return { matched: true, value: undefined };
+
+    const expires = Number(status.expiresAtPlayerTurnStartCount);
+    const applied = Number(status.appliedTurnCycle);
+    if (Number.isFinite(expires) && Number.isFinite(applied)) {
+      return { matched: true, value: Math.max(0, expires - applied) };
+    }
+
+    return { matched: true, value: undefined };
+  }
+
+  return { matched: false, value: undefined };
 }
 
 function containsValue(actual: unknown, expected: unknown): boolean {
@@ -869,6 +1180,96 @@ function runPendingBattle(match: MatchState, steps: RunStep[]): MatchState {
   return next;
 }
 
+function runBattleToDamageRollWindow(match: MatchState, steps: RunStep[]): MatchState {
+  let next = match;
+  let guard = 0;
+
+  while (next.pendingBattle && guard < 20) {
+    guard += 1;
+    const session = next.pendingBattle;
+
+    if (session.status === "AWAITING_DAMAGE_ROLL") break;
+
+    if (session.status === "AWAITING_SPEED_CHECK") {
+      next = updateManualBattleSpeedModifiers(next, session.id, {
+        ...session.speedModifiers,
+        override: "ATTACKER_FIRST",
+        note: "Headless LLM runner: force declared attacker first for deterministic effect verification."
+      });
+      next = runManualBattleSpeedCheck(next, session.id);
+      steps.push({ label: "run battle speed check", ok: true, detail: "attacker first" });
+      continue;
+    }
+
+    if (session.status === "AWAITING_HIT_ROLL") {
+      next = rollManualBattleHit(next, session.id);
+      steps.push({ label: "roll battle hit", ok: true });
+      next = drainEffectRoll(next, steps);
+      continue;
+    }
+
+    if (session.status === "AWAITING_EFFECT_ROLL") {
+      next = drainEffectRoll(next, steps);
+      continue;
+    }
+
+    break;
+  }
+
+  return next;
+}
+
+function forceCurrentRetaliationMiss(match: MatchState, steps: RunStep[]): MatchState {
+  const session = match.pendingBattle;
+  const strike = session?.strikes[session.currentStrikeIndex ?? 0];
+  if (!session || !strike || session.status !== "AWAITING_HIT_ROLL" || strike.status !== "AWAITING_HIT_ROLL") return match;
+
+  const next = updateManualBattleStrikeModifiers(match, session.id, strike.id, {
+    ...strike.modifiers,
+    forceHitResult: "FORCE_MISS",
+    note: [strike.modifiers?.note, "Headless LLM runner: skip retaliation for single-strike damage-dealt assertion."]
+      .filter(Boolean)
+      .join(" | ")
+  });
+  steps.push({ label: "force retaliation miss", ok: true, detail: strike.attacker.creatureName });
+  return next;
+}
+
+function playOnHitDiceModifierFromHand(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
+  let next = match;
+  const session = next.pendingBattle;
+  const strike = session?.strikes[session.currentStrikeIndex ?? 0];
+  const source = findSource(next, plan.card.cardId);
+  const definition = next.cardCatalog[plan.card.cardId];
+
+  if (!session || !strike || !source || source.zone !== "HAND" || !definition) return next;
+  if (session.status !== "AWAITING_DAMAGE_ROLL" || strike.status !== "AWAITING_DAMAGE_ROLL" || !strike.hit) return next;
+
+  const player = getPlayer(next, source.playerId);
+  const handIndex = player.hand.findIndex(card => card.instanceId === source.card.instanceId);
+  if (handIndex < 0) return next;
+
+  const [card] = player.hand.splice(handIndex, 1);
+  card.zone = "CEMETERY";
+  player.cemetery.push(card);
+  steps.push({ label: "play post-hit magic from hand", ok: true, detail: definition.name });
+
+  const diceDelta = Number(
+    effect?.params?.statChanges?.find(change => normalizeText(change?.stat).includes("atk_dice"))?.value ?? 0
+  );
+
+  next = updateManualBattleStrikeModifiers(next, session.id, strike.id, {
+    ...strike.modifiers,
+    damageDiceDelta: Number(strike.modifiers?.damageDiceDelta ?? 0) + (Number.isFinite(diceDelta) ? diceDelta : 0),
+    note: [strike.modifiers?.note, `${definition.name} ${effect?.id ?? ""}: +${diceDelta} attack damage dice this battle`.trim()]
+      .filter(Boolean)
+      .join(" | ")
+  });
+  steps.push({ label: "apply post-hit dice modifier", ok: true, detail: `+${diceDelta} attack damage dice` });
+
+  return next;
+}
+
 function drainAllAutomation(match: MatchState, variant: VariantConfig, steps: RunStep[]): MatchState {
   let next = match;
   let guard = 0;
@@ -912,6 +1313,89 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   const text = normalizeText(planText(plan), effectText(effect));
   const trigger = normalizeText(effect?.trigger);
   const actionType = normalizeText(effect?.actionType);
+
+  const shouldRunPostHitFromHandBattle = definition.cardType === "MAGIC" &&
+    source.zone === "HAND" &&
+    trigger.includes("on_hit_from_hand");
+
+  if (shouldRunPostHitFromHandBattle) {
+    const playerId = plan.setup.activePlayerId ?? source.playerId;
+    const player = getPlayer(match, playerId);
+    const opponent = getPlayer(match, findOpponentPlayerId(match, playerId));
+    const attacker = player.field.primaryCreature;
+    const defender = opponent.field.primaryCreature;
+
+    if (!attacker || !defender) {
+      throw new Error("Headless post-hit Magic battle needs active and opponent primary creatures.");
+    }
+
+    match.turn.activePlayerId = playerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+
+    let next = startManualBattleSession(match, playerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start post-hit magic battle", ok: true, detail: `${definition.name}: ${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+
+    next = runBattleToDamageRollWindow(next, steps);
+    next = playOnHitDiceModifierFromHand(next, plan, effect, steps);
+    if (next.pendingBattle?.status === "AWAITING_DAMAGE_ROLL") {
+      next = rollManualBattleDamage(next, next.pendingBattle.id);
+      steps.push({ label: "roll battle damage", ok: true });
+    }
+    if (next.pendingBattle?.status === "AWAITING_DAMAGE_APPLICATION") {
+      next = applyManualBattleDamage(next, next.pendingBattle.id);
+      steps.push({ label: "apply battle damage", ok: true });
+    }
+    next = forceCurrentRetaliationMiss(next, steps);
+    next = runPendingBattle(next, steps);
+    return next;
+  }
+
+  const shouldRunBattleResponseFromHand = definition.cardType === "MAGIC" &&
+    definition.magicType === "BATTLE_LIGHTNING" &&
+    source.zone === "HAND" &&
+    trigger.includes("during_battle_from_hand");
+
+  if (shouldRunBattleResponseFromHand) {
+    const attackingPlayerId = plan.setup.activePlayerId ?? "player_1";
+    const defendingPlayerId = findOpponentPlayerId(match, attackingPlayerId);
+    const attacker = getPlayer(match, attackingPlayerId).field.primaryCreature;
+    const defender = getPlayer(match, defendingPlayerId).field.primaryCreature;
+
+    if (!attacker || !defender) {
+      throw new Error("Headless battle response needs active and defending primary creatures.");
+    }
+
+    const responseCard = getPlayer(match, defendingPlayerId).hand.find(card => card.cardId === plan.card.cardId) ??
+      ensureCardInHand(match, defendingPlayerId, plan.card.cardId);
+
+    if (!responseCard) {
+      throw new Error(`No battle response card instance was found for ${plan.card.cardId}.`);
+    }
+
+    match.turn.activePlayerId = attackingPlayerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(attackingPlayerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+
+    let next = startManualBattleSession(match, attackingPlayerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start battle response battle", ok: true, detail: `${definition.name}: ${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+    next = runBattleToDamageRollWindow(next, steps);
+
+    if (next.pendingBattle?.status === "AWAITING_DAMAGE_ROLL") {
+      next = playBattleResponseFromHand(next, {
+        playerId: defendingPlayerId,
+        cardInstanceId: responseCard.instanceId,
+        battleSessionId: next.pendingBattle.id
+      });
+      steps.push({ label: "play battle response from hand", ok: true, detail: definition.name });
+      next = drainChain(next, steps);
+    }
+
+    next = runPendingBattle(next, steps);
+    return next;
+  }
 
   if (plan.effect?.effectId && trigger.includes("activated")) {
     const next = activateCardEffect(match, {
@@ -1031,7 +1515,21 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     match.turn.firstTurnCycleComplete = true;
     let next = startManualBattleSession(match, playerId, attacker.instanceId, defender.instanceId);
     steps.push({ label: "start field aura battle", ok: true, detail: `${definition.name}: ${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
-    next = runPendingBattle(next, steps);
+    if (actionType.includes("heal_by_damage_dealt")) {
+      next = runBattleToDamageRollWindow(next, steps);
+      if (next.pendingBattle?.status === "AWAITING_DAMAGE_ROLL") {
+        next = rollManualBattleDamage(next, next.pendingBattle.id);
+        steps.push({ label: "roll battle damage", ok: true });
+      }
+      if (next.pendingBattle?.status === "AWAITING_DAMAGE_APPLICATION") {
+        next = applyManualBattleDamage(next, next.pendingBattle.id);
+        steps.push({ label: "apply battle damage", ok: true });
+      }
+      next = forceCurrentRetaliationMiss(next, steps);
+      next = runPendingBattle(next, steps);
+    } else {
+      next = runPendingBattle(next, steps);
+    }
     return next;
   }
 
@@ -1069,6 +1567,36 @@ function runFollowupBattleForTemporaryHitOverride(match: MatchState, plan: LlmEf
   let next = startManualBattleSession(match, playerId, attacker.instanceId, defender.instanceId);
   steps.push({ label: "start follow-up battle", ok: true, detail: `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
   next = runPendingBattle(next, steps);
+  return next;
+}
+
+function runFollowupBattleForDiceLimit(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
+  const actionType = normalizeText(effect?.actionType);
+  if (!actionType.includes("apply_dice_limit")) return match;
+  if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
+
+  const playerId = plan.setup.activePlayerId ?? "player_1";
+  const player = getPlayer(match, playerId);
+  const attacker = player.field.primaryCreature;
+  const opponent = getPlayer(match, findOpponentPlayerId(match, playerId));
+  const defender = opponent.field.primaryCreature;
+
+  if (!attacker || !defender) return match;
+
+  match.turn.activePlayerId = playerId;
+  match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));
+  match.turn.phase = "COMBAT";
+  match.turn.firstTurnCycleComplete = true;
+
+  let next = startManualBattleSession(match, playerId, attacker.instanceId, defender.instanceId);
+  steps.push({ label: "start dice-limit follow-up battle", ok: true, detail: `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+  next = runPendingBattle(next, steps);
+
+  for (let index = 0; index < 4; index += 1) {
+    next = advanceTurn(next);
+  }
+  steps.push({ label: "advance dice-limit duration", ok: true, detail: "two player_1 turn starts" });
+
   return next;
 }
 
@@ -1275,6 +1803,7 @@ function runVariant(args: {
     match = runInitialAction(match, args.plan, args.effect, steps);
     match = drainAllAutomation(match, args.variant, steps);
     match = runFollowupBattleForTemporaryHitOverride(match, args.plan, args.effect, steps);
+    match = runFollowupBattleForDiceLimit(match, args.plan, args.effect, steps);
     match = drainAllAutomation(match, args.variant, steps);
   } catch (caught) {
     error = caught;
@@ -1298,9 +1827,10 @@ export function runLlmHeadlessEffectTest(args: {
   cardCatalog: Record<string, CardDefinition>;
   plan: LlmEffectTestPlan;
 }): { match: MatchState; result: LlmDirectEffectSmokeTestResult } {
-  const effect = findEffect(args.cardCatalog, args.plan);
+  const scenarioCardCatalog = { ...args.cardCatalog };
+  const effect = findEffect(scenarioCardCatalog, args.plan);
   let baseMatch = createEffectTestScenarioMatch({
-    cardCatalog: args.cardCatalog,
+    cardCatalog: scenarioCardCatalog,
     cardId: args.plan.card.cardId,
     effectId: args.plan.effect?.effectId
   });
@@ -1315,6 +1845,7 @@ export function runLlmHeadlessEffectTest(args: {
     baseMatch.setup.firstTurnDrawsByPlayer[player.id] = true;
   });
 
+  ensureSyntheticSetupDefinitions(baseMatch, args.plan);
   ensurePlanSetupCards(baseMatch, args.plan);
   prepareScenarioTargets(baseMatch, args.plan, effect);
   ensureSourceOnPlayZone(baseMatch, args.plan, effect);

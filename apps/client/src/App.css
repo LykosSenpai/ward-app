@@ -547,10 +547,19 @@
   margin-bottom: 0.65rem;
 }
 
+.effect-dev-card-picker-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .effect-dev-card-picker .effect-dev-card-list {
   flex: 1;
-  min-height: 260px;
+  min-height: 0;
   max-height: none;
+  overflow-y: auto;
 }
 
 .effect-dev-selected-action-card {
@@ -1007,9 +1016,10 @@
 
 .effect-dev-option-a-card-picker .effect-dev-card-list {
   flex: 1;
-  min-height: 220px;
+  min-height: 0;
   max-height: none;
   gap: 0.35rem;
+  overscroll-behavior: contain;
 }
 
 .effect-dev-option-a-card-picker .effect-dev-card-select {
