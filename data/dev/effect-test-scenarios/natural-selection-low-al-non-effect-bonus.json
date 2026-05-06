@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_016_natural_selection",
+  "effectId": "016-E01",
+  "title": "Natural Selection buffs low AL non-effect creatures",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_016_natural_selection",
+      "cardName": "Natural Selection",
+      "cardType": "MAGIC",
+      "cardNumber": "016",
+      "generation": "2",
+      "rawText": "Only affects non-effect creatures of AL 5 or less. Atk: +7. Hit: +7."
+    },
+    "effect": {
+      "effectId": "016-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Non-effect creatures with AL 5 or less",
+      "value": "Atk +7; Hit +7",
+      "durationText": "While field effect is active",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Natural Selection buffs low AL non-effect creatures",
+    "summary": "Play Natural Selection as field magic and verify an eligible low-AL non-effect creature receives the printed Atk and Hit bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_016_natural_selection",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 because it has no card effects and base AL 3."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Natural Selection as field magic.",
+      "Run a follow-up battle with the eligible primary creature attacking.",
+      "Inspect hit roll modifier and damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hit roll modifier increased by 7",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 7
+      },
+      {
+        "label": "Attack damage includes the +7 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 8
+      },
+      {
+        "label": "Natural Selection remains in magic slot",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_016_natural_selection"
+      }
+    ],
+    "manualVerification": [
+      "Confirm creatures with card effects or AL above 5 do not receive this aura."
+    ],
+    "riskNotes": [
+      "This fixture validates the positive eligible case for the printed restriction."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Natural Selection field aura for eligible creatures."
+    },
+    "regression": {
+      "fixtureName": "natural-selection-low-al-non-effect-bonus",
+      "tags": [
+        "magic",
+        "field",
+        "stat-modifier",
+        "atk",
+        "hit"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

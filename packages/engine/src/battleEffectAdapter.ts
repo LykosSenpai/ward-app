@@ -180,11 +180,19 @@ function getBattleCreatures(session: PendingBattleSession): BattleCreatureRef[] 
 }
 
 function sourceAppliesToCreature(
+  state: MatchState,
   source: ActiveBattleSource,
   effect: WardEngineEffect,
   creature: BattleCreatureRef
 ): boolean {
   const text = effectSearchText(effect);
+  const creatureCard = state.players
+    .flatMap(player => [
+      player.field.primaryCreature,
+      ...player.field.limitedSummons
+    ])
+    .find(card => card?.instanceId === creature.creatureInstanceId);
+  const creatureDefinition = creatureCard ? state.cardCatalog[creatureCard.cardId] : undefined;
 
   if (source.card.attachedToInstanceId) {
     return source.card.attachedToInstanceId === creature.creatureInstanceId;
@@ -207,6 +215,21 @@ function sourceAppliesToCreature(
   }
 
   if (text.includes("all creature") || text.includes("both creature") || text.includes("each creature")) {
+    return true;
+  }
+
+  if (text.includes("non-effect creature") || text.includes("non effect creature")) {
+    if (creatureDefinition?.cardType !== "CREATURE") return false;
+    if (creatureDefinition.effects?.length) return false;
+
+    const alLimitMatch = text.match(/al\s*(?:<=|=|of|under|or less|less than or equal to)?\s*(\d+)/i);
+    const baseAlLimitMatch = text.match(/base\s+al\s*(?:<=|=|of|under|or less|less than or equal to)?\s*(\d+)/i);
+    const limit = Number(baseAlLimitMatch?.[1] ?? alLimitMatch?.[1]);
+
+    if (Number.isFinite(limit) && creatureDefinition.armorLevel > limit) {
+      return false;
+    }
+
     return true;
   }
 
@@ -405,12 +428,13 @@ function suggestionsFromActiveEffectInstance(
 }
 
 function suggestionFromEffect(
+  state: MatchState,
   source: ActiveBattleSource,
   effect: WardEngineEffect,
   creature: BattleCreatureRef,
   index: number
 ): BattleEffectSuggestion | BattleEffectSuggestion[] | undefined {
-  if (!sourceAppliesToCreature(source, effect, creature)) return undefined;
+  if (!sourceAppliesToCreature(state, source, effect, creature)) return undefined;
 
   const text = effectSearchText(effect);
   const actionType = getRuntimeBlockActionType(effect).trim().toUpperCase();
@@ -658,7 +682,7 @@ export function collectBattleEffectSuggestions(
       const effect = effects[effectIndex];
 
       for (const creature of battleCreatures) {
-        const suggestion = suggestionFromEffect(source, effect, creature, effectIndex);
+        const suggestion = suggestionFromEffect(state, source, effect, creature, effectIndex);
         if (Array.isArray(suggestion)) {
           suggestions.push(...suggestion);
         } else if (suggestion) {
