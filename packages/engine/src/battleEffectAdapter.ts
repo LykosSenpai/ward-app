@@ -231,6 +231,10 @@ function sourceAppliesToCreature(
     return creatureDefinition?.cardType === "CREATURE" && creatureDefinition.creatureType.toLowerCase().includes("undead");
   }
 
+  if (text.includes("bug-type") || text.includes("bug type")) {
+    return creatureDefinition?.cardType === "CREATURE" && creatureDefinition.creatureType.toLowerCase().includes("bug");
+  }
+
   if (text.includes("humanoid-type") || text.includes("humanoid type")) {
     return creatureDefinition?.cardType === "CREATURE" && creatureDefinition.creatureType.toLowerCase().includes("humanoid");
   }

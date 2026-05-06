@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_031_orcs_vs_apes",
+  "effectId": "031-E02",
+  "title": "Orcs VS Apes doubles attack damage to Humanoid targets",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_031_orcs_vs_apes",
+      "cardName": "Orcs VS Apes",
+      "cardType": "MAGIC",
+      "cardNumber": "031",
+      "generation": "3",
+      "rawText": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field."
+    },
+    "effect": {
+      "effectId": "031-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "All creatures matching condition",
+      "value": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field.",
+      "durationText": "While on field",
+      "reusableFunction": "applyAttackDamageMultiplier"
+    },
+    "title": "Orcs VS Apes doubles attack damage to Humanoid targets",
+    "summary": "With Orcs VS Apes active as field magic, a creature attacking a Humanoid-type target deals 2x attack damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_031_orcs_vs_apes"
+      ],
+      "player2Cards": [
+        "test_orc_named_creature"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            4
+          ],
+          "label": "Attacker hit lands"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            3
+          ],
+          "label": "Base attack damage"
+        }
+      ],
+      "notes": [
+        "Pre-place Orcs VS Apes in an active field magic slot.",
+        "Use Test Orc Scout as player_2 primary Humanoid-type target.",
+        "Ensure not in first turn cycle."
+      ]
+    },
+    "steps": [
+      "Player 1 attacks Test Orc Scout while Orcs VS Apes is field-active.",
+      "Resolve hit and damage calculation.",
+      "Inspect damage event multiplier and defender HP loss."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Damage multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      },
+      {
+        "label": "Humanoid target took doubled attack damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 44
+      },
+      {
+        "label": "Field magic remains active",
+        "path": "players.player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_031_orcs_vs_apes"
+      }
+    ],
+    "manualVerification": [
+      "Confirm non-Humanoid targets are not doubled in a separate variant."
+    ],
+    "riskNotes": [
+      "This covers the multiplier effect 031-E02; 031-E01 is a duplicate damage parse of the same printed line."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Orcs VS Apes' Humanoid damage multiplier aura."
+    },
+    "regression": {
+      "fixtureName": "orcs-vs-apes-doubles-damage-to-humanoid-targets",
+      "tags": [
+        "magic",
+        "field",
+        "damage-multiplier",
+        "humanoid"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_031_orcs_vs_apes:031-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

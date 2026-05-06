@@ -2330,7 +2330,7 @@
       "effects": [
         {
           "id": "031-E01",
-          "trigger": "STATIC_WHILE_ON_FIELD",
+          "trigger": "WHILE_FIELD_ACTIVE",
           "condition": {
             "type": "TEXT",
             "text": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field."
@@ -2374,19 +2374,19 @@
             "type": "TEXT",
             "text": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field."
           },
-          "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
-          "effectGroup": "Damage Multiplier",
-          "actionText": "Apply attack damage multiplier",
-          "target": "All creatures matching condition",
-          "value": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field.",
+          "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
+          "effectGroup": "Damage Multiplier Aura",
+          "actionText": "Multiply Atk damage",
+          "target": "Humanoid-type creatures",
+          "value": "2x Atk damage",
           "duration": {
             "text": "While on field",
             "type": "WHILE_ON_FIELD"
           },
           "reusableFunction": "applyAttackDamageMultiplier",
           "params": {
-            "target": "All creatures matching condition",
-            "valueText": "All creatures inflict 2x Atk damage to Humanoid-type creatures on the field.",
+            "target": "Humanoid-type creatures",
+            "valueText": "2x Atk damage",
             "statChanges": [],
             "condition": {
               "type": "TEXT",
@@ -2401,9 +2401,10 @@
             "usesAnchoring": false,
             "roundingMode": null,
             "stackRule": null,
-            "tickTiming": null
+            "tickTiming": null,
+            "multiplier": 2
           },
-          "notes": "",
+          "notes": "Field aura damage multiplier against Humanoid-type creatures.",
           "needsReview": false
         }
       ],
