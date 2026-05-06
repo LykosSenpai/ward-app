@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_117_holy_water",
+  "effectId": "117-E01",
+  "title": "Holy Water doubles attack damage to Undead targets",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_117_holy_water",
+      "cardName": "Holy Water",
+      "cardType": "MAGIC",
+      "cardNumber": "117",
+      "generation": "1",
+      "rawText": "All creatures inflict 2x Atk damage to Undead-type creatures on the field."
+    },
+    "effect": {
+      "effectId": "117-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
+      "effectGroup": "Damage Multiplier Aura",
+      "target": "All creatures attacking Undead targets",
+      "value": "2x Atk damage",
+      "durationText": "While field active",
+      "reusableFunction": "applyConditionalDamageMultiplierAura"
+    },
+    "title": "Holy Water doubles attack damage to Undead targets",
+    "summary": "With Holy Water active as field magic, a creature attacking an Undead-type target deals 2x attack damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_117_holy_water"
+      ],
+      "player2Cards": [
+        "gen1_013_skeleton"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            4
+          ],
+          "label": "Attacker hit lands"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            3
+          ],
+          "label": "Base attack damage"
+        }
+      ],
+      "notes": [
+        "Pre-place Holy Water in an active field magic slot.",
+        "Use Skeleton as player_2 primary Undead target.",
+        "Ensure not in first turn cycle."
+      ]
+    },
+    "steps": [
+      "Player 1 attacks Skeleton while Holy Water is field-active.",
+      "Resolve hit and damage calculation.",
+      "Inspect damage event multiplier and defender HP loss."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Damage multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      },
+      {
+        "label": "Undead target took doubled attack damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 24
+      },
+      {
+        "label": "Field magic remains active",
+        "path": "players.player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_117_holy_water"
+      }
+    ],
+    "manualVerification": [
+      "Confirm non-Undead targets are not doubled in a separate variant."
+    ],
+    "riskNotes": [
+      "This mirrors the Dragon's Bane field-aura route with an Undead target predicate."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Holy Water's Undead damage multiplier aura."
+    },
+    "regression": {
+      "fixtureName": "holy-water-doubles-damage-to-undead-targets",
+      "tags": [
+        "magic",
+        "field",
+        "damage-multiplier",
+        "undead"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
