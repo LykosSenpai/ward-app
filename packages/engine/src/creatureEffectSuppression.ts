@@ -26,6 +26,9 @@ export function areCreatureEffectsSuppressed(state: MatchState, card: CardInstan
   return Boolean(
     card.isLimitedSummon ||
     card.effectsSuppressed ||
+    card.activeEffectInstances?.some(instance =>
+      String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_CREATURE_EFFECT_NEGATION"
+    ) ||
     hasActiveSilenceReplacementSuppression(state, card) ||
     isGlobalCreatureEffectNegationActive(state) ||
     isCreatureSuppressedBySilenceFromTheGrave(state, card)

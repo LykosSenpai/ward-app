@@ -220,6 +220,7 @@ export function effectShouldResolveWhenCardIsPlayed(effect: WardEngineEffect): b
     trigger === "ON_RESOLVE" ||
     trigger === "ON_MAGIC_RESOLVES" ||
     trigger === "ON_OPPONENT_PLAYS_MAGIC" ||
+    actionType === "APPLY_CREATURE_EFFECT_NEGATION" ||
     actionType === "APPLY_FORCED_FIRST_AUTO_HIT_MULTIPLIER"
   );
 }

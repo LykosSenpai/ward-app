@@ -11,6 +11,7 @@ import type {
 } from "@ward/shared";
 import { calculateCemeteryCreatureHp } from "./cemetery.js";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
+import { removeActiveEffectInstancesFromSource } from "./activeEffectInstances.js";
 import { getCardDefinition, getPlayer, type AddEventFn } from "./engineRuntime.js";
 import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
 import { moveFieldCreatureToCemetery } from "./fieldRemoval.js";
@@ -201,6 +202,14 @@ export function moveMagicSlotCardToCemetery(
   ownerPlayer.cemeteryCreatureHpTotal = calculateCemeteryCreatureHp(ownerPlayer);
 
   removeStatModifiersFromSourceCard(state, magicCard.instanceId);
+  for (const player of state.players) {
+    if (player.field.primaryCreature) {
+      removeActiveEffectInstancesFromSource(player.field.primaryCreature, magicCard.instanceId);
+    }
+    for (const creature of player.field.limitedSummons) {
+      removeActiveEffectInstancesFromSource(creature, magicCard.instanceId);
+    }
+  }
 
   const triggerResult = runCardRemovedFromFieldTriggers(state, {
     removedCard: magicCard,

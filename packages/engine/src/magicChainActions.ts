@@ -89,7 +89,8 @@ function noTargetPromptShouldResolveWithoutManual(effect: WardEngineEffect): boo
   const actionType = effect.actionType.trim().toUpperCase();
   const text = linkEffectText(effect);
 
-  return actionType === "SEARCH_DECK_TO_HAND" || (
+  return actionType === "APPLY_CREATURE_EFFECT_NEGATION" ||
+    actionType === "SEARCH_DECK_TO_HAND" || (
     actionType === "MOVE_CARD" &&
     text.includes("deck") &&
     text.includes("hand")

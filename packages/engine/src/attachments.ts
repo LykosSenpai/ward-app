@@ -1,6 +1,7 @@
 import type { MatchState } from "@ward/shared";
 import { calculateCemeteryCreatureHp } from "./cemetery.js";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
+import { removeActiveEffectInstancesFromSource } from "./activeEffectInstances.js";
 
 type AddEventFn = (
   state: MatchState,
@@ -51,6 +52,14 @@ export function moveAttachedMagicCardsToCemeteryForCreature(
         calculateCemeteryCreatureHp(ownerPlayer);
 
       removeStatModifiersFromSourceCard(state, magicCard.instanceId);
+      for (const player of state.players) {
+        if (player.field.primaryCreature) {
+          removeActiveEffectInstancesFromSource(player.field.primaryCreature, magicCard.instanceId);
+        }
+        for (const creature of player.field.limitedSummons) {
+          removeActiveEffectInstancesFromSource(creature, magicCard.instanceId);
+        }
+      }
 
       addEvent?.(state, "ATTACHED_MAGIC_SENT_TO_CEMETERY", fieldOwner.id, {
         magicCardInstanceId: magicCard.instanceId,

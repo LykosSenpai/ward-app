@@ -3,6 +3,8 @@ import type {
   ActiveCreatureStatus,
   ActiveEffectInstance,
   ActiveRecurringCreatureEffect,
+  CardDefinition,
+  CardInstance,
   EffectTargetOption,
   MatchState,
   PendingEffectTargetPrompt,
@@ -38,6 +40,7 @@ import { getEffectResolutionMode } from "./effectRegistry.js";
 import { isAutomaticMagicEffectSupported, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
 import { resolveEffectProgramTargetPrompt } from "./effectProgramRunner.js";
 import { getRuntimeBlockDurationData, getRuntimeBlockDurationText, getRuntimeBlockText, getRuntimeBlockValueText } from "./effectBlockRuntime.js";
+import { returnLinkedSummonsForInvalidatedSource } from "./triggers.js";
 export { effectNeedsSingleMagicSlotTargetPrompt } from "./effectRegistry.js";
 
 export type ChainLinkEffectSource = {
@@ -46,6 +49,71 @@ export type ChainLinkEffectSource = {
   cardName: string;
   playerId: string;
 };
+
+function isCreatureTargetKind(kind: string): boolean {
+  return kind === "PRIMARY_CREATURE" || kind === "LIMITED_SUMMON" || kind === "ANY_CREATURE";
+}
+
+function creatureDefinitionHasMagicImmunity(definition: CardDefinition | undefined): boolean {
+  if (!definition || definition.cardType !== "CREATURE") return false;
+
+  const effectText = (definition.effects ?? [])
+    .flatMap(effect => [
+      effect.actionType,
+      effect.effectGroup,
+      effect.actionText,
+      effect.target,
+      effect.value,
+      effect.params?.target,
+      effect.params?.valueText,
+      effect.notes
+    ])
+    .filter(Boolean)
+    .join(" ");
+  const text = `${definition.text ?? ""} ${effectText}`.toLowerCase();
+
+  return (
+    (text.includes("unaffected") || text.includes("not affected") || text.includes("immune")) &&
+    text.includes("magic")
+  );
+}
+
+function isSummonResponseWindowForTarget(state: MatchState, targetInstanceId: string): boolean {
+  const window = state.setup.summonResponseWindow;
+  if (!window) return false;
+
+  return window.creatureInstanceId === targetInstanceId &&
+    window.openedTurnNumber === state.turn.turnNumber &&
+    window.openedTurnCycle === state.turn.turnCycleNumber &&
+    window.openedPhase === state.turn.phase;
+}
+
+function filterMagicImmuneCreatureTargetOptions(
+  state: MatchState,
+  link: ChainLinkEffectSource,
+  effect: WardEngineEffect,
+  targetKind: string,
+  options: EffectTargetOption[]
+): EffectTargetOption[] {
+  const sourceDefinition = state.cardCatalog[link.cardId];
+  if (sourceDefinition?.cardType !== "MAGIC" || !isCreatureTargetKind(targetKind)) {
+    return options;
+  }
+
+  const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+  const canUseSummonResponseWindow = actionType === "APPLY_CREATURE_EFFECT_NEGATION";
+
+  return options.filter(option => {
+    if (!option.cardInstanceId || !option.cardId) return true;
+    if (option.playerId === link.playerId) return true;
+
+    const targetDefinition = state.cardCatalog[option.cardId];
+    if (!creatureDefinitionHasMagicImmunity(targetDefinition)) return true;
+
+    return canUseSummonResponseWindow &&
+      isSummonResponseWindowForTarget(state, option.cardInstanceId);
+  });
+}
 
 function getOpponentPlayerId(state: MatchState, playerId: string): string | undefined {
   return state.players.find(player => player.id !== playerId)?.id;
@@ -66,7 +134,8 @@ function noTargetPromptShouldResolveWithoutManual(effect: WardEngineEffect): boo
   const actionType = String(effect.actionType ?? "").trim().toUpperCase();
   const text = effectText(effect).toLowerCase();
 
-  return actionType === "SEARCH_DECK_TO_HAND" || (
+  return actionType === "APPLY_CREATURE_EFFECT_NEGATION" ||
+    actionType === "SEARCH_DECK_TO_HAND" || (
     actionType === "MOVE_CARD" &&
     text.includes("deck") &&
     text.includes("hand")
@@ -305,6 +374,206 @@ function getCreatureFromTargetOption(state: MatchState, option: EffectTargetOpti
   }
 
   throw new Error(`Selected option is not a creature target: ${selected.targetKind}`);
+}
+
+function takeCardInstanceFromZones(
+  state: MatchState,
+  cardInstanceId: string
+): { playerId: string; card: CardInstance } | undefined {
+  const chainIndex = state.chainZone.findIndex(card => card.instanceId === cardInstanceId);
+  if (chainIndex >= 0) {
+    const [card] = state.chainZone.splice(chainIndex, 1);
+    return { playerId: card.controllerPlayerId, card };
+  }
+
+  for (const player of state.players) {
+    const zones = [
+      player.hand,
+      player.deck,
+      player.cemetery,
+      player.removedFromGame,
+      player.field.magicSlots,
+      player.field.limitedSummons
+    ];
+
+    for (const zone of zones) {
+      const index = zone.findIndex(card => card.instanceId === cardInstanceId);
+      if (index >= 0) {
+        const [card] = zone.splice(index, 1);
+        return { playerId: player.id, card };
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function applyCreatureEffectNegationEquip(
+  state: MatchState,
+  prompt: PendingEffectTargetPrompt,
+  selectedOption: EffectTargetOption,
+  effect: WardEngineEffect
+): void {
+  const target = getCreatureFromTargetOption(state, selectedOption);
+  const controller = getPlayer(state, prompt.controllerPlayerId);
+
+  if (controller.field.magicSlots.length >= 5) {
+    throw new Error(`${controller.displayName} already has 5 Magic Slot cards and cannot equip this card.`);
+  }
+
+  const source = takeCardInstanceFromZones(state, prompt.sourceCardInstanceId);
+  if (!source) {
+    throw new Error("The source Magic card for this creature effect negation was not found.");
+  }
+
+  const sourceDefinition = getCardDefinition(state, source.card);
+  if (sourceDefinition.cardType !== "MAGIC") {
+    throw new Error("The source card for this creature effect negation is not a Magic card.");
+  }
+
+  source.card.zone = "MAGIC_SLOT";
+  source.card.controllerPlayerId = prompt.controllerPlayerId;
+  source.card.attachedToInstanceId = target.card.instanceId;
+  controller.field.magicSlots.push(source.card);
+
+  target.card.activeEffectInstances ??= [];
+  target.card.activeEffectInstances = target.card.activeEffectInstances.filter(instance => !(
+    instance.sourceCardInstanceId === source.card.instanceId &&
+    instance.sourceEffectId === effect.id
+  ));
+  target.card.activeEffectInstances.push({
+    id: uuidv4(),
+    kind: "STATIC_MODIFIER",
+    sourceEffectId: effect.id,
+    sourceCardInstanceId: source.card.instanceId,
+    sourceCardName: sourceDefinition.name,
+    sourcePlayerId: prompt.controllerPlayerId,
+    targetPlayerId: target.player.id,
+    targetCardInstanceId: target.card.instanceId,
+    targetCardName: target.definition.name,
+    actionType: "APPLY_CREATURE_EFFECT_NEGATION",
+    label: effect.value ?? effect.actionText ?? "Effects negated",
+    durationType: "WHILE_EQUIPPED",
+    durationText: effect.duration?.text ?? effect.params?.duration?.text ?? "While equipped",
+    sourceLinked: true,
+    expiresWhenSourceLeaves: true,
+    appliedTurnNumber: state.turn.turnNumber,
+    appliedTurnCycle: state.turn.turnCycleNumber,
+    debug: [
+      "Created by Mind Sap after its target creature was chosen.",
+      "Runtime suppression checks ignore this creature's effects while Mind Sap remains equipped."
+    ]
+  });
+
+  const behaviorEffect = state.cardCatalog[prompt.sourceCardId]?.effects?.find(item =>
+    String(item.actionType ?? "").trim().toUpperCase() === "SET_TEMPORARY_CARD_BEHAVIOR"
+  );
+  if (behaviorEffect) {
+    source.card.activeEffectInstances ??= [];
+    source.card.activeEffectInstances = source.card.activeEffectInstances.filter(instance => !(
+      instance.sourceCardInstanceId === source.card.instanceId &&
+      instance.sourceEffectId === behaviorEffect.id
+    ));
+    source.card.activeEffectInstances.push({
+      id: uuidv4(),
+      kind: "OTHER",
+      sourceEffectId: behaviorEffect.id,
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: sourceDefinition.name,
+      sourcePlayerId: prompt.controllerPlayerId,
+      targetPlayerId: prompt.controllerPlayerId,
+      targetCardInstanceId: source.card.instanceId,
+      targetCardName: sourceDefinition.name,
+      actionType: "SET_TEMPORARY_CARD_BEHAVIOR",
+      label: behaviorEffect.value ?? behaviorEffect.actionText ?? "Infinite equip behavior",
+      durationType: "WHILE_EQUIPPED",
+      durationText: behaviorEffect.duration?.text ?? behaviorEffect.params?.duration?.text ?? "While equipped",
+      sourceLinked: true,
+      expiresWhenSourceLeaves: true,
+      appliedTurnNumber: state.turn.turnNumber,
+      appliedTurnCycle: state.turn.turnCycleNumber,
+      debug: [
+        "Mind Sap acts as an Infinite Equip Magic card while equipped."
+      ]
+    });
+
+    addEvent(state, "MIND_SAP_TEMPORARY_INFINITE_EQUIP_BEHAVIOR_APPLIED", prompt.controllerPlayerId, {
+      promptId: prompt.id,
+      sourceCardName: prompt.sourceCardName,
+      sourceCardInstanceId: source.card.instanceId,
+      effectId: behaviorEffect.id,
+      actionType: behaviorEffect.actionType,
+      attachedToInstanceId: target.card.instanceId
+    });
+  }
+
+  const targetHasLinkedSummonCleanup = target.player.field.limitedSummons.length > 0 && (
+    target.player.field.limitedSummons.some(limited =>
+      limited.anchorSourceInstanceId === target.card.instanceId
+    ) ||
+    target.definition.effects?.some(item =>
+      String(item.actionType ?? "").trim().toUpperCase() === "RETURN_LINKED_SUMMON"
+    ) ||
+    target.card.cardId === "gen2_004_undead_king" ||
+    String(target.definition.name ?? "").trim().toLowerCase() === "undead king"
+  );
+  if (targetHasLinkedSummonCleanup) {
+    const returned = [];
+    for (let index = target.player.field.limitedSummons.length - 1; index >= 0; index -= 1) {
+      const limited = target.player.field.limitedSummons[index];
+      const limitedDefinition = getCardDefinition(state, limited);
+      target.player.field.limitedSummons.splice(index, 1);
+      const owner = getPlayer(state, limited.ownerPlayerId);
+      limited.zone = "CEMETERY";
+      limited.currentHp = 0;
+      limited.anchorSourceInstanceId = undefined;
+      owner.cemetery.push(limited);
+      owner.cemeteryCreatureHpTotal = calculateCemeteryCreatureHp(owner);
+      returned.push({
+        creatureInstanceId: limited.instanceId,
+        creatureName: limitedDefinition.name,
+        fieldOwnerPlayerId: target.player.id,
+        ownerPlayerId: owner.id
+      });
+      addEvent(state, "LINKED_LIMITED_SUMMON_DESTROYED", target.player.id, {
+        creatureInstanceId: limited.instanceId,
+        creatureName: limitedDefinition.name,
+        sourceCardInstanceId: target.card.instanceId,
+        fieldOwnerPlayerId: target.player.id,
+        ownerPlayerId: owner.id
+      });
+    }
+
+    if (returned.length > 0) {
+      addEvent(state, "SOURCE_LINKED_SUMMONS_RETURNED_TO_CEMETERY", prompt.controllerPlayerId, {
+        sourceCardInstanceId: target.card.instanceId,
+        sourceCardName: target.definition.name,
+        reason: "SOURCE_EFFECT_NEGATED_BY_MIND_SAP",
+        linkedDestroyedCreatures: returned
+      });
+    }
+  }
+
+  returnLinkedSummonsForInvalidatedSource(state, {
+    sourceCardInstanceId: target.card.instanceId,
+    sourceCardName: target.definition.name,
+    causedByPlayerId: prompt.controllerPlayerId,
+    reason: "SOURCE_EFFECT_NEGATED_BY_MIND_SAP",
+    addEvent
+  });
+
+  addEvent(state, "AUTO_EFFECT_CREATURE_EFFECT_NEGATION_EQUIPPED", prompt.controllerPlayerId, {
+    promptId: prompt.id,
+    sourceCardName: prompt.sourceCardName,
+    sourceCardInstanceId: source.card.instanceId,
+    effectId: effect.id,
+    actionType: effect.actionType,
+    targetPlayerId: target.player.id,
+    targetCreatureName: target.definition.name,
+    targetCreatureInstanceId: target.card.instanceId,
+    attachedToInstanceId: target.card.instanceId,
+    note: "The selected creature's effects are negated while this Equip Magic remains attached."
+  });
 }
 
 function applyStatusPromptEffect(
@@ -587,6 +856,14 @@ export function createEffectTargetPromptFromChainLink(
     throw new Error(`Effect ${effect.actionType} does not have a supported target prompt yet.`);
   }
 
+  const options = filterMagicImmuneCreatureTargetOptions(
+    state,
+    link,
+    effect,
+    targetQuery.kind,
+    getTargetOptionsForQuery(state, link.playerId, targetQuery)
+  );
+
   return {
     id: uuidv4(),
 
@@ -609,7 +886,7 @@ export function createEffectTargetPromptFromChainLink(
       "Choose a target for this effect.",
 
     targetKind: targetQuery.kind,
-    options: getTargetOptionsForQuery(state, link.playerId, targetQuery)
+    options
   };
 }
 
@@ -994,6 +1271,13 @@ export function resolvePendingEffectTargetPrompt(
 
     return nextState;
   }
+
+  if (prompt.actionType === "APPLY_CREATURE_EFFECT_NEGATION") {
+    applyCreatureEffectNegationEquip(nextState, prompt, selectedOption, effect);
+    clearCurrentPromptAndQueueNext(nextState, prompt);
+    return nextState;
+  }
+
   if (prompt.actionType === "SEND_TO_CEMETERY" || prompt.actionType === "SEND_TO_ORIGINAL_OWNER_CEMETERY") {
     const destinationOwnerPlayerId = prompt.actionType === "SEND_TO_ORIGINAL_OWNER_CEMETERY"
       ? selectedOption.cardInstanceId
@@ -1541,4 +1825,3 @@ export function resolvePendingEffectTargetPrompt(
 
   throw new Error(`Unsupported target prompt action: ${prompt.actionType}`);
 }
-

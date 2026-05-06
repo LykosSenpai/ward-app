@@ -978,6 +978,37 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
     moveFirstCreatureToCemetery(match, sourcePlayerId, plan.card.cardId);
   }
 
+  if (text.includes("undead king") && text.includes("linked limited")) {
+    setScenarioPrimaryCreature(match, opponentPlayerId, "gen2_004_undead_king", 50);
+    const opponent = getPlayer(match, opponentPlayerId);
+    const sourceCard = opponent.field.primaryCreature;
+    if (sourceCard && opponent.field.limitedSummons.every(card => card.anchorSourceInstanceId !== sourceCard.instanceId)) {
+      ensureCreatureTypeInCemetery(match, opponentPlayerId, "undead", plan.card.cardId);
+      createAnchoredLimitedSummon(match, opponentPlayerId, sourceCard.instanceId);
+    }
+    if (sourceCard) {
+      for (const limited of opponent.field.limitedSummons) {
+        limited.anchorSourceInstanceId = sourceCard.instanceId;
+      }
+    }
+  }
+
+  if (text.includes("magic-immune") || text.includes("magic immune")) {
+    setScenarioPrimaryCreature(match, opponentPlayerId, "gen3_095_fog", 50);
+    const opponent = getPlayer(match, opponentPlayerId);
+    const target = opponent.field.primaryCreature;
+    if (target && text.includes("summon response window") && !text.includes("do not keep")) {
+      match.setup.summonResponseWindow = {
+        playerId: opponentPlayerId,
+        creatureInstanceId: target.instanceId,
+        cardId: target.cardId,
+        openedTurnNumber: match.turn.turnNumber,
+        openedTurnCycle: match.turn.turnCycleNumber,
+        openedPhase: match.turn.phase
+      };
+    }
+  }
+
   ensureSearchTargetInDeck(match, sourcePlayerId, text, plan.card.cardId);
 }
 
@@ -987,7 +1018,12 @@ function ensureSourceOnPlayZone(match: MatchState, plan: LlmEffectTestPlan, effe
 
   const trigger = normalizeText(effect?.trigger);
   const actionText = normalizeText(effect?.actionType, effect?.actionText, effect?.effectGroup);
-  const shouldPlayFromHand = trigger.includes("on_play") || trigger.includes("when_played") || actionText.includes("on play");
+  const rawText = normalizeText(plan.card.rawText, plan.summary, plan.setup.notes);
+  const shouldPlayFromHand = trigger.includes("on_play") ||
+    trigger.includes("when_played") ||
+    trigger.includes("any_time_from_hand") ||
+    actionText.includes("on play") ||
+    rawText.includes("play this card from your hand");
   if (!shouldPlayFromHand) return;
 
   const source = findSource(match, plan.card.cardId);
@@ -1710,6 +1746,7 @@ function choosePromptOption(match: MatchState, strategy: VariantConfig["targetSt
   const options = [...prompt.options];
   const preferred = options.find(option => actionType.includes("damage") && option.playerId === opponentId) ??
     options.find(option => actionType.includes("heal") && option.playerId === sourcePlayerId) ??
+    options.find(option => actionType.includes("creature_effect_negation") && option.zone === "PRIMARY_CREATURE" && option.playerId === opponentId) ??
     options.find(option => text.includes("opponent") && option.playerId === opponentId) ??
     options.find(option => !text.includes("opponent") && option.playerId === sourcePlayerId) ??
     options.find(option => option.zone === "PRIMARY_CREATURE" && option.playerId === opponentId) ??
@@ -2205,10 +2242,10 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   const shouldRunMagicResponse = definition.cardType === "MAGIC" &&
     definition.magicType === "LIGHTNING" &&
     source.zone === "HAND" &&
+    !trigger.includes("any_time_from_hand") &&
     (
       trigger.includes("opponent_plays_magic") ||
-      text.includes("opponent plays a magic") ||
-      text.includes("lightning response")
+      text.includes("opponent plays a magic")
     );
 
   if (shouldRunMagicResponse) {

@@ -483,6 +483,14 @@ export type MatchSetupState = {
   firstTurnDrawsByPlayer: Record<string, boolean>;
   primaryReplacementRequiredForPlayerId?: string;
   handDiscardRequiredForPlayerId?: string;
+  summonResponseWindow?: {
+    playerId: string;
+    creatureInstanceId: string;
+    cardId: string;
+    openedTurnNumber: number;
+    openedTurnCycle: number;
+    openedPhase: TurnPhase;
+  };
   deckValidation: Record<string, DeckValidationResult>;
 };
 

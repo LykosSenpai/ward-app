@@ -159,6 +159,7 @@ export function advancePhase(state: MatchState): MatchState {
   if (nextPhase) {
     const nextState = cloneState(state);
     let phaseToEnter = nextPhase;
+    nextState.setup.summonResponseWindow = undefined;
 
     if (state.turn.phase === "SUMMON_MAGIC" && nextPhase === "COMBAT" && !state.turn.firstTurnCycleComplete) {
       phaseToEnter = "SECOND_MAGIC";

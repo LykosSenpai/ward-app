@@ -232,6 +232,15 @@ export function playCreatureFromHandAsPrimary(
     cemeteryCreatureHpTotal: player.cemeteryCreatureHpTotal
   });
 
+  nextState.setup.summonResponseWindow = {
+    playerId,
+    creatureInstanceId: targetCard.instanceId,
+    cardId: targetCard.cardId,
+    openedTurnNumber: nextState.turn.turnNumber,
+    openedTurnCycle: nextState.turn.turnCycleNumber,
+    openedPhase: nextState.turn.phase
+  };
+
   return nextState;
 }
 

@@ -643,6 +643,13 @@ export function inferTargetQueryForEffect(
   const text = effectText(effect);
   const controllerScope = inferControllerScope(text);
 
+  if (effect.actionType === "APPLY_CREATURE_EFFECT_NEGATION") {
+    return {
+      kind: text.includes("undead king") ? "PRIMARY_CREATURE" : "ANY_CREATURE",
+      controllerScope: text.includes("opponent") ? "OPPONENT" : controllerScope
+    };
+  }
+
   if (text.includes("equipped creature")) {
     return undefined;
   }

@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_084_mind_sap",
+  "effectId": "084-E01",
+  "title": "Mind Sap cannot target opponent magic-immune creature after summon window",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_084_mind_sap",
+      "cardName": "Mind Sap",
+      "cardType": "MAGIC",
+      "cardNumber": "084",
+      "generation": "1",
+      "rawText": "At any point during the game, play this card from your hand. Negate the equipped creature's effects. While equipped, this card acts as an Infinite equip magic card."
+    },
+    "effect": {
+      "effectId": "084-E01",
+      "trigger": "ANY_TIME_FROM_HAND",
+      "actionType": "APPLY_CREATURE_EFFECT_NEGATION",
+      "effectGroup": "Effect Negation",
+      "target": "Equipped creature",
+      "value": "Effects negated",
+      "durationText": "While equipped",
+      "reusableFunction": "applyCreatureEffectNegation"
+    },
+    "title": "Mind Sap cannot target opponent magic-immune creature after summon window",
+    "summary": "After the summon response window has closed, Mind Sap should not be able to choose an opponent creature that is unaffected by opponent magic cards, though it may still choose a legal non-immune creature.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_084_mind_sap",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen3_095_fog"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Opponent controls a magic-immune creature.",
+        "Do not keep a summon response window open."
+      ]
+    },
+    "steps": [
+      "Player_1 plays Mind Sap from hand after the summon response window has closed.",
+      "Confirm the magic-immune opponent creature is not a legal target.",
+      "Choose a legal non-immune creature if one is available."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Mind Sap target prompt still only includes legal non-immune targets",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EFFECT_TARGET_PROMPT_CREATED"
+      },
+      {
+        "label": "Mind Sap can still equip to a legal creature",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_084_mind_sap"
+      },
+      {
+        "label": "Opponent magic-immune creature was not negated",
+        "path": "player_2.primary.activeEffects",
+        "operator": "notContains",
+        "value": "APPLY_CREATURE_EFFECT_NEGATION"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the effect dev tool does not offer the opponent magic-immune creature as a Mind Sap target after the summon window closes."
+    ],
+    "riskNotes": [
+      "This is the closed-window counterpart to the immediate summon response exception; the card can still target another legal creature."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Mind Sap cannot bypass opponent magic immunity after the summon window closes."
+    },
+    "regression": {
+      "fixtureName": "mind-sap-cannot-target-magic-immune-creature-after-summon-window",
+      "tags": [
+        "magic",
+        "mind-sap",
+        "magic-immunity"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

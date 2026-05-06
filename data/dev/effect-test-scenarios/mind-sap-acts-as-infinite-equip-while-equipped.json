@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_084_mind_sap",
+  "effectId": "084-E02",
+  "title": "Mind Sap acts as Infinite equip while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_084_mind_sap",
+      "cardName": "Mind Sap",
+      "cardType": "MAGIC",
+      "cardNumber": "084",
+      "generation": "1",
+      "rawText": "At any point during the game, play this card from your hand. Negate the equipped creature's effects. While equipped, this card acts as an Infinite equip magic card."
+    },
+    "effect": {
+      "effectId": "084-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "SET_TEMPORARY_CARD_BEHAVIOR",
+      "effectGroup": "Card Type Conversion",
+      "target": "This card after equipping opponent creature",
+      "value": "Infinite equip behavior",
+      "durationText": "While equipped",
+      "reusableFunction": "setTemporaryCardBehavior"
+    },
+    "title": "Mind Sap acts as Infinite equip while equipped",
+    "summary": "Resolve Mind Sap onto the opponent Undead King and verify the source card stays equipped as an Infinite-style magic slot card while equipped.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_084_mind_sap"
+      ],
+      "player2Cards": [
+        "gen2_004_undead_king"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place opponent Undead King on the field as primary.",
+        "Start with an Undead King-linked Limited Summon on opponent field.",
+        "Target the opponent Undead King with Mind Sap."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Mind Sap from hand.",
+      "Choose opponent Undead King as the equipped creature.",
+      "Inspect Mind Sap's magic slot state and temporary equip behavior marker."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Mind Sap remains equipped/on field",
+        "path": "players.player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_084_mind_sap"
+      },
+      {
+        "label": "Temporary Infinite equip behavior applied",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MIND_SAP_TEMPORARY_INFINITE_EQUIP_BEHAVIOR_APPLIED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm this card occupies a Magic Slot while equipped instead of resolving away like a normal Lightning response."
+    ],
+    "riskNotes": [
+      "This fixture uses the same play-and-target route as 084-E01 but records the card behavior conversion row."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Mind Sap's temporary Infinite Equip behavior while attached."
+    },
+    "regression": {
+      "fixtureName": "mind-sap-acts-as-infinite-equip-while-equipped",
+      "tags": [
+        "magic",
+        "lightning",
+        "equip",
+        "temporary-behavior"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

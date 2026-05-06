@@ -84,7 +84,12 @@ const plans = scenarioFiles.map(fileName => {
   return { fileName, plan: scenario.plan };
 });
 
-const packIds = Array.from(new Set(plans.map(({ plan }) => plan.card.packId)));
+const packIds = Array.from(new Set([
+  "ward-gen1",
+  "ward-gen2",
+  "ward-gen3",
+  ...plans.map(({ plan }) => plan.card.packId)
+]));
 const cardCatalog = loadCardCatalog(packIds);
 const results = plans.map(({ fileName, plan }) => {
   const { result } = runLlmHeadlessEffectTest({ cardCatalog, plan });

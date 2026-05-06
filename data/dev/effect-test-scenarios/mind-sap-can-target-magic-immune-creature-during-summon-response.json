@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_084_mind_sap",
+  "effectId": "084-E01",
+  "title": "Mind Sap can target magic-immune creature during summon response",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_084_mind_sap",
+      "cardName": "Mind Sap",
+      "cardType": "MAGIC",
+      "cardNumber": "084",
+      "generation": "1",
+      "rawText": "At any point during the game, play this card from your hand. Negate the equipped creature's effects. While equipped, this card acts as an Infinite equip magic card."
+    },
+    "effect": {
+      "effectId": "084-E01",
+      "trigger": "ANY_TIME_FROM_HAND",
+      "actionType": "APPLY_CREATURE_EFFECT_NEGATION",
+      "effectGroup": "Effect Negation",
+      "target": "Equipped creature",
+      "value": "Effects negated",
+      "durationText": "While equipped",
+      "reusableFunction": "applyCreatureEffectNegation"
+    },
+    "title": "Mind Sap can target magic-immune creature during summon response",
+    "summary": "Play Mind Sap against an opponent magic-immune creature while its summon response window is still open.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_084_mind_sap",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen3_095_fog"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Opponent has just summoned a magic-immune creature.",
+        "Keep the summon response window open for that magic-immune creature."
+      ]
+    },
+    "steps": [
+      "Player_1 plays Mind Sap from hand during the summon response window.",
+      "Choose the opponent magic-immune primary creature.",
+      "Resolve the equip and creature-effect negation."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Mind Sap target prompt was created",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EFFECT_TARGET_PROMPT_CREATED"
+      },
+      {
+        "label": "Mind Sap equipped to the magic-immune creature",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_084_mind_sap"
+      },
+      {
+        "label": "Creature effect negation equipped",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_CREATURE_EFFECT_NEGATION_EQUIPPED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the summon response window exception is limited to the creature just summoned."
+    ],
+    "riskNotes": [
+      "Magic immunity should not block Mind Sap until the summon response window closes."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Mind Sap timing exception for magic-immune summoned creatures."
+    },
+    "regression": {
+      "fixtureName": "mind-sap-can-target-magic-immune-creature-during-summon-response",
+      "tags": [
+        "magic",
+        "mind-sap",
+        "summon-response",
+        "magic-immunity"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}
