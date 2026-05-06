@@ -217,6 +217,55 @@ function shouldSkipResolvedLightningEffect(state: MatchState, link: { cardId: st
   return effects.every(effectNegatesMagicChainLink);
 }
 
+function isDragonRageLink(state: MatchState, link: { cardId: string; cardName?: string }): boolean {
+  const definition = state.cardCatalog[link.cardId];
+  const id = String(definition?.id ?? link.cardId).trim().toLowerCase();
+  const name = String(definition?.name ?? link.cardName ?? "").trim().toLowerCase();
+  const cardNumber = String(definition?.cardNumber ?? "").trim();
+
+  return id.includes("dragon_rage") ||
+    id.includes("dragon-rage") ||
+    name === "dragon rage" ||
+    (cardNumber === "042" && name.includes("dragon") && name.includes("rage"));
+}
+
+function resolveDragonRageFollowupEffects(
+  state: MatchState,
+  link: {
+    cardInstanceId: string;
+    cardId: string;
+    cardName: string;
+    playerId: string;
+  }
+): void {
+  if (!isDragonRageLink(state, link)) return;
+
+  const definition = state.cardCatalog[link.cardId];
+  const followupEffects = getCardEngineEffects(definition).filter(effect => {
+    const actionType = getNormalizedActionType(effect);
+    return actionType === "DESTROY_MAGIC_CARDS" || actionType === "DESTROY_ALL_MAGIC" || actionType === "DRAW_CARDS";
+  });
+
+  for (const effect of followupEffects) {
+    const resolved = tryResolveAutomaticMagicEffect(state, {
+      effect,
+      controllerPlayerId: link.playerId,
+      sourceCardName: link.cardName,
+      sourceCardInstanceId: link.cardInstanceId,
+      addEvent
+    });
+
+    if (!resolved) {
+      state.manualEffectQueue.push(createManualEffectRequestFromChainLink({
+        ...link,
+        magicType: "LIGHTNING",
+        magicSubType: "NONE",
+        text: definition?.text ?? ""
+      }, effect));
+    }
+  }
+}
+
 export function createMagicChainLink(
   state: MatchState,
   playerId: string,
@@ -784,6 +833,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
       // Source-linked resolved effects must run while the source card is still findable in chainZone.
       // Silence From The Grave uses this to attach its Magic lock and turn-conditional creature suppression.
       resolveOrQueueResolvedMagicEffects(nextState, link);
+      resolveDragonRageFollowupEffects(nextState, link);
     }
 
     nextState.chainZone.splice(chainCardIndex, 1);

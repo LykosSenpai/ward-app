@@ -499,11 +499,11 @@
       "effectId": "042-E01",
       "trigger": "ON_OPPONENT_PLAYS_MAGIC_OR_ATTACK_HITS",
       "actionType": "NEGATE_ATTACK_OR_MAGIC",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-06T05:44:43.086Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_042_dragon_rage:042-E02",
@@ -513,11 +513,11 @@
       "effectId": "042-E02",
       "trigger": "AFTER_NEGATION",
       "actionType": "DESTROY_MAGIC_CARDS",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-06T05:44:43.067Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_042_dragon_rage:042-E03",
@@ -527,11 +527,11 @@
       "effectId": "042-E03",
       "trigger": "AFTER_DESTROY",
       "actionType": "DRAW_CARDS",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-06T05:44:43.058Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_044_dragon_s_bane:044-E01",

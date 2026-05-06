@@ -42,7 +42,7 @@ export type LlmForcedRollPlan = {
 export type LlmExpectedAssertion = {
   label: string;
   path: string;
-  operator: "equals" | "notEquals" | "contains" | "greaterThan" | "lessThan" | "exists" | "notExists";
+  operator: "equals" | "notEquals" | "contains" | "notContains" | "greaterThan" | "lessThan" | "exists" | "notExists";
   value?: unknown;
 };
 
@@ -138,7 +138,7 @@ export type LlmRegressionScenarioSummary = {
 export type LlmHeadlessAssertionResult = {
   label: string;
   path: string;
-  operator: "equals" | "notEquals" | "contains" | "greaterThan" | "lessThan" | "exists" | "notExists";
+  operator: "equals" | "notEquals" | "contains" | "notContains" | "greaterThan" | "lessThan" | "exists" | "notExists";
   expected?: unknown;
   actual?: unknown;
   status: "PASS" | "FAIL" | "SKIPPED";

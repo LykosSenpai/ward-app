@@ -8,6 +8,7 @@ import {
   finishManualBattleSession,
   forceNextDevRolls,
   passMagicChainPriority,
+  playLightningResponseFromHand,
   playMagicFromHand,
   resolvePendingEffectTargetPrompt,
   rollManualBattleDamage,
@@ -175,12 +176,69 @@ function moveDeckCardToHand(match: MatchState, playerId: string, cardId: string)
   return card;
 }
 
+function ensureCardInHand(match: MatchState, playerId: string, cardId: string): CardInstance | undefined {
+  const player = getPlayer(match, playerId);
+  const existing = player.hand.find(card => card.cardId === cardId);
+  if (existing) return existing;
+
+  const fromDeck = moveDeckCardToHand(match, playerId, cardId);
+  if (fromDeck) return fromDeck;
+
+  const [created] = createDeckFromCardIds(playerId, [cardId], match.cardCatalog);
+  if (!created) return undefined;
+  created.zone = "HAND";
+  created.controllerPlayerId = playerId;
+  created.ownerPlayerId = playerId;
+  player.hand.push(created);
+  return created;
+}
+
 function moveCardToMagicSlot(match: MatchState, playerId: string, card: CardInstance): void {
   const player = getPlayer(match, playerId);
   card.zone = "MAGIC_SLOT";
   card.controllerPlayerId = playerId;
   card.ownerPlayerId = card.ownerPlayerId || playerId;
   player.field.magicSlots.push(card);
+}
+
+function moveHandCardToMagicSlot(match: MatchState, playerId: string, cardId: string): void {
+  const player = getPlayer(match, playerId);
+  const handIndex = player.hand.findIndex(card => card.cardId === cardId);
+  if (handIndex < 0) return;
+  const [card] = player.hand.splice(handIndex, 1);
+  moveCardToMagicSlot(match, playerId, card);
+}
+
+function ensurePlanSetupCards(match: MatchState, plan: LlmEffectTestPlan): void {
+  for (const cardId of plan.setup.player1Cards ?? []) {
+    ensureCardInHand(match, "player_1", cardId);
+  }
+
+  for (const cardId of plan.setup.player2Cards ?? []) {
+    ensureCardInHand(match, "player_2", cardId);
+  }
+
+  const notesText = normalizeText(plan.setup.notes, plan.steps);
+  if (!notesText.includes("pre-place") && !notesText.includes("on field")) return;
+
+  const placeSupportMagic = (playerId: string, cardIds: string[] | undefined, keepInHandCardIds: Set<string>) => {
+    for (const cardId of cardIds ?? []) {
+      if (keepInHandCardIds.has(cardId)) continue;
+      const definition = match.cardCatalog[cardId];
+      if (definition?.cardType !== "MAGIC") continue;
+      moveHandCardToMagicSlot(match, playerId, cardId);
+    }
+  };
+
+  const player2TriggerMagic = new Set(
+    (plan.setup.player2Cards ?? []).filter((cardId, index) => {
+      const definition = match.cardCatalog[cardId];
+      return index === 0 && definition?.cardType === "MAGIC";
+    })
+  );
+
+  placeSupportMagic("player_1", plan.setup.player1Cards, new Set([plan.card.cardId]));
+  placeSupportMagic("player_2", plan.setup.player2Cards, player2TriggerMagic);
 }
 
 function takeFirstMagicFromZones(match: MatchState, playerId: string, avoidCardId?: string): CardInstance | undefined {
@@ -456,9 +514,45 @@ function summarizeMatch(match: MatchState): string {
 
 function readDerivedPath(root: unknown, path: string): unknown {
   const match = root as MatchState;
+  const cardIdForName = (name: unknown): string | undefined => {
+    const normalized = normalizeText(name).trim();
+    return Object.values(match.cardCatalog).find(definition => normalizeText(definition.name).trim() === normalized)?.id;
+  };
 
   if (path === "effectLog") {
-    return match.eventLog;
+    const semanticEntries = match.eventLog.flatMap(event => {
+      const payload = event.payload as Record<string, unknown> | undefined;
+      if (!payload) return [];
+
+      if (event.type === "CHAIN_LINK_NEGATED") {
+        const negated = cardIdForName(payload.negatedCardName) ?? payload.negatedCardName;
+        return [`negated:${negated}`];
+      }
+
+      if (event.type === "MAGIC_CHAIN_RESOLVED" && Array.isArray(payload.resolutionOrder)) {
+        return payload.resolutionOrder.flatMap(item => {
+          const entry = item as { cardName?: unknown; status?: unknown };
+          const cardId = cardIdForName(entry.cardName) ?? entry.cardName;
+          return [`${String(entry.status ?? "").toLowerCase()}:${cardId}`];
+        });
+      }
+
+      return [];
+    });
+    return [...match.eventLog, ...semanticEntries];
+  }
+
+  if (path === "chain.resolvedCards") {
+    return match.eventLog.flatMap(event => {
+      const payload = event.payload as { resolutionOrder?: unknown } | undefined;
+      if (event.type !== "MAGIC_CHAIN_RESOLVED" || !Array.isArray(payload?.resolutionOrder)) return [];
+
+      return payload.resolutionOrder.flatMap(item => {
+        const entry = item as { cardName?: unknown; status?: unknown };
+        if (entry.status !== "RESOLVED") return [];
+        return cardIdForName(entry.cardName) ?? entry.cardName ?? [];
+      });
+    });
   }
 
   if (path === "damageEvents") {
@@ -477,6 +571,29 @@ function readDerivedPath(root: unknown, path: string): unknown {
 
       return [];
     });
+  }
+
+  const playerCollectionPath = path.match(/^players\.([^.]+)\.(magicSlots|cemetery)$/);
+  if (playerCollectionPath) {
+    const [, playerId, collection] = playerCollectionPath;
+    const player = match.players.find(item => item.id === playerId);
+    if (!player) return undefined;
+    const cards = collection === "magicSlots" ? player.field.magicSlots : player.cemetery;
+    return cards.map(card => card.cardId);
+  }
+
+  const playerCountDeltaPath = path.match(/^players\.([^.]+)\.(hand|deck)\.countDelta$/);
+  if (playerCountDeltaPath) {
+    const [, playerId, collection] = playerCountDeltaPath;
+    const drawEvents = match.eventLog.filter(event => event.type === "AUTO_EFFECT_DRAW_CARDS_RESOLVED");
+    const drawn = drawEvents.reduce((total, event) => {
+      const payload = event.payload as { results?: unknown } | undefined;
+      if (!Array.isArray(payload?.results)) return total;
+      const playerResult = payload.results.find(result => (result as { playerId?: unknown }).playerId === playerId) as { actualDrawn?: unknown } | undefined;
+      return total + Number(playerResult?.actualDrawn ?? 0);
+    }, 0);
+
+    return collection === "hand" ? drawn : -drawn;
   }
 
   const playerPath = path.match(/^players\.([^.]+)\.(primaryCreature|field\.primaryCreature)(?:\.(.+))?$/);
@@ -531,6 +648,14 @@ function containsValue(actual: unknown, expected: unknown): boolean {
   return Object.is(actual, expected);
 }
 
+function valuesEqual(actual: unknown, expected: unknown): boolean {
+  if (Object.is(actual, expected)) return true;
+  if (actual && expected && typeof actual === "object" && typeof expected === "object") {
+    return JSON.stringify(actual) === JSON.stringify(expected);
+  }
+  return false;
+}
+
 function evaluateAssertion(match: MatchState, assertion: LlmEffectTestPlan["expectedAssertions"][number]): LlmHeadlessAssertionResult {
   const actual = readPath(match, assertion.path);
   let status: AssertionStatus = "FAIL";
@@ -540,11 +665,13 @@ function evaluateAssertion(match: MatchState, assertion: LlmEffectTestPlan["expe
   } else if (assertion.operator === "notExists") {
     status = actual === undefined || actual === null ? "PASS" : "FAIL";
   } else if (assertion.operator === "equals") {
-    status = Object.is(actual, assertion.value) ? "PASS" : "FAIL";
+    status = valuesEqual(actual, assertion.value) ? "PASS" : "FAIL";
   } else if (assertion.operator === "notEquals") {
-    status = !Object.is(actual, assertion.value) ? "PASS" : "FAIL";
+    status = !valuesEqual(actual, assertion.value) ? "PASS" : "FAIL";
   } else if (assertion.operator === "contains") {
     status = containsValue(actual, assertion.value) ? "PASS" : "FAIL";
+  } else if (assertion.operator === "notContains") {
+    status = !containsValue(actual, assertion.value) ? "PASS" : "FAIL";
   } else if (assertion.operator === "greaterThan") {
     status = Number(actual) > Number(assertion.value) ? "PASS" : "FAIL";
   } else if (assertion.operator === "lessThan") {
@@ -784,6 +911,50 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     let next = startManualBattleSession(match, source.playerId, attacker.instanceId, defender.instanceId);
     steps.push({ label: "start manual battle", ok: true, detail: `${definition.name} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
     next = runPendingBattle(next, steps);
+    return next;
+  }
+
+  const shouldRunMagicResponse = definition.cardType === "MAGIC" &&
+    definition.magicType === "LIGHTNING" &&
+    source.zone === "HAND" &&
+    (
+      trigger.includes("opponent_plays_magic") ||
+      text.includes("opponent plays a magic") ||
+      text.includes("lightning response")
+    );
+
+  if (shouldRunMagicResponse) {
+    const triggerPlayerId = plan.setup.activePlayerId ?? findOpponentPlayerId(match, source.playerId);
+    const triggerPlayer = getPlayer(match, triggerPlayerId);
+    const preferredTriggerCardId = plan.setup.player2Cards?.find(cardId => {
+      const candidate = match.cardCatalog[cardId];
+      return candidate?.cardType === "MAGIC" && candidate.magicType !== "LIGHTNING";
+    });
+    const triggerCard = preferredTriggerCardId
+      ? ensureCardInHand(match, triggerPlayerId, preferredTriggerCardId)
+      : triggerPlayer.hand.find(card => {
+        const candidate = match.cardCatalog[card.cardId];
+        return candidate?.cardType === "MAGIC" && candidate.magicType !== "LIGHTNING" && card.cardId !== plan.card.cardId;
+      });
+
+    if (!triggerCard) {
+      throw new Error("Headless Lightning response needs an opponent Magic card in hand to trigger the chain.");
+    }
+
+    match.turn.activePlayerId = triggerPlayerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(triggerPlayerId));
+    match.turn.phase = "SUMMON_MAGIC";
+
+    let next = playMagicFromHand(match, triggerPlayerId, triggerCard.instanceId);
+    steps.push({ label: "play triggering magic from hand", ok: true, detail: match.cardCatalog[triggerCard.cardId]?.name ?? triggerCard.cardId });
+
+    const response = findSource(next, plan.card.cardId);
+    if (!response) {
+      throw new Error(`No Lightning response card instance was found for ${plan.card.cardId}.`);
+    }
+
+    next = playLightningResponseFromHand(next, response.playerId, response.card.instanceId);
+    steps.push({ label: "play lightning response from hand", ok: true, detail: definition.name });
     return next;
   }
 
@@ -1076,6 +1247,7 @@ export function runLlmHeadlessEffectTest(args: {
     baseMatch.setup.firstTurnDrawsByPlayer[player.id] = true;
   });
 
+  ensurePlanSetupCards(baseMatch, args.plan);
   prepareScenarioTargets(baseMatch, args.plan, effect);
   ensureSourceOnPlayZone(baseMatch, args.plan, effect);
 
