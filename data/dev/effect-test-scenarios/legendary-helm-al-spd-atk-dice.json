@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_030_legendary_helm",
+  "effectId": "030-E01",
+  "title": "Legendary Helm applies AL SPD plus six and attack dice plus one while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_030_legendary_helm",
+      "cardName": "Legendary Helm",
+      "cardType": "MAGIC",
+      "cardNumber": "030",
+      "generation": "2",
+      "rawText": "AL: +6. SPD: +6. Atk Dice Rolls: +1."
+    },
+    "effect": {
+      "effectId": "030-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "AL +6; SPD +6; Atk Dice Rolls +1",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Legendary Helm applies AL SPD plus six and attack dice plus one while equipped",
+    "summary": "Equip Legendary Helm to a primary creature and verify the printed AL, SPD, and attack dice bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_030_legendary_helm",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so effective stat reads are deterministic."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Legendary Helm and equips it to their primary creature.",
+      "Read equipped creature effective AL, SPD, and attack dice count.",
+      "Run a follow-up battle with the equipped creature attacking."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 6",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 9
+      },
+      {
+        "label": "SPD increased by 6",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 16
+      },
+      {
+        "label": "Attack dice count increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Legendary Helm remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_030_legendary_helm"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the extra attack die is used in the battle damage UI."
+    ],
+    "riskNotes": [
+      "Uses effective stat output for AL, SPD, and attack dice count."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Legendary Helm equipped stat and dice suite."
+    },
+    "regression": {
+      "fixtureName": "legendary-helm-al-spd-atk-dice",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "al",
+        "spd",
+        "dice"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

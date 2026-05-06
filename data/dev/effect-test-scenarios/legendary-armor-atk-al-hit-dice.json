@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_028_legendary_armor",
+  "effectId": "028-E01",
+  "title": "Legendary Armor applies Atk plus six AL plus six and hit dice plus one while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_028_legendary_armor",
+      "cardName": "Legendary Armor",
+      "cardType": "MAGIC",
+      "cardNumber": "028",
+      "generation": "2",
+      "rawText": "Atk: +6. AL: +6. Hit Dice Rolls: +1."
+    },
+    "effect": {
+      "effectId": "028-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +6; AL +6; Hit Dice Rolls +1",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Legendary Armor applies Atk plus six AL plus six and hit dice plus one while equipped",
+    "summary": "Equip Legendary Armor to a modifier-zero primary creature, verify AL gains +6, and run a battle to verify the Atk bonus.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_028_legendary_armor",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Atk bonus comes only from Legendary Armor."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Legendary Armor and equips it to their primary creature.",
+      "Read equipped creature effective AL.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 6",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 9
+      },
+      {
+        "label": "Attack damage includes the +6 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 7
+      },
+      {
+        "label": "Legendary Armor remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_028_legendary_armor"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the extra Hit Dice Roll is shown in battle UI."
+    ],
+    "riskNotes": [
+      "This fixture verifies AL and Atk with stable paths; hit dice count still needs a first-class effective stat assertion path."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Legendary Armor equipped stat suite."
+    },
+    "regression": {
+      "fixtureName": "legendary-armor-atk-al-hit-dice",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk",
+        "al",
+        "dice"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
