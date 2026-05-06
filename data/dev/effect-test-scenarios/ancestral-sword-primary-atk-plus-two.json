@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_106_ancestral_sword",
+  "effectId": "106-E01",
+  "title": "Ancestral Sword gives your primary creature Atk plus two",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_106_ancestral_sword",
+      "cardName": "Ancestral Sword",
+      "cardType": "MAGIC",
+      "cardNumber": "106",
+      "generation": "2",
+      "rawText": "This card only affects your primary creature. Atk: +2."
+    },
+    "effect": {
+      "effectId": "106-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Your primary creature",
+      "value": "Atk +2",
+      "durationText": "While field effect is active",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Ancestral Sword gives your primary creature Atk plus two",
+    "summary": "Play Ancestral Sword as field magic, attack with your primary creature, and verify the printed Atk bonus.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_106_ancestral_sword",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Atk bonus comes only from Ancestral Sword."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Ancestral Sword as field magic.",
+      "Run a follow-up battle with player_1 primary creature attacking.",
+      "Inspect damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Attack damage includes the +2 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Ancestral Sword remains in magic slot",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_106_ancestral_sword"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the aura affects only its controller's primary creature."
+    ],
+    "riskNotes": [
+      "This covers the positive controller primary case only."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Ancestral Sword's primary-creature Atk aura."
+    },
+    "regression": {
+      "fixtureName": "ancestral-sword-primary-atk-plus-two",
+      "tags": [
+        "magic",
+        "field",
+        "stat-modifier",
+        "atk"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

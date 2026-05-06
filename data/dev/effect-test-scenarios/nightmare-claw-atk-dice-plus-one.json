@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_105_nightmare_claw",
+  "effectId": "105-E01",
+  "title": "Nightmare Claw applies attack dice plus one while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_105_nightmare_claw",
+      "cardName": "Nightmare Claw",
+      "cardType": "MAGIC",
+      "cardNumber": "105",
+      "generation": "2",
+      "rawText": "Atk Dice Rolls: +1."
+    },
+    "effect": {
+      "effectId": "105-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk Dice Rolls +1",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Nightmare Claw applies attack dice plus one while equipped",
+    "summary": "Equip Nightmare Claw to a primary creature and verify the printed attack dice bonus.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_105_nightmare_claw",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the attack dice bonus comes only from Nightmare Claw."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Nightmare Claw and equips it to their primary creature.",
+      "Read equipped creature effective attack dice count.",
+      "Run a follow-up battle with the equipped creature attacking."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Attack dice count increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Nightmare Claw remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_105_nightmare_claw"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the extra attack die is used in battle damage UI."
+    ],
+    "riskNotes": [
+      "Uses effective attack dice output."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Nightmare Claw attack dice equip modifier."
+    },
+    "regression": {
+      "fixtureName": "nightmare-claw-atk-dice-plus-one",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "dice"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
