@@ -587,25 +587,24 @@ export function CardLibraryPanel({
                           selectedArtKey={selectedArtKey}
                           onSelectedArtKeyChange={artKey => setSelectedArtKey(card.id, artKey)}
                         />
-
-                        <div className="library-card-badges library-option-a-badges library-option-a-limit-only">
-                          <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
-                        </div>
                       </div>
                     </div>
 
                     <div className="unified-card-actions-row library-option-a-card-actions-row compact-art-ownership-row">
-                      <button
-                        className="library-option-a-mini-deck-add"
-                        onClick={() => onAddCard(card.id)}
-                        disabled={!canAdd}
-                        title="Add 1 copy to the current deck. You can also drag or double-click this card."
-                      >
-                        Add to Deck
-                      </button>
+                      <div className="library-option-a-limit-add-row">
+                        <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
+                        <button
+                          className="library-option-a-mini-deck-add"
+                          onClick={() => onAddCard(card.id)}
+                          disabled={!canAdd}
+                          title="Add 1 copy to the current deck. You can also drag or double-click this card."
+                        >
+                          Add to Deck
+                        </button>
+                      </div>
 
                       <div className="copy-stepper labeled-stepper art-owned-stepper">
-                        <span>Owned {selectedArtLabel}</span>
+                        <span title={`Owned ${selectedArtLabel}`}>Own {selectedArtLabel}</span>
                         <button
                           onClick={() => setSelectedArtOwnedCopies(card.id, ownedCount - 1)}
                           disabled={ownedCount === 0}

@@ -2068,6 +2068,12 @@
   padding: 0.16rem 0.38rem;
 }
 
+.library-option-a-badges .limit-badge {
+  line-height: 1;
+  padding: 0.2rem 0.46rem;
+  white-space: nowrap;
+}
+
 .library-option-a-card-details {
   border-top: 1px solid rgba(148, 163, 184, 0.14);
   color: #dbeafe;
@@ -2093,21 +2099,25 @@
 }
 
 .library-option-a-card-actions-row .labeled-stepper span {
-  font-size: 0.68rem;
-  padding-left: 0.25rem;
+  font-size: 0.62rem;
+  padding-left: 0.18rem;
 }
 
 .library-option-a-card-actions-row .copy-stepper button,
 .library-option-a-current-deck-actions button {
-  min-height: 1.65rem;
-  min-width: 1.65rem;
-  padding: 0.2rem 0.4rem;
+  border-radius: 0.45rem;
+  font-size: 0.64rem;
+  min-height: 1.18rem;
+  min-width: 1.18rem;
+  padding: 0.08rem 0.2rem;
 }
 
 .library-option-a-card-actions-row .copy-stepper input,
 .library-option-a-current-deck-actions input {
-  height: 1.55rem;
-  width: 38px;
+  font-size: 0.66rem;
+  height: 1.18rem;
+  padding: 0.08rem 0.16rem;
+  width: 26px;
 }
 
 .library-option-a-current-deck-panel {
@@ -2240,38 +2250,55 @@
 .library-option-a-card-actions-row.compact-art-ownership-row {
   align-items: center;
   display: grid;
-  grid-template-columns: minmax(80px, 0.62fr) minmax(0, 1.38fr);
+  grid-template-columns: 1fr;
   gap: 0.35rem;
+}
+
+.library-option-a-limit-add-row {
+  align-items: center;
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.library-option-a-limit-add-row .limit-badge {
+  font-size: 0.58rem;
+  min-width: 0;
+  padding: 0.17rem 0.38rem;
 }
 
 .library-option-a-mini-deck-add {
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   font-weight: 900;
-  min-height: 1.65rem;
+  min-height: 1.22rem;
   min-width: 0;
-  padding: 0.22rem 0.45rem;
+  padding: 0.1rem 0.24rem;
   white-space: nowrap;
 }
 
 .library-option-a-card-actions-row .art-owned-stepper {
+  display: grid;
+  gap: 0.12rem;
+  grid-template-columns: minmax(0, 1fr) 1.18rem 26px 1.18rem;
   min-width: 0;
-  padding: 0.14rem;
+  padding: 0.08rem;
 }
 
 .library-option-a-card-actions-row .art-owned-stepper span {
   overflow: hidden;
-  padding-left: 0.22rem;
+  padding-left: 0.12rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .library-option-a-card-actions-row .art-owned-stepper input {
-  width: 34px;
+  width: 26px;
 }
 
 .library-option-a-card-actions-row .art-owned-stepper button {
-  min-width: 1.55rem;
+  border-radius: 0.45rem;
+  min-width: 1.18rem;
 }
 
 .library-option-a-card-content .card-art-select-label {
@@ -4178,18 +4205,32 @@
 }
 
 .library-option-a-grid {
-  grid-template-columns: minmax(240px, max-content) minmax(420px, 1fr) minmax(380px, 500px);
+  grid-template-columns: minmax(170px, 190px) minmax(0, 1fr) minmax(380px, 500px);
   align-items: start;
 }
 
 .library-option-a-filter-panel {
   display: grid;
   gap: 0.7rem;
-  max-width: min(42vw, 560px);
-  min-width: 240px;
-  overflow: visible;
-  width: max-content;
+  max-width: 190px;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
   z-index: 20;
+}
+
+.library-option-a-filter-stack input,
+.library-option-a-filter-stack select,
+.library-option-a-drawer-grid select {
+  font-size: 0.68rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.library-option-a-drawer-grid {
+  max-height: min(34rem, calc(100vh - 15rem));
+  overflow: auto;
+  padding-right: 0.2rem;
 }
 
 .library-option-a-deck-rail {
@@ -4237,7 +4278,7 @@
 }
 
 .library-option-a-card-grid {
-  grid-template-columns: repeat(auto-fill, minmax(clamp(160px, 18vw, 220px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(clamp(145px, 13vw, 185px), 1fr));
   max-height: calc(100vh - 250px);
   overflow: auto;
   padding-right: 0.25rem;
@@ -4246,7 +4287,7 @@
 .library-option-a-card-entry {
   border-radius: 0.45rem;
   min-height: 0;
-  padding: 0.7rem;
+  padding: 0.5rem;
 }
 
 .library-option-a-card-content {
