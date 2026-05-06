@@ -2306,11 +2306,17 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("suppress_modifier_layer") ||
       actionType.includes("deal_percentage_damage") ||
       actionType.includes("heal_to_full") ||
+      actionType === "heal" ||
+      actionType.includes("heal_creature") ||
       actionType.includes("global_creature_effect_negation")
     );
 
   if (shouldAcceptFieldStaticMagic) {
-    if (actionType.includes("heal_to_full")) {
+    if (
+      actionType.includes("heal_to_full") ||
+      actionType === "heal" ||
+      actionType.includes("heal_creature")
+    ) {
       const target = source.card.attachedToInstanceId
         ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
         : undefined;
