@@ -199,6 +199,20 @@ function silenceEffectIsAutomatic(effect: WardEngineEffect): boolean {
   return isSilenceFromTheGraveSplitRuntimeEffect(effect) || isAutomaticMagicEffectSupported(effect);
 }
 
+function suppressesMagicResponseWindow(effect: WardEngineEffect): boolean {
+  const actionType = getNormalizedActionType(effect);
+  const canBeNegated = (effect.params as { canBeNegated?: unknown } | undefined)?.canBeNegated;
+  const text = linkEffectText(effect);
+
+  return actionType === "SET_CAN_BE_NEGATED" &&
+    canBeNegated === false &&
+    text.includes("cannot be negated");
+}
+
+function cardSuppressesMagicResponseWindow(state: MatchState, cardId: string): boolean {
+  return getCardEngineEffects(state.cardCatalog[cardId]).some(suppressesMagicResponseWindow);
+}
+
 
 function orderImmediateEffectsForResolution(effects: WardEngineEffect[]): WardEngineEffect[] {
   const hasDamage = effects.some(effect => effect.actionType.trim().toUpperCase().includes("DAMAGE"));
@@ -250,6 +264,28 @@ function isTwisterLink(state: MatchState, link: { cardId: string; cardName?: str
   return id.includes("twister") ||
     name === "twister" ||
     (cardNumber === "105" && name.includes("twister"));
+}
+
+function isRevivalPriestLink(state: MatchState, link: { cardId: string; cardName?: string }): boolean {
+  const definition = state.cardCatalog[link.cardId];
+  const id = String(definition?.id ?? link.cardId).trim().toLowerCase();
+  const name = String(definition?.name ?? link.cardName ?? "").trim().toLowerCase();
+  const cardNumber = String(definition?.cardNumber ?? "").trim();
+
+  return id.includes("revival_priest") ||
+    id.includes("revival-priest") ||
+    name === "revival priest" ||
+    (cardNumber === "115" && name.includes("revival") && name.includes("priest"));
+}
+
+function isRevivalPriestPreSummonCleanupEffect(effect: WardEngineEffect): boolean {
+  const actionType = getNormalizedActionType(effect);
+  const text = linkEffectText(effect);
+
+  return actionType === "MOVE_CARD" &&
+    text.includes("existing") &&
+    text.includes("creature") &&
+    text.includes("hand");
 }
 
 function resolveDragonRageFollowupEffects(
@@ -399,6 +435,11 @@ export function resolveOrQueueResolvedMagicEffects(
   const effectsThatResolveNowWithoutPreChainCosts = isSilenceFromTheGraveLink(state, link)
     ? effectsThatResolveNow.filter(effect => !isSilenceFromTheGravePreChainCostEffect(effect))
     : effectsThatResolveNow;
+  const runtimeEffectsThatResolveNow = effectsThatResolveNowWithoutPreChainCosts.filter(effect => {
+    if (suppressesMagicResponseWindow(effect)) return false;
+    if (isRevivalPriestLink(state, link) && isRevivalPriestPreSummonCleanupEffect(effect)) return false;
+    return true;
+  });
 
   if (effectsThatResolveNowWithoutPreChainCosts.length !== effectsThatResolveNow.length) {
     addEvent(state, "SILENCE_FROM_THE_GRAVE_PRE_CHAIN_COST_SKIPPED_AFTER_RESOLUTION", link.playerId, {
@@ -408,7 +449,7 @@ export function resolveOrQueueResolvedMagicEffects(
     });
   }
 
-  if (effectsThatResolveNowWithoutPreChainCosts.length === 0) {
+  if (runtimeEffectsThatResolveNow.length === 0) {
     addEvent(state, "NO_ON_PLAY_MAGIC_EFFECTS_TO_RESOLVE", link.playerId, {
       sourceCardName: link.cardName,
       effectCount: effects.length,
@@ -420,13 +461,13 @@ export function resolveOrQueueResolvedMagicEffects(
   }
 
   const immediateEffects = orderImmediateEffectsForResolution(
-    effectsThatResolveNowWithoutPreChainCosts.filter(effect => !isDeferredToAttachmentEffect(effect))
+    runtimeEffectsThatResolveNow.filter(effect => !isDeferredToAttachmentEffect(effect))
   );
 
   if (immediateEffects.length === 0) {
     addEvent(state, "MAGIC_EFFECTS_DEFERRED_TO_ATTACHMENT", link.playerId, {
       sourceCardName: link.cardName,
-      effectCount: effectsThatResolveNow.length
+      effectCount: runtimeEffectsThatResolveNow.length
     });
 
     return;
@@ -679,6 +720,17 @@ export function playMagicFromHand(
     magicType: definition.magicType,
     magicSubType: definition.magicSubType
   });
+
+  if (cardSuppressesMagicResponseWindow(nextState, card.cardId)) {
+    addEvent(nextState, "MAGIC_CHAIN_RESPONSE_WINDOW_SUPPRESSED", playerId, {
+      chainId: pendingChain.id,
+      cardInstanceId,
+      cardName: definition.name,
+      note: "This card cannot be negated when played, so no Lightning response window opens."
+    });
+
+    return resolveMagicChain(nextState);
+  }
 
   return nextState;
 }

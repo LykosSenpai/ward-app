@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_115_revival_priest",
+  "effectId": "115-E01",
+  "title": "Revival Priest summons a cemetery creature and equips",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_115_revival_priest",
+      "cardName": "Revival Priest",
+      "cardType": "MAGIC",
+      "cardNumber": "115",
+      "generation": "1",
+      "rawText": "Summon a creature from your cemetery to the field. If this card is removed from the field, send the creature back to the cemetery. If you have a creature on the field already, send it back to your hand."
+    },
+    "effect": {
+      "effectId": "115-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SUMMON_FROM_CEMETERY_AND_EQUIP",
+      "effectGroup": "Summon/Equip",
+      "target": "Creature from cemetery",
+      "value": "Summon + equip link",
+      "durationText": "While equipped",
+      "reusableFunction": "summonFromCemeteryAndEquip"
+    },
+    "title": "Revival Priest summons a cemetery creature and equips",
+    "summary": "Play Revival Priest with a creature in your cemetery, choose that creature, and verify the creature is summoned as primary with Revival Priest attached in a magic slot.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_115_revival_priest"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Put a creature in player_1 cemetery before play.",
+        "Player_1 has no primary creature before Revival Priest resolves."
+      ]
+    },
+    "steps": [
+      "Player_1 plays Revival Priest.",
+      "Resolve the cemetery creature target prompt.",
+      "Inspect player_1 primary creature and magic slot."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Revival Priest summon/equip resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_PRIMARY_SUMMON_FROM_CEMETERY_AND_EQUIP_RESOLVED"
+      },
+      {
+        "label": "Revival Priest remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_115_revival_priest"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the summoned creature is anchored to Revival Priest while the card remains equipped."
+    ],
+    "riskNotes": [
+      "Source removal cleanup is covered by 115-E03."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate cemetery summon and equip link."
+    },
+    "regression": {
+      "fixtureName": "revival-priest-summons-from-cemetery-and-equips",
+      "tags": [
+        "magic",
+        "equip",
+        "cemetery",
+        "summon"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

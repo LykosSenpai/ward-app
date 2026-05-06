@@ -16,6 +16,7 @@ import {
   playCreatureFromHandAsPrimary,
   playLightningResponseFromHand,
   playMagicFromHand,
+  returnLinkedSummonsForInvalidatedSource,
   resolvePendingEffectTargetPrompt,
   rollManualBattleDamage,
   rollManualBattleHit,
@@ -334,6 +335,14 @@ function planText(plan: LlmEffectTestPlan): string {
   );
 }
 
+function isSilenceFromTheGraveCard(definition: CardDefinition | undefined): boolean {
+  const text = normalizeText(definition?.id, definition?.name, definition?.cardNumber);
+  return text.includes("silence_from_the_grave") ||
+    text.includes("silence-from-the-grave") ||
+    text.includes("silence from the grave") ||
+    (text.includes("151") && text.includes("silence"));
+}
+
 function getCardEffects(definition: CardDefinition | undefined): WardEngineEffect[] {
   return Array.isArray(definition?.effects) ? definition.effects : [];
 }
@@ -599,6 +608,55 @@ function setScenarioPrimaryCurrentHp(match: MatchState, playerId: string, curren
   primary.currentHp = Math.max(0, Math.min(primary.baseHp ?? currentHp, currentHp));
 }
 
+function createAnchoredLimitedSummon(
+  match: MatchState,
+  playerId: string,
+  anchorSourceInstanceId: string
+): CardInstance | undefined {
+  const player = getPlayer(match, playerId);
+  const cemeteryIndex = player.cemetery.findIndex(card =>
+    match.cardCatalog[card.cardId]?.cardType === "CREATURE"
+  );
+  if (cemeteryIndex < 0) return undefined;
+  const [card] = player.cemetery.splice(cemeteryIndex, 1);
+  const definition = match.cardCatalog[card.cardId];
+  if (definition?.cardType !== "CREATURE") return undefined;
+  card.zone = "LIMITED_SUMMON";
+  card.controllerPlayerId = playerId;
+  card.ownerPlayerId = card.ownerPlayerId || playerId;
+  card.baseHp = definition.hp;
+  card.currentHp = definition.hp;
+  card.isLimitedSummon = true;
+  card.anchorSourceInstanceId = anchorSourceInstanceId;
+  player.field.limitedSummons.push(card);
+  return card;
+}
+
+function createAnchoredPrimaryFromCemetery(
+  match: MatchState,
+  playerId: string,
+  anchorSourceInstanceId: string
+): CardInstance | undefined {
+  const player = getPlayer(match, playerId);
+  const cemeteryIndex = player.cemetery.findIndex(card =>
+    match.cardCatalog[card.cardId]?.cardType === "CREATURE"
+  );
+  if (cemeteryIndex < 0) return undefined;
+  const [card] = player.cemetery.splice(cemeteryIndex, 1);
+  const definition = match.cardCatalog[card.cardId];
+  if (definition?.cardType !== "CREATURE") return undefined;
+  card.zone = "PRIMARY_CREATURE";
+  card.controllerPlayerId = playerId;
+  card.ownerPlayerId = card.ownerPlayerId || playerId;
+  card.baseHp = definition.hp;
+  card.currentHp = definition.hp;
+  card.isLimitedSummon = false;
+  card.effectsSuppressed = false;
+  card.anchorSourceInstanceId = anchorSourceInstanceId;
+  player.field.primaryCreature = card;
+  return card;
+}
+
 function findSetupCreatureCardId(match: MatchState, cardIds: string[] | undefined): string | undefined {
   return cardIds?.find(cardId => match.cardCatalog[cardId]?.cardType === "CREATURE");
 }
@@ -641,6 +699,7 @@ function ensurePlanSetupCards(match: MatchState, plan: LlmEffectTestPlan): void 
       if (keepInHandCardIds.has(cardId)) continue;
       const definition = match.cardCatalog[cardId];
       if (definition?.cardType !== "MAGIC") continue;
+      if (definition.magicType === "LIGHTNING") continue;
       moveHandCardToMagicSlot(match, playerId, cardId);
     }
   };
@@ -653,7 +712,19 @@ function ensurePlanSetupCards(match: MatchState, plan: LlmEffectTestPlan): void 
     }))
     : new Set<string>();
 
-  placeSupportMagic("player_1", plan.setup.player1Cards, new Set([plan.card.cardId]));
+  const player1KeepInHand = new Set([plan.card.cardId]);
+  if (isSilenceFromTheGraveCard(sourceDefinition)) {
+    const costCardId = plan.setup.player1Cards?.find(cardId => {
+      if (cardId === plan.card.cardId) return false;
+      const definition = match.cardCatalog[cardId];
+      return definition?.cardType === "MAGIC" && definition.magicType !== "LIGHTNING";
+    });
+    if (costCardId) {
+      player1KeepInHand.add(costCardId);
+    }
+  }
+
+  placeSupportMagic("player_1", plan.setup.player1Cards, player1KeepInHand);
   placeSupportMagic("player_2", plan.setup.player2Cards, player2TriggerMagic);
 }
 
@@ -661,7 +732,9 @@ function takeFirstMagicFromZones(match: MatchState, playerId: string, avoidCardI
   const player = getPlayer(match, playerId);
   const fromHand = player.hand.findIndex(card => {
     const definition = match.cardCatalog[card.cardId];
-    return definition?.cardType === "MAGIC" && card.cardId !== avoidCardId;
+    return definition?.cardType === "MAGIC" &&
+      definition.magicType !== "LIGHTNING" &&
+      card.cardId !== avoidCardId;
   });
 
   if (fromHand >= 0) {
@@ -671,7 +744,9 @@ function takeFirstMagicFromZones(match: MatchState, playerId: string, avoidCardI
 
   const fromDeck = player.deck.findIndex(card => {
     const definition = match.cardCatalog[card.cardId];
-    return definition?.cardType === "MAGIC" && card.cardId !== avoidCardId;
+    return definition?.cardType === "MAGIC" &&
+      definition.magicType !== "LIGHTNING" &&
+      card.cardId !== avoidCardId;
   });
 
   if (fromDeck >= 0) {
@@ -680,7 +755,9 @@ function takeFirstMagicFromZones(match: MatchState, playerId: string, avoidCardI
   }
 
   const catalogMagic = Object.values(match.cardCatalog).find(
-    definition => definition.cardType === "MAGIC" && definition.id !== avoidCardId
+    definition => definition.cardType === "MAGIC" &&
+      definition.magicType !== "LIGHTNING" &&
+      definition.id !== avoidCardId
   );
 
   if (!catalogMagic) return undefined;
@@ -1990,9 +2067,14 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   }
 
   const shouldRunBattleResponseFromHand = definition.cardType === "MAGIC" &&
-    definition.magicType === "BATTLE_LIGHTNING" &&
+    (definition.magicType === "BATTLE_LIGHTNING" || definition.magicType === "LIGHTNING") &&
     source.zone === "HAND" &&
-    trigger.includes("during_battle_from_hand");
+    normalizeText(plan.setup.phase).includes("combat") &&
+    (
+      trigger.includes("during_battle_from_hand") ||
+      trigger.includes("attack_hits") ||
+      actionType.includes("negate_attack")
+    );
 
   if (shouldRunBattleResponseFromHand) {
     const attackingPlayerId = plan.setup.activePlayerId ?? "player_1";
@@ -2032,6 +2114,41 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
 
     next = runPendingBattle(next, steps);
     return next;
+  }
+
+  if (actionType.includes("return_linked_summon")) {
+    const playerId = source.playerId;
+    const sourceCard = source.card;
+    if (!sourceCard) {
+      throw new Error("Headless linked summon cleanup needs a source card.");
+    }
+
+    const player = getPlayer(match, playerId);
+    const existingAnchored = [
+      player.field.primaryCreature,
+      ...player.field.limitedSummons
+    ].find((card): card is CardInstance =>
+      card !== undefined &&
+      card.anchorSourceInstanceId === sourceCard.instanceId
+    );
+    const anchored = existingAnchored ??
+      (definition.cardType === "MAGIC"
+        ? createAnchoredPrimaryFromCemetery(match, playerId, sourceCard.instanceId)
+        : createAnchoredLimitedSummon(match, playerId, sourceCard.instanceId));
+
+    if (!anchored) {
+      throw new Error("Headless linked summon cleanup needs an anchored summoned creature.");
+    }
+
+    returnLinkedSummonsForInvalidatedSource(match, {
+      sourceCardInstanceId: sourceCard.instanceId,
+      sourceCardName: definition.name,
+      causedByPlayerId: playerId,
+      reason: "SOURCE_EFFECT_NEGATED",
+      addEvent: addHeadlessEvent
+    });
+    steps.push({ label: "invalidate source-linked summon", ok: true, detail: `${definition.name} ${effect?.id ?? ""}` });
+    return match;
   }
 
   if (plan.effect?.effectId && trigger.includes("activated")) {

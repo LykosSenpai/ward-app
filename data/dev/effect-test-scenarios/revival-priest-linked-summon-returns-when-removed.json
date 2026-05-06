@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_115_revival_priest",
+  "effectId": "115-E03",
+  "title": "Revival Priest returns linked summoned creature when removed",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_115_revival_priest",
+      "cardName": "Revival Priest",
+      "cardType": "MAGIC",
+      "cardNumber": "115",
+      "generation": "1",
+      "rawText": "Summon a creature from your cemetery to the field. If this card is removed from the field, send the creature back to the cemetery. If you have a creature on the field already, send it back to your hand."
+    },
+    "effect": {
+      "effectId": "115-E03",
+      "trigger": "ON_CARD_REMOVED_FROM_FIELD",
+      "actionType": "RETURN_LINKED_SUMMON",
+      "effectGroup": "Zone Movement",
+      "target": "Linked summoned creature",
+      "value": "Move to cemetery",
+      "durationText": "Instant",
+      "reusableFunction": "returnLinkedSummon"
+    },
+    "title": "Revival Priest returns linked summoned creature when removed",
+    "summary": "Start with Revival Priest on the field anchoring a revived primary creature, invalidate/remove the source, and verify the linked primary returns to cemetery.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_115_revival_priest"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place Revival Priest in a field magic slot.",
+        "Put a creature in player_1 cemetery before cleanup.",
+        "Start with that creature as a primary summoned by and anchored to Revival Priest."
+      ]
+    },
+    "steps": [
+      "Invalidate/remove Revival Priest as the source card.",
+      "Return the linked primary creature to cemetery.",
+      "Inspect player_1 field creatures and cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Linked primary returned to cemetery",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "LINKED_PRIMARY_ANCHORED_CREATURE_RETURNED_TO_CEMETERY"
+      },
+      {
+        "label": "Source linked cleanup resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SOURCE_LINKED_SUMMONS_RETURNED_TO_CEMETERY"
+      }
+    ],
+    "manualVerification": [
+      "Confirm cleanup also happens when Revival Priest is destroyed from a Magic Slot."
+    ],
+    "riskNotes": [
+      "This fixture covers the linked creature return path, not the initial summon prompt."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate linked primary cleanup when source leaves field."
+    },
+    "regression": {
+      "fixtureName": "revival-priest-linked-summon-returns-when-removed",
+      "tags": [
+        "magic",
+        "equip",
+        "source-linked",
+        "cemetery"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

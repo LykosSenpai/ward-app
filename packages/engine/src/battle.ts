@@ -581,25 +581,23 @@ function getCurrentManualStrike(session: PendingBattleSession): ManualBattleStri
   return strike;
 }
 
-function isMinotaurBodyguardDefinition(definition: CardDefinition): boolean {
-  const id = String(definition.id ?? "").trim().toLowerCase();
-  const name = String(definition.name ?? "").trim().toLowerCase();
-  const cardNumber = String(definition.cardNumber ?? "").trim();
-
+function isBattleAttackNegationResponseDefinition(definition: CardDefinition): boolean {
   return definition.cardType === "MAGIC" &&
-    definition.magicType === "BATTLE_LIGHTNING" &&
-    (
-      id.includes("minotaur-bodyguard") ||
-      id.includes("minotaur_bodyguard") ||
-      name === "minotaur bodyguard" ||
-      (cardNumber === "016" && name.includes("minotaur") && name.includes("bodyguard"))
-    );
+    (definition.magicType === "BATTLE_LIGHTNING" || definition.magicType === "LIGHTNING") &&
+    !!getBattleAttackNegationResponseEffect(definition);
 }
 
-function getMinotaurBodyguardEffect(definition: CardDefinition) {
+function getBattleAttackNegationResponseEffect(definition: CardDefinition) {
   return definition.effects?.find(effect =>
-    String(effect.trigger ?? "").trim().toUpperCase() === "DURING_BATTLE_FROM_HAND" &&
-    String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK_DAMAGE"
+    (
+      String(effect.trigger ?? "").trim().toUpperCase() === "DURING_BATTLE_FROM_HAND" ||
+      String(effect.trigger ?? "").trim().toUpperCase().includes("ATTACK_HITS")
+    ) &&
+    (
+      String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK_DAMAGE" ||
+      String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK_OR_MAGIC" ||
+      String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK"
+    )
   );
 }
 
@@ -1442,7 +1440,7 @@ export function playBattleResponseFromHand(
   }
 
   if (strike.defender.playerId !== args.playerId) {
-    throw new Error("Minotaur Bodyguard can only protect your creature from incoming attack damage.");
+    throw new Error("Battle attack negation can only protect your creature from incoming attack damage.");
   }
 
   const player = getPlayer(nextState, args.playerId);
@@ -1455,14 +1453,14 @@ export function playBattleResponseFromHand(
   const card = player.hand[handIndex];
   const definition = nextState.cardCatalog[card.cardId];
 
-  if (!definition || !isMinotaurBodyguardDefinition(definition)) {
-    throw new Error("Minotaur Bodyguard can only be played from hand during battle when your creature would receive Atk damage.");
+  if (!definition || !isBattleAttackNegationResponseDefinition(definition)) {
+    throw new Error("This card cannot be played from hand during battle to negate incoming Atk damage.");
   }
 
-  const effect = getMinotaurBodyguardEffect(definition);
+  const effect = getBattleAttackNegationResponseEffect(definition);
 
   if (!effect) {
-    throw new Error("Minotaur Bodyguard is missing its battle response effect data.");
+    throw new Error("Battle response card is missing its attack negation effect data.");
   }
 
   player.hand.splice(handIndex, 1);

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_115_revival_priest",
+  "effectId": "115-E02",
+  "title": "Revival Priest returns existing creature to hand before summoning",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_115_revival_priest",
+      "cardName": "Revival Priest",
+      "cardType": "MAGIC",
+      "cardNumber": "115",
+      "generation": "1",
+      "rawText": "Summon a creature from your cemetery to the field. If this card is removed from the field, send the creature back to the cemetery. If you have a creature on the field already, send it back to your hand."
+    },
+    "effect": {
+      "effectId": "115-E02",
+      "trigger": "ON_PLAY",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "target": "Your current creature",
+      "value": "Move to hand",
+      "durationText": "Instant",
+      "reusableFunction": "returnCreatureToHand"
+    },
+    "title": "Revival Priest returns existing creature to hand before summoning",
+    "summary": "Play Revival Priest while player_1 already has a primary creature, then verify that existing primary returns to hand before the cemetery creature is summoned.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_115_revival_priest",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature on player_1 field as primary.",
+        "Put another creature in player_1 cemetery before play."
+      ]
+    },
+    "steps": [
+      "Player_1 plays Revival Priest.",
+      "Resolve the cemetery creature target prompt.",
+      "Inspect player_1 hand and magic slots."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Existing primary returned to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "test_primary_creature"
+      },
+      {
+        "label": "Revival Priest summon/equip resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_PRIMARY_SUMMON_FROM_CEMETERY_AND_EQUIP_RESOLVED"
+      },
+      {
+        "label": "Revival Priest remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_115_revival_priest"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the returned creature keeps normal hand ownership and is not sent to cemetery."
+    ],
+    "riskNotes": [
+      "This fixture covers the pre-summon cleanup clause."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate existing creature return-to-hand clause."
+    },
+    "regression": {
+      "fixtureName": "revival-priest-returns-existing-creature-to-hand",
+      "tags": [
+        "magic",
+        "equip",
+        "cemetery",
+        "return-to-hand"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

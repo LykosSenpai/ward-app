@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_004_undead_king",
+  "effectId": "004-E01",
+  "title": "Undead King summons from cemetery as a Limited Summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_004_undead_king",
+      "cardName": "Undead King",
+      "cardType": "CREATURE",
+      "cardNumber": "004",
+      "generation": "2",
+      "rawText": "During your turn, roll 1 die. If the result is 3-6, you may summon a creature from your cemetery as a Limited Summon. Limited Summon(s) return to the cemetery if this card leaves the field, switches control, or this effect is negated."
+    },
+    "effect": {
+      "effectId": "004-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "SUMMON_LIMITED_CREATURE",
+      "effectGroup": "Limited Summon",
+      "target": "Creature from your cemetery",
+      "value": "Limited Summon 1 creature from cemetery",
+      "durationText": "While source effect remains active",
+      "reusableFunction": "summonLimitedFromZone"
+    },
+    "title": "Undead King summons from cemetery as a Limited Summon",
+    "summary": "During player_1's turn, activate Undead King, roll a successful 3-6, choose a creature from player_1 cemetery, and verify it enters the field as a Limited Summon.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_004_undead_king"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            5
+          ],
+          "label": "Undead King summon succeeds"
+        }
+      ],
+      "notes": [
+        "Place Undead King on player_1 field as primary.",
+        "Put an Undead creature in player_1 cemetery before activation.",
+        "Roll 1 die; 3-6 succeeds."
+      ]
+    },
+    "steps": [
+      "Player_1 activates Undead King's once-per-turn style effect.",
+      "Resolve the forced effect roll as 5.",
+      "Choose the cemetery creature as the Limited Summon target.",
+      "Inspect player_1 field creatures and cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Cemetery creature was Limited Summoned",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED"
+      },
+      {
+        "label": "Summon effect resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EFFECT_TARGET_PROMPT_CREATED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm failed 1-2 rolls do not summon a creature."
+    ],
+    "riskNotes": [
+      "This covers the successful summon branch. Source invalidation cleanup is covered by 004-E02."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate successful cemetery Limited Summon branch."
+    },
+    "regression": {
+      "fixtureName": "undead-king-limited-summon-from-cemetery",
+      "tags": [
+        "creature",
+        "activated",
+        "limited-summon",
+        "cemetery"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

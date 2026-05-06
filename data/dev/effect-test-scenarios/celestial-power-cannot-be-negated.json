@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_002_celestial_power",
+  "effectId": "002-E01",
+  "title": "Celestial Power cannot be negated when played",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_002_celestial_power",
+      "cardName": "Celestial Power",
+      "cardType": "MAGIC",
+      "cardNumber": "002",
+      "generation": "2",
+      "rawText": "This card cannot be negated when played. Atk: +8. Hit: +8. SPD: +8."
+    },
+    "effect": {
+      "effectId": "002-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SET_CAN_BE_NEGATED",
+      "effectGroup": "Negation Rule",
+      "target": "This card",
+      "value": "Cannot be negated",
+      "durationText": "While resolving",
+      "reusableFunction": "setCanBeNegated"
+    },
+    "title": "Celestial Power cannot be negated when played",
+    "summary": "Play Celestial Power and verify its cannot-be-negated text suppresses the Lightning response window, then resolves to the field.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_002_celestial_power",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen1_028_blade_in_the_dark",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Player_1 plays Celestial Power.",
+        "Player_2 has Blade in the Dark, but Celestial Power should not open a Lightning response window."
+      ]
+    },
+    "steps": [
+      "Player_1 plays Celestial Power.",
+      "Confirm no Lightning response window remains open.",
+      "Inspect player_1 magic slots and the game log."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Celestial Power resolved to field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_002_celestial_power"
+      },
+      {
+        "label": "Celestial Power was not negated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "magic_negated"
+      },
+      {
+        "label": "Lightning response window was suppressed",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MAGIC_CHAIN_RESPONSE_WINDOW_SUPPRESSED"
+      },
+      {
+        "label": "No Lightning response was added",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "LIGHTNING_RESPONSE_ADDED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm other magic cards without this text still open the normal Lightning response window."
+    ],
+    "riskNotes": [
+      "This fixture specifically validates the response-window immunity, not the equipped stat modifiers."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate cannot-be-negated rule."
+    },
+    "regression": {
+      "fixtureName": "celestial-power-cannot-be-negated",
+      "tags": [
+        "magic",
+        "equip",
+        "chain",
+        "negation"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

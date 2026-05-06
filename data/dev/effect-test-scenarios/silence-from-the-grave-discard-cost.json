@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_151_silence_from_the_grave",
+  "effectId": "151-E01",
+  "title": "Silence From The Grave pays discard-magic cost before chain",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_151_silence_from_the_grave",
+      "cardName": "Silence From The Grave",
+      "cardType": "MAGIC",
+      "cardNumber": "151",
+      "generation": "1",
+      "rawText": "Discard 1 magic card to the cemetery to play this card. Destroy all magic cards on the field. For 2 turn cycles, your opponent cannot play magic cards and their creature effects are negated during your turn. The opponent may still respond with a valid Lightning card before this card resolves."
+    },
+    "effect": {
+      "effectId": "151-E01",
+      "trigger": "ON_PLAY_FIELD",
+      "actionType": "PAY_DISCARD_MAGIC_COST",
+      "effectGroup": "Cost",
+      "target": "Your hand/cemetery",
+      "value": "Discard 1 magic card",
+      "durationText": "Before play",
+      "reusableFunction": "payDiscardMagicCost"
+    },
+    "title": "Silence From The Grave pays discard-magic cost before chain",
+    "summary": "Play Silence From The Grave with another Magic card in hand and verify the discard cost is prompted and paid before the Magic Chain starts.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_151_silence_from_the_grave",
+        "gen1_061_health_potion"
+      ],
+      "player2Cards": [],
+      "forcedRolls": [],
+      "notes": [
+        "Keep Health Potion in player_1 hand as the required discard-Magic cost."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Silence From The Grave.",
+      "Resolve the pre-chain cost prompt by discarding Health Potion.",
+      "Resolve the resulting Magic Chain."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Pre-chain cost prompt created",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SILENCE_FROM_THE_GRAVE_PRE_CHAIN_COST_PROMPT_CREATED"
+      },
+      {
+        "label": "Pre-chain cost paid",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SILENCE_FROM_THE_GRAVE_PRE_CHAIN_COST_PAID"
+      },
+      {
+        "label": "Silence enters chain after cost",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MAGIC_CHAIN_STARTED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Silence itself cannot be discarded for its own cost and opponent priority begins only after the cost is paid."
+    ],
+    "riskNotes": [
+      "The discard is a pre-chain cost, not a negatable effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify required Magic discard cost before Silence enters the Magic Chain."
+    },
+    "regression": {
+      "fixtureName": "silence-from-the-grave-discard-cost",
+      "tags": [
+        "magic",
+        "field",
+        "cost",
+        "chain"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

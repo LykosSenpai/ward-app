@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_151_silence_from_the_grave",
+  "effectId": "151-E04",
+  "title": "Silence From The Grave suppresses opponent creature effects on your turn",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_151_silence_from_the_grave",
+      "cardName": "Silence From The Grave",
+      "cardType": "MAGIC",
+      "cardNumber": "151",
+      "generation": "1",
+      "rawText": "Discard 1 magic card to the cemetery to play this card. Destroy all magic cards on the field. For 2 turn cycles, your opponent cannot play magic cards and their creature effects are negated during your turn. The opponent may still respond with a valid Lightning card before this card resolves."
+    },
+    "effect": {
+      "effectId": "151-E04",
+      "trigger": "DURING_YOUR_TURN_WHILE_ACTIVE",
+      "actionType": "APPLY_TURN_CONDITIONAL_OPPONENT_CREATURE_EFFECT_SUPPRESSION",
+      "effectGroup": "Effect Negation",
+      "target": "Opponent creatures",
+      "value": "Opponent creature effects negated only during activating player turns",
+      "durationText": "2 turn cycles during your turns",
+      "reusableFunction": "applyTurnConditionalOpponentCreatureEffectSuppression"
+    },
+    "title": "Silence From The Grave suppresses opponent creature effects on your turn",
+    "summary": "Resolve Silence From The Grave and verify its turn-conditional opponent creature suppression instance is applied.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_151_silence_from_the_grave",
+        "gen1_061_health_potion",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_primary_creature_mod_0"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Keep Health Potion in hand for Silence's cost.",
+        "Put ordinary creatures on both fields so opponent creature suppression has a visible target scope."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Silence From The Grave.",
+      "Pay its discard-Magic cost.",
+      "Resolve the chain and inspect the applied Silence suppression effect."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Turn-conditional suppression applied",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SILENCE_TURN_CONDITIONAL_SUPPRESSION_APPLIED"
+      },
+      {
+        "label": "Opponent Magic lock also applied from same resolved source",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SILENCE_MAGIC_PLAY_LOCK_APPLIED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm suppression is active during the Silence controller's turns and not during the opponent's turns."
+    ],
+    "riskNotes": [
+      "Creatures that explicitly ignore Magic may ignore this suppression unless they entered during the replacement suppression window."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify turn-scoped creature effect suppression."
+    },
+    "regression": {
+      "fixtureName": "silence-from-the-grave-suppresses-opponent-creatures-on-your-turn",
+      "tags": [
+        "magic",
+        "field",
+        "creature-effects",
+        "restriction"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

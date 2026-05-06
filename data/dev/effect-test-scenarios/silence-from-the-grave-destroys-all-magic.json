@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_151_silence_from_the_grave",
+  "effectId": "151-E02",
+  "title": "Silence From The Grave destroys all magic cards on field",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_151_silence_from_the_grave",
+      "cardName": "Silence From The Grave",
+      "cardType": "MAGIC",
+      "cardNumber": "151",
+      "generation": "1",
+      "rawText": "Discard 1 magic card to the cemetery to play this card. Destroy all magic cards on the field. For 2 turn cycles, your opponent cannot play magic cards and their creature effects are negated during your turn. The opponent may still respond with a valid Lightning card before this card resolves."
+    },
+    "effect": {
+      "effectId": "151-E02",
+      "trigger": "ON_PLAY_FIELD",
+      "actionType": "DESTROY_ALL_MAGIC",
+      "effectGroup": "Destroy",
+      "target": "All magic cards on field",
+      "value": "Destroy all",
+      "durationText": "Instant",
+      "reusableFunction": "destroyAllMagicCards"
+    },
+    "title": "Silence From The Grave destroys all magic cards on field",
+    "summary": "Pay Silence From The Grave's discard cost, allow the opponent response window, then verify every existing field Magic card is destroyed as Silence resolves.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_151_silence_from_the_grave",
+        "gen1_061_health_potion",
+        "test_magic_spd_plus4"
+      ],
+      "player2Cards": [
+        "gen1_062_hero_shield"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Keep Health Potion in hand for Silence's cost.",
+        "Pre-place test_magic_spd_plus4 and Hero Shield on field magic slots before Silence resolves."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Silence From The Grave.",
+      "Discard Health Potion for the pre-chain cost.",
+      "Resolve Silence and inspect all magic slots and cemeteries."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Destroy-all event emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_DESTROY_ALL_MAGIC_RESOLVED"
+      },
+      {
+        "label": "Player 1 field magic destroyed",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "test_magic_spd_plus4"
+      },
+      {
+        "label": "Player 2 field magic destroyed",
+        "path": "player_2.cemetery",
+        "operator": "contains",
+        "value": "gen1_062_hero_shield"
+      }
+    ],
+    "manualVerification": [
+      "Confirm only field Magic is wiped by this branch; the pre-chain discard remains a separate cost."
+    ],
+    "riskNotes": [
+      "Silence also applies lock/suppression after the destroy branch; those are covered by separate fixtures."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify field-wide Magic cleanup."
+    },
+    "regression": {
+      "fixtureName": "silence-from-the-grave-destroys-all-magic",
+      "tags": [
+        "magic",
+        "field",
+        "destroy"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_151_silence_from_the_grave",
+  "effectId": "151-E03",
+  "title": "Silence From The Grave locks opponent magic after resolving",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_151_silence_from_the_grave",
+      "cardName": "Silence From The Grave",
+      "cardType": "MAGIC",
+      "cardNumber": "151",
+      "generation": "1",
+      "rawText": "Discard 1 magic card to the cemetery to play this card. Destroy all magic cards on the field. For 2 turn cycles, your opponent cannot play magic cards and their creature effects are negated during your turn. The opponent may still respond with a valid Lightning card before this card resolves."
+    },
+    "effect": {
+      "effectId": "151-E03",
+      "trigger": "ON_PLAY_FIELD",
+      "actionType": "APPLY_OPPONENT_MAGIC_PLAY_LOCK",
+      "effectGroup": "Play Restriction",
+      "target": "Opponent player",
+      "value": "Cannot play Magic for 2 turn cycles after this card resolves",
+      "durationText": "2 turn cycles",
+      "reusableFunction": "applyOpponentMagicPlayLock"
+    },
+    "title": "Silence From The Grave locks opponent magic after resolving",
+    "summary": "Resolve Silence From The Grave and verify the opponent Magic play lock is applied only after the initial response window.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_151_silence_from_the_grave",
+        "gen1_061_health_potion"
+      ],
+      "player2Cards": [],
+      "forcedRolls": [],
+      "notes": [
+        "Keep Health Potion in hand for Silence's cost."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Silence From The Grave.",
+      "Pay its discard-Magic cost.",
+      "Pass the valid response window and resolve the chain."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Initial response window still opens",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MAGIC_CHAIN_STARTED"
+      },
+      {
+        "label": "Opponent Magic lock applied",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SILENCE_MAGIC_PLAY_LOCK_APPLIED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the lock applies after Silence resolves and blocks later Magic plays, including Lightning."
+    ],
+    "riskNotes": [
+      "The opponent may still respond with a valid Lightning card before this lock exists."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify two-turn-cycle Magic play lock."
+    },
+    "regression": {
+      "fixtureName": "silence-from-the-grave-locks-opponent-magic",
+      "tags": [
+        "magic",
+        "field",
+        "restriction"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

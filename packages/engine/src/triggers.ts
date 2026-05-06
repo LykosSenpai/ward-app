@@ -152,6 +152,39 @@ export function runCardRemovedFromFieldTriggers(
   return { linkedDestroyedCreatures };
 }
 
+export function returnLinkedSummonsForInvalidatedSource(
+  state: MatchState,
+  args: {
+    sourceCardInstanceId: string;
+    sourceCardName: string;
+    causedByPlayerId?: string;
+    reason: string;
+    addEvent?: AddEventFn;
+  }
+): RemovedFromFieldTriggerResult {
+  const linkedDestroyedCreatures = destroyCreaturesAnchoredToCard(
+    state,
+    args.sourceCardInstanceId,
+    args.addEvent
+  );
+
+  if (linkedDestroyedCreatures.length > 0) {
+    args.addEvent?.(state, "SOURCE_LINKED_SUMMONS_RETURNED_TO_CEMETERY", args.causedByPlayerId, {
+      sourceCardInstanceId: args.sourceCardInstanceId,
+      sourceCardName: args.sourceCardName,
+      reason: args.reason,
+      linkedDestroyedCreatures: linkedDestroyedCreatures.map(item => ({
+        creatureInstanceId: item.creature.instanceId,
+        creatureName: item.creatureName,
+        fieldOwnerPlayerId: item.fieldOwnerPlayerId,
+        ownerPlayerId: item.ownerPlayerId
+      }))
+    });
+  }
+
+  return { linkedDestroyedCreatures };
+}
+
 export type BattleTimingTrigger =
   | "WHEN_BATTLE_DECLARED"
   | "BEFORE_SPEED_CHECK"
