@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_117_soul_drain",
+  "effectId": "117-E01",
+  "title": "Soul Drain reduces attack dice and modifier while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_117_soul_drain",
+      "cardName": "Soul Drain",
+      "cardType": "MAGIC",
+      "cardNumber": "117",
+      "generation": "3",
+      "rawText": "Atk Dice Rolls: -1. Modifier: -1. Atk Dice Rolls cannot be reduced to 0."
+    },
+    "effect": {
+      "effectId": "117-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk Dice Rolls -1; Modifier -1",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Soul Drain reduces attack dice and modifier while equipped",
+    "summary": "Equip Soul Drain to a primary creature and verify the printed attack dice penalty respects the cannot-reduce-to-zero floor.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_117_soul_drain",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature with 2 Atk Dice Rolls and Modifier +1 so Soul Drain lowers them to 1 die and +0 modifier."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Soul Drain and equips it to their primary creature.",
+      "Read equipped creature effective attack dice.",
+      "Run a follow-up battle and inspect damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Attack dice reduced by 1 but not to 0",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Attack damage reflects one low damage die and Modifier minus one",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 0
+      },
+      {
+        "label": "Soul Drain remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_117_soul_drain"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Atk Dice Rolls cannot be reduced to 0; damage may still be reduced to 0 by the Modifier penalty."
+    ],
+    "riskNotes": [
+      "Uses battle damage as the observable Modifier output."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Soul Drain equipped dice and modifier penalties."
+    },
+    "regression": {
+      "fixtureName": "soul-drain-atk-dice-and-modifier-minus-one",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "attack-dice",
+        "modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

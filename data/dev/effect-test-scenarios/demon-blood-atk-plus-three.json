@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_096_demon_blood",
+  "effectId": "096-E02",
+  "title": "Demon Blood applies Atk plus three while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_096_demon_blood",
+      "cardName": "Demon Blood",
+      "cardType": "MAGIC",
+      "cardNumber": "096",
+      "generation": "3",
+      "rawText": "Atk: +3. The equipped creature is changed to Demon-type."
+    },
+    "effect": {
+      "effectId": "096-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +3",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Demon Blood applies Atk plus three while equipped",
+    "summary": "Equip Demon Blood to a modifier-zero primary creature and verify the printed Atk bonus through battle damage.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_096_demon_blood",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Atk bonus comes only from Demon Blood."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Demon Blood and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Attack damage includes the +3 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 4
+      },
+      {
+        "label": "Demon Blood remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_096_demon_blood"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the separate printed type-change effect makes the equipped creature Demon-type while equipped."
+    ],
+    "riskNotes": [
+      "This fixture covers only the Atk modifier effect; type change is effect 096-E01."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Demon Blood Atk equip modifier."
+    },
+    "regression": {
+      "fixtureName": "demon-blood-atk-plus-three",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_131_close_encounters",
+  "effectId": "131-E03",
+  "title": "Close Encounters applies Atk SPD and AL plus four while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_131_close_encounters",
+      "cardName": "Close Encounters",
+      "cardType": "MAGIC",
+      "cardNumber": "131",
+      "generation": "3",
+      "rawText": "Atk: +4. SPD: +4. AL: +4. If this card is destroyed, return it to your deck after 3 turn cycles. Shuffle."
+    },
+    "effect": {
+      "effectId": "131-E03",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +4; SPD +4; AL +4",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Close Encounters applies Atk SPD and AL plus four while equipped",
+    "summary": "Equip Close Encounters to a modifier-zero primary creature and verify the printed Atk, SPD, and AL bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_131_close_encounters",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the bonuses come only from Close Encounters."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Close Encounters and equips it to their primary creature.",
+      "Read equipped creature effective AL and SPD.",
+      "Run a follow-up battle and inspect damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 4",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 7
+      },
+      {
+        "label": "SPD increased by 4",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 14
+      },
+      {
+        "label": "Attack damage includes the +4 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Close Encounters remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_131_close_encounters"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the separate destroyed-card delayed return and shuffle effects resolve after 3 turn cycles."
+    ],
+    "riskNotes": [
+      "This fixture covers only the stat modifier effect; delayed return/shuffle are effects 131-E01 and 131-E02."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Close Encounters equipped stat modifier."
+    },
+    "regression": {
+      "fixtureName": "close-encounters-stat-suite",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk",
+        "spd",
+        "al"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
