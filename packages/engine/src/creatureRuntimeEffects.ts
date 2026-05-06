@@ -839,14 +839,29 @@ function applyBattleDamageMultiplier(
   const targetHasWings = targetArtworkTags.some(tag => String(tag).trim().toLowerCase() === "wings") ||
     targetName.includes("dragon") ||
     targetName.includes("griffin");
-  const typePredicateFailed =
-    ((text.includes("dragon-type") || text.includes("dragon target") || text.includes("name contains dragon")) && !targetType.includes("dragon") && !targetName.includes("dragon")) ||
-    ((text.includes("wings") || text.includes("winged")) && !targetHasWings) ||
-    ((text.includes("bug-type") || text.includes("bug type")) && !targetType.includes("bug")) ||
-    ((text.includes("demon-type") || text.includes("demon type") || text.includes("name contains \"demon\"")) && !targetType.includes("demon") && !targetName.includes("demon")) ||
-    ((text.includes("undead-type") || text.includes("undead type")) && !targetType.includes("undead")) ||
-    ((text.includes("humanoid-type") || text.includes("humanoid type")) && !targetType.includes("humanoid")) ||
-    ((text.includes("mechanical-type") || text.includes("mechanical type")) && !targetType.includes("mechanical"));
+  const targetPredicates: boolean[] = [];
+  if (text.includes("dragon-type") || text.includes("dragon target") || text.includes("name contains dragon")) {
+    targetPredicates.push(targetType.includes("dragon") || targetName.includes("dragon"));
+  }
+  if (text.includes("wings") || text.includes("winged")) {
+    targetPredicates.push(targetHasWings);
+  }
+  if (text.includes("bug-type") || text.includes("bug type")) {
+    targetPredicates.push(targetType.includes("bug"));
+  }
+  if (text.includes("demon-type") || text.includes("demon type") || text.includes("name contains \"demon\"")) {
+    targetPredicates.push(targetType.includes("demon") || targetName.includes("demon"));
+  }
+  if (text.includes("undead-type") || text.includes("undead type")) {
+    targetPredicates.push(targetType.includes("undead"));
+  }
+  if (text.includes("humanoid-type") || text.includes("humanoid type")) {
+    targetPredicates.push(targetType.includes("humanoid"));
+  }
+  if (text.includes("mechanical-type") || text.includes("mechanical type")) {
+    targetPredicates.push(targetType.includes("mechanical"));
+  }
+  const typePredicateFailed = targetPredicates.length > 0 && !targetPredicates.some(Boolean);
 
   if (typePredicateFailed) {
     addEvent?.(state, "BATTLE_DAMAGE_MULTIPLIER_CONDITION_NOT_MET", source.player.id, {

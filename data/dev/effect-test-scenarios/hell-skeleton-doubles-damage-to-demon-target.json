@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_142_hell_skeleton",
+  "effectId": "142-E01",
+  "title": "Hell Skeleton doubles damage to Demon targets",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_142_hell_skeleton",
+      "cardName": "Hell Skeleton",
+      "cardType": "CREATURE",
+      "cardNumber": "142",
+      "generation": "1",
+      "rawText": "This creature inflicts 2x Atk damage to any creature with \"Demon\" in their name, or Demon and Undead-types."
+    },
+    "effect": {
+      "effectId": "142-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Matching target creature",
+      "value": "2x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Hell Skeleton doubles damage to Demon targets",
+    "summary": "Verify Hell Skeleton attack damage is doubled against a Demon-type target.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_142_hell_skeleton"
+      ],
+      "player2Cards": [
+        "test_slow_demon_type_creature"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5,
+            5
+          ],
+          "label": "Hell Skeleton hits Demon target"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2
+          ],
+          "label": "Hell Skeleton base damage 8"
+        }
+      ],
+      "notes": [
+        "Use a slow Demon-type target so Hell Skeleton strikes first.",
+        "Hell Skeleton base modifier +2 makes base attack damage 8 before multiplier."
+      ]
+    },
+    "steps": [
+      "Set Hell Skeleton as player_1 primary and Test Slow Demon as player_2 primary.",
+      "Resolve hit and damage calculation.",
+      "Observe final damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Multiplier trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Final damage is doubled",
+        "path": "battle.lastDamage.amount",
+        "operator": "equals",
+        "value": 16
+      },
+      {
+        "label": "Demon target HP reduced by 16",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 16
+      }
+    ],
+    "manualVerification": [
+      "Add separate variants for Demon-name and Undead-type targets if this predicate needs finer coverage."
+    ],
+    "riskNotes": [
+      "This fixture covers the Demon-type branch of the printed Demon-name, Demon-type, or Undead-type condition."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Hell Skeleton's matching-target damage multiplier."
+    },
+    "regression": {
+      "fixtureName": "hell-skeleton-doubles-damage-to-demon-target",
+      "tags": [
+        "creature",
+        "combat",
+        "damage-multiplier",
+        "demon"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_142_hell_skeleton:142-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
