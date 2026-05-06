@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_027_common_helm",
+  "effectId": "027-E01",
+  "title": "Common Helm applies Atk and AL plus two while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_027_common_helm",
+      "cardName": "Common Helm",
+      "cardType": "MAGIC",
+      "cardNumber": "027",
+      "generation": "2",
+      "rawText": "Atk: +2. AL: +2."
+    },
+    "effect": {
+      "effectId": "027-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +2; AL +2",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Common Helm applies Atk and AL plus two while equipped",
+    "summary": "Equip Common Helm to a modifier-zero primary creature, verify AL gains +2, and run a battle to verify Atk gains +2.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_027_common_helm",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Atk bonus comes only from Common Helm."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Common Helm and equips it to their primary creature.",
+      "Read equipped creature effective AL.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 2",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Attack damage includes the +2 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Common Helm remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_027_common_helm"
+      }
+    ],
+    "manualVerification": [
+      "Confirm both bonuses apply only while Common Helm remains equipped."
+    ],
+    "riskNotes": [
+      "Uses effective stat output for AL and battle damage output for Atk."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Common Helm Atk/AL equip modifier."
+    },
+    "regression": {
+      "fixtureName": "common-helm-atk-al-plus-two",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk",
+        "al"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

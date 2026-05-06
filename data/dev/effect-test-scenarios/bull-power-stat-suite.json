@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_012_bull_power",
+  "effectId": "012-E01",
+  "title": "Bull Power applies Atk Hit SPD and AL plus two while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_012_bull_power",
+      "cardName": "Bull Power",
+      "cardType": "MAGIC",
+      "cardNumber": "012",
+      "generation": "2",
+      "rawText": "Atk: +2. Hit: +2. SPD: +2. AL: +2."
+    },
+    "effect": {
+      "effectId": "012-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +2; Hit +2; SPD +2; AL +2",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Bull Power applies Atk Hit SPD and AL plus two while equipped",
+    "summary": "Equip Bull Power to a modifier-zero primary creature, verify the printed SPD and AL bonuses, then run a battle for Hit and Atk.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_012_bull_power",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so Hit and Atk bonuses come only from Bull Power."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Bull Power and equips it to their primary creature.",
+      "Read equipped creature effective SPD and AL.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the resolved hit roll modifier and damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "SPD increased by 2",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 12
+      },
+      {
+        "label": "AL increased by 2",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Hit roll modifier increased by 2",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Attack damage includes the +2 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Bull Power remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_012_bull_power"
+      }
+    ],
+    "manualVerification": [
+      "Confirm all four bonuses apply only while Bull Power remains equipped."
+    ],
+    "riskNotes": [
+      "Uses effective stat reads for SPD/AL and battle output for Hit/Atk."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Bull Power equipped stat suite."
+    },
+    "regression": {
+      "fixtureName": "bull-power-stat-suite",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "hit",
+        "atk",
+        "spd",
+        "al"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
