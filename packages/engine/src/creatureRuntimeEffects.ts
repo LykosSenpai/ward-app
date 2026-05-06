@@ -1012,6 +1012,48 @@ function applyImmediateDamageOrHeal(
   });
 }
 
+function applyForcedDamageDice(
+  state: MatchState,
+  source: ActiveEffectSource,
+  target: FieldCreatureLocation,
+  effect: WardEngineEffect,
+  addEvent?: AddEventFn
+): void {
+  const diceCount = firstPositiveNumber(effect) ?? 1;
+  const dice = rollD6WithDev(state, {
+    kind: "EFFECT_ROLL",
+    count: diceCount,
+    playerId: target.player.id,
+    label: `${source.definition.name} forced damage dice`,
+    addEvent,
+    context: {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      targetCreatureInstanceId: target.card.instanceId,
+      targetCreatureName: target.definition.name
+    }
+  });
+  const damageAmount = dice.reduce((total, die) => total + die, 0);
+  const result = applyDamageToCreatureTarget(state, targetOptionFromCreatureLocation(target), damageAmount);
+
+  addEvent?.(state, "BATTLE_FORCED_DAMAGE_DICE_RESOLVED", source.player.id, {
+    sourceCardInstanceId: source.card.instanceId,
+    sourceCardName: source.definition.name,
+    effectId: effect.id,
+    actionType: effect.actionType,
+    targetPlayerId: target.player.id,
+    targetCreatureInstanceId: result.creature.instanceId,
+    targetCreatureName: result.creatureName,
+    dice,
+    damageAmount: result.damageAmount,
+    remainingHp: result.remainingHp,
+    killed: result.killed,
+    note: "Forced effect damage dice use dice total only; attack modifiers and critical rules do not apply."
+  });
+}
+
 function resolveEffectAction(
   state: MatchState,
   source: ActiveEffectSource,
@@ -1075,6 +1117,11 @@ function resolveEffectAction(
 
   if (actionType === "HEAL_BY_DAMAGE_DEALT") {
     applyHealByDamageDealt(state, source, target, effect, strike, addEvent);
+    return;
+  }
+
+  if (actionType === "ROLL_DAMAGE_DICE") {
+    applyForcedDamageDice(state, source, target, effect, addEvent);
     return;
   }
 

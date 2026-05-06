@@ -368,7 +368,8 @@ function ensureSourceOnPlayZone(match: MatchState, plan: LlmEffectTestPlan, effe
 
 function applyPlanAndVariantRolls(match: MatchState, plan: LlmEffectTestPlan, variant: VariantConfig): void {
   const seenLabels = new Set<string>();
-  for (const roll of [...variant.forcedRolls, ...(plan.setup.forcedRolls ?? [])]) {
+  const planRolls = variant.name === "expected-success" ? plan.setup.forcedRolls ?? [] : [];
+  for (const roll of [...planRolls, ...variant.forcedRolls]) {
     const key = `${roll.kind}:${roll.dice.join(",")}:${roll.label ?? ""}`;
     if (seenLabels.has(key)) continue;
     seenLabels.add(key);
@@ -453,7 +454,47 @@ function summarizeMatch(match: MatchState): string {
   }).join(" | ");
 }
 
+function readDerivedPath(root: unknown, path: string): unknown {
+  const match = root as MatchState;
+
+  if (path === "effectLog") {
+    return match.eventLog;
+  }
+
+  if (path === "damageEvents") {
+    return match.eventLog.flatMap(event => {
+      const payload = event.payload as { damageAmount?: unknown } | undefined;
+      const damageAmount = Number(payload?.damageAmount);
+      if (!Number.isFinite(damageAmount)) return [];
+
+      if (event.type === "BATTLE_FORCED_DAMAGE_DICE_RESOLVED") {
+        return [`effectDamage:${damageAmount}`];
+      }
+
+      if (event.type.includes("DAMAGE")) {
+        return [`damage:${damageAmount}`];
+      }
+
+      return [];
+    });
+  }
+
+  const playerPath = path.match(/^players\.([^.]+)\.(primaryCreature|field\.primaryCreature)(?:\.(.+))?$/);
+  if (playerPath) {
+    const [, playerId, , rest] = playerPath;
+    const player = match.players.find(item => item.id === playerId);
+    const primary = player?.field.primaryCreature;
+    if (!rest) return primary;
+    return readPath(primary, rest);
+  }
+
+  return undefined;
+}
+
 function readPath(root: unknown, path: string): unknown {
+  const derived = readDerivedPath(root, path);
+  if (derived !== undefined) return derived;
+
   const cleaned = path.replace(/\[(\d+)\]/g, ".$1");
   const parts = cleaned.split(".").map(part => part.trim()).filter(Boolean);
   let current: unknown = root;
@@ -804,7 +845,9 @@ function classifyVariant(args: {
 }): LlmHeadlessVariantResult {
   const newEvents = args.after.eventLog.slice(args.startEventCount);
   const eventTypes = newEvents.map(event => event.type);
-  const assertionResults = evaluateAssertions(args.after, args.plan);
+  const assertionResults = args.variant.name === "expected-success"
+    ? evaluateAssertions(args.after, args.plan)
+    : [];
   const assertionPasses = assertionResults.filter(result => result.status === "PASS").length;
   const assertionFailures = assertionResults.filter(result => result.status === "FAIL").length;
   const manualEffectQueueCount = args.after.manualEffectQueue?.length ?? 0;

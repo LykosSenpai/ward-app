@@ -485,11 +485,11 @@
       "effectId": "041-E01",
       "trigger": "ON_HIT",
       "actionType": "ROLL_DAMAGE_DICE",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-06T05:40:19.459Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_042_dragon_rage:042-E01",
