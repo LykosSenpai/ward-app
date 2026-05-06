@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_047_ent_tree",
+  "effectId": "047-E02",
+  "title": "Ent Tree doubles attack damage to weapon holders",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_047_ent_tree",
+      "cardName": "Ent Tree",
+      "cardType": "CREATURE",
+      "cardNumber": "047",
+      "generation": "1",
+      "rawText": "This creature is unaffected by creature effects and magic cards. This creature inflicts 2x Atk damage to any creature holding a weapon."
+    },
+    "effect": {
+      "effectId": "047-E02",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Target creature holding weapon",
+      "value": "2x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Ent Tree doubles attack damage to weapon holders",
+    "summary": "Ent Tree attacks a creature tagged as holding a weapon and should apply a 2x attack-damage multiplier.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_047_ent_tree"
+      ],
+      "player2Cards": [
+        "test_weapon_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Force Ent Tree hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            4
+          ],
+          "label": "Stable Ent Tree damage"
+        }
+      ],
+      "notes": [
+        "Set Ent Tree as player_1 primary.",
+        "Set player_2 primary to a synthetic creature with WEAPON artwork tag."
+      ]
+    },
+    "steps": [
+      "Player 1 attacks the weapon-tagged defender with Ent Tree.",
+      "Resolve hit and attack damage.",
+      "Inspect the damage multiplier trace."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Weapon target damage multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      },
+      {
+        "label": "Weapon holder took battle damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "lessThan",
+        "value": 80
+      }
+    ],
+    "manualVerification": [
+      "Confirm the multiplier only applies against weapon-tagged targets."
+    ],
+    "riskNotes": [
+      "Weapon detection depends on artwork/runtime tags rather than a fully modeled equipment inventory."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate conditional damage multiplier against a weapon-tagged target."
+    },
+    "regression": {
+      "fixtureName": "ent-tree-double-damage-to-weapon-target",
+      "tags": [
+        "creature",
+        "combat",
+        "damage-multiplier",
+        "weapon"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

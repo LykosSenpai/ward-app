@@ -2,6 +2,7 @@ import type { CardDefinition, CardInstance, DevRollKind, MatchState, WardEngineE
 import {
   activateCardEffect,
   applyManualBattleDamage,
+  applyOnEquipImmediateEffects,
   applyOnEquipPercentageDamageEffects,
   applyPendingEffectRoll,
   advanceTurn,
@@ -227,6 +228,19 @@ const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "C
     attackDice: 1,
     modifier: 0,
     text: "Synthetic headless QA defender."
+  },
+  test_weapon_defender: {
+    id: "test_weapon_defender",
+    name: "Test Weapon Defender",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 4,
+    speed: 1,
+    hp: 80,
+    attackDice: 1,
+    modifier: 0,
+    artworkTags: ["WEAPON"],
+    text: "Synthetic headless QA defender holding a weapon."
   }
 };
 
@@ -421,7 +435,7 @@ function ensureCardInHand(match: MatchState, playerId: string, cardId: string): 
   return created;
 }
 
-function addHeadlessEvent(match: MatchState, type: string, playerId: string, payload: Record<string, unknown>): void {
+function addHeadlessEvent(match: MatchState, type: string, playerId?: string, payload?: unknown): void {
   match.eventLog.push({
     id: `headless-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     sequenceNumber: match.eventLog.length + 1,
@@ -680,13 +694,7 @@ function takeFirstMagicFromZones(match: MatchState, playerId: string, avoidCardI
 
 function moveFirstCreatureToCemetery(match: MatchState, playerId: string, avoidCardId?: string): void {
   const player = getPlayer(match, playerId);
-  const deckIndex = player.deck.findIndex(card => {
-    const definition = match.cardCatalog[card.cardId];
-    return definition?.cardType === "CREATURE" && card.cardId !== avoidCardId;
-  });
-
-  if (deckIndex >= 0) {
-    const [card] = player.deck.splice(deckIndex, 1);
+  const moveCard = (card: CardInstance) => {
     const definition = match.cardCatalog[card.cardId];
     card.zone = "CEMETERY";
     card.controllerPlayerId = playerId;
@@ -696,6 +704,27 @@ function moveFirstCreatureToCemetery(match: MatchState, playerId: string, avoidC
       card.currentHp = 0;
     }
     player.cemetery.push(card);
+  };
+
+  const deckIndex = player.deck.findIndex(card => {
+    const definition = match.cardCatalog[card.cardId];
+    return definition?.cardType === "CREATURE" && card.cardId !== avoidCardId;
+  });
+
+  if (deckIndex >= 0) {
+    const [card] = player.deck.splice(deckIndex, 1);
+    moveCard(card);
+    return;
+  }
+
+  const handIndex = player.hand.findIndex(card => {
+    const definition = match.cardCatalog[card.cardId];
+    return definition?.cardType === "CREATURE" && card.cardId !== avoidCardId;
+  });
+
+  if (handIndex >= 0) {
+    const [card] = player.hand.splice(handIndex, 1);
+    moveCard(card);
   }
 }
 
@@ -2021,13 +2050,27 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     source.zone === "MAGIC_SLOT" &&
     (
       actionType.includes("apply_stat_modifier") ||
+      actionType.includes("apply_multi_modifier") ||
+      actionType.includes("apply_stat_set_aura") ||
       actionType.includes("suppress_modifier_layer") ||
       actionType.includes("deal_percentage_damage") ||
+      actionType.includes("heal_to_full") ||
       actionType.includes("global_creature_effect_negation")
     );
 
   if (shouldAcceptFieldStaticMagic) {
-    if (actionType.includes("deal_percentage_damage")) {
+    if (actionType.includes("heal_to_full")) {
+      const target = source.card.attachedToInstanceId
+        ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+        : undefined;
+      if (target?.card) {
+        applyOnEquipImmediateEffects(match, {
+          sourceMagicCard: source.card,
+          targetCreature: target.card,
+          addEvent: addHeadlessEvent
+        });
+      }
+    } else if (actionType.includes("deal_percentage_damage")) {
       const target = source.card.attachedToInstanceId
         ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
         : undefined;
@@ -2035,16 +2078,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
         applyOnEquipPercentageDamageEffects(match, {
           sourceMagicCard: source.card,
           targetCreature: target.card,
-          addEvent: (state, type, playerId, payload) => {
-            state.eventLog.push({
-              id: `headless-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-              sequenceNumber: state.eventLog.length + 1,
-              timestamp: new Date().toISOString(),
-              type,
-              playerId,
-              payload
-            });
-          }
+          addEvent: addHeadlessEvent
         });
       }
     } else {

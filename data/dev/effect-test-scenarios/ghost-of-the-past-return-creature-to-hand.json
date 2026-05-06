@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_053_ghost_of_the_past",
+  "effectId": "053-E01",
+  "title": "Ghost of the Past returns a cemetery creature to hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_053_ghost_of_the_past",
+      "cardName": "Ghost of the Past",
+      "cardType": "MAGIC",
+      "cardNumber": "053",
+      "generation": "1",
+      "rawText": "Return a creature from your cemetery back to your hand."
+    },
+    "effect": {
+      "effectId": "053-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "target": "Your cemetery/hand",
+      "value": "1 creature",
+      "durationText": "Instant",
+      "reusableFunction": "returnFromCemeteryToHand"
+    },
+    "title": "Ghost of the Past returns a cemetery creature to hand",
+    "summary": "Play Ghost of the Past with a creature in player_1 cemetery and verify that creature moves to hand.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_053_ghost_of_the_past",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place one player_1 creature in cemetery before play."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Ghost of the Past.",
+      "Choose a creature from player_1 cemetery.",
+      "Resolve the move to hand."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Creature returned to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "test_primary_creature"
+      },
+      {
+        "label": "Returned creature no longer in cemetery",
+        "path": "player_1.cemetery",
+        "operator": "notContains",
+        "value": "test_primary_creature"
+      }
+    ],
+    "manualVerification": [
+      "Confirm only creature cards are legal cemetery targets."
+    ],
+    "riskNotes": [
+      "Target prompt selection must prefer own cemetery creatures."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate cemetery-to-hand movement."
+    },
+    "regression": {
+      "fixtureName": "ghost-of-the-past-return-creature-to-hand",
+      "tags": [
+        "magic",
+        "zone-movement",
+        "cemetery"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

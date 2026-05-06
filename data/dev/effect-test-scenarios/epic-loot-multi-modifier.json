@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_048_epic_loot",
+  "effectId": "048-E01",
+  "title": "Epic Loot applies multi-stat modifiers while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_048_epic_loot",
+      "cardName": "Epic Loot",
+      "cardType": "MAGIC",
+      "cardNumber": "048",
+      "generation": "1",
+      "rawText": "AL: +5. SPD: +5. Atk Dice Rolls: +1. Hit Dice Rolls: +1. On equip, fully heal the equipped creature."
+    },
+    "effect": {
+      "effectId": "048-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_MULTI_MODIFIER",
+      "effectGroup": "Stat/Dice Modifier",
+      "target": "Equipped creature",
+      "value": "AL +5; SPD +5; Atk Dice Rolls +1; Hit Dice Rolls +1",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatAndDiceModifiers"
+    },
+    "title": "Epic Loot applies multi-stat modifiers while equipped",
+    "summary": "Equip Epic Loot to a primary creature and verify effective AL, SPD, and attack dice include the printed bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_048_epic_loot",
+        "test_creature_spd10"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_creature_spd10 on player_1 field as primary."
+      ]
+    },
+    "steps": [
+      "Play Epic Loot targeting player_1 primary creature.",
+      "Read equipped creature effective stats."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 5",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 8
+      },
+      {
+        "label": "SPD increased by 5",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 15
+      },
+      {
+        "label": "Attack dice increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Epic Loot remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_048_epic_loot"
+      }
+    ],
+    "manualVerification": [
+      "Confirm AL cap still applies if base AL plus modifiers exceeds 12."
+    ],
+    "riskNotes": [
+      "Hit Dice Rolls are not directly exposed by the current effective stat helper."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate while-equipped multi modifier path."
+    },
+    "regression": {
+      "fixtureName": "epic-loot-multi-modifier",
+      "tags": [
+        "magic",
+        "equip",
+        "multi-modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

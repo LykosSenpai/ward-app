@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_049_curse",
+  "effectId": "049-E01",
+  "title": "Curse sets opponent creature AL to one",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_049_curse",
+      "cardName": "Curse",
+      "cardType": "MAGIC",
+      "cardNumber": "049",
+      "generation": "1",
+      "rawText": "All creatures on your opponent's side of the field have their AL reduced to 1. This card supersedes other AL increases."
+    },
+    "effect": {
+      "effectId": "049-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_STAT_SET_AURA",
+      "effectGroup": "Stat Set Aura",
+      "target": "Opponent creatures",
+      "value": "AL = 1",
+      "durationText": "While field active",
+      "reusableFunction": "applyStatSetAura"
+    },
+    "title": "Curse sets opponent creature AL to one",
+    "summary": "Place Curse as field magic and verify opponent primary effective AL is set to 1.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_049_curse",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_defender_al_6_hp_50"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place Curse in player_1 field magic slot as field-active.",
+        "Set player_2 primary to an AL6 creature."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Curse as field magic.",
+      "Read player_2 primary effective AL."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Opponent AL set to 1",
+        "path": "player_2.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Curse remains in magic slot",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_049_curse"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the aura applies only to opponent creatures."
+    ],
+    "riskNotes": [
+      "Layer priority with other AL increases is covered by a separate suppression effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate field-active AL set aura."
+    },
+    "regression": {
+      "fixtureName": "curse-sets-opponent-al-to-one",
+      "tags": [
+        "magic",
+        "field",
+        "stat-set-aura"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

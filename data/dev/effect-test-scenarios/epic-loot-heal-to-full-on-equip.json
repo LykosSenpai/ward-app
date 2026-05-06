@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_048_epic_loot",
+  "effectId": "048-E02",
+  "title": "Epic Loot fully heals equipped creature on equip",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_048_epic_loot",
+      "cardName": "Epic Loot",
+      "cardType": "MAGIC",
+      "cardNumber": "048",
+      "generation": "1",
+      "rawText": "AL: +5. SPD: +5. Atk Dice Rolls: +1. Hit Dice Rolls: +1. On equip, fully heal the equipped creature."
+    },
+    "effect": {
+      "effectId": "048-E02",
+      "trigger": "ON_EQUIP",
+      "actionType": "HEAL_TO_FULL",
+      "effectGroup": "Healing",
+      "target": "Equipped creature",
+      "value": "Full HP",
+      "durationText": "Instant",
+      "reusableFunction": "healToFull"
+    },
+    "title": "Epic Loot fully heals equipped creature on equip",
+    "summary": "Equip Epic Loot to a damaged creature and verify its current HP is restored to max HP once.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_048_epic_loot",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_creature_hp100 on player_1 field as primary.",
+        "Set current HP to 80 before equip."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Epic Loot and equips it to the damaged primary creature.",
+      "Resolve ON_EQUIP healing.",
+      "Inspect equipped creature current HP."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Equipped creature healed to full",
+        "path": "players.player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 100
+      },
+      {
+        "label": "Epic Loot remains equipped/on field",
+        "path": "players.player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_048_epic_loot"
+      }
+    ],
+    "manualVerification": [
+      "Confirm heal resolves only on equip and does not repeat every phase."
+    ],
+    "riskNotes": [
+      "The setup needs a pre-damaged primary creature before equip resolves."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate ON_EQUIP heal-to-full path."
+    },
+    "regression": {
+      "fixtureName": "epic-loot-heal-to-full-on-equip",
+      "tags": [
+        "magic",
+        "equip",
+        "healing"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}
