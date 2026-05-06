@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_075_mysterious_traveler",
+  "effectId": "075-E01",
+  "title": "Mysterious Traveler applies AL +3 and SPD +3 while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_075_mysterious_traveler",
+      "cardName": "Mysterious Traveler",
+      "cardType": "MAGIC",
+      "cardNumber": "075",
+      "generation": "1",
+      "rawText": "AL: +3. SPD: +3."
+    },
+    "effect": {
+      "effectId": "075-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "AL +3; SPD +3",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Mysterious Traveler applies AL +3 and SPD +3 while equipped",
+    "summary": "Equip Mysterious Traveler to a primary creature and verify both effective AL and SPD increase.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_075_mysterious_traveler",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature on player_1 field as primary."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Mysterious Traveler and equips it to their primary creature.",
+      "Read equipped creature effective AL and SPD."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 3",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 6
+      },
+      {
+        "label": "SPD increased by 3",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 13
+      },
+      {
+        "label": "Mysterious Traveler remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_075_mysterious_traveler"
+      }
+    ],
+    "manualVerification": [
+      "Confirm both modifiers disappear when the equip leaves the field."
+    ],
+    "riskNotes": [
+      "Covers a multi-stat APPLY_STAT_MODIFIER equip."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate basic AL/SPD equip modifier."
+    },
+    "regression": {
+      "fixtureName": "mysterious-traveler-al-spd-plus-three",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "al",
+        "spd"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

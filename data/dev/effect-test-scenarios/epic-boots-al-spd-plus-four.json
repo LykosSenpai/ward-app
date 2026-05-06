@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_147_epic_boots",
+  "effectId": "147-E01",
+  "title": "Epic Boots applies AL +4 and SPD +4 while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_147_epic_boots",
+      "cardName": "Epic Boots",
+      "cardType": "MAGIC",
+      "cardNumber": "147",
+      "generation": "1",
+      "rawText": "AL: +4. SPD: +4."
+    },
+    "effect": {
+      "effectId": "147-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "AL +4; SPD +4",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Epic Boots applies AL +4 and SPD +4 while equipped",
+    "summary": "Equip Epic Boots to a primary creature and verify both effective AL and SPD increase.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_147_epic_boots",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature on player_1 field as primary."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Epic Boots and equips it to their primary creature.",
+      "Read equipped creature effective AL and SPD."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 4",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 7
+      },
+      {
+        "label": "SPD increased by 4",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 14
+      },
+      {
+        "label": "Epic Boots remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_147_epic_boots"
+      }
+    ],
+    "manualVerification": [
+      "Confirm both modifiers disappear when the equip leaves the field."
+    ],
+    "riskNotes": [
+      "Covers another multi-stat equip using late Gen 1 card data."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Epic Boots AL/SPD equip modifier."
+    },
+    "regression": {
+      "fixtureName": "epic-boots-al-spd-plus-four",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "al",
+        "spd"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_074_mounted_assault",
+  "effectId": "074-E01",
+  "title": "Mounted Assault applies SPD +6 while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_074_mounted_assault",
+      "cardName": "Mounted Assault",
+      "cardType": "MAGIC",
+      "cardNumber": "074",
+      "generation": "1",
+      "rawText": "SPD: +6."
+    },
+    "effect": {
+      "effectId": "074-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "SPD +6",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Mounted Assault applies SPD +6 while equipped",
+    "summary": "Equip Mounted Assault to a primary creature and verify effective SPD includes the +6 bonus.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_074_mounted_assault",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature on player_1 field as primary."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Mounted Assault and equips it to their primary creature.",
+      "Read equipped creature effective SPD."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "SPD increased by 6",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 16
+      },
+      {
+        "label": "Mounted Assault remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_074_mounted_assault"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the speed bonus applies only while Mounted Assault remains equipped."
+    ],
+    "riskNotes": [
+      "Uses shared while-equipped stat modifier handling."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate basic SPD equip modifier."
+    },
+    "regression": {
+      "fixtureName": "mounted-assault-spd-plus-six",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "spd"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

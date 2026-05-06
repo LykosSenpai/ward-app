@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_090_sword_of_the_grove",
+  "effectId": "090-E01",
+  "title": "Sword of the Grove applies Atk +5 while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_090_sword_of_the_grove",
+      "cardName": "Sword of the Grove",
+      "cardType": "MAGIC",
+      "cardNumber": "090",
+      "generation": "1",
+      "rawText": "Atk: +5."
+    },
+    "effect": {
+      "effectId": "090-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +5",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Sword of the Grove applies Atk +5 while equipped",
+    "summary": "Equip Sword of the Grove to a modifier-zero primary creature, run a battle, and verify attack damage modifier receives +5.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_090_sword_of_the_grove",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature_mod_0 on player_1 field as primary so the attack modifier comes only from Sword of the Grove."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Sword of the Grove and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the resolved attack damage modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Attack damage includes the +5 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 6
+      },
+      {
+        "label": "Sword of the Grove remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_090_sword_of_the_grove"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the Atk bonus applies only while Sword of the Grove remains equipped."
+    ],
+    "riskNotes": [
+      "Atk bonuses are verified through battle damage roll modifier output."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate basic Atk equip modifier through a resolved battle roll."
+    },
+    "regression": {
+      "fixtureName": "sword-of-the-grove-atk-plus-five",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
