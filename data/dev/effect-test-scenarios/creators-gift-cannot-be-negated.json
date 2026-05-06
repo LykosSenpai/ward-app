@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_005_creator_s_gift",
+  "effectId": "005-E01",
+  "title": "Creator's Gift cannot be negated when played",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_005_creator_s_gift",
+      "cardName": "Creator's Gift",
+      "cardType": "MAGIC",
+      "cardNumber": "005",
+      "generation": "2",
+      "rawText": "This card cannot be negated when played. Atk: +6. Hit: +6. Atk Dice Rolls: +2. Hit Dice Rolls: +2."
+    },
+    "effect": {
+      "effectId": "005-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SET_CAN_BE_NEGATED",
+      "effectGroup": "Negation Rule",
+      "target": "This card",
+      "value": "Cannot be negated",
+      "durationText": "While resolving",
+      "reusableFunction": "setCanBeNegated"
+    },
+    "title": "Creator's Gift cannot be negated when played",
+    "summary": "Play Creator's Gift and verify its cannot-be-negated text suppresses the Lightning response window, then resolves to the field.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_005_creator_s_gift",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen1_028_blade_in_the_dark",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Player_1 plays Creator's Gift.",
+        "Player_2 has Blade in the Dark, but Creator's Gift should not open a Lightning response window."
+      ]
+    },
+    "steps": [
+      "Player_1 plays Creator's Gift.",
+      "Confirm no Lightning response window remains open.",
+      "Inspect player_1 magic slots and the game log."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Creator's Gift resolved to field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_005_creator_s_gift"
+      },
+      {
+        "label": "Creator's Gift was not negated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "magic_negated"
+      },
+      {
+        "label": "Lightning response window was suppressed",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MAGIC_CHAIN_RESPONSE_WINDOW_SUPPRESSED"
+      },
+      {
+        "label": "No Lightning response was added",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "LIGHTNING_RESPONSE_ADDED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm other magic cards without this text still open the normal Lightning response window."
+    ],
+    "riskNotes": [
+      "This fixture validates response-window immunity, not equipped stat modifiers."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Creator's Gift cannot-be-negated rule."
+    },
+    "regression": {
+      "fixtureName": "creators-gift-cannot-be-negated",
+      "tags": [
+        "magic",
+        "equip",
+        "chain",
+        "negation"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
