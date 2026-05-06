@@ -135,6 +135,10 @@ function normalizeCardInstance(card: CardInstance): CardInstance {
     )
     .map(normalizeActiveEffectInstance);
 
+  card.attachedUnder = asArray<CardInstance>(card.attachedUnder).map(
+    normalizeCardInstance
+  );
+
   return card;
 }
 

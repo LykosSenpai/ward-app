@@ -150,6 +150,14 @@ export function playCreatureFromHandAsPrimary(
     return card.instanceId !== targetCard.instanceId && !sacrificeIds.has(card.instanceId);
   });
 
+  const attachSacrificesUnderSource = targetDefinition.effects?.some(effect =>
+    String(effect.actionType ?? "").trim().toUpperCase() === "ATTACH_CARDS_UNDER_SOURCE"
+  ) ?? false;
+
+  if (attachSacrificesUnderSource) {
+    targetCard.attachedUnder = [];
+  }
+
   for (const sacrificeCard of sacrificeCards) {
     const sacrificeDefinition = getCardDefinition(nextState, sacrificeCard);
     const sacrificeSourceZone =
@@ -157,17 +165,35 @@ export function playCreatureFromHandAsPrimary(
         ? "PRIMARY_CREATURE"
         : "HAND";
 
-    sacrificeCard.zone = "CEMETERY";
-    sacrificeCard.currentHp = 0;
-
-    player.cemetery.push(sacrificeCard);
+    if (attachSacrificesUnderSource) {
+      sacrificeCard.zone = "ATTACHED_UNDER";
+      sacrificeCard.currentHp = sacrificeDefinition.cardType === "CREATURE"
+        ? sacrificeDefinition.hp
+        : sacrificeCard.currentHp;
+      targetCard.attachedUnder?.push(sacrificeCard);
+    } else {
+      sacrificeCard.zone = "CEMETERY";
+      sacrificeCard.currentHp = 0;
+      player.cemetery.push(sacrificeCard);
+    }
 
     addEvent(nextState, "CREATURE_SACRIFICED_FOR_SUMMON", playerId, {
       cardInstanceId: sacrificeCard.instanceId,
       cardName: sacrificeDefinition.name,
       summonedCardName: targetDefinition.name,
-      sacrificeSourceZone
+      sacrificeSourceZone,
+      attachedUnderSource: attachSacrificesUnderSource
     });
+
+    if (attachSacrificesUnderSource) {
+      addEvent(nextState, "CREATURE_SACRIFICE_ATTACHED_UNDER_SOURCE", playerId, {
+        cardInstanceId: sacrificeCard.instanceId,
+        cardName: sacrificeDefinition.name,
+        sourceCardInstanceId: targetCard.instanceId,
+        sourceCardName: targetDefinition.name,
+        sacrificeSourceZone
+      });
+    }
   }
 
   targetCard.zone = "PRIMARY_CREATURE";
@@ -199,6 +225,7 @@ export function playCreatureFromHandAsPrimary(
     cardName: targetDefinition.name,
     requiredSacrifices,
     sacrificeCount: sacrificeCards.length,
+    attachedUnderCount: targetCard.attachedUnder?.length ?? 0,
     sacrificedCurrentPrimary: !!primarySacrifice,
     autoRemovedCurrentPrimary: !!autoRemovedPrimary,
     wasForcedReplacement: isForcedPrimaryReplacement,

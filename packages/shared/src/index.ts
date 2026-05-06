@@ -60,7 +60,8 @@ export type ZoneType =
   | "MAGIC_SLOT"
   | "CEMETERY"
   | "CHAIN"
-  | "REMOVED_FROM_GAME";
+  | "REMOVED_FROM_GAME"
+  | "ATTACHED_UNDER";
 
 export type TurnPhase =
   | "DRAW"
@@ -338,6 +339,7 @@ export type CardInstance = {
 
   attachedToInstanceId?: string;
   anchorSourceInstanceId?: string;
+  attachedUnder?: CardInstance[];
 
   isLimitedSummon?: boolean;
   effectsSuppressed?: boolean;

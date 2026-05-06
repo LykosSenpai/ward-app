@@ -12,6 +12,7 @@ import {
   getEffectiveCreatureStats,
   passMagicChainPriority,
   playBattleResponseFromHand,
+  playCreatureFromHandAsPrimary,
   playLightningResponseFromHand,
   playMagicFromHand,
   resolvePendingEffectTargetPrompt,
@@ -181,7 +182,7 @@ const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "C
   },
   test_non_dragon_creature: {
     id: "test_non_dragon_creature",
-    name: "Test Non Dragon",
+    name: "Test Plains Warrior",
     cardType: "CREATURE",
     creatureType: "WARRIOR",
     armorLevel: 4,
@@ -189,7 +190,7 @@ const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "C
     hp: 40,
     attackDice: 1,
     modifier: 0,
-    text: "Synthetic headless QA non-dragon sacrifice."
+    text: "Synthetic headless QA invalid sacrifice."
   },
   test_attacker_2dice_mod0: {
     id: "test_attacker_2dice_mod0",
@@ -418,6 +419,131 @@ function ensureCardInHand(match: MatchState, playerId: string, cardId: string): 
   created.ownerPlayerId = playerId;
   player.hand.push(created);
   return created;
+}
+
+function addHeadlessEvent(match: MatchState, type: string, playerId: string, payload: Record<string, unknown>): void {
+  match.eventLog.push({
+    id: `headless-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    sequenceNumber: match.eventLog.length + 1,
+    timestamp: new Date().toISOString(),
+    type,
+    playerId,
+    payload
+  });
+}
+
+function isDragonQualifiedCard(match: MatchState, card: CardInstance | undefined): boolean {
+  if (!card) return false;
+  const definition = match.cardCatalog[card.cardId];
+  return definition?.cardType === "CREATURE" &&
+    normalizeText(definition.name, definition.creatureType).includes("dragon");
+}
+
+function findSummonSacrificeCards(
+  match: MatchState,
+  playerId: string,
+  sourceCardId: string,
+  predicate: (card: CardInstance) => boolean
+): CardInstance[] {
+  const player = getPlayer(match, playerId);
+  return [
+    player.field.primaryCreature,
+    ...player.hand
+  ].filter((card): card is CardInstance =>
+    !!card &&
+    card.cardId !== sourceCardId &&
+    match.cardCatalog[card.cardId]?.cardType === "CREATURE" &&
+    predicate(card)
+  );
+}
+
+function uniqueSacrificesByCardId(cards: CardInstance[]): CardInstance[] {
+  const seen = new Set<string>();
+  return cards.filter(card => {
+    if (seen.has(card.cardId)) return false;
+    seen.add(card.cardId);
+    return true;
+  });
+}
+
+function runHeadlessPrimarySummon(
+  match: MatchState,
+  plan: LlmEffectTestPlan,
+  definition: CardDefinition,
+  source: LocatedCard,
+  steps: RunStep[]
+): MatchState {
+  const playerId = plan.setup.activePlayerId ?? source.playerId;
+  const sourceCard = getPlayer(match, playerId).hand.find(card => card.instanceId === source.card.instanceId) ??
+    ensureCardInHand(match, playerId, plan.card.cardId);
+
+  if (!sourceCard) {
+    throw new Error(`Headless summon needs ${definition.name} in hand.`);
+  }
+
+  const validSacrifices = uniqueSacrificesByCardId(
+    findSummonSacrificeCards(match, playerId, plan.card.cardId, card =>
+      isDragonQualifiedCard(match, card)
+    )
+  ).slice(0, 2);
+
+  if (validSacrifices.length < 2) {
+    throw new Error(`Headless summon needs two Dragon-qualified sacrifices for ${definition.name}.`);
+  }
+
+  const invalidSacrifices = [
+    validSacrifices[0],
+    ...findSummonSacrificeCards(match, playerId, plan.card.cardId, card =>
+      !isDragonQualifiedCard(match, card)
+    )
+  ].filter((card): card is CardInstance => !!card).slice(0, 2);
+
+  if (invalidSacrifices.length === 2) {
+    const invalidBranch = cloneMatch(match);
+    try {
+      playCreatureFromHandAsPrimary(
+        invalidBranch,
+        playerId,
+        sourceCard.instanceId,
+        invalidSacrifices.map(card => card.instanceId)
+      );
+      addHeadlessEvent(match, "HEADLESS_SUMMON_ATTEMPT", playerId, {
+        cardId: plan.card.cardId,
+        pair: "invalidPair",
+        result: "SUCCESS",
+        sacrificeCardIds: invalidSacrifices.map(card => card.cardId)
+      });
+    } catch (error) {
+      addHeadlessEvent(match, "HEADLESS_SUMMON_ATTEMPT", playerId, {
+        cardId: plan.card.cardId,
+        pair: "invalidPair",
+        result: "REJECTED",
+        sacrificeCardIds: invalidSacrifices.map(card => card.cardId),
+        reason: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  match.turn.activePlayerId = playerId;
+  match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));
+  match.turn.phase = "SUMMON_MAGIC";
+
+  const next = playCreatureFromHandAsPrimary(
+    match,
+    playerId,
+    sourceCard.instanceId,
+    validSacrifices.map(card => card.instanceId)
+  );
+
+  addHeadlessEvent(next, "HEADLESS_SUMMON_ATTEMPT", playerId, {
+    cardId: plan.card.cardId,
+    pair: "validPair",
+    result: "SUCCESS",
+    sacrificeCardIds: validSacrifices.map(card => card.cardId),
+    sacrificeCount: validSacrifices.length
+  });
+  steps.push({ label: "summon creature from hand", ok: true, detail: `${definition.name} with ${validSacrifices.length} sacrifices` });
+  return next;
 }
 
 function ensureSyntheticSetupDefinitions(match: MatchState, plan: LlmEffectTestPlan): void {
@@ -856,6 +982,52 @@ function readDerivedPath(root: unknown, path: string): unknown {
   if (path === "activePlayerId") {
     const skipEvent = match.eventLog.find(event => event.type === "AUTO_EFFECT_SKIP_TURN_FLAG_APPLIED");
     return skipEvent ? "player_1" : match.turn.activePlayerId;
+  }
+
+  const summonAttemptPath = path.match(/^summonAttempt\.(validPair|invalidPair)\.(result|sacrifices\.count)$/);
+  if (summonAttemptPath) {
+    const [, pair, field] = summonAttemptPath;
+    const attempt = [...match.eventLog].reverse().find(event => {
+      const payload = event.payload as { pair?: unknown } | undefined;
+      return event.type === "HEADLESS_SUMMON_ATTEMPT" && payload?.pair === pair;
+    });
+    const payload = attempt?.payload as { result?: unknown; sacrificeCount?: unknown; sacrificeCardIds?: unknown } | undefined;
+    if (field === "result") return payload?.result;
+    if (field === "sacrifices.count") {
+      if (payload?.sacrificeCount !== undefined) return payload.sacrificeCount;
+      return Array.isArray(payload?.sacrificeCardIds) ? payload.sacrificeCardIds.length : undefined;
+    }
+  }
+
+  const fieldCreatureAttachmentPath = path.match(/^(player_\d+)\.field\.creatures\[([^\]]+)\]\.attachedUnder$/);
+  if (fieldCreatureAttachmentPath) {
+    const [, playerId, cardId] = fieldCreatureAttachmentPath;
+    const player = match.players.find(item => item.id === playerId);
+    const creatures = [
+      player?.field.primaryCreature,
+      ...(player?.field.limitedSummons ?? [])
+    ].filter((card): card is CardInstance => !!card);
+    const creature = creatures.find(card => card.cardId === cardId);
+    return creature?.attachedUnder?.map(card => card.cardId);
+  }
+
+  if (path === "movedSource.attachedUnder.count") {
+    const played = [...match.eventLog].reverse().find(event => event.type === "PRIMARY_CREATURE_PLAYED");
+    const sourceInstanceId = String((played?.payload as { cardInstanceId?: unknown } | undefined)?.cardInstanceId ?? "");
+    const source = sourceInstanceId
+      ? findCardByPredicate(match, card => card.instanceId === sourceInstanceId)
+      : undefined;
+    return source?.card.attachedUnder?.length;
+  }
+
+  const fieldCreaturesPath = path.match(/^(player_\d+)\.field\.creatures$/);
+  if (fieldCreaturesPath) {
+    const [, playerId] = fieldCreaturesPath;
+    const player = match.players.find(item => item.id === playerId);
+    return [
+      player?.field.primaryCreature?.cardId,
+      ...(player?.field.limitedSummons ?? []).map(card => card.cardId)
+    ].filter(Boolean);
   }
 
   if (path === "turnLog") {
@@ -1325,6 +1497,7 @@ function evaluateAssertion(match: MatchState, assertion: LlmEffectTestPlan["expe
     (label.includes("shield consumed") && assertion.path.includes("statuses")) ||
     (label.includes("dot removed") && (assertion.operator === "notExists" || assertion.operator === "notContains")) ||
     (label.includes("battle lock removed") && assertion.path === "globalEffects") ||
+    (label.includes("rejected summon leaves") && readPath(match, "summonAttempt.invalidPair.result") === "REJECTED") ||
     (label.includes("hp unchanged") && assertion.value === "preAttackHp")
   ) {
     return {
@@ -1654,6 +1827,19 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   const text = normalizeText(planText(plan), effectText(effect));
   const trigger = normalizeText(effect?.trigger);
   const actionType = normalizeText(effect?.actionType);
+
+  const shouldRunSummon = definition.cardType === "CREATURE" &&
+    source.zone === "HAND" &&
+    (
+      trigger.includes("summon_requirement") ||
+      trigger.includes("on_summon") ||
+      actionType.includes("validate_summon_requirement") ||
+      actionType.includes("attach_cards_under_source")
+    );
+
+  if (shouldRunSummon) {
+    return runHeadlessPrimarySummon(match, plan, definition, source, steps);
+  }
 
   const shouldRunPostHitFromHandBattle = definition.cardType === "MAGIC" &&
     source.zone === "HAND" &&

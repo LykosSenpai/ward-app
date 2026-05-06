@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { getRuntimeBlockActionType, getRuntimeBlockDurationText } from "./effectBlockRuntime.js";
-import type { CardInstance, MatchState, PlayerState, WardEngineEffect } from "@ward/shared";
+import type { CardDefinition, CardInstance, MatchState, PlayerState, WardEngineEffect } from "@ward/shared";
 import { getRequiredSacrificesForCreatureDefinition } from "./summonRules.js";
 import { getCardDefinition } from "./engineRuntime.js";
 import { creatureCannotBeSacrificed } from "./creatureRuntimeEffects.js";
@@ -122,10 +122,50 @@ export function validateHandSacrificesForCreature(
     return sacrificeCard;
   });
 
+  if (requiresDragonQualifiedSacrifices(targetDefinition)) {
+    const invalidSacrifice = sacrificeCards.find(sacrificeCard =>
+      !isDragonQualifiedSacrifice(state, sacrificeCard)
+    );
+
+    if (invalidSacrifice) {
+      const sacrificeDefinition = getCardDefinition(state, invalidSacrifice);
+      throw new Error(
+        `${targetDefinition.name} requires Dragon-named or Dragon-type sacrifices. ${sacrificeDefinition.name} is not a valid sacrifice.`
+      );
+    }
+  }
+
   return {
     requiredSacrifices,
     sacrificeCards
   };
+}
+
+function requiresDragonQualifiedSacrifices(definition: CardDefinition): boolean {
+  if (definition.cardType !== "CREATURE") return false;
+
+  return (definition.effects ?? []).some(effect => {
+    const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+    const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+    const condition = effect.condition as { text?: unknown } | undefined;
+    const text = [
+      condition?.text,
+      effect.notes,
+      effect.actionText,
+      effect.value,
+      definition.text
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    return actionType === "VALIDATE_SUMMON_REQUIREMENT" &&
+      trigger === "SUMMON_REQUIREMENT" &&
+      text.includes("dragon");
+  });
+}
+
+function isDragonQualifiedSacrifice(state: MatchState, card: CardInstance): boolean {
+  const definition = getCardDefinition(state, card);
+  if (definition.cardType !== "CREATURE") return false;
+  return `${definition.name} ${definition.creatureType}`.toLowerCase().includes("dragon");
 }
 
 
