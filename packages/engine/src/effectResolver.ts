@@ -88,6 +88,24 @@ function effectTargetsAllMagicCards(effect: WardEngineEffect): boolean {
   );
 }
 
+function inferDestroyAllMagicScopePlayerIds(
+  state: MatchState,
+  controllerPlayerId: string,
+  text: string
+): string[] | undefined {
+  const normalized = text.toLowerCase();
+  const opponentIds = state.players.filter(player => player.id !== controllerPlayerId).map(player => player.id);
+
+  if (normalized.includes("opponent")) {
+    return opponentIds;
+  }
+
+  if (normalized.includes("your")) {
+    return [controllerPlayerId];
+  }
+
+  return undefined;
+}
 
 function normalizeStatKey(rawStat: string): StatModifierKey | undefined {
   const stat = rawStat.trim().toUpperCase();
@@ -409,15 +427,7 @@ export function tryResolveAutomaticMagicEffect(
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
-    const controller = getPlayerOrThrow(state, controllerPlayerId);
-    const opponentIds = state.players.filter(player => player.id !== controllerPlayerId).map(player => player.id);
-    const scopePlayerIds = text.includes("all magic") || text.includes("all magic cards on the field") || text.includes("all magic cards")
-      ? undefined
-      : text.includes("opponent")
-        ? opponentIds
-        : text.includes("your")
-          ? [controller.id]
-          : undefined;
+    const scopePlayerIds = inferDestroyAllMagicScopePlayerIds(state, controllerPlayerId, text);
 
     const result = moveAllMagicSlotCardsToCemetery(
       state,
