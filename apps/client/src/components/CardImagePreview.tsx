@@ -39,10 +39,32 @@ type ImageCandidate = {
   url: string;
 };
 
+function formatCardStats(card: CardLibraryCardSummary): string {
+  if (card.cardType === "CREATURE") {
+    return [
+      card.creatureType ?? "Creature",
+      `AL ${card.armorLevel ?? "?"}`,
+      `SPD ${card.speed ?? "?"}`,
+      `HP ${card.hp ?? "?"}`,
+      `${card.attackDice ?? "?"}D6`,
+      `MOD ${card.modifier ?? "?"}`
+    ].join(" | ");
+  }
+
+  const magicType = card.magicType === "BATTLE_LIGHTNING" ? "LIGHTNING" : card.magicType ?? "MAGIC";
+  return [magicType, card.magicSubType ?? "NONE"].join(" | ");
+}
+
+function formatCardIdentity(card: CardLibraryCardSummary): string {
+  const generation = card.generation ? `Gen ${card.generation}` : card.packId;
+  const number = card.cardNumber ? `#${card.cardNumber}` : card.id;
+  return `${generation} ${number} | ${card.rarity ?? "Unknown"} | ${card.cardType}`;
+}
+
 export const CARD_ART_OPTIONS: CardArtOption[] = [
   { key: "default", label: "Default", suffixAliases: [""] },
   { key: "holo", label: "Holo", suffixAliases: ["holo", "foil", "holographic"] },
-  { key: "zero-art", label: "Zero Art", suffixAliases: ["zero-art", "zero_art", "zeroart"] },
+  { key: "zero-art", label: "Zero", suffixAliases: ["zero-art", "zero_art", "zeroart"] },
   { key: "alt-1", label: "Alt 1", suffixAliases: ["alt-1", "alt_1", "alternate-1", "alternate_art_1"] },
   { key: "alt-2", label: "Alt 2", suffixAliases: ["alt-2", "alt_2", "alternate-2", "alternate_art_2"] },
   { key: "alt-3", label: "Alt 3", suffixAliases: ["alt-3", "alt_3", "alternate-3", "alternate_art_3"] },
@@ -54,6 +76,10 @@ export const CARD_ART_OPTIONS: CardArtOption[] = [
   { key: "future-3", label: "Future 3", suffixAliases: ["future-3", "future_3", "future_art_3"] },
   { key: "future-4", label: "Future 4", suffixAliases: ["future-4", "future_4", "future_art_4"] }
 ];
+
+export const ACTIVE_CARD_ART_OPTIONS = CARD_ART_OPTIONS.filter(option =>
+  option.key === "default" || option.key === "holo" || option.key === "zero-art"
+);
 
 const IMAGE_EXTENSIONS = ["webp", "png", "jpg", "jpeg"];
 
@@ -215,12 +241,12 @@ export function CardImagePreview({ card, selectedArtKey, onSelectedArtKeyChange 
       </div>
 
       <label className="card-art-select-label">
-        Art
+        Art / Card Type
         <select
           value={activeArtKey}
           onChange={event => handleArtChange(event.target.value as CardArtKey)}
         >
-          {CARD_ART_OPTIONS.map(option => (
+          {ACTIVE_CARD_ART_OPTIONS.map(option => (
             <option value={option.key} key={option.key}>{option.label}</option>
           ))}
         </select>
@@ -228,8 +254,53 @@ export function CardImagePreview({ card, selectedArtKey, onSelectedArtKeyChange 
 
       {previewOpen && imageCandidate && (
         <ModalPanel title={`${card.name}  -  ${selectedArtLabel}`} onClose={() => setPreviewOpen(false)}>
-          <div className="expanded-card-image-wrap">
-            <img src={imageCandidate.url} alt={`${card.name} expanded ${selectedArtLabel} card`} />
+          <div className="expanded-card-detail-layout">
+            <div className="expanded-card-image-wrap">
+              <img src={imageCandidate.url} alt={`${card.name} expanded ${selectedArtLabel} card`} />
+            </div>
+
+            <div className="expanded-card-info">
+              <div>
+                <span className="label">Name</span>
+                <strong>{card.name}</strong>
+              </div>
+
+              <div>
+                <span className="label">ID</span>
+                <span>{card.id}</span>
+              </div>
+
+              <div>
+                <span className="label">Card</span>
+                <span>{formatCardIdentity(card)}</span>
+              </div>
+
+              <div>
+                <span className="label">Stats</span>
+                <span>{formatCardStats(card)}</span>
+              </div>
+
+              <div>
+                <span className="label">Skill Description</span>
+                <p>{card.text?.trim() || "No rules text."}</p>
+              </div>
+
+              <div>
+                <span className="label">Artwork Tags</span>
+                {card.artworkTags && card.artworkTags.length > 0 ? (
+                  <div className="expanded-card-tag-row">
+                    {card.artworkTags.map(tag => <span key={tag}>{tag}</span>)}
+                  </div>
+                ) : (
+                  <span>No artwork tags yet.</span>
+                )}
+              </div>
+
+              <div>
+                <span className="label">Skill Notes</span>
+                <p>Detailed skill explanation can be added here once rules notes are authored.</p>
+              </div>
+            </div>
           </div>
         </ModalPanel>
       )}

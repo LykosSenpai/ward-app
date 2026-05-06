@@ -1,9 +1,7 @@
-import type { CardLibraryCardSummary, DeckSummary } from "../clientTypes";
+import type { CardLibraryCardSummary } from "../clientTypes";
 import { CardLibraryPanel } from "./CardLibraryPanel";
-import { DeckManagementPanel } from "./DeckManagementPanel";
 
 type LibraryDecksPageProps = {
-  decks: DeckSummary[];
   selectedPackCount: number;
   cardLibrary: CardLibraryCardSummary[];
   deckBuilderName: string;
@@ -23,12 +21,9 @@ type LibraryDecksPageProps = {
   onSetCardCopies: (cardId: string, copyCount: number) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
-  onLoadDeckIntoBuilder: (deckId: string, mode: "edit" | "clone") => void;
-  onDeleteDeck: (deckId: string) => void;
 };
 
 export function LibraryDecksPage({
-  decks,
   selectedPackCount,
   cardLibrary,
   deckBuilderName,
@@ -47,19 +42,10 @@ export function LibraryDecksPage({
   onRemoveCard,
   onSetCardCopies,
   onSetOwnedCopies,
-  onSaveDeck,
-  onLoadDeckIntoBuilder,
-  onDeleteDeck
+  onSaveDeck
 }: LibraryDecksPageProps) {
   return (
     <section className="library-decks-page library-decks-page-compact">
-      <div className="library-page-mini-header">
-        <div>
-          <h2>Library / Decks</h2>
-          <span>Browse cards, track owned copies, build decks, and manage saved deck files.</span>
-        </div>
-      </div>
-
       <CardLibraryPanel
         cardLibrary={cardLibrary}
         selectedPackCount={selectedPackCount}
@@ -81,15 +67,6 @@ export function LibraryDecksPage({
         onSetOwnedCopies={onSetOwnedCopies}
         onSaveDeck={onSaveDeck}
       />
-
-      <details className="card library-deck-management-card library-deck-management-drawer">
-        <summary>Saved Decks ({decks.length})</summary>
-        <DeckManagementPanel
-          decks={decks}
-          onLoadDeck={onLoadDeckIntoBuilder}
-          onDeleteDeck={onDeleteDeck}
-        />
-      </details>
     </section>
   );
 }

@@ -758,6 +758,15 @@ io.on("connection", socket => {
   socket.emit("setup:options", listSetupOptions());
   socket.emit("cards:library", listDefaultCardLibrary());
   socket.emit("collection:ownership", loadCardOwnershipMap());
+  socket.emit("deck:details", listSetupOptions().decks.map(deckSummary => {
+    const deck = loadDeckList(deckSummary.id);
+
+    return {
+      id: deck.id,
+      name: deck.name,
+      cardIds: deck.cardIds
+    };
+  }));
 
   socket.on(
     "match:create1v1",
@@ -1807,6 +1816,26 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("deck:listDetails", () => {
+    try {
+      const deckDetails = listSetupOptions().decks.map(deckSummary => {
+        const deck = loadDeckList(deckSummary.id);
+
+        return {
+          id: deck.id,
+          name: deck.name,
+          cardIds: deck.cardIds
+        };
+      });
+
+      socket.emit("deck:details", deckDetails);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   socket.on("cards:listForPacks", (data: { packIds: string[] }) => {
     try {
       socket.emit(
@@ -2694,6 +2723,15 @@ io.on("connection", socket => {
 
         io.emit("setup:options", listSetupOptions());
         io.emit("cards:library", listDefaultCardLibrary());
+        io.emit("deck:details", listSetupOptions().decks.map(deckSummary => {
+          const savedDeck = loadDeckList(deckSummary.id);
+
+          return {
+            id: savedDeck.id,
+            name: savedDeck.name,
+            cardIds: savedDeck.cardIds
+          };
+        }));
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -2719,6 +2757,15 @@ io.on("connection", socket => {
 
     io.emit("setup:options", listSetupOptions());
     io.emit("cards:library", listDefaultCardLibrary());
+    io.emit("deck:details", listSetupOptions().decks.map(deckSummary => {
+      const deck = loadDeckList(deckSummary.id);
+
+      return {
+        id: deck.id,
+        name: deck.name,
+        cardIds: deck.cardIds
+      };
+    }));
   } catch (error) {
     socket.emit("match:error", {
       message: error instanceof Error ? error.message : "Unknown error"

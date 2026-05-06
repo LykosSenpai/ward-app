@@ -6,6 +6,7 @@ import { DiceRollerPanel } from "./components/DiceRollerPanel";
 import { EffectCoveragePage } from "./components/EffectCoveragePage";
 import { EffectDebugPanel } from "./components/EffectDebugPanel";
 import { EffectDevToolPage } from "./components/EffectDevToolPage";
+import { DeckLibraryPage } from "./components/DeckLibraryPage";
 import { EventLogCard } from "./components/EventLogCard";
 import { EffectRollModal } from "./components/EffectRollModal";
 import { LibraryDecksPage } from "./components/LibraryDecksPage";
@@ -49,7 +50,7 @@ import type {
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
-type AppPage = "play" | "library-decks" | "effect-dev" | "effect-coverage" | "llm-tests";
+type AppPage = "play" | "card-library" | "deck-library" | "effect-dev" | "effect-coverage" | "llm-tests";
 
 type DashboardModal =
   | "save-load"
@@ -70,6 +71,7 @@ export default function App() {
   const [saveMessage, setSaveMessage] = useState("");
   const [cardPacks, setCardPacks] = useState<CardPackSummary[]>([]);
   const [decks, setDecks] = useState<DeckSummary[]>([]);
+  const [deckDetails, setDeckDetails] = useState<DeckDetail[]>([]);
   const [selectedPackIds, setSelectedPackIds] = useState<string[]>([]);
   const [selectedPlayer1DeckId, setSelectedPlayer1DeckId] = useState("");
   const [selectedPlayer2DeckId, setSelectedPlayer2DeckId] = useState("");
@@ -208,6 +210,10 @@ export default function App() {
       setCardLibrary(data);
     });
 
+    socket.on("deck:details", (data: DeckDetail[]) => {
+      setDeckDetails(data);
+    });
+
     socket.on("collection:ownership", (data: CardOwnershipMap) => {
       setCardOwnershipCounts(data);
     });
@@ -224,6 +230,7 @@ export default function App() {
     socket.on("deck:saved", (data: { message: string; deckId: string }) => {
       setSaveMessage(data.message);
       socket.emit("setup:listOptions");
+      socket.emit("deck:listDetails");
 
       setSelectedPlayer1DeckId(current => current || data.deckId);
       setSelectedPlayer2DeckId(current => current || data.deckId);
@@ -288,6 +295,7 @@ export default function App() {
       );
 
       socket.emit("setup:listOptions");
+      socket.emit("deck:listDetails");
     });
 
     socket.on(
@@ -406,6 +414,7 @@ export default function App() {
       socket.off("match:bulkDeleted");
       socket.off("setup:options");
       socket.off("cards:library");
+      socket.off("deck:details");
       socket.off("collection:ownership");
       socket.off("dev:effectCoverage");
       socket.off("dev:effectRuntimeTestStatusSaved");
@@ -458,6 +467,7 @@ export default function App() {
   function requestInitialData() {
     socket.emit("match:listSaved");
     socket.emit("setup:listOptions");
+    socket.emit("deck:listDetails");
     socket.emit("collection:listOwnership");
     socket.emit("llm:getStatus");
   }
@@ -489,6 +499,7 @@ export default function App() {
 
   function refreshSetupOptions() {
     socket.emit("setup:listOptions");
+    socket.emit("deck:listDetails");
     refreshCardLibrary();
   }
 
@@ -653,6 +664,11 @@ export default function App() {
     setError("");
     setSaveMessage("");
     socket.emit("deck:load", { deckId, mode });
+  }
+
+  function loadDeckIntoBuilderAndOpenCardLibrary(deckId: string, mode: "edit" | "clone") {
+    loadDeckIntoBuilder(deckId, mode);
+    setActivePage("card-library");
   }
 
   function saveBuiltDeck() {
@@ -1281,7 +1297,7 @@ export default function App() {
     match?.manualEffectQueue.some(effect => !effect.completed) ?? false;
 
   return (
-    <main className="app-shell">
+    <main className={activePage === "card-library" || activePage === "deck-library" ? "app-shell app-shell-library-decks" : "app-shell"}>
       <section className="panel">
         <header className="app-header">
           <div>
@@ -1303,10 +1319,16 @@ export default function App() {
             Play Table
           </button>
           <button
-            className={activePage === "library-decks" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("library-decks")}
+            className={activePage === "card-library" ? "app-page-nav-button active" : "app-page-nav-button"}
+            onClick={() => setActivePage("card-library")}
           >
-            Library / Decks
+            Card Library
+          </button>
+          <button
+            className={activePage === "deck-library" ? "app-page-nav-button active" : "app-page-nav-button"}
+            onClick={() => setActivePage("deck-library")}
+          >
+            Deck Library
           </button>
           <button
             className={activePage === "effect-dev" ? "app-page-nav-button active" : "app-page-nav-button"}
@@ -1330,7 +1352,7 @@ export default function App() {
           </button>
         </nav>
 
-        {socketId && (
+        {socketId && activePage !== "card-library" && activePage !== "deck-library" && (
           <p className="socket-id">
             Socket ID: <span>{socketId}</span>
           </p>
@@ -1389,9 +1411,17 @@ export default function App() {
             effectCoverageRows={effectCoverageRows}
             onResetWorkflow={resetLlmWorkflow}
           />
-        ) : activePage === "library-decks" ? (
-          <LibraryDecksPage
+        ) : activePage === "deck-library" ? (
+          <DeckLibraryPage
             decks={decks}
+            deckDetails={deckDetails}
+            cardLibrary={cardLibrary}
+            onEditDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "edit")}
+            onCloneDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "clone")}
+            onDeleteDeck={deleteDeck}
+          />
+        ) : activePage === "card-library" ? (
+          <LibraryDecksPage
             selectedPackCount={selectedPackIds.length}
             cardLibrary={cardLibrary}
             deckBuilderName={deckBuilderName}
@@ -1414,8 +1444,6 @@ export default function App() {
             onSetCardCopies={setDeckBuilderCardCopies}
             onSetOwnedCopies={setOwnedCardCopies}
             onSaveDeck={saveBuiltDeck}
-            onLoadDeckIntoBuilder={loadDeckIntoBuilder}
-            onDeleteDeck={deleteDeck}
           />
         ) : !match ? (
           <section className={`play-setup-workspace${setupSavesOpen ? " saves-open" : " saves-collapsed"}`}>

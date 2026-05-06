@@ -3,7 +3,7 @@ import type { DragEvent } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, sanitizeDownloadFileName } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
-import { CARD_ART_OPTIONS, CardImagePreview, getCardArtLabel } from "./CardImagePreview";
+import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, getCardArtLabel } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
 
 type CardTypeFilter = "ALL" | "CREATURE" | "MAGIC";
@@ -63,12 +63,6 @@ function getCardSearchText(card: CardLibraryCardSummary): string {
     .toLowerCase();
 }
 
-function formatCardNumber(card: CardLibraryCardSummary): string {
-  const generation = card.generation ? `Gen ${card.generation}` : card.packId;
-  const number = card.cardNumber ? `#${card.cardNumber}` : card.id;
-  return `${generation} ${number}`;
-}
-
 function getCardSortNumber(card: CardLibraryCardSummary): string {
   return `${card.generation ?? ""}`.padStart(3, "0") + `-${card.cardNumber ?? card.id}`;
 }
@@ -89,7 +83,6 @@ export function CardLibraryPanel({
   ownershipCounts,
   normalizeId,
   getDeckBuilderCounts,
-  getDeckBuilderCardCount,
   onDeckNameChange,
   onDeckIdChange,
   onRefreshCardLibrary,
@@ -111,7 +104,6 @@ export function CardLibraryPanel({
   const [deckMembershipFilter, setDeckMembershipFilter] = useState<DeckMembershipFilter>("ALL");
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>("ALL");
   const [sortMode, setSortMode] = useState<SortMode>("number");
-  const [alwaysShowEffects, setAlwaysShowEffects] = useState(true);
   const [selectedArtKeysByCardId, setSelectedArtKeysByCardId] = useState<Record<string, CardArtKey>>({});
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [deckDropActive, setDeckDropActive] = useState(false);
@@ -286,7 +278,7 @@ export function CardLibraryPanel({
   }
 
   function getTotalOwnedCopiesForCard(cardId: string): number {
-    return CARD_ART_OPTIONS.reduce((total, artOption) => {
+    return ACTIVE_CARD_ART_OPTIONS.reduce((total, artOption) => {
       return total + (ownershipCounts[getCardArtOwnershipKey(cardId, artOption.key)] ?? 0);
     }, 0);
   }
@@ -444,41 +436,6 @@ export function CardLibraryPanel({
         </div>
       </div>
 
-      <div className="library-option-a-deck-fields">
-        <label>
-          Deck Name
-          <input value={deckBuilderName} onChange={event => onDeckNameChange(event.target.value)} />
-        </label>
-
-        <label>
-          Deck ID / File Name
-          <input value={deckBuilderId} onChange={event => onDeckIdChange(event.target.value)} />
-        </label>
-      </div>
-
-      <details className="library-option-a-details-drawer deck-share-tools-card">
-        <summary>Deck String / Notes Tools</summary>
-        <div className="builder-filter-grid deck-share-tools-grid">
-          <label>
-            Export Deck String
-            <textarea value={deckShareString} readOnly rows={3} placeholder="Click Copy Deck String to generate a shareable WARDDECK1 string." />
-          </label>
-
-          <label>
-            Import Deck String
-            <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={3} placeholder="Paste WARDDECK1:... here." />
-          </label>
-        </div>
-
-        <div className="actions small-actions deck-share-actions">
-          <button onClick={copyCurrentDeckString} disabled={deckBuilderCardIds.length === 0}>Copy Deck String</button>
-          <button onClick={importDeckStringIntoBuilder} disabled={!deckImportString.trim()}>Import String</button>
-          <button onClick={downloadCurrentDeckNotes} disabled={deckBuilderCardIds.length === 0}>Download Notes File</button>
-        </div>
-
-        {deckShareMessage && <p className="event-meta">{deckShareMessage}</p>}
-      </details>
-
       {deckWarnings.length > 0 && (
         <div className="library-option-a-warning-strip">
           {deckWarnings.map(warning => <span key={warning}>{warning}</span>)}
@@ -587,22 +544,6 @@ export function CardLibraryPanel({
                 </label>
               </div>
             </details>
-
-            <label className="checkbox-label inline-checkbox-label library-option-a-effect-toggle">
-              <input
-                type="checkbox"
-                checked={alwaysShowEffects}
-                onChange={event => setAlwaysShowEffects(event.target.checked)}
-              />
-              Show effect text on cards
-            </label>
-
-            <details className="library-option-a-details-drawer">
-              <summary>Image naming help</summary>
-              <div className="card-image-help-box library-option-a-help-box">
-                Put images in <code>apps/client/public/card-images</code>. Default uses <code>{"<cardId>.webp"}</code>. Art variants use suffixes like <code>{"<cardId>__holo.webp"}</code>, <code>{"<cardId>__zero-art.webp"}</code>, <code>{"<cardId>__alt-1.webp"}</code>, and <code>{"<cardId>__future-1.webp"}</code>. PNG/JPG/JPEG and common alias suffixes are also checked.
-              </div>
-            </details>
           </div>
         </aside>
 
@@ -619,11 +560,9 @@ export function CardLibraryPanel({
           ) : (
             <div className="library-card-grid unified-library-card-grid library-option-a-card-grid">
               {filteredCards.map(card => {
-                const deckCount = getDeckBuilderCardCount(card.id);
                 const selectedArtKey = getSelectedArtKey(card.id);
                 const selectedArtLabel = getCardArtLabel(selectedArtKey);
                 const ownedCount = getOwnedCopiesForSelectedArt(card.id);
-                const totalOwnedCount = getTotalOwnedCopiesForCard(card.id);
                 const deckLimit = card.deckLimit ?? 3;
                 const canAdd = getCanAddCardToDeck(card.id);
                 const deckLimitLabel = deckLimit === 0 ? "BANNED" : deckLimit < 3 ? `LIMIT ${deckLimit}` : "LIMIT 3";
@@ -642,37 +581,16 @@ export function CardLibraryPanel({
                     title={canAdd ? "Drag to Current Deck or double-click to add 1 copy." : "Deck limit, ban, or 30-card cap prevents adding this card."}
                   >
                     <div className="library-card-content-grid library-option-a-card-content">
-                      <CardImagePreview
-                        card={card}
-                        selectedArtKey={selectedArtKey}
-                        onSelectedArtKeyChange={artKey => setSelectedArtKey(card.id, artKey)}
-                      />
+                      <div className="library-option-a-image-stack">
+                        <CardImagePreview
+                          card={card}
+                          selectedArtKey={selectedArtKey}
+                          onSelectedArtKeyChange={artKey => setSelectedArtKey(card.id, artKey)}
+                        />
 
-                      <div className="library-card-main-info">
-                        <div className="library-card-main static-library-card-main">
-                          <span className="library-card-kicker">{formatCardNumber(card)}  -  {card.rarity ?? "Unknown"}</span>
-                          <strong>{card.name}</strong>
-                          <span>{card.cardType === "CREATURE" ? `${card.creatureType ?? "Creature"}  -  AL ${card.armorLevel}  -  SPD ${card.speed}  -  HP ${card.hp}  -  ${card.attackDice}D6 MOD ${card.modifier}` : `${getDisplayMagicType(card.magicType)}  -  ${card.magicSubType}`}</span>
-                        </div>
-
-                        <div className="library-card-badges library-option-a-badges">
+                        <div className="library-card-badges library-option-a-badges library-option-a-limit-only">
                           <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
-                          <span className="limit-badge normal">Deck {deckCount}</span>
-                          <span className={ownedCount > 0 ? "limit-badge normal" : "limit-badge limited"}>{selectedArtLabel} {ownedCount}</span>
-                          {totalOwnedCount !== ownedCount && <span className="limit-badge normal">Total {totalOwnedCount}</span>}
-                          {typeof card.effectCount === "number" && <span className="limit-badge normal">{card.effectCount} effects</span>}
                         </div>
-
-                        {(card.effectTypes?.length ?? 0) > 0 && (
-                          <div className="effect-type-tag-list library-option-a-effect-tags">
-                            {card.effectTypes?.slice(0, 4).map(effectType => <span key={effectType}>{effectType}</span>)}
-                            {(card.effectTypes?.length ?? 0) > 4 && <span>+{(card.effectTypes?.length ?? 0) - 4}</span>}
-                          </div>
-                        )}
-
-                        {alwaysShowEffects && (
-                          <p className="library-card-details library-option-a-card-details">{card.text?.trim() || "No rules text."}</p>
-                        )}
                       </div>
                     </div>
 
@@ -683,18 +601,32 @@ export function CardLibraryPanel({
                         disabled={!canAdd}
                         title="Add 1 copy to the current deck. You can also drag or double-click this card."
                       >
-                        + Deck {deckCount}
+                        Add to Deck
                       </button>
 
                       <div className="copy-stepper labeled-stepper art-owned-stepper">
-                        <span>{selectedArtLabel}</span>
-                        <button onClick={() => setSelectedArtOwnedCopies(card.id, ownedCount - 1)} disabled={ownedCount === 0}>-</button>
+                        <span>Owned {selectedArtLabel}</span>
+                        <button
+                          onClick={() => setSelectedArtOwnedCopies(card.id, ownedCount - 1)}
+                          disabled={ownedCount === 0}
+                          aria-label={`Remove one owned ${selectedArtLabel} copy of ${card.name}`}
+                          title={`Remove one owned ${selectedArtLabel} copy`}
+                        >
+                          -
+                        </button>
                         <input
                           value={ownedCount}
                           onChange={event => setSelectedArtOwnedCopiesFromInput(card.id, event.target.value)}
                           aria-label={`${card.name} ${selectedArtLabel} owned copies`}
+                          title={`${selectedArtLabel} copies you own`}
                         />
-                        <button onClick={() => setSelectedArtOwnedCopies(card.id, ownedCount + 1)}>+</button>
+                        <button
+                          onClick={() => setSelectedArtOwnedCopies(card.id, ownedCount + 1)}
+                          aria-label={`Add one owned ${selectedArtLabel} copy of ${card.name}`}
+                          title={`Add one owned ${selectedArtLabel} copy`}
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
                   </article>
@@ -704,29 +636,54 @@ export function CardLibraryPanel({
           )}
         </section>
 
-        <aside
-          className={`current-deck-panel unified-current-deck-panel library-option-a-current-deck-panel ${deckDropActive ? "drag-over" : ""}`}
-          onDragLeave={event => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDeckDropActive(false);
-          }}
-          onDragOver={handleDeckDragOver}
-          onDrop={handleDeckDrop}
-        >
-          <div className="current-deck-header-row library-option-a-current-deck-header">
-            <div>
+        <aside className="library-option-a-deck-rail">
+          <div className="library-option-a-details-drawer deck-share-tools-card library-option-a-code-tools library-option-a-deck-rail-codes">
+            <div className="deck-share-tools-grid">
+              <label>
+                Export Code
+                <textarea value={deckShareString} readOnly rows={2} placeholder="Click Copy Export Code." />
+              </label>
+
+              <label>
+                Import Code
+                <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={2} placeholder="Paste WARDDECK1:... here." />
+              </label>
+            </div>
+
+            <div className="actions small-actions deck-share-actions">
+              <button onClick={copyCurrentDeckString} disabled={deckBuilderCardIds.length === 0}>Copy Export</button>
+              <button onClick={importDeckStringIntoBuilder} disabled={!deckImportString.trim()}>Import Code</button>
+              <button onClick={downloadCurrentDeckNotes} disabled={deckBuilderCardIds.length === 0}>Notes</button>
+            </div>
+
+            {deckShareMessage && <p className="event-meta">{deckShareMessage}</p>}
+          </div>
+
+          <div
+            className={`current-deck-panel unified-current-deck-panel library-option-a-current-deck-panel ${deckDropActive ? "drag-over" : ""}`}
+            onDragLeave={event => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDeckDropActive(false);
+            }}
+            onDragOver={handleDeckDragOver}
+            onDrop={handleDeckDrop}
+          >
+            <div className="library-option-a-current-deck-topline">
+              <label className="library-option-a-current-deck-name">
+                Deck Name
+                <input value={deckBuilderName} onChange={event => onDeckNameChange(event.target.value)} />
+              </label>
+
+              <button onClick={onSaveDeck} disabled={saveDisabled}>Save</button>
+            </div>
+
+            <div className="current-deck-header-row library-option-a-current-deck-header">
               <h4>Current Deck</h4>
               <span>{deckCards.length} unique  -  {deckStats.total}/30 cards</span>
             </div>
-            <button onClick={onSaveDeck} disabled={saveDisabled}>Save</button>
-          </div>
 
           <div className="deck-builder-summary deck-stat-strip library-option-a-deck-stat-strip">
             <span>Creatures: {deckStats.creatureCount}</span>
             <span>Magic: {deckStats.magicCount}</span>
-            <span>Std: {deckStats.standardMagicCount}</span>
-            <span>Inf: {deckStats.infiniteMagicCount}</span>
-            <span>Light: {deckStats.lightningMagicCount}</span>
-            <span>Avg AL: {deckStats.averageAL.toFixed(1)}</span>
           </div>
 
           <div className="library-option-a-drop-hint">
@@ -742,34 +699,41 @@ export function CardLibraryPanel({
                 const ownedCount = getTotalOwnedCopiesForCard(cardId);
 
                 return (
-                  <div className="builder-card-entry current-deck-entry library-option-a-current-deck-entry" key={cardId}>
-                    <div>
+                  <div className="builder-card-entry current-deck-entry library-option-a-current-deck-entry visual-deck-stack-entry" key={cardId}>
+                    <div className="visual-deck-card-stack">
+                      {card ? <CardImageThumbnail card={card} className="visual-deck-card-image" /> : <span className="card-image-thumb missing visual-deck-card-image">{cardId.slice(0, 1)}</span>}
+                      <span className="visual-deck-card-counter">{count}x</span>
+                    </div>
+
+                    <div className="visual-deck-card-copy">
                       <strong>{card?.name ?? cardId}</strong>
                       <div className="event-meta">
                         {card?.cardType ?? "UNKNOWN"} | {count}/{deckLimit} copies | Owned total: {ownedCount}
                       </div>
-                    </div>
 
-                    <div className="builder-card-actions compact-deck-actions library-option-a-current-deck-actions">
-                      <button onClick={() => onRemoveCard(cardId)}>-</button>
-                      <input
-                        value={count}
-                        onChange={event => setDeckCopiesFromInput(cardId, event.target.value)}
-                        aria-label={`${card?.name ?? cardId} copies`}
-                      />
-                      <button
-                        onClick={() => onAddCard(cardId)}
-                        disabled={count >= deckLimit || deckBuilderCardIds.length >= 30 || deckLimit <= 0}
-                      >
-                        +
-                      </button>
-                      <button onClick={() => onSetCardCopies(cardId, 0)}>Remove</button>
+                      <div className="builder-card-actions compact-deck-actions library-option-a-current-deck-actions">
+                        <button onClick={() => onRemoveCard(cardId)} aria-label={`Remove one ${card?.name ?? cardId}`}>-</button>
+                        <input
+                          value={count}
+                          onChange={event => setDeckCopiesFromInput(cardId, event.target.value)}
+                          aria-label={`${card?.name ?? cardId} copies`}
+                        />
+                        <button
+                          onClick={() => onAddCard(cardId)}
+                          disabled={count >= deckLimit || deckBuilderCardIds.length >= 30 || deckLimit <= 0}
+                          aria-label={`Add one ${card?.name ?? cardId}`}
+                        >
+                          +
+                        </button>
+                        <button onClick={() => onSetCardCopies(cardId, 0)}>Remove</button>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+          </div>
         </aside>
       </div>
     </section>
