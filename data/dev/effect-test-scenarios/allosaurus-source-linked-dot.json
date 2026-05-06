@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_123_allosaurus",
+  "effectId": "123-E01",
+  "title": "Allosaurus applies source-linked damage over time",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_123_allosaurus",
+      "cardName": "Allosaurus",
+      "cardType": "CREATURE",
+      "cardNumber": "123",
+      "generation": "1",
+      "rawText": "When this creature hits, the targeted creature receives 10 damage once per turn cycle, until this card leaves the field."
+    },
+    "effect": {
+      "effectId": "123-E01",
+      "trigger": "ON_HIT",
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "target": "Target creature",
+      "value": "10 damage per turn cycle",
+      "durationText": "Until this card leaves field",
+      "reusableFunction": "applyDamageOverTimeUntilSourceLeaves"
+    },
+    "title": "Allosaurus applies source-linked damage over time",
+    "summary": "Allosaurus lands a hit and applies recurring 10 damage to the target until Allosaurus leaves the field.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_123_allosaurus"
+      ],
+      "player2Cards": [
+        "test_defender_al5_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Force Allosaurus hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Stable low attack damage"
+        }
+      ],
+      "notes": [
+        "Set Allosaurus as player_1 primary.",
+        "Set player_2 primary to a 100 HP defender."
+      ]
+    },
+    "steps": [
+      "Player 1 attacks and hits with Allosaurus.",
+      "Resolve the ON_HIT recurring damage application.",
+      "Inspect recurring damage events and target HP."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Damage over time applied",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_DAMAGE_OVER_TIME"
+      },
+      {
+        "label": "Source-linked DOT marker exists",
+        "path": "player_2.primaryCreature.statusEffects",
+        "operator": "contains",
+        "value": "ALLOSAURUS_DOT_SOURCE_LINKED"
+      },
+      {
+        "label": "Recurring damage applied",
+        "path": "combatEndEffects.damageApplied",
+        "operator": "contains",
+        "value": "10"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the recurring damage clears when Allosaurus leaves the field."
+    ],
+    "riskNotes": [
+      "This fixture covers source-linked DOT application; source-leaves cleanup should get a separate fixture."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Allosaurus source-linked DOT path."
+    },
+    "regression": {
+      "fixtureName": "allosaurus-source-linked-dot",
+      "tags": [
+        "creature",
+        "combat",
+        "dot",
+        "source-linked"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

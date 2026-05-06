@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_143_naga",
+  "effectId": "143-E01",
+  "title": "Naga applies two-cycle damage over time",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_143_naga",
+      "cardName": "Naga",
+      "cardType": "CREATURE",
+      "cardNumber": "143",
+      "generation": "1",
+      "rawText": "When this creature hits, the targeted creature receives 10 damage once per turn cycle, for 2 turn cycles."
+    },
+    "effect": {
+      "effectId": "143-E01",
+      "trigger": "ON_HIT",
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "target": "Target creature",
+      "value": "10 damage per turn cycle",
+      "durationText": "2 turn cycles",
+      "reusableFunction": "applyDamageOverTime"
+    },
+    "title": "Naga applies two-cycle damage over time",
+    "summary": "Naga lands a hit and applies recurring 10 damage to the target for two turn cycles.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_143_naga"
+      ],
+      "player2Cards": [
+        "test_defender_al5_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Force Naga hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Stable low attack damage"
+        }
+      ],
+      "notes": [
+        "Set Naga as player_1 primary.",
+        "Set player_2 primary to a 100 HP defender."
+      ]
+    },
+    "steps": [
+      "Player 1 attacks and hits with Naga.",
+      "Resolve the ON_HIT recurring damage application.",
+      "Inspect recurring damage events and target HP."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Damage over time applied",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_DAMAGE_OVER_TIME"
+      },
+      {
+        "label": "Recurring damage applied",
+        "path": "combatEndEffects.damageApplied",
+        "operator": "contains",
+        "value": "10"
+      },
+      {
+        "label": "Target took recurring damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "lessThan",
+        "value": 100
+      }
+    ],
+    "manualVerification": [
+      "Confirm the recurring damage expires after two turn cycles and does not stack with another active DOT."
+    ],
+    "riskNotes": [
+      "Turn-cycle expiry is covered by shared DOT behavior."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Naga's standard two-cycle DOT path."
+    },
+    "regression": {
+      "fixtureName": "naga-two-cycle-dot",
+      "tags": [
+        "creature",
+        "combat",
+        "dot"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
