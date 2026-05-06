@@ -541,11 +541,11 @@
       "effectId": "044-E01",
       "trigger": "WHILE_FIELD_ACTIVE",
       "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-06T05:50:39.928Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_046_elf:046-E01",
@@ -555,11 +555,11 @@
       "effectId": "046-E01",
       "trigger": "DURING_DAMAGE_CALC",
       "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
-      "status": "UNTESTED",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result.",
-      "lastTestedAt": "2026-05-03T16:26:38.796Z",
-      "testedBy": "LLM Test Lab Batch"
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-06T05:50:39.973Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen1:gen1_048_epic_loot:048-E01",

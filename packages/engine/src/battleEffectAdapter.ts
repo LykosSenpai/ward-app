@@ -461,6 +461,20 @@ function suggestionFromEffect(
     };
   }
 
+  const trigger = normalizeText(effect.trigger).trim().toUpperCase();
+  if (
+    (
+      actionType.includes("DAMAGE_MULTIPLIER") ||
+      actionType.includes("ATTACK_DAMAGE_MULTIPLIER") ||
+      text.includes("x atk damage") ||
+      text.includes("Ã— atk damage") ||
+      text.includes("double attack damage")
+    ) &&
+    ["ON_HIT", "ON_HIT_FIRST", "DURING_DAMAGE_CALC", "BEFORE_DAMAGE_ROLL", "AFTER_HIT_ROLL"].includes(trigger)
+  ) {
+    return { ...base, kind: "BATTLE_TRIGGER" };
+  }
+
   if (runtimeBattlePlan.forceFirstStrike && runtimeBattlePlan.forceHit) {
     const damageMultiplier = runtimeBattlePlan.damageMultiplier ?? parseMultiplier(effect) ?? 3;
     return forcedFirstAutoHitMultiplierSuggestions(
@@ -521,7 +535,6 @@ function suggestionFromEffect(
     text.includes("× atk damage") ||
     text.includes("double attack damage")
   ) {
-    const trigger = normalizeText(effect.trigger).trim().toUpperCase();
     const damageMultiplier = parseMultiplier(effect) ?? (text.includes("double") ? 2 : undefined);
 
     // Triggered damage multipliers are now applied by the runtime during the

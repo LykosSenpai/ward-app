@@ -809,12 +809,35 @@ function applyBattleDamageMultiplier(
     return;
   }
 
-
   const text = textForEffect(effect);
+  const modifierNote = String(strike.modifiers.note ?? "").toLowerCase();
+  const sourceAlreadyAppliedByBattleAdapter =
+    modifierNote.includes(source.definition.name.toLowerCase()) &&
+    Number(strike.modifiers.damageMultiplier ?? 1) >= multiplier;
+
+  if (sourceAlreadyAppliedByBattleAdapter) {
+    addEvent?.(state, "BATTLE_DAMAGE_MULTIPLIER_ALREADY_APPLIED", source.player.id, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      strikeId: strike.id,
+      multiplier,
+      stackedDamageMultiplier: strike.modifiers.damageMultiplier,
+      note: "Battle modifier adapter already applied this multiplier before the runtime timing trigger."
+    });
+    return;
+  }
+
   const targetType = target.definition.creatureType.toLowerCase();
   const targetName = target.definition.name.toLowerCase();
+  const targetArtworkTags = ((target.definition as { artworkTags?: unknown }).artworkTags ?? []) as unknown[];
+  const targetHasWings = targetArtworkTags.some(tag => String(tag).trim().toLowerCase() === "wings") ||
+    targetName.includes("dragon") ||
+    targetName.includes("griffin");
   const typePredicateFailed =
     ((text.includes("dragon-type") || text.includes("dragon target") || text.includes("name contains dragon")) && !targetType.includes("dragon") && !targetName.includes("dragon")) ||
+    ((text.includes("wings") || text.includes("winged")) && !targetHasWings) ||
     ((text.includes("bug-type") || text.includes("bug type")) && !targetType.includes("bug")) ||
     ((text.includes("demon-type") || text.includes("demon type") || text.includes("name contains \"demon\"")) && !targetType.includes("demon") && !targetName.includes("demon")) ||
     ((text.includes("undead-type") || text.includes("undead type")) && !targetType.includes("undead")) ||

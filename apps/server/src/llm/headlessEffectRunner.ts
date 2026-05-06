@@ -193,6 +193,25 @@ function ensureCardInHand(match: MatchState, playerId: string, cardId: string): 
   return created;
 }
 
+function createScenarioCreature(match: MatchState, playerId: string, cardId: string, hpOverride?: number): CardInstance | undefined {
+  const definition = match.cardCatalog[cardId];
+  if (definition?.cardType !== "CREATURE") return undefined;
+  const [card] = createDeckFromCardIds(playerId, [cardId], match.cardCatalog);
+  if (!card) return undefined;
+  card.zone = "PRIMARY_CREATURE";
+  card.controllerPlayerId = playerId;
+  card.ownerPlayerId = playerId;
+  card.baseHp = hpOverride ?? definition.hp;
+  card.currentHp = hpOverride ?? definition.hp;
+  return card;
+}
+
+function setScenarioPrimaryCreature(match: MatchState, playerId: string, cardId: string, hpOverride?: number): void {
+  const creature = createScenarioCreature(match, playerId, cardId, hpOverride);
+  if (!creature) return;
+  getPlayer(match, playerId).field.primaryCreature = creature;
+}
+
 function moveCardToMagicSlot(match: MatchState, playerId: string, card: CardInstance): void {
   const player = getPlayer(match, playerId);
   card.zone = "MAGIC_SLOT";
@@ -380,6 +399,12 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
   const opponentPlayerId = findOpponentPlayerId(match, sourcePlayerId);
   const text = normalizeText(planText(plan), effectText(effect));
 
+  if (text.includes("wings") || text.includes("winged")) {
+    setScenarioPrimaryCreature(match, opponentPlayerId, "gen1_001_blue_dragon", 50);
+  } else if (text.includes("dragon target") || text.includes("dragon-type") || text.includes("dragon fox")) {
+    setScenarioPrimaryCreature(match, opponentPlayerId, "gen1_041_dragon_fox", 50);
+  }
+
   if (text.includes("magic")) {
     const opponent = getPlayer(match, opponentPlayerId);
     if (opponent.field.magicSlots.length === 0) {
@@ -558,7 +583,18 @@ function readDerivedPath(root: unknown, path: string): unknown {
 
   if (path === "damageEvents") {
     return match.eventLog.flatMap(event => {
-      const payload = event.payload as { damageAmount?: unknown } | undefined;
+      const payload = event.payload as { damageAmount?: unknown; multiplier?: unknown; effectAndManualDamageMultiplier?: unknown; criticalHit?: unknown } | undefined;
+      if (event.type === "BATTLE_DAMAGE_MULTIPLIER_APPLIED" || event.type === "BATTLE_DAMAGE_MULTIPLIER_ALREADY_APPLIED") {
+        return [`multiplier:${payload?.multiplier}`];
+      }
+
+      if (event.type === "BATTLE_DAMAGE_PIPELINE_RESOLVED") {
+        return [
+          `multiplier:${payload?.effectAndManualDamageMultiplier}`,
+          payload?.criticalHit ? "critical" : ""
+        ].filter(Boolean);
+      }
+
       const damageAmount = Number(payload?.damageAmount);
       if (!Number.isFinite(damageAmount)) return [];
 
@@ -965,6 +1001,35 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     match.turn.phase = "SUMMON_MAGIC";
     let next = playMagicFromHand(match, source.playerId, source.card.instanceId);
     steps.push({ label: "play magic from hand", ok: true, detail: definition.name });
+    return next;
+  }
+
+  const shouldRunFieldAuraBattle = definition.cardType === "MAGIC" &&
+    source.zone === "MAGIC_SLOT" &&
+    (
+      actionType.includes("damage_multiplier") ||
+      text.includes("damage multiplier") ||
+      text.includes("atk damage")
+    );
+
+  if (shouldRunFieldAuraBattle) {
+    const playerId = plan.setup.activePlayerId ?? source.playerId;
+    const player = getPlayer(match, playerId);
+    const opponent = getPlayer(match, findOpponentPlayerId(match, playerId));
+    const attacker = player.field.primaryCreature;
+    const defender = opponent.field.primaryCreature;
+
+    if (!attacker || !defender) {
+      throw new Error("Headless field aura battle needs active and opponent primary creatures.");
+    }
+
+    match.turn.activePlayerId = playerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+    let next = startManualBattleSession(match, playerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start field aura battle", ok: true, detail: `${definition.name}: ${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+    next = runPendingBattle(next, steps);
     return next;
   }
 
