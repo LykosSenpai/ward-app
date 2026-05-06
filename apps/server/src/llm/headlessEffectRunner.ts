@@ -177,6 +177,8 @@ function moveDeckCardToHand(match: MatchState, playerId: string, cardId: string)
 }
 
 function ensureCardInHand(match: MatchState, playerId: string, cardId: string): CardInstance | undefined {
+  if (!match.cardCatalog[cardId]) return undefined;
+
   const player = getPlayer(match, playerId);
   const existing = player.hand.find(card => card.cardId === cardId);
   if (existing) return existing;
