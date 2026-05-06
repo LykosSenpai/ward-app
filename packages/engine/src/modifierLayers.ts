@@ -134,7 +134,6 @@ function sourceAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
   if (source.card.attachedToInstanceId) return source.card.attachedToInstanceId === target.card.instanceId;
   if (text.includes("equipped creature")) return source.card.attachedToInstanceId === target.card.instanceId;
   if (text.includes("your primary creature") || text.includes("controller's primary creature")) return source.player.id === target.player.id && target.zone === "PRIMARY_CREATURE";
-  if (text.includes("this creature") || text.includes("this card")) return source.card.instanceId === target.card.instanceId;
   if (text.includes("your creature") || text.includes("you control") || text.includes("your side")) return source.player.id === target.player.id;
   if (text.includes("opponent") || text.includes("opposing")) return source.player.id !== target.player.id;
   if (text.includes("non-effect creature") || text.includes("non effect creature")) return !target.definition.effects?.length;
@@ -147,6 +146,7 @@ function sourceAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
   if (text.includes("humanoid-type") || text.includes("humanoid type")) return target.definition.creatureType.toLowerCase().includes("humanoid");
   if (text.includes("mechanical-type") || text.includes("mechanical type")) return target.definition.creatureType.toLowerCase().includes("mechanical");
   if (text.includes("all creatures") || text.includes("each creature") || text.includes("both creatures")) return true;
+  if (text.includes("this creature") || text.includes("this card")) return source.card.instanceId === target.card.instanceId;
   return source.card.instanceId === target.card.instanceId;
 }
 

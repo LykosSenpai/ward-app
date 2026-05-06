@@ -206,6 +206,30 @@ const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "C
     modifier: 3,
     text: "Synthetic headless QA creature with Were in its name."
   },
+  test_orc_named_creature: {
+    id: "test_orc_named_creature",
+    name: "Test Orc Scout",
+    cardType: "CREATURE",
+    creatureType: "HUMANOID",
+    armorLevel: 3,
+    speed: 7,
+    hp: 50,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA creature with Orc in its name."
+  },
+  test_demon_type_creature: {
+    id: "test_demon_type_creature",
+    name: "Test Demon Scout",
+    cardType: "CREATURE",
+    creatureType: "DEMON",
+    armorLevel: 4,
+    speed: 7,
+    hp: 50,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA Demon-type creature."
+  },
   test_attacker_2dice_mod0: {
     id: "test_attacker_2dice_mod0",
     name: "Test Attacker 2D +0",

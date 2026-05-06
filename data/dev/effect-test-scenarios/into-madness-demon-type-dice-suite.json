@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_080_into_madness",
+  "effectId": "080-E01",
+  "title": "Into Madness buffs Demon-type creatures",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_080_into_madness",
+      "cardName": "Into Madness",
+      "cardType": "MAGIC",
+      "cardNumber": "080",
+      "generation": "3",
+      "rawText": "This card only affects Demon-type and Undead-type creatures. Atk Dice Rolls: +1. Hit Dice Rolls: +1."
+    },
+    "effect": {
+      "effectId": "080-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Demon-type and Undead-type creatures",
+      "value": "Atk Dice Rolls +1; Hit Dice Rolls +1",
+      "durationText": "While on field",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Into Madness buffs Demon-type creatures",
+    "summary": "Play Into Madness as field magic and verify a Demon-type creature receives the printed Atk Dice Roll and Hit Dice Roll bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_080_into_madness",
+        "test_demon_type_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use Test Demon Scout because it is Demon-type."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Into Madness as field magic.",
+      "Read the Demon-type creature's effective attack dice.",
+      "Run a follow-up battle and inspect the hit roll dice count."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Demon-type creature attack dice increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Hit roll used three dice after the +1 Hit Dice Roll bonus",
+        "path": "battle.lastHitRoll.dice.length",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Into Madness remains in magic slot",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_080_into_madness"
+      }
+    ],
+    "manualVerification": [
+      "Confirm non-Demon and non-Undead creatures do not receive this aura.",
+      "Confirm Undead-type creatures also receive this aura."
+    ],
+    "riskNotes": [
+      "This fixture validates the Demon-type positive case; Undead positive and negative cases are future coverage."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Into Madness field aura for Demon-type creatures."
+    },
+    "regression": {
+      "fixtureName": "into-madness-demon-type-dice-suite",
+      "tags": [
+        "magic",
+        "field",
+        "stat-modifier",
+        "attack-dice",
+        "hit-dice"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

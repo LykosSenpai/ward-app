@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_038_army_of_the_orcs",
+  "effectId": "038-E01",
+  "title": "Army of the Orcs buffs creatures with Orc in their name",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_038_army_of_the_orcs",
+      "cardName": "Army of the Orcs",
+      "cardType": "MAGIC",
+      "cardNumber": "038",
+      "generation": "3",
+      "rawText": "All creatures with \"Orc\" in their name: SPD: +3. Atk: +6. Atk Dice Rolls: +1."
+    },
+    "effect": {
+      "effectId": "038-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "All creatures with \"Orc\" in their name",
+      "value": "SPD +3; Atk +6; Atk Dice Rolls +1",
+      "durationText": "While on field",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Army of the Orcs buffs creatures with Orc in their name",
+    "summary": "Play Army of the Orcs as field magic and verify an Orc-named creature receives the printed SPD and Atk Dice Roll bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_038_army_of_the_orcs",
+        "test_orc_named_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use Test Orc Scout because its name contains \"Orc\"."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Army of the Orcs as field magic.",
+      "Read the Orc-named creature's effective SPD and attack dice."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Orc-named creature SPD increased by 3",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 10
+      },
+      {
+        "label": "Orc-named creature attack dice increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Army of the Orcs remains in magic slot",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_038_army_of_the_orcs"
+      }
+    ],
+    "manualVerification": [
+      "Confirm creatures without \"Orc\" in their name do not receive this aura.",
+      "Confirm Atk +6 is reflected in battle damage without double-counting the attack dice aura."
+    ],
+    "riskNotes": [
+      "This fixture validates name targeting and direct stat outputs; damage output is left to a separate adapter pass."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Army of the Orcs field aura for Orc-named creatures."
+    },
+    "regression": {
+      "fixtureName": "army-of-the-orcs-orc-name-stat-suite",
+      "tags": [
+        "magic",
+        "field",
+        "stat-modifier",
+        "spd",
+        "attack-dice"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
