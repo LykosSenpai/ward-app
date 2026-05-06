@@ -133,8 +133,8 @@ function sourceAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
   const text = effectText(effect);
   if (source.card.attachedToInstanceId) return source.card.attachedToInstanceId === target.card.instanceId;
   if (text.includes("equipped creature")) return source.card.attachedToInstanceId === target.card.instanceId;
-  if (text.includes("this creature") || text.includes("this card")) return source.card.instanceId === target.card.instanceId;
   if (text.includes("your primary creature") || text.includes("controller's primary creature")) return source.player.id === target.player.id && target.zone === "PRIMARY_CREATURE";
+  if (text.includes("this creature") || text.includes("this card")) return source.card.instanceId === target.card.instanceId;
   if (text.includes("your creature") || text.includes("you control") || text.includes("your side")) return source.player.id === target.player.id;
   if (text.includes("opponent") || text.includes("opposing")) return source.player.id !== target.player.id;
   if (text.includes("all creatures") || text.includes("each creature") || text.includes("both creatures")) return true;
