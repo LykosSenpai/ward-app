@@ -194,6 +194,18 @@ const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "C
     modifier: 0,
     text: "Synthetic headless QA invalid sacrifice."
   },
+  test_were_named_creature: {
+    id: "test_were_named_creature",
+    name: "Test Were Scout",
+    cardType: "CREATURE",
+    creatureType: "BEAST",
+    armorLevel: 6,
+    speed: 8,
+    hp: 70,
+    attackDice: 2,
+    modifier: 3,
+    text: "Synthetic headless QA creature with Were in its name."
+  },
   test_attacker_2dice_mod0: {
     id: "test_attacker_2dice_mod0",
     name: "Test Attacker 2D +0",

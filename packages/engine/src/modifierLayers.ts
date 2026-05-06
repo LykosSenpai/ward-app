@@ -137,14 +137,16 @@ function sourceAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
   if (text.includes("this creature") || text.includes("this card")) return source.card.instanceId === target.card.instanceId;
   if (text.includes("your creature") || text.includes("you control") || text.includes("your side")) return source.player.id === target.player.id;
   if (text.includes("opponent") || text.includes("opposing")) return source.player.id !== target.player.id;
-  if (text.includes("all creatures") || text.includes("each creature") || text.includes("both creatures")) return true;
   if (text.includes("non-effect creature") || text.includes("non effect creature")) return !target.definition.effects?.length;
+  if (text.includes("\"were\"") || text.includes("with were in") || text.includes("name contains \"were\"")) return target.definition.name.toLowerCase().includes("were");
+  if (text.includes("\"orc\"") || text.includes("with orc in") || text.includes("name contains \"orc\"")) return target.definition.name.toLowerCase().includes("orc");
   if (text.includes("bug-type") || text.includes("bug type")) return target.definition.creatureType.toLowerCase().includes("bug");
   if (text.includes("dragon-type") || text.includes("dragon type")) return target.definition.creatureType.toLowerCase().includes("dragon") || target.definition.name.toLowerCase().includes("dragon");
   if (text.includes("demon-type") || text.includes("demon type")) return target.definition.creatureType.toLowerCase().includes("demon") || target.definition.name.toLowerCase().includes("demon");
   if (text.includes("undead-type") || text.includes("undead type")) return target.definition.creatureType.toLowerCase().includes("undead");
   if (text.includes("humanoid-type") || text.includes("humanoid type")) return target.definition.creatureType.toLowerCase().includes("humanoid");
   if (text.includes("mechanical-type") || text.includes("mechanical type")) return target.definition.creatureType.toLowerCase().includes("mechanical");
+  if (text.includes("all creatures") || text.includes("each creature") || text.includes("both creatures")) return true;
   return source.card.instanceId === target.card.instanceId;
 }
 

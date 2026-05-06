@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_036_full_moon",
+  "effectId": "036-E01",
+  "title": "Full Moon buffs creatures with Were in their name",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_036_full_moon",
+      "cardName": "Full Moon",
+      "cardType": "MAGIC",
+      "cardNumber": "036",
+      "generation": "2",
+      "rawText": "All creatures with \"Were\" in their name gain: AL: +5. Hit Dice Rolls: +1. Atk Dice Rolls: +1."
+    },
+    "effect": {
+      "effectId": "036-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "All creatures with \"Were\" in their name",
+      "value": "AL +5; Hit Dice Rolls +1; Atk Dice Rolls +1",
+      "durationText": "While field effect is active",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Full Moon buffs creatures with Were in their name",
+    "summary": "Play Full Moon as field magic and verify a Were-named creature receives the printed AL, Hit Dice Roll, and Atk Dice Roll bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_036_full_moon",
+        "test_were_named_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use Test Were Scout because its name contains \"Were\"."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Full Moon as field magic.",
+      "Read the Were-named creature's effective AL and attack dice.",
+      "Run a follow-up battle and inspect the hit roll dice count."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Were-named creature AL increased by 5",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 11
+      },
+      {
+        "label": "Were-named creature attack dice increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Hit roll used three dice after the +1 Hit Dice Roll bonus",
+        "path": "battle.lastHitRoll.dice.length",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Full Moon remains in magic slot",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_036_full_moon"
+      }
+    ],
+    "manualVerification": [
+      "Confirm creatures without \"Were\" in their name do not receive this aura.",
+      "Confirm battle damage does not double-count the attack dice aura through both effective stats and battle suggestions."
+    ],
+    "riskNotes": [
+      "This fixture validates positive Were-name targeting and direct stat outputs; damage double-counting needs a separate adapter pass."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Full Moon field aura for Were-named creatures."
+    },
+    "regression": {
+      "fixtureName": "full-moon-were-name-stat-suite",
+      "tags": [
+        "magic",
+        "field",
+        "stat-modifier",
+        "al",
+        "attack-dice",
+        "hit-dice"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

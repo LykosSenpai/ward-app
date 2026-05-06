@@ -214,8 +214,29 @@ function sourceAppliesToCreature(
     return source.playerId !== creature.playerId;
   }
 
-  if (text.includes("all creature") || text.includes("both creature") || text.includes("each creature")) {
-    return true;
+  if (text.includes("\"were\"") || text.includes("with were in") || text.includes("name contains \"were\"")) {
+    return creatureDefinition?.cardType === "CREATURE" && creatureDefinition.name.toLowerCase().includes("were");
+  }
+
+  if (text.includes("\"orc\"") || text.includes("with orc in") || text.includes("name contains \"orc\"")) {
+    return creatureDefinition?.cardType === "CREATURE" && creatureDefinition.name.toLowerCase().includes("orc");
+  }
+
+  if (text.includes("demon-type") || text.includes("demon type")) {
+    return creatureDefinition?.cardType === "CREATURE" &&
+      (creatureDefinition.creatureType.toLowerCase().includes("demon") || creatureDefinition.name.toLowerCase().includes("demon"));
+  }
+
+  if (text.includes("undead-type") || text.includes("undead type")) {
+    return creatureDefinition?.cardType === "CREATURE" && creatureDefinition.creatureType.toLowerCase().includes("undead");
+  }
+
+  if (text.includes("humanoid-type") || text.includes("humanoid type")) {
+    return creatureDefinition?.cardType === "CREATURE" && creatureDefinition.creatureType.toLowerCase().includes("humanoid");
+  }
+
+  if (text.includes("mechanical-type") || text.includes("mechanical type")) {
+    return creatureDefinition?.cardType === "CREATURE" && creatureDefinition.creatureType.toLowerCase().includes("mechanical");
   }
 
   if (text.includes("non-effect creature") || text.includes("non effect creature")) {
@@ -230,6 +251,10 @@ function sourceAppliesToCreature(
       return false;
     }
 
+    return true;
+  }
+
+  if (text.includes("all creature") || text.includes("both creature") || text.includes("each creature")) {
     return true;
   }
 
