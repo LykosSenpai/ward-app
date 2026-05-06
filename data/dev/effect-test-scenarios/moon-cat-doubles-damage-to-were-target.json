@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_072_moon_cat",
+  "effectId": "072-E01",
+  "title": "Moon Cat doubles attack damage to Were target",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_072_moon_cat",
+      "cardName": "Moon Cat",
+      "cardType": "CREATURE",
+      "cardNumber": "072",
+      "generation": "2",
+      "rawText": "This card inflicts 2x Atk damage to any creature with \"Were\" in its name. It also receives the effects of the \"Full Moon\" magic card."
+    },
+    "effect": {
+      "effectId": "072-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Creature with Were in its name",
+      "value": "2x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Moon Cat doubles attack damage to Were target",
+    "summary": "Verify Moon Cat attack damage is doubled against a creature with Were in its name.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_072_moon_cat"
+      ],
+      "player2Cards": [
+        "gen1_011_werewolf"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5,
+            5
+          ],
+          "label": "Moon Cat hits"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Moon Cat base damage 7"
+        }
+      ],
+      "notes": [
+        "Use Werewolf as a target whose name contains Were."
+      ]
+    },
+    "steps": [
+      "Set Moon Cat as player_1 primary and Werewolf as player_2 primary.",
+      "Resolve hit and damage calculation.",
+      "Observe final damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Multiplier trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Final damage is doubled",
+        "path": "battle.lastDamage.amount",
+        "operator": "equals",
+        "value": 14
+      },
+      {
+        "label": "Were target HP reduced by 14",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 14
+      }
+    ],
+    "manualVerification": [
+      "Confirm non-Were targets do not receive the multiplier."
+    ],
+    "riskNotes": [
+      "This fixture covers Moon Cat's Were-target multiplier only, not its Full Moon interaction."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Moon Cat's Were target damage multiplier."
+    },
+    "regression": {
+      "fixtureName": "moon-cat-doubles-damage-to-were-target",
+      "tags": [
+        "creature",
+        "combat",
+        "damage-multiplier",
+        "were"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
