@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_037_exorcism",
+  "effectId": "037-E01",
+  "title": "Exorcism doubles attack damage to Demon targets",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_037_exorcism",
+      "cardName": "Exorcism",
+      "cardType": "MAGIC",
+      "cardNumber": "037",
+      "generation": "2",
+      "rawText": "All creatures inflict 2x Atk damage to Demon-type creatures, or creatures with \"Demon\" in their name on the field."
+    },
+    "effect": {
+      "effectId": "037-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
+      "effectGroup": "Damage Multiplier Aura",
+      "target": "Demon-type creatures or creatures with Demon in name",
+      "value": "2x Atk damage",
+      "durationText": "While field effect is active",
+      "reusableFunction": "applyConditionalDamageMultiplierAura"
+    },
+    "title": "Exorcism doubles attack damage to Demon targets",
+    "summary": "With Exorcism active as field magic, a creature attacking a Demon-type target deals 2x attack damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_037_exorcism"
+      ],
+      "player2Cards": [
+        "gen1_137_forest_demon"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            4
+          ],
+          "label": "Attacker hit lands"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            3
+          ],
+          "label": "Base attack damage"
+        }
+      ],
+      "notes": [
+        "Pre-place Exorcism in an active field magic slot.",
+        "Use Forest Demon as player_2 primary Demon target.",
+        "Ensure not in first turn cycle."
+      ]
+    },
+    "steps": [
+      "Player 1 attacks Forest Demon while Exorcism is field-active.",
+      "Resolve hit and damage calculation.",
+      "Inspect damage event multiplier and defender HP loss."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Damage multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      },
+      {
+        "label": "Demon target took doubled attack damage",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 24
+      },
+      {
+        "label": "Field magic remains active",
+        "path": "players.player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_037_exorcism"
+      }
+    ],
+    "manualVerification": [
+      "Confirm name-containing Demon targets and non-Demon targets in separate variants."
+    ],
+    "riskNotes": [
+      "This mirrors the Holy Water field-aura route with a Demon target predicate."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Exorcism's Demon damage multiplier aura."
+    },
+    "regression": {
+      "fixtureName": "exorcism-doubles-damage-to-demon-targets",
+      "tags": [
+        "magic",
+        "field",
+        "damage-multiplier",
+        "demon"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

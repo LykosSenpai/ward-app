@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_056_knight_helm",
+  "effectId": "056-E01",
+  "title": "Knight Helm applies Hit and AL plus two while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_056_knight_helm",
+      "cardName": "Knight Helm",
+      "cardType": "MAGIC",
+      "cardNumber": "056",
+      "generation": "2",
+      "rawText": "Hit: +2. AL: +2."
+    },
+    "effect": {
+      "effectId": "056-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Hit +2; AL +2",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Knight Helm applies Hit and AL plus two while equipped",
+    "summary": "Equip Knight Helm to a modifier-zero primary creature, verify AL gains +2, and run a battle to verify Hit gains +2.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_056_knight_helm",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Hit bonus comes only from Knight Helm."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Knight Helm and equips it to their primary creature.",
+      "Read equipped creature effective AL.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the resolved hit roll modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 2",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Hit roll modifier increased by 2",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Knight Helm remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_056_knight_helm"
+      }
+    ],
+    "manualVerification": [
+      "Confirm both bonuses apply only while Knight Helm remains equipped."
+    ],
+    "riskNotes": [
+      "Uses effective stat output for AL and battle output for Hit."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Knight Helm Hit/AL equip modifier."
+    },
+    "regression": {
+      "fixtureName": "knight-helm-hit-al-plus-two",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "hit",
+        "al"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
