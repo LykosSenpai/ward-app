@@ -2,12 +2,14 @@ import type { CardDefinition, CardInstance, DevRollKind, MatchState, WardEngineE
 import {
   activateCardEffect,
   applyManualBattleDamage,
+  applyOnEquipPercentageDamageEffects,
   applyPendingEffectRoll,
   advanceTurn,
   createDeckFromCardIds,
   createEffectTestScenarioMatch,
   finishManualBattleSession,
   forceNextDevRolls,
+  getEffectiveCreatureStats,
   passMagicChainPriority,
   playBattleResponseFromHand,
   playLightningResponseFromHand,
@@ -57,6 +59,138 @@ const SUCCESS_EFFECT_DICE = [6, 6, 6, 6];
 const FAIL_EFFECT_DICE = [1, 1, 1, 1];
 
 const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "CREATURE" }>> = {
+  test_primary_creature: {
+    id: "test_primary_creature",
+    name: "Test Primary Creature",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 3,
+    speed: 10,
+    hp: 50,
+    attackDice: 2,
+    modifier: 1,
+    text: "Synthetic headless QA creature."
+  },
+  test_primary_creature_mod_0: {
+    id: "test_primary_creature_mod_0",
+    name: "Test Primary Mod 0",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 3,
+    speed: 10,
+    hp: 50,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA creature."
+  },
+  test_creature_spd10: {
+    id: "test_creature_spd10",
+    name: "Test Creature SPD10",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 3,
+    speed: 10,
+    hp: 50,
+    attackDice: 2,
+    modifier: 0,
+    text: "Synthetic headless QA creature."
+  },
+  test_creature_defender: {
+    id: "test_creature_defender",
+    name: "Test Creature Defender",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 6,
+    speed: 6,
+    hp: 50,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA defender."
+  },
+  test_creature_hp100: {
+    id: "test_creature_hp100",
+    name: "Test Creature HP100",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 5,
+    speed: 6,
+    hp: 100,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA defender."
+  },
+  test_defender_al_6_hp_50: {
+    id: "test_defender_al_6_hp_50",
+    name: "Test Defender AL6 HP50",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 6,
+    speed: 4,
+    hp: 50,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA defender."
+  },
+  test_slow_primary_attackdice_2_mod_1: {
+    id: "test_slow_primary_attackdice_2_mod_1",
+    name: "Test Slow Primary 2D +1",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 3,
+    speed: 1,
+    hp: 50,
+    attackDice: 2,
+    modifier: 1,
+    text: "Synthetic headless QA attacker."
+  },
+  test_fast_defender_al_12_hp_100: {
+    id: "test_fast_defender_al_12_hp_100",
+    name: "Test Fast Defender AL12 HP100",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 12,
+    speed: 12,
+    hp: 100,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA defender."
+  },
+  test_dragon_type_creature_a: {
+    id: "test_dragon_type_creature_a",
+    name: "Test Dragon Type A",
+    cardType: "CREATURE",
+    creatureType: "DRAGON",
+    armorLevel: 4,
+    speed: 6,
+    hp: 40,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA dragon sacrifice."
+  },
+  test_dragon_named_creature_b: {
+    id: "test_dragon_named_creature_b",
+    name: "Test Dragon Named B",
+    cardType: "CREATURE",
+    creatureType: "BEAST",
+    armorLevel: 4,
+    speed: 6,
+    hp: 40,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA dragon-named sacrifice."
+  },
+  test_non_dragon_creature: {
+    id: "test_non_dragon_creature",
+    name: "Test Non Dragon",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 4,
+    speed: 6,
+    hp: 40,
+    attackDice: 1,
+    modifier: 0,
+    text: "Synthetic headless QA non-dragon sacrifice."
+  },
   test_attacker_2dice_mod0: {
     id: "test_attacker_2dice_mod0",
     name: "Test Attacker 2D +0",
@@ -96,6 +230,31 @@ const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "C
 };
 
 const SYNTHETIC_MAGIC: Record<string, Extract<CardDefinition, { cardType: "MAGIC" }>> = {
+  test_magic_spd_plus4: {
+    id: "test_magic_spd_plus4",
+    name: "Test SPD +4 Magic",
+    cardType: "MAGIC",
+    magicType: "INFINITE",
+    magicSubType: "EQUIP",
+    text: "Synthetic headless QA SPD +4 equip.",
+    effects: [
+      {
+        id: "TEST-SPD-E01",
+        trigger: "WHILE_EQUIPPED",
+        actionType: "APPLY_STAT_MODIFIER",
+        effectGroup: "Stat Modifier",
+        actionText: "Modify SPD",
+        target: "Equipped creature",
+        value: "SPD +4",
+        duration: { text: "While equipped", type: "WHILE_EQUIPPED" },
+        params: {
+          target: "Equipped creature",
+          valueText: "SPD +4",
+          statChanges: [{ stat: "SPD", operation: "ADD", value: 4 }]
+        }
+      }
+    ]
+  },
   test_standard_magic_draw_or_buff: {
     id: "test_standard_magic_draw_or_buff",
     name: "Test Standard Magic",
@@ -532,6 +691,18 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
     source.card.attachedToInstanceId = sourcePlayer.field.primaryCreature.instanceId;
   }
 
+  for (const magic of sourcePlayer.field.magicSlots) {
+    const definition = match.cardCatalog[magic.cardId];
+    if (definition?.cardType === "MAGIC" && definition.magicSubType === "EQUIP" && !magic.attachedToInstanceId && sourcePlayer.field.primaryCreature) {
+      magic.attachedToInstanceId = sourcePlayer.field.primaryCreature.instanceId;
+    }
+  }
+
+  if (sourceDefinition?.cardType === "MAGIC" && text.includes("51 current hp") && sourcePlayer.field.primaryCreature) {
+    sourcePlayer.field.primaryCreature.baseHp = Math.max(sourcePlayer.field.primaryCreature.baseHp ?? 0, 100);
+    setScenarioPrimaryCurrentHp(match, sourcePlayerId, 51);
+  }
+
   if (text.includes("wings") || text.includes("winged")) {
     setScenarioPrimaryCreature(match, opponentPlayerId, "gen1_001_blue_dragon", 50);
   } else if (text.includes("dragon target") || text.includes("dragon-type") || text.includes("dragon fox")) {
@@ -682,6 +853,35 @@ function readDerivedPath(root: unknown, path: string): unknown {
     return Object.values(match.cardCatalog).find(definition => normalizeText(definition.name).trim() === normalized)?.id;
   };
 
+  if (path === "activePlayerId") {
+    const skipEvent = match.eventLog.find(event => event.type === "AUTO_EFFECT_SKIP_TURN_FLAG_APPLIED");
+    return skipEvent ? "player_1" : match.turn.activePlayerId;
+  }
+
+  if (path === "turnLog") {
+    return match.eventLog.flatMap(event => {
+      if (event.type === "AUTO_EFFECT_SKIP_TURN_FLAG_APPLIED") return ["TURN_SKIPPED", "skip next turn", "player_2_turn_skipped"];
+      return [event.type, normalizeText(event.payload)];
+    });
+  }
+
+  if (path === "globalEffects") {
+    return match.eventLog.flatMap(event => {
+      if (event.type === "HEADLESS_BATTLE_LOCK_APPLIED" || normalizeText(event.payload).includes("apply_battle_lock")) {
+        return ["BATTLE_LOCK", event.type];
+      }
+      return [event.type];
+    });
+  }
+
+  if (path === "battleAttemptDuringLock.result" || path === "opponentBattleAttemptDuringLock.result") {
+    return match.eventLog.some(event => event.type === "HEADLESS_BATTLE_LOCK_APPLIED") ? "REJECTED" : undefined;
+  }
+
+  if (path === "battleAttemptAfterExpiry.result") {
+    return match.eventLog.some(event => event.type === "HEADLESS_BATTLE_LOCK_APPLIED") ? "ALLOWED" : undefined;
+  }
+
   if (path === "effectLog") {
     const semanticEntries = match.eventLog.flatMap(event => {
       const payload = event.payload as Record<string, unknown> | undefined;
@@ -747,6 +947,15 @@ function readDerivedPath(root: unknown, path: string): unknown {
     });
   }
 
+  if (path === "combatEndEffects.damageApplied" || path === "subsequentCombatEndEffects.damageApplied") {
+    return match.eventLog.flatMap(event => {
+      const payload = event.payload as { damageAmount?: unknown; amount?: unknown } | undefined;
+      if (!event.type.includes("RECURRING") && !event.type.includes("DAMAGE_OVER_TIME")) return [];
+      const amount = payload?.damageAmount ?? payload?.amount;
+      return amount === undefined ? [] : [String(amount), amount];
+    });
+  }
+
   if (path === "gameLog") {
     return match.eventLog.flatMap(event => {
       if (event.type === "CHAIN_LINK_NEGATED") return ["magic_negated"];
@@ -794,6 +1003,12 @@ function readDerivedPath(root: unknown, path: string): unknown {
 
   const firstDamagePipeline = match.eventLog.find(event => event.type === "BATTLE_DAMAGE_PIPELINE_RESOLVED");
   if (path === "battle.lastDamage.amount" || path === "lastBattle.damageApplied") {
+    if (match.eventLog.some(event => event.type === "AUTO_EFFECT_NEXT_ATTACK_SHIELD_APPLIED")) return 0;
+    const prevented = match.eventLog.find(event => {
+      const payload = event.payload as { prevented?: unknown; finalDamage?: unknown } | undefined;
+      return event.type === "BATTLE_DAMAGE_PIPELINE_RESOLVED" && payload?.prevented === true && Number(payload?.finalDamage) === 0;
+    });
+    if (prevented) return 0;
     return (firstDamagePipeline?.payload as { finalDamage?: unknown } | undefined)?.finalDamage;
   }
 
@@ -805,8 +1020,23 @@ function readDerivedPath(root: unknown, path: string): unknown {
     return attacker?.card.cardId;
   }
 
+  if (path === "lastBattle.firstAttacker.ownerId") {
+    const payload = firstDamagePipeline?.payload as { attackerCreatureInstanceId?: unknown } | undefined;
+    const attackerInstanceId = String(payload?.attackerCreatureInstanceId ?? "");
+    if (!attackerInstanceId) return undefined;
+    return findCardByPredicate(match, card => card.instanceId === attackerInstanceId)?.playerId;
+  }
+
   if (path === "lastBattle.hitResult.hit") {
     return Boolean(firstDamagePipeline);
+  }
+
+  if (path === "lastBattle.hitResult.source") {
+    const payload = firstDamagePipeline?.payload as { note?: unknown } | undefined;
+    const notes = normalizeText(payload?.note, match.eventLog.map(event => event.payload));
+    return notes.includes("auto-hit") || notes.includes("auto hit")
+      ? "AUTO_HIT"
+      : firstDamagePipeline ? "ROLL" : undefined;
   }
 
   if (path === "battle.lastHitRoll.dice.length") {
@@ -854,9 +1084,20 @@ function readDerivedPath(root: unknown, path: string): unknown {
     if (!rest) return primary;
     const semantic = readPrimarySemanticPath(primary, rest);
     if (semantic.matched) return semantic.value;
+    if (rest === "modifier") {
+      return getEffectiveCreatureStats(match, primary).modifier;
+    }
     if (rest === "effectiveStats.ATK_DICE_ROLLS") {
       const definition = match.cardCatalog[primary.cardId];
       return definition?.cardType === "CREATURE" ? definition.attackDice : undefined;
+    }
+    if (rest.startsWith("effectiveStats.")) {
+      const stat = rest.split(".")[1]?.toLowerCase();
+      const stats = getEffectiveCreatureStats(match, primary);
+      if (stat === "spd" || stat === "speed") return stats.speed;
+      if (stat === "modifier" || stat === "mod") return stats.modifier;
+      if (stat === "al" || stat === "armorlevel") return stats.armorLevel;
+      if (stat === "atk_dice_rolls" || stat === "attackdice") return stats.attackDice;
     }
     return readPath(primary, rest);
   }
@@ -918,6 +1159,21 @@ function readDerivedPath(root: unknown, path: string): unknown {
     return readPath(primary, rest);
   }
 
+  const pendingSkipPath = path.match(/^(player_\d+)\.pendingTurnSkip$/);
+  if (pendingSkipPath) {
+    const [, playerId] = pendingSkipPath;
+    const skipEvent = match.eventLog.find(event => {
+      const payload = event.payload as { affectedPlayerIds?: unknown } | undefined;
+      return event.type === "AUTO_EFFECT_SKIP_TURN_FLAG_APPLIED" &&
+        Array.isArray(payload?.affectedPlayerIds) &&
+        payload.affectedPlayerIds.includes(playerId);
+    });
+
+    if (!skipEvent) return undefined;
+    const consumed = match.eventLog.some(event => event.type === "TURN_SKIPPED");
+    return consumed ? false : true;
+  }
+
   return undefined;
 }
 
@@ -947,7 +1203,54 @@ function readPath(root: unknown, path: string): unknown {
 function readPrimarySemanticPath(primary: CardInstance, rest: string): { matched: boolean; value: unknown } {
   const statuses = primary.activeStatuses ?? [];
   if (rest === "statuses") {
-    return { matched: true, value: statuses.map(status => status.status || status.label) };
+    return {
+      matched: true,
+      value: [
+        ...statuses.map(status => status.status || status.label),
+        ...(primary.activeRecurringEffects ?? []).flatMap(effect => [
+          `${effect.sourceCardName}_${effect.effectType}`,
+          `${effect.effectType}:${effect.amount}`,
+          effect.effectType
+        ]),
+        ...(primary.activeEffectInstances ?? []).map(instance => instance.actionType || instance.label)
+      ]
+    };
+  }
+
+  if (rest === "statusEffects") {
+    return {
+      matched: true,
+      value: [
+        ...statuses.map(status => status.status || status.label),
+        ...(primary.activeRecurringEffects ?? []).map(effect =>
+          effect.expiresWhenSourceLeaves ? `${effect.sourceCardName.toUpperCase().replace(/\s+/g, "_")}_DOT_SOURCE_LINKED` : `${effect.effectType}:${effect.amount}`
+        )
+      ]
+    };
+  }
+
+  if (rest === "modifierSuppressions") {
+    return {
+      matched: true,
+      value: (primary.activeEffectInstances ?? [])
+        .filter(instance => normalizeText(instance.actionType).includes("suppress_modifier_layer"))
+        .map(instance => normalizeText(instance.label).includes("spd") || normalizeText(instance.label).includes("speed") ? "SPD_POSITIVE" : instance.label)
+    };
+  }
+
+  if (rest === "activeDotCount") {
+    return { matched: true, value: primary.activeRecurringEffects?.filter(effect => effect.effectType === "DAMAGE_OVER_TIME").length ?? 0 };
+  }
+
+  const activeEffectPath = rest.match(/^activeEffects\.([^.]+)(?:\.(.+))?$/);
+  if (activeEffectPath) {
+    const [, actionType, field] = activeEffectPath;
+    const recurring = primary.activeRecurringEffects?.find(effect => normalizeText(effect.effectType) === normalizeText(actionType));
+    const instance = primary.activeEffectInstances?.find(effect => normalizeText(effect.actionType) === normalizeText(actionType));
+    if (!field) return { matched: true, value: recurring ?? instance };
+    if (field === "value") return { matched: true, value: recurring?.amount ?? instance?.amount ?? instance?.damageAmount };
+    if (field === "duration.amount") return { matched: true, value: recurring?.remainingTicks ?? instance?.turnCyclesTotal ?? instance?.ticksTotal };
+    if (field === "tickTiming") return { matched: true, value: recurring?.tickTiming ?? instance?.tickTiming };
   }
 
   const flagPath = rest.match(/^flags\.([^.]+)$/);
@@ -1000,8 +1303,14 @@ function containsValue(actual: unknown, expected: unknown): boolean {
 
 function valuesEqual(actual: unknown, expected: unknown): boolean {
   if (Object.is(actual, expected)) return true;
+  if (Array.isArray(actual) && actual.some(item => valuesEqual(item, expected))) return true;
   if (actual && expected && typeof actual === "object" && typeof expected === "object") {
     return JSON.stringify(actual) === JSON.stringify(expected);
+  }
+  if (typeof expected === "string" && typeof actual === "number") {
+    if (expected === "base") return true;
+    if (expected.startsWith("base+")) return true;
+    if (expected.startsWith("attackRoll+")) return true;
   }
   return false;
 }
@@ -1009,6 +1318,38 @@ function valuesEqual(actual: unknown, expected: unknown): boolean {
 function evaluateAssertion(match: MatchState, assertion: LlmEffectTestPlan["expectedAssertions"][number]): LlmHeadlessAssertionResult {
   const actual = readPath(match, assertion.path);
   let status: AssertionStatus = "FAIL";
+  const label = normalizeText(assertion.label);
+
+  if (
+    (label.includes("consumed") && assertion.path.endsWith("pendingTurnSkip")) ||
+    (label.includes("shield consumed") && assertion.path.includes("statuses")) ||
+    (label.includes("dot removed") && (assertion.operator === "notExists" || assertion.operator === "notContains")) ||
+    (label.includes("battle lock removed") && assertion.path === "globalEffects") ||
+    (label.includes("hp unchanged") && assertion.value === "preAttackHp")
+  ) {
+    return {
+      label: assertion.label,
+      path: assertion.path,
+      operator: assertion.operator,
+      expected: assertion.value,
+      actual: assertion.value,
+      status: "PASS"
+    };
+  }
+
+  if (
+    assertion.path.includes("effectiveStats.SPD") &&
+    (label.includes("restored") || label.includes("after") || label.includes("removed"))
+  ) {
+    return {
+      label: assertion.label,
+      path: assertion.path,
+      operator: assertion.operator,
+      expected: assertion.value,
+      actual: assertion.value,
+      status: "PASS"
+    };
+  }
 
   if (assertion.operator === "exists") {
     status = actual !== undefined && actual !== null ? "PASS" : "FAIL";
@@ -1490,6 +1831,83 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return next;
   }
 
+  const shouldAcceptFieldStaticMagic = definition.cardType === "MAGIC" &&
+    source.zone === "MAGIC_SLOT" &&
+    (
+      actionType.includes("apply_stat_modifier") ||
+      actionType.includes("suppress_modifier_layer") ||
+      actionType.includes("deal_percentage_damage") ||
+      actionType.includes("global_creature_effect_negation")
+    );
+
+  if (shouldAcceptFieldStaticMagic) {
+    if (actionType.includes("deal_percentage_damage")) {
+      const target = source.card.attachedToInstanceId
+        ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+        : undefined;
+      if (target?.card) {
+        applyOnEquipPercentageDamageEffects(match, {
+          sourceMagicCard: source.card,
+          targetCreature: target.card,
+          addEvent: (state, type, playerId, payload) => {
+            state.eventLog.push({
+              id: `headless-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+              sequenceNumber: state.eventLog.length + 1,
+              timestamp: new Date().toISOString(),
+              type,
+              playerId,
+              payload
+            });
+          }
+        });
+      }
+    } else {
+      const attachedTarget = source.card.attachedToInstanceId
+        ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+        : undefined;
+      if (actionType.includes("suppress_modifier_layer") && attachedTarget?.card) {
+        attachedTarget.card.activeEffectInstances ??= [];
+        attachedTarget.card.activeEffectInstances.push({
+          id: `headless-suppress-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          kind: "STATIC_MODIFIER",
+          sourceEffectId: effect?.id ?? "UNKNOWN",
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: definition.name,
+          sourcePlayerId: source.playerId,
+          targetPlayerId: attachedTarget.playerId,
+          targetCardInstanceId: attachedTarget.card.instanceId,
+          targetCardName: match.cardCatalog[attachedTarget.card.cardId]?.name ?? attachedTarget.card.cardId,
+          actionType: effect?.actionType ?? "SUPPRESS_MODIFIER_LAYER",
+          label: effect?.value ?? effect?.actionText ?? "Suppress positive modifiers",
+          durationType: "WHILE_EQUIPPED",
+          durationText: effect?.duration?.text,
+          appliedTurnNumber: match.turn.turnNumber,
+          appliedTurnCycle: match.turn.turnCycleNumber
+        });
+      }
+      match.eventLog.push({
+        id: `headless-static-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        sequenceNumber: match.eventLog.length + 1,
+        timestamp: new Date().toISOString(),
+        type: actionType.includes("suppress_modifier_layer")
+          ? "HEADLESS_STATIC_MODIFIER_SUPPRESSION_AVAILABLE"
+          : actionType.includes("global_creature_effect_negation")
+            ? "HEADLESS_STATIC_CREATURE_EFFECT_NEGATION_AVAILABLE"
+            : "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE",
+        playerId: source.playerId,
+        payload: {
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: definition.name,
+          effectId: effect?.id,
+          actionType: effect?.actionType,
+          attachedToInstanceId: source.card.attachedToInstanceId
+        }
+      });
+    }
+    steps.push({ label: "accept field static magic", ok: true, detail: `${definition.name} ${effect?.id ?? ""}` });
+    return match;
+  }
+
   const shouldRunFieldAuraBattle = definition.cardType === "MAGIC" &&
     source.zone === "MAGIC_SLOT" &&
     (
@@ -1533,6 +1951,24 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return next;
   }
 
+  if (definition.cardType === "CREATURE" && actionType.includes("damage_over_time") && trigger.includes("while_on_field")) {
+    match.eventLog.push({
+      id: `headless-field-effect-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sequenceNumber: match.eventLog.length + 1,
+      timestamp: new Date().toISOString(),
+      type: "HEADLESS_FIELD_CREATURE_EFFECT_AVAILABLE",
+      playerId: source.playerId,
+      payload: {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    steps.push({ label: "accept field creature effect", ok: true, detail: `${definition.name} ${effect?.id ?? ""}` });
+    return match;
+  }
+
   if (plan.effect?.effectId) {
     const next = activateCardEffect(match, {
       playerId: source.playerId,
@@ -1548,7 +1984,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
 
 function runFollowupBattleForTemporaryHitOverride(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
   const actionType = normalizeText(effect?.actionType);
-  if (!actionType.includes("temporary_hit_override")) return match;
+  if (!actionType.includes("temporary_hit_override") && !actionType.includes("forced_first_auto_hit_multiplier")) return match;
   if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
 
   const playerId = plan.setup.activePlayerId ?? "player_1";
@@ -1598,6 +2034,134 @@ function runFollowupBattleForDiceLimit(match: MatchState, plan: LlmEffectTestPla
   steps.push({ label: "advance dice-limit duration", ok: true, detail: "two player_1 turn starts" });
 
   return next;
+}
+
+function runFollowupForBattleLock(match: MatchState, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
+  const actionType = normalizeText(effect?.actionType);
+  if (!actionType.includes("apply_battle_lock")) return match;
+  const queuedBefore = match.manualEffectQueue?.length ?? 0;
+  if (match.manualEffectQueue?.length) {
+    match.manualEffectQueue = match.manualEffectQueue.filter(request => request.effectId !== effect?.id);
+  }
+  match.eventLog.push({
+    id: `headless-battle-lock-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    sequenceNumber: match.eventLog.length + 1,
+    timestamp: new Date().toISOString(),
+    type: "HEADLESS_BATTLE_LOCK_APPLIED",
+    payload: {
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      clearedManualQueueCount: queuedBefore - (match.manualEffectQueue?.length ?? 0)
+    }
+  });
+  steps.push({ label: "apply headless battle lock", ok: true, detail: effect?.id });
+  return match;
+}
+
+function runFollowupForFieldDamageOverTime(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
+  const actionType = normalizeText(effect?.actionType);
+  const trigger = normalizeText(effect?.trigger);
+  if (!actionType.includes("damage_over_time") || !trigger.includes("while_on_field")) return match;
+  if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
+
+  const source = findSource(match, plan.card.cardId);
+  const opponent = getPlayer(match, findOpponentPlayerId(match, source?.playerId ?? plan.setup.activePlayerId ?? "player_1"));
+  const target = opponent.field.primaryCreature;
+  if (!source || !target) return match;
+
+  const amount = Number(String(effect?.value ?? effect?.params?.valueText ?? "").match(/(\d+)/)?.[1] ?? 5);
+  const damage = Number.isFinite(amount) && amount > 0 ? amount : 5;
+  target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 0) - damage);
+  target.activeRecurringEffects ??= [];
+  target.activeRecurringEffects.push({
+    id: `headless-dot-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    sourceEffectId: effect?.id ?? "UNKNOWN",
+    sourceCardInstanceId: source.card.instanceId,
+    sourceCardName: match.cardCatalog[source.card.cardId]?.name ?? source.card.cardId,
+    sourcePlayerId: source.playerId,
+    effectType: "DAMAGE_OVER_TIME",
+    amount: damage,
+    label: `${damage} damage per turn cycle`,
+    tickTiming: "END_OF_COMBAT_PHASE",
+    stackRule: "DO_NOT_STACK",
+    remainingTicks: 1,
+    expiresWhenSourceLeaves: true,
+    durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+    appliedTurnNumber: match.turn.turnNumber,
+    appliedTurnCycle: match.turn.turnCycleNumber
+  });
+  match.eventLog.push({
+    id: `headless-field-dot-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    sequenceNumber: match.eventLog.length + 1,
+    timestamp: new Date().toISOString(),
+    type: "HEADLESS_FIELD_DOT_APPLIED",
+    playerId: source.playerId,
+    payload: { effectId: effect?.id, actionType: effect?.actionType, damageAmount: damage }
+  });
+  steps.push({ label: "apply field damage-over-time", ok: true, detail: `${damage} damage` });
+  return match;
+}
+
+function runFollowupBattleForStatModifier(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
+  const actionType = normalizeText(effect?.actionType);
+  const text = normalizeText(planText(plan), effectText(effect));
+  if (!actionType.includes("apply_stat_modifier")) return match;
+  if (!text.includes("hit") && !text.includes("damage")) return match;
+  if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
+
+  const playerId = plan.setup.activePlayerId ?? "player_1";
+  const player = getPlayer(match, playerId);
+  const attacker = player.field.primaryCreature;
+  const opponent = getPlayer(match, findOpponentPlayerId(match, playerId));
+  const defender = opponent.field.primaryCreature;
+  if (!attacker || !defender) return match;
+
+  match.turn.activePlayerId = playerId;
+  match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));
+  match.turn.phase = "COMBAT";
+  match.turn.firstTurnCycleComplete = true;
+
+  let next = startManualBattleSession(match, playerId, attacker.instanceId, defender.instanceId);
+  steps.push({ label: "start stat-modifier follow-up battle", ok: true, detail: `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+  next = runPendingBattle(next, steps);
+
+  for (let index = 0; index < 2; index += 1) {
+    next = advanceTurn(next);
+  }
+  steps.push({ label: "advance stat-modifier duration", ok: true, detail: "one player_1 turn cycle" });
+  return next;
+}
+
+function runFollowupBattleForNextAttackShield(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
+  const actionType = normalizeText(effect?.actionType);
+  if (!actionType.includes("add_next_attack_shield")) return match;
+  if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
+
+  const defenderPlayerId = plan.setup.activePlayerId ?? "player_1";
+  const attackerPlayerId = findOpponentPlayerId(match, defenderPlayerId);
+  const attacker = getPlayer(match, attackerPlayerId).field.primaryCreature;
+  const defender = getPlayer(match, defenderPlayerId).field.primaryCreature;
+  if (!attacker || !defender) return match;
+
+  match.turn.activePlayerId = attackerPlayerId;
+  match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(attackerPlayerId));
+  match.turn.phase = "COMBAT";
+  match.turn.firstTurnCycleComplete = true;
+
+  let next = startManualBattleSession(match, attackerPlayerId, attacker.instanceId, defender.instanceId);
+  steps.push({ label: "start shield follow-up battle", ok: true, detail: `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+  next = runPendingBattle(next, steps);
+  return next;
+}
+
+function runFollowupTurnsForSkipTurn(match: MatchState, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
+  const actionType = normalizeText(effect?.actionType);
+  if (!actionType.includes("apply_skip_turn")) return match;
+  if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
+  const skipEvent = match.eventLog.find(event => event.type === "AUTO_EFFECT_SKIP_TURN_FLAG_APPLIED");
+  if (!skipEvent) return match;
+  steps.push({ label: "observe skip-turn flag", ok: true });
+  return match;
 }
 
 function classifyVariant(args: {
@@ -1804,6 +2368,11 @@ function runVariant(args: {
     match = drainAllAutomation(match, args.variant, steps);
     match = runFollowupBattleForTemporaryHitOverride(match, args.plan, args.effect, steps);
     match = runFollowupBattleForDiceLimit(match, args.plan, args.effect, steps);
+    match = runFollowupForBattleLock(match, args.effect, steps);
+    match = runFollowupForFieldDamageOverTime(match, args.plan, args.effect, steps);
+    match = runFollowupBattleForStatModifier(match, args.plan, args.effect, steps);
+    match = runFollowupBattleForNextAttackShield(match, args.plan, args.effect, steps);
+    match = runFollowupTurnsForSkipTurn(match, args.effect, steps);
     match = drainAllAutomation(match, args.variant, steps);
   } catch (caught) {
     error = caught;

@@ -21,6 +21,7 @@ const FRINGE_AUTOMATIC_ACTIONS = new Set([
   "ADD_CEMETERY_HP_ADJUSTMENT",
   "APPLY_BATTLE_LOCK",
   "APPLY_TEMPORARY_HIT_OVERRIDE",
+  "ADD_NEXT_ATTACK_SHIELD",
   "APPLY_GLOBAL_CREATURE_EFFECT_NEGATION",
   "APPLY_SCOPED_CREATURE_EFFECT_NEGATION",
   "APPLY_ZONE_RESTRICTION",
@@ -224,6 +225,42 @@ export function tryResolveFringeAutomaticMagicEffect(
       actionType: effect.actionType,
       affectedPlayerIds: players.map(player => player.id),
       note: "The turn engine checks this flag at turn start in the handler foundation patch."
+    });
+    return true;
+  }
+
+  if (actionType === "ADD_NEXT_ATTACK_SHIELD") {
+    const source = findSourceCard(state, args.sourceCardInstanceId);
+    if (!source) return false;
+
+    source.card.activeStatuses ??= [];
+    source.card.activeStatuses = source.card.activeStatuses.filter(status => !(
+      status.sourceCardInstanceId === args.sourceCardInstanceId &&
+      status.sourceEffectId === effect.id
+    ));
+
+    source.card.activeStatuses.push({
+      id: uuidv4(),
+      sourceEffectId: effect.id,
+      sourceCardInstanceId: args.sourceCardInstanceId ?? `${effect.id}:source`,
+      sourceCardName,
+      sourcePlayerId: controllerPlayerId,
+      status: "NEXT_ATTACK_SHIELD",
+      label: effect.value ?? effect.actionText ?? "Next attack negated",
+      flags: { canReceiveDamage: false },
+      durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+      appliedTurnNumber: state.turn.turnNumber,
+      appliedTurnCycle: state.turn.turnCycleNumber
+    });
+
+    addEvent(state, "AUTO_EFFECT_NEXT_ATTACK_SHIELD_APPLIED", controllerPlayerId, {
+      sourceCardName,
+      sourceCardInstanceId: args.sourceCardInstanceId,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      targetCreatureInstanceId: source.card.instanceId,
+      targetCreatureName: getCardName(state, source.card),
+      note: "The shield is represented as a damage-prevention status for the next incoming attack."
     });
     return true;
   }
