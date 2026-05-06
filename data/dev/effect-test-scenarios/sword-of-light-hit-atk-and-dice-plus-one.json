@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_150_sword_of_light",
+  "effectId": "150-E01",
+  "title": "Sword of Light applies Hit, Atk, and dice bonuses while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_150_sword_of_light",
+      "cardName": "Sword of Light",
+      "cardType": "MAGIC",
+      "cardNumber": "150",
+      "generation": "1",
+      "rawText": "Hit: +3. Atk: +3. Atk Dice Rolls: +1. Hit Dice Rolls: +1."
+    },
+    "effect": {
+      "effectId": "150-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_MULTI_MODIFIER",
+      "effectGroup": "Stat/Dice Modifier",
+      "target": "Equipped creature",
+      "value": "Hit +3; Atk +3; Atk Dice Rolls +1; Hit Dice Rolls +1",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatAndDiceModifiers"
+    },
+    "title": "Sword of Light applies Hit, Atk, and dice bonuses while equipped",
+    "summary": "Equip Sword of Light to a modifier-zero primary creature, run a battle, and verify flat bonuses plus extra hit and attack dice.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_150_sword_of_light",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature_mod_0 on player_1 field as primary so modifiers come only from Sword of Light."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Sword of Light and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect hit dice, attack dice, hit modifier, and damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hit roll modifier increased by 3",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Attack dice count increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Attack damage includes the +3 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 6
+      },
+      {
+        "label": "Sword of Light remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_150_sword_of_light"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the extra Hit Dice Roll is also shown in battle UI."
+    ],
+    "riskNotes": [
+      "This fixture covers the shared APPLY_MULTI_MODIFIER route and effective attack dice count; hit dice count may need a more explicit assertion path later."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Sword of Light's multi modifier while equipped."
+    },
+    "regression": {
+      "fixtureName": "sword-of-light-hit-atk-and-dice-plus-one",
+      "tags": [
+        "magic",
+        "equip",
+        "multi-modifier",
+        "hit",
+        "atk",
+        "dice"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

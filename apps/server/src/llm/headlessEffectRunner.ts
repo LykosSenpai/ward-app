@@ -2587,7 +2587,11 @@ function runFollowupForFieldDamageOverTime(match: MatchState, plan: LlmEffectTes
 function runFollowupBattleForStatModifier(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
   const actionType = normalizeText(effect?.actionType);
   const text = normalizeText(planText(plan), effectText(effect));
-  if (!actionType.includes("apply_stat_modifier") && !actionType.includes("apply_dynamic_stat_modifier")) return match;
+  if (
+    !actionType.includes("apply_stat_modifier") &&
+    !actionType.includes("apply_dynamic_stat_modifier") &&
+    !actionType.includes("apply_multi_modifier")
+  ) return match;
   if (!text.includes("hit") && !text.includes("damage") && !text.includes("atk") && !text.includes("modifier")) return match;
   if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
 
