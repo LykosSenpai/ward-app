@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_151_terry",
+  "effectId": "151-E02",
+  "title": "Terry doubles base combat stats with Jerry under source",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_151_terry",
+      "cardName": "Terry",
+      "cardType": "CREATURE",
+      "cardNumber": "151",
+      "generation": "2",
+      "rawText": "During your turn, you may place a \"Jerry\" card under this card. Then, double this creature's base AL, SPD, Atk Dice Rolls, and Modifier. If this card leaves the field or changes control, \"Jerry\" stays on the field. (This effect cannot stack)."
+    },
+    "effect": {
+      "effectId": "151-E02",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Dynamic Stat Modifier",
+      "target": "This creature",
+      "value": "Double this creature's base AL, SPD, Atk Dice Rolls, and Modifier while Jerry is under this card",
+      "durationText": "While Jerry remains under this card",
+      "reusableFunction": "applyDynamicStatModifier"
+    },
+    "title": "Terry doubles base combat stats with Jerry under source",
+    "summary": "Attach Jerry under Terry and verify Terry's effective AL, SPD, Atk Dice Rolls, and Modifier are doubled.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_151_terry",
+        "gen2_075_jerry"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Terry as player_1 primary.",
+        "Pre-place Jerry under Terry before reading effective stats."
+      ]
+    },
+    "steps": [
+      "Set Terry as player_1 primary creature.",
+      "Place Jerry under Terry.",
+      "Read Terry's effective copied stats."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Terry AL doubles from 6 to 12",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 12
+      },
+      {
+        "label": "Terry SPD doubles from 6 to 12",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 12
+      },
+      {
+        "label": "Terry attack dice doubles from 3 to 6",
+        "path": "player_1.primaryCreature.effectiveStats.ATK_DICE_ROLLS",
+        "operator": "equals",
+        "value": 6
+      },
+      {
+        "label": "Terry Modifier doubles from 3 to 6",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 6
+      }
+    ],
+    "manualVerification": [
+      "Confirm multiple Jerry cards do not apply multiple doubling layers."
+    ],
+    "riskNotes": [
+      "This fixture verifies effective stat layers; card activation prompting is covered separately."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Terry's Jerry-under-source stat doubling."
+    },
+    "regression": {
+      "fixtureName": "terry-doubles-stats-with-jerry-under-source",
+      "tags": [
+        "gen2",
+        "creature",
+        "dynamic-stat",
+        "jerry"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_151_terry:151-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

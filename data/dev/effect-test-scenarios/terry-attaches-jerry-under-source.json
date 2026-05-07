@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_151_terry",
+  "effectId": "151-E01",
+  "title": "Terry places Jerry under source",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_151_terry",
+      "cardName": "Terry",
+      "cardType": "CREATURE",
+      "cardNumber": "151",
+      "generation": "2",
+      "rawText": "During your turn, you may place a \"Jerry\" card under this card. Then, double this creature's base AL, SPD, Atk Dice Rolls, and Modifier. If this card leaves the field or changes control, \"Jerry\" stays on the field. (This effect cannot stack)."
+    },
+    "effect": {
+      "effectId": "151-E01",
+      "trigger": "DURING_YOUR_TURN",
+      "actionType": "ATTACH_NAMED_CARD_UNDER_SOURCE",
+      "effectGroup": "Attachment/Linked Cards",
+      "target": "Jerry",
+      "value": "Place Jerry under this card",
+      "durationText": "While Jerry remains under this card",
+      "reusableFunction": "attachNamedCardUnderSource"
+    },
+    "title": "Terry places Jerry under source",
+    "summary": "Place Terry as player_1 primary and verify a Jerry card moves under Terry.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_151_terry",
+        "gen2_075_jerry"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Terry as player_1 primary.",
+        "Keep Jerry available to place under Terry during player_1's turn."
+      ]
+    },
+    "steps": [
+      "Set Terry as player_1 primary creature.",
+      "Resolve Terry's during-turn attachment effect.",
+      "Inspect Terry's attached-under list."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Jerry is attached under Terry",
+        "path": "player_1.field.creatures[gen2_151_terry].attachedUnder",
+        "operator": "contains",
+        "value": "gen2_075_jerry"
+      },
+      {
+        "label": "Attachment route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "ATTACH_NAMED_CARD_UNDER_SOURCE"
+      }
+    ],
+    "manualVerification": [
+      "Confirm this is optional during your turn and does not attach normal summon sacrifices under Terry."
+    ],
+    "riskNotes": [
+      "This fixture covers attached-under state; UI prompting for optional activation remains a broader manual workflow."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Terry placing Jerry under source."
+    },
+    "regression": {
+      "fixtureName": "terry-attaches-jerry-under-source",
+      "tags": [
+        "gen2",
+        "creature",
+        "attachment",
+        "jerry"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_151_terry:151-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

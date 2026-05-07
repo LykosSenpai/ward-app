@@ -216,6 +216,10 @@ function cardNameIncludes(card: CardInstance, state: MatchState, text: string): 
   return Boolean(definition?.name.toLowerCase().includes(text.toLowerCase()));
 }
 
+function attachedUnderNameCount(card: CardInstance, state: MatchState, text: string): number {
+  return (card.attachedUnder ?? []).filter(attached => cardNameIncludes(attached, state, text)).length;
+}
+
 function activeLinkedLimitedSummonCount(state: MatchState, sourceCardInstanceId: string): number {
   return state.players.reduce((count, player) => {
     return count + player.field.limitedSummons.filter(card => card.anchorSourceInstanceId === sourceCardInstanceId).length;
@@ -317,6 +321,20 @@ function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: 
     const currentSpeed = currentSpeedForDynamicFormula(state, target, source, effect);
     const over = Math.max(0, currentSpeed - 12);
     if (over > 0) layers.push(makeLayer(source, effect, "spd-over-12-modifier", "modifier", "ADD", over, `Current SPD over 12: ${over}`));
+  }
+
+  if (
+    actionType === "APPLY_DYNAMIC_STAT_MODIFIER" &&
+    text.includes("jerry") &&
+    text.includes("under this card") &&
+    text.includes("double") &&
+    attachedUnderNameCount(source.card, state, "Jerry") > 0
+  ) {
+    const multiplier = Number((effect.params as { multiplier?: unknown } | undefined)?.multiplier ?? 2);
+    const safeMultiplier = Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 2;
+    for (const stat of ["armorLevel", "speed", "attackDice", "modifier"] as const) {
+      layers.push(makeLayer(source, effect, `attached-jerry-double-${stat}`, stat, "MULTIPLY", safeMultiplier, "Jerry under source"));
+    }
   }
 
   if (!usedStructuredOpponentPrimaryBaseStats && (actionType === "APPLY_DYNAMIC_STAT_MODIFIER" || actionType === "APPLY_STAT_MODIFIER") && text.includes("opponent") && text.includes("primary") && text.includes("base")) {

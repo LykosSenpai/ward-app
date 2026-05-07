@@ -192,11 +192,13 @@ function PlayerPlaymat({
 export function PlayerPanel({
   match,
   player,
-  controlledPlayerId
+  controlledPlayerId,
+  boardMode = false
 }: {
   match: AppMatchState;
   player: PlayerState;
   controlledPlayerId?: string;
+  boardMode?: boolean;
 }) {
   const [selectedSacrificesByCard, setSelectedSacrificesByCard] = useState<
     Record<string, string[]>
@@ -471,116 +473,161 @@ export function PlayerPanel({
     canPlayLightningResponse ||
     canPlayBattleResponse;
 
+  const summaryPanel = (
+    <PlayerSummaryPanel
+      match={match}
+      player={player}
+      isActivePlayer={isActivePlayer}
+      isMatchComplete={isMatchComplete}
+      canControlThisPlayer={canControlThisPlayer}
+      normalSummonUsed={player.turnFlags.normalSummonUsed}
+      discardRequiredForThisPlayer={discardRequiredForThisPlayer}
+      replacementRequiredForThisPlayer={replacementRequiredForThisPlayer}
+      canPlayPrimaryNow={canPlayPrimaryNow}
+      hasSummonableCreature={hasSummonableCreature}
+      onShuffleDeck={shuffleDeck}
+      onConcede={concedeAsPlayer}
+      onCallCemeteryHpLoss={callCemeteryHpLossAgainstPlayer}
+      onRequestNoCreatureRedraw={requestNoCreatureRedraw}
+    />
+  );
+
+  const playmatPanel = (
+    <PlayerPlaymat
+      match={match}
+      player={player}
+      isActivePlayer={isActivePlayer}
+      canControlThisPlayer={canControlThisPlayer}
+      canPromoteLimitedSummonToPrimary={canPromoteLimitedSummonToPrimary}
+      onPromoteLimitedSummonToPrimary={promoteLimitedSummonToPrimary}
+      onDestroyMagic={destroyMagic}
+      onShuffleDeck={shuffleDeck}
+    />
+  );
+
+  const primaryPanel = (
+    <PrimaryCreatureZone
+      match={match}
+      player={player}
+      isActivePlayer={isActivePlayer}
+      canControlThisPlayer={canControlThisPlayer}
+      anyDiscardRequired={anyDiscardRequired}
+      replacementRequiredForThisPlayer={replacementRequiredForThisPlayer}
+      manualHpAmount={manualHpAmount}
+      setManualHpAmount={setManualHpAmount}
+      onApplyManualDamage={applyManualDamage}
+      onApplyManualHeal={applyManualHeal}
+      onPrimaryToCemetery={primaryToCemetery}
+      onKillOwnPrimary={killOwnPrimary}
+    />
+  );
+
+  const effectsPanel = (
+    <AvailableEffectsPanel
+      match={match}
+      player={player}
+      canControlThisPlayer={canControlThisPlayer}
+      onActivateEffect={activateCardEffect}
+    />
+  );
+
+  const zoneAccordion = (
+    <div className="player-zone-accordion">
+      <ZoneDetails
+        title="Hand"
+        badge={`${player.hand.length} cards`}
+        defaultOpen={handShouldOpen}
+      >
+        <HandZone
+          match={match}
+          player={player}
+          discardRequiredForThisPlayer={discardRequiredForThisPlayer}
+          canPlayPrimaryNow={canPlayPrimaryNow}
+          canPlayMagicNow={canPlayMagicNow}
+          canPlayLightningResponse={canPlayLightningResponse}
+          canPlayBattleResponse={canPlayBattleResponse}
+          selectedSacrificesByCard={selectedSacrificesByCard}
+          onDiscardFromHand={discardFromHand}
+          onToggleSacrifice={toggleSacrifice}
+          onPlayPrimary={playPrimary}
+          onPlayMagic={playMagic}
+          onPlayLightningResponse={playLightningResponse}
+          onPlayBattleResponse={playBattleResponse}
+        />
+      </ZoneDetails>
+
+      <ZoneDetails
+        title="Limited Summons"
+        badge={`${player.field.limitedSummons.length}/4`}
+        defaultOpen={player.field.limitedSummons.length > 0}
+      >
+        <LimitedSummonsZone
+          match={match}
+          player={player}
+          canPromoteToPrimary={canPromoteLimitedSummonToPrimary}
+          onPromoteToPrimary={promoteLimitedSummonToPrimary}
+        />
+      </ZoneDetails>
+
+      <ZoneDetails
+        title="Magic Slots"
+        badge={`${player.field.magicSlots.length}/5`}
+        defaultOpen={player.field.magicSlots.length > 0}
+      >
+        <MagicSlotsZone
+          match={match}
+          player={player}
+          anyDiscardRequired={anyDiscardRequired}
+          onAttachEquipMagic={attachEquipMagic}
+          onDestroyMagic={destroyMagic}
+        />
+      </ZoneDetails>
+
+      <ZoneDetails
+        title="Cemetery"
+        badge={`${player.cemetery.length} cards / ${player.cemeteryCreatureHpTotal} HP`}
+      >
+        <CemeteryZone match={match} player={player} />
+      </ZoneDetails>
+    </div>
+  );
+
+  if (boardMode) {
+    return (
+      <div className={isActivePlayer ? "card player-card active-player-card board-mode-player-card" : "card player-card board-mode-player-card"}>
+        {playmatPanel}
+
+        <div className="player-zone-accordion board-mode-accordion">
+          <ZoneDetails
+            title="Player Status & Controls"
+            badge={isActivePlayer ? "Active" : `${player.hand.length} hand`}
+            defaultOpen={isActivePlayer || discardRequiredForThisPlayer || replacementRequiredForThisPlayer}
+          >
+            {summaryPanel}
+          </ZoneDetails>
+
+          <ZoneDetails
+            title="Primary Details"
+            badge={player.field.primaryCreature ? getCardName(match, player.field.primaryCreature) : "Empty"}
+            defaultOpen={false}
+          >
+            {primaryPanel}
+          </ZoneDetails>
+        </div>
+
+        {effectsPanel}
+        {zoneAccordion}
+      </div>
+    );
+  }
+
   return (
     <div className={isActivePlayer ? "card player-card active-player-card" : "card player-card"}>
-      <PlayerSummaryPanel
-        match={match}
-        player={player}
-        isActivePlayer={isActivePlayer}
-        isMatchComplete={isMatchComplete}
-        canControlThisPlayer={canControlThisPlayer}
-        normalSummonUsed={player.turnFlags.normalSummonUsed}
-        discardRequiredForThisPlayer={discardRequiredForThisPlayer}
-        replacementRequiredForThisPlayer={replacementRequiredForThisPlayer}
-        canPlayPrimaryNow={canPlayPrimaryNow}
-        hasSummonableCreature={hasSummonableCreature}
-        onShuffleDeck={shuffleDeck}
-        onConcede={concedeAsPlayer}
-        onCallCemeteryHpLoss={callCemeteryHpLossAgainstPlayer}
-        onRequestNoCreatureRedraw={requestNoCreatureRedraw}
-      />
-
-      <PlayerPlaymat
-        match={match}
-        player={player}
-        isActivePlayer={isActivePlayer}
-        canControlThisPlayer={canControlThisPlayer}
-        canPromoteLimitedSummonToPrimary={canPromoteLimitedSummonToPrimary}
-        onPromoteLimitedSummonToPrimary={promoteLimitedSummonToPrimary}
-        onDestroyMagic={destroyMagic}
-        onShuffleDeck={shuffleDeck}
-      />
-
-      <PrimaryCreatureZone
-        match={match}
-        player={player}
-        isActivePlayer={isActivePlayer}
-        canControlThisPlayer={canControlThisPlayer}
-        anyDiscardRequired={anyDiscardRequired}
-        replacementRequiredForThisPlayer={replacementRequiredForThisPlayer}
-        manualHpAmount={manualHpAmount}
-        setManualHpAmount={setManualHpAmount}
-        onApplyManualDamage={applyManualDamage}
-        onApplyManualHeal={applyManualHeal}
-        onPrimaryToCemetery={primaryToCemetery}
-        onKillOwnPrimary={killOwnPrimary}
-      />
-
-      <AvailableEffectsPanel
-        match={match}
-        player={player}
-        canControlThisPlayer={canControlThisPlayer}
-        onActivateEffect={activateCardEffect}
-      />
-
-      <div className="player-zone-accordion">
-        <ZoneDetails
-          title="Hand"
-          badge={`${player.hand.length} cards`}
-          defaultOpen={handShouldOpen}
-        >
-          <HandZone
-            match={match}
-            player={player}
-            discardRequiredForThisPlayer={discardRequiredForThisPlayer}
-            canPlayPrimaryNow={canPlayPrimaryNow}
-            canPlayMagicNow={canPlayMagicNow}
-            canPlayLightningResponse={canPlayLightningResponse}
-            canPlayBattleResponse={canPlayBattleResponse}
-            selectedSacrificesByCard={selectedSacrificesByCard}
-            onDiscardFromHand={discardFromHand}
-            onToggleSacrifice={toggleSacrifice}
-            onPlayPrimary={playPrimary}
-            onPlayMagic={playMagic}
-            onPlayLightningResponse={playLightningResponse}
-            onPlayBattleResponse={playBattleResponse}
-          />
-        </ZoneDetails>
-
-        <ZoneDetails
-          title="Limited Summons"
-          badge={`${player.field.limitedSummons.length}/4`}
-          defaultOpen={player.field.limitedSummons.length > 0}
-        >
-          <LimitedSummonsZone
-            match={match}
-            player={player}
-            canPromoteToPrimary={canPromoteLimitedSummonToPrimary}
-            onPromoteToPrimary={promoteLimitedSummonToPrimary}
-          />
-        </ZoneDetails>
-
-        <ZoneDetails
-          title="Magic Slots"
-          badge={`${player.field.magicSlots.length}/5`}
-          defaultOpen={player.field.magicSlots.length > 0}
-        >
-          <MagicSlotsZone
-            match={match}
-            player={player}
-            anyDiscardRequired={anyDiscardRequired}
-            onAttachEquipMagic={attachEquipMagic}
-            onDestroyMagic={destroyMagic}
-          />
-        </ZoneDetails>
-
-        <ZoneDetails
-          title="Cemetery"
-          badge={`${player.cemetery.length} cards / ${player.cemeteryCreatureHpTotal} HP`}
-        >
-          <CemeteryZone match={match} player={player} />
-        </ZoneDetails>
-      </div>
+      {summaryPanel}
+      {playmatPanel}
+      {primaryPanel}
+      {effectsPanel}
+      {zoneAccordion}
     </div>
   );
 }

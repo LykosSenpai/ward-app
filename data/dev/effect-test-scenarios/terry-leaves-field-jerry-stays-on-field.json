@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_151_terry",
+  "effectId": "151-E03",
+  "title": "Terry leaves field and Jerry stays on field",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_151_terry",
+      "cardName": "Terry",
+      "cardType": "CREATURE",
+      "cardNumber": "151",
+      "generation": "2",
+      "rawText": "During your turn, you may place a \"Jerry\" card under this card. Then, double this creature's base AL, SPD, Atk Dice Rolls, and Modifier. If this card leaves the field or changes control, \"Jerry\" stays on the field. (This effect cannot stack)."
+    },
+    "effect": {
+      "effectId": "151-E03",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "actionType": "DETACH_ATTACHED_CARDS_TO_FIELD",
+      "effectGroup": "Attachment/Linked Cards",
+      "target": "Attached Jerry",
+      "value": "Jerry stays on the field",
+      "durationText": "Instant",
+      "reusableFunction": "detachAttachedCardsToField"
+    },
+    "title": "Terry leaves field and Jerry stays on field",
+    "summary": "Attach Jerry under Terry, remove Terry from the field, and verify Jerry remains on the field instead of following Terry.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_151_terry",
+        "gen2_075_jerry"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Terry as player_1 primary.",
+        "Pre-place Jerry under Terry, then invalidate Terry."
+      ]
+    },
+    "steps": [
+      "Set Terry as player_1 primary creature.",
+      "Place Jerry under Terry.",
+      "Remove Terry from the field.",
+      "Verify Jerry remains on player_1's field."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Terry moved to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen2_151_terry"
+      },
+      {
+        "label": "Jerry remains on field",
+        "path": "player_1.field.creatures",
+        "operator": "contains",
+        "value": "gen2_075_jerry"
+      },
+      {
+        "label": "Detach route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "DETACH_ATTACHED_CARDS_TO_FIELD"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the same behavior occurs if Terry changes control instead of leaving the field."
+    ],
+    "riskNotes": [
+      "This fixture models the leave-field cleanup path; change-control cleanup is noted as a manual follow-up."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Terry detach cleanup leaves Jerry on field."
+    },
+    "regression": {
+      "fixtureName": "terry-leaves-field-jerry-stays-on-field",
+      "tags": [
+        "gen2",
+        "creature",
+        "attachment",
+        "cleanup",
+        "jerry"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_151_terry:151-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

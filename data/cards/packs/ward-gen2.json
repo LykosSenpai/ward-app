@@ -10596,6 +10596,160 @@
       "magicType": "INFINITE",
       "magicSubType": "EQUIP",
       "isEquip": true
+    },
+    {
+      "id": "gen2_151_terry",
+      "name": "Terry",
+      "generation": "2",
+      "edition": "2nd Edition",
+      "rarity": "Legendary",
+      "cardNumber": "151",
+      "text": "During your turn, you may place a \"Jerry\" card under this card. Then, double this creature's base AL, SPD, Atk Dice Rolls, and Modifier. If this card leaves the field or changes control, \"Jerry\" stays on the field. (This effect cannot stack).",
+      "effects": [
+        {
+          "id": "151-E01",
+          "trigger": "DURING_YOUR_TURN",
+          "condition": {
+            "type": "TEXT",
+            "text": "You control this creature and have a Jerry card available"
+          },
+          "actionType": "ATTACH_NAMED_CARD_UNDER_SOURCE",
+          "effectGroup": "Attachment/Linked Cards",
+          "actionText": "Place a Jerry card under Terry",
+          "target": "Jerry",
+          "value": "Place Jerry under this card",
+          "duration": {
+            "text": "While Jerry remains under this card",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "attachNamedCardUnderSource",
+          "params": {
+            "target": "Jerry",
+            "valueText": "Place Jerry under this card",
+            "statChanges": [],
+            "condition": {
+              "type": "TEXT",
+              "text": "You control this creature and have a Jerry card available"
+            },
+            "duration": {
+              "text": "While Jerry remains under this card",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": true,
+            "roundingMode": null,
+            "stackRule": "DO_NOT_STACK",
+            "tickTiming": null,
+            "attachNames": [
+              "Jerry"
+            ]
+          },
+          "notes": "Optional once-active attachment route for Terry's non-stacking stat boost.",
+          "needsReview": false
+        },
+        {
+          "id": "151-E02",
+          "trigger": "WHILE_ON_FIELD",
+          "condition": {
+            "type": "TEXT",
+            "text": "Jerry is under this card"
+          },
+          "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+          "effectGroup": "Dynamic Stat Modifier",
+          "actionText": "Double Terry's base AL, SPD, Atk Dice Rolls, and Modifier",
+          "target": "This creature",
+          "value": "Double this creature's base AL, SPD, Atk Dice Rolls, and Modifier while Jerry is under this card",
+          "duration": {
+            "text": "While Jerry remains under this card",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "applyDynamicStatModifier",
+          "params": {
+            "target": "This creature",
+            "valueText": "Double this creature's base AL, SPD, Atk Dice Rolls, and Modifier while Jerry is under this card",
+            "statChanges": [],
+            "condition": {
+              "type": "TEXT",
+              "text": "Jerry is under this card"
+            },
+            "duration": {
+              "text": "While Jerry remains under this card",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": true,
+            "roundingMode": null,
+            "stackRule": "DO_NOT_STACK",
+            "tickTiming": null,
+            "requiredAttachedNames": [
+              "Jerry"
+            ],
+            "multiplier": 2,
+            "multipliedStats": [
+              "AL",
+              "SPD",
+              "ATK_DICE_ROLLS",
+              "MODIFIER"
+            ]
+          },
+          "notes": "This effect cannot stack; multiple Jerry cards still create only one doubling layer.",
+          "needsReview": false
+        },
+        {
+          "id": "151-E03",
+          "trigger": "ON_SOURCE_INVALIDATED",
+          "condition": {
+            "type": "SOURCE_INVALIDATED",
+            "text": "This card leaves the field or changes control while Jerry is under it"
+          },
+          "actionType": "DETACH_ATTACHED_CARDS_TO_FIELD",
+          "effectGroup": "Attachment/Linked Cards",
+          "actionText": "Leave Jerry on the field",
+          "target": "Attached Jerry",
+          "value": "Jerry stays on the field",
+          "duration": {
+            "text": "Instant",
+            "type": "INSTANT"
+          },
+          "reusableFunction": "detachAttachedCardsToField",
+          "params": {
+            "target": "Attached Jerry",
+            "valueText": "Jerry stays on the field",
+            "statChanges": [],
+            "condition": {
+              "type": "SOURCE_INVALIDATED",
+              "text": "This card leaves the field or changes control while Jerry is under it"
+            },
+            "duration": {
+              "text": "Instant",
+              "type": "INSTANT"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": true,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "detachNames": [
+              "Jerry"
+            ],
+            "destination": "FIELD"
+          },
+          "notes": "Unlike linked material cards, Jerry does not follow Terry off field.",
+          "needsReview": false
+        }
+      ],
+      "notes": "Bonus card printed as 151/150.",
+      "cardType": "CREATURE",
+      "creatureType": "Toon",
+      "armorLevel": 6,
+      "speed": 6,
+      "hp": 50,
+      "attackName": "Toon Smash",
+      "attackDice": 3,
+      "modifier": 3
     }
   ]
 }

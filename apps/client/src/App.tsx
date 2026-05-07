@@ -19,7 +19,7 @@ import { MatchCompleteCard } from "./components/MatchCompleteCard";
 import { MatchLobbyPanel } from "./components/MatchLobbyPanel";
 import { CompactMatchControlPanel } from "./components/CompactMatchControlPanel";
 import { MatchStatePanel } from "./components/MatchStatePanel";
-import { PlayerPanel } from "./components/PlayerPanel";
+import { CardBoardView } from "./components/CardBoardView";
 import { ProfilePage } from "./components/ProfilePage";
 import { SaveLoadPanel } from "./components/SaveLoadPanel";
 import { TargetPromptCard } from "./components/TargetPromptCard";
@@ -1757,11 +1757,11 @@ export default function App() {
             )}
 
             <section className="match-workspace">
-              <section className="players-grid match-board-grid">
-                {displayedPlayers.map(player => (
-                  <PlayerPanel key={player.id} match={match} player={player} controlledPlayerId={controlledPlayerId} />
-                ))}
-              </section>
+              <CardBoardView
+                match={match}
+                players={displayedPlayers}
+                controlledPlayerId={controlledPlayerId}
+              />
             </section>
 
             {match.pendingBattle && !match.pendingChain && (
