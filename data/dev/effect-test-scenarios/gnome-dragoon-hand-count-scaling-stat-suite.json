@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_089_gnome_dragoon",
+  "effectId": "089-E01",
+  "title": "Gnome Dragoon scales from Gnome cards in hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_089_gnome_dragoon",
+      "cardName": "Gnome Dragoon",
+      "cardType": "CREATURE",
+      "cardNumber": "089",
+      "generation": "2",
+      "rawText": "For every card in your hand with \"Gnome\" in its name, add: Atk Dice Rolls: +1. Modifier: +1."
+    },
+    "effect": {
+      "effectId": "089-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +1 and Modifier +1 per Gnome card",
+      "durationText": "While on field",
+      "reusableFunction": "applyDynamicStatModifier"
+    },
+    "title": "Gnome Dragoon scales from Gnome cards in hand",
+    "summary": "Put one Gnome card in hand while Gnome Dragoon is primary and verify the per-Gnome attack dice and modifier bonuses apply once.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_089_gnome_dragoon"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Gnome Dragoon as player_1 primary and keep one Gnome card in player_1 hand for the name-count scaling effect."
+      ]
+    },
+    "steps": [
+      "Set Gnome Dragoon as player_1 primary creature.",
+      "Keep one Gnome card in player_1 hand.",
+      "Read Gnome Dragoon's effective attack dice and modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "One Gnome in hand adds one attack die",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 4
+      },
+      {
+        "label": "One Gnome in hand adds one modifier",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 2
+      }
+    ],
+    "manualVerification": [
+      "Confirm each additional Gnome-named card in hand adds one Atk Dice Roll and one Modifier."
+    ],
+    "riskNotes": [
+      "Uses the same dynamic hand-name count layer as the Gen 1 Gnome fixture, with Gnome Dragoon's printed 3 Atk Dice and +1 Modifier baseline."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Gnome Dragoon hand-count scaling."
+    },
+    "regression": {
+      "fixtureName": "gnome-dragoon-hand-count-scaling-stat-suite",
+      "tags": [
+        "creature",
+        "scaling",
+        "attack-dice",
+        "modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
