@@ -253,6 +253,7 @@ function buildEffectCoverageRows(packIds: string[]): EffectCoverageRow[] {
       const support = getEffectRuntimeSupport(effect);
       const key = `${card.packId}:${card.id}:${effect.id}`;
       const testRecord = testStatusMap[key];
+      const isQaVerified = testRecord?.status === "WORKING" && (testRecord.issueType ?? "NONE") === "NONE";
 
       rows.push({
         packId: card.packId,
@@ -266,10 +267,12 @@ function buildEffectCoverageRows(packIds: string[]): EffectCoverageRow[] {
         actionType: effect.actionType,
         reusableFunction: effect.reusableFunction,
         effectGroup: effect.effectGroup,
-        supportLevel: support.level,
-        runtimeRoute: support.route,
-        supportNotes: support.notes,
-        needsReview: effect.needsReview,
+        supportLevel: isQaVerified ? "SUPPORTED" : support.level,
+        runtimeRoute: isQaVerified ? `${support.route} / Headless Engine QA` : support.route,
+        supportNotes: isQaVerified
+          ? `Verified by saved Headless Engine QA status. ${support.notes}`
+          : support.notes,
+        needsReview: isQaVerified ? false : effect.needsReview,
         effectNotes: effect.notes,
         testStatus: testRecord?.status ?? "UNTESTED",
         testIssueType: testRecord?.issueType ?? "NONE",

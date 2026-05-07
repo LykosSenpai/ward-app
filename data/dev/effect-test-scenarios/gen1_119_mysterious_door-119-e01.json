@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T15:10:45.422Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_119_mysterious_door",
+  "effectId": "119-E01",
+  "title": "Test Mysterious Door: 119-E01 PAY_DAMAGE_COST",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T15:10:45.417Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_119_mysterious_door",
+      "cardName": "Mysterious Door",
+      "cardType": "MAGIC",
+      "cardNumber": "119",
+      "generation": "1",
+      "rawText": "Play this card when your opponent plays a magic card. Inflict 10 damage to your primary creature to negate the card effect and instead send it to the cemetery. Return this card to your hand after 3 turn cycles."
+    },
+    "effect": {
+      "effectId": "119-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC",
+      "actionType": "PAY_DAMAGE_COST",
+      "effectGroup": "Cost/Damage",
+      "target": "Your primary creature",
+      "value": "10 damage",
+      "durationText": "Instant/cost",
+      "reusableFunction": "dealCostDamage"
+    },
+    "title": "Test Mysterious Door: 119-E01 PAY_DAMAGE_COST",
+    "summary": "Create a deterministic dev scenario for Mysterious Door and verify that 119-E01 PAY_DAMAGE_COST resolves according to the parsed effect and WARD rules.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_119_mysterious_door"
+      ],
+      "player2Cards": [],
+      "forcedRolls": [],
+      "notes": [
+        "Local fallback created this plan because no LLM provider was configured or the provider call failed.",
+        "Use the generated scenario match, then verify the expected assertions manually."
+      ]
+    },
+    "steps": [
+      "Create the effect scenario match from this plan.",
+      "Confirm Player 1 controls or can play the source card.",
+      "Activate or play the source card through the available effect controls.",
+      "Resolve any target, card-selection, chain, battle, or effect-roll prompts.",
+      "Review the event log and the affected card/player state."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Source card exists in the generated match catalog.",
+        "path": "cardCatalog.gen1_119_mysterious_door",
+        "operator": "exists"
+      },
+      {
+        "label": "Event log records the tested card or effect during execution.",
+        "path": "eventLog",
+        "operator": "contains",
+        "value": "Mysterious Door"
+      }
+    ],
+    "manualVerification": [
+      "Verify target behavior: Your primary creature.",
+      "Verify value/effect result: 10 damage.",
+      "Verify duration cleanup: Instant/cost."
+    ],
+    "riskNotes": [
+      "Fallback plan cannot infer every WARD edge case.",
+      "The engine remains source of truth; the LLM/fallback only proposes a QA plan."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run the generated scenario and update after reviewing result."
+    },
+    "regression": {
+      "fixtureName": "gen1_119_mysterious_door-119-e01",
+      "tags": [
+        "MAGIC",
+        "ON_OPPONENT_PLAYS_MAGIC",
+        "PAY_DAMAGE_COST"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_119_mysterious_door:119-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

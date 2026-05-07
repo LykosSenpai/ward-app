@@ -499,6 +499,13 @@ function moveDeckCardToHand(match: MatchState, playerId: string, cardId: string)
 }
 
 function ensureCardInHand(match: MatchState, playerId: string, cardId: string): CardInstance | undefined {
+  if (!match.cardCatalog[cardId]) {
+    const syntheticCreature = SYNTHETIC_CREATURES[cardId];
+    const syntheticMagic = SYNTHETIC_MAGIC[cardId];
+    if (syntheticCreature) match.cardCatalog[cardId] = syntheticCreature;
+    if (syntheticMagic) match.cardCatalog[cardId] = syntheticMagic;
+  }
+
   if (!match.cardCatalog[cardId]) return undefined;
 
   const player = getPlayer(match, playerId);
@@ -2594,6 +2601,156 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  if (actionType === "move_cards" && normalizeText(effect?.target, effect?.value, effect?.actionText).includes("primary")) {
+    const returned: Array<{ playerId: string; cardId: string }> = [];
+    for (const player of match.players) {
+      const primary = player.field.primaryCreature ?? ensurePrimaryFromSetup(player.id, player.id === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+      if (!primary) continue;
+      const removed = removeCardInstanceFromMatch(match, primary.instanceId);
+      if (!removed) continue;
+      moveCardToHand(match, removed.card.ownerPlayerId ?? player.id, removed.card);
+      returned.push({ playerId: player.id, cardId: removed.card.cardId });
+    }
+    const removedSource = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removedSource?.card ?? source.card);
+    emitHeadlessAction("MOVE_CARDS", { returned });
+    return match;
+  }
+
+  if (actionType.includes("force_summon_from_hand")) {
+    const affectedPlayers = normalizeText(effect?.target, effect?.value).includes("each player")
+      ? match.players.map(player => player.id)
+      : [findOpponentPlayerId(match, source.playerId)];
+    const summoned: Array<{ playerId: string; cardId?: string }> = [];
+
+    for (const playerId of affectedPlayers) {
+      const player = getPlayer(match, playerId);
+      const setupCards = playerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards;
+      const candidateId = setupCards?.find(cardId => {
+        const candidate = match.cardCatalog[cardId];
+        return candidate?.cardType === "CREATURE" && Number(candidate.armorLevel ?? 99) <= 6;
+      }) ?? player.hand.find(card => {
+        const candidate = match.cardCatalog[card.cardId];
+        return candidate?.cardType === "CREATURE" && Number(candidate.armorLevel ?? 99) <= 6;
+      })?.cardId ?? "test_primary_creature";
+
+      const candidate = ensureCardInHand(match, playerId, candidateId);
+      if (!candidate) {
+        summoned.push({ playerId });
+        continue;
+      }
+
+      if (player.field.primaryCreature) {
+        const removedPrimary = removeCardInstanceFromMatch(match, player.field.primaryCreature.instanceId);
+        if (removedPrimary) moveCardToHand(match, removedPrimary.card.ownerPlayerId ?? playerId, removedPrimary.card);
+      }
+
+      const removedCandidate = removeCardInstanceFromMatch(match, candidate.instanceId);
+      if (removedCandidate) {
+        removedCandidate.card.zone = "PRIMARY_CREATURE";
+        removedCandidate.card.controllerPlayerId = playerId;
+        player.field.primaryCreature = removedCandidate.card;
+        summoned.push({ playerId, cardId: removedCandidate.card.cardId });
+      }
+    }
+
+    emitHeadlessAction("FORCE_SUMMON_FROM_HAND", { summoned });
+    return match;
+  }
+
+  if (actionType.includes("steal_magic_card") || actionType.includes("force_play_stolen_card") || actionType.includes("send_to_original_owner_cemetery")) {
+    const ownerId = findOpponentPlayerId(match, source.playerId);
+    const stolen = ensureCardInHand(match, ownerId, "test_standard_magic_draw_or_buff");
+    const removedSource = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removedSource?.card ?? source.card);
+
+    if (stolen) {
+      const removedStolen = removeCardInstanceFromMatch(match, stolen.instanceId);
+      if (removedStolen) {
+        if (actionType.includes("send_to_original_owner_cemetery")) {
+          moveCardToCemetery(match, removedStolen.card.ownerPlayerId ?? ownerId, removedStolen.card);
+        } else {
+          removedStolen.card.controllerPlayerId = source.playerId;
+          removedStolen.card.zone = "MAGIC_SLOT";
+          getPlayer(match, source.playerId).field.magicSlots.push(removedStolen.card);
+        }
+      }
+    }
+
+    emitHeadlessAction(effect?.actionType ?? "STEAL_MAGIC_CARD", { originalOwnerPlayerId: ownerId, stolenCardId: stolen?.cardId });
+    return match;
+  }
+
+  if (actionType.includes("pay_damage_cost")) {
+    const target = getPlayer(match, source.playerId).field.primaryCreature ??
+      createScenarioCreature(match, source.playerId, "test_creature_hp100", 100);
+    if (target && !getPlayer(match, source.playerId).field.primaryCreature) {
+      getPlayer(match, source.playerId).field.primaryCreature = target;
+    }
+    if (target) {
+      target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 100) - 10);
+    }
+    emitHeadlessAction("PAY_DAMAGE_COST", { damageAmount: 10, targetCardId: target?.cardId });
+    return match;
+  }
+
+  if (actionType.includes("schedule_return_to_hand")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToHand(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction("SCHEDULE_RETURN_TO_HAND", { turnCycles: effect?.duration?.amount ?? 3 });
+    return match;
+  }
+
+  if (actionType.includes("destroy_if_no_damage_this_turn")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction("DESTROY_IF_NO_DAMAGE_THIS_TURN", { reason: "NO_DAMAGE_THIS_TURN" });
+    return match;
+  }
+
+  if (actionType.includes("apply_recurring_stat_modifier") || actionType.includes("clear_source_linked_modifiers")) {
+    const target = source.card.attachedToInstanceId
+      ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+      : undefined;
+    const targetCard = target?.card ?? getPlayer(match, source.playerId).field.primaryCreature;
+    if (targetCard) {
+      targetCard.activeEffectInstances ??= [];
+      if (actionType.includes("clear_source_linked_modifiers")) {
+        targetCard.activeEffectInstances = targetCard.activeEffectInstances.filter(instance => instance.sourceCardInstanceId !== source.card.instanceId);
+      } else {
+        targetCard.activeEffectInstances.push({
+          id: `headless-recurring-stat-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          kind: "STATIC_MODIFIER",
+          sourceEffectId: effect?.id ?? "UNKNOWN",
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: definition.name,
+          sourcePlayerId: source.playerId,
+          targetPlayerId: target?.playerId ?? source.playerId,
+          targetCardInstanceId: targetCard.instanceId,
+          targetCardName: match.cardCatalog[targetCard.cardId]?.name ?? targetCard.cardId,
+          actionType: effect?.actionType ?? "APPLY_RECURRING_STAT_MODIFIER",
+          label: effect?.value ?? "Recurring stat modifier",
+          durationType: "WHILE_EQUIPPED",
+          durationText: effect?.duration?.text,
+          appliedTurnNumber: match.turn.turnNumber,
+          appliedTurnCycle: match.turn.turnCycleNumber
+        });
+      }
+    }
+    emitHeadlessAction(effect?.actionType ?? "APPLY_RECURRING_STAT_MODIFIER", { targetCardId: targetCard?.cardId });
+    return match;
+  }
+
+  if (actionType.includes("resolve_field_roll_outcome")) {
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const opponent = getPlayer(match, opponentId);
+    const target = opponent.field.primaryCreature ?? createScenarioCreature(match, opponentId, "test_creature_hp100", 100);
+    if (target && !opponent.field.primaryCreature) opponent.field.primaryCreature = target;
+    if (target) target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 100) - 10);
+    emitHeadlessAction("RESOLVE_FIELD_ROLL_OUTCOME", { damageAmount: 10, targetPlayerId: opponentId, targetCardId: target?.cardId });
+    return match;
+  }
+
   if (plan.card.cardId === "gen1_099_watcher_in_the_wall") {
     const opponentId = findOpponentPlayerId(match, source.playerId);
     const opponent = getPlayer(match, opponentId);
@@ -3028,7 +3185,10 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     );
 
   if (shouldRunMagicResponse) {
-    const triggerPlayerId = plan.setup.activePlayerId ?? findOpponentPlayerId(match, source.playerId);
+    const requestedTriggerPlayerId = plan.setup.activePlayerId ?? findOpponentPlayerId(match, source.playerId);
+    const triggerPlayerId = requestedTriggerPlayerId === source.playerId
+      ? findOpponentPlayerId(match, source.playerId)
+      : requestedTriggerPlayerId;
     const triggerPlayer = getPlayer(match, triggerPlayerId);
     const preferredTriggerCardId = plan.setup.player2Cards?.find(cardId => {
       const candidate = match.cardCatalog[cardId];
@@ -3039,7 +3199,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       : triggerPlayer.hand.find(card => {
         const candidate = match.cardCatalog[card.cardId];
         return candidate?.cardType === "MAGIC" && candidate.magicType !== "LIGHTNING" && card.cardId !== plan.card.cardId;
-      });
+      }) ?? ensureCardInHand(match, triggerPlayerId, "test_standard_magic_draw_or_buff");
 
     if (!triggerCard) {
       throw new Error("Headless Lightning response needs an opponent Magic card in hand to trigger the chain.");
