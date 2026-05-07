@@ -1037,7 +1037,9 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
     }
   }
 
-  if ((text.includes("cemetery") || text.includes("graveyard")) && text.includes("undead")) {
+  if (text.includes("opponent") && (text.includes("cemetery") || text.includes("graveyard"))) {
+    moveFirstCreatureToCemetery(match, opponentPlayerId, plan.card.cardId);
+  } else if ((text.includes("cemetery") || text.includes("graveyard")) && text.includes("undead")) {
     ensureCreatureTypeInCemetery(match, sourcePlayerId, "undead", plan.card.cardId);
   } else if (text.includes("cemetery") || text.includes("graveyard")) {
     moveFirstCreatureToCemetery(match, sourcePlayerId, plan.card.cardId);
@@ -2071,7 +2073,9 @@ function statusForStaticEquipEffect(
   effect?: WardEngineEffect
 ): ActiveCreatureStatus | undefined {
   const text = normalizeText(effectText(effect));
-  if (!text.includes("frozen") && !text.includes("freeze") && !text.includes("cannot inflict")) return undefined;
+  const isFrozen = text.includes("frozen") || text.includes("freeze") || text.includes("cannot inflict");
+  const isFlight = text.includes("flying") || text.includes("flight") || text.includes("take flight");
+  if (!isFrozen && !isFlight) return undefined;
 
   return {
     id: `headless-status-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -2079,14 +2083,16 @@ function statusForStaticEquipEffect(
     sourceCardInstanceId: source.card.instanceId,
     sourceCardName: definition.name,
     sourcePlayerId: source.playerId,
-    status: text.includes("frozen") || text.includes("freeze") ? "FROZEN" : "STATUS",
+    status: isFrozen ? "FROZEN" : "FLYING",
     label: effect?.value ?? effect?.params?.valueText ?? effect?.actionText ?? "Status",
-    flags: {
-      canInflictAtkDamage: false,
-      canBeSacrificed: text.includes("sacrific")
-        ? false
-        : undefined
-    },
+    flags: isFrozen
+      ? {
+        canInflictAtkDamage: false,
+        canBeSacrificed: text.includes("sacrific")
+          ? false
+          : undefined
+      }
+      : {},
     durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
     appliedTurnNumber: match.turn.turnNumber,
     appliedTurnCycle: match.turn.turnCycleNumber
@@ -2398,6 +2404,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("apply_dynamic_stat_modifier") ||
       actionType.includes("apply_multi_modifier") ||
       actionType.includes("apply_stat_set_aura") ||
+      actionType.includes("apply_temporary_stat_set") ||
       actionType.includes("apply_status") ||
       actionType.includes("suppress_modifier_layer") ||
       actionType.includes("deal_percentage_damage") ||

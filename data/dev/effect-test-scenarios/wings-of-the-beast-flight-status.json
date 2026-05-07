@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_101_wings_of_the_beast",
+  "effectId": "101-E01",
+  "title": "Wings of the Beast gives flight",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_101_wings_of_the_beast",
+      "cardName": "Wings of the Beast",
+      "cardType": "MAGIC",
+      "cardNumber": "101",
+      "generation": "1",
+      "rawText": "Take flight for 1 turn cycle. The equipped creature cannot be damaged by any creature without wings."
+    },
+    "effect": {
+      "effectId": "101-E01",
+      "trigger": "ON_EQUIP",
+      "actionType": "APPLY_STATUS",
+      "effectGroup": "Status",
+      "target": "Equipped creature",
+      "value": "Flying/Flight",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "applyFlightStatus"
+    },
+    "title": "Wings of the Beast gives flight",
+    "summary": "Equip Wings of the Beast and verify the equipped creature gains Flight/Flying status.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_101_wings_of_the_beast",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Equip Wings of the Beast to player_1 primary creature.",
+        "This fixture covers the Take flight status, not the separate non-winged damage prevention clause."
+      ]
+    },
+    "steps": [
+      "Player 1 equips Wings of the Beast to their primary creature.",
+      "Inspect the equipped creature's Flight status."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Equipped creature is Flying",
+        "path": "player_1.primaryCreature.statuses",
+        "operator": "contains",
+        "value": "FLYING"
+      },
+      {
+        "label": "Wings of the Beast remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_101_wings_of_the_beast"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Flight expires after one full turn cycle.",
+      "Confirm 101-E02 separately prevents damage from creatures without wings while Flight is active."
+    ],
+    "riskNotes": [
+      "This status fixture intentionally does not assert damage immunity from non-winged creatures."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Wings of the Beast flight status."
+    },
+    "regression": {
+      "fixtureName": "wings-of-the-beast-flight-status",
+      "tags": [
+        "magic",
+        "equip",
+        "status",
+        "flight"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_101_wings_of_the_beast:101-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

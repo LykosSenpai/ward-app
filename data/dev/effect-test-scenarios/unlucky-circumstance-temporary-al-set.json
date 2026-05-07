@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_096_unlucky_circumstance",
+  "effectId": "096-E01",
+  "title": "Unlucky Circumstance reduces equipped creature AL to one",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_096_unlucky_circumstance",
+      "cardName": "Unlucky Circumstance",
+      "cardType": "MAGIC",
+      "cardNumber": "096",
+      "generation": "1",
+      "rawText": "Reduce target creature's AL to 1 for 1 turn cycle."
+    },
+    "effect": {
+      "effectId": "096-E01",
+      "trigger": "ON_EQUIP_OR_PLAY",
+      "actionType": "APPLY_TEMPORARY_STAT_SET",
+      "effectGroup": "Stat Set",
+      "target": "Target creature",
+      "value": "AL = 1",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "applyTemporaryStatSet"
+    },
+    "title": "Unlucky Circumstance reduces equipped creature AL to one",
+    "summary": "Play Unlucky Circumstance on a creature and verify its effective AL is temporarily set to 1.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_096_unlucky_circumstance",
+        "test_defender_al_6_hp_50"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Equip Unlucky Circumstance to player_1 primary creature.",
+        "Use an AL6 primary so the AL=1 set is visible."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Unlucky Circumstance and equips it to their primary creature.",
+      "Read the equipped creature's effective AL."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Equipped creature AL set to 1",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Unlucky Circumstance remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_096_unlucky_circumstance"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the AL set expires after one full turn cycle."
+    ],
+    "riskNotes": [
+      "This fixture validates the set layer while equipped; expiry timing should be covered separately."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate temporary AL set to 1."
+    },
+    "regression": {
+      "fixtureName": "unlucky-circumstance-temporary-al-set",
+      "tags": [
+        "magic",
+        "equip",
+        "temporary-stat-set",
+        "al"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_096_unlucky_circumstance:096-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

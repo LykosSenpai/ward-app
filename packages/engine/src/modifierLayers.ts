@@ -90,7 +90,9 @@ function isStaticEffect(effect: WardEngineEffect): boolean {
       "STATIC_WHILE_ON_FIELD",
       "WHILE_ON_FIELD",
       "ON_EQUIP",
+      "ON_EQUIP_OR_PLAY",
       "DURING_BATTLE",
+      "DURING_DAMAGE_CALC_OR_STATIC",
       "DURING_DAMAGE_CALC_OR_WHILE_IN_HAND_COUNT"
     ].includes(trigger);
   }
@@ -135,6 +137,7 @@ function sourceAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
   if (text.includes("equipped creature")) return source.card.attachedToInstanceId === target.card.instanceId;
   if (text.includes("your primary creature") || text.includes("controller's primary creature")) return source.player.id === target.player.id && target.zone === "PRIMARY_CREATURE";
   if (text.includes("your creature") || text.includes("you control") || text.includes("your side")) return source.player.id === target.player.id;
+  if (text.includes("this creature") || (text.includes("this card") && !text.includes("this card only affects"))) return source.card.instanceId === target.card.instanceId;
   if (text.includes("opponent") || text.includes("opposing")) return source.player.id !== target.player.id;
   if (text.includes("non-effect creature") || text.includes("non effect creature")) return !target.definition.effects?.length;
   if (text.includes("\"were\"") || text.includes("with were in") || text.includes("name contains \"were\"")) return target.definition.name.toLowerCase().includes("were");
@@ -146,7 +149,6 @@ function sourceAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
   if (text.includes("humanoid-type") || text.includes("humanoid type")) return target.definition.creatureType.toLowerCase().includes("humanoid");
   if (text.includes("mechanical-type") || text.includes("mechanical type")) return target.definition.creatureType.toLowerCase().includes("mechanical");
   if (text.includes("all creatures") || text.includes("each creature") || text.includes("both creatures")) return true;
-  if (text.includes("this creature") || text.includes("this card")) return source.card.instanceId === target.card.instanceId;
   return source.card.instanceId === target.card.instanceId;
 }
 
@@ -300,7 +302,7 @@ export function collectRuntimeModifierLayers(state: MatchState, target: Creature
         modifier => modifier.sourceCardInstanceId === source.card.instanceId && modifier.sourceEffectId === effect.id
       );
 
-      if (!alreadyMaterializedOnTarget) {
+      if (!alreadyMaterializedOnTarget && effect.actionType !== "APPLY_SCALING_MODIFIER_FROM_ZONE_COUNT") {
         for (let index = 0; index < (effect.params?.statChanges ?? []).length; index++) {
           const layer = layerFromStatChange(source, effect, effect.params!.statChanges![index], index);
           if (layer) layers.push(layer);

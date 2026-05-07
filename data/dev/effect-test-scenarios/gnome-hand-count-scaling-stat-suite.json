@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_134_gnome",
+  "effectId": "134-E01",
+  "title": "Gnome scales from Gnome cards in hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_134_gnome",
+      "cardName": "Gnome",
+      "cardType": "CREATURE",
+      "cardNumber": "134",
+      "generation": "1",
+      "rawText": "For every card in your hand with \"Gnome\" in its name, add: Atk Dice Rolls: +1. Modifier: +1."
+    },
+    "effect": {
+      "effectId": "134-E01",
+      "trigger": "DURING_DAMAGE_CALC_OR_WHILE_IN_HAND_COUNT",
+      "actionType": "APPLY_SCALING_MODIFIER_FROM_ZONE_COUNT",
+      "effectGroup": "Scaling Modifier",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +1 and Modifier +1 per Gnome card",
+      "durationText": "Current battle/while condition true",
+      "reusableFunction": "applyScalingModifierFromZoneCount"
+    },
+    "title": "Gnome scales from Gnome cards in hand",
+    "summary": "Put one Gnome card in hand while Gnome is primary and verify the printed per-Gnome attack dice and modifier bonuses apply once.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_134_gnome"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Gnome as player_1 primary and keep one Gnome card in player_1 hand for the name-count scaling effect."
+      ]
+    },
+    "steps": [
+      "Set Gnome as player_1 primary creature.",
+      "Keep one Gnome card in player_1 hand.",
+      "Read Gnome's effective attack dice and modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "One Gnome in hand adds one attack die",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "One Gnome in hand adds one modifier",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 2
+      }
+    ],
+    "manualVerification": [
+      "Confirm duplicate Gnome cards in hand each add one Atk Dice Roll and one Modifier."
+    ],
+    "riskNotes": [
+      "Scaling statChanges are interpreted through the dynamic count layer only, so the per-card effect is not double-counted as a flat +1."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Gnome hand-count scaling."
+    },
+    "regression": {
+      "fixtureName": "gnome-hand-count-scaling-stat-suite",
+      "tags": [
+        "creature",
+        "scaling",
+        "attack-dice",
+        "modifier"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_134_gnome:134-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

@@ -103,13 +103,17 @@ function isStaticStatEffect(effect: WardEngineEffect): boolean {
       "WHILE_FIELD_ACTIVE",
       "STATIC_WHILE_ON_FIELD",
       "WHILE_ON_FIELD",
-      "ON_EQUIP"
+      "ON_EQUIP",
+      "ON_EQUIP_OR_PLAY",
+      "DURING_DAMAGE_CALC_OR_STATIC",
+      "DURING_DAMAGE_CALC_OR_WHILE_IN_HAND_COUNT"
     ].includes(trigger);
   }
 
   return actionType === "APPLY_STAT_SET_AURA" ||
     actionType === "APPLY_STAT_MODIFIER" ||
-    actionType === "APPLY_DYNAMIC_STAT_MODIFIER";
+    actionType === "APPLY_DYNAMIC_STAT_MODIFIER" ||
+    actionType === "APPLY_SCALING_MODIFIER_FROM_ZONE_COUNT";
 }
 
 function collectSources(state: MatchState): FieldSource[] {

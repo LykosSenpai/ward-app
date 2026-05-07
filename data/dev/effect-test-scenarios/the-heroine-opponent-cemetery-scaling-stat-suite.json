@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_140_the_heroine",
+  "effectId": "140-E01",
+  "title": "The Heroine scales from opponent cemetery creatures",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_140_the_heroine",
+      "cardName": "The Heroine",
+      "cardType": "CREATURE",
+      "cardNumber": "140",
+      "generation": "1",
+      "rawText": "For every creature in your opponents' cemetery add: Atk Dice Rolls: +1. Modifier: +1."
+    },
+    "effect": {
+      "effectId": "140-E01",
+      "trigger": "DURING_DAMAGE_CALC_OR_STATIC",
+      "actionType": "APPLY_SCALING_MODIFIER_FROM_ZONE_COUNT",
+      "effectGroup": "Scaling Modifier",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +1; Modifier +1 per creature",
+      "durationText": "While condition true",
+      "reusableFunction": "applyScalingModifierFromZoneCount"
+    },
+    "title": "The Heroine scales from opponent cemetery creatures",
+    "summary": "Move one opponent creature to the cemetery and verify The Heroine gains one attack die and one modifier.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_140_the_heroine"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set The Heroine as player_1 primary.",
+        "Move one opponent creature to player_2 cemetery for the opponent cemetery count."
+      ]
+    },
+    "steps": [
+      "Set The Heroine as player_1 primary creature.",
+      "Move one player_2 creature to player_2 cemetery.",
+      "Read The Heroine's effective attack dice and modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "One opponent cemetery creature adds one attack die",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "One opponent cemetery creature adds one modifier",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 3
+      }
+    ],
+    "manualVerification": [
+      "Confirm each additional opponent cemetery creature adds another Atk Dice Roll and Modifier."
+    ],
+    "riskNotes": [
+      "This fixture covers the positive one-creature count path, not cemetery count changes during an active battle."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate The Heroine opponent cemetery scaling."
+    },
+    "regression": {
+      "fixtureName": "the-heroine-opponent-cemetery-scaling-stat-suite",
+      "tags": [
+        "creature",
+        "scaling",
+        "cemetery",
+        "attack-dice",
+        "modifier"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_140_the_heroine:140-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
