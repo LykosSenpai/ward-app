@@ -4979,10 +4979,10 @@
       "effectId": "009-E01",
       "trigger": "STATIC_WHILE_ON_FIELD",
       "actionType": "LIMITED_SUMMON",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: Selected attacker is not on the active player's field.",
-      "lastTestedAt": "2026-05-07T16:35:09.663Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.002Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -4993,10 +4993,10 @@
       "effectId": "009-E02",
       "trigger": "STATIC_WHILE_ON_FIELD",
       "actionType": "DAMAGE",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: Selected attacker is not on the active player's field.",
-      "lastTestedAt": "2026-05-07T16:35:09.630Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:20.981Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5007,10 +5007,10 @@
       "effectId": "009-E03",
       "trigger": "STATIC_WHILE_ON_FIELD",
       "actionType": "SEND_TO_CEMETERY",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: Selected attacker is not on the active player's field.",
-      "lastTestedAt": "2026-05-07T16:35:09.696Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.026Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5063,10 +5063,10 @@
       "effectId": "012-E02",
       "trigger": "SUMMON_REQUIREMENT",
       "actionType": "LIMITED_SUMMON",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:35:09.301Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:20.913Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5077,10 +5077,10 @@
       "effectId": "012-E03",
       "trigger": "SUMMON_REQUIREMENT",
       "actionType": "MOVE_CARD",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:35:09.317Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:20.924Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5245,10 +5245,10 @@
       "effectId": "021-E01",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "LIMITED_SUMMON",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: LIMITED_SUMMON.",
-      "lastTestedAt": "2026-05-07T16:35:09.707Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.161Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5259,10 +5259,10 @@
       "effectId": "021-E02",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "NEGATE_CARD_EFFECT",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: NEGATE_CARD_EFFECT.",
-      "lastTestedAt": "2026-05-07T16:35:09.719Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.171Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5273,10 +5273,10 @@
       "effectId": "021-E03",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "MOVE_CARD",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MOVE_CARD.",
-      "lastTestedAt": "2026-05-07T16:35:09.742Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.190Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5287,10 +5287,10 @@
       "effectId": "021-E04",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "SEND_TO_CEMETERY",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: SEND_TO_CEMETERY.",
-      "lastTestedAt": "2026-05-07T16:35:09.731Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.180Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5497,10 +5497,10 @@
       "effectId": "039-E01",
       "trigger": "ON_SUMMON",
       "actionType": "LIMITED_SUMMON",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:47:13.507Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.117Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5511,10 +5511,10 @@
       "effectId": "039-E02",
       "trigger": "ON_SUMMON",
       "actionType": "NEGATE_CARD_EFFECT",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:47:13.525Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.128Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5525,10 +5525,10 @@
       "effectId": "039-E03",
       "trigger": "ON_SUMMON",
       "actionType": "MOVE_CARD",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:47:13.491Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.107Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6113,10 +6113,10 @@
       "effectId": "082-E01",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "LIMITED_SUMMON",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: LIMITED_SUMMON.",
-      "lastTestedAt": "2026-05-07T16:20:16.441Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:20.960Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6127,10 +6127,10 @@
       "effectId": "082-E02",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "SEND_TO_CEMETERY",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: SEND_TO_CEMETERY.",
-      "lastTestedAt": "2026-05-07T16:20:16.429Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:20.947Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6239,10 +6239,10 @@
       "effectId": "087-E02",
       "trigger": "DURING_YOUR_TURN_ACTIVATED",
       "actionType": "NEGATE_CARD_EFFECT",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:20:16.772Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.151Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6253,10 +6253,10 @@
       "effectId": "087-E03",
       "trigger": "DURING_YOUR_TURN_ACTIVATED",
       "actionType": "MOVE_CARD",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:20:16.737Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.139Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6519,10 +6519,10 @@
       "effectId": "107-E01",
       "trigger": "ON_HIT",
       "actionType": "LIMITED_SUMMON",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:20:16.547Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.071Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6533,10 +6533,10 @@
       "effectId": "107-E02",
       "trigger": "ON_HIT",
       "actionType": "SEND_TO_CEMETERY",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:20:16.657Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.096Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -7205,10 +7205,10 @@
       "effectId": "139-E01",
       "trigger": "END_OF_YOUR_TURN",
       "actionType": "LIMITED_SUMMON",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: LIMITED_SUMMON.",
-      "lastTestedAt": "2026-05-07T16:28:52.013Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.049Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -7219,10 +7219,10 @@
       "effectId": "139-E02",
       "trigger": "END_OF_YOUR_TURN",
       "actionType": "SEND_TO_CEMETERY",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: SEND_TO_CEMETERY.",
-      "lastTestedAt": "2026-05-07T16:28:52.001Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T19:05:21.037Z",
       "testedBy": "Headless Engine QA"
     },
     {

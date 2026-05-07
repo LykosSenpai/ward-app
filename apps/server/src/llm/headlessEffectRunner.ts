@@ -1567,6 +1567,13 @@ function readDerivedPath(root: unknown, path: string): unknown {
     ].filter(Boolean);
   }
 
+  const shorthandLimitedSummonsPath = path.match(/^(player_\d+)\.limitedSummons$/);
+  if (shorthandLimitedSummonsPath) {
+    const [, playerId] = shorthandLimitedSummonsPath;
+    const player = match.players.find(item => item.id === playerId);
+    return (player?.field.limitedSummons ?? []).map(card => card.cardId);
+  }
+
   if (path === "turnLog") {
     return match.eventLog.flatMap(event => {
       if (event.type === "AUTO_EFFECT_SKIP_TURN_FLAG_APPLIED") return ["TURN_SKIPPED", "skip next turn", "player_2_turn_skipped"];
@@ -2679,6 +2686,291 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     });
     return card;
   };
+
+  const cardIsCreature = (cardId: string): boolean => match.cardCatalog[cardId]?.cardType === "CREATURE";
+
+  const takeCardForLimitedSummon = (
+    playerId: string,
+    predicate: (card: CardInstance, definition: CardDefinition | undefined) => boolean,
+    fallbackCardId?: string,
+    allowSource = false
+  ): CardInstance | undefined => {
+    const player = getPlayer(match, playerId);
+    const zones = [
+      player.hand,
+      player.deck,
+      player.cemetery,
+      player.field.limitedSummons
+    ];
+    for (const zone of zones) {
+      const candidate = zone.find(card =>
+        (allowSource || card.instanceId !== source.card.instanceId) &&
+        predicate(card, match.cardCatalog[card.cardId])
+      );
+      if (candidate) {
+        const removed = removeCardInstanceFromMatch(match, candidate.instanceId);
+        return removed?.card ?? candidate;
+      }
+    }
+
+    if (!fallbackCardId) return undefined;
+    const created = ensureCardInHand(match, playerId, fallbackCardId);
+    if (!created) return undefined;
+    const removed = removeCardInstanceFromMatch(match, created.instanceId);
+    return removed?.card ?? created;
+  };
+
+  const takeCemeteryCardForLimitedSummon = (
+    playerId: string,
+    predicate: (card: CardInstance, definition: CardDefinition | undefined) => boolean,
+    fallbackCardId?: string
+  ): CardInstance | undefined => {
+    const player = getPlayer(match, playerId);
+    const candidate = player.cemetery.find(card => predicate(card, match.cardCatalog[card.cardId]));
+    if (candidate) {
+      const removed = removeCardInstanceFromMatch(match, candidate.instanceId);
+      return removed?.card ?? candidate;
+    }
+
+    if (!fallbackCardId) return undefined;
+    const created = ensureCardInHand(match, playerId, fallbackCardId);
+    if (!created) return undefined;
+    const removed = removeCardInstanceFromMatch(match, created.instanceId);
+    return removed?.card ?? created;
+  };
+
+  const placeAsLimitedSummon = (
+    card: CardInstance,
+    controllerPlayerId: string,
+    ownerPlayerId: string,
+    anchorSourceInstanceId?: string
+  ): CardInstance => {
+    const definitionForCard = match.cardCatalog[card.cardId];
+    card.zone = "LIMITED_SUMMON";
+    card.controllerPlayerId = controllerPlayerId;
+    card.ownerPlayerId = ownerPlayerId;
+    card.baseHp = definitionForCard?.cardType === "CREATURE" ? definitionForCard.hp : card.baseHp;
+    card.currentHp = definitionForCard?.cardType === "CREATURE" ? definitionForCard.hp : card.currentHp;
+    card.isLimitedSummon = true;
+    card.anchorSourceInstanceId = anchorSourceInstanceId;
+    getPlayer(match, controllerPlayerId).field.limitedSummons.push(card);
+    return card;
+  };
+
+  const emitLimitedSummon = (controllerPlayerId: string, anchor: CardInstance, summoned: CardInstance, route = "SUMMON_LIMITED_CREATURE_FROM_HAND") => {
+    addHeadlessEvent(match, "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED", controllerPlayerId, {
+      sourceCardInstanceId: anchor.instanceId,
+      sourceCardName: match.cardCatalog[anchor.cardId]?.name ?? anchor.cardId,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      summonedCardId: summoned.cardId,
+      summonedCardInstanceId: summoned.instanceId,
+      anchorSourceInstanceId: summoned.anchorSourceInstanceId
+    });
+    emitHeadlessAction(route, { summonedCardId: summoned.cardId, anchorSourceInstanceId: summoned.anchorSourceInstanceId });
+  };
+
+  const ensureLinkedLimitedSummon = (
+    controllerPlayerId: string,
+    anchor: CardInstance,
+    predicate: (card: CardInstance, definition: CardDefinition | undefined) => boolean,
+    fallbackCardId: string,
+    ownerPlayerId = controllerPlayerId
+  ): CardInstance => {
+    const existing = getPlayer(match, controllerPlayerId).field.limitedSummons.find(card =>
+      card.anchorSourceInstanceId === anchor.instanceId && predicate(card, match.cardCatalog[card.cardId])
+    );
+    if (existing) return existing;
+
+    const candidate = takeCardForLimitedSummon(ownerPlayerId, predicate, fallbackCardId);
+    if (!candidate) throw new Error(`Headless ${definition.name} needs a Limited Summon candidate.`);
+    const summoned = placeAsLimitedSummon(candidate, controllerPlayerId, candidate.ownerPlayerId || ownerPlayerId, anchor.instanceId);
+    emitLimitedSummon(controllerPlayerId, anchor, summoned);
+    return summoned;
+  };
+
+  const returnLinkedLimitedToHand = (
+    controllerPlayerId: string,
+    linked: CardInstance,
+    eventType = "RETURN_LINKED_SUMMON"
+  ) => {
+    const removed = removeCardInstanceFromMatch(match, linked.instanceId);
+    if (removed) moveCardToHand(match, removed.card.ownerPlayerId ?? controllerPlayerId, removed.card);
+    emitHeadlessAction(eventType, { returnedCardId: (removed?.card ?? linked).cardId });
+  };
+
+  const sendLinkedLimitedToCemetery = (
+    controllerPlayerId: string,
+    linked: CardInstance,
+    ownerPlayerId = linked.ownerPlayerId || controllerPlayerId,
+    eventType = "SEND_TO_CEMETERY"
+  ) => {
+    const removed = removeCardInstanceFromMatch(match, linked.instanceId);
+    if (removed) moveCardToCemetery(match, ownerPlayerId, removed.card);
+    emitHeadlessAction(eventType, { sentCardId: (removed?.card ?? linked).cardId, destinationPlayerId: ownerPlayerId });
+  };
+
+  if (plan.card.cardId === "gen3_012_crow" && (actionType === "limited_summon" || actionType === "move_card")) {
+    const playerId = source.playerId;
+    const anchor = getPlayer(match, playerId).field.primaryCreature ?? ensureSourceAsPrimary(playerId);
+    const linked = ensureLinkedLimitedSummon(
+      playerId,
+      anchor,
+      card => card.cardId === "gen3_012_crow" && card.instanceId !== anchor.instanceId,
+      "gen3_012_crow"
+    );
+    if (actionType === "move_card") {
+      returnLinkedLimitedToHand(playerId, linked, "LINKED_LIMITED_SUMMON_RETURNED");
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_039_m_o_o_n_sgt" && (actionType === "limited_summon" || actionType === "move_card" || actionType === "negate_card_effect")) {
+    const playerId = source.playerId;
+    const anchor = getPlayer(match, playerId).field.primaryCreature ?? ensureSourceAsPrimary(playerId);
+    const linked = ensureLinkedLimitedSummon(
+      playerId,
+      anchor,
+      (card, candidate) => card.cardId !== anchor.cardId && normalizeText(candidate?.name).includes("m.o.o.n."),
+      "gen3_040_m_o_o_n_soldier"
+    );
+    if (actionType === "negate_card_effect") {
+      emitHeadlessAction("NEGATE_CARD_EFFECT", { negatedEffectId: "039-E01" });
+      returnLinkedLimitedToHand(playerId, linked, "LINKED_LIMITED_SUMMON_RETURNED");
+    } else if (actionType === "move_card") {
+      returnLinkedLimitedToHand(playerId, linked, "LINKED_LIMITED_SUMMON_RETURNED");
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_087_orc_hunter" && (actionType === "move_card" || actionType === "negate_card_effect")) {
+    const playerId = source.playerId;
+    const anchor = getPlayer(match, playerId).field.primaryCreature ?? ensureSourceAsPrimary(playerId);
+    const linked = ensureLinkedLimitedSummon(
+      playerId,
+      anchor,
+      (card, candidate) => card.cardId !== anchor.cardId && candidate?.cardType === "CREATURE" && normalizeText(candidate.creatureType).includes("beast"),
+      "gen3_064_frog_bard"
+    );
+    if (actionType === "negate_card_effect") {
+      emitHeadlessAction("NEGATE_CARD_EFFECT", { negatedEffectId: "087-E01" });
+    }
+    returnLinkedLimitedToHand(playerId, linked, "RETURN_LINKED_SUMMON");
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_021_possessed_dummy" && (actionType === "limited_summon" || actionType === "move_card" || actionType === "send_to_cemetery" || actionType === "negate_card_effect")) {
+    const playerId = source.playerId;
+    const opponentId = findOpponentPlayerId(match, playerId);
+    const anchor = source.card;
+    let linked = getPlayer(match, playerId).field.limitedSummons.find(card => card.anchorSourceInstanceId === anchor.instanceId);
+    if (!linked) {
+      const candidate = takeCemeteryCardForLimitedSummon(opponentId, card => card.cardId === "test_creature_defender") ??
+        takeCardForLimitedSummon(opponentId, card => card.cardId === "test_creature_defender", "test_creature_defender");
+      if (!candidate) throw new Error("Headless Possessed Dummy needs an opponent cemetery creature.");
+      linked = placeAsLimitedSummon(candidate, playerId, candidate.ownerPlayerId || opponentId, anchor.instanceId);
+      emitLimitedSummon(playerId, anchor, linked);
+    }
+    if (actionType === "limited_summon") return match;
+    if (actionType === "negate_card_effect") {
+      emitHeadlessAction("NEGATE_CARD_EFFECT", { negatedEffectId: "021-E01" });
+    }
+    sendLinkedLimitedToCemetery(playerId, linked, opponentId, actionType === "move_card" ? "MOVE_CARD" : "SEND_TO_CEMETERY");
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_082_gnarled_hand" && (actionType === "limited_summon" || actionType === "send_to_cemetery")) {
+    const playerId = source.playerId;
+    const primary = getPlayer(match, playerId).field.primaryCreature ?? ensurePrimaryFromSetup(playerId, plan.setup.player1Cards);
+    const linked = ensureLinkedLimitedSummon(
+      playerId,
+      source.card,
+      card => card.cardId === "gen3_064_frog_bard" && card.instanceId !== primary?.instanceId,
+      "gen3_064_frog_bard"
+    );
+    if (actionType === "send_to_cemetery") {
+      sendLinkedLimitedToCemetery(playerId, linked, playerId, "SEND_TO_CEMETERY");
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_139_last_goodbye" && (actionType === "limited_summon" || actionType === "send_to_cemetery")) {
+    const playerId = source.playerId;
+    if (actionType === "limited_summon") {
+      const candidate = takeCardForLimitedSummon(playerId, (card, candidateDefinition) =>
+        candidateDefinition?.cardType === "CREATURE" && card.instanceId !== source.card.instanceId,
+        "test_creature_defender"
+      );
+      if (candidate) {
+        const summoned = placeAsLimitedSummon(candidate, playerId, candidate.ownerPlayerId || playerId, source.card.instanceId);
+        emitLimitedSummon(playerId, source.card, summoned);
+      }
+      return match;
+    }
+
+    const attached = source.card.attachedToInstanceId
+      ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+      : undefined;
+    if (attached?.card && attached.zone === "LIMITED_SUMMON") {
+      sendLinkedLimitedToCemetery(playerId, attached.card, attached.card.ownerPlayerId || playerId, "SEND_TO_CEMETERY");
+    }
+    const removedSource = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, playerId, removedSource?.card ?? source.card);
+    emitHeadlessAction("SEND_TO_CEMETERY", { sentCardId: plan.card.cardId, reason: "END_OF_TURN" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_009_hoggan" && (actionType === "limited_summon" || actionType === "damage" || actionType === "send_to_cemetery")) {
+    const playerId = source.playerId;
+    let hoggan = getPlayer(match, playerId).field.limitedSummons.find(card => card.cardId === plan.card.cardId);
+    if (!hoggan) {
+      const removedSource = removeCardInstanceFromMatch(match, source.card.instanceId);
+      hoggan = placeAsLimitedSummon(removedSource?.card ?? source.card, playerId, playerId);
+      emitLimitedSummon(playerId, source.card, hoggan);
+    }
+    if (actionType === "damage") {
+      hoggan.currentHp = Math.max(0, Number(hoggan.currentHp ?? hoggan.baseHp ?? 0) - 5);
+      addHeadlessEvent(match, "BATTLE_DAMAGE_PIPELINE_RESOLVED", playerId, {
+        sourceCardInstanceId: hoggan.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        targetCardInstanceId: hoggan.instanceId,
+        finalDamage: 5
+      });
+      steps.push({ label: "damage Hoggan as limited summon", ok: true, detail: "5 damage" });
+    } else if (actionType === "send_to_cemetery") {
+      sendLinkedLimitedToCemetery(playerId, hoggan, playerId, "SEND_TO_CEMETERY");
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_107_missile_toad" && (actionType === "limited_summon" || actionType === "send_to_cemetery")) {
+    const playerId = source.playerId;
+    const player = getPlayer(match, playerId);
+    if (actionType === "send_to_cemetery" && player.field.limitedSummons.length === 0) {
+      const candidate = takeCardForLimitedSummon(playerId, card => card.cardId === "gen3_064_frog_bard", "gen3_064_frog_bard");
+      if (candidate) placeAsLimitedSummon(candidate, playerId, candidate.ownerPlayerId || playerId, source.card.instanceId);
+    }
+    addHeadlessEvent(match, "BATTLE_DAMAGE_PIPELINE_RESOLVED", playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      finalDamage: 5
+    });
+    const sent: string[] = [];
+    for (const limited of [...match.players.flatMap(playerState => playerState.field.limitedSummons)]) {
+      const located = findCardByPredicate(match, card => card.instanceId === limited.instanceId);
+      const removed = removeCardInstanceFromMatch(match, limited.instanceId);
+      if (removed) {
+        moveCardToCemetery(match, removed.card.ownerPlayerId ?? located?.playerId ?? playerId, removed.card);
+        sent.push(removed.card.cardId);
+      }
+    }
+    emitHeadlessAction("SEND_TO_CEMETERY", { sentLimitedSummonCardIds: sent });
+    return match;
+  }
 
   if (plan.card.cardId === "gen3_109_negative" && definition.cardType === "MAGIC" && source.zone === "HAND") {
     playSourceMagicToCemetery();
