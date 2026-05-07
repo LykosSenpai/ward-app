@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_047_ent_tree",
+  "effectId": "047-E01",
+  "title": "Ent Tree has static creature and magic immunity",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_047_ent_tree",
+      "cardName": "Ent Tree",
+      "cardType": "CREATURE",
+      "cardNumber": "047",
+      "generation": "1",
+      "rawText": "This creature is unaffected by creature effects and magic cards. This creature inflicts 2x Atk damage to any creature holding a weapon."
+    },
+    "effect": {
+      "effectId": "047-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_IMMUNITY",
+      "effectGroup": "Immunity",
+      "target": "This creature",
+      "value": "Unaffected by creature effects and magic cards",
+      "durationText": "While on field",
+      "reusableFunction": "applyImmunity"
+    },
+    "title": "Ent Tree has static creature and magic immunity",
+    "summary": "Put Ent Tree on the field and verify the headless route recognizes its continuous immunity to creature effects and magic cards.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_047_ent_tree"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Ent Tree as player_1 primary creature.",
+        "This fixture isolates Ent Tree's printed immunity clause; its weapon-target damage multiplier is covered separately."
+      ]
+    },
+    "steps": [
+      "Set Ent Tree as player_1 primary creature.",
+      "Accept the while-on-field creature and magic immunity static rule."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Creature immunity rule is available",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_CREATURE_IMMUNITY_AVAILABLE"
+      },
+      {
+        "label": "Ent Tree remains primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen1_047_ent_tree"
+      }
+    ],
+    "manualVerification": [
+      "Confirm future creature effects and magic cards cannot affect Ent Tree while it remains on the field."
+    ],
+    "riskNotes": [
+      "This fixture validates static-rule recognition, not a full opposing effect targeting attempt."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Ent Tree's continuous creature-effect and magic-card immunity."
+    },
+    "regression": {
+      "fixtureName": "ent-tree-static-creature-and-magic-immunity",
+      "tags": [
+        "creature",
+        "immunity",
+        "static"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
