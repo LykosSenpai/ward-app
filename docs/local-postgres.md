@@ -7,7 +7,7 @@ WARD uses `DATABASE_URL` for account, ownership, deck, and lobby data.
 On this Windows machine, `winget` is available. Install PostgreSQL with:
 
 ```powershell
-winget install PostgreSQL.PostgreSQL
+winget install PostgreSQL.PostgreSQL.17
 ```
 
 During installation, choose a password for the default `postgres` admin user and keep the default port `5432`.
@@ -36,6 +36,8 @@ Create `.env` in the repo root with:
 
 ```env
 DATABASE_URL=postgres://ward_app:ward_app_dev@localhost:5432/ward_app
+CLIENT_ORIGIN=http://localhost:5173
+SESSION_SECRET=ward-local-dev-session-secret-change-before-hosting
 ```
 
 `.env` is ignored by git. `.env.example` has the same local template without secrets that matter.

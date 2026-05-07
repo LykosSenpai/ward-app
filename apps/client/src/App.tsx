@@ -16,10 +16,11 @@ import { HandRevealPromptCard } from "./components/HandRevealPromptCard";
 import { MagicChainCard } from "./components/MagicChainCard";
 import { ManualEffectQueueCard } from "./components/ManualEffectQueueCard";
 import { MatchCompleteCard } from "./components/MatchCompleteCard";
-import { MatchSetupPanel } from "./components/MatchSetupPanel";
+import { MatchLobbyPanel } from "./components/MatchLobbyPanel";
 import { CompactMatchControlPanel } from "./components/CompactMatchControlPanel";
 import { MatchStatePanel } from "./components/MatchStatePanel";
 import { PlayerPanel } from "./components/PlayerPanel";
+import { ProfilePage } from "./components/ProfilePage";
 import { SaveLoadPanel } from "./components/SaveLoadPanel";
 import { TargetPromptCard } from "./components/TargetPromptCard";
 import { ModalPanel } from "./components/ui/ModalPanel";
@@ -44,6 +45,7 @@ import type {
   LlmPhase4ReportSummary,
   LlmRegressionScenarioSummary,
   LlmServiceStatus,
+  MatchLobby,
   ManualEffectDurationType,
   ManualEffectStatKey,
   SavedMatchSummary,
@@ -53,7 +55,7 @@ import type {
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
-type AppPage = "play" | "card-library" | "deck-library" | "effect-dev" | "effect-coverage" | "llm-tests";
+type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests";
 
 type DashboardModal =
   | "save-load"
@@ -64,6 +66,8 @@ type DashboardModal =
   | "match-details"
   | "effect-debug"
   | null;
+
+type OwnershipSaveStatus = "idle" | "saving" | "saved" | "error";
 
 export default function App() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
@@ -77,12 +81,13 @@ export default function App() {
   const [cardPacks, setCardPacks] = useState<CardPackSummary[]>([]);
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [deckDetails, setDeckDetails] = useState<DeckDetail[]>([]);
+  const [matchLobbies, setMatchLobbies] = useState<MatchLobby[]>([]);
+  const [activeLobby, setActiveLobby] = useState<MatchLobby | undefined>();
   const [selectedPackIds, setSelectedPackIds] = useState<string[]>([]);
-  const [selectedPlayer1DeckId, setSelectedPlayer1DeckId] = useState("");
-  const [selectedPlayer2DeckId, setSelectedPlayer2DeckId] = useState("");
   const [cardLibrary, setCardLibrary] = useState<CardLibraryCardSummary[]>([]);
   const [effectCoverageRows, setEffectCoverageRows] = useState<EffectCoverageRow[]>([]);
   const [cardOwnershipCounts, setCardOwnershipCounts] = useState<CardOwnershipMap>({});
+  const [ownershipSaveStatus, setOwnershipSaveStatus] = useState<OwnershipSaveStatus>("idle");
   const [deckBuilderName, setDeckBuilderName] = useState("New Test Deck");
   const [deckBuilderId, setDeckBuilderId] = useState("new-test-deck");
   const [deckBuilderCardIds, setDeckBuilderCardIds] = useState<string[]>([]);
@@ -97,7 +102,6 @@ export default function App() {
   const [activePage, setActivePage] = useState<AppPage>("play");
   const [effectDevFocusedCardKey, setEffectDevFocusedCardKey] = useState("");
   const [effectCoverageFocusedCardKey, setEffectCoverageFocusedCardKey] = useState("");
-  const [setupSavesOpen, setSetupSavesOpen] = useState(true);
   const [llmStatus, setLlmStatus] = useState<LlmServiceStatus | undefined>();
   const [llmBatchPlans, setLlmBatchPlans] = useState<LlmEffectTestPlan[]>([]);
   const [llmRegressionScenarios, setLlmRegressionScenarios] = useState<LlmRegressionScenarioSummary[]>([]);
@@ -140,6 +144,7 @@ export default function App() {
     socket.on("match:error", (data: { message: string }) => {
       setError(data.message);
       setLlmBusy(false);
+      setOwnershipSaveStatus(current => current === "saving" ? "error" : current);
     });
 
     socket.on("match:savedList", (data: SavedMatchSummary[]) => {
@@ -211,21 +216,6 @@ export default function App() {
         return validPackIds;
       });
 
-      setSelectedPlayer1DeckId(current => {
-        if (current && data.decks.some(deck => deck.id === current)) {
-          return current;
-        }
-
-        return data.decks[0]?.id ?? "";
-      });
-
-      setSelectedPlayer2DeckId(current => {
-        if (current && data.decks.some(deck => deck.id === current)) {
-          return current;
-        }
-
-        return data.decks[0]?.id ?? "";
-      });
     });
 
     socket.on("cards:library", (data: CardLibraryCardSummary[]) => {
@@ -236,8 +226,28 @@ export default function App() {
       setDeckDetails(data);
     });
 
+    socket.on("lobby:list", (data: MatchLobby[]) => {
+      setMatchLobbies(data);
+      setActiveLobby(current => {
+        if (!current) {
+          return current;
+        }
+
+        return data.find(lobby => lobby.id === current.id) ?? current;
+      });
+    });
+
+    socket.on("lobby:updated", (data: MatchLobby) => {
+      setActiveLobby(data);
+      setMatchLobbies(current => {
+        const withoutLobby = current.filter(lobby => lobby.id !== data.id);
+        return data.status === "CLOSED" ? withoutLobby : [data, ...withoutLobby];
+      });
+    });
+
     socket.on("collection:ownership", (data: CardOwnershipMap) => {
       setCardOwnershipCounts(data);
+      setOwnershipSaveStatus(current => current === "saving" ? "saved" : current);
     });
 
     socket.on("dev:effectCoverage", (data: EffectCoverageRow[]) => {
@@ -253,9 +263,6 @@ export default function App() {
       setSaveMessage(data.message);
       socket.emit("setup:listOptions");
       socket.emit("deck:listDetails");
-
-      setSelectedPlayer1DeckId(current => current || data.deckId);
-      setSelectedPlayer2DeckId(current => current || data.deckId);
     });
 
     socket.on(
@@ -311,13 +318,6 @@ export default function App() {
 
     socket.on("deck:deleted", (data: { message: string; deckId: string }) => {
       setSaveMessage(data.message);
-
-      setSelectedPlayer1DeckId(current =>
-        current === data.deckId ? "" : current
-      );
-      setSelectedPlayer2DeckId(current =>
-        current === data.deckId ? "" : current
-      );
 
       socket.emit("setup:listOptions");
       socket.emit("deck:listDetails");
@@ -440,6 +440,8 @@ export default function App() {
       socket.off("setup:options");
       socket.off("cards:library");
       socket.off("deck:details");
+      socket.off("lobby:list");
+      socket.off("lobby:updated");
       socket.off("collection:ownership");
       socket.off("dev:effectCoverage");
       socket.off("dev:effectRuntimeTestStatusSaved");
@@ -493,6 +495,7 @@ export default function App() {
     socket.emit("match:listSaved");
     socket.emit("setup:listOptions");
     socket.emit("deck:listDetails");
+    socket.emit("lobby:list");
     socket.emit("collection:listOwnership");
     socket.emit("llm:getStatus");
   }
@@ -538,25 +541,44 @@ export default function App() {
     });
   }
 
-  function createConfiguredMatch() {
+  function createLobby(data: { name: string; selectedDeckId?: string }) {
     setError("");
     setSaveMessage("");
-
-    if (selectedPackIds.length === 0) {
-      setError("Select at least one card pack.");
-      return;
-    }
-
-    if (!selectedPlayer1DeckId || !selectedPlayer2DeckId) {
-      setError("Select a deck for both players.");
-      return;
-    }
-
-    socket.emit("match:create1v1WithSetup", {
-      packIds: selectedPackIds,
-      player1DeckId: selectedPlayer1DeckId,
-      player2DeckId: selectedPlayer2DeckId
+    socket.emit("lobby:create", {
+      name: data.name,
+      selectedDeckId: data.selectedDeckId,
+      selectedPackIds
     });
+  }
+
+  function joinLobby(lobbyId: string) {
+    setError("");
+    socket.emit("lobby:join", lobbyId);
+  }
+
+  function viewLobby(lobbyId: string) {
+    setError("");
+    socket.emit("lobby:view", lobbyId);
+  }
+
+  function leaveLobby(lobbyId: string) {
+    setError("");
+    socket.emit("lobby:leave", lobbyId);
+  }
+
+  function selectLobbyDeck(lobbyId: string, deckId: string) {
+    setError("");
+    if (!deckId) {
+      return;
+    }
+
+    socket.emit("lobby:selectDeck", { lobbyId, deckId });
+  }
+
+  function startLobbyMatch(lobbyId: string) {
+    setError("");
+    setSaveMessage("");
+    socket.emit("lobby:startMatch", lobbyId);
   }
 
   function normalizeId(value: string): string {
@@ -711,6 +733,7 @@ export default function App() {
   function setOwnedCardCopies(cardId: string, requestedOwnedCount: number) {
     const safeOwnedCount = Math.min(999, Math.max(0, Math.floor(requestedOwnedCount)));
 
+    setOwnershipSaveStatus("saving");
     setCardOwnershipCounts(current => ({
       ...current,
       [cardId]: safeOwnedCount
@@ -1366,6 +1389,7 @@ export default function App() {
     setSavedMatches([]);
     setDeckDetails([]);
     setCardOwnershipCounts({});
+    setOwnershipSaveStatus("idle");
     socket.disconnect();
     socket.connect();
   }
@@ -1438,6 +1462,18 @@ export default function App() {
             Deck Library
           </button>
           <button
+            className={activePage === "saved-matches" ? "app-page-nav-button active" : "app-page-nav-button"}
+            onClick={() => setActivePage("saved-matches")}
+          >
+            Saved Matches
+          </button>
+          <button
+            className={activePage === "profile" ? "app-page-nav-button active" : "app-page-nav-button"}
+            onClick={() => setActivePage("profile")}
+          >
+            Profile
+          </button>
+          <button
             className={activePage === "effect-dev" ? "app-page-nav-button active" : "app-page-nav-button"}
             onClick={() => setActivePage("effect-dev")}
           >
@@ -1467,6 +1503,11 @@ export default function App() {
 
         {error && <div className="error-box">{error}</div>}
         {saveMessage && <div className="success-box">{saveMessage}</div>}
+        {activePage === "card-library" && ownershipSaveStatus !== "idle" && (
+          <div className={`ownership-save-status ${ownershipSaveStatus}`}>
+            Ownership: {ownershipSaveStatus === "saving" ? "Saving..." : ownershipSaveStatus === "saved" ? "Saved" : "Could not save"}
+          </div>
+        )}
 
         {activePage === "effect-dev" ? (
           <EffectDevToolPage
@@ -1527,6 +1568,18 @@ export default function App() {
             onCloneDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "clone")}
             onDeleteDeck={deleteDeck}
           />
+        ) : activePage === "saved-matches" ? (
+          <SaveLoadPanel
+            savedMatches={savedMatches}
+            canSave={!!match}
+            onRefresh={refreshSavedMatches}
+            onSave={saveCurrentMatch}
+            onLoad={loadSavedMatch}
+            onDelete={deleteSavedMatch}
+            onDeleteSelected={deleteSelectedSavedMatches}
+          />
+        ) : activePage === "profile" ? (
+          <ProfilePage onUserUpdated={setAuthUser} />
         ) : activePage === "card-library" ? (
           <LibraryDecksPage
             selectedPackCount={selectedPackIds.length}
@@ -1554,46 +1607,24 @@ export default function App() {
             onSaveDeck={saveBuiltDeck}
           />
         ) : !match ? (
-          <section className={`play-setup-workspace${setupSavesOpen ? " saves-open" : " saves-collapsed"}`}>
-            <aside className="play-saves-drawer" aria-label="Saved matches">
-              <button
-                type="button"
-                className="play-saves-drawer-toggle"
-                onClick={() => setSetupSavesOpen(current => !current)}
-                aria-expanded={setupSavesOpen}
-                aria-controls="play-save-load-drawer-content"
-              >
-                <span>{setupSavesOpen ? "Hide Saves" : "Show Saves"}</span>
-                <span className="zone-details-badge">{savedMatches.length}</span>
-              </button>
-
-              <div id="play-save-load-drawer-content" className="play-saves-drawer-content">
-                {setupSavesOpen && (
-                  <SaveLoadPanel
-                    savedMatches={savedMatches}
-                    canSave={false}
-                    onRefresh={refreshSavedMatches}
-                    onSave={saveCurrentMatch}
-                    onLoad={loadSavedMatch}
-                    onDelete={deleteSavedMatch}
-                    onDeleteSelected={deleteSelectedSavedMatches}
-                  />
-                )}
-              </div>
-            </aside>
-
+          <section className="play-lobby-workspace">
             <section className="play-setup-main">
-              <MatchSetupPanel
+              <MatchLobbyPanel
+                user={authUser}
+                lobbies={matchLobbies}
+                activeLobby={activeLobby}
                 cardPacks={cardPacks}
                 decks={decks}
+                deckDetails={deckDetails}
                 selectedPackIds={selectedPackIds}
-                selectedPlayer1DeckId={selectedPlayer1DeckId}
-                selectedPlayer2DeckId={selectedPlayer2DeckId}
-                onRefreshSetupOptions={refreshSetupOptions}
                 onToggleSelectedPack={toggleSelectedPack}
-                onPlayer1DeckChange={setSelectedPlayer1DeckId}
-                onPlayer2DeckChange={setSelectedPlayer2DeckId}
-                onCreateConfiguredMatch={createConfiguredMatch}
+                onRefresh={refreshSetupOptions}
+                onCreateLobby={createLobby}
+                onJoinLobby={joinLobby}
+                onViewLobby={viewLobby}
+                onLeaveLobby={leaveLobby}
+                onSelectDeck={selectLobbyDeck}
+                onStartMatch={startLobbyMatch}
               />
             </section>
           </section>

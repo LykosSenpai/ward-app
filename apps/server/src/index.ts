@@ -4,7 +4,10 @@ console.log("BOOTING WARD SERVER...");
 import express from "express";
 import cors from "cors";
 import http from "http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Server } from "socket.io";
+import rateLimit from "express-rate-limit";
 
 import type { CardDefinition, CardInstance, CannotInflictAttackDamageBattlePolicy, DeckListDefinition, DevRollKind, MatchState, TurnPhase, WardEngineEffect } from "@ward/shared";
 
@@ -63,6 +66,8 @@ import {
 
 import {
   deckFileExists,
+  userDeckFileExists,
+  deleteUserDeckFromDisk,
   deleteDeckFromDisk,
   deleteMatchFromDisk,
   listCardLibraryForPacks,
@@ -72,15 +77,19 @@ import {
   saveEffectRuntimeTestStatusRecords,
   listSavedMatches,
   listSetupOptions,
+  listUserDecks,
   loadCardCatalog,
   loadCardLimitMap,
   loadDeckList,
+  loadUserDeckList,
   loadMatchFromDisk,
   saveDeckListToDisk,
+  saveUserDeckListToDisk,
   updateCardEffectsInPack,
   saveMatchToDisk,
   validateDataFileId
 } from "./dataStore.js";
+import type { SetupOptions } from "./dataStore.js";
 
 import {
   generateEffectTestPlan,
@@ -98,12 +107,22 @@ import type { EffectRuntimeTestStatusRecord } from "./dataStore.js";
 import type { LlmDirectEffectSmokeTestResult, LlmEffectResultReview, LlmEffectTestPlan } from "./llm/types.js";
 import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
-import { createUser, verifyUserLogin } from "./auth/userStore.js";
+import { changeUserPassword, createUser, getUserProfile, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
 import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
+import { checkDbConnection } from "./db/pool.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT_DIR = path.resolve(__dirname, "../../..");
+const CLIENT_DIST_DIR = path.join(ROOT_DIR, "apps", "client", "dist");
+const isProduction = process.env.NODE_ENV === "production";
 
 const app = express();
+
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
 
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
 const LOCAL_CLIENT_ORIGIN_PATTERN = /^http:\/\/(?:localhost|127\.0\.0\.1):\d+$/;
@@ -123,10 +142,49 @@ app.use(cors({
 app.use(express.json());
 app.use(sessionMiddleware);
 
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: isProduction ? 40 : 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many auth attempts. Try again shortly." }
+});
+
+const passwordRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: isProduction ? 10 : 80,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many password attempts. Try again shortly." }
+});
+
 const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
+const matchLobbies = new Map<string, MatchLobbyRecord>();
 
 const MAX_UNDO_STEPS = 25;
+
+type MatchLobbyStatus = "OPEN" | "IN_MATCH" | "CLOSED";
+
+type MatchLobbyPlayerRecord = {
+  userId: string;
+  displayName: string;
+  seat: number;
+  selectedDeckId?: string;
+  ready: boolean;
+};
+
+type MatchLobbyRecord = {
+  id: string;
+  name: string;
+  status: MatchLobbyStatus;
+  hostUserId: string;
+  selectedPackIds: string[];
+  matchId?: string;
+  players: MatchLobbyPlayerRecord[];
+  createdAt: string;
+  updatedAt: string;
+};
 
 function getSocketUser(socket: { request: unknown }): AuthUser | null {
   const request = socket.request as { session?: { user?: AuthUser } };
@@ -305,6 +363,83 @@ function normalizeDeckCardArtKeys(cardArtKeys: string[] | undefined, cardCount: 
   });
 
   return normalized.some(artKey => artKey !== "default") ? normalized : undefined;
+}
+
+function createId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getUserSetupOptions(user: AuthUser | null): SetupOptions {
+  const options = listSetupOptions();
+
+  return {
+    ...options,
+    decks: user ? listUserDecks(user.id) : []
+  };
+}
+
+function loadDeckForUser(userId: string, deckId: string): DeckListDefinition {
+  return loadUserDeckList(userId, deckId);
+}
+
+function getDeckDetailsForUser(user: AuthUser | null) {
+  if (!user) {
+    return [];
+  }
+
+  return listUserDecks(user.id).map(deckSummary => {
+    const deck = loadUserDeckList(user.id, deckSummary.id);
+
+    return {
+      id: deck.id,
+      name: deck.name,
+      cardIds: deck.cardIds,
+      cardArtKeys: deck.cardArtKeys
+    };
+  });
+}
+
+function getLobbySnapshot(lobby: MatchLobbyRecord) {
+  return {
+    ...lobby,
+    players: [...lobby.players].sort((a, b) => a.seat - b.seat)
+  };
+}
+
+function listLobbySnapshots() {
+  return Array.from(matchLobbies.values())
+    .filter(lobby => lobby.status !== "CLOSED")
+    .map(getLobbySnapshot)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+function emitLobbyList(): void {
+  io.emit("lobby:list", listLobbySnapshots());
+}
+
+function emitLobbyUpdated(lobby: MatchLobbyRecord): void {
+  io.to(lobby.id).emit("lobby:updated", getLobbySnapshot(lobby));
+  emitLobbyList();
+}
+
+function getLobbyOrThrow(lobbyId: string): MatchLobbyRecord {
+  const lobby = matchLobbies.get(lobbyId);
+
+  if (!lobby || lobby.status === "CLOSED") {
+    throw new Error("Lobby not found.");
+  }
+
+  return lobby;
+}
+
+function getLobbyPlayerOrThrow(lobby: MatchLobbyRecord, userId: string): MatchLobbyPlayerRecord {
+  const player = lobby.players.find(item => item.userId === userId);
+
+  if (!player) {
+    throw new Error("Join this lobby before changing your deck.");
+  }
+
+  return player;
 }
 
 function prepareLlmBulkDeckPlayer(match: MatchState, playerId: string): void {
@@ -782,13 +917,35 @@ app.get("/health", (_req, res) => {
   });
 });
 
+app.get("/ready", async (_req, res) => {
+  try {
+    await checkDbConnection();
+
+    res.json({
+      ok: true,
+      service: "ward-server",
+      database: "ok",
+      sessions: "postgres",
+      production: isProduction,
+      clientOrigin: CLIENT_ORIGIN
+    });
+  } catch (error) {
+    res.status(503).json({
+      ok: false,
+      service: "ward-server",
+      database: "error",
+      message: error instanceof Error ? error.message : "Readiness check failed."
+    });
+  }
+});
+
 app.get("/api/auth/me", (req, res) => {
   res.json({
     user: req.session.user ?? null
   });
 });
 
-app.post("/api/auth/register", async (req, res) => {
+app.post("/api/auth/register", authRateLimit, async (req, res) => {
   try {
     const user = await createUser({
       username: String(req.body?.username ?? ""),
@@ -806,7 +963,7 @@ app.post("/api/auth/register", async (req, res) => {
   }
 });
 
-app.post("/api/auth/login", async (req, res) => {
+app.post("/api/auth/login", authRateLimit, async (req, res) => {
   try {
     const user = await verifyUserLogin({
       login: String(req.body?.login ?? req.body?.username ?? ""),
@@ -834,6 +991,80 @@ app.post("/api/auth/logout", (req, res) => {
   });
 });
 
+app.get("/api/profile", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    res.json({ profile: await getUserProfile(req.session.user.id) });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to load profile."
+    });
+  }
+});
+
+app.patch("/api/profile", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const profile = await updateUserProfile(req.session.user.id, {
+      email: String(req.body?.email ?? ""),
+      displayName: String(req.body?.displayName ?? "")
+    });
+
+    req.session.user = {
+      id: profile.id,
+      username: profile.username,
+      displayName: profile.displayName
+    };
+
+    res.json({ profile, user: req.session.user });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to update profile."
+    });
+  }
+});
+
+app.post("/api/profile/change-password", passwordRateLimit, async (req, res) => {
+  try {
+    if (!req.session.user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    await changeUserPassword(req.session.user.id, {
+      currentPassword: String(req.body?.currentPassword ?? ""),
+      newPassword: String(req.body?.newPassword ?? "")
+    });
+
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to change password."
+    });
+  }
+});
+
+if (isProduction) {
+  app.use(express.static(CLIENT_DIST_DIR));
+
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/") || req.path === "/health" || req.path === "/ready") {
+      next();
+      return;
+    }
+
+    res.sendFile(path.join(CLIENT_DIST_DIR, "index.html"));
+  });
+}
+
 const httpServer = http.createServer(app);
 
 const io = new Server(httpServer, {
@@ -858,19 +1089,11 @@ io.on("connection", async socket => {
   });
 
   socket.emit("match:savedList", listSavedMatches());
-  socket.emit("setup:options", listSetupOptions());
+  socket.emit("setup:options", getUserSetupOptions(connectedUser));
   socket.emit("cards:library", listDefaultCardLibrary());
   socket.emit("collection:ownership", connectedUser ? await loadUserCardOwnershipMap(connectedUser.id) : {});
-  socket.emit("deck:details", listSetupOptions().decks.map(deckSummary => {
-    const deck = loadDeckList(deckSummary.id);
-
-    return {
-      id: deck.id,
-      name: deck.name,
-      cardIds: deck.cardIds,
-      cardArtKeys: deck.cardArtKeys
-    };
-  }));
+  socket.emit("deck:details", getDeckDetailsForUser(connectedUser));
+  socket.emit("lobby:list", listLobbySnapshots());
 
   socket.on(
     "match:create1v1",
@@ -914,6 +1137,8 @@ io.on("connection", async socket => {
       player2DeckId: string;
     }) => {
       try {
+        const user = requireSocketUser(socket);
+
         if (!data.packIds || data.packIds.length === 0) {
           throw new Error("Select at least one card pack before creating a match.");
         }
@@ -928,8 +1153,8 @@ io.on("connection", async socket => {
 
         const cardCatalog = loadCardCatalog(data.packIds);
         const cardLimits = loadCardLimitMap();
-        const player1Deck = loadDeckList(data.player1DeckId);
-        const player2Deck = loadDeckList(data.player2DeckId);
+        const player1Deck = loadDeckForUser(user.id, data.player1DeckId);
+        const player2Deck = loadDeckForUser(user.id, data.player2DeckId);
 
         const match = create1v1MatchFromDeckCardIds({
           cardCatalog,
@@ -1911,9 +2136,11 @@ io.on("connection", async socket => {
   socket.on("setup:listOptions", async () => {
     try {
       const user = getSocketUser(socket);
-      socket.emit("setup:options", listSetupOptions());
+      socket.emit("setup:options", getUserSetupOptions(user));
       socket.emit("cards:library", listDefaultCardLibrary());
       socket.emit("collection:ownership", user ? await loadUserCardOwnershipMap(user.id) : {});
+      socket.emit("deck:details", getDeckDetailsForUser(user));
+      socket.emit("lobby:list", listLobbySnapshots());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -1923,16 +2150,7 @@ io.on("connection", async socket => {
 
   socket.on("deck:listDetails", () => {
     try {
-      const deckDetails = listSetupOptions().decks.map(deckSummary => {
-        const deck = loadDeckList(deckSummary.id);
-
-        return {
-          id: deck.id,
-          name: deck.name,
-          cardIds: deck.cardIds,
-          cardArtKeys: deck.cardArtKeys
-        };
-      });
+      const deckDetails = getDeckDetailsForUser(getSocketUser(socket));
 
       socket.emit("deck:details", deckDetails);
     } catch (error) {
@@ -2750,13 +2968,212 @@ io.on("connection", async socket => {
     }
   });
 
+  socket.on("lobby:list", () => {
+    socket.emit("lobby:list", listLobbySnapshots());
+  });
+
+  socket.on("lobby:view", (lobbyId: string) => {
+    try {
+      validateDataFileId(lobbyId);
+      const lobby = getLobbyOrThrow(lobbyId);
+      socket.join(lobby.id);
+      socket.emit("lobby:updated", getLobbySnapshot(lobby));
+
+      if (lobby.matchId) {
+        const lobbyMatch = activeMatches.get(lobby.matchId);
+        if (lobbyMatch) {
+          socket.join(lobbyMatch.matchId);
+          socket.emit("match:state", lobbyMatch);
+        }
+      }
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on(
+    "lobby:create",
+    (data: { name?: string; selectedPackIds?: string[]; selectedDeckId?: string }) => {
+      try {
+        const user = requireSocketUser(socket);
+        const selectedPackIds = (data.selectedPackIds?.length ? data.selectedPackIds : listSetupOptions().cardPacks.map(pack => pack.id))
+          .map(packId => String(packId ?? "").trim())
+          .filter(Boolean);
+
+        if (selectedPackIds.length === 0) {
+          throw new Error("Select at least one card pack before creating a lobby.");
+        }
+
+        if (data.selectedDeckId) {
+          loadDeckForUser(user.id, data.selectedDeckId);
+        }
+
+        const lobby: MatchLobbyRecord = {
+          id: createId("lobby"),
+          name: String(data.name ?? `${user.displayName}'s Match`).trim() || `${user.displayName}'s Match`,
+          status: "OPEN",
+          hostUserId: user.id,
+          selectedPackIds,
+          players: [{
+            userId: user.id,
+            displayName: user.displayName,
+            seat: 1,
+            selectedDeckId: data.selectedDeckId || undefined,
+            ready: Boolean(data.selectedDeckId)
+          }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        matchLobbies.set(lobby.id, lobby);
+        socket.join(lobby.id);
+        socket.emit("lobby:updated", getLobbySnapshot(lobby));
+        emitLobbyList();
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on("lobby:join", (lobbyId: string) => {
+    try {
+      const user = requireSocketUser(socket);
+      validateDataFileId(lobbyId);
+      const lobby = getLobbyOrThrow(lobbyId);
+
+      if (lobby.status !== "OPEN") {
+        throw new Error("This lobby is no longer open.");
+      }
+
+      const existingPlayer = lobby.players.find(player => player.userId === user.id);
+      if (!existingPlayer) {
+        if (lobby.players.length >= 2) {
+          throw new Error("This lobby is full.");
+        }
+
+        const takenSeats = new Set(lobby.players.map(player => player.seat));
+        const seat = takenSeats.has(1) ? 2 : 1;
+        lobby.players.push({
+          userId: user.id,
+          displayName: user.displayName,
+          seat,
+          ready: false
+        });
+      }
+
+      lobby.updatedAt = new Date().toISOString();
+      socket.join(lobby.id);
+      emitLobbyUpdated(lobby);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("lobby:leave", (lobbyId: string) => {
+    try {
+      const user = requireSocketUser(socket);
+      validateDataFileId(lobbyId);
+      const lobby = getLobbyOrThrow(lobbyId);
+      lobby.players = lobby.players.filter(player => player.userId !== user.id);
+      socket.leave(lobby.id);
+
+      if (lobby.players.length === 0) {
+        lobby.status = "CLOSED";
+      } else if (lobby.hostUserId === user.id) {
+        lobby.players.sort((a, b) => a.seat - b.seat);
+        lobby.hostUserId = lobby.players[0]?.userId ?? lobby.hostUserId;
+      }
+
+      lobby.updatedAt = new Date().toISOString();
+      emitLobbyUpdated(lobby);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("lobby:selectDeck", (data: { lobbyId: string; deckId: string }) => {
+    try {
+      const user = requireSocketUser(socket);
+      validateDataFileId(data.lobbyId);
+      validateDataFileId(data.deckId);
+      const lobby = getLobbyOrThrow(data.lobbyId);
+      const player = getLobbyPlayerOrThrow(lobby, user.id);
+      loadDeckForUser(user.id, data.deckId);
+
+      player.selectedDeckId = data.deckId;
+      player.ready = true;
+      lobby.updatedAt = new Date().toISOString();
+      emitLobbyUpdated(lobby);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("lobby:startMatch", (lobbyId: string) => {
+    try {
+      const user = requireSocketUser(socket);
+      validateDataFileId(lobbyId);
+      const lobby = getLobbyOrThrow(lobbyId);
+
+      if (lobby.hostUserId !== user.id) {
+        throw new Error("Only the lobby host can start the match.");
+      }
+
+      if (lobby.players.length !== 2 || lobby.players.some(player => !player.selectedDeckId)) {
+        throw new Error("Both players need to join and select a deck.");
+      }
+
+      const sortedPlayers = [...lobby.players].sort((a, b) => a.seat - b.seat);
+      const player1Deck = loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId ?? "");
+      const player2Deck = loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId ?? "");
+      const cardCatalog = loadCardCatalog(lobby.selectedPackIds);
+      const cardLimits = loadCardLimitMap();
+      const match = create1v1MatchFromDeckCardIds({
+        cardCatalog,
+        cardLimits,
+        player1DeckCardIds: player1Deck.cardIds,
+        player2DeckCardIds: player2Deck.cardIds,
+        player1Name: sortedPlayers[0].displayName,
+        player2Name: sortedPlayers[1].displayName
+      });
+
+      lobby.status = "IN_MATCH";
+      lobby.matchId = match.matchId;
+      lobby.updatedAt = new Date().toISOString();
+      activeMatches.set(match.matchId, match);
+      matchUndoHistory.set(match.matchId, []);
+      saveMatchToDisk(match);
+
+      io.in(lobby.id).socketsJoin(match.matchId);
+      io.to(lobby.id).emit("lobby:updated", getLobbySnapshot(lobby));
+      io.to(lobby.id).emit("match:state", match);
+      io.to(lobby.id).emit("match:savedList", listSavedMatches());
+      emitLobbyList();
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   socket.on(
     "deck:load",
     (data: { deckId: string; mode?: "edit" | "clone" }) => {
       try {
+        const user = requireSocketUser(socket);
         validateDataFileId(data.deckId);
 
-        const deck = loadDeckList(data.deckId);
+        const deck = loadUserDeckList(user.id, data.deckId);
 
         socket.emit("deck:loaded", {
           id: deck.id,
@@ -2783,9 +3200,10 @@ io.on("connection", async socket => {
       overwrite?: boolean;
     }) => {
       try {
+        const user = requireSocketUser(socket);
         validateDataFileId(data.deckId);
 
-        if (deckFileExists(data.deckId) && !data.overwrite) {
+        if (userDeckFileExists(user.id, data.deckId) && !data.overwrite) {
             socket.emit("deck:overwriteRequired", {
               message: `Deck ID "${data.deckId}" already exists. Confirm overwrite to replace it.`,
               deckId: data.deckId,
@@ -2830,25 +3248,16 @@ io.on("connection", async socket => {
           cardArtKeys: normalizeDeckCardArtKeys(data.cardArtKeys, data.cardIds.length)
         };
 
-        saveDeckListToDisk(deck);
+        saveUserDeckListToDisk(user.id, deck);
 
         socket.emit("deck:saved", {
           message: `Deck saved: ${deck.name}`,
           deckId: deck.id
         });
 
-        io.emit("setup:options", listSetupOptions());
-        io.emit("cards:library", listDefaultCardLibrary());
-        io.emit("deck:details", listSetupOptions().decks.map(deckSummary => {
-          const savedDeck = loadDeckList(deckSummary.id);
-
-          return {
-            id: savedDeck.id,
-            name: savedDeck.name,
-            cardIds: savedDeck.cardIds,
-            cardArtKeys: savedDeck.cardArtKeys
-          };
-        }));
+        socket.emit("setup:options", getUserSetupOptions(user));
+        socket.emit("cards:library", listDefaultCardLibrary());
+        socket.emit("deck:details", getDeckDetailsForUser(user));
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -2859,31 +3268,23 @@ io.on("connection", async socket => {
 
   socket.on("deck:delete", (deckId: string) => {
   try {
+    const user = requireSocketUser(socket);
     validateDataFileId(deckId);
 
     if (deckId === "demo-30-card") {
       throw new Error("The default demo deck cannot be deleted.");
     }
 
-    deleteDeckFromDisk(deckId);
+    deleteUserDeckFromDisk(user.id, deckId);
 
     socket.emit("deck:deleted", {
       message: `Deleted deck: ${deckId}`,
       deckId
     });
 
-    io.emit("setup:options", listSetupOptions());
-    io.emit("cards:library", listDefaultCardLibrary());
-    io.emit("deck:details", listSetupOptions().decks.map(deckSummary => {
-      const deck = loadDeckList(deckSummary.id);
-
-      return {
-        id: deck.id,
-        name: deck.name,
-        cardIds: deck.cardIds,
-        cardArtKeys: deck.cardArtKeys
-      };
-    }));
+    socket.emit("setup:options", getUserSetupOptions(user));
+    socket.emit("cards:library", listDefaultCardLibrary());
+    socket.emit("deck:details", getDeckDetailsForUser(user));
   } catch (error) {
     socket.emit("match:error", {
       message: error instanceof Error ? error.message : "Unknown error"

@@ -11,6 +11,12 @@ export type AuthUser = {
   displayName: string;
 };
 
+export type UserProfile = AuthUser & {
+  email: string;
+  ownedUniqueCards: number;
+  ownedTotalCopies: number;
+};
+
 export type SavedMatchSummary = {
   matchId: string;
   format: string;
@@ -39,6 +45,28 @@ export type DeckDetail = {
   name: string;
   cardIds: string[];
   cardArtKeys?: string[];
+};
+
+export type MatchLobbyStatus = "OPEN" | "IN_MATCH" | "CLOSED";
+
+export type MatchLobbyPlayer = {
+  userId: string;
+  displayName: string;
+  seat: number;
+  selectedDeckId?: string;
+  ready: boolean;
+};
+
+export type MatchLobby = {
+  id: string;
+  name: string;
+  status: MatchLobbyStatus;
+  hostUserId: string;
+  selectedPackIds: string[];
+  matchId?: string;
+  players: MatchLobbyPlayer[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type SetupOptions = {

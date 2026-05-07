@@ -1,4 +1,6 @@
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { getDbPool } from "../db/pool.js";
 
 export type AuthUser = {
   id: string;
@@ -12,9 +14,20 @@ declare module "express-session" {
   }
 }
 
+const SESSION_SECRET = process.env.SESSION_SECRET ?? "";
+const PgSessionStore = connectPgSimple(session);
+
+if (process.env.NODE_ENV === "production" && SESSION_SECRET.length < 32) {
+  throw new Error("SESSION_SECRET must be set to at least 32 characters in production.");
+}
+
 export const sessionMiddleware = session({
   name: "ward.sid",
-  secret: process.env.SESSION_SECRET ?? "ward-local-dev-session-secret-change-before-hosting",
+  secret: SESSION_SECRET || "ward-local-dev-session-secret-change-before-hosting",
+  store: new PgSessionStore({
+    pool: getDbPool(),
+    tableName: "user_sessions"
+  }),
   resave: false,
   saveUninitialized: false,
   cookie: {

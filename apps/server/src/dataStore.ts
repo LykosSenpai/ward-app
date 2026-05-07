@@ -20,6 +20,7 @@ const ROOT_DIR = path.resolve(__dirname, "../../..");
 const DATA_DIR = path.join(ROOT_DIR, "data");
 
 const MATCHES_DIR = path.join(DATA_DIR, "matches");
+const USER_DATA_DIR = path.join(DATA_DIR, "users");
 const CARD_LIMITS_DIR = path.join(DATA_DIR, "rules", "card-limits");
 const CARD_COLLECTION_DIR = path.join(DATA_DIR, "collection");
 const CARD_OWNERSHIP_FILE = path.join(CARD_COLLECTION_DIR, "card-ownership.json");
@@ -34,6 +35,7 @@ function ensureDirectoryExists(directoryPath: string): void {
 }
 
 ensureDirectoryExists(MATCHES_DIR);
+ensureDirectoryExists(USER_DATA_DIR);
 ensureDirectoryExists(CARD_LIMITS_DIR);
 ensureDirectoryExists(CARD_COLLECTION_DIR);
 ensureDirectoryExists(DEV_DATA_DIR);
@@ -426,6 +428,19 @@ export function loadDeckList(deckId: string): DeckListDefinition {
   return readJsonFile<DeckListDefinition>(deckPath);
 }
 
+export function loadUserDeckList(userId: string, deckId: string): DeckListDefinition {
+  validateDataFileId(userId);
+  validateDataFileId(deckId);
+
+  const deckPath = getUserDeckFilePath(userId, deckId);
+
+  if (!fs.existsSync(deckPath)) {
+    throw new Error(`Deck not found: ${deckId}`);
+  }
+
+  return readJsonFile<DeckListDefinition>(deckPath);
+}
+
 export function loadCardLimitMap(
   limitListId = DEFAULT_CARD_LIMIT_LIST_ID
 ): DeckCardLimitMap {
@@ -607,6 +622,30 @@ export function listDecks(): DeckSummary[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+export function listUserDecks(userId: string): DeckSummary[] {
+  validateDataFileId(userId);
+  const decksDir = getUserDecksDir(userId);
+
+  if (!fs.existsSync(decksDir)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(decksDir)
+    .filter(fileName => fileName.endsWith(".json"))
+    .map(fileName => {
+      const filePath = path.join(decksDir, fileName);
+      const deck = readJsonFile<DeckListDefinition>(filePath);
+
+      return {
+        id: deck.id,
+        name: deck.name,
+        cardCount: deck.cardIds.length
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function listSetupOptions(): SetupOptions {
   return {
     cardPacks: listCardPacks(),
@@ -619,8 +658,22 @@ export function getDeckFilePath(deckId: string): string {
   return path.join(DATA_DIR, "decks", `${deckId}.json`);
 }
 
+export function getUserDecksDir(userId: string): string {
+  validateDataFileId(userId);
+  return path.join(USER_DATA_DIR, userId, "decks");
+}
+
+export function getUserDeckFilePath(userId: string, deckId: string): string {
+  validateDataFileId(deckId);
+  return path.join(getUserDecksDir(userId), `${deckId}.json`);
+}
+
 export function deckFileExists(deckId: string): boolean {
   return fs.existsSync(getDeckFilePath(deckId));
+}
+
+export function userDeckFileExists(userId: string, deckId: string): boolean {
+  return fs.existsSync(getUserDeckFilePath(userId, deckId));
 }
 
 export function listCardLibraryForPacks(
@@ -781,10 +834,32 @@ export function saveDeckListToDisk(deck: DeckListDefinition): void {
   fs.writeFileSync(filePath, JSON.stringify(deck, null, 2), "utf-8");
 }
 
+export function saveUserDeckListToDisk(userId: string, deck: DeckListDefinition): void {
+  validateDataFileId(userId);
+  validateDataFileId(deck.id);
+  const decksDir = getUserDecksDir(userId);
+  ensureDirectoryExists(decksDir);
+
+  fs.writeFileSync(getUserDeckFilePath(userId, deck.id), JSON.stringify(deck, null, 2), "utf-8");
+}
+
 export function deleteDeckFromDisk(deckId: string): void {
   validateDataFileId(deckId);
 
   const filePath = getDeckFilePath(deckId);
+
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Deck not found: ${deckId}`);
+  }
+
+  fs.unlinkSync(filePath);
+}
+
+export function deleteUserDeckFromDisk(userId: string, deckId: string): void {
+  validateDataFileId(userId);
+  validateDataFileId(deckId);
+
+  const filePath = getUserDeckFilePath(userId, deckId);
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`Deck not found: ${deckId}`);
