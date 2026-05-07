@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.408Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_006_electroloon",
+  "effectId": "006-E02",
+  "title": "Electroloon escape roll removes stun on 1-2",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.407Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_006_electroloon",
+      "cardName": "Electroloon",
+      "cardType": "CREATURE",
+      "cardNumber": "006",
+      "generation": "2",
+      "rawText": "All creatures on the opposing side of the field are stunned and cannot inflict Atk damage. At the beginning of their turn, they may roll 1 die. If the result is 1-2, this effect ends."
+    },
+    "effect": {
+      "effectId": "006-E02",
+      "trigger": "AT_BEGINNING_OF_AFFECTED_PLAYER_TURN",
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status Escape Roll",
+      "target": "Affected opposing creatures",
+      "value": "End Electroloon stun on 1-2",
+      "durationText": "Instant",
+      "reusableFunction": "applyStatusWithEscapeRoll"
+    },
+    "title": "Electroloon escape roll removes stun on 1-2",
+    "summary": "Start the affected player turn with Electroloon stun active, force a successful effect roll, and verify the stun ends.",
+    "setup": {
+      "phase": "DRAW",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_006_electroloon"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Electroloon escape roll succeeds"
+        }
+      ],
+      "notes": [
+        "Pre-place Electroloon on player_1 field and a stunned opposing creature on player_2 field.",
+        "At the beginning of player_2 turn, roll 1 die; 1-2 ends Electroloon stun."
+      ]
+    },
+    "steps": [
+      "Apply Electroloon stun to the affected creature.",
+      "Begin player_2 turn and resolve the forced escape roll.",
+      "Verify the stun is removed after the 1 result."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Escape-roll route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_STATUS_WITH_ESCAPE_ROLL"
+      },
+      {
+        "label": "Stun is removed after successful escape roll",
+        "path": "player_2.primaryCreature.statuses",
+        "operator": "notContains",
+        "value": "STUNNED"
+      }
+    ],
+    "manualVerification": [
+      "Also verify a failed 3-6 roll leaves the Electroloon stun active."
+    ],
+    "riskNotes": [
+      "The setup requires an existing source-linked Electroloon stun before the turn-start roll."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_006_electroloon-006-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_006_electroloon-006-e02",
+      "tags": [
+        "CREATURE",
+        "AT_BEGINNING_OF_AFFECTED_PLAYER_TURN",
+        "APPLY_STATUS_WITH_ESCAPE_ROLL"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_006_electroloon:006-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

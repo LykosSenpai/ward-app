@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.413Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_014_double_hit",
+  "effectId": "014-E01",
+  "title": "Double Hit grants a second initiated battle",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.413Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_014_double_hit",
+      "cardName": "Double Hit",
+      "cardType": "MAGIC",
+      "cardNumber": "014",
+      "generation": "2",
+      "rawText": "Equipped creature can initiate battle twice during their turn. Your opponent can only return attack for 1 of these battles."
+    },
+    "effect": {
+      "effectId": "014-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_BATTLE_REQUIREMENT",
+      "effectGroup": "Battle Permission",
+      "target": "Equipped creature",
+      "value": "May initiate battle twice during controller's turn",
+      "durationText": "While equipped",
+      "reusableFunction": "applyBattleRequirement"
+    },
+    "title": "Double Hit grants a second initiated battle",
+    "summary": "Equip Double Hit and verify the equipped creature gains the battle requirement effect that allows one extra initiated battle.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_014_double_hit",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Equip Double Hit to player_1 primary creature; equipped creature can initiate battle twice during its turn."
+      ]
+    },
+    "steps": [
+      "Equip Double Hit.",
+      "Inspect equipped creature battle permissions.",
+      "Verify the extra initiated battle effect is active."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Double Hit remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_014_double_hit"
+      },
+      {
+        "label": "Equipped creature has battle requirement effect",
+        "path": "player_1.primaryCreature.activeEffects",
+        "operator": "contains",
+        "value": "APPLY_BATTLE_REQUIREMENT"
+      },
+      {
+        "label": "Battle requirement route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_BATTLE_REQUIREMENT"
+      }
+    ],
+    "manualVerification": [
+      "A full battle-count interaction should prove the second initiated battle can be used only during the controller turn."
+    ],
+    "riskNotes": [
+      "This fixture is the extra-initiated-battle branch; 014-E02 covers return-attack limits."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_014_double_hit-014-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_014_double_hit-014-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_EQUIPPED",
+        "APPLY_BATTLE_REQUIREMENT"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_014_double_hit:014-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

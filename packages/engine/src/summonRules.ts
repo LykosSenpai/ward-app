@@ -21,7 +21,38 @@ export function getRequiredSacrificesForCreatureDefinition(
     throw new Error("Only creature cards have sacrifice requirements.");
   }
 
+  if (hasNoSacrificeRequirementOverride(definition)) {
+    return 0;
+  }
+
   return getRequiredSacrificesFromArmorLevel(definition.armorLevel);
+}
+
+function hasNoSacrificeRequirementOverride(
+  definition: Extract<CardDefinition, { cardType: "CREATURE" }>
+): boolean {
+  const text = String(definition.text ?? "").toLowerCase();
+  if (text.includes("does not require a sacrifice") || text.includes("no sacrifice required")) {
+    return true;
+  }
+
+  return (definition.effects ?? []).some(effect => {
+    const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+    const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+    const valueText = [
+      effect.actionText,
+      effect.value,
+      effect.params?.valueText,
+      effect.notes
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    return trigger === "SUMMON_REQUIREMENT" &&
+      actionType === "OVERRIDE_SUMMON_SACRIFICE_REQUIREMENT" &&
+      (
+        valueText.includes("no sacrifice") ||
+        valueText.includes("ignore sacrifice")
+      );
+  });
 }
 
 export function getHandCreatureCards(

@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.409Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_009_bio_regeneration",
+  "effectId": "009-E01",
+  "title": "Bio-Regeneration only equips at 9 or less HP",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.409Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_009_bio_regeneration",
+      "cardName": "Bio-Regeneration",
+      "cardType": "MAGIC",
+      "cardNumber": "009",
+      "generation": "2",
+      "rawText": "Can only be equipped to a creature with 9 or less remaining HP. Heal 30 HP. 2x Hit Roll results for this creature. 2x Atk Damage for this creature."
+    },
+    "effect": {
+      "effectId": "009-E01",
+      "trigger": "EQUIP_REQUIREMENT",
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Equip Requirement",
+      "target": "Target creature",
+      "value": "Remaining HP must be 9 or less",
+      "durationText": "Before equip",
+      "reusableFunction": "validateSummonRequirement"
+    },
+    "title": "Bio-Regeneration only equips at 9 or less HP",
+    "summary": "Equip Bio-Regeneration to a creature at 5 HP and verify the valid low-HP equip proceeds and applies the linked on-equip heal.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_009_bio_regeneration",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set player_1 primary current hp to 5 before Bio-Regeneration resolves.",
+        "Bio-Regeneration can only be equipped to a creature with 9 or less remaining HP."
+      ]
+    },
+    "steps": [
+      "Set player_1 primary creature current HP to 5.",
+      "Equip Bio-Regeneration to that creature.",
+      "Verify the equip was accepted and its immediate heal resolved."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Bio-Regeneration remains equipped/on field after valid low-HP target",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_009_bio_regeneration"
+      },
+      {
+        "label": "Valid equip target receives the 30 HP heal",
+        "path": "player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 35
+      },
+      {
+        "label": "Equip requirement did not fall back to manual queue",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "MANUAL_MAGIC_EFFECT_QUEUED"
+      }
+    ],
+    "manualVerification": [
+      "A separate invalid branch should reject targets above 9 remaining HP."
+    ],
+    "riskNotes": [
+      "This validates the allowed edge for 009-E01; existing Bio-Regeneration fixtures cover the heal and multipliers."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_009_bio_regeneration-009-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_009_bio_regeneration-009-e01",
+      "tags": [
+        "MAGIC",
+        "EQUIP_REQUIREMENT",
+        "VALIDATE_SUMMON_REQUIREMENT"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_009_bio_regeneration:009-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

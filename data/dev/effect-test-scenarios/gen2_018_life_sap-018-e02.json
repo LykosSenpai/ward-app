@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.415Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_018_life_sap",
+  "effectId": "018-E02",
+  "title": "Life Sap heals your creature on opponent draw",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.415Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_018_life_sap",
+      "cardName": "Life Sap",
+      "cardType": "MAGIC",
+      "cardNumber": "018",
+      "generation": "2",
+      "rawText": "Equip this card to your opponent's creature. Whenever your opponent draws a card, inflict 5 damage to the equipped creature and heal your creature 5 HP."
+    },
+    "effect": {
+      "effectId": "018-E02",
+      "trigger": "ON_OPPONENT_DRAW_CARD",
+      "actionType": "HEAL_CREATURE",
+      "effectGroup": "Healing",
+      "target": "Your creature",
+      "value": "Heal 5 HP",
+      "durationText": "While equipped",
+      "reusableFunction": "healFlat"
+    },
+    "title": "Life Sap heals your creature on opponent draw",
+    "summary": "Equip Life Sap to the opponent creature, trigger the opponent draw, and verify your creature heals 5 HP.",
+    "setup": {
+      "phase": "DRAW",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_018_life_sap",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set player_1 primary current hp to 40 before Life Sap resolves.",
+        "Pre-place Life Sap as field magic equipped to player_2 primary creature.",
+        "When player_2 draws a card, Life Sap heals your creature 5 HP."
+      ]
+    },
+    "steps": [
+      "Set player_1 primary creature current HP to 40.",
+      "Equip Life Sap to player_2 primary creature.",
+      "Resolve player_2 draw-card trigger.",
+      "Read player_1 primary creature HP."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Your creature heals 5 on opponent draw",
+        "path": "player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 45
+      },
+      {
+        "label": "Life Sap remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_018_life_sap"
+      },
+      {
+        "label": "Draw heal route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEAL_CREATURE"
+      }
+    ],
+    "manualVerification": [
+      "The heal should target the Life Sap controller creature while the damage targets the equipped opponent creature."
+    ],
+    "riskNotes": [
+      "This fixture is the heal branch; 018-E01 covers damage to the equipped creature."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_018_life_sap-018-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_018_life_sap-018-e02",
+      "tags": [
+        "MAGIC",
+        "ON_OPPONENT_DRAW_CARD",
+        "HEAL_CREATURE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_018_life_sap:018-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

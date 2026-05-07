@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.410Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_011_raccoon_knight",
+  "effectId": "011-E01",
+  "title": "Raccoon Knight summons with no sacrifice",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.410Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_011_raccoon_knight",
+      "cardName": "Raccoon Knight",
+      "cardType": "CREATURE",
+      "cardNumber": "011",
+      "generation": "2",
+      "rawText": "This creature does not require a sacrifice to summon."
+    },
+    "effect": {
+      "effectId": "011-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "APPLY_SUMMON_REQUIREMENT_OVERRIDE",
+      "effectGroup": "Summon Requirement",
+      "target": "This creature",
+      "value": "No sacrifice required",
+      "durationText": "Before summon",
+      "reusableFunction": "applySummonRequirementOverride"
+    },
+    "title": "Raccoon Knight summons with no sacrifice",
+    "summary": "Summon Raccoon Knight from hand with zero sacrifices and verify the summon requirement override ignores normal AL sacrifice requirements.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_011_raccoon_knight"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Raccoon Knight text: this creature does not require a sacrifice to summon."
+      ]
+    },
+    "steps": [
+      "Keep Raccoon Knight in player_1 hand with no sacrifice cards selected.",
+      "Summon Raccoon Knight as primary creature.",
+      "Verify the summon succeeded with zero sacrifices."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "No-sacrifice summon succeeds",
+        "path": "summonAttempt.validPair.result",
+        "operator": "equals",
+        "value": "SUCCESS"
+      },
+      {
+        "label": "No sacrifices were consumed",
+        "path": "summonAttempt.validPair.sacrifices.count",
+        "operator": "equals",
+        "value": 0
+      },
+      {
+        "label": "Raccoon Knight becomes the primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen2_011_raccoon_knight"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the override applies despite armor level 12."
+    ],
+    "riskNotes": [
+      "This fixture protects the text-based no-sacrifice summon requirement."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_011_raccoon_knight-011-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_011_raccoon_knight-011-e01",
+      "tags": [
+        "CREATURE",
+        "SUMMON_REQUIREMENT",
+        "APPLY_SUMMON_REQUIREMENT_OVERRIDE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_011_raccoon_knight:011-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

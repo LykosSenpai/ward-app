@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.412Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_013_bunnysaurus",
+  "effectId": "013-E02",
+  "title": "Bunnysaurus negates one magic card when played",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.412Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_013_bunnysaurus",
+      "cardName": "Bunnysaurus",
+      "cardType": "CREATURE",
+      "cardNumber": "013",
+      "generation": "2",
+      "rawText": "While on the field, negate an attack against this card, or negate a magic card when it is played. This effect can only be used once while this card is on the field."
+    },
+    "effect": {
+      "effectId": "013-E02",
+      "trigger": "ON_MAGIC_CARD_PLAYED",
+      "actionType": "ADD_ONCE_PER_FIELD_SHIELD",
+      "effectGroup": "Once Per Field Negation",
+      "target": "Magic card being played",
+      "value": "Negate 1 magic card when played",
+      "durationText": "Until used",
+      "reusableFunction": "addOncePerFieldShield"
+    },
+    "title": "Bunnysaurus negates one magic card when played",
+    "summary": "Keep Bunnysaurus on field, have the opponent play a magic card, and verify the once-per-field shield negates that magic card.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_013_bunnysaurus"
+      ],
+      "player2Cards": [
+        "test_standard_magic_draw_or_buff",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Bunnysaurus as player_1 primary creature on field.",
+        "Player_2 plays a standard magic card while BUNNYSAURUS_ONCE_PER_FIELD is unused."
+      ]
+    },
+    "steps": [
+      "Player_2 plays the standard magic card.",
+      "Resolve Bunnysaurus once-per-field magic negation.",
+      "Verify the triggering magic card effect was negated."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Magic card negation route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "ADD_ONCE_PER_FIELD_SHIELD"
+      },
+      {
+        "label": "Triggering magic card was negated",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "CHAIN_LINK_NEGATED"
+      }
+    ],
+    "manualVerification": [
+      "After negating magic, the attack-negation branch should no longer be available until Bunnysaurus leaves and re-enters."
+    ],
+    "riskNotes": [
+      "This fixture intentionally checks the magic branch, not a generic static shield marker."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_013_bunnysaurus-013-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_013_bunnysaurus-013-e02",
+      "tags": [
+        "CREATURE",
+        "ON_MAGIC_CARD_PLAYED",
+        "ADD_ONCE_PER_FIELD_SHIELD"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_013_bunnysaurus:013-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

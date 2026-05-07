@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.416Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_020_great_white",
+  "effectId": "020-E01",
+  "title": "Great White requires Sharkling material",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.416Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_020_great_white",
+      "cardName": "Great White",
+      "cardType": "CREATURE",
+      "cardNumber": "020",
+      "generation": "2",
+      "rawText": "This creature can only be summoned by placing \"Sharkling\" under this card on the field. If this card is removed from the field, changes control, or is killed, \"Sharkling\" follows it."
+    },
+    "effect": {
+      "effectId": "020-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "target": "This card",
+      "value": "Place Sharkling under this card on the field",
+      "durationText": "Before summon",
+      "reusableFunction": "validateSummonRequirement"
+    },
+    "title": "Great White requires Sharkling material",
+    "summary": "Summon Great White by placing Sharkling under it and verify Sharkling is attached under the source instead of sent to cemetery.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_020_great_white",
+        "gen2_019_sharkling"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Great White can only be summoned by placing Sharkling under this card on the field."
+      ]
+    },
+    "steps": [
+      "Keep Great White and Sharkling available to player_1.",
+      "Summon Great White using Sharkling as material.",
+      "Verify Sharkling is attached under Great White."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Great White summon succeeds with Sharkling material",
+        "path": "summonAttempt.validPair.result",
+        "operator": "equals",
+        "value": "SUCCESS"
+      },
+      {
+        "label": "Exactly one material was used",
+        "path": "summonAttempt.validPair.sacrifices.count",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Sharkling is attached under Great White",
+        "path": "player_1.field.creatures[gen2_020_great_white].attachedUnder",
+        "operator": "contains",
+        "value": "gen2_019_sharkling"
+      },
+      {
+        "label": "Sharkling is not sent to cemetery as a normal sacrifice",
+        "path": "player_1.cemetery",
+        "operator": "notContains",
+        "value": "gen2_019_sharkling"
+      }
+    ],
+    "manualVerification": [
+      "A missing-Sharkling branch should reject the summon."
+    ],
+    "riskNotes": [
+      "This protects the material-under-source behavior implied by the card text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_020_great_white-020-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_020_great_white-020-e01",
+      "tags": [
+        "CREATURE",
+        "SUMMON_REQUIREMENT",
+        "VALIDATE_SUMMON_REQUIREMENT"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_020_great_white:020-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

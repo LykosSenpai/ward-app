@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.409Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_007_absolute_terror",
+  "effectId": "007-E01",
+  "title": "Absolute Terror damages opponent primary when opponent draws",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.408Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_007_absolute_terror",
+      "cardName": "Absolute Terror",
+      "cardType": "MAGIC",
+      "cardNumber": "007",
+      "generation": "2",
+      "rawText": "Equip to opponent's creature. Every time your opponent draws a card, inflict 10 damage to their primary creature."
+    },
+    "effect": {
+      "effectId": "007-E01",
+      "trigger": "ON_OPPONENT_DRAW_CARD",
+      "actionType": "DEAL_DAMAGE_ON_DRAW",
+      "effectGroup": "Triggered Damage",
+      "target": "Opponent primary creature",
+      "value": "10 damage",
+      "durationText": "While equipped",
+      "reusableFunction": "dealDamageOnDraw"
+    },
+    "title": "Absolute Terror damages opponent primary when opponent draws",
+    "summary": "Equip Absolute Terror to an opponent creature, advance to the opponent draw trigger, and verify their primary creature takes 10 damage.",
+    "setup": {
+      "phase": "DRAW",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_007_absolute_terror",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Absolute Terror as field magic after equipping it to player_2 primary creature.",
+        "When player_2 draws a card, Absolute Terror inflicts 10 damage to player_2 primary creature."
+      ]
+    },
+    "steps": [
+      "Equip Absolute Terror to player_2 primary creature.",
+      "Resolve the player_2 draw-card trigger.",
+      "Read player_2 primary creature HP."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Opponent primary takes 10 damage from draw trigger",
+        "path": "player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 40
+      },
+      {
+        "label": "Absolute Terror remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_007_absolute_terror"
+      },
+      {
+        "label": "Draw-damage runtime route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "DEAL_DAMAGE_ON_DRAW"
+      }
+    ],
+    "manualVerification": [
+      "The equip target is the opponent creature; the damage target is the opponent current primary creature."
+    ],
+    "riskNotes": [
+      "Opponent-target equip and draw-trigger routing are both part of this check."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_007_absolute_terror-007-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_007_absolute_terror-007-e01",
+      "tags": [
+        "MAGIC",
+        "ON_OPPONENT_DRAW_CARD",
+        "DEAL_DAMAGE_ON_DRAW"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_007_absolute_terror:007-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

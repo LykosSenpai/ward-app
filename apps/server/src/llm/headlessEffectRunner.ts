@@ -550,6 +550,57 @@ function uniqueSacrificesByCardId(cards: CardInstance[]): CardInstance[] {
   });
 }
 
+function materialNamesForSummon(definition: Extract<CardDefinition, { cardType: "CREATURE" }>): string[] {
+  const names = new Set<string>();
+
+  for (const effect of definition.effects ?? []) {
+    const params = effect.params as { requiredMaterials?: unknown; attachNames?: unknown } | undefined;
+    if (Array.isArray(params?.requiredMaterials)) {
+      for (const material of params.requiredMaterials) {
+        const name = (material as { name?: unknown } | undefined)?.name;
+        if (typeof name === "string" && name.trim()) names.add(name.trim());
+      }
+    }
+
+    if (Array.isArray(params?.attachNames)) {
+      for (const name of params.attachNames) {
+        if (typeof name === "string" && name.trim()) names.add(name.trim());
+      }
+    }
+  }
+
+  return [...names];
+}
+
+function normalizeCardNameForMaterial(value: string | undefined): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function findNamedMaterialSacrifices(
+  match: MatchState,
+  playerId: string,
+  sourceCardId: string,
+  materialNames: string[]
+): CardInstance[] {
+  const candidates = findSummonSacrificeCards(match, playerId, sourceCardId, () => true);
+  const selected: CardInstance[] = [];
+  const used = new Set<string>();
+
+  for (const materialName of materialNames) {
+    const wanted = normalizeCardNameForMaterial(materialName);
+    const matchCard = candidates.find(card => {
+      if (used.has(card.instanceId)) return false;
+      const definition = match.cardCatalog[card.cardId];
+      return normalizeCardNameForMaterial(definition?.name) === wanted;
+    });
+    if (!matchCard) continue;
+    used.add(matchCard.instanceId);
+    selected.push(matchCard);
+  }
+
+  return selected;
+}
+
 function runHeadlessPrimarySummon(
   match: MatchState,
   plan: LlmEffectTestPlan,
@@ -557,6 +608,10 @@ function runHeadlessPrimarySummon(
   source: LocatedCard,
   steps: RunStep[]
 ): MatchState {
+  if (definition.cardType !== "CREATURE") {
+    throw new Error(`Headless summon route received non-creature card ${definition.name}.`);
+  }
+
   const playerId = plan.setup.activePlayerId ?? source.playerId;
   const player = getPlayer(match, playerId);
   if (player.field.primaryCreature?.cardId === plan.card.cardId) {
@@ -587,10 +642,10 @@ function runHeadlessPrimarySummon(
     summonText.includes("two dragon") ||
     summonText.includes("2 dragon") ||
     summonText.includes("requires two") ||
-    summonText.includes("requires 2") ||
-    normalizeText(plan.effect?.actionType).includes("attach_cards_under_source");
+    summonText.includes("requires 2");
 
   const requiredSacrifices = getRequiredSacrificesForCreatureDefinition(definition);
+  const materialNames = materialNamesForSummon(definition);
 
   const validSacrifices = needsTwoDragonSacrifices
     ? uniqueSacrificesByCardId(
@@ -598,11 +653,18 @@ function runHeadlessPrimarySummon(
           isDragonQualifiedCard(match, card)
         )
       ).slice(0, 2)
+    : materialNames.length > 0
+      ? findNamedMaterialSacrifices(match, playerId, plan.card.cardId, materialNames)
+        .slice(0, Math.max(requiredSacrifices, materialNames.length))
     : findSummonSacrificeCards(match, playerId, plan.card.cardId, () => true)
       .slice(0, requiredSacrifices);
 
   if (needsTwoDragonSacrifices && validSacrifices.length < 2) {
     throw new Error(`Headless summon needs two Dragon-qualified sacrifices for ${definition.name}.`);
+  }
+
+  if (materialNames.length > 0 && validSacrifices.length < materialNames.length) {
+    throw new Error(`Headless summon needs material card(s) for ${definition.name}: ${materialNames.join(", ")}.`);
   }
 
   const invalidSacrifices = needsTwoDragonSacrifices
@@ -2752,6 +2814,8 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
 
   const shouldRunFieldAuraBattle = definition.cardType === "MAGIC" &&
     source.zone === "MAGIC_SLOT" &&
+    !trigger.includes("equip_requirement") &&
+    !actionType.includes("validate_summon_requirement") &&
     (
       actionType.includes("damage_multiplier") ||
       actionType.includes("pre_battle_roll") ||

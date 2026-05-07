@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.418Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_020_great_white",
+  "effectId": "020-E03",
+  "title": "Great White linked Sharkling follows source when invalidated",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.418Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_020_great_white",
+      "cardName": "Great White",
+      "cardType": "CREATURE",
+      "cardNumber": "020",
+      "generation": "2",
+      "rawText": "This creature can only be summoned by placing \"Sharkling\" under this card on the field. If this card is removed from the field, changes control, or is killed, \"Sharkling\" follows it."
+    },
+    "effect": {
+      "effectId": "020-E03",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "actionType": "RETURN_LINKED_CARDS",
+      "effectGroup": "Zone Movement",
+      "target": "Attached Sharkling",
+      "value": "Follow this card",
+      "durationText": "Instant",
+      "reusableFunction": "returnLinkedCards"
+    },
+    "title": "Great White linked Sharkling follows source when invalidated",
+    "summary": "After Sharkling is attached under Great White, invalidate Great White and verify linked cards move with the source.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_020_great_white",
+        "gen2_019_sharkling"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Great White text: if this card is removed from the field, changes control, or is killed, Sharkling follows it."
+      ]
+    },
+    "steps": [
+      "Summon Great White with Sharkling attached under it.",
+      "Invalidate Great White by moving it from field.",
+      "Verify attached Sharkling follows the source card."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Return-linked-cards route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "RETURN_LINKED_CARDS"
+      },
+      {
+        "label": "Moved source retains attached Sharkling",
+        "path": "movedSource.attachedUnder.count",
+        "operator": "equals",
+        "value": 1
+      }
+    ],
+    "manualVerification": [
+      "Exact destination should follow the source movement event: removal, control change, or killed."
+    ],
+    "riskNotes": [
+      "This is separate from the summon attachment branch and requires source invalidation routing."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_020_great_white-020-e03 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_020_great_white-020-e03",
+      "tags": [
+        "CREATURE",
+        "ON_SOURCE_INVALIDATED",
+        "RETURN_LINKED_CARDS"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_020_great_white:020-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

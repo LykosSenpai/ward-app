@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:15:12.418Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_021_perfect_shark",
+  "effectId": "021-E01",
+  "title": "Perfect Shark requires Sharkling and Great White materials",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:15:12.418Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_021_perfect_shark",
+      "cardName": "Perfect Shark",
+      "cardType": "CREATURE",
+      "cardNumber": "021",
+      "generation": "2",
+      "rawText": "Can only be summoned by placing \"Sharkling\" and \"Great White\" on the field under this card. If this card leaves the field, changes control, or is killed, \"Sharkling\" and \"Great White\" follow it."
+    },
+    "effect": {
+      "effectId": "021-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "target": "This card",
+      "value": "Place Sharkling and Great White under this card on the field",
+      "durationText": "Before summon",
+      "reusableFunction": "validateSummonRequirement"
+    },
+    "title": "Perfect Shark requires Sharkling and Great White materials",
+    "summary": "Summon Perfect Shark by placing Sharkling and Great White under it and verify both materials attach under the source.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_021_perfect_shark",
+        "gen2_019_sharkling",
+        "gen2_020_great_white"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Perfect Shark can only be summoned by placing Sharkling and Great White on the field under this card."
+      ]
+    },
+    "steps": [
+      "Keep Perfect Shark, Sharkling, and Great White available to player_1.",
+      "Summon Perfect Shark using both required materials.",
+      "Verify both materials are attached under Perfect Shark."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Perfect Shark summon succeeds with both required materials",
+        "path": "summonAttempt.validPair.result",
+        "operator": "equals",
+        "value": "SUCCESS"
+      },
+      {
+        "label": "Exactly two materials were used",
+        "path": "summonAttempt.validPair.sacrifices.count",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Sharkling is attached under Perfect Shark",
+        "path": "player_1.field.creatures[gen2_021_perfect_shark].attachedUnder",
+        "operator": "contains",
+        "value": "gen2_019_sharkling"
+      },
+      {
+        "label": "Great White is attached under Perfect Shark",
+        "path": "player_1.field.creatures[gen2_021_perfect_shark].attachedUnder",
+        "operator": "contains",
+        "value": "gen2_020_great_white"
+      },
+      {
+        "label": "Sharkling is not sent to cemetery as a normal sacrifice",
+        "path": "player_1.cemetery",
+        "operator": "notContains",
+        "value": "gen2_019_sharkling"
+      },
+      {
+        "label": "Great White is not sent to cemetery as a normal sacrifice",
+        "path": "player_1.cemetery",
+        "operator": "notContains",
+        "value": "gen2_020_great_white"
+      }
+    ],
+    "manualVerification": [
+      "Missing either material should reject the summon."
+    ],
+    "riskNotes": [
+      "This protects the two-material under-source requirement for Perfect Shark."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_021_perfect_shark-021-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_021_perfect_shark-021-e01",
+      "tags": [
+        "CREATURE",
+        "SUMMON_REQUIREMENT",
+        "VALIDATE_SUMMON_REQUIREMENT"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_021_perfect_shark:021-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
