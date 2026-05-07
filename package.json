@@ -32,7 +32,11 @@
     "qa:gen2:deck-sweep": "powershell -NoProfile -Command \"$env:WARD_QA_GENERATION='2'; pnpm --filter @ward/server exec tsx ../../tools/run-gen1-full-deck-engine-sweep.ts\"",
     "qa:gen2:setup-users": "powershell -NoProfile -Command \"$env:WARD_QA_GENERATION='2'; pnpm --filter @ward/server exec tsx ../../tools/setup-gen1-qa-users.ts\"",
     "qa:gen2:lobby-smoke": "powershell -NoProfile -Command \"$env:WARD_QA_GENERATION='2'; pnpm --filter @ward/client exec tsx ../../tools/run-gen1-lobby-smoke.ts\"",
-    "qa:gen2:lobby-sweep": "pnpm qa:gen2:lobby-smoke"
+    "qa:gen2:lobby-sweep": "pnpm qa:gen2:lobby-smoke",
+    "qa:gen1-gen2:deck-sweep": "powershell -NoProfile -Command \"$env:WARD_QA_PACK_IDS='ward-gen1,ward-gen2'; $env:WARD_QA_LABEL='Gen1+Gen2'; $env:WARD_QA_SLUG='gen1_gen2'; pnpm --filter @ward/server exec tsx ../../tools/run-gen1-full-deck-engine-sweep.ts\"",
+    "qa:gen1-gen2:setup-users": "powershell -NoProfile -Command \"$env:WARD_QA_PACK_IDS='ward-gen1,ward-gen2'; $env:WARD_QA_LABEL='Gen1+Gen2'; $env:WARD_QA_SLUG='gen1_gen2'; $env:WARD_QA_DECK_COUNT='16'; pnpm --filter @ward/server exec tsx ../../tools/setup-gen1-qa-users.ts\"",
+    "qa:gen1-gen2:lobby-smoke": "powershell -NoProfile -Command \"$env:WARD_QA_PACK_IDS='ward-gen1,ward-gen2'; $env:WARD_QA_LABEL='Gen1+Gen2'; $env:WARD_QA_SLUG='gen1_gen2'; $env:WARD_QA_DECK_COUNT='16'; $env:WARD_QA_EXPECTED_CARD_COUNT='301'; pnpm --filter @ward/client exec tsx ../../tools/run-gen1-lobby-smoke.ts\"",
+    "qa:gen1-gen2:lobby-sweep": "pnpm qa:gen1-gen2:lobby-smoke"
   },
   "devDependencies": {
     "tsx": "^4.21.0",

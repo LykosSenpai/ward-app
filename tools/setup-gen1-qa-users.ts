@@ -11,20 +11,27 @@ import {
 } from "../apps/server/src/dataStore.js";
 
 const QA_GENERATION = process.env.WARD_QA_GENERATION?.trim() || "1";
-const QA_LABEL = `Gen${QA_GENERATION}`;
-const PACK_ID = `ward-gen${QA_GENERATION}`;
-const QA_PASSWORD = process.env[`WARD_GEN${QA_GENERATION}_QA_PASSWORD`]?.trim() || `WardGen${QA_GENERATION}QA!2026`;
-const DECK_COUNT = 10;
+const PACK_IDS = (process.env.WARD_QA_PACK_IDS?.trim() || `ward-gen${QA_GENERATION}`)
+  .split(",")
+  .map(packId => packId.trim())
+  .filter(Boolean);
+const QA_LABEL = process.env.WARD_QA_LABEL?.trim() || `Gen${QA_GENERATION}`;
+const QA_SLUG = process.env.WARD_QA_SLUG?.trim() || `gen${QA_GENERATION}`;
+const PASSWORD_ENV_KEY = QA_SLUG.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+const QA_PASSWORD = process.env[`WARD_${PASSWORD_ENV_KEY}_QA_PASSWORD`]?.trim() ||
+  process.env[`WARD_GEN${QA_GENERATION}_QA_PASSWORD`]?.trim() ||
+  `Ward${QA_LABEL.replace(/[^A-Za-z0-9]+/g, "")}QA!2026`;
+const DECK_COUNT = Number(process.env.WARD_QA_DECK_COUNT?.trim() || "10");
 
 const QA_USERS = [
   {
-    username: `gen${QA_GENERATION}_qa_alpha`,
-    email: `gen${QA_GENERATION}_qa_alpha@example.test`,
+    username: `${QA_SLUG}_qa_alpha`,
+    email: `${QA_SLUG}_qa_alpha@example.test`,
     displayName: `${QA_LABEL} QA Alpha`
   },
   {
-    username: `gen${QA_GENERATION}_qa_bravo`,
-    email: `gen${QA_GENERATION}_qa_bravo@example.test`,
+    username: `${QA_SLUG}_qa_bravo`,
+    email: `${QA_SLUG}_qa_bravo@example.test`,
     displayName: `${QA_LABEL} QA Bravo`
   }
 ];
@@ -73,7 +80,7 @@ function buildGenerationQaDecks(catalog: Record<string, CardDefinition>): Genera
     ].map(card => card.id);
 
     return {
-      id: `gen${QA_GENERATION}-qa-${String(deckNumber).padStart(2, "0")}`,
+      id: `${QA_SLUG}-qa-${String(deckNumber).padStart(2, "0")}`,
       name: `${QA_LABEL} QA Deck ${String(deckNumber).padStart(2, "0")}`,
       userIndex,
       cardIds
@@ -111,7 +118,7 @@ function assertDecksCoverGeneration(
   }
 }
 
-const catalog = loadCardCatalog([PACK_ID]);
+const catalog = loadCardCatalog(PACK_IDS);
 const decks = buildGenerationQaDecks(catalog);
 
 for (const deck of decks) {

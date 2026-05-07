@@ -26,14 +26,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "..");
 const QA_GENERATION = process.env.WARD_QA_GENERATION?.trim() || "1";
-const QA_LABEL = `Gen${QA_GENERATION}`;
-const PACK_ID = `ward-gen${QA_GENERATION}`;
-const PACK_PATH = path.join(ROOT_DIR, `data/cards/packs/${PACK_ID}.json`);
+const PACK_IDS = (process.env.WARD_QA_PACK_IDS?.trim() || `ward-gen${QA_GENERATION}`)
+  .split(",")
+  .map(packId => packId.trim())
+  .filter(Boolean);
+const QA_LABEL = process.env.WARD_QA_LABEL?.trim() || `Gen${QA_GENERATION}`;
 const STATUS_PATH = path.join(ROOT_DIR, "data/dev/effect-runtime-test-status.json");
 
 type CardPack = {
   id: string;
   cards: CardDefinition[];
+};
+
+type CardWithPack = CardDefinition & {
+  packId: string;
 };
 
 type StatusRecord = {
@@ -50,6 +56,10 @@ type StatusFile = {
 
 function readJson<T>(filePath: string): T {
   return JSON.parse(fs.readFileSync(filePath, "utf8")) as T;
+}
+
+function readPack(packId: string): CardPack {
+  return readJson<CardPack>(path.join(ROOT_DIR, `data/cards/packs/${packId}.json`));
 }
 
 function getPlayer(state: MatchState, playerId: string): PlayerState {
@@ -202,14 +212,21 @@ function runBattleSmoke(state: MatchState): MatchState {
   return normalizeMatch(nextState);
 }
 
-const pack = readJson<CardPack>(PACK_PATH);
+const packs = PACK_IDS.map(readPack);
 const statusFile = readJson<StatusFile>(STATUS_PATH);
-const catalog = Object.fromEntries(pack.cards.map(card => [card.id, card]));
-const fullDeck = buildFullDeckWithStarterFirst(pack.cards);
+const cards: CardWithPack[] = packs.flatMap(pack =>
+  pack.cards.map(card => ({
+    ...card,
+    packId: pack.id
+  }))
+);
+const catalog = Object.fromEntries(cards.map(card => [card.id, card]));
+const fullDeck = buildFullDeckWithStarterFirst(cards);
 
-const effectRows = pack.cards.flatMap(card =>
+const effectRows = cards.flatMap(card =>
   (card.effects ?? []).map(effect => ({
-    key: `${pack.id}:${card.id}:${effect.id}`,
+    key: `${card.packId}:${card.id}:${effect.id}`,
+    packId: card.packId,
     cardId: card.id,
     effectId: effect.id
   }))
@@ -261,8 +278,8 @@ if (!player1Primary || !player2Primary) {
 }
 
 const summary = {
-  packId: pack.id,
-  cardCount: pack.cards.length,
+  packIds: PACK_IDS,
+  cardCount: cards.length,
   effectCount: effectRows.length,
   verifiedWorkingEffects: effectRows.length - unverifiedEffects.length,
   fullDeckSizePerPlayer: initialDeckSize,

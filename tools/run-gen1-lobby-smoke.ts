@@ -2,18 +2,26 @@ import { io, type Socket } from "socket.io-client";
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL?.trim() || "http://localhost:3001";
 const QA_GENERATION = process.env.WARD_QA_GENERATION?.trim() || "1";
-const QA_LABEL = `Gen${QA_GENERATION}`;
-const PACK_ID = `ward-gen${QA_GENERATION}`;
-const QA_PASSWORD = process.env[`WARD_GEN${QA_GENERATION}_QA_PASSWORD`]?.trim() || `WardGen${QA_GENERATION}QA!2026`;
+const PACK_IDS = (process.env.WARD_QA_PACK_IDS?.trim() || `ward-gen${QA_GENERATION}`)
+  .split(",")
+  .map(packId => packId.trim())
+  .filter(Boolean);
+const QA_LABEL = process.env.WARD_QA_LABEL?.trim() || `Gen${QA_GENERATION}`;
+const QA_SLUG = process.env.WARD_QA_SLUG?.trim() || `gen${QA_GENERATION}`;
+const PASSWORD_ENV_KEY = QA_SLUG.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+const QA_PASSWORD = process.env[`WARD_${PASSWORD_ENV_KEY}_QA_PASSWORD`]?.trim() ||
+  process.env[`WARD_GEN${QA_GENERATION}_QA_PASSWORD`]?.trim() ||
+  `Ward${QA_LABEL.replace(/[^A-Za-z0-9]+/g, "")}QA!2026`;
+const DECK_COUNT = Number(process.env.WARD_QA_DECK_COUNT?.trim() || "10");
 const WAIT_TIMEOUT_MS = 12_000;
 
-const DECK_PAIRS = Array.from({ length: 5 }, (_item, index) => {
+const DECK_PAIRS = Array.from({ length: Math.ceil(DECK_COUNT / 2) }, (_item, index) => {
   const firstDeck = index * 2 + 1;
   return [
-    `gen${QA_GENERATION}-qa-${String(firstDeck).padStart(2, "0")}`,
-    `gen${QA_GENERATION}-qa-${String(firstDeck + 1).padStart(2, "0")}`
+    `${QA_SLUG}-qa-${String(firstDeck).padStart(2, "0")}`,
+    `${QA_SLUG}-qa-${String(firstDeck + 1).padStart(2, "0")}`
   ] as const;
-});
+}).filter(([_alphaDeckId, bravoDeckId]) => Number(bravoDeckId.slice(-2)) <= DECK_COUNT);
 
 const BATTLE_ROLL_PLANS = [
   { speed: [6, 1], hit: [6, 6], damage: [3, 3, 3, 3], label: "critical hit" },
@@ -331,7 +339,10 @@ async function emitAndWait<T>(
   timeoutMs = WAIT_TIMEOUT_MS
 ): Promise<T> {
   client.socket.emit(eventName, payload);
-  const result = await waitFor(label, predicate, timeoutMs);
+  const result = await waitFor(label, () => {
+    throwClientErrors(client);
+    return predicate();
+  }, timeoutMs);
   throwClientErrors(client);
   return result;
 }
@@ -343,7 +354,10 @@ async function undoAndWait(
   label: string
 ): Promise<MatchState> {
   client.socket.emit("match:undoLastAction", matchId);
-  const match = await waitFor(label, predicate);
+  const match = await waitFor(label, () => {
+    throwClientErrors(client);
+    return predicate();
+  });
   throwClientErrors(client);
   return match;
 }
@@ -567,7 +581,10 @@ async function runBattleWithUndoCheck(
       client,
       eventName,
       { matchId: nextMatch.matchId, battleSessionId: battleId },
-      () => client.state.match?.pendingBattle?.status !== previousStatus && client.state.match,
+      () => (
+        client.state.match?.pendingEffectRoll ||
+        client.state.match?.pendingBattle?.status !== previousStatus
+      ) && client.state.match,
       eventName
     );
   }
@@ -598,7 +615,7 @@ async function runDeckPairGame(
 
   alpha.socket.emit("lobby:create", {
     name: lobbyName,
-    selectedPackIds: [PACK_ID],
+    selectedPackIds: PACK_IDS,
     selectedDeckId: alphaDeckId
   });
   const lobby = await waitFor(
@@ -714,8 +731,8 @@ async function runDeckPairGame(
 }
 
 async function main(): Promise<void> {
-  const alphaLogin = await login(`gen${QA_GENERATION}_qa_alpha`);
-  const bravoLogin = await login(`gen${QA_GENERATION}_qa_bravo`);
+  const alphaLogin = await login(`${QA_SLUG}_qa_alpha`);
+  const bravoLogin = await login(`${QA_SLUG}_qa_bravo`);
   console.log(`Logged in ${alphaLogin.user.username} and ${bravoLogin.user.username}`);
 
   const alpha = connectClient("alpha", alphaLogin.cookie);
@@ -765,7 +782,7 @@ async function main(): Promise<void> {
         eventCount: summary.eventCount,
         undoChecks: summary.undoChecks
       })),
-      packId: PACK_ID,
+      packIds: PACK_IDS,
       coveredCards: coveredCardIds.size,
       totalUndoChecks
     }, null, 2));
