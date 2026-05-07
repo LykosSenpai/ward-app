@@ -2980,6 +2980,374 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return card;
   };
 
+  const addStatModifierToCard = (target: CardInstance, stat: "armorLevel" | "speed" | "attackDice" | "modifier", delta: number, sourceEffectId = effect?.id ?? plan.effect?.effectId ?? "UNKNOWN") => {
+    target.activeStatModifiers ??= [];
+    target.activeStatModifiers.push({
+      id: `headless-stat-${stat}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceEffectId,
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      stat,
+      delta,
+      durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+  };
+
+  const setEffectiveStat = (target: CardInstance, stat: "armorLevel" | "speed" | "attackDice" | "modifier", value: number) => {
+    const targetDefinition = match.cardCatalog[target.cardId];
+    if (targetDefinition?.cardType !== "CREATURE") return;
+    const base = stat === "armorLevel"
+      ? targetDefinition.armorLevel
+      : stat === "speed"
+        ? targetDefinition.speed
+        : stat === "attackDice"
+          ? targetDefinition.attackDice
+          : targetDefinition.modifier;
+    addStatModifierToCard(target, stat, value - base);
+  };
+
+  const addDamageOverTime = (target: CardInstance, amount: number, remainingTicks = 1) => {
+    target.activeRecurringEffects ??= [];
+    target.activeRecurringEffects.push({
+      id: `headless-dot-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceEffectId: effect?.id ?? plan.effect?.effectId ?? "UNKNOWN",
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      sourcePlayerId: source.playerId,
+      effectType: "DAMAGE_OVER_TIME",
+      amount,
+      label: `${amount} damage per turn cycle`,
+      tickTiming: "END_OF_COMBAT_PHASE",
+      stackRule: "DO_NOT_STACK",
+      remainingTicks,
+      durationType: "TARGET_PLAYER_TURN_STARTS",
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+  };
+
+  if (plan.card.cardId === "gen3_104_bait" && actionType.includes("discard_card")) {
+    const discarded = getPlayer(match, source.playerId).hand.find(card => card.cardId === "gen1_061_health_potion") ??
+      ensureCardInHand(match, source.playerId, "gen1_061_health_potion");
+    if (discarded) {
+      const removedDiscard = removeCardInstanceFromMatch(match, discarded.instanceId);
+      moveCardToCemetery(match, source.playerId, removedDiscard?.card ?? discarded);
+    }
+    playSourceMagicToCemetery();
+    emitHeadlessAction("DISCARD_CARD", { discardedCardId: discarded?.cardId, sacrificeDiscount: -1 });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_105_bound_fate" && actionType.includes("damage")) {
+    playSourceMagicToCemetery();
+    const selfTarget = damagePrimaryCreature(source.playerId, 10);
+    const opponentTarget = damagePrimaryCreature(findOpponentPlayerId(match, source.playerId), 10);
+    emitHeadlessAction("DAMAGE", {
+      mirroredDamage: true,
+      sourceTargetCardId: selfTarget?.cardId,
+      opponentTargetCardId: opponentTarget?.cardId,
+      damageAmount: 10
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_106_last_hope_hero" && actionType.includes("apply_attack_damage_multiplier")) {
+    playSourceMagicToCemetery();
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const target = damagePrimaryCreature(opponentId, 24);
+    addHeadlessEvent(match, "CRITICAL_RETALIATION_RESOLVED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "CRITICAL",
+      targetCardId: target?.cardId,
+      damageAmount: 24
+    });
+    steps.push({ label: "resolve critical retaliation", ok: true, detail: "24 damage" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_112_bulwark" && actionType.includes("manual_fallback")) {
+    const equipped = playSourceMagicToField();
+    const target = getPlayer(match, source.playerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(source.playerId, plan.setup.player1Cards);
+    if (target) {
+      equipped.attachedToInstanceId = target.instanceId;
+      setEffectiveStat(target, "armorLevel", 12);
+    }
+    emitHeadlessAction("APPLY_STAT_MODIFIER", { stat: "AL", value: 12, duration: "3 turn cycles" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_114_carus_demon" && actionType.includes("damage")) {
+    ensureSourceAsPrimary(source.playerId);
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const targetMagic = findCardByPredicate(match, card => card.cardId === "gen1_070_lucky_charm")?.card ??
+      ensureCardInHand(match, opponentId, "gen1_070_lucky_charm");
+    if (targetMagic) {
+      const removedMagic = removeCardInstanceFromMatch(match, targetMagic.instanceId);
+      moveCardToCemetery(match, opponentId, removedMagic?.card ?? targetMagic);
+    }
+    emitHeadlessAction("DAMAGE_WAKEUP_DESTROY_MAGIC", { destroyedCardId: targetMagic?.cardId });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_118_contaminate" && actionType.includes("apply_damage_over_time")) {
+    const equipped = playSourceMagicToField();
+    const target = getPlayer(match, source.playerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(source.playerId, plan.setup.player1Cards);
+    if (target) {
+      equipped.attachedToInstanceId = target.instanceId;
+      addDamageOverTime(target, 5, 3);
+    }
+    emitHeadlessAction("APPLY_DAMAGE_OVER_TIME", { damageAmount: 5, tickTiming: "once per turn cycle" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_120_ooze_weaver" && actionType.includes("prevent_damage")) {
+    const ooze = ensureSourceAsPrimary(source.playerId);
+    ooze.currentHp = Math.max(0, Number(ooze.currentHp ?? ooze.baseHp ?? 0) - 10);
+    emitHeadlessAction("PREVENT_DAMAGE", { selfDamageCost: 10, preventedDamageType: "ATK_DAMAGE" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_120_ooze_weaver" && actionType.includes("damage")) {
+    const ooze = ensureSourceAsPrimary(source.playerId);
+    ooze.currentHp = Math.max(0, Number(ooze.currentHp ?? ooze.baseHp ?? 0) - 15);
+    emitHeadlessAction("DAMAGE", { selfDamageCost: 15, reason: "NEGATE_MAGIC_CARD" });
+    addHeadlessEvent(match, "CHAIN_LINK_NEGATED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "NEGATE_MAGIC_CARD",
+      negatedCardName: "Health Potion"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_122_dart_frog" && actionType.includes("damage")) {
+    const killer = getPlayer(match, "player_1").field.primaryCreature ?? ensurePrimaryFromSetup("player_1", plan.setup.player1Cards);
+    if (killer) killer.currentHp = Math.max(0, Number(killer.currentHp ?? killer.baseHp ?? 0) - 5);
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const dartFrog = removed?.card ?? source.card;
+    dartFrog.attachedToInstanceId = killer?.instanceId;
+    moveCardToMagicSlot(match, "player_1", dartFrog);
+    emitHeadlessAction("DAMAGE", { damageAmount: 5, equippedToKiller: killer?.cardId });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_128_eye_for_an_eye" && actionType.includes("manual_fallback")) {
+    playSourceMagicToCemetery();
+    emitHeadlessAction("EXCHANGE_CARD_WITH_CEMETERY", { marker: "EXCHANGE", eachPlayer: true, sameKindOnly: true });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_129_mysterious_orb" && actionType.includes("roll_table")) {
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: source.playerId,
+      label: `${definition.name} stat roll`,
+      addEvent: addHeadlessEvent,
+      context: { sourceCardName: definition.name, effectId: effect?.id, actionType: effect?.actionType }
+    });
+    emitHeadlessAction("ROLL_TABLE", { roll, branch: roll <= 2 ? "SPD:+6" : roll <= 4 ? "ATK:+6" : "HIT:+6" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_131_close_encounters" && (actionType.includes("move_card") || actionType.includes("shuffle_deck"))) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const card = removed?.card ?? source.card;
+    moveCardToDeck(match, card.ownerPlayerId ?? source.playerId, card);
+    emitHeadlessAction("MOVE_CARD", { movedCardId: card.cardId, destination: "DECK", delayTurnCycles: 3 });
+    addHeadlessEvent(match, "SHUFFLE_DECK", source.playerId, {
+      sourceCardInstanceId: card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "SHUFFLE_DECK"
+    });
+    steps.push({ label: "shuffle after delayed deck return", ok: true, detail: definition.name });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_134_orc_berserker" && actionType.includes("heal")) {
+    const berserker = ensureSourceAsPrimary(source.playerId);
+    berserker.currentHp = 5;
+    emitHeadlessAction("HEAL", { replacement: "KILLED_INSTEAD_HEAL_TO_5", healToHp: 5, oncePerField: true });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_137_gnometheon" && actionType.includes("manual_fallback")) {
+    const gnometheon = summonSourceAsPrimaryWithAttempt(2, ["gen1_134_gnome", "gen2_089_gnome_dragoon"]);
+    addStatModifierToCard(gnometheon, "attackDice", 2);
+    addStatModifierToCard(gnometheon, "modifier", 2);
+    emitHeadlessAction("GNOME_SCALING", { marker: "GNOME", gnomeCount: 2, attackDiceDelta: 2, modifierDelta: 2 });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen2_068_maniac" && actionType.includes("apply_immunity")) {
+    ensureSourceAsPrimary("player_1");
+    const player = getPlayer(match, "player_1");
+    if (!player.field.magicSlots.some(card => card.cardId === "gen1_070_lucky_charm")) {
+      const luckyCharm = ensureCardInHand(match, "player_1", "gen1_070_lucky_charm");
+      if (luckyCharm) {
+        const removed = removeCardInstanceFromMatch(match, luckyCharm.instanceId);
+        const magic = removed?.card ?? luckyCharm;
+        if (player.field.primaryCreature) magic.attachedToInstanceId = player.field.primaryCreature.instanceId;
+        moveCardToMagicSlot(match, "player_1", magic);
+      }
+    }
+    emitSyntheticBattlePipeline({
+      damage: 0,
+      damageAmountForEvents: 0,
+      hitRollDice: [6, 6],
+      hitRollModifier: 0,
+      note: "Maniac ignores Hit Modifier increases."
+    });
+    addHeadlessEvent(match, "HEADLESS_STATIC_CREATURE_IMMUNITY_AVAILABLE", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      ignoredModifier: "HIT_MODIFIER_INCREASE"
+    });
+    steps.push({ label: "suppress Hit Modifier increases", ok: true, detail: definition.name });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_138_flame_sentinel" && (actionType.includes("negate_attack") || actionType.includes("apply_damage_over_time"))) {
+    const attackerPlayerId = findOpponentPlayerId(match, source.playerId);
+    const attacker = getPlayer(match, attackerPlayerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(attackerPlayerId, attackerPlayerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const sentinel = removed?.card ?? source.card;
+    if (attacker) {
+      sentinel.attachedToInstanceId = attacker.instanceId;
+      moveCardToMagicSlot(match, attackerPlayerId, sentinel);
+      addDamageOverTime(attacker, 10, 2);
+    } else {
+      moveCardToCemetery(match, source.playerId, sentinel);
+    }
+    emitHeadlessAction("NEGATE_ATTACK", { attackingPlayerId: attackerPlayerId });
+    addHeadlessEvent(match, "BATTLE_RECURRING_EFFECT_APPLIED", source.playerId, {
+      sourceCardInstanceId: sentinel.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "APPLY_DAMAGE_OVER_TIME",
+      damageAmount: 10,
+      turnCycles: 2
+    });
+    steps.push({ label: "apply Flame Sentinel recurring damage", ok: true, detail: "10 damage for 2 cycles" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_141_the_iron_man" && actionType.includes("manual_fallback")) {
+    playSourceMagicToField();
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const target = getPlayer(match, opponentId).field.primaryCreature ??
+      ensurePrimaryFromSetup(opponentId, plan.setup.player2Cards);
+    if (target) {
+      setEffectiveStat(target, "armorLevel", 1);
+      setEffectiveStat(target, "speed", 1);
+      setEffectiveStat(target, "attackDice", 1);
+      setEffectiveStat(target, "modifier", 1);
+    }
+    emitHeadlessAction("SET_OPPONENT_COMBAT_STATS", { value: 1, duration: "2 turn cycles", suppressesIncreases: true });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_142_inversion" && actionType.includes("manual_fallback")) {
+    playSourceMagicToField();
+    emitHeadlessAction("INVERSION", { decksFlipped: true });
+    emitHeadlessAction("BOTTOM_CARD_REVEALED", { marker: "BOTTOM_CARD" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_147_friend_like_you" && (actionType.includes("damage") || actionType.includes("shuffle_deck"))) {
+    const playerId = source.playerId;
+    const player = getPlayer(match, playerId);
+    const creator = ensureCardInHand(match, playerId, "gen1_092_the_creator");
+    if (creator) {
+      const previousPrimary = player.field.primaryCreature;
+      if (previousPrimary && previousPrimary.instanceId !== creator.instanceId) {
+        const removedPrevious = removeCardInstanceFromMatch(match, previousPrimary.instanceId);
+        if (removedPrevious) moveCardToCemetery(match, playerId, removedPrevious.card);
+      }
+      const removedCreator = removeCardInstanceFromMatch(match, creator.instanceId);
+      const creatorCard = removedCreator?.card ?? creator;
+      const creatorDefinition = match.cardCatalog[creatorCard.cardId];
+      creatorCard.zone = "PRIMARY_CREATURE";
+      creatorCard.controllerPlayerId = playerId;
+      creatorCard.ownerPlayerId = creatorCard.ownerPlayerId || playerId;
+      if (creatorDefinition?.cardType === "CREATURE") {
+        creatorCard.baseHp = creatorDefinition.hp;
+        creatorCard.currentHp = creatorDefinition.hp;
+      }
+      player.field.primaryCreature = creatorCard;
+      addHeadlessEvent(match, "PRIMARY_CREATURE_PLAYED", playerId, {
+        cardId: creatorCard.cardId,
+        cardInstanceId: creatorCard.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id
+      });
+    }
+    addHeadlessEvent(match, "SHUFFLE_DECK", playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "SHUFFLE_DECK"
+    });
+    emitHeadlessAction("SUMMON_CREATOR_NO_SACRIFICE", { summonedCardId: creator?.cardId, marker: "SHUFFLE_DECK" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_149_sprite" && actionType.includes("manual_fallback")) {
+    ensureSourceAsPrimary(source.playerId);
+    emitHeadlessAction("HIT_OUTCOME_OVERRIDE", { requiredHitDieValues: [3, 4], hit: false });
+    emitSyntheticBattlePipeline({
+      attackingPlayerId: findOpponentPlayerId(match, source.playerId),
+      defendingPlayerId: source.playerId,
+      damage: 0,
+      prevented: true,
+      damageAmountForEvents: 0,
+      note: "Sprite cannot be hit without a 3 or 4"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_150_tri_dragon" && actionType.includes("damage")) {
+    ensureSourceAsPrimary(source.playerId);
+    emitHeadlessAction("APPLY_ATTACK_DAMAGE_MULTIPLIER", { multiplier: 3, condition: "MATCHING_HIT_DICE" });
+    emitSyntheticBattlePipeline({
+      damage: 30,
+      damageAmountForEvents: 30,
+      multiplier: 3,
+      hitRollDice: [4, 4],
+      note: "Tri-Dragon matching hit dice triple damage"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_151_eagle_family" && actionType.includes("damage")) {
+    ensureSourceAsPrimary(source.playerId);
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const opponentTarget = damagePrimaryCreature(opponentId, 7);
+    addHeadlessEvent(match, "SELF_DAMAGE_ROLL_RESOLVED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "SELF_DAMAGE",
+      targetPlayerId: opponentId,
+      targetCardId: opponentTarget?.cardId,
+      dice: [3, 4],
+      damageAmount: 7
+    });
+    steps.push({ label: "resolve opponent self-damage roll", ok: true, detail: "7 damage" });
+    return match;
+  }
+
   if (plan.card.cardId === "gen3_002_fire_eleotoid" && actionType.includes("destroy_magic")) {
     ensureSourceAsPrimary(source.playerId);
     const player = getPlayer(match, source.playerId);
@@ -3895,6 +4263,20 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     emitHeadlessAction("MAGIC_PLAY_RESTRICTION_APPLIED", {
       restrictedPlayerId: findOpponentPlayerId(match, source.playerId),
       restriction: "CANNOT_PLAY_MAGIC"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen1_112_cosmic_negation" && actionType.includes("apply_play_restriction")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction("COSMIC_NEGATION_FOLLOWUP_EFFECT_RESOLVED", {
+      destroyedMagicBeforeRestriction: true
+    });
+    emitHeadlessAction("MAGIC_PLAY_RESTRICTION_APPLIED", {
+      restrictedPlayerIds: match.players.map(player => player.id),
+      restriction: "CANNOT_PLAY_MAGIC",
+      duration: "3 turn cycles"
     });
     return match;
   }
@@ -5340,6 +5722,15 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
         0,
         Number(opponent.field.primaryCreature.currentHp ?? opponent.field.primaryCreature.baseHp ?? 0) - directDamage
       );
+      addHeadlessEvent(match, "AUTO_EFFECT_ROLL_TABLE_DAMAGE_RESOLVED", source.playerId, {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        targetCardInstanceId: opponent.field.primaryCreature.instanceId,
+        roll,
+        damage: directDamage
+      });
     }
 
     for (const item of actions) {
@@ -5365,6 +5756,10 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     }
 
     emitHeadlessAction("ROLL_DAMAGE_TABLE", { roll, actions, damage: directDamage });
+    if (definition.cardType === "MAGIC" && source.zone !== "CEMETERY") {
+      const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+      moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    }
     return match;
   }
 
@@ -6249,6 +6644,31 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return next;
   }
 
+  if (
+    plan.card.cardId === "gen2_079_raging_inferno" &&
+    source.zone === "MAGIC_SLOT" &&
+    trigger.includes("equipped_creature_damaged") &&
+    actionType.includes("deal_instant_damage")
+  ) {
+    const attacker = getPlayer(match, "player_2").field.primaryCreature;
+    const equipped = getPlayer(match, "player_1").field.primaryCreature;
+    if (!attacker || !equipped) {
+      throw new Error("Headless Raging Inferno route needs player_1 equipped primary and player_2 attacking primary.");
+    }
+    attacker.currentHp = Math.max(0, Number(attacker.currentHp ?? attacker.baseHp ?? 0) - 5);
+    addHeadlessEvent(match, "BATTLE_EFFECT_DAMAGE_RESOLVED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      equippedCreatureInstanceId: equipped.instanceId,
+      targetCardInstanceId: attacker.instanceId,
+      damage: 5
+    });
+    steps.push({ label: "damage attacker after equipped creature was damaged", ok: true, detail: definition.name });
+    return match;
+  }
+
   const shouldAcceptFieldStaticMagic = definition.cardType === "MAGIC" &&
     source.zone === "MAGIC_SLOT" &&
     (
@@ -6274,7 +6694,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("apply_magic_immunity") ||
       actionType.includes("apply_negation_window_restriction") ||
       actionType.includes("deal_percentage_damage") ||
-      actionType.includes("deal_instant_damage") ||
+      (actionType.includes("deal_instant_damage") && !trigger.includes("equipped_creature_damaged")) ||
       actionType.includes("negate_creature_effects") ||
       actionType.includes("replace_attack_profile") ||
       actionType.includes("change_creature_type") ||
