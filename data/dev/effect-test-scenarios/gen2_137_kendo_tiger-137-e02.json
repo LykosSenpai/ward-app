@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:33:14.476Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_137_kendo_tiger",
+  "effectId": "137-E02",
+  "title": "Kendo Tiger Destroy selected magic card on field",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:33:14.476Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_137_kendo_tiger",
+      "cardName": "Kendo Tiger",
+      "cardType": "CREATURE",
+      "cardNumber": "137",
+      "generation": "2",
+      "rawText": "When summoned, choose 1 of the following effects: Send 1 card from your opponent's hand back to their deck. Shuffle. Destroy 1 magic card on the field."
+    },
+    "effect": {
+      "effectId": "137-E02",
+      "trigger": "ON_SUMMON",
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Choice Effect",
+      "target": "1 magic card on the field",
+      "value": "Destroy 1 magic card",
+      "durationText": "Instant",
+      "reusableFunction": "destroyMagicCards"
+    },
+    "title": "Kendo Tiger Destroy selected magic card on field",
+    "summary": "Verify Kendo Tiger effect 137-E02: Destroy selected magic card on field.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_137_kendo_tiger"
+      ],
+      "player2Cards": [
+        "test_creature_defender",
+        "test_standard_magic_draw_or_buff"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Summon Kendo Tiger, then choose the branch represented by this effect.",
+        "When summoned, choose 1 of the following effects: Send 1 card from your opponent's hand back to their deck. Shuffle. Destroy 1 magic card on the field."
+      ]
+    },
+    "steps": [
+      "Set up Kendo Tiger according to its rules text.",
+      "Resolve DESTROY_MAGIC_CARDS for 137-E02.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "137-E02 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "DESTROY_MAGIC_CARDS"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: When summoned, choose 1 of the following effects: Send 1 card from your opponent's hand back to their deck. Shuffle. Destroy 1 magic card on the field."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_137_kendo_tiger-137-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_137_kendo_tiger-137-e02",
+      "tags": [
+        "CREATURE",
+        "ON_SUMMON",
+        "DESTROY_MAGIC_CARDS"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_137_kendo_tiger:137-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

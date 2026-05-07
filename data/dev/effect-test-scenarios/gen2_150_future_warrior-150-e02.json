@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:33:14.476Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_150_future_warrior",
+  "effectId": "150-E02",
+  "title": "Future Warrior Send this card to cemetery",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:33:14.476Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_150_future_warrior",
+      "cardName": "Future Warrior",
+      "cardType": "MAGIC",
+      "cardNumber": "150",
+      "generation": "2",
+      "rawText": "The equipped creature can see the future. Negate opponent's creature Atk damage for a single battle of your choosing. Send this card to the cemetery after negation."
+    },
+    "effect": {
+      "effectId": "150-E02",
+      "trigger": "AFTER_DAMAGE_NEGATED",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "target": "This card",
+      "value": "Send to cemetery",
+      "durationText": "Instant",
+      "reusableFunction": "moveCard"
+    },
+    "title": "Future Warrior Send this card to cemetery",
+    "summary": "Verify Future Warrior effect 150-E02: Send this card to cemetery.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_150_future_warrior",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Equip Future Warrior to player_1 primary and choose the incoming opponent battle damage to negate.",
+        "The equipped creature can see the future. Negate opponent's creature Atk damage for a single battle of your choosing. Send this card to the cemetery after negation."
+      ]
+    },
+    "steps": [
+      "Set up Future Warrior according to its rules text.",
+      "Resolve MOVE_CARD for 150-E02.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "150-E02 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MOVE_CARD"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: The equipped creature can see the future. Negate opponent's creature Atk damage for a single battle of your choosing. Send this card to the cemetery after negation."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_150_future_warrior-150-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_150_future_warrior-150-e02",
+      "tags": [
+        "MAGIC",
+        "AFTER_DAMAGE_NEGATED",
+        "MOVE_CARD"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_150_future_warrior:150-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

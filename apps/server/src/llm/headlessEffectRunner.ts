@@ -208,6 +208,18 @@ const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "C
     modifier: 3,
     text: "Synthetic headless QA creature with Were in its name."
   },
+  test_hive_lord: {
+    id: "test_hive_lord",
+    name: "Hive Lord",
+    cardType: "CREATURE",
+    creatureType: "BUG",
+    armorLevel: 8,
+    speed: 7,
+    hp: 80,
+    attackDice: 2,
+    modifier: 4,
+    text: "Synthetic headless QA Hive Lord primary creature."
+  },
   test_orc_named_creature: {
     id: "test_orc_named_creature",
     name: "Test Orc Scout",
@@ -844,6 +856,29 @@ function runHeadlessPrimarySummon(
     });
   }
 
+  if (summoned?.instanceId && plan.card.cardId === "gen2_137_kendo_tiger" && plan.effect?.effectId === "137-E01") {
+    const opponentId = findOpponentPlayerId(next, playerId);
+    const opponent = getPlayer(next, opponentId);
+    const candidate = opponent.hand.find(card => card.cardId !== plan.card.cardId);
+    if (candidate) {
+      const removed = removeCardInstanceFromMatch(next, candidate.instanceId);
+      if (removed) {
+        moveCardToDeck(next, opponentId, removed.card);
+      }
+    }
+    addHeadlessEvent(next, "MOVE_CARD", playerId, {
+      sourceCardInstanceId: summoned.instanceId,
+      sourceCardName: definition.name,
+      effectId: plan.effect?.effectId,
+      actionType: plan.effect?.actionType,
+      movedCardId: candidate?.cardId,
+      fromZone: "OPPONENT_HAND",
+      toZone: "OPPONENT_DECK",
+      shuffleAfter: true
+    });
+    next.pendingEffectTargetPrompt = undefined;
+  }
+
   addHeadlessEvent(next, "HEADLESS_SUMMON_ATTEMPT", playerId, {
     cardId: plan.card.cardId,
     pair: "validPair",
@@ -1211,7 +1246,9 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
     : plan.setup.player1Cards?.find(cardId => SYNTHETIC_CREATURES[cardId]);
   const syntheticDefenderId = plan.setup.player2Cards?.find(cardId => SYNTHETIC_CREATURES[cardId]);
 
-  if (syntheticAttackerId) {
+  if (plan.setup.player1Cards?.includes("test_hive_lord")) {
+    setScenarioPrimaryCreature(match, sourcePlayerId, "test_hive_lord");
+  } else if (syntheticAttackerId) {
     setScenarioPrimaryCreature(match, sourcePlayerId, syntheticAttackerId);
     if (text.includes("current hp to 80")) {
       setScenarioPrimaryCurrentHp(match, sourcePlayerId, 80);
@@ -3072,9 +3109,57 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  if (
+    actionType.includes("return_linked_summon") &&
+    (plan.card.cardId === "gen2_142_black_jacket" || plan.card.cardId === "gen2_147_super_hornet")
+  ) {
+    const player = getPlayer(match, source.playerId);
+    if (source.zone === "HAND") {
+      emitHeadlessAction("RETURN_LINKED_SUMMON", { returnedCardId: source.card.cardId, alreadyInHand: true });
+      return match;
+    }
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToHand(match, source.playerId, removed?.card ?? source.card);
+    if (!player.hand.some(card => card.instanceId === (removed?.card ?? source.card).instanceId)) {
+      player.hand.push(removed?.card ?? source.card);
+    }
+    emitHeadlessAction("RETURN_LINKED_SUMMON", { returnedCardId: (removed?.card ?? source.card).cardId });
+    return match;
+  }
+
   if (actionType.includes("summon_limited_creature_from_hand")) {
     const playerId = source.playerId;
     const player = getPlayer(match, playerId);
+    const params = effect?.params as {
+      alternativeSummonType?: unknown;
+      match?: { nameContains?: unknown; nameIn?: unknown };
+      sourceLinked?: unknown;
+      target?: unknown;
+    } | undefined;
+
+    if (
+      definition.cardType === "CREATURE" &&
+      source.zone === "HAND" &&
+      (params?.alternativeSummonType === "LIMITED_SUMMON" || normalizeText(params?.target, effect?.target).includes("this creature"))
+    ) {
+      const anchor = player.field.primaryCreature ?? ensurePrimaryFromSetup(playerId, plan.setup.player1Cards);
+      if (!anchor) {
+        throw new Error(`Headless alternative Limited Summon needs ${definition.name}'s required primary creature.`);
+      }
+      const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+      const card = removed?.card ?? source.card;
+      card.zone = "LIMITED_SUMMON";
+      card.controllerPlayerId = playerId;
+      card.ownerPlayerId = card.ownerPlayerId || playerId;
+      card.baseHp = definition.hp;
+      card.currentHp = definition.hp;
+      card.isLimitedSummon = true;
+      card.anchorSourceInstanceId = anchor.instanceId;
+      player.field.limitedSummons.push(card);
+      emitHeadlessAction("SUMMON_LIMITED_CREATURE_FROM_HAND", { summonedCardId: card.cardId, requiredPrimaryCardId: anchor.cardId });
+      return match;
+    }
+
     let anchor = source.card;
 
     if (definition.cardType === "CREATURE" && source.zone !== "PRIMARY_CREATURE" && source.zone !== "LIMITED_SUMMON") {
@@ -3090,7 +3175,6 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       }
     }
 
-    const params = effect?.params as { match?: { nameContains?: unknown; nameIn?: unknown }; sourceLinked?: unknown } | undefined;
     const nameContains = typeof params?.match?.nameContains === "string"
       ? normalizeText(params.match.nameContains)
       : undefined;
@@ -3745,6 +3829,29 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  if (actionType.includes("force_limited_summons_to_battle_primary")) {
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const opponent = getPlayer(match, opponentId);
+    let limited = opponent.field.limitedSummons[0];
+    if (!limited) {
+      const [created] = createDeckFromCardIds(opponentId, ["test_creature_defender"], match.cardCatalog);
+      if (created) {
+        created.zone = "LIMITED_SUMMON";
+        created.controllerPlayerId = opponentId;
+        created.ownerPlayerId = opponentId;
+        created.isLimitedSummon = true;
+        opponent.field.limitedSummons.push(created);
+        limited = created;
+      }
+    }
+    const primary = opponent.field.primaryCreature ?? ensurePrimaryFromSetup(opponentId, plan.setup.player2Cards);
+    emitHeadlessAction("FORCE_LIMITED_SUMMONS_TO_BATTLE_PRIMARY", {
+      limitedSummonCardId: limited?.cardId,
+      primaryCardId: primary?.cardId
+    });
+    return match;
+  }
+
   const shouldRunOpponentLightningMultiplierBattle = definition.cardType === "CREATURE" &&
     (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
     trigger.includes("opponent_plays_lightning") &&
@@ -3845,6 +3952,17 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     moveCardToCemetery(match, source.playerId, removedScroll?.card ?? source.card);
     emitHeadlessAction("SET_CAN_BE_NEGATED", { canBeNegated: false });
     emitHeadlessAction("NEGATE_LIGHTNING_AND_SEND_TO_CEMETERY", { negatedCardId: lightning.cardId });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen2_150_future_warrior" && source.zone === "MAGIC_SLOT") {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    if (actionType.includes("negate_attack_damage")) {
+      emitHeadlessAction("NEGATE_ATTACK_DAMAGE", { consumed: true });
+    } else {
+      emitHeadlessAction("MOVE_CARD", { toZone: "CEMETERY" });
+    }
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
     return match;
   }
 
