@@ -362,6 +362,53 @@ function resolveTwisterFollowupEffects(
   }
 }
 
+function isCosmicNegationLink(state: MatchState, link: { cardId: string; cardName?: string }): boolean {
+  const definition = state.cardCatalog[link.cardId];
+  const id = String(definition?.id ?? link.cardId).trim().toLowerCase();
+  const name = String(definition?.name ?? link.cardName ?? "").trim().toLowerCase();
+
+  return id.includes("cosmic_negation") ||
+    id.includes("cosmic-negation") ||
+    name === "cosmic negation";
+}
+
+function resolveCosmicNegationFollowupEffects(
+  state: MatchState,
+  link: {
+    cardInstanceId: string;
+    cardId: string;
+    cardName: string;
+    playerId: string;
+  }
+): void {
+  if (!isCosmicNegationLink(state, link)) return;
+
+  const definition = state.cardCatalog[link.cardId];
+  const followupEffects = getCardEngineEffects(definition).filter(effect => {
+    const actionType = getNormalizedActionType(effect);
+    const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+    return actionType === "APPLY_PLAY_RESTRICTION" && trigger === "AFTER_DESTROY";
+  });
+
+  for (const effect of followupEffects) {
+    const resolved = tryResolveAutomaticMagicEffect(state, {
+      effect,
+      controllerPlayerId: link.playerId,
+      sourceCardName: link.cardName,
+      sourceCardInstanceId: link.cardInstanceId,
+      addEvent
+    });
+
+    if (resolved) {
+      addEvent(state, "COSMIC_NEGATION_FOLLOWUP_EFFECT_RESOLVED", link.playerId, {
+        sourceCardName: link.cardName,
+        effectId: effect.id,
+        actionType: effect.actionType
+      });
+    }
+  }
+}
+
 export function createMagicChainLink(
   state: MatchState,
   playerId: string,
@@ -955,6 +1002,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
       resolveOrQueueResolvedMagicEffects(nextState, link);
       resolveDragonRageFollowupEffects(nextState, link);
       resolveTwisterFollowupEffects(nextState, link);
+      resolveCosmicNegationFollowupEffects(nextState, link);
     }
 
     nextState.chainZone.splice(chainCardIndex, 1);

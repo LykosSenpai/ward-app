@@ -21,6 +21,26 @@ function getOpponentPlayerId(state: MatchState, playerId: string): string | unde
   return state.players.find(player => player.id !== playerId)?.id;
 }
 
+function getMagicPlayRestrictionTargetPlayerIds(state: MatchState, effect: WardEngineEffect, controllerPlayerId: string): string[] {
+  const text = [
+    effect.target,
+    effect.params?.target,
+    effect.value,
+    effect.params?.valueText,
+    effect.actionText
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (text.includes("all players") || text.includes("both players") || text.includes("each player")) {
+    return state.players.map(player => player.id);
+  }
+
+  const opponentId = getOpponentPlayerId(state, controllerPlayerId);
+  return opponentId ? [opponentId] : [];
+}
+
 function forEachCardInstance(state: MatchState, callback: (card: CardInstance) => void): void {
   const seen = new Set<string>();
   const visit = (card: CardInstance | undefined) => {
@@ -208,15 +228,15 @@ export function applyOpponentMagicPlayRestrictionEffect(
     addEvent: AddEventFn;
   }
 ): boolean {
-  const targetPlayerId = getOpponentPlayerId(state, args.controllerPlayerId);
+  const targetPlayerIds = getMagicPlayRestrictionTargetPlayerIds(state, args.effect, args.controllerPlayerId);
   const sourceCard = findCardInstance(state, args.sourceCardInstanceId);
 
-  if (!targetPlayerId || !sourceCard) {
+  if (targetPlayerIds.length === 0 || !sourceCard) {
     args.addEvent(state, "MAGIC_PLAY_RESTRICTION_SKIPPED", args.controllerPlayerId, {
       sourceCardName: args.sourceCardName,
       effectId: args.effect.id,
       actionType: args.effect.actionType,
-      reason: !targetPlayerId ? "No opponent player found." : "Source card instance was not found."
+      reason: targetPlayerIds.length === 0 ? "No target player found." : "Source card instance was not found."
     });
     return false;
   }
@@ -228,28 +248,30 @@ export function applyOpponentMagicPlayRestrictionEffect(
     instance.sourceEffectId === args.effect.id
   ));
 
-  const instance = createSourceLinkedPlayerEffectInstance({
-    state,
-    effect: args.effect,
-    sourceCard,
-    controllerPlayerId: args.controllerPlayerId,
-    targetPlayerId,
-    actionType: MAGIC_PLAY_RESTRICTION_ACTION,
-    label: args.effect.value ?? args.effect.actionText ?? "Opponent cannot play Magic cards."
-  });
+  for (const targetPlayerId of targetPlayerIds) {
+    const instance = createSourceLinkedPlayerEffectInstance({
+      state,
+      effect: args.effect,
+      sourceCard,
+      controllerPlayerId: args.controllerPlayerId,
+      targetPlayerId,
+      actionType: MAGIC_PLAY_RESTRICTION_ACTION,
+      label: args.effect.value ?? args.effect.actionText ?? "Cannot play Magic cards."
+    });
 
-  sourceCard.activeEffectInstances.push(instance);
+    sourceCard.activeEffectInstances.push(instance);
 
-  args.addEvent(state, "MAGIC_PLAY_RESTRICTION_APPLIED", args.controllerPlayerId, {
-    sourceCardName: args.sourceCardName,
-    sourceCardInstanceId: sourceCard.instanceId,
-    effectId: args.effect.id,
-    targetPlayerId,
-    durationText: instance.durationText,
-    expiresOnPlayerId: instance.expiresOnPlayerId,
-    expiresAtPlayerTurnStartCount: instance.expiresAtPlayerTurnStartCount,
-    note: "Target player cannot play Magic cards while this restriction is active."
-  });
+    args.addEvent(state, "MAGIC_PLAY_RESTRICTION_APPLIED", args.controllerPlayerId, {
+      sourceCardName: args.sourceCardName,
+      sourceCardInstanceId: sourceCard.instanceId,
+      effectId: args.effect.id,
+      targetPlayerId,
+      durationText: instance.durationText,
+      expiresOnPlayerId: instance.expiresOnPlayerId,
+      expiresAtPlayerTurnStartCount: instance.expiresAtPlayerTurnStartCount,
+      note: "Target player cannot play Magic cards while this restriction is active."
+    });
+  }
 
   return true;
 }

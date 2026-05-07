@@ -545,7 +545,7 @@ export function isAutomaticMagicEffectSupported(
     actionType === "APPLY_OPPONENT_MAGIC_PLAY_LOCK" ||
     (
       actionType === "APPLY_PLAY_RESTRICTION" &&
-      text.includes("opponent") &&
+      (text.includes("opponent") || text.includes("all players") || text.includes("both players") || text.includes("each player")) &&
       text.includes("cannot play magic")
     ) ||
     actionType === "APPLY_TURN_CONDITIONAL_OPPONENT_CREATURE_EFFECT_SUPPRESSION" ||

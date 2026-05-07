@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_112_cosmic_negation",
+  "effectId": "112-E02",
+  "title": "Cosmic Negation locks all Magic after destroy",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_112_cosmic_negation",
+      "cardName": "Cosmic Negation",
+      "cardType": "MAGIC",
+      "cardNumber": "112",
+      "generation": "1",
+      "rawText": "Destroy all magic cards on the field. Magic cards cannot be played for 3 turn cycles."
+    },
+    "effect": {
+      "effectId": "112-E02",
+      "trigger": "AFTER_DESTROY",
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "target": "All players",
+      "value": "Cannot play magic cards",
+      "durationText": "3 turn cycles",
+      "reusableFunction": "applyGlobalPlayRestriction"
+    },
+    "title": "Cosmic Negation locks all Magic after destroy",
+    "summary": "Play Cosmic Negation and verify its follow-up restriction prevents both players from playing Magic for 3 turn cycles.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_112_cosmic_negation",
+        "gen1_039_demonic_magic",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen1_044_dragon_s_bane",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Demonic Magic and Dragon's Bane on field before Cosmic Negation is played.",
+        "Play this card from your hand so the destroy-all-magic sentence resolves before the after-destroy restriction.",
+        "Resolve Cosmic Negation's destroy-all-magic effect, then apply its all-player Magic play restriction."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Cosmic Negation.",
+      "Resolve the destroy all magic cards effect.",
+      "Apply the after-destroy Magic play restriction to all players."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Cosmic follow-up resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "COSMIC_NEGATION_FOLLOWUP_EFFECT_RESOLVED"
+      },
+      {
+        "label": "Magic play restriction applied",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MAGIC_PLAY_RESTRICTION_APPLIED"
+      },
+      {
+        "label": "Player 1 is a restriction target",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "player_1"
+      },
+      {
+        "label": "Player 2 is a restriction target",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "player_2"
+      },
+      {
+        "label": "Restriction duration is 3 turn cycles",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "3 turn cycles"
+      }
+    ],
+    "manualVerification": [
+      "Confirm neither player can play Magic cards until the 3-turn-cycle restriction expires."
+    ],
+    "riskNotes": [
+      "This fixture verifies the follow-up restriction application and target scope. The existing E01 fixture covers field-wide Magic destruction."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Cosmic Negation's all-player Magic play restriction after destroying field Magic."
+    },
+    "regression": {
+      "fixtureName": "cosmic-negation-locks-all-magic-after-destroy",
+      "tags": [
+        "magic",
+        "field",
+        "play-restriction",
+        "global"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
