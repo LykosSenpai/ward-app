@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_045_demon_dragon",
+  "effectId": "045-E01",
+  "title": "Demon Dragon scales from opponent hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_045_demon_dragon",
+      "cardName": "Demon Dragon",
+      "cardType": "CREATURE",
+      "cardNumber": "045",
+      "generation": "2",
+      "rawText": "For every card in your opponents' hand add: Atk Dice Rolls: +1. Modifier: +1."
+    },
+    "effect": {
+      "effectId": "045-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "target": "This creature",
+      "value": "For every card in opponents' hand: Atk Dice Rolls +1; Modifier +1",
+      "durationText": "While on field",
+      "reusableFunction": "applyDynamicStatModifier"
+    },
+    "title": "Demon Dragon scales from opponent hand",
+    "summary": "Put Demon Dragon on field and verify its attack dice and modifier scale from the opponent's current hand size.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_045_demon_dragon"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Demon Dragon as player_1 primary creature.",
+        "Use the default headless player_2 hand size as the opponent hand-count source."
+      ]
+    },
+    "steps": [
+      "Set Demon Dragon as player_1 primary creature.",
+      "Read Demon Dragon's effective attack dice and modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Opponent hand cards add attack dice",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 7
+      },
+      {
+        "label": "Opponent hand cards add modifier",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 7
+      }
+    ],
+    "manualVerification": [
+      "Confirm the bonus updates if the opponent hand size changes during play."
+    ],
+    "riskNotes": [
+      "This fixture uses the default headless opponent hand size of 6 cards, so Demon Dragon's base 1 attack die/modifier become 7."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Demon Dragon opponent hand-count scaling."
+    },
+    "regression": {
+      "fixtureName": "demon-dragon-opponent-hand-scaling",
+      "tags": [
+        "creature",
+        "dynamic-stat-modifier",
+        "hand-count",
+        "attack-dice",
+        "modifier"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_045_demon_dragon:045-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

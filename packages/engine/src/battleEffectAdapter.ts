@@ -113,6 +113,7 @@ function normalizeStatName(stat: string):
   | "modifier"
   | "hitDice"
   | "hitFlat"
+  | "hitRollMultiplier"
   | "attackFlat"
   | undefined {
   const value = stat.trim().toUpperCase().replace(/[\s-]+/g, "_");
@@ -123,6 +124,7 @@ function normalizeStatName(stat: string):
   if (["ATK", "ATTACK", "ATK_BONUS", "ATTACK_BONUS", "ATK_DAMAGE", "ATTACK_DAMAGE", "ATK_DAMAGE_BONUS", "ATTACK_DAMAGE_BONUS", "DAMAGE_BONUS"].includes(value)) return "attackFlat";
   if (["MOD", "MODIFIER"].includes(value)) return "modifier";
   if (["HIT_DICE", "HIT_DICE_ROLLS"].includes(value)) return "hitDice";
+  if (["HIT_ROLL_RESULT_MULTIPLIER"].includes(value)) return "hitRollMultiplier";
   if (["HIT", "HIT_ROLL", "HIT_BONUS"].includes(value)) return "hitFlat";
 
   return undefined;
@@ -294,6 +296,7 @@ function mergeStrikeModifier(
       : Math.min(target.hitDiceLimit, patch.hitDiceLimit);
   }
   target.hitFlatBonus = Number(target.hitFlatBonus ?? 0) + Number(patch.hitFlatBonus ?? 0);
+  target.hitRollMultiplier = Number(target.hitRollMultiplier ?? 1) * Number(patch.hitRollMultiplier ?? 1);
   target.damageDiceDelta = Number(target.damageDiceDelta ?? 0) + Number(patch.damageDiceDelta ?? 0);
   target.damageFlatBonus = Number(target.damageFlatBonus ?? 0) + Number(patch.damageFlatBonus ?? 0);
   target.damageMultiplier = Number(target.damageMultiplier ?? 1) * Number(patch.damageMultiplier ?? 1);
@@ -311,7 +314,9 @@ function suggestionFromStatChange(
   const stat = normalizeStatName(change.stat);
   const delta = statDelta(change);
 
-  if (!stat || delta === undefined || delta === 0) return undefined;
+  const multiplier = stat === "hitRollMultiplier" ? Number(change.value) : undefined;
+  if (!stat || (stat !== "hitRollMultiplier" && (delta === undefined || delta === 0))) return undefined;
+  if (stat === "hitRollMultiplier" && (!Number.isFinite(multiplier) || multiplier === 1)) return undefined;
 
   const base = {
     id: `${source.card.instanceId}:${effect.id}:stat:${index}:${creature.creatureInstanceId}`,
@@ -326,7 +331,9 @@ function suggestionFromStatChange(
     appliesToPlayerId: creature.playerId,
     appliesToCreatureInstanceId: creature.creatureInstanceId,
     appliesToRole: creature.role,
-    label: `${source.definition.name}: ${change.stat} ${delta > 0 ? "+" : ""}${delta}`,
+    label: stat === "hitRollMultiplier"
+      ? `${source.definition.name}: ${change.stat} x${multiplier}`
+      : `${source.definition.name}: ${change.stat} ${Number(delta) > 0 ? "+" : ""}${delta}`,
     note: effect.actionText ?? effect.value ?? effect.notes
   } satisfies Omit<BattleEffectSuggestion, "kind">;
 
@@ -346,6 +353,7 @@ function suggestionFromStatChange(
   }
   if (stat === "hitDice") strikeModifiers.hitDiceDelta = delta;
   if (stat === "hitFlat") strikeModifiers.hitFlatBonus = delta;
+  if (stat === "hitRollMultiplier") strikeModifiers.hitRollMultiplier = multiplier;
   if (stat === "attackFlat") strikeModifiers.damageFlatBonus = delta;
 
   if (Object.keys(strikeModifiers).length === 0) {
@@ -805,6 +813,7 @@ export function getSuggestedStrikeModifiers(
     hitDiceDelta: 0,
     hitDiceLimit: undefined,
     hitFlatBonus: 0,
+    hitRollMultiplier: 1,
     forceHitResult: "AUTO",
     damageDiceDelta: 0,
     damageFlatBonus: 0,

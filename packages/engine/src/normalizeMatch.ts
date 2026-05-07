@@ -261,6 +261,7 @@ function normalizePendingBattle(match: MatchState): void {
         ? Math.max(1, Math.trunc(Number(strike.modifiers?.hitDiceLimit)))
         : undefined,
       hitFlatBonus: Number(strike.modifiers?.hitFlatBonus ?? 0),
+      hitRollMultiplier: Number(strike.modifiers?.hitRollMultiplier ?? 1),
       forceHitResult:
         strike.modifiers?.forceHitResult === "FORCE_HIT" ||
         strike.modifiers?.forceHitResult === "FORCE_MISS"

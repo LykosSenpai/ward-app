@@ -632,6 +632,7 @@ export type ManualBattleStrikeModifiers = {
   hitDiceDelta: number;
   hitDiceLimit?: number;
   hitFlatBonus: number;
+  hitRollMultiplier: number;
   forceHitResult: ManualBattleForceHitResult;
   damageDiceDelta: number;
   damageFlatBonus: number;

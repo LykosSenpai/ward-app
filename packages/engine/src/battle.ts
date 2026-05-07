@@ -49,6 +49,7 @@ type BattleCreatureRef = {
 const DEFAULT_STRIKE_MODIFIERS: ManualBattleStrikeModifiers = {
   hitDiceDelta: 0,
   hitFlatBonus: 0,
+  hitRollMultiplier: 1,
   forceHitResult: "AUTO",
   damageDiceDelta: 0,
   damageFlatBonus: 0,
@@ -103,6 +104,7 @@ function normalizeStrikeModifiers(
     hitDiceDelta: clampInteger(modifiers?.hitDiceDelta, -1, 10, DEFAULT_STRIKE_MODIFIERS.hitDiceDelta),
     hitDiceLimit: clampOptionalInteger(modifiers?.hitDiceLimit, 1, 20),
     hitFlatBonus: clampInteger(modifiers?.hitFlatBonus, -50, 50, DEFAULT_STRIKE_MODIFIERS.hitFlatBonus),
+    hitRollMultiplier: clampNumber(modifiers?.hitRollMultiplier, 0, 25, DEFAULT_STRIKE_MODIFIERS.hitRollMultiplier),
     forceHitResult,
     damageDiceDelta: clampInteger(modifiers?.damageDiceDelta, -20, 20, DEFAULT_STRIKE_MODIFIERS.damageDiceDelta),
     damageFlatBonus: clampInteger(modifiers?.damageFlatBonus, -500, 500, DEFAULT_STRIKE_MODIFIERS.damageFlatBonus),
@@ -194,6 +196,7 @@ function modifiersAreEqual(
   return left.hitDiceDelta === right.hitDiceDelta &&
     left.hitDiceLimit === right.hitDiceLimit &&
     left.hitFlatBonus === right.hitFlatBonus &&
+    left.hitRollMultiplier === right.hitRollMultiplier &&
     left.forceHitResult === right.forceHitResult &&
     left.damageDiceDelta === right.damageDiceDelta &&
     left.damageFlatBonus === right.damageFlatBonus &&
@@ -1676,7 +1679,7 @@ export function rollManualBattleHit(
     context: { battleSessionId: session.id, strikeId: strike.id, attackerCreatureInstanceId: attacker.card.instanceId, defenderCreatureInstanceId: defender.card.instanceId }
   });
   const hitRollModifier = attackerStats.modifier + modifiers.hitFlatBonus;
-  const hitRollTotal = sumDice(hitRollDice) + hitRollModifier;
+  const hitRollTotal = Math.ceil((sumDice(hitRollDice) + hitRollModifier) * modifiers.hitRollMultiplier);
   let criticalHit = hitRollDice.length > 1 && hitRollDice.every(die => die === 6);
   let criticalMiss = hitRollDice.length > 1 && hitRollDice.every(die => die === 1);
   let hit = criticalHit || (!criticalMiss && hitRollTotal >= defenderStats.armorLevel);
