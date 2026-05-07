@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:50:34.520Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_042_corn_creeper",
+  "effectId": "042-E01",
+  "title": "Corn Creeper inflicts 5x Atk damage on first attack once",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:50:34.520Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_042_corn_creeper",
+      "cardName": "Corn Creeper",
+      "cardType": "CREATURE",
+      "cardNumber": "042",
+      "generation": "2",
+      "rawText": "Inflict 5x Atk damage during this card's first attack. This effect can only occur 1 time while this card is on the field."
+    },
+    "effect": {
+      "effectId": "042-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Attack target",
+      "value": "5x Atk damage",
+      "durationText": "Current attack",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Corn Creeper inflicts 5x Atk damage on first attack once",
+    "summary": "Battle Corn Creeper and verify its first attack gets the 5x attack damage multiplier.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_042_corn_creeper"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Corn Creeper first hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1,
+            1
+          ],
+          "label": "Low Corn Creeper damage"
+        }
+      ],
+      "notes": [
+        "Place Corn Creeper on player_1 field as primary.",
+        "This is Corn Creeper first attack while on the field."
+      ]
+    },
+    "steps": [
+      "Start Corn Creeper first battle.",
+      "Resolve first hit and damage roll.",
+      "Verify the first-attack 5x damage multiplier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Corn Creeper 5x first attack multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:5"
+      }
+    ],
+    "manualVerification": [
+      "The 5x multiplier should only occur one time while Corn Creeper remains on the field."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_042_corn_creeper-042-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_042_corn_creeper-042-e01",
+      "tags": [
+        "CREATURE",
+        "DURING_DAMAGE_CALC",
+        "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_042_corn_creeper:042-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

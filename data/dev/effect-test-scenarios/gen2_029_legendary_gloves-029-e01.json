@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:50:34.520Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_029_legendary_gloves",
+  "effectId": "029-E01",
+  "title": "Legendary Gloves grants +6 Hit, +6 Atk, and +6 Speed",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:50:34.520Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_029_legendary_gloves",
+      "cardName": "Legendary Gloves",
+      "cardType": "MAGIC",
+      "cardNumber": "029",
+      "generation": "2",
+      "rawText": "Hit: +6. Atk: +6. SPD: +6."
+    },
+    "effect": {
+      "effectId": "029-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "HIT_BONUS ADD 6; ATK_BONUS ADD 6; SPD ADD 6",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Legendary Gloves grants +6 Hit, +6 Atk, and +6 Speed",
+    "summary": "Attach Legendary Gloves and verify the equipped creature gains +6 Speed.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_029_legendary_gloves",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place this equip Magic on field magic slot attached to player_1 primary creature.",
+        "Use the card rules text for expected stat changes."
+      ]
+    },
+    "steps": [
+      "Put Legendary Gloves in player_1 magic slot.",
+      "Attach it to player_1 primary creature.",
+      "Verify the while-equipped effect is represented by runtime state/events."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Static stat modifier route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Equipped primary speed includes +6",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 16
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Hit: +6. Atk: +6. SPD: +6."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_029_legendary_gloves-029-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_029_legendary_gloves-029-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_EQUIPPED",
+        "APPLY_STAT_MODIFIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_029_legendary_gloves:029-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

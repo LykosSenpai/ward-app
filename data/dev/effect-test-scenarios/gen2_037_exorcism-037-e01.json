@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:50:34.520Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_037_exorcism",
+  "effectId": "037-E01",
+  "title": "Exorcism doubles damage to Demon creatures",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:50:34.520Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_037_exorcism",
+      "cardName": "Exorcism",
+      "cardType": "MAGIC",
+      "cardNumber": "037",
+      "generation": "2",
+      "rawText": "All creatures inflict 2x Atk damage to Demon-type creatures, or creatures with \"Demon\" in their name on the field."
+    },
+    "effect": {
+      "effectId": "037-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_DAMAGE_MULTIPLIER_AURA",
+      "effectGroup": "Damage Multiplier Aura",
+      "target": "Demon-type creatures or creatures with \"Demon\" in name",
+      "value": "2x Atk damage",
+      "durationText": "While field effect is active",
+      "reusableFunction": "applyConditionalDamageMultiplierAura"
+    },
+    "title": "Exorcism doubles damage to Demon creatures",
+    "summary": "Place Exorcism as a field card and verify battle damage to a Demon target receives a 2x multiplier.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_037_exorcism",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen1_136_demon"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Exorcism hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Stable Exorcism damage"
+        }
+      ],
+      "notes": [
+        "Pre-place Exorcism on field magic slot as a field-active Magic card.",
+        "Opponent primary is a Demon-type creature."
+      ]
+    },
+    "steps": [
+      "Put Exorcism in player_1 field magic slot.",
+      "Battle into the Demon target.",
+      "Verify the 2x damage-to-Demon aura."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Exorcism 2x damage multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: All creatures inflict 2x Atk damage to Demon-type creatures, or creatures with \"Demon\" in their name on the field."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_037_exorcism-037-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_037_exorcism-037-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_FIELD_ACTIVE",
+        "APPLY_DAMAGE_MULTIPLIER_AURA"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_037_exorcism:037-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

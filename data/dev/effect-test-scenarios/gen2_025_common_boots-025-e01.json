@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:50:34.520Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_025_common_boots",
+  "effectId": "025-E01",
+  "title": "Common Boots grants +3 Speed while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:50:34.520Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_025_common_boots",
+      "cardName": "Common Boots",
+      "cardType": "MAGIC",
+      "cardNumber": "025",
+      "generation": "2",
+      "rawText": "SPD: +3."
+    },
+    "effect": {
+      "effectId": "025-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "SPD ADD 3",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Common Boots grants +3 Speed while equipped",
+    "summary": "Attach Common Boots and verify the equipped creature gains +3 Speed.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_025_common_boots",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place this equip Magic on field magic slot attached to player_1 primary creature.",
+        "Use the card rules text for expected stat changes."
+      ]
+    },
+    "steps": [
+      "Put Common Boots in player_1 magic slot.",
+      "Attach it to player_1 primary creature.",
+      "Verify the while-equipped effect is represented by runtime state/events."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Static stat modifier route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Equipped primary speed includes +3",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 13
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: SPD: +3."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_025_common_boots-025-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_025_common_boots-025-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_EQUIPPED",
+        "APPLY_STAT_MODIFIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_025_common_boots:025-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

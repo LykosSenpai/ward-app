@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:50:34.520Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_040_the_career_buccaneer",
+  "effectId": "040-E01",
+  "title": "The Career Buccaneer grants +6 Modifier for one turn cycle",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:50:34.520Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_040_the_career_buccaneer",
+      "cardName": "The Career Buccaneer",
+      "cardType": "MAGIC",
+      "cardNumber": "040",
+      "generation": "2",
+      "rawText": "For 1 turn cycle add +6 to the equipped creature's Modifier."
+    },
+    "effect": {
+      "effectId": "040-E01",
+      "trigger": "ON_EQUIP",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Modifier +6",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "The Career Buccaneer grants +6 Modifier for one turn cycle",
+    "summary": "Attach The Career Buccaneer and verify its temporary on-equip Modifier bonus route is available.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_040_the_career_buccaneer",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place The Career Buccaneer on field magic slot attached to player_1 primary creature.",
+        "For 1 turn cycle add +6 to the equipped creature Modifier."
+      ]
+    },
+    "steps": [
+      "Put The Career Buccaneer in player_1 magic slot.",
+      "Attach it to player_1 primary creature.",
+      "Verify the while-equipped effect is represented by runtime state/events."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Static stat modifier route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "The Career Buccaneer stays equipped",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_040_the_career_buccaneer"
+      }
+    ],
+    "manualVerification": [
+      "The +6 Modifier should expire after one full turn cycle."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_040_the_career_buccaneer-040-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_040_the_career_buccaneer-040-e01",
+      "tags": [
+        "MAGIC",
+        "ON_EQUIP",
+        "APPLY_STAT_MODIFIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_040_the_career_buccaneer:040-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

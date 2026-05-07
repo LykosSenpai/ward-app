@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:50:34.520Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_036_full_moon",
+  "effectId": "036-E01",
+  "title": "Full Moon buffs creatures with Were in their name",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:50:34.520Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_036_full_moon",
+      "cardName": "Full Moon",
+      "cardType": "MAGIC",
+      "cardNumber": "036",
+      "generation": "2",
+      "rawText": "All creatures with \"Were\" in their name gain: AL: +5. Hit Dice Rolls: +1. Atk Dice Rolls: +1."
+    },
+    "effect": {
+      "effectId": "036-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "All creatures with \"Were\" in their name",
+      "value": "AL ADD 5; HIT_DICE_ROLLS ADD 1; ATK_DICE_ROLLS ADD 1",
+      "durationText": "While field effect is active",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Full Moon buffs creatures with Were in their name",
+    "summary": "Place Full Moon as a field card with a Were-named creature and verify its field stat aura route is available.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_036_full_moon",
+        "test_were_named_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Full Moon on field magic slot as a field-active Magic card.",
+        "Use a creature with Were in its name."
+      ]
+    },
+    "steps": [
+      "Put Full Moon in player_1 field magic slot.",
+      "Use a Were-named primary creature.",
+      "Verify the field aura stat modifier route is represented."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Static stat modifier route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Full Moon stays in player_1 magic slots",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_036_full_moon"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: All creatures with \"Were\" in their name gain: AL: +5. Hit Dice Rolls: +1. Atk Dice Rolls: +1."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_036_full_moon-036-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_036_full_moon-036-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_FIELD_ACTIVE",
+        "APPLY_STAT_MODIFIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_036_full_moon:036-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:50:34.520Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_024_common_sword",
+  "effectId": "024-E01",
+  "title": "Common Sword grants +4 Atk while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:50:34.520Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_024_common_sword",
+      "cardName": "Common Sword",
+      "cardType": "MAGIC",
+      "cardNumber": "024",
+      "generation": "2",
+      "rawText": "Atk: +4."
+    },
+    "effect": {
+      "effectId": "024-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "ATK_BONUS ADD 4",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Common Sword grants +4 Atk while equipped",
+    "summary": "Attach Common Sword and verify the while-equipped attack modifier route is active.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_024_common_sword",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place this equip Magic on field magic slot attached to player_1 primary creature.",
+        "Use the card rules text for expected stat changes."
+      ]
+    },
+    "steps": [
+      "Put Common Sword in player_1 magic slot.",
+      "Attach it to player_1 primary creature.",
+      "Verify the while-equipped effect is represented by runtime state/events."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Static stat modifier route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Common Sword stays equipped",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_024_common_sword"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Atk: +4."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_024_common_sword-024-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_024_common_sword-024-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_EQUIPPED",
+        "APPLY_STAT_MODIFIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_024_common_sword:024-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

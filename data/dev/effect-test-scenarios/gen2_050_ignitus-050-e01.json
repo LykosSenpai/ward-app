@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:50:34.520Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_050_ignitus",
+  "effectId": "050-E01",
+  "title": "Ignitus deals 30 damage on a 6",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:50:34.520Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_050_ignitus",
+      "cardName": "Ignitus",
+      "cardType": "MAGIC",
+      "cardNumber": "050",
+      "generation": "2",
+      "rawText": "Roll 1 die to inflict damage on a creature. If the result is: 1-5: 15 damage. 6: 30 damage."
+    },
+    "effect": {
+      "effectId": "050-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "ROLL_DAMAGE_TABLE",
+      "effectGroup": "Direct Damage",
+      "target": "Target creature",
+      "value": "Roll damage table",
+      "durationText": "Instant",
+      "reusableFunction": "rollDamageTable"
+    },
+    "title": "Ignitus deals 30 damage on a 6",
+    "summary": "Play Ignitus, force a die result of 6, and verify the target creature takes 30 effect damage.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_050_ignitus",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Ignitus table result 6"
+        }
+      ],
+      "notes": [
+        "Play Ignitus from player_1 hand.",
+        "Target player_2 primary creature.",
+        "A result of 6 deals 30 damage."
+      ]
+    },
+    "steps": [
+      "Play Ignitus.",
+      "Resolve target selection and forced die roll of 6.",
+      "Verify 30 damage is applied to the target creature."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Ignitus target prompt was created",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EFFECT_TARGET_PROMPT_CREATED"
+      },
+      {
+        "label": "Ignitus 30 damage applied",
+        "path": "player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 70
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Roll 1 die to inflict damage on a creature. If the result is: 1-5: 15 damage. 6: 30 damage."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_050_ignitus-050-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_050_ignitus-050-e01",
+      "tags": [
+        "MAGIC",
+        "ON_PLAY",
+        "ROLL_DAMAGE_TABLE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_050_ignitus:050-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

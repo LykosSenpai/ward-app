@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:50:34.520Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_035_spino",
+  "effectId": "035-E01",
+  "title": "Spino inflicts 2x Atk damage near water",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:50:34.520Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_035_spino",
+      "cardName": "Spino",
+      "cardType": "CREATURE",
+      "cardNumber": "035",
+      "generation": "2",
+      "rawText": "This creature inflicts 2x Atk damage to any creature in or near water."
+    },
+    "effect": {
+      "effectId": "035-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Creature in or near water",
+      "value": "2x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Spino inflicts 2x Atk damage near water",
+    "summary": "Battle Spino against a creature marked in or near water and verify a 2x attack damage multiplier is observed.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_035_spino"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Spino hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Stable Spino damage"
+        }
+      ],
+      "notes": [
+        "Place Spino on player_1 field as primary.",
+        "Treat the opposing creature as in or near water for this fixture."
+      ]
+    },
+    "steps": [
+      "Start battle with Spino.",
+      "Resolve a hit and damage roll.",
+      "Verify the 2x near-water attack damage multiplier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Spino 2x damage multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      }
+    ],
+    "manualVerification": [
+      "The multiplier should only apply to creatures in or near water."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_035_spino-035-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_035_spino-035-e01",
+      "tags": [
+        "CREATURE",
+        "DURING_DAMAGE_CALC",
+        "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_035_spino:035-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
