@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:07:35.177Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_110_turncoat",
+  "effectId": "110-E01",
+  "title": "Test Turncoat: 110-E01 SWAP_PRIMARY_CREATURES",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:07:35.177Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_110_turncoat",
+      "cardName": "Turncoat",
+      "cardType": "MAGIC",
+      "cardNumber": "110",
+      "generation": "1",
+      "rawText": "Switch primary creatures with your opponent. Equipped cards are destroyed."
+    },
+    "effect": {
+      "effectId": "110-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SWAP_PRIMARY_CREATURES",
+      "effectGroup": "Control Swap",
+      "target": "Your/opponent primary creatures",
+      "value": "Swap control/field positions",
+      "durationText": "Instant",
+      "reusableFunction": "swapPrimaryCreatures"
+    },
+    "title": "Test Turncoat: 110-E01 SWAP_PRIMARY_CREATURES",
+    "summary": "Create a deterministic dev scenario for Turncoat and verify that 110-E01 SWAP_PRIMARY_CREATURES resolves according to the parsed effect and WARD rules. Assertions were tightened from the printed card text for headless QA.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_110_turncoat",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Rules text: switch primary creatures with your opponent, and equipped cards are destroyed.",
+        "Both players start with a primary creature so the swap can be verified."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Turncoat from hand.",
+      "Resolve the primary creature swap.",
+      "Verify both players now control the opposite primary creature."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Player 1 received opponent primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "test_creature_defender"
+      },
+      {
+        "label": "Player 2 received player primary creature",
+        "path": "player_2.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "test_primary_creature"
+      },
+      {
+        "label": "Turncoat swap action resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SWAP_PRIMARY_CREATURES"
+      }
+    ],
+    "manualVerification": [
+      "Confirm primary creature ownership/control state is consistent after the swap."
+    ],
+    "riskNotes": [
+      "Fallback plan cannot infer every WARD edge case.",
+      "The engine remains source of truth; the LLM/fallback only proposes a QA plan."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run the generated scenario and update after reviewing result."
+    },
+    "regression": {
+      "fixtureName": "gen1_110_turncoat-110-e01",
+      "tags": [
+        "MAGIC",
+        "ON_PLAY",
+        "SWAP_PRIMARY_CREATURES"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

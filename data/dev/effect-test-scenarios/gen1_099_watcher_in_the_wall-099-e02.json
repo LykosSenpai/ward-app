@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:07:35.173Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_099_watcher_in_the_wall",
+  "effectId": "099-E02",
+  "title": "Test Watcher in the Wall: 099-E02 MOVE_CARD",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:07:35.173Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_099_watcher_in_the_wall",
+      "cardName": "Watcher in the Wall",
+      "cardType": "MAGIC",
+      "cardNumber": "099",
+      "generation": "1",
+      "rawText": "Your opponent must reveal their hand to you. Choose 1 of their cards: Magic: Discard it to their cemetery. Creature: Send it to the bottom of their deck."
+    },
+    "effect": {
+      "effectId": "099-E02",
+      "trigger": "AFTER_CHOOSE_CARD",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Discard",
+      "target": "Chosen magic card",
+      "value": "Move to cemetery",
+      "durationText": "Instant",
+      "reusableFunction": "discardCardToCemetery"
+    },
+    "title": "Test Watcher in the Wall: 099-E02 MOVE_CARD",
+    "summary": "Create a deterministic dev scenario for Watcher in the Wall and verify that 099-E02 MOVE_CARD resolves according to the parsed effect and WARD rules. Assertions were tightened from the printed card text for headless QA.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_099_watcher_in_the_wall"
+      ],
+      "player2Cards": [
+        "gen1_024_ball_and_chain"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Rules text: opponent reveals hand; choose one card. If it is Magic, discard it to their cemetery.",
+        "Keep Ball and Chain in Player 2 hand as the chosen Magic card."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Watcher in the Wall.",
+      "Resolve the reveal/choose prompt by selecting Player 2 Ball and Chain from hand.",
+      "Verify the chosen Magic card goes to Player 2 cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Chosen opponent magic card discarded",
+        "path": "player_2.cemetery",
+        "operator": "contains",
+        "value": "gen1_024_ball_and_chain"
+      },
+      {
+        "label": "Watcher choice/move action resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MOVE_CARD"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the selected Magic card comes from the revealed opponent hand."
+    ],
+    "riskNotes": [
+      "Fallback plan cannot infer every WARD edge case.",
+      "The engine remains source of truth; the LLM/fallback only proposes a QA plan."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run the generated scenario and update after reviewing result."
+    },
+    "regression": {
+      "fixtureName": "gen1_099_watcher_in_the_wall-099-e02",
+      "tags": [
+        "MAGIC",
+        "AFTER_CHOOSE_CARD",
+        "MOVE_CARD"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}
