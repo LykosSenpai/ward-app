@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T13:53:44.184Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_066_junk_scarecrow",
+  "effectId": "066-E01",
+  "title": "Test Junk Scarecrow: 066-E01 NEGATE_ATTACK",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T13:53:44.180Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_066_junk_scarecrow",
+      "cardName": "Junk Scarecrow",
+      "cardType": "MAGIC",
+      "cardNumber": "066",
+      "generation": "1",
+      "rawText": "On hit, play this card from your hand. This card negates the attack and is sent to the cemetery instead. Return this card to your hand after 3 turn cycles."
+    },
+    "effect": {
+      "effectId": "066-E01",
+      "trigger": "ON_HIT_FROM_HAND",
+      "actionType": "NEGATE_ATTACK",
+      "effectGroup": "Negation",
+      "target": "Attack against your creature",
+      "value": "Negate attack",
+      "durationText": "Instant",
+      "reusableFunction": "negateAttack"
+    },
+    "title": "Test Junk Scarecrow: 066-E01 NEGATE_ATTACK",
+    "summary": "Create a deterministic dev scenario for Junk Scarecrow and verify that 066-E01 NEGATE_ATTACK resolves according to the parsed effect and WARD rules.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_066_junk_scarecrow",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            5
+          ],
+          "label": "LLM test: force hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            4,
+            4,
+            3,
+            3
+          ],
+          "label": "LLM test: stable attack damage"
+        }
+      ],
+      "notes": [
+        "Local fallback created this plan because no LLM provider was configured or the provider call failed.",
+        "Use the generated scenario match, then verify the expected assertions manually."
+      ]
+    },
+    "steps": [
+      "Create the effect scenario match from this plan.",
+      "Confirm Player 1 controls or can play the source card.",
+      "Run a battle or hit sequence using the forced rolls.",
+      "Resolve any target, card-selection, chain, battle, or effect-roll prompts.",
+      "Review the event log and the affected card/player state."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Junk Scarecrow moved to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_066_junk_scarecrow"
+      },
+      {
+        "label": "Attack negation trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "NEGATE_ATTACK"
+      },
+      {
+        "label": "Attack damage was negated",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 0
+      }
+    ],
+    "manualVerification": [
+      "Verify target behavior: Attack against your creature.",
+      "Verify value/effect result: Negate attack.",
+      "Verify duration cleanup: Instant."
+    ],
+    "riskNotes": [
+      "Fallback plan cannot infer every WARD edge case.",
+      "The engine remains source of truth; the LLM/fallback only proposes a QA plan."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run the generated scenario and update after reviewing result."
+    },
+    "regression": {
+      "fixtureName": "gen1_066_junk_scarecrow-066-e01",
+      "tags": [
+        "MAGIC",
+        "ON_HIT_FROM_HAND",
+        "NEGATE_ATTACK"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_066_junk_scarecrow:066-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}
