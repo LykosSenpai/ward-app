@@ -18,7 +18,7 @@ import {
   createManualEffectRequestFromChainLink,
   effectShouldResolveWhenCardIsPlayed
 } from "./actionCards.js";
-import { assertPlayerCanPlayMagicUnderSilenceFromTheGrave } from "./silenceFromTheGrave.js";
+import { assertPlayerCanPlayMagicUnderActivePlayRestrictions } from "./silenceFromTheGrave.js";
 import { resolveBattleResponseChainLinkInPlace } from "./battle.js";
 
 function getOpponentPlayerId(state: MatchState, playerId: string): string | undefined {
@@ -663,7 +663,7 @@ export function playMagicFromHand(
     throw new Error("Only magic cards can be played with this action.");
   }
 
-  assertPlayerCanPlayMagicUnderSilenceFromTheGrave(nextState, playerId);
+  assertPlayerCanPlayMagicUnderActivePlayRestrictions(nextState, playerId);
 
   if (definition.magicType === "INFINITE" && player.field.magicSlots.length >= 5) {
     throw new Error("You already have 5 Infinite Magic cards on your side of the field.");
@@ -778,7 +778,7 @@ export function playLightningResponseFromHand(
     throw new Error("Only Lightning Magic cards can be played as a response.");
   }
 
-  assertPlayerCanPlayMagicUnderSilenceFromTheGrave(nextState, playerId);
+  assertPlayerCanPlayMagicUnderActivePlayRestrictions(nextState, playerId);
 
   const previousLink = chain.links[chain.links.length - 1];
 

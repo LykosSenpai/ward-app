@@ -16,7 +16,7 @@ import { getNextRecurringEffectTickSchedule, getTurnCycleExpiration } from "./ef
 import { moveAllMagicSlotCardsToCemetery } from "./cardMovement.js";
 import { getRuntimeBlockActionType, getRuntimeBlockDurationText, getRuntimeBlockMultiplier, getRuntimeBlockTargetText, getRuntimeBlockText } from "./effectBlockRuntime.js";
 import { isFringeAutomaticMagicEffectSupported, tryResolveFringeAutomaticMagicEffect } from "./fringeEffectHandlers.js";
-import { applyOpponentMagicPlayLockEffect, applyTurnConditionalOpponentCreatureSuppressionEffect } from "./silenceFromTheGrave.js";
+import { applyOpponentMagicPlayLockEffect, applyOpponentMagicPlayRestrictionEffect, applyTurnConditionalOpponentCreatureSuppressionEffect } from "./silenceFromTheGrave.js";
 
 type AddEventFn = (
   state: MatchState,
@@ -525,6 +525,17 @@ export function isAutomaticMagicEffectSupported(
   effect: WardEngineEffect
 ): boolean {
   const actionType = getRuntimeBlockActionType(effect).trim().toUpperCase();
+  const text = [
+    getRuntimeBlockText(effect),
+    effect.actionText,
+    effect.target,
+    effect.params?.target,
+    effect.value,
+    effect.params?.valueText
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 
   return actionType === "DRAW_CARDS" ||
     effectTargetsAllMagicCards(effect) ||
@@ -532,6 +543,11 @@ export function isAutomaticMagicEffectSupported(
     actionType === "APPLY_TEMPORARY_HIT_OVERRIDE" ||
     actionType === "APPLY_FORCED_FIRST_AUTO_HIT_MULTIPLIER" ||
     actionType === "APPLY_OPPONENT_MAGIC_PLAY_LOCK" ||
+    (
+      actionType === "APPLY_PLAY_RESTRICTION" &&
+      text.includes("opponent") &&
+      text.includes("cannot play magic")
+    ) ||
     actionType === "APPLY_TURN_CONDITIONAL_OPPONENT_CREATURE_EFFECT_SUPPRESSION" ||
     isFringeAutomaticMagicEffectSupported(effect);
 }
@@ -574,6 +590,10 @@ export function tryResolveAutomaticMagicEffect(
 
   if (actionType === "APPLY_OPPONENT_MAGIC_PLAY_LOCK") {
     return applyOpponentMagicPlayLockEffect(state, args);
+  }
+
+  if (actionType === "APPLY_PLAY_RESTRICTION") {
+    return applyOpponentMagicPlayRestrictionEffect(state, args);
   }
 
   if (actionType === "APPLY_TURN_CONDITIONAL_OPPONENT_CREATURE_EFFECT_SUPPRESSION") {

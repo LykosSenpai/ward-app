@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_050_eternal_titan",
+  "effectId": "050-E01",
+  "title": "Eternal Titan locks opponent magic on 5-6",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_050_eternal_titan",
+      "cardName": "Eternal Titan",
+      "cardType": "CREATURE",
+      "cardNumber": "050",
+      "generation": "1",
+      "rawText": "During your turn, roll 1 die. If the result is 5-6, your opponent cannot play magic cards for 1 turn cycle."
+    },
+    "effect": {
+      "effectId": "050-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "target": "Opponent",
+      "value": "Cannot play magic",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "applyPlayRestriction"
+    },
+    "title": "Eternal Titan locks opponent magic on 5-6",
+    "summary": "Summon Eternal Titan, activate its once-per-turn roll effect with a successful roll, and verify the opponent receives a Magic play restriction.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_050_eternal_titan"
+      ],
+      "player2Cards": [
+        "test_creature_defender",
+        "gen1_003_unholy_revival"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            5
+          ],
+          "label": "Eternal Titan succeeds on 5"
+        }
+      ],
+      "notes": [
+        "Set Eternal Titan as player_1 primary creature.",
+        "Activate Eternal Titan's during-your-turn effect and force a successful 5 result."
+      ]
+    },
+    "steps": [
+      "Set Eternal Titan as player_1 primary creature.",
+      "Activate 050-E01.",
+      "Roll 5 for the effect.",
+      "Apply the opponent Magic play restriction for 1 turn cycle."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Effect roll succeeds",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "CARD_EFFECT_ROLL_SUCCEEDED"
+      },
+      {
+        "label": "Magic play restriction applies",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MAGIC_PLAY_RESTRICTION_APPLIED"
+      },
+      {
+        "label": "Restriction is tracked on Eternal Titan",
+        "path": "player_1.primaryCreature.activeEffects",
+        "operator": "contains",
+        "value": "APPLY_PLAY_RESTRICTION"
+      }
+    ],
+    "manualVerification": [
+      "Confirm player_2 cannot play Magic cards while Eternal Titan's 1-turn-cycle restriction is active.",
+      "Confirm the restriction expires after the configured turn-cycle boundary."
+    ],
+    "riskNotes": [
+      "This fixture verifies successful application and active tracking. It does not separately attempt a blocked Magic play action in the scenario."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Eternal Titan's successful 5-6 Magic play restriction."
+    },
+    "regression": {
+      "fixtureName": "eternal-titan-success-locks-opponent-magic",
+      "tags": [
+        "creature",
+        "activated",
+        "roll",
+        "play-restriction"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

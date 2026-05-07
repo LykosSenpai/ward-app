@@ -5,6 +5,7 @@ import { getRuntimeBlockDurationText } from "./effectBlockRuntime.js";
 import { getTurnCycleExpiration } from "./effectTiming.js";
 
 const MAGIC_LOCK_ACTION = "APPLY_OPPONENT_MAGIC_PLAY_LOCK";
+const MAGIC_PLAY_RESTRICTION_ACTION = "APPLY_PLAY_RESTRICTION";
 const TURN_CONDITIONAL_SUPPRESSION_ACTION = "APPLY_TURN_CONDITIONAL_OPPONENT_CREATURE_EFFECT_SUPPRESSION";
 const REPLACEMENT_SUPPRESSION_ACTION = "SILENCE_FROM_THE_GRAVE_REPLACEMENT_SUPPRESSION";
 
@@ -197,6 +198,62 @@ export function applyOpponentMagicPlayLockEffect(
   return true;
 }
 
+export function applyOpponentMagicPlayRestrictionEffect(
+  state: MatchState,
+  args: {
+    effect: WardEngineEffect;
+    controllerPlayerId: string;
+    sourceCardInstanceId?: string;
+    sourceCardName: string;
+    addEvent: AddEventFn;
+  }
+): boolean {
+  const targetPlayerId = getOpponentPlayerId(state, args.controllerPlayerId);
+  const sourceCard = findCardInstance(state, args.sourceCardInstanceId);
+
+  if (!targetPlayerId || !sourceCard) {
+    args.addEvent(state, "MAGIC_PLAY_RESTRICTION_SKIPPED", args.controllerPlayerId, {
+      sourceCardName: args.sourceCardName,
+      effectId: args.effect.id,
+      actionType: args.effect.actionType,
+      reason: !targetPlayerId ? "No opponent player found." : "Source card instance was not found."
+    });
+    return false;
+  }
+
+  sourceCard.activeEffectInstances ??= [];
+  sourceCard.activeEffectInstances = sourceCard.activeEffectInstances.filter(instance => !(
+    normalize(instance.actionType) === MAGIC_PLAY_RESTRICTION_ACTION &&
+    instance.sourceCardInstanceId === sourceCard.instanceId &&
+    instance.sourceEffectId === args.effect.id
+  ));
+
+  const instance = createSourceLinkedPlayerEffectInstance({
+    state,
+    effect: args.effect,
+    sourceCard,
+    controllerPlayerId: args.controllerPlayerId,
+    targetPlayerId,
+    actionType: MAGIC_PLAY_RESTRICTION_ACTION,
+    label: args.effect.value ?? args.effect.actionText ?? "Opponent cannot play Magic cards."
+  });
+
+  sourceCard.activeEffectInstances.push(instance);
+
+  args.addEvent(state, "MAGIC_PLAY_RESTRICTION_APPLIED", args.controllerPlayerId, {
+    sourceCardName: args.sourceCardName,
+    sourceCardInstanceId: sourceCard.instanceId,
+    effectId: args.effect.id,
+    targetPlayerId,
+    durationText: instance.durationText,
+    expiresOnPlayerId: instance.expiresOnPlayerId,
+    expiresAtPlayerTurnStartCount: instance.expiresAtPlayerTurnStartCount,
+    note: "Target player cannot play Magic cards while this restriction is active."
+  });
+
+  return true;
+}
+
 export function applyTurnConditionalOpponentCreatureSuppressionEffect(
   state: MatchState,
   args: {
@@ -257,13 +314,24 @@ export function playerIsMagicLockedBySilenceFromTheGrave(state: MatchState, play
   return collectActiveSilenceInstances(state, MAGIC_LOCK_ACTION).some(({ instance }) => instance.targetPlayerId === playerId);
 }
 
-export function assertPlayerCanPlayMagicUnderSilenceFromTheGrave(state: MatchState, playerId: string): void {
-  if (!playerIsMagicLockedBySilenceFromTheGrave(state, playerId)) {
+export function playerIsUnderMagicPlayRestriction(state: MatchState, playerId: string): boolean {
+  return collectActiveSilenceInstances(state, MAGIC_PLAY_RESTRICTION_ACTION).some(({ instance }) =>
+    instance.targetPlayerId === playerId &&
+    normalize(instance.label).includes("MAGIC")
+  );
+}
+
+export function assertPlayerCanPlayMagicUnderActivePlayRestrictions(state: MatchState, playerId: string): void {
+  if (!playerIsMagicLockedBySilenceFromTheGrave(state, playerId) && !playerIsUnderMagicPlayRestriction(state, playerId)) {
     return;
   }
 
   const player = getPlayer(state, playerId);
-  throw new Error(`${player.displayName} cannot play Magic cards while Silence From The Grave is active.`);
+  throw new Error(`${player.displayName} cannot play Magic cards while an active play restriction is in effect.`);
+}
+
+export function assertPlayerCanPlayMagicUnderSilenceFromTheGrave(state: MatchState, playerId: string): void {
+  assertPlayerCanPlayMagicUnderActivePlayRestrictions(state, playerId);
 }
 
 function cardDefinitionHasUnaffectedByMagicText(definition: CardDefinition | undefined): boolean {
