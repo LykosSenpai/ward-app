@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:04:03.438Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_073_metallic_bone",
+  "effectId": "073-E02",
+  "title": "Metallic Bone can be destroyed by opponent roll 1-3",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:04:03.438Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_073_metallic_bone",
+      "cardName": "Metallic Bone",
+      "cardType": "MAGIC",
+      "cardNumber": "073",
+      "generation": "2",
+      "rawText": "The equipped creature cannot receive damage. During your opponent's turn they may roll 1 die. If the result is 1-3, this card is destroyed."
+    },
+    "effect": {
+      "effectId": "073-E02",
+      "trigger": "DURING_OPPONENT_TURN",
+      "actionType": "DESTROY_SELF",
+      "effectGroup": "Escape Roll/Destroy",
+      "target": "This card",
+      "value": "Destroyed on opponent roll 1-3",
+      "durationText": "Instant",
+      "reusableFunction": "destroySelf"
+    },
+    "title": "Metallic Bone can be destroyed by opponent roll 1-3",
+    "summary": "During opponent turn, force a successful 1-3 roll and verify Metallic Bone destroys itself.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_073_metallic_bone",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            2
+          ],
+          "label": "Metallic Bone destroy roll succeeds"
+        }
+      ],
+      "notes": [
+        "Pre-place Metallic Bone on field magic slot attached to player_1 primary creature.",
+        "During opponent turn they may roll 1 die; 1-3 destroys this card."
+      ]
+    },
+    "steps": [
+      "Opponent chooses the Metallic Bone destroy roll.",
+      "Resolve roll as 2.",
+      "Verify Metallic Bone leaves field."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Destroy self route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "DESTROY_SELF"
+      },
+      {
+        "label": "Metallic Bone leaves player_1 magic slots",
+        "path": "player_1.magicSlots",
+        "operator": "notContains",
+        "value": "gen2_073_metallic_bone"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: The equipped creature cannot receive damage. During your opponent's turn they may roll 1 die. If the result is 1-3, this card is destroyed."
+    ],
+    "riskNotes": [
+      "A red result marks missing opponent-turn destroy-self runtime support."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_073_metallic_bone-073-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_073_metallic_bone-073-e02",
+      "tags": [
+        "MAGIC",
+        "DURING_OPPONENT_TURN",
+        "DESTROY_SELF"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_073_metallic_bone:073-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

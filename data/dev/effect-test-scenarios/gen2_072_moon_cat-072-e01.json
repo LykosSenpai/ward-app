@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:04:03.438Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_072_moon_cat",
+  "effectId": "072-E01",
+  "title": "Moon Cat deals 2x Atk damage to Were-named creatures",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:04:03.438Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_072_moon_cat",
+      "cardName": "Moon Cat",
+      "cardType": "CREATURE",
+      "cardNumber": "072",
+      "generation": "2",
+      "rawText": "This card inflicts 2x Atk damage to any creature with \"Were\" in its name. It also receives the effects of the \"Full Moon\" magic card."
+    },
+    "effect": {
+      "effectId": "072-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Creature with \"Were\" in its name",
+      "value": "2x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Moon Cat deals 2x Atk damage to Were-named creatures",
+    "summary": "Battle Moon Cat into a Were-named target and verify the 2x attack damage multiplier applies.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_072_moon_cat"
+      ],
+      "player2Cards": [
+        "test_were_named_creature"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Moon Cat hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Stable Moon Cat damage"
+        }
+      ],
+      "notes": [
+        "Opponent target has Were in its name."
+      ]
+    },
+    "steps": [
+      "Start battle with Moon Cat into Were-named target.",
+      "Resolve hit and damage roll.",
+      "Verify 2x Atk damage multiplier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Moon Cat 2x Were multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: This card inflicts 2x Atk damage to any creature with \"Were\" in its name. It also receives the effects of the \"Full Moon\" magic card."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed Gen 2 effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_072_moon_cat-072-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_072_moon_cat-072-e01",
+      "tags": [
+        "CREATURE",
+        "DURING_DAMAGE_CALC",
+        "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_072_moon_cat:072-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

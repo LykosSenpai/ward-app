@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:04:03.438Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_071_sonic_screech",
+  "effectId": "071-E01",
+  "title": "Sonic Screech pre-battle roll applies no-Atk-damage status",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:04:03.438Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_071_sonic_screech",
+      "cardName": "Sonic Screech",
+      "cardType": "MAGIC",
+      "cardNumber": "071",
+      "generation": "2",
+      "rawText": "Prior to each battle, the equipped creature must roll 1 die. If the result is: 1-2: The effect ends. Destroy this card. 3-6: Equipped creature receives 5 damage, and cannot cause Atk damage."
+    },
+    "effect": {
+      "effectId": "071-E01",
+      "trigger": "PRIOR_TO_EACH_BATTLE",
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Pre-Battle Roll Gate",
+      "target": "Equipped creature",
+      "value": "Roll: 1-2 destroy this card; 3-6 take 5 damage and cannot cause Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyStatusWithEscapeRoll"
+    },
+    "title": "Sonic Screech pre-battle roll applies no-Atk-damage status",
+    "summary": "Attach Sonic Screech, force a 3-6 pre-battle roll, and verify status/damage route is represented.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_071_sonic_screech",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Sonic Screech 3-6 branch"
+        },
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Battle after Sonic Screech"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Stable Sonic Screech battle"
+        }
+      ],
+      "notes": [
+        "Pre-place Sonic Screech on field magic slot attached to player_1 primary creature.",
+        "On 3-6, equipped creature receives 5 damage and cannot cause Atk damage for current battle."
+      ]
+    },
+    "steps": [
+      "Start battle involving equipped creature.",
+      "Resolve Sonic Screech pre-battle roll as 6.",
+      "Verify current-battle status route is represented."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Sonic Screech status route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STATUS_AVAILABLE"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Prior to each battle, the equipped creature must roll 1 die. If the result is: 1-2: The effect ends. Destroy this card. 3-6: Equipped creature receives 5 damage, and cannot cause Atk damage."
+    ],
+    "riskNotes": [
+      "Card is marked needsReview; this fixture checks the 3-6 branch route, not the 1-2 destroy branch."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_071_sonic_screech-071-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_071_sonic_screech-071-e01",
+      "tags": [
+        "MAGIC",
+        "PRIOR_TO_EACH_BATTLE",
+        "APPLY_STATUS_WITH_ESCAPE_ROLL"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_071_sonic_screech:071-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

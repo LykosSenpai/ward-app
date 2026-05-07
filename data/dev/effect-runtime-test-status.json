@@ -3432,6 +3432,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen2:gen2_065_steam_golem:065-E01",
+      "packId": "ward-gen2",
+      "cardId": "gen2_065_steam_golem",
+      "cardName": "Steam Golem",
+      "effectId": "065-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_EFFECT_IMMUNITY",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:36.642Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen2:gen2_065_steam_golem:065-E02",
       "packId": "ward-gen2",
       "cardId": "gen2_065_steam_golem",
@@ -3442,7 +3456,49 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:58.461Z",
+      "lastTestedAt": "2026-05-07T16:07:36.750Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_066_dawn_of_the_living_chickens:066-E01",
+      "packId": "ward-gen2",
+      "cardId": "gen2_066_dawn_of_the_living_chickens",
+      "cardName": "Dawn of the Living Chickens",
+      "effectId": "066-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SUMMON_LIMITED_CREATURE_FROM_HAND",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:36.784Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_066_dawn_of_the_living_chickens:066-E02",
+      "packId": "ward-gen2",
+      "cardId": "gen2_066_dawn_of_the_living_chickens",
+      "cardName": "Dawn of the Living Chickens",
+      "effectId": "066-E02",
+      "trigger": "DELAYED_TRIGGER",
+      "actionType": "SCHEDULE_RETURN_TO_HAND",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:36.794Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_068_maniac:068-E01",
+      "packId": "ward-gen2",
+      "cardId": "gen2_068_maniac",
+      "cardName": "Maniac",
+      "effectId": "068-E01",
+      "trigger": "DURING_HIT_ROLL",
+      "actionType": "APPLY_HIT_OUTCOME_OVERRIDE",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:36.910Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3456,7 +3512,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:55.231Z",
+      "lastTestedAt": "2026-05-07T16:07:36.930Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3470,7 +3526,35 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:59.924Z",
+      "lastTestedAt": "2026-05-07T16:07:37.003Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_070_sacrificial_goat:070-E01",
+      "packId": "ward-gen2",
+      "cardId": "gen2_070_sacrificial_goat",
+      "cardName": "Sacrificial Goat",
+      "effectId": "070-E01",
+      "trigger": "STATIC_RULE",
+      "actionType": "APPLY_SACRIFICE_VALUE",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:37.015Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_071_sonic_screech:071-E01",
+      "packId": "ward-gen2",
+      "cardId": "gen2_071_sonic_screech",
+      "cardName": "Sonic Screech",
+      "effectId": "071-E01",
+      "trigger": "PRIOR_TO_EACH_BATTLE",
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:37.039Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3484,7 +3568,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:56.167Z",
+      "lastTestedAt": "2026-05-07T16:07:37.154Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3498,7 +3582,63 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:56.295Z",
+      "lastTestedAt": "2026-05-07T16:07:37.281Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_073_metallic_bone:073-E01",
+      "packId": "ward-gen2",
+      "cardId": "gen2_073_metallic_bone",
+      "cardName": "Metallic Bone",
+      "effectId": "073-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_DAMAGE_IMMUNITY",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:37.302Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_073_metallic_bone:073-E02",
+      "packId": "ward-gen2",
+      "cardId": "gen2_073_metallic_bone",
+      "cardName": "Metallic Bone",
+      "effectId": "073-E02",
+      "trigger": "DURING_OPPONENT_TURN",
+      "actionType": "DESTROY_SELF",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:37.321Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_074_the_old_one:074-E01",
+      "packId": "ward-gen2",
+      "cardId": "gen2_074_the_old_one",
+      "cardName": "The Old One",
+      "effectId": "074-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "MOVE_CARDS",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:37.331Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_074_the_old_one:074-E02",
+      "packId": "ward-gen2",
+      "cardId": "gen2_074_the_old_one",
+      "cardName": "The Old One",
+      "effectId": "074-E02",
+      "trigger": "AFTER_RETURN",
+      "actionType": "DRAW_CARDS_VARIABLE",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:07:37.340Z",
       "testedBy": "Headless Engine QA"
     },
     {

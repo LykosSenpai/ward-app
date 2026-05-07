@@ -19,6 +19,7 @@ import {
   playMagicFromHand,
   returnLinkedSummonsForInvalidatedSource,
   resolvePendingEffectTargetPrompt,
+  rollD6WithDev,
   rollManualBattleDamage,
   rollManualBattleHit,
   rollPendingEffectRoll,
@@ -1335,7 +1336,8 @@ function applyPlanAndVariantRolls(match: MatchState, plan: LlmEffectTestPlan, va
 function getEffectSuccessDice(effect?: WardEngineEffect): number[] {
   const condition = effect?.condition as { successValues?: unknown } | undefined;
   const paramsCondition = effect?.params?.condition as { successValues?: unknown } | undefined;
-  const successValues = condition?.successValues ?? paramsCondition?.successValues;
+  const params = effect?.params as { successValues?: unknown } | undefined;
+  const successValues = condition?.successValues ?? paramsCondition?.successValues ?? params?.successValues;
   if (!Array.isArray(successValues)) return SUCCESS_EFFECT_DICE;
 
   const dice = successValues
@@ -2389,6 +2391,10 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   const setupText = normalizeText(plan.setup.notes, plan.steps);
   const trigger = normalizeText(effect?.trigger);
   const actionType = normalizeText(effect?.actionType);
+  const durationText = normalizeText(effect?.duration?.text, effect?.duration?.type, plan.effect?.durationText);
+  const isStaticFieldRule = trigger.includes("while_on_field") ||
+    trigger.includes("static_while_on_field") ||
+    (trigger.includes("static_rule") && durationText.includes("while"));
   const ensurePrimaryFromSetup = (playerId: string, cardIds: string[] | undefined): CardInstance | undefined => {
     const player = getPlayer(match, playerId);
     if (player.field.primaryCreature) return player.field.primaryCreature;
@@ -2559,13 +2565,42 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
-  if (plan.card.cardId === "gen1_108_wrath_of_the_old_ones" && (actionType === "move_cards" || actionType.includes("draw_cards_variable"))) {
+  const shouldRunReturnFieldCardsThenDraw = (
+    plan.card.cardId === "gen1_108_wrath_of_the_old_ones" ||
+    plan.card.cardId === "gen2_074_the_old_one"
+  ) && (actionType === "move_cards" || actionType.includes("draw_cards_variable"));
+
+  if (shouldRunReturnFieldCardsThenDraw) {
     ensurePrimaryFromSetup("player_1", plan.setup.player1Cards);
     ensurePrimaryFromSetup("player_2", plan.setup.player2Cards);
     const returnCounts: Record<string, number> = {};
+    if (plan.card.cardId === "gen2_074_the_old_one") {
+      const caster = getPlayer(match, source.playerId);
+      const previousPrimary = caster.field.primaryCreature;
+      const removedOldOne = removeCardInstanceFromMatch(match, source.card.instanceId);
+      const oldOne = removedOldOne?.card ?? source.card;
+
+      if (previousPrimary && previousPrimary.instanceId !== oldOne.instanceId) {
+        const removedPrevious = removeCardInstanceFromMatch(match, previousPrimary.instanceId);
+        if (removedPrevious) {
+          const ownerId = removedPrevious.card.ownerPlayerId ?? source.playerId;
+          moveCardToDeck(match, ownerId, removedPrevious.card);
+          returnCounts[ownerId] = (returnCounts[ownerId] ?? 0) + 1;
+        }
+      }
+
+      oldOne.zone = "PRIMARY_CREATURE";
+      oldOne.controllerPlayerId = source.playerId;
+      oldOne.ownerPlayerId = oldOne.ownerPlayerId || source.playerId;
+      oldOne.baseHp = definition.cardType === "CREATURE" ? definition.hp : oldOne.baseHp;
+      oldOne.currentHp = definition.cardType === "CREATURE" ? definition.hp : oldOne.currentHp;
+      caster.field.primaryCreature = oldOne;
+    }
+
     for (const player of match.players) {
       const returnCard = (card: CardInstance | undefined) => {
         if (!card) return;
+        if (plan.card.cardId === "gen2_074_the_old_one" && card.cardId === plan.card.cardId) return;
         const removed = removeCardInstanceFromMatch(match, card.instanceId);
         if (!removed) return;
         const ownerId = removed.card.ownerPlayerId ?? player.id;
@@ -2705,6 +2740,29 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
     moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
     emitHeadlessAction("DESTROY_IF_NO_DAMAGE_THIS_TURN", { reason: "NO_DAMAGE_THIS_TURN" });
+    return match;
+  }
+
+  if (actionType.includes("destroy_self")) {
+    const successValues = new Set(getEffectSuccessDice(effect));
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: findOpponentPlayerId(match, source.playerId),
+      label: `${definition.name} destroy-self roll`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    const destroyed = successValues.has(roll);
+    if (destroyed) {
+      const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+      moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    }
+    emitHeadlessAction("DESTROY_SELF", { roll, destroyed, successValues: [...successValues] });
     return match;
   }
 
@@ -3029,10 +3087,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
 
   const shouldAcceptStaticCreatureModifier = definition.cardType === "CREATURE" &&
     (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
-    (
-      trigger.includes("while_on_field") ||
-      trigger.includes("static_while_on_field")
-    ) &&
+    isStaticFieldRule &&
     (
       actionType.includes("apply_stat_modifier") ||
       actionType.includes("apply_dynamic_stat_modifier") ||
@@ -3060,10 +3115,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
 
   const shouldAcceptStaticCreatureImmunity = definition.cardType === "CREATURE" &&
     (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
-    (
-      trigger.includes("while_on_field") ||
-      trigger.includes("static_while_on_field")
-    ) &&
+    isStaticFieldRule &&
     (
       actionType.includes("apply_immunity") ||
       actionType.includes("apply_effect_immunity") ||
@@ -3088,6 +3140,30 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       }
     });
     steps.push({ label: "accept static creature immunity", ok: true, detail: `${definition.name} ${effect?.id ?? ""}` });
+    return match;
+  }
+
+  const shouldAcceptStaticSacrificeValue = definition.cardType === "CREATURE" &&
+    (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON" || source.zone === "HAND") &&
+    trigger.includes("static_rule") &&
+    actionType.includes("apply_sacrifice_value");
+
+  if (shouldAcceptStaticSacrificeValue) {
+    match.eventLog.push({
+      id: `headless-sacrifice-value-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sequenceNumber: match.eventLog.length + 1,
+      timestamp: new Date().toISOString(),
+      type: "HEADLESS_STATIC_SACRIFICE_VALUE_AVAILABLE",
+      playerId: source.playerId,
+      payload: {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        zone: source.zone
+      }
+    });
+    steps.push({ label: "accept static sacrifice value", ok: true, detail: `${definition.name} ${effect?.id ?? ""}` });
     return match;
   }
 

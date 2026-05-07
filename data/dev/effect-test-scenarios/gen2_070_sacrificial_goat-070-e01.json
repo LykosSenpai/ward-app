@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:04:03.438Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_070_sacrificial_goat",
+  "effectId": "070-E01",
+  "title": "Sacrificial Goat counts as two sacrifices",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:04:03.438Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_070_sacrificial_goat",
+      "cardName": "Sacrificial Goat",
+      "cardType": "CREATURE",
+      "cardNumber": "070",
+      "generation": "2",
+      "rawText": "This creature counts as 2 sacrifices while on the field or in your hand."
+    },
+    "effect": {
+      "effectId": "070-E01",
+      "trigger": "STATIC_RULE",
+      "actionType": "APPLY_SACRIFICE_VALUE",
+      "effectGroup": "Sacrifice Value",
+      "target": "This creature",
+      "value": "Counts as 2 sacrifices",
+      "durationText": "While on field or in hand",
+      "reusableFunction": "applySacrificeValue"
+    },
+    "title": "Sacrificial Goat counts as two sacrifices",
+    "summary": "Verify Sacrificial Goat static sacrifice value route is represented while in hand or on field.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_070_sacrificial_goat"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Sacrificial Goat counts as 2 sacrifices while on the field or in your hand."
+      ]
+    },
+    "steps": [
+      "Keep Sacrificial Goat available.",
+      "Represent its sacrifice value as two.",
+      "Verify sacrifice-value route is visible."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Sacrifice value route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_SACRIFICE_VALUE"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: This creature counts as 2 sacrifices while on the field or in your hand."
+    ],
+    "riskNotes": [
+      "A red result marks missing sacrifice-value runtime support."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_070_sacrificial_goat-070-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_070_sacrificial_goat-070-e01",
+      "tags": [
+        "CREATURE",
+        "STATIC_RULE",
+        "APPLY_SACRIFICE_VALUE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_070_sacrificial_goat:070-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

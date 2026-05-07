@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:04:03.438Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_073_metallic_bone",
+  "effectId": "073-E01",
+  "title": "Metallic Bone prevents damage to equipped creature",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:04:03.438Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_073_metallic_bone",
+      "cardName": "Metallic Bone",
+      "cardType": "MAGIC",
+      "cardNumber": "073",
+      "generation": "2",
+      "rawText": "The equipped creature cannot receive damage. During your opponent's turn they may roll 1 die. If the result is 1-3, this card is destroyed."
+    },
+    "effect": {
+      "effectId": "073-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_DAMAGE_IMMUNITY",
+      "effectGroup": "Damage Immunity",
+      "target": "Equipped creature",
+      "value": "Cannot receive damage",
+      "durationText": "While equipped",
+      "reusableFunction": "applyDamageImmunity"
+    },
+    "title": "Metallic Bone prevents damage to equipped creature",
+    "summary": "Attach Metallic Bone and verify the equipped creature receives damage immunity.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_073_metallic_bone",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place this equip Magic on field magic slot attached to player_1 primary creature.",
+        "Use the card rules text for expected behavior."
+      ]
+    },
+    "steps": [
+      "Put Metallic Bone in player_1 magic slot.",
+      "Attach it to player_1 primary creature.",
+      "Verify equipped primary cannot receive damage."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Metallic Bone status route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STATUS_AVAILABLE"
+      },
+      {
+        "label": "Equipped primary has damage immunity status",
+        "path": "player_1.primaryCreature.statuses",
+        "operator": "contains",
+        "value": "DAMAGE_IMMUNITY"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: The equipped creature cannot receive damage. During your opponent's turn they may roll 1 die. If the result is 1-3, this card is destroyed."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed Gen 2 effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_073_metallic_bone-073-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_073_metallic_bone-073-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_EQUIPPED",
+        "APPLY_DAMAGE_IMMUNITY"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_073_metallic_bone:073-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

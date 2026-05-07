@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:04:03.438Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_066_dawn_of_the_living_chickens",
+  "effectId": "066-E02",
+  "title": "Dawn of the Living Chickens schedules return to hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:04:03.438Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_066_dawn_of_the_living_chickens",
+      "cardName": "Dawn of the Living Chickens",
+      "cardType": "MAGIC",
+      "cardNumber": "066",
+      "generation": "2",
+      "rawText": "Summon up to 4 creatures from your hand as Limited Summons. Return them back to your hand after 1 turn cycle."
+    },
+    "effect": {
+      "effectId": "066-E02",
+      "trigger": "DELAYED_TRIGGER",
+      "actionType": "SCHEDULE_RETURN_TO_HAND",
+      "effectGroup": "Zone Movement",
+      "target": "Creatures summoned by this card",
+      "value": "Return to your hand after 1 turn cycle",
+      "durationText": "After 1 turn cycle",
+      "reusableFunction": "scheduleReturnToHand"
+    },
+    "title": "Dawn of the Living Chickens schedules return to hand",
+    "summary": "Verify Dawn of the Living Chickens delayed trigger returns linked Limited Summons to hand after one turn cycle.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_066_dawn_of_the_living_chickens",
+        "gen2_019_sharkling"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Seed a Dawn-linked Limited Summon.",
+        "Return summoned creatures back to your hand after 1 turn cycle."
+      ]
+    },
+    "steps": [
+      "Resolve the delayed return trigger.",
+      "Return linked Limited Summon(s) to hand.",
+      "Verify schedule return route is represented."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Schedule return route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SCHEDULE_RETURN_TO_HAND"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Summon up to 4 creatures from your hand as Limited Summons. Return them back to your hand after 1 turn cycle."
+    ],
+    "riskNotes": [
+      "A red result here means delayed hand-return scheduling still needs runtime support."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_066_dawn_of_the_living_chickens-066-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_066_dawn_of_the_living_chickens-066-e02",
+      "tags": [
+        "MAGIC",
+        "DELAYED_TRIGGER",
+        "SCHEDULE_RETURN_TO_HAND"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_066_dawn_of_the_living_chickens:066-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

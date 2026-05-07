@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:04:03.438Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_068_maniac",
+  "effectId": "068-E01",
+  "title": "Maniac uses custom hit outcomes instead of target AL",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:04:03.438Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_068_maniac",
+      "cardName": "Maniac",
+      "cardType": "CREATURE",
+      "cardNumber": "068",
+      "generation": "2",
+      "rawText": "When this creature rolls to hit, ignore the target's AL. Use the following outcomes instead: 1-7: Critical Fail. 8-12: Critical Hit. 13+: Normal Hit. This card is unaffected by Hit Modifier increases."
+    },
+    "effect": {
+      "effectId": "068-E01",
+      "trigger": "DURING_HIT_ROLL",
+      "actionType": "APPLY_HIT_OUTCOME_OVERRIDE",
+      "effectGroup": "Hit Outcome Override",
+      "target": "This creature hit roll",
+      "value": "Ignore target AL; use custom outcome table",
+      "durationText": "While on field",
+      "reusableFunction": "applyHitOutcomeOverride"
+    },
+    "title": "Maniac uses custom hit outcomes instead of target AL",
+    "summary": "Battle Maniac and verify the custom hit outcome override route is represented when it rolls to hit.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_068_maniac"
+      ],
+      "player2Cards": [
+        "test_fast_defender_al_12_hp_100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Maniac custom hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1,
+            1,
+            1
+          ],
+          "label": "Low Maniac damage"
+        }
+      ],
+      "notes": [
+        "Maniac ignores target AL when rolling to hit.",
+        "Use 8-12 as a Critical Hit range per card text."
+      ]
+    },
+    "steps": [
+      "Start battle with Maniac.",
+      "Resolve hit roll using custom outcome table.",
+      "Verify hit outcome override route is visible."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Maniac hit outcome override route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_HIT_OUTCOME_OVERRIDE"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: When this creature rolls to hit, ignore the target's AL. Use the following outcomes instead: 1-7: Critical Fail. 8-12: Critical Hit. 13+: Normal Hit. This card is unaffected by Hit Modifier increases."
+    ],
+    "riskNotes": [
+      "This may expose missing custom hit-table runtime support."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_068_maniac-068-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_068_maniac-068-e01",
+      "tags": [
+        "CREATURE",
+        "DURING_HIT_ROLL",
+        "APPLY_HIT_OUTCOME_OVERRIDE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_068_maniac:068-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

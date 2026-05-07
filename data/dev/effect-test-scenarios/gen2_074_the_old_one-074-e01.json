@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:04:03.438Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_074_the_old_one",
+  "effectId": "074-E01",
+  "title": "The Old One returns all other field cards to owner decks",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:04:03.438Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_074_the_old_one",
+      "cardName": "The Old One",
+      "cardType": "CREATURE",
+      "cardNumber": "074",
+      "generation": "2",
+      "rawText": "When summoned, return all cards aside from this card on the field back to their original owner's deck. All players then shuffle and draw the same number of cards they sent to their deck."
+    },
+    "effect": {
+      "effectId": "074-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "MOVE_CARDS",
+      "effectGroup": "Mass Return",
+      "target": "All other cards on the field",
+      "value": "Return to original owner's deck",
+      "durationText": "Instant",
+      "reusableFunction": "returnCardsToOwnerDeck"
+    },
+    "title": "The Old One returns all other field cards to owner decks",
+    "summary": "Summon The Old One and verify all other field cards are returned to their original owners decks.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_074_the_old_one",
+        "test_primary_creature",
+        "test_magic_spd_plus4"
+      ],
+      "player2Cards": [
+        "test_creature_defender",
+        "gen1_024_ball_and_chain"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "When The Old One is summoned, all other field cards return to original owner decks.",
+        "Exclude The Old One itself."
+      ]
+    },
+    "steps": [
+      "Summon The Old One.",
+      "Return all other field cards to owner decks.",
+      "Verify mass return route is represented."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Move cards route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MOVE_CARDS"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: When summoned, return all cards aside from this card on the field back to their original owner's deck. All players then shuffle and draw the same number of cards they sent to their deck."
+    ],
+    "riskNotes": [
+      "A red result marks missing mass-return runtime support for The Old One."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_074_the_old_one-074-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_074_the_old_one-074-e01",
+      "tags": [
+        "CREATURE",
+        "ON_SUMMON",
+        "MOVE_CARDS"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_074_the_old_one:074-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

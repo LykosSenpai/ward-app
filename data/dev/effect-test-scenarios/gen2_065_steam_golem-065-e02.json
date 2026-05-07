@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:04:03.438Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_065_steam_golem",
+  "effectId": "065-E02",
+  "title": "Steam Golem deals 3x Atk damage to AL 12 creatures",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:04:03.438Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_065_steam_golem",
+      "cardName": "Steam Golem",
+      "cardType": "CREATURE",
+      "cardNumber": "065",
+      "generation": "2",
+      "rawText": "This creature is unaffected by creature effects and magic cards. This creature inflicts 3x Atk damage to any creature with an AL of 12. This includes equip cards."
+    },
+    "effect": {
+      "effectId": "065-E02",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Creature with AL 12",
+      "value": "3x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Steam Golem deals 3x Atk damage to AL 12 creatures",
+    "summary": "Battle Steam Golem into an AL 12 target and verify the 3x attack damage multiplier applies.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_065_steam_golem"
+      ],
+      "player2Cards": [
+        "test_fast_defender_al_12_hp_100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Steam Golem hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2
+          ],
+          "label": "Stable Steam Golem damage"
+        }
+      ],
+      "notes": [
+        "Place Steam Golem on player_1 field as primary.",
+        "Opponent target has AL 12, including equip-card-aware AL."
+      ]
+    },
+    "steps": [
+      "Start battle with Steam Golem into AL 12 target.",
+      "Resolve hit and damage roll.",
+      "Verify 3x Atk damage multiplier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Steam Golem 3x AL12 multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:3"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: This creature is unaffected by creature effects and magic cards. This creature inflicts 3x Atk damage to any creature with an AL of 12. This includes equip cards."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed Gen 2 effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_065_steam_golem-065-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_065_steam_golem-065-e02",
+      "tags": [
+        "CREATURE",
+        "DURING_DAMAGE_CALC",
+        "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_065_steam_golem:065-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
