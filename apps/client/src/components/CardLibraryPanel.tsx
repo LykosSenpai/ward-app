@@ -14,8 +14,6 @@ type SortMode = "number" | "name" | "generation" | "deckCount" | "ownedCount" | 
 const FIXED_HOLO_INTENSITY = 10;
 const INITIAL_VISIBLE_CARD_COUNT = 72;
 const VISIBLE_CARD_INCREMENT = 72;
-const MAX_RENDERED_CARD_COUNT = 216;
-const OFFSCREEN_UNLOAD_DELAY_MS = 20000;
 
 type CardLibraryPanelProps = {
   cardLibrary: CardLibraryCardSummary[];
@@ -282,7 +280,6 @@ export function CardLibraryPanel({
     () => filteredCards.slice(unloadedCardCount, visibleCardCount),
     [filteredCards, unloadedCardCount, visibleCardCount]
   );
-  const renderedCardCount = visibleCardCount - unloadedCardCount;
   const unloadedTopSpacerHeight = Math.ceil(unloadedCardCount / gridColumnCount) * estimatedCardBlockSize;
   const hiddenAboveCardCount = unloadedCardCount;
   const hiddenBelowCardCount = Math.max(0, filteredCards.length - visibleCardCount);
@@ -358,32 +355,6 @@ export function CardLibraryPanel({
 
     return () => observer.disconnect();
   }, [hiddenAboveCardCount, unloadedCardCount]);
-
-  useEffect(() => {
-    if (renderedCardCount <= MAX_RENDERED_CARD_COUNT) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setUnloadedCardCount(current => {
-        const renderedNow = visibleCardCount - current;
-        const excessCount = renderedNow - MAX_RENDERED_CARD_COUNT;
-
-        if (excessCount <= 0) {
-          return current;
-        }
-
-        const unloadCount = Math.floor(excessCount / VISIBLE_CARD_INCREMENT) * VISIBLE_CARD_INCREMENT;
-        if (unloadCount <= 0) {
-          return current;
-        }
-
-        return Math.min(current + unloadCount, Math.max(0, visibleCardCount - INITIAL_VISIBLE_CARD_COUNT));
-      });
-    }, OFFSCREEN_UNLOAD_DELAY_MS);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [renderedCardCount, visibleCardCount]);
 
   useEffect(() => {
     const grid = cardGridRef.current;

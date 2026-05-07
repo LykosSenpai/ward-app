@@ -9,6 +9,8 @@ type UserRow = {
   email: string;
   display_name: string;
   password_hash: string;
+  role: "PLAYER" | "DEVELOPER" | "ADMIN";
+  dev_tools_enabled: boolean;
 };
 
 export type UserProfile = AuthUser & {
@@ -43,7 +45,7 @@ export async function createUser(args: {
       `
         insert into users (username, email, password_hash, display_name)
         values ($1, $2, $3, $4)
-        returning id, username, email, display_name, password_hash
+        returning id, username, email, display_name, password_hash, role, dev_tools_enabled
       `,
       [username, email, passwordHash, displayName]
     );
@@ -70,7 +72,7 @@ export async function verifyUserLogin(args: {
 
   const result = await getDbPool().query<UserRow>(
     `
-      select id, username, email, display_name, password_hash
+      select id, username, email, display_name, password_hash, role, dev_tools_enabled
       from users
       where username = $1 or email = $1
     `,
@@ -104,6 +106,8 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
         u.email,
         u.display_name,
         u.password_hash,
+        u.role,
+        u.dev_tools_enabled,
         count(distinct o.card_id) filter (where o.owned_count > 0) as owned_unique_cards,
         coalesce(sum(o.owned_count) filter (where o.owned_count > 0), 0) as owned_total_copies
       from users u
@@ -131,6 +135,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
 export async function updateUserProfile(userId: string, args: {
   email: string;
   displayName: string;
+  devToolsEnabled?: boolean;
 }): Promise<UserProfile> {
   const email = normalizeEmail(args.email);
   const displayName = String(args.displayName ?? "").trim();
@@ -140,13 +145,19 @@ export async function updateUserProfile(userId: string, args: {
   }
 
   try {
+    const currentProfile = await getUserProfile(userId);
+    const canAccessDevTools = currentProfile.canAccessDevTools;
+    const devToolsEnabled = canAccessDevTools
+      ? Boolean(args.devToolsEnabled)
+      : false;
+
     await getDbPool().query(
       `
         update users
-        set email = $2, display_name = $3, updated_at = now()
+        set email = $2, display_name = $3, dev_tools_enabled = $4, updated_at = now()
         where id = $1
       `,
-      [userId, email, displayName]
+      [userId, email, displayName, devToolsEnabled]
     );
   } catch (error) {
     if (isUniqueViolation(error)) {
@@ -171,7 +182,7 @@ export async function changeUserPassword(userId: string, args: {
 
   const result = await getDbPool().query<UserRow>(
     `
-      select id, username, email, display_name, password_hash
+      select id, username, email, display_name, password_hash, role, dev_tools_enabled
       from users
       where id = $1
     `,
@@ -223,10 +234,15 @@ function normalizeEmail(value: string): string {
 }
 
 function toAuthUser(row: UserRow): AuthUser {
+  const canAccessDevTools = row.role === "DEVELOPER" || row.role === "ADMIN";
+
   return {
     id: row.id,
     username: row.username,
-    displayName: row.display_name
+    displayName: row.display_name,
+    role: row.role,
+    canAccessDevTools,
+    devToolsEnabled: canAccessDevTools && row.dev_tools_enabled
   };
 }
 

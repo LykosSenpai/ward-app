@@ -1,8 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
-import type { PlayerState } from "@ward/shared";
+import type { CardInstance, PlayerState } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import { socket } from "../socket";
 import {
+  getCardName,
+  getCreatureStatsLine,
+  getMagicLine,
   getMatchStatus,
   getRequiredSacrificesForCard,
   playerHasSummonableCreatureInHand
@@ -49,6 +52,140 @@ function ZoneDetails({
 
       <div className="zone-details-body">{children}</div>
     </details>
+  );
+}
+
+function PlaymatCard({
+  match,
+  card,
+  emptyLabel,
+  kind,
+  actionLabel,
+  onAction
+}: {
+  match: AppMatchState;
+  card?: CardInstance;
+  emptyLabel: string;
+  kind: "creature" | "magic" | "stack";
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  if (!card) {
+    return (
+      <div className={`playmat-card empty ${kind}`}>
+        <span>{emptyLabel}</span>
+      </div>
+    );
+  }
+
+  const detail = kind === "magic"
+    ? getMagicLine(match, card)
+    : getCreatureStatsLine(match, card);
+
+  return (
+    <div className={`playmat-card occupied ${kind}`}>
+      <strong>{getCardName(match, card)}</strong>
+      <span>{detail}</span>
+      {actionLabel && onAction && (
+        <button type="button" onClick={onAction}>
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function PlayerPlaymat({
+  match,
+  player,
+  isActivePlayer,
+  canControlThisPlayer,
+  canPromoteLimitedSummonToPrimary,
+  onPromoteLimitedSummonToPrimary,
+  onDestroyMagic,
+  onShuffleDeck
+}: {
+  match: AppMatchState;
+  player: PlayerState;
+  isActivePlayer: boolean;
+  canControlThisPlayer: boolean;
+  canPromoteLimitedSummonToPrimary: boolean;
+  onPromoteLimitedSummonToPrimary: (cardInstanceId: string) => void;
+  onDestroyMagic: (cardInstanceId: string) => void;
+  onShuffleDeck: () => void;
+}) {
+  const limitedSlots = Array.from({ length: 4 }, (_, index) => player.field.limitedSummons[index]);
+  const magicSlots = Array.from({ length: 5 }, (_, index) => player.field.magicSlots[index]);
+  const deckCount = player.deck.length;
+  const cemeteryCount = player.cemetery.length;
+
+  return (
+    <section className={`player-playmat ${isActivePlayer ? "active" : ""}`} aria-label={`${player.displayName} play mat`}>
+      <div className="playmat-brand">
+        <span>WARD</span>
+        <strong>{player.displayName}</strong>
+      </div>
+
+      <div className="playmat-zone playmat-primary-zone">
+        <span className="playmat-zone-label">Primary Creature</span>
+        <PlaymatCard
+          match={match}
+          card={player.field.primaryCreature}
+          emptyLabel="No primary"
+          kind="creature"
+        />
+      </div>
+
+      <div className="playmat-limited-row" aria-label="Limited summon area">
+        {limitedSlots.map((card, index) => (
+          <div className="playmat-zone playmat-limited-zone" key={card?.instanceId ?? `limited-${index}`}>
+            <span className="playmat-zone-label">Limited Summon</span>
+            <PlaymatCard
+              match={match}
+              card={card}
+              emptyLabel={`Slot ${index + 1}`}
+              kind="creature"
+              actionLabel={card && canPromoteLimitedSummonToPrimary ? "Promote" : undefined}
+              onAction={card && canPromoteLimitedSummonToPrimary ? () => onPromoteLimitedSummonToPrimary(card.instanceId) : undefined}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="playmat-magic-row" aria-label="Magic slots">
+        {magicSlots.map((card, index) => (
+          <div className="playmat-zone playmat-magic-zone" key={card?.instanceId ?? `magic-${index}`}>
+            <span className="playmat-zone-label">Magic Slot</span>
+            <PlaymatCard
+              match={match}
+              card={card}
+              emptyLabel={`Slot ${index + 1}`}
+              kind="magic"
+              actionLabel={card && canControlThisPlayer ? "Remove" : undefined}
+              onAction={card && canControlThisPlayer ? () => onDestroyMagic(card.instanceId) : undefined}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="playmat-stack-rail" aria-label="Deck and cemetery">
+        <button
+          className="playmat-stack-zone deck"
+          disabled={!canControlThisPlayer || deckCount === 0 || player.hand.length > 0 || !!match.pendingPrompt}
+          onClick={onShuffleDeck}
+          type="button"
+        >
+          <span>Deck</span>
+          <strong>{deckCount}</strong>
+        </button>
+
+        <div className="playmat-stack-zone cemetery">
+          <span>Card Cemetery</span>
+          <strong>{cemeteryCount}</strong>
+          <small>{player.cemeteryCreatureHpTotal} HP</small>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -351,6 +488,17 @@ export function PlayerPanel({
         onConcede={concedeAsPlayer}
         onCallCemeteryHpLoss={callCemeteryHpLossAgainstPlayer}
         onRequestNoCreatureRedraw={requestNoCreatureRedraw}
+      />
+
+      <PlayerPlaymat
+        match={match}
+        player={player}
+        isActivePlayer={isActivePlayer}
+        canControlThisPlayer={canControlThisPlayer}
+        canPromoteLimitedSummonToPrimary={canPromoteLimitedSummonToPrimary}
+        onPromoteLimitedSummonToPrimary={promoteLimitedSummonToPrimary}
+        onDestroyMagic={destroyMagic}
+        onShuffleDeck={shuffleDeck}
       />
 
       <PrimaryCreatureZone

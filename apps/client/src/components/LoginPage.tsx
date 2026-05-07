@@ -8,6 +8,12 @@ type LoginPageProps = {
 
 type AuthMode = "login" | "register";
 
+const SHOWCASE_CARDS = [
+  "/card-images/gen1_001_blue_dragon.png",
+  "/card-images/gen1_018_wizard.png",
+  "/card-images/gen1_032_council_of_the_cosmos.png"
+];
+
 export function LoginPage({ onAuthenticated }: LoginPageProps) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [login, setLogin] = useState("");
@@ -55,80 +61,101 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
 
   return (
     <main className="login-page">
-      <section className="login-panel">
-        <div className="login-title">
-          <span>WARD</span>
-          <h1>{mode === "login" ? "Login" : "Create Account"}</h1>
-        </div>
+      <section className="login-entry">
+        <section className="login-showcase" aria-label="WARD card artwork">
+          <div className="login-showcase-copy">
+            <span>WARD</span>
+            <h1>Virtual Tabletop</h1>
+            <p>Build decks, manage your collection, and play rules-assisted matches online.</p>
+          </div>
 
-        <form className="login-form" onSubmit={submitAuth}>
-          <label>
-            {mode === "login" ? "Username or Email" : "Username"}
-            <input
-              value={mode === "login" ? login : username}
-              onChange={event => {
-                if (mode === "login") {
-                  setLogin(event.target.value);
-                } else {
-                  setUsername(event.target.value);
-                }
-              }}
-              autoComplete="username"
-              placeholder={mode === "login" ? "player_name or player@email.com" : "player_name"}
-            />
-          </label>
+          <div className="login-card-stack" aria-hidden="true">
+            {SHOWCASE_CARDS.map((src, index) => (
+              <img
+                alt=""
+                className={`login-card-image card-${index + 1}`}
+                key={src}
+                src={src}
+              />
+            ))}
+          </div>
+        </section>
 
-          {mode === "register" && (
-            <>
-              <label>
-                Email
-                <input
-                  value={email}
-                  onChange={event => setEmail(event.target.value)}
-                  autoComplete="email"
-                  placeholder="player@email.com"
-                  type="email"
-                />
-              </label>
+        <section className="login-panel">
+          <div className="login-title">
+            <span>WARD</span>
+            <h1>{mode === "login" ? "Login" : "Create Account"}</h1>
+          </div>
 
-              <label>
-                Display Name
-                <input
-                  value={displayName}
-                  onChange={event => setDisplayName(event.target.value)}
-                  autoComplete="nickname"
-                  placeholder="Player Name"
-                />
-              </label>
-            </>
-          )}
+          <form className="login-form" onSubmit={submitAuth}>
+            <label>
+              {mode === "login" ? "Username or Email" : "Username"}
+              <input
+                value={mode === "login" ? login : username}
+                onChange={event => {
+                  if (mode === "login") {
+                    setLogin(event.target.value);
+                  } else {
+                    setUsername(event.target.value);
+                  }
+                }}
+                autoComplete="username"
+                placeholder={mode === "login" ? "player_name or player@email.com" : "player_name"}
+              />
+            </label>
 
-          <label>
-            Password
-            <input
-              value={password}
-              onChange={event => setPassword(event.target.value)}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              type="password"
-            />
-          </label>
+            {mode === "register" && (
+              <>
+                <label>
+                  Email
+                  <input
+                    value={email}
+                    onChange={event => setEmail(event.target.value)}
+                    autoComplete="email"
+                    placeholder="player@email.com"
+                    type="email"
+                  />
+                </label>
 
-          {error && <p className="login-error">{error}</p>}
+                <label>
+                  Display Name
+                  <input
+                    value={displayName}
+                    onChange={event => setDisplayName(event.target.value)}
+                    autoComplete="nickname"
+                    placeholder="Player Name"
+                  />
+                </label>
+              </>
+            )}
 
-          <button disabled={busy}>
-            {busy ? "Working..." : mode === "login" ? "Login" : "Create Account"}
+            <label>
+              Password
+              <input
+                value={password}
+                onChange={event => setPassword(event.target.value)}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                type="password"
+              />
+            </label>
+
+            {error && <p className="login-error">{error}</p>}
+
+            <button disabled={busy} type="submit">
+              {busy ? "Working..." : mode === "login" ? "Login" : "Create Account"}
+            </button>
+          </form>
+
+          <button
+            className="login-mode-toggle"
+            onClick={() => {
+              setMode(current => current === "login" ? "register" : "login");
+              setError("");
+            }}
+          >
+            {mode === "login" ? "Need an account?" : "Already have an account?"}
           </button>
-        </form>
-
-        <button
-          className="login-mode-toggle"
-          onClick={() => {
-            setMode(current => current === "login" ? "register" : "login");
-            setError("");
-          }}
-        >
-          {mode === "login" ? "Need an account?" : "Already have an account?"}
-        </button>
+        </section>
       </section>
     </main>
   );

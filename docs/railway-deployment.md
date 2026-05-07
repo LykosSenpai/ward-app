@@ -23,7 +23,9 @@ Set these on Railway:
 DATABASE_URL=<Railway Postgres connection string>
 SESSION_SECRET=<at least 32 random characters>
 CLIENT_ORIGIN=https://your-client-domain.example
+ENABLE_DEV_TOOLS=false
 VITE_API_BASE_URL=
+VITE_ENABLE_DEV_TOOLS=false
 NODE_ENV=production
 ```
 
@@ -65,6 +67,8 @@ The server refuses to start in production if `SESSION_SECRET` is shorter than 32
 Express sessions are stored in Postgres in the `user_sessions` table so logins survive server restarts.
 
 Leave `VITE_API_BASE_URL` blank for a combined Railway deployment where the server serves the built client from the same origin. Set it only if the client is hosted on a different domain from the server.
+
+Keep `ENABLE_DEV_TOOLS=false` and `VITE_ENABLE_DEV_TOOLS=false` for public player builds. Set both to `true` only for private development deployments that should expose effect authoring, coverage, LLM test, debug, and forced-roll controls.
 
 ## Before First Public Test
 

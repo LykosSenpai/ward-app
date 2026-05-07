@@ -10,6 +10,7 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [devToolsEnabled, setDevToolsEnabled] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,6 +38,7 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
       setProfile(data.profile);
       setDisplayName(data.profile.displayName);
       setEmail(data.profile.email);
+      setDevToolsEnabled(data.profile.devToolsEnabled);
     } catch (profileError) {
       setError(profileError instanceof Error ? profileError.message : "Unable to load profile.");
     }
@@ -44,6 +46,10 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
 
   async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    await saveProfileChanges();
+  }
+
+  async function saveProfileChanges() {
     setBusy(true);
     setError("");
     setMessage("");
@@ -57,7 +63,8 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
         },
         body: JSON.stringify({
           displayName,
-          email
+          email,
+          devToolsEnabled
         })
       });
       const data = await response.json() as { profile?: UserProfile; user?: AuthUser; message?: string };
@@ -168,6 +175,29 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
             </div>
           </div>
         </section>
+
+        {profile?.canAccessDevTools && (
+          <section className="profile-card">
+            <h3>Developer Access</h3>
+            <div className="profile-readonly-grid">
+              <span>Role</span>
+              <strong>{profile.role}</strong>
+            </div>
+
+            <label className="profile-toggle-row">
+              <input
+                checked={devToolsEnabled}
+                onChange={event => setDevToolsEnabled(event.target.checked)}
+                type="checkbox"
+              />
+              <span>Show developer tools</span>
+            </label>
+
+            <button onClick={() => void saveProfileChanges()} disabled={busy}>
+              {busy ? "Saving..." : "Save Developer Tools"}
+            </button>
+          </section>
+        )}
 
         <section className="profile-card">
           <h3>Password</h3>

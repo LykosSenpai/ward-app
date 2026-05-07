@@ -9,6 +9,8 @@ type UserRow = {
   username: string;
   email: string;
   display_name: string;
+  role: "PLAYER" | "DEVELOPER" | "ADMIN";
+  dev_tools_enabled: boolean;
   created_at: Date;
   owned_unique_cards: string | number;
   owned_total_copies: string | number;
@@ -17,6 +19,8 @@ type UserRow = {
 type Command =
   | "list"
   | "set-email"
+  | "set-role"
+  | "set-dev-tools"
   | "reset-password"
   | "delete";
 
@@ -29,6 +33,8 @@ WARD local user admin
 Commands:
   pnpm user:list
   pnpm user:set-email <username> <email>
+  pnpm user:set-role <username> <PLAYER|DEVELOPER|ADMIN>
+  pnpm user:set-dev-tools <username> <on|off>
   pnpm user:reset-password <username> <new-password>
   pnpm user:delete <username>
 
@@ -67,6 +73,8 @@ async function listUsers(): Promise<void> {
       u.username,
       u.email,
       u.display_name,
+      u.role,
+      u.dev_tools_enabled,
       u.created_at,
       count(distinct o.card_id) filter (where o.owned_count > 0) as owned_unique_cards,
       coalesce(sum(o.owned_count) filter (where o.owned_count > 0), 0) as owned_total_copies
@@ -85,6 +93,8 @@ async function listUsers(): Promise<void> {
     username: row.username,
     email: row.email,
     displayName: row.display_name,
+    role: row.role,
+    devTools: row.dev_tools_enabled ? "on" : "off",
     ownedUnique: Number(row.owned_unique_cards ?? 0),
     ownedCopies: Number(row.owned_total_copies ?? 0),
     createdAt: row.created_at.toISOString()
@@ -100,7 +110,7 @@ async function setEmail(usernameArg: string | undefined, emailArg: string | unde
       update users
       set email = $2, updated_at = now()
       where username = $1
-      returning id, username, email, display_name, created_at, 0 as owned_unique_cards, 0 as owned_total_copies
+      returning id, username, email, display_name, role, dev_tools_enabled, created_at, 0 as owned_unique_cards, 0 as owned_total_copies
     `,
     [username, email]
   );
@@ -112,6 +122,79 @@ async function setEmail(usernameArg: string | undefined, emailArg: string | unde
   }
 
   console.log(`Updated ${user.username} email to ${user.email}.`);
+}
+
+function normalizeRole(value: string): UserRow["role"] {
+  const role = value.trim().toUpperCase();
+
+  if (role !== "PLAYER" && role !== "DEVELOPER" && role !== "ADMIN") {
+    throw new Error("Role must be PLAYER, DEVELOPER, or ADMIN.");
+  }
+
+  return role;
+}
+
+function parseToggle(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+
+  if (["1", "true", "yes", "on", "enabled"].includes(normalized)) return true;
+  if (["0", "false", "no", "off", "disabled"].includes(normalized)) return false;
+
+  throw new Error("Toggle must be on or off.");
+}
+
+async function setRole(usernameArg: string | undefined, roleArg: string | undefined): Promise<void> {
+  const username = normalizeUsername(requireArg(usernameArg, "username"));
+  const role = normalizeRole(requireArg(roleArg, "role"));
+  const devToolsEnabled = role === "PLAYER" ? false : undefined;
+
+  const result = await getDbPool().query<UserRow>(
+    `
+      update users
+      set role = $2,
+          dev_tools_enabled = coalesce($3, dev_tools_enabled),
+          updated_at = now()
+      where username = $1
+      returning id, username, email, display_name, role, dev_tools_enabled, created_at, 0 as owned_unique_cards, 0 as owned_total_copies
+    `,
+    [username, role, devToolsEnabled]
+  );
+
+  const user = result.rows[0];
+
+  if (!user) {
+    throw new Error(`User not found: ${username}`);
+  }
+
+  console.log(`Updated ${user.username} role to ${user.role}.`);
+}
+
+async function setDevTools(usernameArg: string | undefined, enabledArg: string | undefined): Promise<void> {
+  const username = normalizeUsername(requireArg(usernameArg, "username"));
+  const enabled = parseToggle(requireArg(enabledArg, "on|off"));
+
+  const result = await getDbPool().query<UserRow>(
+    `
+      update users
+      set dev_tools_enabled = case when role in ('DEVELOPER', 'ADMIN') then $2 else false end,
+          updated_at = now()
+      where username = $1
+      returning id, username, email, display_name, role, dev_tools_enabled, created_at, 0 as owned_unique_cards, 0 as owned_total_copies
+    `,
+    [username, enabled]
+  );
+
+  const user = result.rows[0];
+
+  if (!user) {
+    throw new Error(`User not found: ${username}`);
+  }
+
+  if (enabled && user.role === "PLAYER") {
+    throw new Error(`${user.username} is a PLAYER. Set role to DEVELOPER or ADMIN before enabling dev tools.`);
+  }
+
+  console.log(`Updated ${user.username} developer tools to ${user.dev_tools_enabled ? "on" : "off"}.`);
 }
 
 async function resetPassword(usernameArg: string | undefined, passwordArg: string | undefined): Promise<void> {
@@ -128,7 +211,7 @@ async function resetPassword(usernameArg: string | undefined, passwordArg: strin
       update users
       set password_hash = $2, updated_at = now()
       where username = $1
-      returning id, username, email, display_name, created_at, 0 as owned_unique_cards, 0 as owned_total_copies
+      returning id, username, email, display_name, role, dev_tools_enabled, created_at, 0 as owned_unique_cards, 0 as owned_total_copies
     `,
     [username, passwordHash]
   );
@@ -149,7 +232,7 @@ async function deleteUser(usernameArg: string | undefined): Promise<void> {
     `
       delete from users
       where username = $1
-      returning id, username, email, display_name, created_at, 0 as owned_unique_cards, 0 as owned_total_copies
+      returning id, username, email, display_name, role, dev_tools_enabled, created_at, 0 as owned_unique_cards, 0 as owned_total_copies
     `,
     [username]
   );
@@ -176,6 +259,16 @@ async function run(): Promise<void> {
 
   if (command === "set-email") {
     await setEmail(args[0], args[1]);
+    return;
+  }
+
+  if (command === "set-role") {
+    await setRole(args[0], args[1]);
+    return;
+  }
+
+  if (command === "set-dev-tools") {
+    await setDevTools(args[0], args[1]);
     return;
   }
 

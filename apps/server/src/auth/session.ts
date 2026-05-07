@@ -6,6 +6,9 @@ export type AuthUser = {
   id: string;
   username: string;
   displayName: string;
+  role: "PLAYER" | "DEVELOPER" | "ADMIN";
+  canAccessDevTools: boolean;
+  devToolsEnabled: boolean;
 };
 
 declare module "express-session" {

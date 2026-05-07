@@ -5,3 +5,5 @@ export const API_BASE_URL = configuredApiBaseUrl || (
 );
 
 export const SOCKET_URL = API_BASE_URL || undefined;
+
+export const ENABLE_DEV_TOOLS = import.meta.env.VITE_ENABLE_DEV_TOOLS === "true";

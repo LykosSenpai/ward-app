@@ -23,7 +23,7 @@ type CompactMatchControlPanelProps = {
   onOpenBattleResult: () => void;
   onOpenEventLog: () => void;
   onOpenMatchDetails: () => void;
-  onOpenEffectDebug: () => void;
+  onOpenEffectDebug?: () => void;
   onOpenDiceRoller: () => void;
 };
 
@@ -215,9 +215,11 @@ export function CompactMatchControlPanel({
           Event Log ({match.eventLog.length})
         </button>
 
-        <button className="secondary-button" onClick={onOpenEffectDebug}>
-          Effect Debug
-        </button>
+        {onOpenEffectDebug && (
+          <button className="secondary-button" onClick={onOpenEffectDebug}>
+            Effect Debug
+          </button>
+        )}
       </div>
     </section>
   );

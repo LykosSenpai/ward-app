@@ -9,6 +9,9 @@ export type AuthUser = {
   id: string;
   username: string;
   displayName: string;
+  role: "PLAYER" | "DEVELOPER" | "ADMIN";
+  canAccessDevTools: boolean;
+  devToolsEnabled: boolean;
 };
 
 export type UserProfile = AuthUser & {

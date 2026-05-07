@@ -54,6 +54,7 @@ type BattleResolverModalProps = {
   ) => void;
   onRollHit: (battleSessionId: string) => void;
   onForceRolls: (kind: DevRollKind, dice: number[], label?: string) => void;
+  enableDevTools?: boolean;
   onRollDamage: (battleSessionId: string) => void;
   onPlayBattleResponse: (
     battleSessionId: string,
@@ -682,6 +683,7 @@ export function BattleResolverModal({
   onUpdateStrikeModifiers,
   onRollHit,
   onForceRolls,
+  enableDevTools = false,
   onRollDamage,
   onPlayBattleResponse,
   onUndo,
@@ -794,43 +796,47 @@ export function BattleResolverModal({
             <button onClick={() => onRollHit(battle.id)}>
               Roll Hit for {getParticipantLabel(match, currentStrike.attacker)}
             </button>
-            <button
-              className="secondary-button"
-              onClick={() => queueForcedRollAndRun(
-                onForceRolls,
-                () => onRollHit(battle.id),
-                "HIT_ROLL",
-                [6, 6],
-                `Critical hit test: ${currentStrike.attacker.creatureName}`
-              )}
-            >
-              Roll Critical Hit 6,6
-            </button>
-            <button
-              className="secondary-button"
-              onClick={() => queueForcedRollAndRun(
-                onForceRolls,
-                () => onRollHit(battle.id),
-                "HIT_ROLL",
-                [1, 1],
-                `Critical miss test: ${currentStrike.attacker.creatureName}`
-              )}
-            >
-              Roll Critical Miss 1,1
-            </button>
-            <button
-              className="secondary-button"
-              onClick={() => {
-                onForceRolls("HIT_ROLL", [1, 1], `Critical miss test: ${currentStrike.attacker.creatureName}`);
-                onForceRolls("SELF_DAMAGE_ROLL", [6], `Critical miss self-damage test: ${currentStrike.attacker.creatureName}`);
-                window.setTimeout(() => onRollHit(battle.id), 0);
-              }}
-            >
-              Crit Miss + Self Damage 6
-            </button>
-            <small>
-              Critical checks only apply when the final hit roll has 2+ dice. Force Hit still rolls dice: 6,6 keeps critical hit; 1,1 ignores critical miss and becomes a forced hit.
-            </small>
+            {enableDevTools && (
+              <>
+                <button
+                  className="secondary-button"
+                  onClick={() => queueForcedRollAndRun(
+                    onForceRolls,
+                    () => onRollHit(battle.id),
+                    "HIT_ROLL",
+                    [6, 6],
+                    `Critical hit test: ${currentStrike.attacker.creatureName}`
+                  )}
+                >
+                  Roll Critical Hit 6,6
+                </button>
+                <button
+                  className="secondary-button"
+                  onClick={() => queueForcedRollAndRun(
+                    onForceRolls,
+                    () => onRollHit(battle.id),
+                    "HIT_ROLL",
+                    [1, 1],
+                    `Critical miss test: ${currentStrike.attacker.creatureName}`
+                  )}
+                >
+                  Roll Critical Miss 1,1
+                </button>
+                <button
+                  className="secondary-button"
+                  onClick={() => {
+                    onForceRolls("HIT_ROLL", [1, 1], `Critical miss test: ${currentStrike.attacker.creatureName}`);
+                    onForceRolls("SELF_DAMAGE_ROLL", [6], `Critical miss self-damage test: ${currentStrike.attacker.creatureName}`);
+                    window.setTimeout(() => onRollHit(battle.id), 0);
+                  }}
+                >
+                  Crit Miss + Self Damage 6
+                </button>
+                <small>
+                  Critical checks only apply when the final hit roll has 2+ dice. Force Hit still rolls dice: 6,6 keeps critical hit; 1,1 ignores critical miss and becomes a forced hit.
+                </small>
+              </>
+            )}
           </div>
         )}
 

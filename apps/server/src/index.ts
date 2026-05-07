@@ -117,6 +117,11 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "../../..");
 const CLIENT_DIST_DIR = path.join(ROOT_DIR, "apps", "client", "dist");
 const isProduction = process.env.NODE_ENV === "production";
+const ENABLE_DEV_TOOLS = process.env.ENABLE_DEV_TOOLS === "true" || (!isProduction && process.env.ENABLE_DEV_TOOLS !== "false");
+const DEV_SOCKET_EVENTS = new Set([
+  "match:devForceRolls",
+  "match:devClearForcedRolls"
+]);
 
 const app = express();
 
@@ -131,6 +136,16 @@ function isAllowedClientOrigin(origin?: string): boolean {
   if (!origin) return true;
   if (origin === CLIENT_ORIGIN) return true;
   return process.env.NODE_ENV !== "production" && LOCAL_CLIENT_ORIGIN_PATTERN.test(origin);
+}
+
+function isDevToolSocketEvent(eventName: string): boolean {
+  return eventName.startsWith("dev:") ||
+    eventName.startsWith("llm:") ||
+    DEV_SOCKET_EVENTS.has(eventName);
+}
+
+function canSocketUseDevTools(socket: { request: unknown }): boolean {
+  return ENABLE_DEV_TOOLS || !!getSocketUser(socket)?.devToolsEnabled;
 }
 
 app.use(cors({
@@ -1097,14 +1112,11 @@ app.patch("/api/profile", async (req, res) => {
 
     const profile = await updateUserProfile(req.session.user.id, {
       email: String(req.body?.email ?? ""),
-      displayName: String(req.body?.displayName ?? "")
+      displayName: String(req.body?.displayName ?? ""),
+      devToolsEnabled: Boolean(req.body?.devToolsEnabled)
     });
 
-    req.session.user = {
-      id: profile.id,
-      username: profile.username,
-      displayName: profile.displayName
-    };
+    req.session.user = profile;
 
     res.json({ profile, user: req.session.user });
   } catch (error) {
@@ -1164,6 +1176,19 @@ io.engine.use(sessionMiddleware);
 io.on("connection", async socket => {
   console.log(`Client connected: ${socket.id}`);
   const connectedUser = getSocketUser(socket);
+
+  socket.use((packet, next) => {
+    const [eventName] = packet;
+
+    if (!canSocketUseDevTools(socket) && typeof eventName === "string" && isDevToolSocketEvent(eventName)) {
+      socket.emit("match:error", {
+        message: "Developer tools are disabled on this server."
+      });
+      return;
+    }
+
+    next();
+  });
 
   socket.emit("server:welcome", {
     message: "Connected to WARD server",

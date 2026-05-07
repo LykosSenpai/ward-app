@@ -58,6 +58,12 @@ import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests";
 
+const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests"]);
+
+function isDevToolPage(page: AppPage): boolean {
+  return DEV_TOOL_PAGES.has(page);
+}
+
 type DashboardModal =
   | "save-load"
   | "manual-effects"
@@ -110,6 +116,23 @@ export default function App() {
   const [llmBatchProgress, setLlmBatchProgress] = useState<LlmBatchProgress | undefined>();
   const [llmDirectTestResults, setLlmDirectTestResults] = useState<Record<string, LlmDirectEffectSmokeTestResult>>({});
   const [llmBusy, setLlmBusy] = useState(false);
+  const canUseDevTools = !!authUser?.devToolsEnabled;
+
+  useEffect(() => {
+    if (!canUseDevTools && isDevToolPage(activePage)) {
+      setActivePage("play");
+    }
+
+    if (!canUseDevTools && dashboardModal === "effect-debug") {
+      setDashboardModal(null);
+    }
+  }, [activePage, canUseDevTools, dashboardModal]);
+
+  useEffect(() => {
+    if (canUseDevTools) {
+      socket.emit("llm:getStatus");
+    }
+  }, [canUseDevTools]);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/auth/me`, {
@@ -498,7 +521,9 @@ export default function App() {
     socket.emit("deck:listDetails");
     socket.emit("lobby:list");
     socket.emit("collection:listOwnership");
-    socket.emit("llm:getStatus");
+    if (canUseDevTools) {
+      socket.emit("llm:getStatus");
+    }
   }
 
   function refreshEffectCoverage() {
@@ -1503,26 +1528,30 @@ export default function App() {
           >
             Profile
           </button>
-          <button
-            className={activePage === "effect-dev" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("effect-dev")}
-          >
-            Effect Dev Tool
-          </button>
+          {canUseDevTools && (
+            <>
+              <button
+                className={activePage === "effect-dev" ? "app-page-nav-button active" : "app-page-nav-button"}
+                onClick={() => setActivePage("effect-dev")}
+              >
+                Effect Dev Tool
+              </button>
 
-          <button
-            className={activePage === "effect-coverage" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("effect-coverage")}
-          >
-            Effect Coverage
-          </button>
+              <button
+                className={activePage === "effect-coverage" ? "app-page-nav-button active" : "app-page-nav-button"}
+                onClick={() => setActivePage("effect-coverage")}
+              >
+                Effect Coverage
+              </button>
 
-          <button
-            className={activePage === "llm-tests" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("llm-tests")}
-          >
-            LLM Test Lab
-          </button>
+              <button
+                className={activePage === "llm-tests" ? "app-page-nav-button active" : "app-page-nav-button"}
+                onClick={() => setActivePage("llm-tests")}
+              >
+                LLM Test Lab
+              </button>
+            </>
+          )}
         </nav>
 
         {socketId && activePage !== "card-library" && activePage !== "deck-library" && (
@@ -1539,7 +1568,7 @@ export default function App() {
           </div>
         )}
 
-        {activePage === "effect-dev" ? (
+        {canUseDevTools && activePage === "effect-dev" ? (
           <EffectDevToolPage
             cardPacks={cardPacks}
             selectedPackIds={selectedPackIds}
@@ -1552,7 +1581,7 @@ export default function App() {
             onSaveCardEffects={saveCardEffects}
             onCreateTestMatch={createEffectTestMatch}
           />
-        ) : activePage === "effect-coverage" ? (
+        ) : canUseDevTools && activePage === "effect-coverage" ? (
           <EffectCoveragePage
             cardPacks={cardPacks}
             selectedPackIds={selectedPackIds}
@@ -1566,7 +1595,7 @@ export default function App() {
             onCreateScenarioMatch={createEffectScenarioMatch}
             onSaveTestStatus={saveEffectRuntimeTestStatus}
           />
-        ) : activePage === "llm-tests" ? (
+        ) : canUseDevTools && activePage === "llm-tests" ? (
           <LlmEffectTestLabPage
             cardPacks={cardPacks}
             selectedPackIds={selectedPackIds}
@@ -1610,7 +1639,11 @@ export default function App() {
             onDeleteSelected={deleteSelectedSavedMatches}
           />
         ) : activePage === "profile" ? (
-          <ProfilePage onUserUpdated={setAuthUser} />
+          <ProfilePage onUserUpdated={user => {
+            setAuthUser(user);
+            socket.disconnect();
+            socket.connect();
+          }} />
         ) : activePage === "card-library" ? (
           <LibraryDecksPage
             selectedPackCount={selectedPackIds.length}
@@ -1675,7 +1708,7 @@ export default function App() {
               onOpenDiceRoller={() => setDashboardModal("dice-roller")}
               onOpenEventLog={() => setDashboardModal("event-log")}
               onOpenMatchDetails={() => setDashboardModal("match-details")}
-              onOpenEffectDebug={() => setDashboardModal("effect-debug")}
+              onOpenEffectDebug={canUseDevTools ? () => setDashboardModal("effect-debug") : undefined}
             />
 
             {!match.pendingBattle && (
@@ -1687,11 +1720,13 @@ export default function App() {
               />
             )}
 
-            <DevTestControlsPanel
-              match={match}
-              onForceRolls={forceDevRolls}
-              onClearForcedRolls={clearForcedDevRolls}
-            />
+            {canUseDevTools && (
+              <DevTestControlsPanel
+                match={match}
+                onForceRolls={forceDevRolls}
+                onClearForcedRolls={clearForcedDevRolls}
+              />
+            )}
 
             <section className="match-workspace">
               <section className="players-grid match-board-grid">
@@ -1711,6 +1746,7 @@ export default function App() {
                   onUpdateStrikeModifiers={updateBattleStrikeModifiers}
                   onRollHit={rollBattleHit}
                   onForceRolls={forceDevRolls}
+                  enableDevTools={canUseDevTools}
                   onRollDamage={rollBattleDamage}
                   onPlayBattleResponse={playBattleResponseFromHand}
                   onUndo={undoLastAction}
@@ -1849,7 +1885,7 @@ export default function App() {
             )}
 
 
-            {dashboardModal === "effect-debug" && (
+            {canUseDevTools && dashboardModal === "effect-debug" && (
               <ModalPanel
                 title="Effect Debug Inspector"
                 onClose={() => setDashboardModal(null)}
