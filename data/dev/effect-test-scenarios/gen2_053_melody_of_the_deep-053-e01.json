@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:00:47.050Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_053_melody_of_the_deep",
+  "effectId": "053-E01",
+  "title": "Melody of the Deep negates opponent magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:00:47.050Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_053_melody_of_the_deep",
+      "cardName": "Melody of the Deep",
+      "cardType": "MAGIC",
+      "cardNumber": "053",
+      "generation": "2",
+      "rawText": "Play this card from your hand when your opponent plays a magic card or lands a hit. Negate the magic card effect and send it to the cemetery, or negate the attack."
+    },
+    "effect": {
+      "effectId": "053-E01",
+      "trigger": "ON_OPPONENT_PLAYS_MAGIC_OR_ATTACK_HITS",
+      "actionType": "NEGATE_ATTACK_OR_MAGIC",
+      "effectGroup": "Negation",
+      "target": "Opponent magic card or attack",
+      "value": "Negate selected legal event",
+      "durationText": "Instant",
+      "reusableFunction": "negateAttackOrMagic"
+    },
+    "title": "Melody of the Deep negates opponent magic",
+    "summary": "Respond to opponent magic with Melody of the Deep and verify the triggering magic is negated and sent to cemetery.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_053_melody_of_the_deep",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_standard_magic_draw_or_buff",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Melody of the Deep is in player_1 hand.",
+        "Player_2 plays a standard magic card to open the response window."
+      ]
+    },
+    "steps": [
+      "Player_2 plays target standard magic.",
+      "Player_1 plays Melody of the Deep as the Lightning response.",
+      "Resolve chain and verify original magic is negated."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Opponent magic sent to cemetery",
+        "path": "player_2.cemetery",
+        "operator": "contains",
+        "value": "test_standard_magic_draw_or_buff"
+      },
+      {
+        "label": "Opponent magic effect was negated",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "magic_negated"
+      },
+      {
+        "label": "Melody of the Deep sent to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen2_053_melody_of_the_deep"
+      }
+    ],
+    "manualVerification": [
+      "The same card also has an attack-negation mode when the opponent lands a hit."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed Gen 2 effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_053_melody_of_the_deep-053-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_053_melody_of_the_deep-053-e01",
+      "tags": [
+        "MAGIC",
+        "ON_OPPONENT_PLAYS_MAGIC_OR_ATTACK_HITS",
+        "NEGATE_ATTACK_OR_MAGIC"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_053_melody_of_the_deep:053-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

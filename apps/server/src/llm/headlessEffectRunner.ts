@@ -3239,6 +3239,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     (
       actionType.includes("apply_stat_modifier") ||
       actionType.includes("apply_dynamic_stat_modifier") ||
+      actionType.includes("apply_dice_modifier") ||
       actionType.includes("apply_field_aura_modifiers") ||
       actionType.includes("apply_multi_modifier") ||
       actionType.includes("apply_stat_set_aura") ||
@@ -3584,6 +3585,7 @@ function runFollowupBattleForStatModifier(match: MatchState, plan: LlmEffectTest
   if (
     !actionType.includes("apply_stat_modifier") &&
     !actionType.includes("apply_dynamic_stat_modifier") &&
+    !actionType.includes("apply_dice_modifier") &&
     !actionType.includes("apply_field_aura_modifiers") &&
     !actionType.includes("apply_multi_modifier")
   ) return match;

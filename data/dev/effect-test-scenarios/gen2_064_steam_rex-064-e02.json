@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:00:47.050Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_064_steam_rex",
+  "effectId": "064-E02",
+  "title": "Steam Rex deals 2x Atk damage after opponent Lightning",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:00:47.050Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_064_steam_rex",
+      "cardName": "Steam Rex",
+      "cardType": "CREATURE",
+      "cardNumber": "064",
+      "generation": "2",
+      "rawText": "This creature is unaffected by creature effects and magic cards. If your opponent plays a Lightning card, this creature inflicts 2x Atk damage the turn it was used."
+    },
+    "effect": {
+      "effectId": "064-E02",
+      "trigger": "ON_OPPONENT_PLAYS_LIGHTNING",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "This creature attack",
+      "value": "2x Atk damage",
+      "durationText": "Current turn",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Steam Rex deals 2x Atk damage after opponent Lightning",
+    "summary": "Have the opponent use a Lightning card, then battle with Steam Rex and verify 2x attack damage for that turn.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_064_steam_rex",
+        "test_standard_magic_draw_or_buff"
+      ],
+      "player2Cards": [
+        "gen1_028_blade_in_the_dark",
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Steam Rex boosted hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2
+          ],
+          "label": "Stable Steam Rex damage"
+        }
+      ],
+      "notes": [
+        "Place Steam Rex on player_1 field as primary.",
+        "Opponent uses a Lightning card this turn.",
+        "Then Steam Rex battles."
+      ]
+    },
+    "steps": [
+      "Player_1 plays standard magic.",
+      "Player_2 responds with Lightning.",
+      "Battle with Steam Rex and verify 2x Atk damage."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Steam Rex 2x opponent-Lightning multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: This creature is unaffected by creature effects and magic cards. If your opponent plays a Lightning card, this creature inflicts 2x Atk damage the turn it was used."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed Gen 2 effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_064_steam_rex-064-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_064_steam_rex-064-e02",
+      "tags": [
+        "CREATURE",
+        "ON_OPPONENT_PLAYS_LIGHTNING",
+        "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_064_steam_rex:064-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

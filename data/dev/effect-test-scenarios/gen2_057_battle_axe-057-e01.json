@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:00:47.050Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_057_battle_axe",
+  "effectId": "057-E01",
+  "title": "Battle Axe grants +2 Atk while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:00:47.050Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_057_battle_axe",
+      "cardName": "Battle Axe",
+      "cardType": "MAGIC",
+      "cardNumber": "057",
+      "generation": "2",
+      "rawText": "Atk: +2. Hit: +2."
+    },
+    "effect": {
+      "effectId": "057-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "target": "Equipped creature",
+      "value": "+2 ATK_DAMAGE",
+      "durationText": "While equipped",
+      "reusableFunction": "applyDiceModifier"
+    },
+    "title": "Battle Axe grants +2 Atk while equipped",
+    "summary": "Attach Battle Axe and verify the attack modifier route is represented for the equipped creature.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_057_battle_axe",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place this equip Magic on field magic slot attached to player_1 primary creature.",
+        "Use the card rules text for expected stat changes."
+      ]
+    },
+    "steps": [
+      "Put Battle Axe in player_1 magic slot.",
+      "Attach it to player_1 primary creature.",
+      "Verify the while-equipped effect is represented by runtime state/events."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Battle Axe remains equipped",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_057_battle_axe"
+      },
+      {
+        "label": "Battle Axe stat route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Atk: +2. Hit: +2."
+    ],
+    "riskNotes": [
+      "Battle Axe is parsed as APPLY_DICE_MODIFIER, which may need runner/runtime parity with other equip stat modifiers."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_057_battle_axe-057-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_057_battle_axe-057-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_EQUIPPED",
+        "APPLY_DICE_MODIFIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_057_battle_axe:057-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

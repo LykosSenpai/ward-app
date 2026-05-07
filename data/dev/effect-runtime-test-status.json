@@ -3176,7 +3176,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:50.036Z",
+      "lastTestedAt": "2026-05-07T16:01:42.269Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3190,7 +3190,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:54.859Z",
+      "lastTestedAt": "2026-05-07T16:01:42.320Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3204,7 +3204,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:55.455Z",
+      "lastTestedAt": "2026-05-07T16:01:42.379Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3260,7 +3260,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:53.913Z",
+      "lastTestedAt": "2026-05-07T16:01:42.513Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3273,9 +3273,9 @@
       "actionType": "APPLY_DICE_MODIFIER",
       "status": "WORKING",
       "issueType": "NONE",
-      "notes": "",
-      "lastTestedAt": "2026-05-02T18:38:45.226Z",
-      "testedBy": "Dev"
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:01:42.639Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen2:gen2_057_battle_axe:057-E02",
@@ -3287,9 +3287,9 @@
       "actionType": "APPLY_DICE_MODIFIER",
       "status": "WORKING",
       "issueType": "NONE",
-      "notes": "",
-      "lastTestedAt": "2026-05-02T18:38:44.319Z",
-      "testedBy": "Dev"
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:01:42.767Z",
+      "testedBy": "Headless Engine QA"
     },
     {
       "key": "ward-gen2:gen2_058_zombie_dog:058-E01",
@@ -3302,7 +3302,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:44:01.044Z",
+      "lastTestedAt": "2026-05-07T16:01:42.878Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3316,7 +3316,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:44:00.139Z",
+      "lastTestedAt": "2026-05-07T16:01:42.944Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3334,6 +3334,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen2:gen2_061_abominable_deer_man:061-E02",
+      "packId": "ward-gen2",
+      "cardId": "gen2_061_abominable_deer_man",
+      "cardName": "Abominable Deer Man",
+      "effectId": "061-E02",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_SOURCE_LINKED_CLEANUP",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:01:42.995Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen2:gen2_062_martial_arts_man:062-E01",
       "packId": "ward-gen2",
       "cardId": "gen2_062_martial_arts_man",
@@ -3344,7 +3358,49 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:55.335Z",
+      "lastTestedAt": "2026-05-07T16:01:43.108Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_063_steam_spider:063-E01",
+      "packId": "ward-gen2",
+      "cardId": "gen2_063_steam_spider",
+      "cardName": "Steam Spider",
+      "effectId": "063-E01",
+      "trigger": "STATIC_RULE",
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: APPLY_PLAY_RESTRICTION.",
+      "lastTestedAt": "2026-05-07T16:01:43.120Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_063_steam_spider:063-E02",
+      "packId": "ward-gen2",
+      "cardId": "gen2_063_steam_spider",
+      "cardName": "Steam Spider",
+      "effectId": "063-E02",
+      "trigger": "STATIC_RULE",
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: APPLY_PLAY_RESTRICTION.",
+      "lastTestedAt": "2026-05-07T16:01:43.130Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_063_steam_spider:063-E03",
+      "packId": "ward-gen2",
+      "cardId": "gen2_063_steam_spider",
+      "cardName": "Steam Spider",
+      "effectId": "063-E03",
+      "trigger": "STATIC_RULE",
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: APPLY_PLAY_RESTRICTION.",
+      "lastTestedAt": "2026-05-07T16:01:43.139Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3358,7 +3414,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T13:43:58.471Z",
+      "lastTestedAt": "2026-05-07T16:01:43.149Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3372,7 +3428,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T14:04:53.394Z",
+      "lastTestedAt": "2026-05-07T16:01:43.292Z",
       "testedBy": "Headless Engine QA"
     },
     {

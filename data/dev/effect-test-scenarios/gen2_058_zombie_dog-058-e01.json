@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:00:47.050Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_058_zombie_dog",
+  "effectId": "058-E01",
+  "title": "Zombie Dog inflicts 3x Atk damage when it hits first",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:00:47.050Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_058_zombie_dog",
+      "cardName": "Zombie Dog",
+      "cardType": "CREATURE",
+      "cardNumber": "058",
+      "generation": "2",
+      "rawText": "If this creature hits first during battle, inflict 3x Atk damage."
+    },
+    "effect": {
+      "effectId": "058-E01",
+      "trigger": "ON_HIT_FIRST",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Attack target",
+      "value": "3x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Zombie Dog inflicts 3x Atk damage when it hits first",
+    "summary": "Battle Zombie Dog so it hits first and verify the 3x attack damage multiplier applies.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_058_zombie_dog"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Zombie Dog first hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Stable Zombie Dog damage"
+        }
+      ],
+      "notes": [
+        "Place Zombie Dog on player_1 field as primary.",
+        "Force it to hit first during battle."
+      ]
+    },
+    "steps": [
+      "Start Zombie Dog battle.",
+      "Resolve first hit and damage.",
+      "Verify 3x Atk damage multiplier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Zombie Dog 3x first-hit multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:3"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: If this creature hits first during battle, inflict 3x Atk damage."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to deterministic headless coverage for this parsed Gen 2 effect."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_058_zombie_dog-058-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_058_zombie_dog-058-e01",
+      "tags": [
+        "CREATURE",
+        "ON_HIT_FIRST",
+        "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_058_zombie_dog:058-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
