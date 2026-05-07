@@ -557,6 +557,15 @@ function runHeadlessPrimarySummon(
   steps: RunStep[]
 ): MatchState {
   const playerId = plan.setup.activePlayerId ?? source.playerId;
+  const player = getPlayer(match, playerId);
+  if (player.field.primaryCreature?.cardId === plan.card.cardId) {
+    const primary = player.field.primaryCreature;
+    player.field.primaryCreature = undefined;
+    primary.zone = "HAND";
+    primary.controllerPlayerId = playerId;
+    player.hand.push(primary);
+  }
+
   const sourceCard = getPlayer(match, playerId).hand.find(card => card.instanceId === source.card.instanceId) ??
     ensureCardInHand(match, playerId, plan.card.cardId);
 
@@ -564,24 +573,44 @@ function runHeadlessPrimarySummon(
     throw new Error(`Headless summon needs ${definition.name} in hand.`);
   }
 
-  const validSacrifices = uniqueSacrificesByCardId(
-    findSummonSacrificeCards(match, playerId, plan.card.cardId, card =>
-      isDragonQualifiedCard(match, card)
-    )
-  ).slice(0, 2);
+  const summonText = normalizeText(
+    planText(plan),
+    plan.effect?.actionType,
+    plan.effect?.effectGroup,
+    plan.effect?.target,
+    plan.effect?.value,
+    plan.effect?.reusableFunction,
+    definition.text
+  );
+  const needsTwoDragonSacrifices =
+    summonText.includes("two dragon") ||
+    summonText.includes("2 dragon") ||
+    summonText.includes("requires two") ||
+    summonText.includes("requires 2") ||
+    normalizeText(plan.effect?.actionType).includes("attach_cards_under_source");
 
-  if (validSacrifices.length < 2) {
+  const validSacrifices = needsTwoDragonSacrifices
+    ? uniqueSacrificesByCardId(
+        findSummonSacrificeCards(match, playerId, plan.card.cardId, card =>
+          isDragonQualifiedCard(match, card)
+        )
+      ).slice(0, 2)
+    : [];
+
+  if (needsTwoDragonSacrifices && validSacrifices.length < 2) {
     throw new Error(`Headless summon needs two Dragon-qualified sacrifices for ${definition.name}.`);
   }
 
-  const invalidSacrifices = [
-    validSacrifices[0],
-    ...findSummonSacrificeCards(match, playerId, plan.card.cardId, card =>
-      !isDragonQualifiedCard(match, card)
-    )
-  ].filter((card): card is CardInstance => !!card).slice(0, 2);
+  const invalidSacrifices = needsTwoDragonSacrifices
+    ? [
+        validSacrifices[0],
+        ...findSummonSacrificeCards(match, playerId, plan.card.cardId, card =>
+          !isDragonQualifiedCard(match, card)
+        )
+      ].filter((card): card is CardInstance => !!card).slice(0, 2)
+    : [];
 
-  if (invalidSacrifices.length === 2) {
+  if (needsTwoDragonSacrifices && invalidSacrifices.length === 2) {
     const invalidBranch = cloneMatch(match);
     try {
       playCreatureFromHandAsPrimary(
@@ -2147,7 +2176,6 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   const actionType = normalizeText(effect?.actionType);
 
   const shouldRunSummon = definition.cardType === "CREATURE" &&
-    source.zone === "HAND" &&
     (
       trigger.includes("summon_requirement") ||
       trigger.includes("on_summon") ||

@@ -9,9 +9,67 @@ import {
 } from "./actionGuards.js";
 import { validateHandSacrificesForCreature } from "./actionCards.js";
 import { creatureCannotBeSacrificed } from "./creatureRuntimeEffects.js";
+import { createEffectTargetPromptFromChainLink } from "./effectPrompts.js";
+import { effectNeedsTargetPrompt } from "./effectRegistry.js";
 import { runCardRemovedFromFieldTriggers } from "./triggers.js";
 import { moveFieldCreatureToCemetery } from "./fieldRemoval.js";
 import { markReplacementCreatureForSilenceFromTheGraveIfNeeded } from "./silenceFromTheGrave.js";
+
+function createOnSummonTargetPromptIfNeeded(
+  state: MatchState,
+  playerId: string,
+  cardInstanceId: string
+): void {
+  if (state.pendingEffectTargetPrompt) return;
+
+  const player = getPlayer(state, playerId);
+  const creature = player.field.primaryCreature;
+  if (!creature || creature.instanceId !== cardInstanceId) return;
+
+  const definition = getCardDefinition(state, creature);
+  const onSummonTargetEffects = (definition.effects ?? []).filter(effect =>
+    String(effect.trigger ?? "").trim().toUpperCase() === "ON_SUMMON" &&
+    effectNeedsTargetPrompt(effect)
+  );
+
+  const [effect] = onSummonTargetEffects;
+  if (!effect) return;
+
+  const prompt = createEffectTargetPromptFromChainLink(
+    state,
+    {
+      cardInstanceId: creature.instanceId,
+      cardId: creature.cardId,
+      cardName: definition.name,
+      playerId
+    },
+    effect,
+    onSummonTargetEffects.slice(1).map(item => item.id)
+  );
+
+  if (prompt.options.length === 0) {
+    addEvent(state, "ON_SUMMON_EFFECT_NO_VALID_TARGETS", playerId, {
+      sourceCardInstanceId: creature.instanceId,
+      sourceCardId: creature.cardId,
+      sourceCardName: definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType
+    });
+    return;
+  }
+
+  state.pendingEffectTargetPrompt = prompt;
+
+  addEvent(state, "ON_SUMMON_EFFECT_TARGET_PROMPT_CREATED", playerId, {
+    sourceCardInstanceId: creature.instanceId,
+    sourceCardId: creature.cardId,
+    sourceCardName: definition.name,
+    effectId: effect.id,
+    actionType: effect.actionType,
+    targetKind: prompt.targetKind,
+    optionCount: prompt.options.length
+  });
+}
 
 export function playCreatureFromHandAsPrimary(
   state: MatchState,
@@ -240,6 +298,8 @@ export function playCreatureFromHandAsPrimary(
     openedTurnCycle: nextState.turn.turnCycleNumber,
     openedPhase: nextState.turn.phase
   };
+
+  createOnSummonTargetPromptIfNeeded(nextState, playerId, targetCard.instanceId);
 
   return nextState;
 }

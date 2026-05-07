@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_106_hive_lord",
+  "effectId": "106-E01",
+  "title": "Hive Lord destroys one magic card on summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_106_hive_lord",
+      "cardName": "Hive Lord",
+      "cardType": "CREATURE",
+      "cardNumber": "106",
+      "generation": "1",
+      "rawText": "When summoned, destroy 1 magic card on the field."
+    },
+    "effect": {
+      "effectId": "106-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "target": "1 magic card on field",
+      "value": "Destroy 1",
+      "durationText": "Instant",
+      "reusableFunction": "destroyMagicCards"
+    },
+    "title": "Hive Lord destroys one magic card on summon",
+    "summary": "Summon Hive Lord while a magic card is on the field, choose that field magic, and verify it is destroyed.",
+    "setup": {
+      "phase": "SUMMON_CREATURE",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_106_hive_lord"
+      ],
+      "player2Cards": [
+        "gen1_024_ball_and_chain",
+        "test_creature_primary"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Hive Lord's rules text requires a magic card on the field at summon time.",
+        "Player_2 has Ball and Chain equipped/in a magic slot as Hive Lord's target."
+      ]
+    },
+    "steps": [
+      "Player 1 summons Hive Lord.",
+      "Select player_2 Ball and Chain as the magic card to destroy.",
+      "Resolve the summon-triggered effect."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hive Lord is summoned as primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen1_106_hive_lord"
+      },
+      {
+        "label": "Chosen magic removed from field",
+        "path": "player_2.magicSlots",
+        "operator": "notContains",
+        "value": "gen1_024_ball_and_chain"
+      },
+      {
+        "label": "Former equip cleanup removes attached magic",
+        "path": "player_2.primaryCreature.attachedMagic",
+        "operator": "notContains",
+        "value": "gen1_024_ball_and_chain"
+      },
+      {
+        "label": "Destroy event emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_DESTROY_MAGIC_CARD_RESOLVED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the summon-triggered prompt lets the player choose exactly one magic card on the field."
+    ],
+    "riskNotes": [
+      "This mirrors the already-working destroy-one-magic path, but verifies it from a creature's ON_SUMMON trigger."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Hive Lord's summon-triggered destroy-one-magic effect."
+    },
+    "regression": {
+      "fixtureName": "hive-lord-destroys-one-field-magic-on-summon",
+      "tags": [
+        "creature",
+        "summon",
+        "destroy",
+        "targeting"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_106_hive_lord:106-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
