@@ -140,6 +140,7 @@ function sourceAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
   if (text.includes("equipped creature")) return source.card.attachedToInstanceId === target.card.instanceId;
   if (text.includes("your primary creature") || text.includes("controller's primary creature")) return source.player.id === target.player.id && target.zone === "PRIMARY_CREATURE";
   if (text.includes("your creature") || text.includes("you control") || text.includes("your side")) return source.player.id === target.player.id;
+  if (text.includes("this card's modifier") && text.includes("opponent") && text.includes("base spd")) return source.card.instanceId === target.card.instanceId;
   if (
     actionType === "APPLY_SOURCE_LINKED_STAT_SET_AURA" &&
     (text.includes("opponent") || text.includes("opposing"))
@@ -312,6 +313,7 @@ function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: 
     if (opponentDefinition?.cardType === "CREATURE") {
       if (text.includes("copy") && text.includes("base al")) layers.push(makeLayer(source, effect, "copy-base-al", "armorLevel", "SET", opponentDefinition.armorLevel));
       if (text.includes("copy") && text.includes("base spd")) layers.push(makeLayer(source, effect, "copy-base-spd", "speed", "SET", opponentDefinition.speed));
+      if (text.includes("modifier") && text.includes("equal") && text.includes("base spd")) layers.push(makeLayer(source, effect, "modifier-equals-base-spd", "modifier", "SET", opponentDefinition.speed));
       if ((text.includes("copy") || text.includes("add")) && text.includes("base atk dice")) layers.push(makeLayer(source, effect, "copy-base-attack-dice", text.includes("add") ? "attackDice" : "attackDice", text.includes("add") ? "ADD" : "SET", opponentDefinition.attackDice));
       if ((text.includes("copy") || text.includes("add")) && text.includes("base modifier")) layers.push(makeLayer(source, effect, "copy-base-modifier", "modifier", text.includes("add") ? "ADD" : "SET", opponentDefinition.modifier));
     }

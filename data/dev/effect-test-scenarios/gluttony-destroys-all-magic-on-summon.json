@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_083_gluttony",
+  "effectId": "083-E01",
+  "title": "Gluttony destroys all magic on summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_083_gluttony",
+      "cardName": "Gluttony",
+      "cardType": "CREATURE",
+      "cardNumber": "083",
+      "generation": "3",
+      "rawText": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases."
+    },
+    "effect": {
+      "effectId": "083-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "DESTROY_ALL_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "target": "Magic cards on the field",
+      "value": "Destroy all magic cards",
+      "durationText": "Instant",
+      "reusableFunction": "destroyAllMagic"
+    },
+    "title": "Gluttony destroys all magic on summon",
+    "summary": "Summon Gluttony while field magic exists and verify its summon trigger destroys field magic.",
+    "setup": {
+      "phase": "SUMMON_CREATURE",
+      "activePlayerId": "player_1",
+      "player1Cards": ["gen3_083_gluttony"],
+      "player2Cards": ["gen1_024_ball_and_chain", "test_creature_primary"],
+      "forcedRolls": [],
+      "notes": ["Player_2 has Ball and Chain equipped/in a magic slot before Gluttony is summoned."]
+    },
+    "steps": [
+      "Player 1 summons Gluttony.",
+      "Resolve the on-summon destroy-all-magic trigger.",
+      "Inspect Gluttony and field magic slots."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Gluttony is summoned as primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen3_083_gluttony"
+      },
+      {
+        "label": "Opponent magic removed from field",
+        "path": "player_2.magicSlots",
+        "operator": "notContains",
+        "value": "gen1_024_ball_and_chain"
+      },
+      {
+        "label": "Destroy all magic event emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_DESTROY_ALL_MAGIC_RESOLVED"
+      }
+    ],
+    "manualVerification": ["Confirm Gluttony's +1 Modifier per destroyed magic is covered separately."],
+    "riskNotes": ["This fixture isolates the on-summon destroy-all-magic clause."],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Gluttony's on-summon magic wipe."
+    },
+    "regression": {
+      "fixtureName": "gluttony-destroys-all-magic-on-summon",
+      "tags": ["creature", "summon", "destroy", "global"]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

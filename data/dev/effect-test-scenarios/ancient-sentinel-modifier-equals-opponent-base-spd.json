@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_121_ancient_sentinel",
+  "effectId": "121-E01",
+  "title": "Ancient Sentinel modifier equals opponent base SPD",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_121_ancient_sentinel",
+      "cardName": "Ancient Sentinel",
+      "cardType": "CREATURE",
+      "cardNumber": "121",
+      "generation": "3",
+      "rawText": "This card's Modifier is equal to your opponent's current primary creature's base SPD stat."
+    },
+    "effect": {
+      "effectId": "121-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "This creature",
+      "value": "Modifier equals opponent primary base SPD",
+      "durationText": "While on field",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Ancient Sentinel modifier equals opponent base SPD",
+    "summary": "Place Ancient Sentinel across from a synthetic SPD 10 primary creature and verify its effective Modifier becomes 10.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": ["gen3_121_ancient_sentinel"],
+      "player2Cards": ["test_primary_creature"],
+      "forcedRolls": [],
+      "notes": ["Set Ancient Sentinel as player_1 primary.", "Set the opponent synthetic primary creature with base SPD 10."]
+    },
+    "steps": [
+      "Set Ancient Sentinel as player_1 primary creature.",
+      "Set the synthetic creature as player_2 primary creature.",
+      "Read Ancient Sentinel's effective Modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Ancient Sentinel Modifier equals opponent base SPD",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 10
+      }
+    ],
+    "manualVerification": ["Confirm the value updates if the opponent primary creature changes."],
+    "riskNotes": ["This fixture covers the numeric Modifier formula only."],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Ancient Sentinel's opponent-base-SPD modifier formula."
+    },
+    "regression": {
+      "fixtureName": "ancient-sentinel-modifier-equals-opponent-base-spd",
+      "tags": ["creature", "dynamic-stat", "modifier", "opponent-primary"]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
