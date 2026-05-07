@@ -2410,6 +2410,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen2:gen2_064_steam_rex:064-E02",
+      "packId": "ward-gen2",
+      "cardId": "gen2_064_steam_rex",
+      "cardName": "Steam Rex",
+      "effectId": "064-E02",
+      "trigger": "ON_OPPONENT_PLAYS_LIGHTNING",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T14:04:53.394Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen2:gen2_065_steam_golem:065-E02",
       "packId": "ward-gen2",
       "cardId": "gen2_065_steam_golem",

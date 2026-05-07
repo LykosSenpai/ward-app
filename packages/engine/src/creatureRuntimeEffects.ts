@@ -193,6 +193,34 @@ function sourceControlsStrikeDefender(source: ActiveEffectSource, strike: Manual
     source.card.attachedToInstanceId === strike.defender.creatureInstanceId;
 }
 
+function isOpponentLightningDamageBoostEffect(effect: WardEngineEffect): boolean {
+  const trigger = normalize(effect.trigger);
+  const actionType = normalize(getRuntimeBlockActionType(effect));
+  const text = textForEffect(effect);
+
+  return actionType === "APPLY_ATTACK_DAMAGE_MULTIPLIER" &&
+    (
+      trigger.includes("OPPONENT_PLAYS_LIGHTNING") ||
+      text.includes("opponent played a lightning") ||
+      text.includes("opponent plays a lightning")
+    );
+}
+
+function opponentPlayedLightningThisTurn(state: MatchState, source: ActiveEffectSource): boolean {
+  return state.eventLog.some(event => {
+    if (event.type !== "LIGHTNING_RESPONSE_ADDED") return false;
+    if (event.playerId === source.player.id) return false;
+
+    const payload = event.payload as { turnNumber?: unknown; turnCycleNumber?: unknown } | undefined;
+    const eventTurnNumber = Number(payload?.turnNumber);
+    if (Number.isFinite(eventTurnNumber)) {
+      return eventTurnNumber === state.turn.turnNumber;
+    }
+
+    return false;
+  });
+}
+
 function sourceCanResolveForTiming(source: ActiveEffectSource, effect: WardEngineEffect, timing: string, strike: ManualBattleStrike): boolean {
   const trigger = normalize(effect.trigger);
   const actionType = normalize(getRuntimeBlockActionType(effect));
@@ -205,12 +233,15 @@ function sourceCanResolveForTiming(source: ActiveEffectSource, effect: WardEngin
     "DEAL_PERCENTAGE_DAMAGE"
   ].includes(actionType);
 
+  const opponentLightningDamageBoost = timing === "DURING_DAMAGE_CALC" &&
+    isOpponentLightningDamageBoostEffect(effect);
+
   const afterDamageAction = timing === "AFTER_DAMAGE_APPLIED" && [
     "HEAL_BY_DAMAGE_DEALT",
     "HEAL_BY_SENT_CREATURE_HP"
   ].includes(actionType);
 
-  if (!aliases.includes(trigger) && !aliases.includes(actionType) && !staticBattleAction && !afterDamageAction) {
+  if (!aliases.includes(trigger) && !aliases.includes(actionType) && !staticBattleAction && !opponentLightningDamageBoost && !afterDamageAction) {
     return false;
   }
 
@@ -222,6 +253,10 @@ function sourceCanResolveForTiming(source: ActiveEffectSource, effect: WardEngin
       return true;
     }
     return sourceControlsStrikeAttacker(source, strike) || sourceControlsStrikeDefender(source, strike);
+  }
+
+  if (opponentLightningDamageBoost) {
+    return sourceControlsStrikeAttacker(source, strike);
   }
 
   if (timing === "AFTER_DAMAGE_APPLIED" && actionType === "HEAL_BY_DAMAGE_DEALT") {
@@ -276,6 +311,21 @@ function conditionPasses(
     const text = textForEffect(effect);
     if (text.includes("hits first") && strike.role !== "FIRST_STRIKE") return false;
     if (text.includes("hit lands") && !strike.hit) return false;
+    if (isOpponentLightningDamageBoostEffect(effect)) {
+      const passed = opponentPlayedLightningThisTurn(state, source);
+      if (!passed) {
+        addEvent?.(state, "BATTLE_EFFECT_CONDITION_NOT_MET", source.player.id, {
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: source.definition.name,
+          effectId: effect.id,
+          actionType: effect.actionType,
+          timing,
+          strikeId: strike.id,
+          reason: "Opponent has not played a Lightning card this turn."
+        });
+      }
+      return passed;
+    }
     return true;
   }
 

@@ -2464,6 +2464,60 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  const shouldRunOpponentLightningMultiplierBattle = definition.cardType === "CREATURE" &&
+    (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
+    trigger.includes("opponent_plays_lightning") &&
+    actionType.includes("attack_damage_multiplier");
+
+  if (shouldRunOpponentLightningMultiplierBattle) {
+    const playerId = source.playerId;
+    const opponentId = findOpponentPlayerId(match, playerId);
+    const player = getPlayer(match, playerId);
+    const opponent = getPlayer(match, opponentId);
+    const attacker = player.field.primaryCreature?.cardId === plan.card.cardId
+      ? player.field.primaryCreature
+      : source.card;
+    const defender = opponent.field.primaryCreature;
+
+    if (!attacker || !defender) {
+      throw new Error("Headless opponent-Lightning damage multiplier needs source and opponent primary creatures.");
+    }
+
+    const triggerMagic = ensureCardInHand(match, playerId, "test_standard_magic_draw_or_buff");
+    const lightning = ensureCardInHand(match, opponentId, "gen1_028_blade_in_the_dark");
+    if (!triggerMagic || !lightning) {
+      throw new Error("Headless opponent-Lightning damage multiplier needs a standard Magic card and Blade in the Dark.");
+    }
+
+    match.turn.activePlayerId = playerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));
+    match.turn.phase = "SUMMON_MAGIC";
+    match.turn.firstTurnCycleComplete = true;
+
+    let next = playMagicFromHand(match, playerId, triggerMagic.instanceId);
+    steps.push({ label: "play triggering standard magic", ok: true, detail: match.cardCatalog[triggerMagic.cardId]?.name ?? triggerMagic.cardId });
+
+    const responseCard = getPlayer(next, opponentId).hand.find(card => card.instanceId === lightning.instanceId) ??
+      getPlayer(next, opponentId).hand.find(card => card.cardId === "gen1_028_blade_in_the_dark");
+    if (!responseCard) {
+      throw new Error("Headless opponent-Lightning damage multiplier could not find the opponent Lightning card after the chain opened.");
+    }
+
+    next = playLightningResponseFromHand(next, opponentId, responseCard.instanceId);
+    steps.push({ label: "opponent plays Lightning response", ok: true, detail: match.cardCatalog[responseCard.cardId]?.name ?? responseCard.cardId });
+    next = drainChain(next, steps);
+
+    next.turn.activePlayerId = playerId;
+    next.turn.currentTurnIndex = Math.max(0, next.turn.currentTurnOrder.indexOf(playerId));
+    next.turn.phase = "COMBAT";
+    next.turn.firstTurnCycleComplete = true;
+
+    next = startManualBattleSession(next, playerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start opponent-Lightning boosted battle", ok: true, detail: `${definition.name} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+    next = runPendingBattle(next, steps);
+    return next;
+  }
+
   const shouldRunBattle = definition.cardType === "CREATURE" && (
     trigger.includes("on_hit") ||
     trigger.includes("hit") ||

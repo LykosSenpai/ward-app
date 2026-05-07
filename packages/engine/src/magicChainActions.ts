@@ -866,7 +866,9 @@ export function playLightningResponseFromHand(
     cardName: definition.name,
     respondsToLinkId: previousLink.id,
     respondsToCardName: previousLink.cardName,
-    nextPriorityPlayerId: chain.priorityPlayerId
+    nextPriorityPlayerId: chain.priorityPlayerId,
+    turnNumber: nextState.turn.turnNumber,
+    turnCycleNumber: nextState.turn.turnCycleNumber
   });
 
   return nextState;
