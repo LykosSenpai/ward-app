@@ -58,6 +58,7 @@ function getRuntimeEffectRows(match: AppMatchState): RuntimeEffectRow[] {
 type MatchStatePanelProps = {
   match: AppMatchState;
   advanceBlockReason: string;
+  controlledPlayerId?: string;
   onShuffleAllDecks: () => void;
   onUndoLastAction: () => void;
   onDrawActivePlayer: () => void;
@@ -68,6 +69,7 @@ type MatchStatePanelProps = {
 export function MatchStatePanel({
   match,
   advanceBlockReason,
+  controlledPlayerId,
   onShuffleAllDecks,
   onUndoLastAction,
   onDrawActivePlayer,
@@ -75,6 +77,7 @@ export function MatchStatePanel({
   onAdvancePhase
 }: MatchStatePanelProps) {
   const runtimeEffectRows = getRuntimeEffectRows(match);
+  const canControlActiveTurn = !controlledPlayerId || controlledPlayerId === match.turn.activePlayerId;
 
   return (
     <section className="card">
@@ -194,14 +197,14 @@ export function MatchStatePanel({
       <div className="actions">
         <button
           onClick={onShuffleAllDecks}
-          disabled={match.players.some(player => player.hand.length > 0) || !!match.pendingPrompt}
+          disabled={!canControlActiveTurn || match.players.some(player => player.hand.length > 0) || !!match.pendingPrompt}
         >
           Shuffle Both Decks
         </button>
 
         <button
           onClick={onUndoLastAction}
-          disabled={getMatchStatus(match) === "COMPLETE"}
+          disabled={getMatchStatus(match) === "COMPLETE" || !canControlActiveTurn}
         >
           Undo Last Action
         </button>
@@ -210,6 +213,7 @@ export function MatchStatePanel({
           onClick={onDrawActivePlayer}
           disabled={
             getMatchStatus(match) === "COMPLETE" ||
+            !canControlActiveTurn ||
             !match.setup.decksShuffled ||
             !!match.pendingPrompt ||
             !!match.pendingChain ||
@@ -230,6 +234,7 @@ export function MatchStatePanel({
           onClick={onBattlePrimaryCreatures}
           disabled={
             getMatchStatus(match) === "COMPLETE" ||
+            !canControlActiveTurn ||
             match.turn.phase !== "COMBAT" ||
             !match.turn.firstTurnCycleComplete ||
             !!match.pendingPrompt ||
@@ -250,7 +255,7 @@ export function MatchStatePanel({
 
         <button
           onClick={onAdvancePhase}
-          disabled={getMatchStatus(match) === "COMPLETE" || !!advanceBlockReason}
+          disabled={getMatchStatus(match) === "COMPLETE" || !canControlActiveTurn || !!advanceBlockReason}
         >
           Advance Phase
         </button>

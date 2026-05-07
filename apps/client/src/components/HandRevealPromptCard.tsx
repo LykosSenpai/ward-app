@@ -3,13 +3,16 @@ import { getPlayerName } from "../gameViewHelpers";
 
 type HandRevealPromptCardProps = {
   match: AppMatchState;
+  controlledPlayerId?: string;
   onApprove: () => void;
 };
 
-export function HandRevealPromptCard({ match, onApprove }: HandRevealPromptCardProps) {
+export function HandRevealPromptCard({ match, controlledPlayerId, onApprove }: HandRevealPromptCardProps) {
   if (!match.pendingPrompt) {
     return null;
   }
+
+  const canApprove = !controlledPlayerId || controlledPlayerId === match.pendingPrompt.approvingPlayerId;
 
   return (
     <section className="card prompt-card">
@@ -35,10 +38,16 @@ export function HandRevealPromptCard({ match, onApprove }: HandRevealPromptCardP
       </div>
 
       <div className="actions">
-        <button onClick={onApprove}>
+        <button onClick={onApprove} disabled={!canApprove}>
           Accept Reveal and Redraw {match.pendingPrompt.redrawCount}
         </button>
       </div>
+
+      {!canApprove && (
+        <p className="event-meta">
+          Waiting for {getPlayerName(match, match.pendingPrompt.approvingPlayerId)} to accept the reveal.
+        </p>
+      )}
     </section>
   );
 }

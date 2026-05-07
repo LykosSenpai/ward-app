@@ -6,6 +6,7 @@ export function PrimaryCreatureZone({
   match,
   player,
   isActivePlayer,
+  canControlThisPlayer,
   anyDiscardRequired,
   replacementRequiredForThisPlayer,
   manualHpAmount,
@@ -18,6 +19,7 @@ export function PrimaryCreatureZone({
   match: AppMatchState;
   player: PlayerState;
   isActivePlayer: boolean;
+  canControlThisPlayer: boolean;
   anyDiscardRequired: boolean;
   replacementRequiredForThisPlayer: boolean;
   manualHpAmount: string;
@@ -29,6 +31,7 @@ export function PrimaryCreatureZone({
 }) {
   const primaryCreature = player.field.primaryCreature;
   const manualHpActionsDisabled =
+    !canControlThisPlayer ||
     !!match.pendingPrompt ||
     !!match.pendingEffectTargetPrompt ||
     anyDiscardRequired ||
@@ -67,12 +70,13 @@ export function PrimaryCreatureZone({
           <div className="primary-actions">
             <button
               onClick={onPrimaryToCemetery}
-              disabled={!!match.pendingPrompt || !!match.pendingEffectTargetPrompt}
+              disabled={!canControlThisPlayer || !!match.pendingPrompt || !!match.pendingEffectTargetPrompt}
             >
               Battle/Card Effect to Cemetery
             </button>
 
             {isActivePlayer &&
+              canControlThisPlayer &&
               match.turn.phase === "SUMMON_MAGIC" &&
               !replacementRequiredForThisPlayer &&
               !player.turnFlags.normalSummonUsed &&

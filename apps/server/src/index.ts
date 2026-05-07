@@ -161,6 +161,7 @@ const passwordRateLimit = rateLimit({
 const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
+const matchPlayerOwners = new Map<string, Map<string, string>>();
 
 const MAX_UNDO_STEPS = 25;
 
@@ -382,6 +383,16 @@ function loadDeckForUser(userId: string, deckId: string): DeckListDefinition {
   return loadUserDeckList(userId, deckId);
 }
 
+function getFirstDeckForUser(userId: string): DeckListDefinition {
+  const [deck] = listUserDecks(userId);
+
+  if (!deck) {
+    throw new Error("Each player needs at least one saved deck before starting a match.");
+  }
+
+  return loadDeckForUser(userId, deck.id);
+}
+
 function getDeckDetailsForUser(user: AuthUser | null) {
   if (!user) {
     return [];
@@ -422,6 +433,18 @@ function emitLobbyUpdated(lobby: MatchLobbyRecord): void {
   emitLobbyList();
 }
 
+function closeLobbyForMatch(matchId: string): void {
+  const lobby = Array.from(matchLobbies.values()).find(item => item.matchId === matchId);
+
+  if (!lobby || lobby.status === "CLOSED") {
+    return;
+  }
+
+  lobby.status = "CLOSED";
+  lobby.updatedAt = new Date().toISOString();
+  emitLobbyUpdated(lobby);
+}
+
 function getLobbyOrThrow(lobbyId: string): MatchLobbyRecord {
   const lobby = matchLobbies.get(lobbyId);
 
@@ -440,6 +463,61 @@ function getLobbyPlayerOrThrow(lobby: MatchLobbyRecord, userId: string): MatchLo
   }
 
   return player;
+}
+
+function getSocketOwnedPlayerId(socket: { request: unknown }, matchId: string): string | undefined {
+  const user = getSocketUser(socket);
+  if (!user) {
+    return undefined;
+  }
+
+  return matchPlayerOwners.get(matchId)?.get(user.id);
+}
+
+function requireSocketCanControlPlayer(socket: { request: unknown }, matchId: string, playerId: string): void {
+  const owners = matchPlayerOwners.get(matchId);
+
+  if (!owners) {
+    return;
+  }
+
+  const ownedPlayerId = getSocketOwnedPlayerId(socket, matchId);
+
+  if (ownedPlayerId !== playerId) {
+    throw new Error("You can only control your own seat in this match.");
+  }
+}
+
+function requireSocketCanControlActivePlayer(socket: { request: unknown }, match: MatchState): void {
+  requireSocketCanControlPlayer(socket, match.matchId, match.turn.activePlayerId);
+}
+
+function requireSocketCanUndoMatch(socket: { request: unknown }, match: MatchState): void {
+  const owners = matchPlayerOwners.get(match.matchId);
+
+  if (!owners) {
+    return;
+  }
+
+  const ownedPlayerId = getSocketOwnedPlayerId(socket, match.matchId);
+
+  if (!ownedPlayerId) {
+    throw new Error("You can only undo actions for your own seat in this match.");
+  }
+
+  const undoPlayerIds = new Set<string>([match.turn.activePlayerId]);
+
+  if (match.pendingChain?.lastLinkPlayerId) {
+    undoPlayerIds.add(match.pendingChain.lastLinkPlayerId);
+  }
+
+  if (match.pendingChain?.priorityPlayerId) {
+    undoPlayerIds.add(match.pendingChain.priorityPlayerId);
+  }
+
+  if (!undoPlayerIds.has(ownedPlayerId)) {
+    throw new Error("You can only undo the current step when it belongs to your seat.");
+  }
 }
 
 function prepareLlmBulkDeckPlayer(match: MatchState, playerId: string): void {
@@ -853,6 +931,10 @@ function getUndoCount(matchId: string): number {
 function emitMatchState(match: MatchState): void {
   saveMatchToDisk(match);
   io.to(match.matchId).emit("match:state", match);
+
+  if ((match.status ?? "ACTIVE") === "COMPLETE") {
+    closeLobbyForMatch(match.matchId);
+  }
 }
 
 function getMatchOrThrow(matchId: string): MatchState {
@@ -1189,6 +1271,7 @@ io.on("connection", async socket => {
   socket.on("match:advancePhase", (matchId: string) => {
     try {
       const match = getPlayableMatchOrThrow(matchId);
+      requireSocketCanControlActivePlayer(socket, match);
       const updatedMatch = advancePhase(match);
 
       activeMatches.set(matchId, updatedMatch);
@@ -1203,6 +1286,7 @@ io.on("connection", async socket => {
   socket.on("match:shuffleAllDecks", (matchId: string) => {
     try {
       const match = getPlayableMatchOrThrow(matchId);
+      requireSocketCanControlActivePlayer(socket, match);
       const updatedMatch = shuffleAllDecks(match);
 
       activeMatches.set(matchId, updatedMatch);
@@ -1219,6 +1303,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = shuffleDeckForPlayer(match, data.playerId);
 
         activeMatches.set(data.matchId, updatedMatch);
@@ -1234,6 +1319,7 @@ io.on("connection", async socket => {
   socket.on("match:drawActivePlayer", (matchId: string) => {
     try {
       const match = getPlayableMatchOrThrow(matchId);
+      requireSocketCanControlActivePlayer(socket, match);
       const updatedMatch = drawForActivePlayer(match);
 
       activeMatches.set(matchId, updatedMatch);
@@ -1255,6 +1341,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = playCreatureFromHandAsPrimary(
           match,
           data.playerId,
@@ -1277,6 +1364,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; cardInstanceId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = promoteLimitedSummonToPrimary(
           match,
           data.playerId,
@@ -1298,6 +1386,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = sendPrimaryCreatureToCemetery(
           match,
           data.playerId
@@ -1318,6 +1407,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = killOwnPrimaryCreature(match, data.playerId);
 
         activeMatches.set(data.matchId, updatedMatch);
@@ -1335,6 +1425,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; cardInstanceId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = playMagicFromHand(
           match,
           data.playerId,
@@ -1395,6 +1486,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; attackerCreatureInstanceId: string; defenderCreatureInstanceId?: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         pushUndoSnapshot(match);
         const updatedMatch = startManualBattleSession(
           match,
@@ -1427,6 +1519,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = updateManualBattleSpeedModifiers(
           match,
@@ -1463,6 +1556,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = updateManualBattleStrikeModifiers(
           match,
@@ -1486,6 +1580,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = runManualBattleSpeedCheck(match, data.battleSessionId);
 
@@ -1504,6 +1599,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = rollManualBattleHit(match, data.battleSessionId);
 
@@ -1522,6 +1618,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = rollManualBattleDamage(match, data.battleSessionId);
 
@@ -1540,6 +1637,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; cardInstanceId: string; battleSessionId: string; strikeId?: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         pushUndoSnapshot(match);
         const updatedMatch = playBattleResponseFromHand(match, {
           playerId: data.playerId,
@@ -1563,6 +1661,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = applyManualBattleDamage(match, data.battleSessionId);
 
@@ -1581,6 +1680,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; effectRollSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = rollPendingEffectRoll(match, data.effectRollSessionId);
 
@@ -1599,6 +1699,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; effectRollSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = applyPendingEffectRoll(match, data.effectRollSessionId);
 
@@ -1617,6 +1718,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; effectRollSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = skipPendingEffectRoll(match, data.effectRollSessionId);
 
@@ -1635,6 +1737,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = finishManualBattleSession(match, data.battleSessionId);
 
@@ -1653,6 +1756,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = cancelManualBattleSession(match, data.battleSessionId);
 
@@ -1671,6 +1775,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = battlePrimaryCreatures(match, data.playerId);
 
         activeMatches.set(data.matchId, updatedMatch);
@@ -1688,6 +1793,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; attackerCreatureInstanceId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         pushUndoSnapshot(match);
         const updatedMatch = battleWithCreature(
           match,
@@ -1710,6 +1816,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = requestNoCreatureRedrawReveal(
           match,
           data.playerId
@@ -1730,6 +1837,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; approvingPlayerId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.approvingPlayerId);
         const updatedMatch = approveNoCreatureRedrawReveal(
           match,
           data.approvingPlayerId
@@ -1750,6 +1858,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; cardInstanceId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = discardCardFromHand(
           match,
           data.playerId,
@@ -1771,6 +1880,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; amount: number }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = applyManualDamageToPrimaryCreature(
           match,
           data.playerId,
@@ -1792,6 +1902,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; amount: number }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = applyManualHealToPrimaryCreature(
           match,
           data.playerId,
@@ -1838,6 +1949,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; cardInstanceId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         pushUndoSnapshot(match);
         const updatedMatch = playLightningResponseFromHand(
           match,
@@ -1860,6 +1972,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string; sourceInstanceId: string; effectId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         const updatedMatch = activateCardEffect(match, {
           playerId: data.playerId,
           sourceInstanceId: data.sourceInstanceId,
@@ -1913,6 +2026,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; playerId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
         pushUndoSnapshot(match);
         const updatedMatch = passMagicChainPriority(match, data.playerId);
 
@@ -1929,6 +2043,11 @@ io.on("connection", async socket => {
   socket.on("match:resolveMagicChain", (matchId: string) => {
     try {
       const match = getMatchOrThrow(matchId);
+      if (match.pendingChain?.priorityPlayerId) {
+        requireSocketCanControlPlayer(socket, matchId, match.pendingChain.priorityPlayerId);
+      } else {
+        requireSocketCanControlActivePlayer(socket, match);
+      }
       pushUndoSnapshot(match);
       const updatedMatch = resolveMagicChain(match);
 
@@ -1946,6 +2065,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; effectId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         const updatedMatch = completeManualMagicEffect(match, data.effectId);
 
         activeMatches.set(data.matchId, updatedMatch);
@@ -1968,6 +2088,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         const updatedMatch = applyManualMagicDamageToPrimaryCreature(
           match,
           data.effectId,
@@ -1995,6 +2116,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         const updatedMatch = applyManualMagicHealToPrimaryCreature(
           match,
           data.effectId,
@@ -2022,6 +2144,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         const updatedMatch = destroyMagicSlotCardFromManualEffect(
           match,
           data.effectId,
@@ -2054,6 +2177,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlActivePlayer(socket, match);
         const updatedMatch = applyManualMagicStatModifierToPrimaryCreature(
           match,
           data.effectId,
@@ -2084,6 +2208,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.fieldOwnerPlayerId);
         const updatedMatch = attachEquipMagicToPrimaryCreature(
           match,
           data.fieldOwnerPlayerId,
@@ -2115,6 +2240,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.fieldOwnerPlayerId);
         const updatedMatch = attachEquipMagicToCreature(
           match,
           data.fieldOwnerPlayerId,
@@ -2804,6 +2930,7 @@ io.on("connection", async socket => {
 
       activeMatches.set(match.matchId, match);
       matchUndoHistory.set(match.matchId, []);
+      matchPlayerOwners.delete(match.matchId);
       socket.join(match.matchId);
 
       socket.emit("match:state", match);
@@ -2826,6 +2953,7 @@ io.on("connection", async socket => {
 
       activeMatches.delete(matchId);
       matchUndoHistory.delete(matchId);
+      matchPlayerOwners.delete(matchId);
 
       socket.emit("match:deleted", {
         message: `Deleted saved match: ${matchId}`,
@@ -2856,6 +2984,7 @@ io.on("connection", async socket => {
           deleteMatchFromDisk(matchId);
           activeMatches.delete(matchId);
           matchUndoHistory.delete(matchId);
+          matchPlayerOwners.delete(matchId);
           deletedMatchIds.push(matchId);
         } catch {
           failedMatchIds.push(matchId);
@@ -2888,6 +3017,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; concedingPlayerId: string }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.concedingPlayerId);
         const updatedMatch = concedeMatch(match, data.concedingPlayerId);
 
         activeMatches.set(data.matchId, updatedMatch);
@@ -2910,6 +3040,7 @@ io.on("connection", async socket => {
     }) => {
       try {
         const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.callingPlayerId);
         const updatedMatch = callCemeteryHpLoss(
           match,
           data.losingPlayerId,
@@ -2934,6 +3065,8 @@ io.on("connection", async socket => {
       if ((currentMatch.status ?? "ACTIVE") === "COMPLETE") {
         throw new Error("Cannot undo after the match is complete.");
       }
+
+      requireSocketCanUndoMatch(socket, currentMatch);
 
       const history = matchUndoHistory.get(matchId) ?? [];
 
@@ -3129,13 +3262,17 @@ io.on("connection", async socket => {
         throw new Error("Only the lobby host can start the match.");
       }
 
-      if (lobby.players.length !== 2 || lobby.players.some(player => !player.selectedDeckId)) {
-        throw new Error("Both players need to join and select a deck.");
+      if (lobby.players.length !== 2) {
+        throw new Error("Both seats need to be filled before starting the match.");
       }
 
       const sortedPlayers = [...lobby.players].sort((a, b) => a.seat - b.seat);
-      const player1Deck = loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId ?? "");
-      const player2Deck = loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId ?? "");
+      const player1Deck = sortedPlayers[0].selectedDeckId
+        ? loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId)
+        : getFirstDeckForUser(sortedPlayers[0].userId);
+      const player2Deck = sortedPlayers[1].selectedDeckId
+        ? loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId)
+        : getFirstDeckForUser(sortedPlayers[1].userId);
       const cardCatalog = loadCardCatalog(lobby.selectedPackIds);
       const cardLimits = loadCardLimitMap();
       const match = create1v1MatchFromDeckCardIds({
@@ -3152,6 +3289,10 @@ io.on("connection", async socket => {
       lobby.updatedAt = new Date().toISOString();
       activeMatches.set(match.matchId, match);
       matchUndoHistory.set(match.matchId, []);
+      matchPlayerOwners.set(match.matchId, new Map([
+        [sortedPlayers[0].userId, "player_1"],
+        [sortedPlayers[1].userId, "player_2"]
+      ]));
       saveMatchToDisk(match);
 
       io.in(lobby.id).socketsJoin(match.matchId);
@@ -3303,6 +3444,8 @@ socket.on(
       const match = getPlayableMatchOrThrow(data.matchId, {
         allowPendingEffectTarget: true
       });
+      requireSocketCanControlActivePlayer(socket, match);
+      pushUndoSnapshot(match);
 
       const updatedMatch = resolvePendingEffectTargetPrompt(
         match,

@@ -5,6 +5,7 @@ import { getCardName } from "../gameViewHelpers";
 type AvailableEffectsPanelProps = {
   match: AppMatchState;
   player: PlayerState;
+  canControlThisPlayer: boolean;
   onActivateEffect: (sourceInstanceId: string, effectId: string) => void;
 };
 
@@ -100,9 +101,14 @@ function getEffectLabel(effect: WardEngineEffect): string {
 function getEffectDisabledReason(
   match: AppMatchState,
   player: PlayerState,
+  canControlThisPlayer: boolean,
   source: EffectSource,
   effect: WardEngineEffect
 ): string | undefined {
+  if (!canControlThisPlayer) {
+    return "You do not control this player.";
+  }
+
   if ((match.status ?? "ACTIVE") === "COMPLETE") {
     return "Match is complete.";
   }
@@ -229,6 +235,7 @@ function getLatestRevealForPlayer(
 export function AvailableEffectsPanel({
   match,
   player,
+  canControlThisPlayer,
   onActivateEffect
 }: AvailableEffectsPanelProps) {
   const sources = getFieldEffectSources(match, player);
@@ -238,7 +245,7 @@ export function AvailableEffectsPanel({
       .map(effect => ({
         source,
         effect,
-        disabledReason: getEffectDisabledReason(match, player, source, effect)
+        disabledReason: getEffectDisabledReason(match, player, canControlThisPlayer, source, effect)
       }))
   );
   const latestReveal = getLatestRevealForPlayer(match, player.id);

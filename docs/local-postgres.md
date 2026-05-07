@@ -38,6 +38,7 @@ Create `.env` in the repo root with:
 DATABASE_URL=postgres://ward_app:ward_app_dev@localhost:5432/ward_app
 CLIENT_ORIGIN=http://localhost:5173
 SESSION_SECRET=ward-local-dev-session-secret-change-before-hosting
+VITE_API_BASE_URL=http://localhost:3001
 ```
 
 `.env` is ignored by git. `.env.example` has the same local template without secrets that matter.

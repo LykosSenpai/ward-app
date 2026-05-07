@@ -1,13 +1,12 @@
 import { useState } from "react";
 import type { AuthUser } from "../clientTypes";
+import { API_BASE_URL } from "../config";
 
 type LoginPageProps = {
   onAuthenticated: (user: AuthUser) => void;
 };
 
 type AuthMode = "login" | "register";
-
-const API_BASE_URL = "http://localhost:3001";
 
 export function LoginPage({ onAuthenticated }: LoginPageProps) {
   const [mode, setMode] = useState<AuthMode>("login");

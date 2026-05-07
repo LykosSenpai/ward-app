@@ -23,6 +23,7 @@ Set these on Railway:
 DATABASE_URL=<Railway Postgres connection string>
 SESSION_SECRET=<at least 32 random characters>
 CLIENT_ORIGIN=https://your-client-domain.example
+VITE_API_BASE_URL=
 NODE_ENV=production
 ```
 
@@ -62,6 +63,8 @@ The server refuses to start in production if `SESSION_SECRET` is shorter than 32
 `CLIENT_ORIGIN` must match the hosted client origin so browser cookies and Socket.IO credentials work correctly.
 
 Express sessions are stored in Postgres in the `user_sessions` table so logins survive server restarts.
+
+Leave `VITE_API_BASE_URL` blank for a combined Railway deployment where the server serves the built client from the same origin. Set it only if the client is hosted on a different domain from the server.
 
 ## Before First Public Test
 

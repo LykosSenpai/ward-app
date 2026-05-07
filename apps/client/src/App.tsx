@@ -26,6 +26,7 @@ import { TargetPromptCard } from "./components/TargetPromptCard";
 import { ModalPanel } from "./components/ui/ModalPanel";
 import type { CardArtKey } from "./components/CardImagePreview";
 import { socket } from "./socket";
+import { API_BASE_URL } from "./config";
 import type { DevRollKind, WardEngineEffect } from "@ward/shared";
 import type {
   AppMatchState,
@@ -111,7 +112,7 @@ export default function App() {
   const [llmBusy, setLlmBusy] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/auth/me", {
+    fetch(`${API_BASE_URL}/api/auth/me`, {
       credentials: "include"
     })
       .then(response => response.json())
@@ -233,12 +234,12 @@ export default function App() {
           return current;
         }
 
-        return data.find(lobby => lobby.id === current.id) ?? current;
+        return data.find(lobby => lobby.id === current.id);
       });
     });
 
     socket.on("lobby:updated", (data: MatchLobby) => {
-      setActiveLobby(data);
+      setActiveLobby(data.status === "CLOSED" ? undefined : data);
       setMatchLobbies(current => {
         const withoutLobby = current.filter(lobby => lobby.id !== data.id);
         return data.status === "CLOSED" ? withoutLobby : [data, ...withoutLobby];
@@ -541,12 +542,11 @@ export default function App() {
     });
   }
 
-  function createLobby(data: { name: string; selectedDeckId?: string }) {
+  function createLobby(data: { name: string }) {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:create", {
       name: data.name,
-      selectedDeckId: data.selectedDeckId,
       selectedPackIds
     });
   }
@@ -558,21 +558,17 @@ export default function App() {
 
   function viewLobby(lobbyId: string) {
     setError("");
+    const lobby = matchLobbies.find(item => item.id === lobbyId);
+    if (lobby) {
+      setActiveLobby(lobby);
+    }
     socket.emit("lobby:view", lobbyId);
   }
 
   function leaveLobby(lobbyId: string) {
     setError("");
+    setActiveLobby(current => current?.id === lobbyId ? undefined : current);
     socket.emit("lobby:leave", lobbyId);
-  }
-
-  function selectLobbyDeck(lobbyId: string, deckId: string) {
-    setError("");
-    if (!deckId) {
-      return;
-    }
-
-    socket.emit("lobby:selectDeck", { lobbyId, deckId });
   }
 
   function startLobbyMatch(lobbyId: string) {
@@ -1375,11 +1371,13 @@ export default function App() {
   function closeCompletedMatch() {
     setDashboardModal(null);
     socket.emit("match:listSaved");
+    socket.emit("lobby:list");
+    setActiveLobby(undefined);
     setMatch(null);
   }
 
   async function logout() {
-    await fetch("http://localhost:3001/api/auth/logout", {
+    await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: "POST",
       credentials: "include"
     });
@@ -1397,6 +1395,20 @@ export default function App() {
   const advanceBlockReason = match ? getAdvanceBlockReason(match) : "";
   const hasPendingManualEffects =
     match?.manualEffectQueue.some(effect => !effect.completed) ?? false;
+  const controlledPlayerId = (() => {
+    if (!match || !activeLobby || activeLobby.matchId !== match.matchId || !authUser) {
+      return undefined;
+    }
+
+    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+    return lobbyPlayer ? `player_${lobbyPlayer.seat}` : undefined;
+  })();
+  const displayedPlayers = match && controlledPlayerId
+    ? [
+        ...match.players.filter(player => player.id === controlledPlayerId),
+        ...match.players.filter(player => player.id !== controlledPlayerId)
+      ]
+    : match?.players ?? [];
 
   if (!authChecked) {
     return (
@@ -1615,7 +1627,6 @@ export default function App() {
                 activeLobby={activeLobby}
                 cardPacks={cardPacks}
                 decks={decks}
-                deckDetails={deckDetails}
                 selectedPackIds={selectedPackIds}
                 onToggleSelectedPack={toggleSelectedPack}
                 onRefresh={refreshSetupOptions}
@@ -1623,7 +1634,6 @@ export default function App() {
                 onJoinLobby={joinLobby}
                 onViewLobby={viewLobby}
                 onLeaveLobby={leaveLobby}
-                onSelectDeck={selectLobbyDeck}
                 onStartMatch={startLobbyMatch}
               />
             </section>
@@ -1633,6 +1643,7 @@ export default function App() {
             <CompactMatchControlPanel
               match={match}
               advanceBlockReason={advanceBlockReason}
+              controlledPlayerId={controlledPlayerId}
               onShuffleAllDecks={shuffleAllDecks}
               onUndoLastAction={undoLastAction}
               onDrawActivePlayer={drawActivePlayer}
@@ -1649,7 +1660,12 @@ export default function App() {
             />
 
             {!match.pendingBattle && (
-              <MagicChainCard match={match} onResolve={resolveMagicChain} onPassPriority={passMagicChainPriority} />
+              <MagicChainCard
+                match={match}
+                onResolve={resolveMagicChain}
+                onUndo={undoLastAction}
+                onPassPriority={passMagicChainPriority}
+              />
             )}
 
             <DevTestControlsPanel
@@ -1660,8 +1676,8 @@ export default function App() {
 
             <section className="match-workspace">
               <section className="players-grid match-board-grid">
-                {match.players.map(player => (
-                  <PlayerPanel key={player.id} match={match} player={player} />
+                {displayedPlayers.map(player => (
+                  <PlayerPanel key={player.id} match={match} player={player} controlledPlayerId={controlledPlayerId} />
                 ))}
               </section>
             </section>
@@ -1678,6 +1694,7 @@ export default function App() {
                   onForceRolls={forceDevRolls}
                   onRollDamage={rollBattleDamage}
                   onPlayBattleResponse={playBattleResponseFromHand}
+                  onUndo={undoLastAction}
                   onApplyDamage={applyBattleDamage}
                   onFinish={finishManualBattle}
                   onCancel={cancelManualBattle}
@@ -1686,7 +1703,12 @@ export default function App() {
             )}
 
             {match.pendingBattle && match.pendingChain && (
-              <MagicChainCard match={match} onResolve={resolveMagicChain} onPassPriority={passMagicChainPriority} />
+              <MagicChainCard
+                match={match}
+                onResolve={resolveMagicChain}
+                onUndo={undoLastAction}
+                onPassPriority={passMagicChainPriority}
+              />
             )}
 
             {match.pendingEffectRoll && (
@@ -1703,7 +1725,11 @@ export default function App() {
 
             {match.pendingPrompt && (
               <ModalPanel title="Action Required" blocking>
-                <HandRevealPromptCard match={match} onApprove={approveRevealRedraw} />
+                <HandRevealPromptCard
+                  match={match}
+                  controlledPlayerId={controlledPlayerId}
+                  onApprove={approveRevealRedraw}
+                />
               </ModalPanel>
             )}
 
@@ -1711,6 +1737,7 @@ export default function App() {
               <ModalPanel title="Choose Effect Target" blocking wide>
                 <TargetPromptCard
                   prompt={match.pendingEffectTargetPrompt}
+                  onUndo={undoLastAction}
                   onResolve={resolveEffectTarget}
                 />
               </ModalPanel>
@@ -1821,6 +1848,7 @@ export default function App() {
                 <MatchStatePanel
                   match={match}
                   advanceBlockReason={advanceBlockReason}
+                  controlledPlayerId={controlledPlayerId}
                   onShuffleAllDecks={shuffleAllDecks}
                   onUndoLastAction={undoLastAction}
                   onDrawActivePlayer={drawActivePlayer}

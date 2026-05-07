@@ -2,11 +2,13 @@ import type { EffectTargetOption, PendingEffectTargetPrompt } from "@ward/shared
 
 type TargetPromptCardProps = {
   prompt: PendingEffectTargetPrompt;
+  onUndo?: () => void;
   onResolve: (promptId: string, selectedOptionId: string) => void;
 };
 
 export function TargetPromptCard({
   prompt,
+  onUndo,
   onResolve
 }: TargetPromptCardProps) {
   return (
@@ -51,6 +53,14 @@ export function TargetPromptCard({
           </button>
         ))}
       </div>
+
+      {onUndo && (
+        <div className="actions">
+          <button className="secondary-button" onClick={onUndo}>
+            Undo Card Selection
+          </button>
+        </div>
+      )}
     </section>
   );
 }

@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import type { AuthUser, UserProfile } from "../clientTypes";
+import { API_BASE_URL } from "../config";
 
 type ProfilePageProps = {
   onUserUpdated: (user: AuthUser) => void;
 };
-
-const API_BASE_URL = "http://localhost:3001";
 
 export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);

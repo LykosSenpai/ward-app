@@ -54,10 +54,12 @@ function ZoneDetails({
 
 export function PlayerPanel({
   match,
-  player
+  player,
+  controlledPlayerId
 }: {
   match: AppMatchState;
   player: PlayerState;
+  controlledPlayerId?: string;
 }) {
   const [selectedSacrificesByCard, setSelectedSacrificesByCard] = useState<
     Record<string, string[]>
@@ -66,6 +68,7 @@ export function PlayerPanel({
 
   const isActivePlayer = match.turn.activePlayerId === player.id;
   const isMatchComplete = getMatchStatus(match) === "COMPLETE";
+  const canControlThisPlayer = !controlledPlayerId || controlledPlayerId === player.id;
   const replacementRequiredForThisPlayer =
     match.setup.primaryReplacementRequiredForPlayerId === player.id;
   const limitedSummonPromotionRequiredForThisPlayer =
@@ -76,6 +79,7 @@ export function PlayerPanel({
 
   const canPlayPrimaryNow =
     !isMatchComplete &&
+    canControlThisPlayer &&
     !match.pendingPrompt &&
     !match.pendingChain &&
     !anyDiscardRequired &&
@@ -87,6 +91,7 @@ export function PlayerPanel({
 
   const canPlayMagicNow =
     !isMatchComplete &&
+    canControlThisPlayer &&
     isActivePlayer &&
     !match.pendingPrompt &&
     !match.pendingChain &&
@@ -96,6 +101,7 @@ export function PlayerPanel({
 
   const canPlayLightningResponse =
     !isMatchComplete &&
+    canControlThisPlayer &&
     !!match.pendingChain &&
     match.pendingChain.priorityPlayerId === player.id &&
     match.pendingChain.lastLinkPlayerId !== player.id &&
@@ -105,6 +111,7 @@ export function PlayerPanel({
   const currentBattleStrike = match.pendingBattle?.strikes[match.pendingBattle.currentStrikeIndex];
   const canPlayBattleResponse =
     !isMatchComplete &&
+    canControlThisPlayer &&
     !!match.pendingBattle &&
     !match.pendingChain &&
     !match.pendingPrompt &&
@@ -118,6 +125,7 @@ export function PlayerPanel({
   const hasSummonableCreature = playerHasSummonableCreatureInHand(match, player);
 
   function shuffleDeck() {
+    if (!canControlThisPlayer) return;
     socket.emit("match:shuffleDeck", {
       matchId: match.matchId,
       playerId: player.id
@@ -125,6 +133,7 @@ export function PlayerPanel({
   }
 
   function playLightningResponse(cardInstanceId: string) {
+    if (!canControlThisPlayer) return;
     socket.emit("match:playLightningResponse", {
       matchId: match.matchId,
       playerId: player.id,
@@ -133,6 +142,7 @@ export function PlayerPanel({
   }
 
   function playBattleResponse(cardInstanceId: string) {
+    if (!canControlThisPlayer) return;
     if (!match.pendingBattle || !currentBattleStrike) return;
 
     socket.emit("match:playBattleResponseFromHand", {
@@ -145,6 +155,7 @@ export function PlayerPanel({
   }
 
   function discardFromHand(cardInstanceId: string) {
+    if (!canControlThisPlayer) return;
     socket.emit("match:discardFromHand", {
       matchId: match.matchId,
       playerId: player.id,
@@ -153,6 +164,7 @@ export function PlayerPanel({
   }
 
   function applyManualDamage() {
+    if (!canControlThisPlayer) return;
     socket.emit("match:manualDamagePrimary", {
       matchId: match.matchId,
       playerId: player.id,
@@ -161,6 +173,7 @@ export function PlayerPanel({
   }
 
   function applyManualHeal() {
+    if (!canControlThisPlayer) return;
     socket.emit("match:manualHealPrimary", {
       matchId: match.matchId,
       playerId: player.id,
@@ -169,6 +182,7 @@ export function PlayerPanel({
   }
 
   function concedeAsPlayer() {
+    if (!canControlThisPlayer) return;
     socket.emit("match:concede", {
       matchId: match.matchId,
       concedingPlayerId: player.id
@@ -176,6 +190,7 @@ export function PlayerPanel({
   }
 
   function callCemeteryHpLossAgainstPlayer() {
+    if (controlledPlayerId && controlledPlayerId === player.id) return;
     const callingPlayer = match.players.find(candidate => candidate.id !== player.id);
 
     if (!callingPlayer) return;
@@ -188,6 +203,7 @@ export function PlayerPanel({
   }
 
   function destroyMagic(cardInstanceId: string) {
+    if (!canControlThisPlayer) return;
     socket.emit("match:destroyMagicSlotCard", {
       matchId: match.matchId,
       fieldOwnerPlayerId: player.id,
@@ -201,6 +217,7 @@ export function PlayerPanel({
     targetCreatureInstanceId: string,
     targetKind: "PRIMARY_CREATURE" | "LIMITED_SUMMON"
   ) {
+    if (!canControlThisPlayer) return;
     socket.emit("match:attachEquipMagicToCreature", {
       matchId: match.matchId,
       fieldOwnerPlayerId: player.id,
@@ -238,6 +255,7 @@ export function PlayerPanel({
   }
 
   function playPrimary(cardInstanceId: string) {
+    if (!canControlThisPlayer) return;
     socket.emit("match:playPrimaryCreature", {
       matchId: match.matchId,
       playerId: player.id,
@@ -247,6 +265,7 @@ export function PlayerPanel({
   }
 
   function playMagic(cardInstanceId: string) {
+    if (!canControlThisPlayer) return;
     socket.emit("match:playMagic", {
       matchId: match.matchId,
       playerId: player.id,
@@ -255,6 +274,7 @@ export function PlayerPanel({
   }
 
   function activateCardEffect(sourceInstanceId: string, effectId: string) {
+    if (!canControlThisPlayer) return;
     socket.emit("match:activateCardEffect", {
       matchId: match.matchId,
       playerId: player.id,
@@ -264,6 +284,7 @@ export function PlayerPanel({
   }
 
   function primaryToCemetery() {
+    if (!canControlThisPlayer) return;
     socket.emit("match:primaryToCemetery", {
       matchId: match.matchId,
       playerId: player.id
@@ -271,6 +292,7 @@ export function PlayerPanel({
   }
 
   function killOwnPrimary() {
+    if (!canControlThisPlayer) return;
     socket.emit("match:killOwnPrimaryCreature", {
       matchId: match.matchId,
       playerId: player.id
@@ -278,6 +300,7 @@ export function PlayerPanel({
   }
 
   function requestNoCreatureRedraw() {
+    if (!canControlThisPlayer) return;
     socket.emit("match:requestNoCreatureRedrawReveal", {
       matchId: match.matchId,
       playerId: player.id
@@ -285,6 +308,7 @@ export function PlayerPanel({
   }
 
   function promoteLimitedSummonToPrimary(cardInstanceId: string) {
+    if (!canControlThisPlayer) return;
     socket.emit("match:promoteLimitedSummonToPrimary", {
       matchId: match.matchId,
       playerId: player.id,
@@ -294,6 +318,7 @@ export function PlayerPanel({
 
   const canPromoteLimitedSummonToPrimary =
     !isMatchComplete &&
+    canControlThisPlayer &&
     limitedSummonPromotionRequiredForThisPlayer &&
     !match.pendingPrompt &&
     !match.pendingChain &&
@@ -316,6 +341,7 @@ export function PlayerPanel({
         player={player}
         isActivePlayer={isActivePlayer}
         isMatchComplete={isMatchComplete}
+        canControlThisPlayer={canControlThisPlayer}
         normalSummonUsed={player.turnFlags.normalSummonUsed}
         discardRequiredForThisPlayer={discardRequiredForThisPlayer}
         replacementRequiredForThisPlayer={replacementRequiredForThisPlayer}
@@ -331,6 +357,7 @@ export function PlayerPanel({
         match={match}
         player={player}
         isActivePlayer={isActivePlayer}
+        canControlThisPlayer={canControlThisPlayer}
         anyDiscardRequired={anyDiscardRequired}
         replacementRequiredForThisPlayer={replacementRequiredForThisPlayer}
         manualHpAmount={manualHpAmount}
@@ -344,6 +371,7 @@ export function PlayerPanel({
       <AvailableEffectsPanel
         match={match}
         player={player}
+        canControlThisPlayer={canControlThisPlayer}
         onActivateEffect={activateCardEffect}
       />
 

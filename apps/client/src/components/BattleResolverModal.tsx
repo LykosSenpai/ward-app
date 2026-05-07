@@ -61,6 +61,7 @@ type BattleResolverModalProps = {
     playerId: string,
     cardInstanceId: string
   ) => void;
+  onUndo?: () => void;
   onApplyDamage: (battleSessionId: string) => void;
   onFinish: (battleSessionId: string) => void;
   onCancel: (battleSessionId: string) => void;
@@ -683,6 +684,7 @@ export function BattleResolverModal({
   onForceRolls,
   onRollDamage,
   onPlayBattleResponse,
+  onUndo,
   onApplyDamage,
   onFinish,
   onCancel
@@ -775,6 +777,12 @@ export function BattleResolverModal({
       </div>
 
       <div className="battle-wizard-action-row">
+        {onUndo && (
+          <button className="secondary-button" onClick={onUndo}>
+            Undo Battle Step
+          </button>
+        )}
+
         {battle.status === "AWAITING_SPEED_CHECK" && (
           <button onClick={() => onRunSpeedCheck(battle.id)}>
             Run Speed Check

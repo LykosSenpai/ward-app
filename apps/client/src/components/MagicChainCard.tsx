@@ -4,10 +4,11 @@ import { getPlayerName } from "../gameViewHelpers";
 type MagicChainCardProps = {
   match: AppMatchState;
   onResolve: () => void;
+  onUndo?: () => void;
   onPassPriority?: (playerId: string) => void;
 };
 
-export function MagicChainCard({ match, onResolve, onPassPriority }: MagicChainCardProps) {
+export function MagicChainCard({ match, onResolve, onUndo, onPassPriority }: MagicChainCardProps) {
   if (!match.pendingChain) {
     return null;
   }
@@ -67,6 +68,11 @@ export function MagicChainCard({ match, onResolve, onPassPriority }: MagicChainC
       </div>
 
       <div className="actions">
+        {onUndo && (
+          <button className="secondary-button" onClick={onUndo}>
+            Undo Last Chain Step
+          </button>
+        )}
         {match.pendingChain.priorityPlayerId && onPassPriority && (
           <button onClick={() => onPassPriority(match.pendingChain!.priorityPlayerId!)}>
             Pass Priority as {priorityPlayerName}

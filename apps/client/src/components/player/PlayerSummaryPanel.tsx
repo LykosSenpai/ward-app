@@ -6,6 +6,7 @@ export function PlayerSummaryPanel({
   player,
   isActivePlayer,
   isMatchComplete,
+  canControlThisPlayer,
   normalSummonUsed,
   discardRequiredForThisPlayer,
   replacementRequiredForThisPlayer,
@@ -20,6 +21,7 @@ export function PlayerSummaryPanel({
   player: PlayerState;
   isActivePlayer: boolean;
   isMatchComplete: boolean;
+  canControlThisPlayer: boolean;
   normalSummonUsed: boolean;
   discardRequiredForThisPlayer: boolean;
   replacementRequiredForThisPlayer: boolean;
@@ -38,7 +40,7 @@ export function PlayerSummaryPanel({
         <h2>{player.displayName}</h2>
         <button
           onClick={onShuffleDeck}
-          disabled={player.hand.length > 0 || !!match.pendingPrompt}
+          disabled={!canControlThisPlayer || player.hand.length > 0 || !!match.pendingPrompt}
         >
           Shuffle Deck
         </button>
@@ -56,7 +58,7 @@ export function PlayerSummaryPanel({
         <h3>Match Controls</h3>
 
         <div className="match-control-actions">
-          <button className="concede-button" onClick={onConcede} disabled={isMatchComplete}>
+          <button className="concede-button" onClick={onConcede} disabled={isMatchComplete || !canControlThisPlayer}>
             Concede as {player.displayName}
           </button>
 
@@ -65,6 +67,7 @@ export function PlayerSummaryPanel({
             onClick={onCallCemeteryHpLoss}
             disabled={
               isMatchComplete ||
+              canControlThisPlayer ||
               player.cemeteryCreatureHpTotal < match.settings.cemeteryHpLimit
             }
           >
@@ -152,6 +155,7 @@ export function PlayerSummaryPanel({
       )}
 
       {canPlayPrimaryNow &&
+        canControlThisPlayer &&
         !player.field.primaryCreature &&
         player.field.limitedSummons.length === 0 &&
         !hasSummonableCreature && (

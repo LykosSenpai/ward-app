@@ -11,6 +11,7 @@ import {
 type CompactMatchControlPanelProps = {
   match: AppMatchState;
   advanceBlockReason: string;
+  controlledPlayerId?: string;
   onShuffleAllDecks: () => void;
   onUndoLastAction: () => void;
   onDrawActivePlayer: () => void;
@@ -29,6 +30,7 @@ type CompactMatchControlPanelProps = {
 export function CompactMatchControlPanel({
   match,
   advanceBlockReason,
+  controlledPlayerId,
   onShuffleAllDecks,
   onUndoLastAction,
   onDrawActivePlayer,
@@ -46,6 +48,7 @@ export function CompactMatchControlPanel({
   const matchStatus = getMatchStatus(match);
   const pendingManualEffects = match.manualEffectQueue.filter(effect => !effect.completed).length;
   const canUseMatchActions = matchStatus !== "COMPLETE";
+  const canControlActiveTurn = !controlledPlayerId || controlledPlayerId === match.turn.activePlayerId;
   const battleBlockReason = getBattleBlockReason(match);
   const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
   const battleOptions = activePlayer
@@ -54,6 +57,7 @@ export function CompactMatchControlPanel({
 
   const drawDisabled =
     !canUseMatchActions ||
+    !canControlActiveTurn ||
     !match.setup.decksShuffled ||
     !!match.pendingPrompt ||
     !!match.pendingBattle ||
@@ -97,12 +101,12 @@ export function CompactMatchControlPanel({
         <div className="compact-primary-actions">
           <button
             onClick={onShuffleAllDecks}
-            disabled={match.players.some(player => player.hand.length > 0) || !!match.pendingPrompt}
+            disabled={!canControlActiveTurn || match.players.some(player => player.hand.length > 0) || !!match.pendingPrompt}
           >
             Shuffle Both
           </button>
 
-          <button onClick={onUndoLastAction} disabled={!canUseMatchActions}>
+          <button onClick={onUndoLastAction} disabled={!canUseMatchActions || !canControlActiveTurn}>
             Undo
           </button>
 
@@ -119,14 +123,14 @@ export function CompactMatchControlPanel({
             <select
               value={match.settings.cannotInflictAttackDamageBattlePolicy ?? "SKIP_BATTLE"}
               onChange={event => onUpdateCannotInflictAttackDamageBattlePolicy(event.target.value as "DAMAGE_ONLY" | "SKIP_BATTLE")}
-              disabled={!canUseMatchActions}
+              disabled={!canUseMatchActions || !canControlActiveTurn}
             >
               <option value="SKIP_BATTLE">Skip battle turn</option>
               <option value="DAMAGE_ONLY">Allow battle, damage = 0</option>
             </select>
           </label>
 
-          <button onClick={onAdvancePhase} disabled={!canUseMatchActions || !!advanceBlockReason}>
+          <button onClick={onAdvancePhase} disabled={!canUseMatchActions || !canControlActiveTurn || !!advanceBlockReason}>
             Advance Phase
           </button>
         </div>
@@ -143,7 +147,7 @@ export function CompactMatchControlPanel({
 
           <div className="battle-attacker-buttons">
             {battleOptions.map(option => {
-              const disabled = !!battleBlockReason || option.usedThisCombat;
+              const disabled = !canControlActiveTurn || !!battleBlockReason || option.usedThisCombat;
               const title = option.usedThisCombat
                 ? "This creature already battled this Combat Phase."
                 : option.statusBattleSkipReason
