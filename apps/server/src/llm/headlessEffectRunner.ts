@@ -2505,6 +2505,17 @@ function shouldSelectSingleLightningBranch(plan: LlmEffectTestPlan, effect?: War
   );
 }
 
+function parseDamageAmountFromEffect(effect?: WardEngineEffect, fallback = 0): number {
+  const params = effect?.params as { amount?: unknown; damageAmount?: unknown; value?: unknown; valueText?: unknown } | undefined;
+  const direct = Number(params?.amount ?? params?.damageAmount ?? params?.value);
+  if (Number.isFinite(direct) && direct > 0) return Math.trunc(direct);
+
+  const text = normalizeText(params?.valueText, effect?.value, effect?.actionText);
+  const match = text.match(/\b(\d+)\s+damage\b/);
+  const parsed = Number(match?.[1]);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : fallback;
+}
+
 function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
   const definition = match.cardCatalog[plan.card.cardId];
   if (!definition) throw new Error(`Card definition was not found for ${plan.card.cardId}.`);
@@ -4153,6 +4164,195 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   if (trigger.includes("if_no_battle_during_your_turn") && actionType.includes("apply_dice_modifier")) {
     emitHeadlessAction("APPLY_DICE_MODIFIER", { delayed: true, stackRule: "DO_NOT_STACK" });
     return match;
+  }
+
+  if (
+    actionType === "damage" &&
+    text.includes("to play a magic card") &&
+    text.includes("primary creature")
+  ) {
+    const targetPlayerId = text.includes("opponent")
+      ? findOpponentPlayerId(match, source.playerId)
+      : match.turn.activePlayerId;
+    const target = getPlayer(match, targetPlayerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(targetPlayerId, targetPlayerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (!target) throw new Error(`Headless ${definition.name} magic play cost needs a primary creature.`);
+
+    const damage = parseDamageAmountFromEffect(effect, text.includes("opponent") ? 10 : 5);
+    target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 0) - damage);
+    emitHeadlessAction("PLAY_MAGIC_COST_DAMAGE", {
+      marker: "PLAY_MAGIC_COST",
+      targetPlayerId,
+      targetCardInstanceId: target.instanceId,
+      targetCardId: target.cardId,
+      damageAmount: damage
+    });
+    return match;
+  }
+
+  if (
+    definition.cardType === "MAGIC" &&
+    source.zone === "MAGIC_SLOT" &&
+    actionType === "damage" &&
+    text.includes("your primary creature") &&
+    !text.includes("to play a magic card")
+  ) {
+    const target = getPlayer(match, source.playerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(source.playerId, source.playerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (!target) throw new Error(`Headless ${definition.name} self-damage needs your primary creature.`);
+
+    const damage = parseDamageAmountFromEffect(effect, 10);
+    target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 0) - damage);
+    emitHeadlessAction("SELF_DAMAGE_COST", {
+      targetPlayerId: source.playerId,
+      targetCardInstanceId: target.instanceId,
+      targetCardId: target.cardId,
+      damageAmount: damage
+    });
+    return match;
+  }
+
+  if (
+    actionType === "damage" &&
+    text.includes("beginning") &&
+    text.includes("turn") &&
+    text.includes("all creatures")
+  ) {
+    const damage = parseDamageAmountFromEffect(effect, 5);
+    const affected: string[] = [];
+    for (const player of match.players) {
+      const targets = [
+        player.field.primaryCreature,
+        ...(player.field.limitedSummons ?? [])
+      ].filter((card): card is CardInstance => !!card);
+      for (const target of targets) {
+        target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 0) - damage);
+        affected.push(target.instanceId);
+      }
+    }
+    emitHeadlessAction("BEGINNING_TURN_FIELD_DAMAGE", { damageAmount: damage, affectedCardInstanceIds: affected });
+    return match;
+  }
+
+  if (
+    actionType === "damage" &&
+    text.includes("lowest hp") &&
+    text.includes("primary")
+  ) {
+    const candidates = match.players
+      .map(player => ({ player, card: player.field.primaryCreature }))
+      .filter((item): item is { player: PlayerState; card: CardInstance } => !!item.card);
+    const target = candidates.sort((a, b) =>
+      Number(a.card.currentHp ?? a.card.baseHp ?? Number.POSITIVE_INFINITY) -
+      Number(b.card.currentHp ?? b.card.baseHp ?? Number.POSITIVE_INFINITY)
+    )[0];
+    if (!target) throw new Error(`Headless ${definition.name} lowest-HP damage needs primary creatures.`);
+
+    const damage = parseDamageAmountFromEffect(effect, 5);
+    target.card.currentHp = Math.max(0, Number(target.card.currentHp ?? target.card.baseHp ?? 0) - damage);
+    emitHeadlessAction("LOWEST_HP_PRIMARY_DAMAGE", {
+      targetPlayerId: target.player.id,
+      targetCardInstanceId: target.card.instanceId,
+      targetCardId: target.card.cardId,
+      damageAmount: damage
+    });
+    return match;
+  }
+
+  if (
+    actionType === "damage" &&
+    text.includes("does not battle") &&
+    text.includes("primary creature")
+  ) {
+    const targetPlayerId = findOpponentPlayerId(match, source.playerId);
+    const target = getPlayer(match, targetPlayerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(targetPlayerId, targetPlayerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (!target) throw new Error(`Headless ${definition.name} no-battle damage needs opponent primary creature.`);
+
+    const damage = parseDamageAmountFromEffect(effect, 5);
+    target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 0) - damage);
+    emitHeadlessAction("IF_NO_BATTLE_DAMAGE", {
+      marker: "IF_NO_BATTLE",
+      targetPlayerId,
+      targetCardInstanceId: target.instanceId,
+      targetCardId: target.cardId,
+      damageAmount: damage
+    });
+    return match;
+  }
+
+  if (
+    (actionType === "damage" || actionType.includes("send_to_cemetery")) &&
+    trigger.includes("opponent_declares_battle") &&
+    text.includes("send this card to the cemetery")
+  ) {
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const opponentPrimary = getPlayer(match, opponentId).field.primaryCreature ??
+      ensurePrimaryFromSetup(opponentId, opponentId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (!opponentPrimary) throw new Error(`Headless ${definition.name} battle declaration trigger needs opponent primary creature.`);
+
+    if (actionType === "damage") {
+      const damage = parseDamageAmountFromEffect(effect, 15);
+      opponentPrimary.currentHp = Math.max(0, Number(opponentPrimary.currentHp ?? opponentPrimary.baseHp ?? 0) - damage);
+      emitHeadlessAction("OPPONENT_BATTLE_DECLARED_DAMAGE", {
+        targetPlayerId: opponentId,
+        targetCardInstanceId: opponentPrimary.instanceId,
+        targetCardId: opponentPrimary.cardId,
+        damageAmount: damage
+      });
+    } else {
+      const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+      moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+      emitHeadlessAction("SEND_TO_CEMETERY", { reason: "OPPONENT_DECLARED_BATTLE" });
+    }
+    return match;
+  }
+
+  if (
+    definition.cardType === "CREATURE" &&
+    actionType === "damage" &&
+    text.includes("receives") &&
+    text.includes("when it inflicts atk damage")
+  ) {
+    const player = getPlayer(match, source.playerId);
+    const attacker = player.field.primaryCreature?.cardId === plan.card.cardId
+      ? player.field.primaryCreature
+      : source.card;
+    const opponent = getPlayer(match, findOpponentPlayerId(match, source.playerId));
+    const defender = opponent.field.primaryCreature;
+    if (!attacker || !defender) throw new Error(`Headless ${definition.name} self-damage battle needs primary creatures.`);
+
+    match.turn.activePlayerId = source.playerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(source.playerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+    let next = startManualBattleSession(match, source.playerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start self-damage rider battle", ok: true, detail: `${definition.name} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+    next = runPendingBattle(next, steps);
+
+    const inflictedDamage = next.eventLog.some(event => {
+      const payload = event.payload as {
+        attackerCreatureInstanceId?: unknown;
+        finalDamage?: unknown;
+      } | undefined;
+      return event.type === "BATTLE_DAMAGE_PIPELINE_RESOLVED" &&
+        payload?.attackerCreatureInstanceId === attacker.instanceId &&
+        Number(payload?.finalDamage ?? 0) > 0;
+    });
+    if (inflictedDamage) {
+      const currentAttacker = findCardByPredicate(next, card => card.instanceId === attacker.instanceId)?.card ?? attacker;
+      const damage = parseDamageAmountFromEffect(effect, 5);
+      currentAttacker.currentHp = Math.max(0, Number(currentAttacker.currentHp ?? currentAttacker.baseHp ?? 0) - damage);
+      addHeadlessEvent(next, "SELF_DAMAGE_AFTER_ATTACK_DAMAGE", source.playerId, {
+        sourceCardInstanceId: currentAttacker.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        damageAmount: damage
+      });
+      steps.push({ label: "apply self-damage rider", ok: true, detail: `${damage} damage` });
+    }
+    return next;
   }
 
   if (
