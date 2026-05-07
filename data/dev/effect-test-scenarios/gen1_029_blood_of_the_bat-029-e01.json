@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T15:05:24.811Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_029_blood_of_the_bat",
+  "effectId": "029-E01",
+  "title": "Test Blood of the Bat: 029-E01 HEAL_BY_DAMAGE_DEALT",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T15:05:24.797Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_029_blood_of_the_bat",
+      "cardName": "Blood of the Bat",
+      "cardType": "MAGIC",
+      "cardNumber": "029",
+      "generation": "1",
+      "rawText": "Heal the equipped creature for 1/2 of the Atk damage it inflicts."
+    },
+    "effect": {
+      "effectId": "029-E01",
+      "trigger": "ON_EQUIPPED_CREATURE_DEALS_ATK_DAMAGE",
+      "actionType": "HEAL_BY_DAMAGE_DEALT",
+      "effectGroup": "Healing",
+      "target": "Equipped creature",
+      "value": "Heal 1/2 Atk damage inflicted",
+      "durationText": "Instant",
+      "reusableFunction": "healByDamageDealt"
+    },
+    "title": "Test Blood of the Bat: 029-E01 HEAL_BY_DAMAGE_DEALT",
+    "summary": "Create a deterministic dev scenario for Blood of the Bat and verify that 029-E01 HEAL_BY_DAMAGE_DEALT resolves according to the parsed effect and WARD rules.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_029_blood_of_the_bat"
+      ],
+      "player2Cards": [],
+      "forcedRolls": [],
+      "notes": [
+        "Local fallback created this plan because no LLM provider was configured or the provider call failed.",
+        "Use the generated scenario match, then verify the expected assertions manually."
+      ]
+    },
+    "steps": [
+      "Create the effect scenario match from this plan.",
+      "Confirm Player 1 controls or can play the source card.",
+      "Activate or play the source card through the available effect controls.",
+      "Resolve any target, card-selection, chain, battle, or effect-roll prompts.",
+      "Review the event log and the affected card/player state."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Source card exists in the generated match catalog.",
+        "path": "cardCatalog.gen1_029_blood_of_the_bat",
+        "operator": "exists"
+      },
+      {
+        "label": "Event log records the tested card or effect during execution.",
+        "path": "eventLog",
+        "operator": "contains",
+        "value": "Blood of the Bat"
+      }
+    ],
+    "manualVerification": [
+      "Verify target behavior: Equipped creature.",
+      "Verify value/effect result: Heal 1/2 Atk damage inflicted.",
+      "Verify duration cleanup: Instant."
+    ],
+    "riskNotes": [
+      "Fallback plan cannot infer every WARD edge case.",
+      "The engine remains source of truth; the LLM/fallback only proposes a QA plan."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run the generated scenario and update after reviewing result."
+    },
+    "regression": {
+      "fixtureName": "gen1_029_blood_of_the_bat-029-e01",
+      "tags": [
+        "MAGIC",
+        "ON_EQUIPPED_CREATURE_DEALS_ATK_DAMAGE",
+        "HEAL_BY_DAMAGE_DEALT"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_029_blood_of_the_bat:029-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

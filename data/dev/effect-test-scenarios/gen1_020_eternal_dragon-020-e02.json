@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.408Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_020_eternal_dragon",
+  "effectId": "020-E02",
+  "title": "Eternal Dragon attaches sacrificed cards under source on summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:12:37.139Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_020_eternal_dragon",
+      "cardName": "Eternal Dragon",
+      "cardType": "CREATURE",
+      "cardNumber": "020",
+      "generation": "1",
+      "rawText": "Requires 2 “Dragon” named or Dragon-type creatures to summon. Place the sacrificed cards under this card while on the field. If this card leaves the field or changes control, the cards under follow it."
+    },
+    "effect": {
+      "effectId": "020-E02",
+      "trigger": "ON_SUMMON",
+      "actionType": "ATTACH_CARDS_UNDER_SOURCE",
+      "effectGroup": "Attachment/Linked Cards",
+      "target": "Sacrificed cards",
+      "value": "Attach under source card",
+      "durationText": "While on field",
+      "reusableFunction": "attachCardsUnderSource"
+    },
+    "title": "Eternal Dragon attaches sacrificed cards under source on summon",
+    "summary": "After a valid summon, sacrificed cards should be stored under Eternal Dragon and move with it if it changes zone/control.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_020_eternal_dragon",
+        "test_dragon_type_creature_a",
+        "test_dragon_named_creature_b"
+      ],
+      "player2Cards": [
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use a fixture where Eternal Dragon summon requirement is already payable.",
+        "Action type currently has no registered runtime route."
+      ]
+    },
+    "steps": [
+      "Summon Eternal Dragon using two Dragon-qualified sacrifices.",
+      "Inspect Eternal Dragon attachments/under-card list.",
+      "Apply a control-change or move-from-field action if available.",
+      "Inspect whether attached cards follow the source."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Sacrificed cards attached under source",
+        "path": "player_1.field.creatures[gen1_020_eternal_dragon].attachedUnder",
+        "operator": "contains",
+        "value": "test_dragon_type_creature_a"
+      },
+      {
+        "label": "Second sacrificed card attached under source",
+        "path": "player_1.field.creatures[gen1_020_eternal_dragon].attachedUnder",
+        "operator": "contains",
+        "value": "test_dragon_named_creature_b"
+      },
+      {
+        "label": "Attached cards not in cemetery",
+        "path": "player_1.cemetery",
+        "operator": "notContains",
+        "value": "test_dragon_type_creature_a"
+      },
+      {
+        "label": "Attachments follow source movement",
+        "path": "movedSource.attachedUnder.count",
+        "operator": "equals",
+        "value": 2
+      }
+    ],
+    "manualVerification": [
+      "If no attachment model exists, capture actual post-summon location of sacrificed cards."
+    ],
+    "riskNotes": [
+      "Runtime route is unsupported; likely missing resolver/model support for under-card attachments."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "No runtime route registered, but tester should verify whether summon pipeline has implicit attachment behavior."
+    },
+    "regression": {
+      "fixtureName": "eternal-dragon-attach-sacrifices-under-source",
+      "tags": [
+        "creature",
+        "on-summon",
+        "attachment",
+        "unsupported"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_020_eternal_dragon:020-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

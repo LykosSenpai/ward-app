@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T15:05:24.813Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_039_demonic_magic",
+  "effectId": "039-E03",
+  "title": "Test Demonic Magic: 039-E03 DEAL_PERCENTAGE_DAMAGE",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T15:05:24.797Z",
+    "mode": "LOCAL_FALLBACK",
+    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_039_demonic_magic",
+      "cardName": "Demonic Magic",
+      "cardType": "MAGIC",
+      "cardNumber": "039",
+      "generation": "1",
+      "rawText": "Hit: +5. Atk: +5. Negate all creature effects on the field. Reduce equipped creature's remaining HP by 1/2."
+    },
+    "effect": {
+      "effectId": "039-E03",
+      "trigger": "ON_EQUIP",
+      "actionType": "DEAL_PERCENTAGE_DAMAGE",
+      "effectGroup": "HP Reduction",
+      "target": "Equipped creature",
+      "value": "Remaining HP / 2",
+      "durationText": "Instant/on equip",
+      "reusableFunction": "reduceRemainingHpFraction"
+    },
+    "title": "Test Demonic Magic: 039-E03 DEAL_PERCENTAGE_DAMAGE",
+    "summary": "Create a deterministic dev scenario for Demonic Magic and verify that 039-E03 DEAL_PERCENTAGE_DAMAGE resolves according to the parsed effect and WARD rules.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_039_demonic_magic"
+      ],
+      "player2Cards": [],
+      "forcedRolls": [],
+      "notes": [
+        "Local fallback created this plan because no LLM provider was configured or the provider call failed.",
+        "Use the generated scenario match, then verify the expected assertions manually."
+      ]
+    },
+    "steps": [
+      "Create the effect scenario match from this plan.",
+      "Confirm Player 1 controls or can play the source card.",
+      "Activate or play the source card through the available effect controls.",
+      "Resolve any target, card-selection, chain, battle, or effect-roll prompts.",
+      "Review the event log and the affected card/player state."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Source card exists in the generated match catalog.",
+        "path": "cardCatalog.gen1_039_demonic_magic",
+        "operator": "exists"
+      },
+      {
+        "label": "Event log records the tested card or effect during execution.",
+        "path": "eventLog",
+        "operator": "contains",
+        "value": "Demonic Magic"
+      }
+    ],
+    "manualVerification": [
+      "Verify target behavior: Equipped creature.",
+      "Verify value/effect result: Remaining HP / 2.",
+      "Verify duration cleanup: Instant/on equip."
+    ],
+    "riskNotes": [
+      "Fallback plan cannot infer every WARD edge case.",
+      "The engine remains source of truth; the LLM/fallback only proposes a QA plan."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run the generated scenario and update after reviewing result."
+    },
+    "regression": {
+      "fixtureName": "gen1_039_demonic_magic-039-e03",
+      "tags": [
+        "MAGIC",
+        "ON_EQUIP",
+        "DEAL_PERCENTAGE_DAMAGE"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_039_demonic_magic:039-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}

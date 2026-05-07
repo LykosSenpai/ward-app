@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T16:28:19.407Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_020_eternal_dragon",
+  "effectId": "020-E01",
+  "title": "Eternal Dragon requires two Dragon-qualified sacrifices",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-03T16:12:37.138Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_020_eternal_dragon",
+      "cardName": "Eternal Dragon",
+      "cardType": "CREATURE",
+      "cardNumber": "020",
+      "generation": "1",
+      "rawText": "Requires 2 “Dragon” named or Dragon-type creatures to summon. Place the sacrificed cards under this card while on the field. If this card leaves the field or changes control, the cards under follow it."
+    },
+    "effect": {
+      "effectId": "020-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "target": "This card",
+      "value": "2 sacrifices",
+      "durationText": "Before summon",
+      "reusableFunction": "validateSummonRequirement"
+    },
+    "title": "Eternal Dragon requires two Dragon-qualified sacrifices",
+    "summary": "Validate summon is allowed only when both sacrifices are Dragon-named or Dragon-type, in addition to AL12 two-sacrifice rule.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_020_eternal_dragon",
+        "test_dragon_type_creature_a",
+        "test_dragon_named_creature_b",
+        "test_non_dragon_creature"
+      ],
+      "player2Cards": [
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Keep at least one player_1 primary creature before summon if possible.",
+        "Test valid pair and invalid mixed pair in separate reset runs."
+      ]
+    },
+    "steps": [
+      "Attempt to summon Eternal Dragon using two Dragon-qualified creatures as sacrifices.",
+      "Reset fixture.",
+      "Attempt to summon Eternal Dragon using one Dragon-qualified and one non-Dragon creature."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Valid Dragon sacrifices accepted",
+        "path": "summonAttempt.validPair.result",
+        "operator": "equals",
+        "value": "SUCCESS"
+      },
+      {
+        "label": "Two sacrifices required",
+        "path": "summonAttempt.validPair.sacrifices.count",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Invalid non-Dragon sacrifice rejected",
+        "path": "summonAttempt.invalidPair.result",
+        "operator": "equals",
+        "value": "REJECTED"
+      },
+      {
+        "label": "Rejected summon leaves Eternal Dragon out of field",
+        "path": "player_1.field.creatures",
+        "operator": "notContains",
+        "value": "gen1_020_eternal_dragon"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Dragon match accepts either creatureType Dragon or card name containing Dragon."
+    ],
+    "riskNotes": [
+      "Runtime support is partial; custom material validation may not exist beyond normal AL sacrifice count."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Plan targets card-specific sacrifice validation without assuming blocker until runtime is checked."
+    },
+    "regression": {
+      "fixtureName": "eternal-dragon-requires-two-dragon-sacrifices",
+      "tags": [
+        "creature",
+        "summon",
+        "sacrifice",
+        "dragon"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_020_eternal_dragon:020-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+  ]
+}
