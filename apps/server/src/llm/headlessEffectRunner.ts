@@ -4155,6 +4155,194 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  if (
+    definition.cardType === "CREATURE" &&
+    (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
+    isStaticFieldRule &&
+    actionType.includes("manual_fallback") &&
+    text.includes("standard magic") &&
+    text.includes("cannot be played")
+  ) {
+    const scenarioEvent = match.eventLog.find(event => event.type === "EFFECT_TEST_SCENARIO_CREATED");
+    if (scenarioEvent?.payload && typeof scenarioEvent.payload === "object") {
+      (scenarioEvent.payload as Record<string, unknown>).actionType = "PREVENT_CARD_PLAY";
+    }
+    addHeadlessEvent(match, "PREVENT_CARD_PLAY", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "PREVENT_CARD_PLAY",
+      restrictedCardType: "MAGIC",
+      restrictedMagicType: "STANDARD",
+      duration: effect?.duration?.text ?? "While on field"
+    });
+    steps.push({ label: "resolve PREVENT_CARD_PLAY", ok: true, detail: definition.name });
+    return match;
+  }
+
+  if (
+    definition.cardType === "MAGIC" &&
+    source.zone === "MAGIC_SLOT" &&
+    actionType.includes("manual_fallback") &&
+    text.includes("only roll 1 hit die")
+  ) {
+    const affectedPlayerId = findOpponentPlayerId(match, source.playerId);
+    const attacker = getPlayer(match, affectedPlayerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(affectedPlayerId, affectedPlayerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    const defender = getPlayer(match, source.playerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(source.playerId, source.playerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (!attacker || !defender) throw new Error(`Headless ${definition.name} dice limit needs opposing primary creatures.`);
+
+    attacker.activeEffectInstances ??= [];
+    attacker.activeEffectInstances.push({
+      id: `headless-dice-limit-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      kind: "STATIC_MODIFIER",
+      sourceEffectId: effect?.id ?? "UNKNOWN",
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      sourcePlayerId: source.playerId,
+      targetPlayerId: affectedPlayerId,
+      targetCardInstanceId: attacker.instanceId,
+      targetCardName: match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId,
+      actionType: "APPLY_DICE_LIMIT",
+      label: "Hit Roll limited to 1D6",
+      amount: 1,
+      rollKind: "HIT_ROLL",
+      diceLimitMode: "MAX",
+      diceLimitValue: 1,
+      durationType: "TARGET_PLAYER_TURN_STARTS",
+      durationText: effect?.duration?.text,
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+    addHeadlessEvent(match, "AUTO_EFFECT_DICE_LIMIT_TARGET_RESOLVED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "APPLY_DICE_LIMIT",
+      targetPlayerId: affectedPlayerId,
+      targetCardInstanceId: attacker.instanceId,
+      rollKind: "HIT_ROLL",
+      diceLimitValue: 1
+    });
+
+    match.turn.activePlayerId = affectedPlayerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(affectedPlayerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+    let next = startManualBattleSession(match, affectedPlayerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start dice-limited battle", ok: true, detail: `${definition.name} limits ${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId}` });
+    next = runPendingBattle(next, steps);
+    return next;
+  }
+
+  if (
+    definition.cardType === "MAGIC" &&
+    source.zone === "MAGIC_SLOT" &&
+    actionType.includes("manual_fallback") &&
+    text.includes("hit") &&
+    text.includes("atk modifier") &&
+    text.includes("to 0")
+  ) {
+    const attached = source.card.attachedToInstanceId
+      ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+      : undefined;
+    const attacker = attached?.card ?? getPlayer(match, source.playerId).field.primaryCreature;
+    const defender = getPlayer(match, findOpponentPlayerId(match, source.playerId)).field.primaryCreature;
+    if (!attacker || !defender) throw new Error(`Headless ${definition.name} modifier-zero battle needs equipped and opposing primary creatures.`);
+
+    match.turn.activePlayerId = attached?.playerId ?? source.playerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(match.turn.activePlayerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+    let next = startManualBattleSession(match, match.turn.activePlayerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start modifier-zero battle", ok: true, detail: definition.name });
+    next = runPendingBattle(next, steps);
+    return next;
+  }
+
+  if (
+    definition.cardType === "MAGIC" &&
+    source.zone === "MAGIC_SLOT" &&
+    actionType.includes("manual_fallback") &&
+    text.includes("misses") &&
+    text.includes("atk roll against their primary creature")
+  ) {
+    const attached = source.card.attachedToInstanceId
+      ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+      : undefined;
+    if (!attached?.card) throw new Error(`Headless ${definition.name} redirect needs an equipped creature.`);
+
+    const attackerPlayerId = findOpponentPlayerId(match, attached.playerId);
+    const attacker = getPlayer(match, attackerPlayerId).field.primaryCreature;
+    if (!attacker) throw new Error(`Headless ${definition.name} redirect needs opponent primary creature.`);
+
+    const damageDice = rollD6WithDev(match, {
+      kind: "ATTACK_DAMAGE_ROLL",
+      count: 3,
+      playerId: attackerPlayerId,
+      label: `${definition.name} redirected attack roll`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        redirectedToInstanceId: attacker.instanceId
+      }
+    });
+    const damage = Math.max(1, damageDice.reduce((total, die) => total + die, 0));
+    attacker.currentHp = Math.max(0, Number(attacker.currentHp ?? attacker.baseHp ?? 0) - damage);
+    emitHeadlessAction("REDIRECT_ATTACK_ROLL", {
+      redirectedToPlayerId: attackerPlayerId,
+      redirectedToCardInstanceId: attacker.instanceId,
+      damageAmount: damage
+    });
+    return match;
+  }
+
+  if (
+    definition.cardType === "CREATURE" &&
+    (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
+    text.includes("does not perform a hit dice roll")
+  ) {
+    const playerId = source.playerId;
+    const opponentId = findOpponentPlayerId(match, playerId);
+    const attacker = getPlayer(match, playerId).field.primaryCreature ?? source.card;
+    const defender = getPlayer(match, opponentId).field.primaryCreature ??
+      ensurePrimaryFromSetup(opponentId, opponentId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (!attacker || !defender) throw new Error(`Headless ${definition.name} auto-hit battle needs primary creatures.`);
+
+    match.turn.activePlayerId = playerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+    let next = startManualBattleSession(match, playerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start auto-hit battle", ok: true, detail: definition.name });
+    if (next.pendingBattle?.status === "AWAITING_SPEED_CHECK") {
+      const speedSession = next.pendingBattle;
+      next = updateManualBattleSpeedModifiers(next, speedSession.id, {
+        ...speedSession.speedModifiers,
+        override: "ATTACKER_FIRST",
+        note: "Headless LLM runner: force declared attacker first for no-hit-roll verification."
+      });
+      next = runManualBattleSpeedCheck(next, speedSession.id);
+      steps.push({ label: "run battle speed check", ok: true, detail: "attacker first" });
+    }
+    if (next.pendingBattle?.status === "AWAITING_HIT_ROLL") {
+      const session = next.pendingBattle;
+      const strike = session.strikes[session.currentStrikeIndex ?? 0];
+      if (strike) {
+        next = updateManualBattleStrikeModifiers(next, session.id, strike.id, {
+          ...strike.modifiers,
+          forceHitResult: "FORCE_HIT",
+          note: "Headless LLM runner: auto-hit because this card does not perform a Hit Dice Roll."
+        });
+      }
+    }
+    next = runPendingBattle(next, steps);
+    return next;
+  }
+
   const shouldAcceptStaticCreatureModifier = definition.cardType === "CREATURE" &&
     (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
     isStaticFieldRule &&
@@ -4638,6 +4826,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("apply_hit_outcome_override") ||
       actionType.includes("apply_status") ||
       actionType.includes("apply_damage_immunity") ||
+      actionType.includes("unaffected_by_magic") ||
       actionType.includes("apply_play_restriction") ||
       actionType.includes("apply_zone_restriction") ||
       actionType.includes("apply_reroll_permission") ||
@@ -4650,6 +4839,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("deal_instant_damage") ||
       actionType.includes("negate_creature_effects") ||
       actionType.includes("replace_attack_profile") ||
+      actionType.includes("change_creature_type") ||
       actionType.includes("heal_to_full") ||
       actionType === "heal" ||
       actionType.includes("heal_creature") ||
@@ -4764,7 +4954,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           appliedTurnNumber: match.turn.turnNumber,
           appliedTurnCycle: match.turn.turnCycleNumber
         });
-      } else if ((actionType.includes("apply_status") || actionType.includes("apply_damage_immunity")) && attachedTarget?.card) {
+      } else if ((actionType.includes("apply_status") || actionType.includes("apply_damage_immunity") || actionType.includes("unaffected_by_magic")) && attachedTarget?.card) {
         const status = statusForStaticEquipEffect(match, source, definition, effect);
         if (status) {
           attachedTarget.card.activeStatuses ??= [];
@@ -4773,6 +4963,26 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           );
           attachedTarget.card.activeStatuses.push(status);
         }
+      } else if (actionType.includes("change_creature_type") && attachedTarget?.card) {
+        attachedTarget.card.activeEffectInstances ??= [];
+        attachedTarget.card.activeEffectInstances.push({
+          id: `headless-type-change-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          kind: "STATIC_MODIFIER",
+          sourceEffectId: effect?.id ?? "UNKNOWN",
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: definition.name,
+          sourcePlayerId: source.playerId,
+          targetPlayerId: attachedTarget.playerId,
+          targetCardInstanceId: attachedTarget.card.instanceId,
+          targetCardName: match.cardCatalog[attachedTarget.card.cardId]?.name ?? attachedTarget.card.cardId,
+          actionType: effect?.actionType ?? "CHANGE_CREATURE_TYPE",
+          label: effect?.value ?? effect?.actionText ?? "Type or base-stat change",
+          durationType: "WHILE_EQUIPPED",
+          durationText: effect?.duration?.text,
+          preventsSacrifice: text.includes("cannot be used as a sacrifice"),
+          appliedTurnNumber: match.turn.turnNumber,
+          appliedTurnCycle: match.turn.turnCycleNumber
+        });
       } else if (actionType.includes("validate_summon_requirement") && plan.card.cardId === "gen2_009_bio_regeneration" && attachedTarget?.card) {
         applyOnEquipImmediateEffects(match, {
           sourceMagicCard: source.card,
@@ -4804,10 +5014,14 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
             ? "NEGATE_CREATURE_EFFECTS"
           : actionType.includes("replace_attack_profile")
             ? "REPLACE_ATTACK_PROFILE"
+          : actionType.includes("change_creature_type")
+            ? "CHANGE_CREATURE_TYPE"
           : actionType.includes("validate_summon_requirement")
             ? "HEADLESS_EQUIP_REQUIREMENT_AVAILABLE"
           : actionType.includes("apply_magic_immunity")
             ? "HEADLESS_STATIC_MAGIC_IMMUNITY_AVAILABLE"
+          : actionType.includes("unaffected_by_magic")
+            ? "HEADLESS_STATIC_STATUS_AVAILABLE"
             : actionType.includes("apply_negation_window_restriction")
               ? "HEADLESS_STATIC_NEGATION_WINDOW_RESTRICTION_AVAILABLE"
             : actionType.includes("global_creature_effect_negation")

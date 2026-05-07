@@ -99,7 +99,12 @@ function isStaticEffect(effect: WardEngineEffect): boolean {
       "DURING_DAMAGE_CALC_OR_WHILE_IN_HAND_COUNT"
     ].includes(trigger) || (trigger === "ON_PLAY" && durationType === "WHILE_EQUIPPED");
   }
-  if (text.includes("reduced to 1") || text.includes("cannot be increased")) return true;
+  if (
+    text.includes("reduced to 1") ||
+    text.includes("cannot be increased") ||
+    text.includes("changed to 0") ||
+    text.includes("modifier to 0")
+  ) return true;
   return [
     "APPLY_STAT_SET_AURA",
     "APPLY_STAT_MODIFIER",
@@ -355,6 +360,11 @@ function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: 
     const replacement = parseReplacementAttackProfile(text);
     if (replacement.dice !== undefined) layers.push(makeLayer(source, effect, "replace-attack-dice", "attackDice", "SET", replacement.dice));
     if (replacement.modifier !== undefined) layers.push(makeLayer(source, effect, "replace-modifier", "modifier", "SET", replacement.modifier));
+  }
+
+  if (text.includes("changed to 0") || text.includes("modifier to 0")) {
+    if (text.includes("spd") || text.includes("speed")) layers.push(makeLayer(source, effect, "set-spd-0", "speed", "SET", 0));
+    if (text.includes("modifier")) layers.push(makeLayer(source, effect, "set-modifier-0", "modifier", "SET", 0));
   }
 
   if (actionType === "APPLY_TEMPORARY_STAT_SET" || actionType === "APPLY_SOURCE_LINKED_STAT_SET_AURA" || actionType === "APPLY_STAT_SET_AURA" || text.includes("al = 1") || text.includes("al to 1") || text.includes("al reduced to 1")) {
