@@ -37,7 +37,7 @@ import {
 import { syncRecurringActiveEffectInstance, syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
 import { getNextRecurringEffectTickSchedule } from "./effectTiming.js";
 import { getEffectResolutionMode } from "./effectRegistry.js";
-import { isAutomaticMagicEffectSupported, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
+import { applyDestroyedMagicCountModifier, isAutomaticMagicEffectSupported, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
 import { resolveEffectProgramTargetPrompt } from "./effectProgramRunner.js";
 import { getRuntimeBlockDurationData, getRuntimeBlockDurationText, getRuntimeBlockText, getRuntimeBlockValueText } from "./effectBlockRuntime.js";
 import { returnLinkedSummonsForInvalidatedSource } from "./triggers.js";
@@ -1369,6 +1369,14 @@ export function resolvePendingEffectTargetPrompt(
         cardOwnerPlayerId: item.cardOwnerPlayerId,
         linkedDestroyedCreatureCount: item.linkedDestroyedCreatures.length
       }))
+    });
+
+    applyDestroyedMagicCountModifier(nextState, {
+      sourceCardInstanceId: prompt.sourceCardInstanceId,
+      sourceCardName: prompt.sourceCardName,
+      controllerPlayerId: prompt.controllerPlayerId,
+      destroyedCount: result.destroyedCount,
+      addEvent
     });
 
     return nextState;

@@ -59,6 +59,98 @@ export function getCardEngineEffects(
   return withEffects.effects;
 }
 
+function allCardInstances(state: MatchState): CardInstance[] {
+  return state.players.flatMap(player => [
+    ...player.hand,
+    ...player.deck,
+    ...player.cemetery,
+    ...player.removedFromGame,
+    ...player.field.magicSlots,
+    ...(player.field.primaryCreature ? [player.field.primaryCreature] : []),
+    ...player.field.limitedSummons
+  ]);
+}
+
+function findCardInstance(state: MatchState, instanceId: string | undefined): CardInstance | undefined {
+  if (!instanceId) return undefined;
+
+  return allCardInstances(state).find(card => card.instanceId === instanceId);
+}
+
+function magicDestroyedModifierEffects(definition: CardDefinition | undefined): WardEngineEffect[] {
+  return getCardEngineEffects(definition).filter(effect => {
+    const actionType = getRuntimeBlockActionType(effect).trim().toUpperCase();
+    const text = [
+      getRuntimeBlockText(effect),
+      effect.actionText,
+      effect.target,
+      effect.params?.target,
+      effect.value,
+      effect.params?.valueText
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return actionType === "APPLY_STAT_MODIFIER" &&
+      text.includes("for each magic") &&
+      text.includes("destroyed") &&
+      text.includes("modifier");
+  });
+}
+
+export function applyDestroyedMagicCountModifier(
+  state: MatchState,
+  args: {
+    sourceCardInstanceId?: string;
+    sourceCardName: string;
+    controllerPlayerId: string;
+    destroyedCount: number;
+    addEvent: AddEventFn;
+  }
+): number {
+  const sourceCard = findCardInstance(state, args.sourceCardInstanceId);
+  const sourceDefinition = sourceCard ? state.cardCatalog[sourceCard.cardId] : undefined;
+
+  if (!sourceCard || sourceDefinition?.cardType !== "CREATURE" || args.destroyedCount <= 0) {
+    return 0;
+  }
+
+  const effects = magicDestroyedModifierEffects(sourceDefinition);
+  let appliedCount = 0;
+
+  for (const effect of effects) {
+    sourceCard.activeStatModifiers ??= [];
+    sourceCard.activeStatModifiers = sourceCard.activeStatModifiers.filter(modifier =>
+      !(modifier.sourceCardInstanceId === sourceCard.instanceId && modifier.sourceEffectId === effect.id)
+    );
+    sourceCard.activeStatModifiers.push({
+      id: uuidv4(),
+      sourceEffectId: effect.id,
+      sourceCardInstanceId: sourceCard.instanceId,
+      sourceCardName: args.sourceCardName,
+      stat: "modifier",
+      delta: args.destroyedCount,
+      durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+      appliedTurnNumber: state.turn.turnNumber,
+      appliedTurnCycle: state.turn.turnCycleNumber
+    });
+
+    appliedCount += 1;
+    args.addEvent(state, "AUTO_DESTROYED_MAGIC_STAT_MODIFIER_APPLIED", args.controllerPlayerId, {
+      sourceCardName: args.sourceCardName,
+      sourceCardInstanceId: sourceCard.instanceId,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      stat: "modifier",
+      delta: args.destroyedCount,
+      destroyedCount: args.destroyedCount
+    });
+  }
+
+  return appliedCount;
+}
+
 function effectTargetsAllMagicCards(effect: WardEngineEffect): boolean {
   const actionType = getRuntimeBlockActionType(effect).trim().toUpperCase();
   const text = [
@@ -521,6 +613,14 @@ export function tryResolveAutomaticMagicEffect(
         cardOwnerPlayerId: item.cardOwnerPlayerId,
         linkedDestroyedCreatureCount: item.linkedDestroyedCreatures.length
       }))
+    });
+
+    applyDestroyedMagicCountModifier(state, {
+      sourceCardInstanceId: args.sourceCardInstanceId,
+      sourceCardName,
+      controllerPlayerId,
+      destroyedCount: result.destroyedCount,
+      addEvent
     });
 
     return true;

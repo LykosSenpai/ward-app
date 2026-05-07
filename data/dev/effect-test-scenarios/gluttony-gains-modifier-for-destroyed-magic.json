@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_083_gluttony",
+  "effectId": "083-E03",
+  "title": "Gluttony gains modifier for destroyed magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_083_gluttony",
+      "cardName": "Gluttony",
+      "cardType": "CREATURE",
+      "cardNumber": "083",
+      "generation": "3",
+      "rawText": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases."
+    },
+    "effect": {
+      "effectId": "083-E03",
+      "trigger": "ON_SUMMON",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "This creature",
+      "value": "+1 Modifier for each magic card destroyed",
+      "durationText": "Immediate",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Gluttony gains modifier for destroyed magic",
+    "summary": "Summon Gluttony while two magic cards are on the field and verify it gains +1 Modifier for each destroyed magic card.",
+    "setup": {
+      "phase": "SUMMON_CREATURE",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_083_gluttony"
+      ],
+      "player2Cards": [
+        "gen1_024_ball_and_chain",
+        "gen2_024_common_sword",
+        "test_creature_primary"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Ball and Chain and Common Sword as field magic before Gluttony is summoned.",
+        "Gluttony has base Modifier 0, so two destroyed magic cards should produce effective Modifier 2."
+      ]
+    },
+    "steps": [
+      "Player 1 summons Gluttony.",
+      "Resolve the on-summon destroy-all-magic trigger.",
+      "Read Gluttony's effective Modifier after two field magic cards are destroyed."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Gluttony is summoned as primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen3_083_gluttony"
+      },
+      {
+        "label": "Ball and Chain was removed from field",
+        "path": "player_2.magicSlots",
+        "operator": "notContains",
+        "value": "gen1_024_ball_and_chain"
+      },
+      {
+        "label": "Common Sword was removed from field",
+        "path": "player_2.magicSlots",
+        "operator": "notContains",
+        "value": "gen2_024_common_sword"
+      },
+      {
+        "label": "Gluttony Modifier gained one per destroyed magic card",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 2
+      }
+    ],
+    "manualVerification": [
+      "Confirm the Modifier increase scales with the number of magic cards actually destroyed."
+    ],
+    "riskNotes": [
+      "This fixture isolates the numeric follow-up clause after Gluttony's on-summon field wipe."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Gluttony's +1 Modifier per destroyed magic card."
+    },
+    "regression": {
+      "fixtureName": "gluttony-gains-modifier-for-destroyed-magic",
+      "tags": [
+        "creature",
+        "summon",
+        "destroy",
+        "dynamic-stat",
+        "modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
