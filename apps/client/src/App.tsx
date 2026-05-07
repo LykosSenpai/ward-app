@@ -64,6 +64,18 @@ function isDevToolPage(page: AppPage): boolean {
   return DEV_TOOL_PAGES.has(page);
 }
 
+function getLobbyCreatedTime(lobby: MatchLobby): number {
+  const createdAt = Date.parse(lobby.createdAt);
+  return Number.isFinite(createdAt) ? createdAt : 0;
+}
+
+function sortLobbiesByCreatedAt(lobbies: MatchLobby[]): MatchLobby[] {
+  return [...lobbies].sort((a, b) =>
+    getLobbyCreatedTime(b) - getLobbyCreatedTime(a) ||
+    b.id.localeCompare(a.id)
+  );
+}
+
 type DashboardModal =
   | "save-load"
   | "manual-effects"
@@ -251,13 +263,14 @@ export default function App() {
     });
 
     socket.on("lobby:list", (data: MatchLobby[]) => {
-      setMatchLobbies(data);
+      const sortedLobbies = sortLobbiesByCreatedAt(data);
+      setMatchLobbies(sortedLobbies);
       setActiveLobby(current => {
         if (!current) {
           return current;
         }
 
-        return data.find(lobby => lobby.id === current.id);
+        return sortedLobbies.find(lobby => lobby.id === current.id);
       });
     });
 
@@ -265,8 +278,14 @@ export default function App() {
       setActiveLobby(data.status === "CLOSED" ? undefined : data);
       setMatchLobbies(current => {
         const withoutLobby = current.filter(lobby => lobby.id !== data.id);
-        return data.status === "CLOSED" ? withoutLobby : [data, ...withoutLobby];
+        return data.status === "CLOSED"
+          ? sortLobbiesByCreatedAt(withoutLobby)
+          : sortLobbiesByCreatedAt([data, ...withoutLobby]);
       });
+    });
+
+    socket.on("lobby:cleanupComplete", (data: { message: string; closedCount: number }) => {
+      setSaveMessage(data.message);
     });
 
     socket.on("collection:ownership", (data: CardOwnershipMap) => {
@@ -466,6 +485,7 @@ export default function App() {
       socket.off("deck:details");
       socket.off("lobby:list");
       socket.off("lobby:updated");
+      socket.off("lobby:cleanupComplete");
       socket.off("collection:ownership");
       socket.off("dev:effectCoverage");
       socket.off("dev:effectRuntimeTestStatusSaved");
@@ -600,6 +620,12 @@ export default function App() {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:startMatch", lobbyId);
+  }
+
+  function cleanupStaleLobbies() {
+    setError("");
+    setSaveMessage("");
+    socket.emit("lobby:cleanupStale");
   }
 
   function normalizeId(value: string): string {
@@ -1687,6 +1713,8 @@ export default function App() {
                 onViewLobby={viewLobby}
                 onLeaveLobby={leaveLobby}
                 onStartMatch={startLobbyMatch}
+                canUseDevTools={canUseDevTools}
+                onCleanupStaleLobbies={cleanupStaleLobbies}
               />
             </section>
           </section>

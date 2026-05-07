@@ -276,6 +276,14 @@
   margin: 0.2rem 0 0;
 }
 
+.match-lobby-header-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 .match-lobby-layout {
   align-items: stretch;
   display: grid;
@@ -424,7 +432,7 @@
   gap: 0.55rem;
   grid-template-rows: minmax(0, 1fr) auto;
   height: fit-content;
-  min-height: 7.25rem;
+  min-height: 8.5rem;
   padding: 0.6rem;
 }
 
@@ -483,10 +491,25 @@
 .match-lobby-seat em,
 .match-lobby-deck-option span,
 .match-lobby-deck-option em,
-.match-lobby-section-header span {
+.match-lobby-section-header span,
+.match-lobby-timer-grid span {
   color: #cbd5e1;
   font-size: 0.76rem;
   font-style: normal;
+}
+
+.match-lobby-timer-grid {
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+}
+
+.match-lobby-timer-grid span {
+  background: rgba(2, 6, 23, 0.34);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 0.35rem;
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
 }
 
 .match-lobby-player-strip span {

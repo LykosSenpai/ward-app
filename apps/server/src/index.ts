@@ -120,7 +120,8 @@ const isProduction = process.env.NODE_ENV === "production";
 const ENABLE_DEV_TOOLS = process.env.ENABLE_DEV_TOOLS === "true" || (!isProduction && process.env.ENABLE_DEV_TOOLS !== "false");
 const DEV_SOCKET_EVENTS = new Set([
   "match:devForceRolls",
-  "match:devClearForcedRolls"
+  "match:devClearForcedRolls",
+  "lobby:cleanupStale"
 ]);
 
 const app = express();
@@ -179,8 +180,12 @@ const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
 
 const MAX_UNDO_STEPS = 25;
+const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const IN_MATCH_LOBBY_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
+const LOBBY_CLEANUP_INTERVAL_MS = 60 * 1000;
 
 type MatchLobbyStatus = "OPEN" | "IN_MATCH" | "CLOSED";
+type MatchLobbyCloseReason = "EMPTY" | "MATCH_COMPLETE" | "IDLE_TIMEOUT";
 
 type MatchLobbyPlayerRecord = {
   userId: string;
@@ -200,6 +205,9 @@ type MatchLobbyRecord = {
   players: MatchLobbyPlayerRecord[];
   createdAt: string;
   updatedAt: string;
+  lastActivityAt: string;
+  closedAt?: string;
+  closeReason?: MatchLobbyCloseReason;
 };
 
 function getSocketUser(socket: { request: unknown }): AuthUser | null {
@@ -428,18 +436,79 @@ function getDeckDetailsForUser(user: AuthUser | null) {
   });
 }
 
+function getLobbyIdleTimeoutMs(lobby: MatchLobbyRecord): number {
+  return lobby.status === "IN_MATCH" ? IN_MATCH_LOBBY_IDLE_TIMEOUT_MS : OPEN_LOBBY_IDLE_TIMEOUT_MS;
+}
+
+function getLobbyActivityTime(lobby: MatchLobbyRecord): number {
+  const activityTime = Date.parse(lobby.lastActivityAt || lobby.updatedAt || lobby.createdAt);
+  return Number.isFinite(activityTime) ? activityTime : Date.parse(lobby.createdAt);
+}
+
+function getLobbyCreatedTime(lobby: MatchLobbyRecord): number {
+  const createdTime = Date.parse(lobby.createdAt);
+  return Number.isFinite(createdTime) ? createdTime : 0;
+}
+
+function touchLobbyActivity(lobby: MatchLobbyRecord, now = new Date().toISOString()): void {
+  lobby.updatedAt = now;
+  lobby.lastActivityAt = now;
+}
+
+function closeLobby(
+  lobby: MatchLobbyRecord,
+  reason: MatchLobbyCloseReason,
+  now = new Date().toISOString()
+): void {
+  lobby.status = "CLOSED";
+  lobby.updatedAt = now;
+  lobby.lastActivityAt = now;
+  lobby.closedAt = now;
+  lobby.closeReason = reason;
+}
+
+function closeStaleLobbies(nowMs = Date.now()): number {
+  let closedCount = 0;
+  const now = new Date(nowMs).toISOString();
+
+  for (const lobby of matchLobbies.values()) {
+    if (lobby.status === "CLOSED") {
+      continue;
+    }
+
+    const idleMs = nowMs - getLobbyActivityTime(lobby);
+    if (idleMs >= getLobbyIdleTimeoutMs(lobby)) {
+      closeLobby(lobby, "IDLE_TIMEOUT", now);
+      closedCount += 1;
+    }
+  }
+
+  return closedCount;
+}
+
 function getLobbySnapshot(lobby: MatchLobbyRecord) {
+  const nowMs = Date.now();
+  const createdAtMs = getLobbyCreatedTime(lobby);
+  const lastActivityAtMs = getLobbyActivityTime(lobby);
+  const staleAfterMs = getLobbyIdleTimeoutMs(lobby);
+
   return {
     ...lobby,
-    players: [...lobby.players].sort((a, b) => a.seat - b.seat)
+    players: [...lobby.players].sort((a, b) => a.seat - b.seat),
+    ageMs: Math.max(0, nowMs - createdAtMs),
+    idleMs: Math.max(0, nowMs - lastActivityAtMs),
+    staleAfterMs,
+    autoCloseAt: new Date(lastActivityAtMs + staleAfterMs).toISOString()
   };
 }
 
 function listLobbySnapshots() {
+  closeStaleLobbies();
+
   return Array.from(matchLobbies.values())
     .filter(lobby => lobby.status !== "CLOSED")
     .map(getLobbySnapshot)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    .sort((a, b) => getLobbyCreatedTime(b) - getLobbyCreatedTime(a));
 }
 
 function emitLobbyList(): void {
@@ -458,8 +527,18 @@ function closeLobbyForMatch(matchId: string): void {
     return;
   }
 
-  lobby.status = "CLOSED";
-  lobby.updatedAt = new Date().toISOString();
+  closeLobby(lobby, "MATCH_COMPLETE");
+  emitLobbyUpdated(lobby);
+}
+
+function touchLobbyActivityForMatch(matchId: string): void {
+  const lobby = Array.from(matchLobbies.values()).find(item => item.matchId === matchId);
+
+  if (!lobby || lobby.status === "CLOSED") {
+    return;
+  }
+
+  touchLobbyActivity(lobby);
   emitLobbyUpdated(lobby);
 }
 
@@ -952,6 +1031,8 @@ function emitMatchState(match: MatchState): void {
 
   if ((match.status ?? "ACTIVE") === "COMPLETE") {
     closeLobbyForMatch(match.matchId);
+  } else {
+    touchLobbyActivityForMatch(match.matchId);
   }
 }
 
@@ -1175,6 +1256,12 @@ const io = new Server(httpServer, {
 });
 
 io.engine.use(sessionMiddleware);
+
+setInterval(() => {
+  if (closeStaleLobbies() > 0) {
+    emitLobbyList();
+  }
+}, LOBBY_CLEANUP_INTERVAL_MS).unref();
 
 io.on("connection", async socket => {
   console.log(`Client connected: ${socket.id}`);
@@ -3115,6 +3202,7 @@ io.on("connection", async socket => {
 
       socket.join(matchId);
       io.to(matchId).emit("match:state", restoredMatch);
+      touchLobbyActivityForMatch(matchId);
 
       socket.emit("match:saved", {
         message: `Undid last action. Undo steps remaining: ${getUndoCount(matchId)}`,
@@ -3131,6 +3219,21 @@ io.on("connection", async socket => {
 
   socket.on("lobby:list", () => {
     socket.emit("lobby:list", listLobbySnapshots());
+  });
+
+  socket.on("lobby:cleanupStale", () => {
+    try {
+      const closedCount = closeStaleLobbies();
+      emitLobbyList();
+      socket.emit("lobby:cleanupComplete", {
+        message: `Closed ${closedCount} stale ${closedCount === 1 ? "lobby" : "lobbies"}.`,
+        closedCount
+      });
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
   });
 
   socket.on("lobby:view", (lobbyId: string) => {
@@ -3171,6 +3274,7 @@ io.on("connection", async socket => {
           loadDeckForUser(user.id, data.selectedDeckId);
         }
 
+        const now = new Date().toISOString();
         const lobby: MatchLobbyRecord = {
           id: createId("lobby"),
           name: String(data.name ?? `${user.displayName}'s Match`).trim() || `${user.displayName}'s Match`,
@@ -3184,8 +3288,9 @@ io.on("connection", async socket => {
             selectedDeckId: data.selectedDeckId || undefined,
             ready: Boolean(data.selectedDeckId)
           }],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          createdAt: now,
+          updatedAt: now,
+          lastActivityAt: now
         };
 
         matchLobbies.set(lobby.id, lobby);
@@ -3226,7 +3331,7 @@ io.on("connection", async socket => {
         });
       }
 
-      lobby.updatedAt = new Date().toISOString();
+      touchLobbyActivity(lobby);
       socket.join(lobby.id);
       emitLobbyUpdated(lobby);
     } catch (error) {
@@ -3245,13 +3350,15 @@ io.on("connection", async socket => {
       socket.leave(lobby.id);
 
       if (lobby.players.length === 0) {
-        lobby.status = "CLOSED";
+        closeLobby(lobby, "EMPTY");
       } else if (lobby.hostUserId === user.id) {
         lobby.players.sort((a, b) => a.seat - b.seat);
         lobby.hostUserId = lobby.players[0]?.userId ?? lobby.hostUserId;
+        touchLobbyActivity(lobby);
+      } else {
+        touchLobbyActivity(lobby);
       }
 
-      lobby.updatedAt = new Date().toISOString();
       emitLobbyUpdated(lobby);
     } catch (error) {
       socket.emit("match:error", {
@@ -3271,7 +3378,7 @@ io.on("connection", async socket => {
 
       player.selectedDeckId = data.deckId;
       player.ready = true;
-      lobby.updatedAt = new Date().toISOString();
+      touchLobbyActivity(lobby);
       emitLobbyUpdated(lobby);
     } catch (error) {
       socket.emit("match:error", {
@@ -3314,7 +3421,7 @@ io.on("connection", async socket => {
 
       lobby.status = "IN_MATCH";
       lobby.matchId = match.matchId;
-      lobby.updatedAt = new Date().toISOString();
+      touchLobbyActivity(lobby);
       activeMatches.set(match.matchId, match);
       matchUndoHistory.set(match.matchId, []);
       matchPlayerOwners.set(match.matchId, new Map([

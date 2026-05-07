@@ -70,6 +70,13 @@ export type MatchLobby = {
   players: MatchLobbyPlayer[];
   createdAt: string;
   updatedAt: string;
+  lastActivityAt: string;
+  closedAt?: string;
+  closeReason?: "EMPTY" | "MATCH_COMPLETE" | "IDLE_TIMEOUT";
+  ageMs?: number;
+  idleMs?: number;
+  staleAfterMs?: number;
+  autoCloseAt?: string;
 };
 
 export type SetupOptions = {
