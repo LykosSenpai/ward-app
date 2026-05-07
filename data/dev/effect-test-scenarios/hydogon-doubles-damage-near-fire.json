@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_070_hydogon",
+  "effectId": "070-E02",
+  "title": "Hydogon doubles attack damage to creatures near fire",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_070_hydogon",
+      "cardName": "Hydogon",
+      "cardType": "CREATURE",
+      "cardNumber": "070",
+      "generation": "3",
+      "rawText": "This creature inflicts 2x Atk damage to any creature in or near fire."
+    },
+    "effect": {
+      "effectId": "070-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "This creature",
+      "value": "This creature inflicts 2x Atk damage to any creature in or near fire.",
+      "durationText": "Immediate",
+      "reusableFunction": "applyAttackDamageMultiplier"
+    },
+    "title": "Hydogon doubles attack damage to creatures near fire",
+    "summary": "Run Hydogon through battle and verify whether the 2x near-fire attack damage multiplier is represented.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_070_hydogon"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: This creature inflicts 2x Atk damage to any creature in or near fire.",
+        "Treat the target as in or near fire for this focused headless route."
+      ]
+    },
+    "steps": [
+      "Start battle with Hydogon as attacker.",
+      "Resolve deterministic hit and attack damage.",
+      "Inspect for a 2x attack damage multiplier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hydogon battle route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Hydogon near-fire multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      }
+    ],
+    "manualVerification": [
+      "The environmental fire condition likely needs explicit runtime state if this fails."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run Hydogon through battle and verify whether the 2x near-fire attack damage multiplier is represented."
+    },
+    "regression": {
+      "fixtureName": "hydogon-doubles-damage-near-fire",
+      "tags": [
+        "gen3",
+        "creature",
+        "battle",
+        "damage-multiplier"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_070_hydogon:070-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

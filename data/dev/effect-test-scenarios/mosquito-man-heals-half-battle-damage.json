@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_024_mosquito_man",
+  "effectId": "024-E01",
+  "title": "Mosquito Man heals for half its battle damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_024_mosquito_man",
+      "cardName": "Mosquito Man",
+      "cardType": "CREATURE",
+      "cardNumber": "024",
+      "generation": "3",
+      "rawText": "This creature heals for 1/2 of the Atk damage it inflicts during battle."
+    },
+    "effect": {
+      "effectId": "024-E01",
+      "trigger": "DURING_BATTLE",
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "target": "This creature",
+      "value": "This creature heals for 1/2 of the Atk damage it inflicts during battle.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "heal"
+    },
+    "title": "Mosquito Man heals for half its battle damage",
+    "summary": "Damage Mosquito Man before battle, then verify its lifesteal-style healing route is exercised from attack damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_024_mosquito_man"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: This creature heals for 1/2 of the Atk damage it inflicts during battle.",
+        "Set player_1 primary current HP to 20 before battle so healing is observable."
+      ]
+    },
+    "steps": [
+      "Start battle with Mosquito Man as the attacker.",
+      "Resolve deterministic hit and damage rolls.",
+      "Inspect whether the source heals after attack damage is inflicted."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Mosquito Man battle route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Mosquito Man healing increased HP above setup damage",
+        "path": "player_1.primary.currentHp",
+        "operator": "greaterThan",
+        "value": 20
+      }
+    ],
+    "manualVerification": [
+      "Confirm the healed amount is half of inflicted Atk damage, rounded according to the card data."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Damage Mosquito Man before battle, then verify its lifesteal-style healing route is exercised from attack damage."
+    },
+    "regression": {
+      "fixtureName": "mosquito-man-heals-half-battle-damage",
+      "tags": [
+        "gen3",
+        "creature",
+        "battle",
+        "heal"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_024_mosquito_man:024-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

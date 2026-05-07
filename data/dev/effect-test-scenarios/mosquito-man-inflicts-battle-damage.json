@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_024_mosquito_man",
+  "effectId": "024-E02",
+  "title": "Mosquito Man battle damage route applies damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_024_mosquito_man",
+      "cardName": "Mosquito Man",
+      "cardType": "CREATURE",
+      "cardNumber": "024",
+      "generation": "3",
+      "rawText": "This creature heals for 1/2 of the Atk damage it inflicts during battle."
+    },
+    "effect": {
+      "effectId": "024-E02",
+      "trigger": "DURING_BATTLE",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "This creature",
+      "value": "This creature heals for 1/2 of the Atk damage it inflicts during battle.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "damage"
+    },
+    "title": "Mosquito Man battle damage route applies damage",
+    "summary": "Verify Mosquito Man still damages the defender while its half-damage healing text is under test.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_024_mosquito_man"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: This creature heals for 1/2 of the Atk damage it inflicts during battle."
+      ]
+    },
+    "steps": [
+      "Start battle with Mosquito Man as the attacker.",
+      "Resolve deterministic hit and damage rolls.",
+      "Inspect defender HP loss."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Mosquito Man battle damage pipeline ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Defender took Mosquito Man attack damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 0
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Mosquito Man still damages the defender while its half-damage healing text is under test."
+    },
+    "regression": {
+      "fixtureName": "mosquito-man-inflicts-battle-damage",
+      "tags": [
+        "gen3",
+        "creature",
+        "battle",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_024_mosquito_man:024-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

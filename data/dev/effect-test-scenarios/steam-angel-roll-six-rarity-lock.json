@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_057_steam_angel",
+  "effectId": "057-E01",
+  "title": "Steam Angel roll-six locks Legendary and Mythic cards",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_057_steam_angel",
+      "cardName": "Steam Angel",
+      "cardType": "CREATURE",
+      "cardNumber": "057",
+      "generation": "3",
+      "rawText": "During your turn, roll 1 die. For 1 turn cycle, the following rarity cards cannot be played: 1-3 Epic/Promo. 4-6 Legendary/Mythic."
+    },
+    "effect": {
+      "effectId": "057-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "target": "This creature",
+      "value": "During your turn, roll 1 die. For 1 turn cycle, the following rarity cards cannot be played: 1-3 Epic/Promo. 4-6 Legendary/Mythic.",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "resolveRollTable"
+    },
+    "title": "Steam Angel roll-six locks Legendary and Mythic cards",
+    "summary": "Activate Steam Angel, force the 4-6 branch, and verify the rarity play-prevention route is represented.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_057_steam_angel"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Steam Angel high rarity lock branch"
+        }
+      ],
+      "notes": [
+        "Read text first: During your turn, roll 1 die. For 1 turn cycle, the following rarity cards cannot be played: 1-3 Epic/Promo. 4-6 Legendary/Mythic."
+      ]
+    },
+    "steps": [
+      "Activate Steam Angel during player_1 turn.",
+      "Force a roll of 6.",
+      "Inspect the rarity lock runtime marker."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Steam Angel activation was logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Steam Angel"
+      },
+      {
+        "label": "Rarity prevention marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "PREVENT_CARD_PLAY"
+      }
+    ],
+    "manualVerification": [
+      "Separate coverage should force the 1-3 Epic/Promo branch."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Activate Steam Angel, force the 4-6 branch, and verify the rarity play-prevention route is represented."
+    },
+    "regression": {
+      "fixtureName": "steam-angel-roll-six-rarity-lock",
+      "tags": [
+        "gen3",
+        "creature",
+        "activated",
+        "roll-table",
+        "prevent-play"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_057_steam_angel:057-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_058_steam_armor",
+  "effectId": "058-E01",
+  "title": "Steam Armor makes equipped primary unaffected by effects",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_058_steam_armor",
+      "cardName": "Steam Armor",
+      "cardType": "MAGIC",
+      "cardNumber": "058",
+      "generation": "3",
+      "rawText": "Equip to a primary creature. For 2 turn cycles, the equipped creature is unaffected by creature and magic card effects. Does not include this card."
+    },
+    "effect": {
+      "effectId": "058-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "UNAFFECTED_BY_MAGIC",
+      "effectGroup": "Immunity",
+      "target": "Equipped creature",
+      "value": "Equip to a primary creature. For 2 turn cycles, the equipped creature is unaffected by creature and magic card effects. Does not include this card.",
+      "durationText": "2 turn cycles",
+      "reusableFunction": "applyImmunity"
+    },
+    "title": "Steam Armor makes equipped primary unaffected by effects",
+    "summary": "Equip Steam Armor to a primary creature and verify the immunity/unaffected route is represented for two turn cycles.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_058_steam_armor",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Equip to a primary creature. For 2 turn cycles, the equipped creature is unaffected by creature and magic card effects. Does not include this card."
+      ]
+    },
+    "steps": [
+      "Equip Steam Armor to player_1 primary.",
+      "Verify the equipped creature receives an immunity/status route."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Steam Armor static status route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STATUS_AVAILABLE"
+      },
+      {
+        "label": "Steam Armor remains equipped in magic slots",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_058_steam_armor"
+      }
+    ],
+    "manualVerification": [
+      "Confirm this blocks creature and magic effects except Steam Armor itself for exactly 2 turn cycles."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Steam Armor to a primary creature and verify the immunity/unaffected route is represented for two turn cycles."
+    },
+    "regression": {
+      "fixtureName": "steam-armor-unaffected-by-effects",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "immunity"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_058_steam_armor:058-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

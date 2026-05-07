@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_028_catcow",
+  "effectId": "028-E01",
+  "title": "Catcow exposes its field stat-switch rule",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_028_catcow",
+      "cardName": "Catcow",
+      "cardType": "MAGIC",
+      "cardNumber": "028",
+      "generation": "3",
+      "rawText": "For 2 turn cycles, all creatures switch their own base Atk Dice Rolls and Modifier."
+    },
+    "effect": {
+      "effectId": "028-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "All creatures matching condition",
+      "value": "For 2 turn cycles, all creatures switch their own base Atk Dice Rolls and Modifier.",
+      "durationText": "2 turn cycles",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Catcow exposes its field stat-switch rule",
+    "summary": "Place Catcow as field magic and verify the headless runtime recognizes the static stat modifier route for switching attack dice and modifier.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_028_catcow",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: For 2 turn cycles, all creatures switch their own base Atk Dice Rolls and Modifier."
+      ]
+    },
+    "steps": [
+      "Place Catcow in the field magic slot.",
+      "Verify its static field stat-rule route is represented."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Catcow static stat route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Catcow remains active as field magic",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_028_catcow"
+      }
+    ],
+    "manualVerification": [
+      "A future deeper fixture should verify each creature swaps its own base Atk Dice Rolls and Modifier values for exactly 2 turn cycles."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Place Catcow as field magic and verify the headless runtime recognizes the static stat modifier route for switching attack dice and modifier."
+    },
+    "regression": {
+      "fixtureName": "catcow-field-switch-stat-marker",
+      "tags": [
+        "gen3",
+        "magic",
+        "field",
+        "stat-rule"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_028_catcow:028-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

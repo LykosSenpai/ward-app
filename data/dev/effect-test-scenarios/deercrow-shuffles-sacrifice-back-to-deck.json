@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_051_deercrow",
+  "effectId": "051-E02",
+  "title": "Deercrow shuffles Scarecrow or Big Buck sacrifice back to deck",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_051_deercrow",
+      "cardName": "Deercrow",
+      "cardType": "CREATURE",
+      "cardNumber": "051",
+      "generation": "3",
+      "rawText": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD."
+    },
+    "effect": {
+      "effectId": "051-E02",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "SHUFFLE_DECK",
+      "effectGroup": "Deck",
+      "target": "Magic card(s) on the field",
+      "value": "Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD.",
+      "durationText": "Immediate",
+      "reusableFunction": "shuffleDeck"
+    },
+    "title": "Deercrow shuffles Scarecrow or Big Buck sacrifice back to deck",
+    "summary": "Summon Deercrow with a named sacrifice available and verify the shuffle-back summon requirement route is represented.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_051_deercrow",
+        "gen1_066_junk_scarecrow"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Summon Requirement: If summoned by sacrificing \"Scarecrow\" or \"Big Buck\", send 1 of them back to your deck, then shuffle. This card receives 2x effects from Common / Uncommon magic cards for Hit, Atk, Atk Dice Rolls, and SPD.",
+        "Use a Scarecrow-named sacrifice to satisfy the text before checking the deck shuffle effect."
+      ]
+    },
+    "steps": [
+      "Attempt to summon Deercrow using Scarecrow as the named sacrifice.",
+      "Verify the selected sacrifice can return to deck and shuffle."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Deercrow summon requirement route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Deercrow"
+      },
+      {
+        "label": "Shuffle deck marker emitted for named sacrifice",
+        "path": "game.events",
+        "operator": "contains",
+        "value": "SHUFFLE_DECK"
+      }
+    ],
+    "manualVerification": [
+      "Also verify the doubled Common/Uncommon magic modifier rule in a separate combat fixture."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Summon Deercrow with a named sacrifice available and verify the shuffle-back summon requirement route is represented."
+    },
+    "regression": {
+      "fixtureName": "deercrow-shuffles-sacrifice-back-to-deck",
+      "tags": [
+        "gen3",
+        "creature",
+        "summon-requirement",
+        "shuffle"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_051_deercrow:051-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

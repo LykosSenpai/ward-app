@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_079_living_trap",
+  "effectId": "079-E01",
+  "title": "Living Trap damages opponent primary when battle is declared",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_079_living_trap",
+      "cardName": "Living Trap",
+      "cardType": "MAGIC",
+      "cardNumber": "079",
+      "generation": "3",
+      "rawText": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery."
+    },
+    "effect": {
+      "effectId": "079-E01",
+      "trigger": "WHEN_OPPONENT_DECLARES_BATTLE",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Opponent's primary creature",
+      "value": "When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery.",
+      "durationText": "While on field",
+      "reusableFunction": "damage"
+    },
+    "title": "Living Trap damages opponent primary when battle is declared",
+    "summary": "Place Living Trap as field magic and verify the opponent-declares-battle trigger deals 15 damage to their primary creature.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen3_079_living_trap",
+        "test_creature_defender"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: When your opponent declares battle, inflict 15 damage to their primary creature and send this card to the cemetery."
+      ]
+    },
+    "steps": [
+      "Place Living Trap in player_1 field magic.",
+      "Have player_2 declare battle.",
+      "Verify player_2 primary takes 15 damage."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Living Trap battle declaration route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Living Trap"
+      },
+      {
+        "label": "Opponent primary took 15 trap damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 15
+      }
+    ],
+    "manualVerification": [
+      "Also verify the self-send-to-cemetery follow-up in the paired effect."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Place Living Trap as field magic and verify the opponent-declares-battle trigger deals 15 damage to their primary creature."
+    },
+    "regression": {
+      "fixtureName": "living-trap-damages-opponent-on-battle-declare",
+      "tags": [
+        "gen3",
+        "magic",
+        "field",
+        "battle-trigger",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_079_living_trap:079-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -82,8 +82,15 @@ function inferIssueType(result: {
 
   const failedAssertions = result.assertionResults?.filter(assertion => assertion.status === "FAIL") ?? [];
   if (failedAssertions.some(assertion => {
-    const text = `${assertion.label} ${assertion.path}`.toLowerCase();
-    return text.includes("damage") || text.includes("hp") || text.includes("currenthp");
+    const path = assertion.path.toLowerCase();
+    const label = assertion.label.toLowerCase();
+    const isDamageAmountPath = path.includes("damageevents") ||
+      path.includes("damagetaken") ||
+      path.includes("lastdamage") ||
+      path.includes("combatendeffects.damageapplied") ||
+      path.includes("currenthp") ||
+      path.endsWith(".hp");
+    return isDamageAmountPath && !label.includes("damage immunity");
   })) {
     return "WRONG_DAMAGE";
   }

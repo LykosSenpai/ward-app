@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_062_graft",
+  "effectId": "062-E01",
+  "title": "Graft exposes creature-as-equip stat rule",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_062_graft",
+      "cardName": "Graft",
+      "cardType": "MAGIC",
+      "cardNumber": "062",
+      "generation": "3",
+      "rawText": "Players may equip creatures from their hand to their primary creature as Infinite equip magic cards. Add their base Atk Dice Rolls and Modifier to the equipped card."
+    },
+    "effect": {
+      "effectId": "062-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Magic card(s) on the field",
+      "value": "Players may equip creatures from their hand to their primary creature as Infinite equip magic cards. Add their base Atk Dice Rolls and Modifier to the equipped card.",
+      "durationText": "While on field",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Graft exposes creature-as-equip stat rule",
+    "summary": "Place Graft as field magic and verify the runtime recognizes its field rule for turning hand creatures into Infinite equip stat sources.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_062_graft",
+        "test_primary_creature_mod_0",
+        "gen3_064_frog_bard"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Players may equip creatures from their hand to their primary creature as Infinite equip magic cards. Add their base Atk Dice Rolls and Modifier to the equipped card."
+      ]
+    },
+    "steps": [
+      "Place Graft in the field magic slot.",
+      "Keep a creature in hand as the potential Infinite equip source.",
+      "Verify the static stat-rule marker is available."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Graft static stat route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Graft remains active as field magic",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_062_graft"
+      }
+    ],
+    "manualVerification": [
+      "A later live or deeper headless route should actually equip a hand creature and transfer its base dice/modifier."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Place Graft as field magic and verify the runtime recognizes its field rule for turning hand creatures into Infinite equip stat sources."
+    },
+    "regression": {
+      "fixtureName": "graft-field-creature-equip-stat-rule",
+      "tags": [
+        "gen3",
+        "magic",
+        "field",
+        "stat-rule"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_062_graft:062-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

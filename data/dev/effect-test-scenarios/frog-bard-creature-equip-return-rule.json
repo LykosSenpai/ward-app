@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_064_frog_bard",
+  "effectId": "064-E01",
+  "title": "Frog Bard can be played as Infinite equip and return to hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_064_frog_bard",
+      "cardName": "Frog Bard",
+      "cardType": "CREATURE",
+      "cardNumber": "064",
+      "generation": "3",
+      "rawText": "You may play this card from your hand as an Infinite equip magic card to your primary creature. The equipped creature gains this card's Atk Dice Rolls and Modifier. If that creature is removed from the field, return this card to your hand."
+    },
+    "effect": {
+      "effectId": "064-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Card Movement",
+      "target": "Your primary creature",
+      "value": "You may play this card from your hand as an Infinite equip magic card to your primary creature. The equipped creature gains this card's Atk Dice Rolls and Modifier. If that creature is removed from the field, return this card to your hand.",
+      "durationText": "Immediate",
+      "reusableFunction": "moveCard"
+    },
+    "title": "Frog Bard can be played as Infinite equip and return to hand",
+    "summary": "Exercise Frog Bard?s creature-as-equip movement rule and capture whether runtime support exists for the return-to-hand behavior.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_064_frog_bard",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: You may play this card from your hand as an Infinite equip magic card to your primary creature. The equipped creature gains this card's Atk Dice Rolls and Modifier. If that creature is removed from the field, return this card to your hand.",
+        "Frog Bard text allows playing this creature from hand as Infinite equip magic to your primary creature."
+      ]
+    },
+    "steps": [
+      "Attempt to use Frog Bard from hand as an Infinite equip.",
+      "Remove the equipped creature or inspect movement support.",
+      "Verify the return-to-hand route exists."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Frog Bard movement rule was logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Frog Bard"
+      },
+      {
+        "label": "Frog Bard returned or stayed available in hand after host removal",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "gen3_064_frog_bard"
+      }
+    ],
+    "manualVerification": [
+      "A red result should be treated as missing runtime support for creature-as-equip return behavior."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Exercise Frog Bard?s creature-as-equip movement rule and capture whether runtime support exists for the return-to-hand behavior."
+    },
+    "regression": {
+      "fixtureName": "frog-bard-creature-equip-return-rule",
+      "tags": [
+        "gen3",
+        "creature",
+        "equip",
+        "move-card"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_064_frog_bard:064-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
