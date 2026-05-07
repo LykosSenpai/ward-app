@@ -2713,6 +2713,43 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  const shouldRunEquippedCreatureDamagedBattle = definition.cardType === "MAGIC" &&
+    source.zone === "MAGIC_SLOT" &&
+    trigger.includes("equipped_creature_damaged") &&
+    actionType.includes("deal_instant_damage");
+
+  if (shouldRunEquippedCreatureDamagedBattle) {
+    const attached = source.card.attachedToInstanceId
+      ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+      : undefined;
+
+    if (!attached?.card) {
+      throw new Error("Headless equipped-creature damaged battle needs the source Magic attached to a creature.");
+    }
+
+    const attackerPlayerId = findOpponentPlayerId(match, attached.playerId);
+    const attacker = getPlayer(match, attackerPlayerId).field.primaryCreature;
+    const defender = attached.card;
+
+    if (!attacker) {
+      throw new Error("Headless equipped-creature damaged battle needs an opposing primary creature to attack.");
+    }
+
+    match.turn.activePlayerId = attackerPlayerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(attackerPlayerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+
+    let next = startManualBattleSession(match, attackerPlayerId, attacker.instanceId, defender.instanceId);
+    steps.push({
+      label: "start equipped-creature damaged battle",
+      ok: true,
+      detail: `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}`
+    });
+    next = runPendingBattle(next, steps);
+    return next;
+  }
+
   const shouldRunFieldAuraBattle = definition.cardType === "MAGIC" &&
     source.zone === "MAGIC_SLOT" &&
     (

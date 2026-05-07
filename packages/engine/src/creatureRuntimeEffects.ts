@@ -221,6 +221,21 @@ function opponentPlayedLightningThisTurn(state: MatchState, source: ActiveEffect
   });
 }
 
+function equippedCreatureWasDamagedByStrike(source: ActiveEffectSource, strike: ManualBattleStrike): boolean {
+  const attachedToInstanceId = source.card.attachedToInstanceId;
+  if (!attachedToInstanceId) return false;
+
+  if (strike.damageTarget === "DEFENDER" && strike.defender.creatureInstanceId === attachedToInstanceId) {
+    return Number(strike.damageDealt ?? 0) > 0;
+  }
+
+  if (strike.damageTarget === "ATTACKER" && strike.attacker.creatureInstanceId === attachedToInstanceId) {
+    return Number(strike.selfDamageDealt ?? 0) > 0;
+  }
+
+  return false;
+}
+
 function sourceCanResolveForTiming(source: ActiveEffectSource, effect: WardEngineEffect, timing: string, strike: ManualBattleStrike): boolean {
   const trigger = normalize(effect.trigger);
   const actionType = normalize(getRuntimeBlockActionType(effect));
@@ -311,6 +326,21 @@ function conditionPasses(
     const text = textForEffect(effect);
     if (text.includes("hits first") && strike.role !== "FIRST_STRIKE") return false;
     if (text.includes("hit lands") && !strike.hit) return false;
+    if (text.includes("equipped creature is damaged") || text.includes("equipped creature damaged")) {
+      const passed = equippedCreatureWasDamagedByStrike(source, strike);
+      if (!passed) {
+        addEvent?.(state, "BATTLE_EFFECT_CONDITION_NOT_MET", source.player.id, {
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: source.definition.name,
+          effectId: effect.id,
+          actionType: effect.actionType,
+          timing,
+          strikeId: strike.id,
+          reason: "The equipped creature was not damaged by this battle strike."
+        });
+      }
+      return passed;
+    }
     if (isOpponentLightningDamageBoostEffect(effect)) {
       const passed = opponentPlayedLightningThisTurn(state, source);
       if (!passed) {

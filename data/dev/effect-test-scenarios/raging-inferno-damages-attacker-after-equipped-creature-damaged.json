@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_079_raging_inferno",
+  "effectId": "079-E01",
+  "title": "Raging Inferno damages attacker after equipped creature is damaged",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_079_raging_inferno",
+      "cardName": "Raging Inferno",
+      "cardType": "MAGIC",
+      "cardNumber": "079",
+      "generation": "2",
+      "rawText": "If the equipped creature is damaged in battle, inflict 5 damage to the attacking creature."
+    },
+    "effect": {
+      "effectId": "079-E01",
+      "trigger": "ON_EQUIPPED_CREATURE_DAMAGED_IN_BATTLE",
+      "actionType": "DEAL_INSTANT_DAMAGE",
+      "effectGroup": "Triggered Damage",
+      "target": "Attacking creature",
+      "value": "5 damage",
+      "durationText": "Instant",
+      "reusableFunction": "dealDirectDamage"
+    },
+    "title": "Raging Inferno damages attacker after equipped creature is damaged",
+    "summary": "Equip Raging Inferno to player_1's creature, have the opponent attack and damage that equipped creature, then verify Raging Inferno inflicts 5 effect damage to the attacking creature.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "test_creature_defender"
+      ],
+      "player2Cards": [
+        "gen2_079_raging_inferno",
+        "test_attacker_2dice_mod3_hp100"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Raging Inferno in a field magic slot.",
+        "Attach Raging Inferno to player_1's primary creature.",
+        "Player_2 attacks and damages the equipped creature."
+      ]
+    },
+    "steps": [
+      "Set player_1's creature as the equipped defender.",
+      "Set player_2's creature as the attacking primary creature.",
+      "Resolve battle damage to the equipped creature.",
+      "Verify Raging Inferno deals 5 effect damage to the attacker."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Raging Inferno trigger resolves",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_EFFECT_DAMAGE_RESOLVED"
+      },
+      {
+        "label": "Attacking creature takes Raging Inferno damage",
+        "path": "players.player_2.field.primaryCreature.currentHp",
+        "operator": "lessThan",
+        "value": 100
+      },
+      {
+        "label": "Equipped creature remains player_1 primary",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "test_creature_defender"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Raging Inferno only triggers after the equipped creature is damaged in battle.",
+      "Confirm the effect damage is dealt to the attacking creature, not the equipped creature."
+    ],
+    "riskNotes": [
+      "This fixture verifies the positive trigger path. A separate control can verify no trigger occurs when the equipped creature receives no battle damage."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Raging Inferno's after-battle-damage retaliation effect."
+    },
+    "regression": {
+      "fixtureName": "raging-inferno-damages-attacker-after-equipped-creature-damaged",
+      "tags": [
+        "magic",
+        "equip",
+        "battle",
+        "triggered-damage"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
