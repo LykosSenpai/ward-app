@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:46:41.502Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_009_bio_regeneration",
+  "effectId": "009-E04",
+  "title": "Bio-Regeneration doubles attack damage while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:46:41.502Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_009_bio_regeneration",
+      "cardName": "Bio-Regeneration",
+      "cardType": "MAGIC",
+      "cardNumber": "009",
+      "generation": "2",
+      "rawText": "Can only be equipped to a creature with 9 or less remaining HP. Heal 30 HP. 2x Hit Roll results for this creature. 2x Atk Damage for this creature."
+    },
+    "effect": {
+      "effectId": "009-E04",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Equipped creature attack",
+      "value": "2x Atk damage",
+      "durationText": "While equipped",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Bio-Regeneration doubles attack damage while equipped",
+    "summary": "Attach Bio-Regeneration, run a battle, and verify the attack damage multiplier route can apply 2x damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_009_bio_regeneration",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Bio-Regeneration battle hit"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Stable damage for 2x check"
+        }
+      ],
+      "notes": [
+        "Pre-place Bio-Regeneration on field magic slot attached to player_1 primary creature.",
+        "Set player_1 primary current hp to 5.",
+        "2x Atk Damage for this creature."
+      ]
+    },
+    "steps": [
+      "Attach Bio-Regeneration to player_1 primary creature.",
+      "Start battle against player_2 primary creature.",
+      "Verify a 2x attack damage multiplier is observed."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Bio-Regeneration damage multiplier applied",
+        "path": "damageEvents",
+        "operator": "contains",
+        "value": "multiplier:2"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Can only be equipped to a creature with 9 or less remaining HP. Heal 30 HP. 2x Hit Roll results for this creature. 2x Atk Damage for this creature."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the headless expected-success route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_009_bio_regeneration-009-e04 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_009_bio_regeneration-009-e04",
+      "tags": [
+        "MAGIC",
+        "WHILE_EQUIPPED",
+        "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_009_bio_regeneration:009-E04"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

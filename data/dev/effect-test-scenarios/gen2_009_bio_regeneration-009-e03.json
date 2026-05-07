@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:46:41.502Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_009_bio_regeneration",
+  "effectId": "009-E03",
+  "title": "Bio-Regeneration doubles hit roll results while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:46:41.502Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_009_bio_regeneration",
+      "cardName": "Bio-Regeneration",
+      "cardType": "MAGIC",
+      "cardNumber": "009",
+      "generation": "2",
+      "rawText": "Can only be equipped to a creature with 9 or less remaining HP. Heal 30 HP. 2x Hit Roll results for this creature. 2x Atk Damage for this creature."
+    },
+    "effect": {
+      "effectId": "009-E03",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Roll Result Multiplier",
+      "target": "Equipped creature",
+      "value": "2x Hit Roll results",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Bio-Regeneration doubles hit roll results while equipped",
+    "summary": "Attach Bio-Regeneration to a low-HP creature and verify the hit-roll stat modifier route is active while equipped.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_009_bio_regeneration",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Bio-Regeneration on field magic slot attached to player_1 primary creature.",
+        "Set player_1 primary current hp to 5.",
+        "2x Hit Roll results for this creature."
+      ]
+    },
+    "steps": [
+      "Put Bio-Regeneration in player_1 magic slot.",
+      "Attach it to player_1 primary creature.",
+      "Verify the while-equipped effect is represented by runtime state/events."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE static route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Bio-Regeneration stays equipped",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_009_bio_regeneration"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Can only be equipped to a creature with 9 or less remaining HP. Heal 30 HP. 2x Hit Roll results for this creature. 2x Atk Damage for this creature."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the headless expected-success route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_009_bio_regeneration-009-e03 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_009_bio_regeneration-009-e03",
+      "tags": [
+        "MAGIC",
+        "WHILE_EQUIPPED",
+        "APPLY_STAT_MODIFIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_009_bio_regeneration:009-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

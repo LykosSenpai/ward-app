@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:46:41.502Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_016_natural_selection",
+  "effectId": "016-E01",
+  "title": "Natural Selection buffs non-effect creatures of AL 5 or less",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:46:41.502Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_016_natural_selection",
+      "cardName": "Natural Selection",
+      "cardType": "MAGIC",
+      "cardNumber": "016",
+      "generation": "2",
+      "rawText": "Only affects non-effect creatures of AL 5 or less. Atk: +7. Hit: +7."
+    },
+    "effect": {
+      "effectId": "016-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Non-effect creatures with base/current AL 5 or less",
+      "value": "ATK_BONUS ADD 7; HIT_BONUS ADD 7",
+      "durationText": "While field effect is active",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Natural Selection buffs non-effect creatures of AL 5 or less",
+    "summary": "Place Natural Selection as a field card and verify its non-effect AL <=5 aura route is available.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_016_natural_selection",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Natural Selection on field magic slot as a field-active Magic card.",
+        "Only affects non-effect creatures of AL 5 or less."
+      ]
+    },
+    "steps": [
+      "Put Natural Selection in player_1 field magic slot.",
+      "Use a non-effect AL 3 primary creature.",
+      "Verify the field aura stat modifier route is represented."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE static route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Natural Selection stays in player_1 magic slots",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_016_natural_selection"
+      }
+    ],
+    "manualVerification": [
+      "Creatures with effects or AL above 5 should not receive the buff."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the headless expected-success route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_016_natural_selection-016-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_016_natural_selection-016-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_FIELD_ACTIVE",
+        "APPLY_STAT_MODIFIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_016_natural_selection:016-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

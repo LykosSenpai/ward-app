@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:46:41.502Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_002_celestial_power",
+  "effectId": "002-E01",
+  "title": "Celestial Power suppresses the Lightning response window",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:46:41.502Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_002_celestial_power",
+      "cardName": "Celestial Power",
+      "cardType": "MAGIC",
+      "cardNumber": "002",
+      "generation": "2",
+      "rawText": "This card cannot be negated when played. Atk: +8. Hit: +8. SPD: +8."
+    },
+    "effect": {
+      "effectId": "002-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SET_CAN_BE_NEGATED",
+      "effectGroup": "Negation Rule",
+      "target": "This card",
+      "value": "Cannot be negated",
+      "durationText": "While resolving",
+      "reusableFunction": "setCanBeNegated"
+    },
+    "title": "Celestial Power suppresses the Lightning response window",
+    "summary": "Play Celestial Power and verify its cannot-be-negated text prevents a chain response window instead of inviting negation.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_002_celestial_power",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen1_028_blade_in_the_dark",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Play Celestial Power from hand.",
+        "This card cannot be negated when played, so the chain response should never happen."
+      ]
+    },
+    "steps": [
+      "Play Celestial Power from player_1 hand.",
+      "Resolve the card.",
+      "Verify no Lightning response is added against Celestial Power."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Response window was suppressed",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MAGIC_CHAIN_RESPONSE_WINDOW_SUPPRESSED"
+      },
+      {
+        "label": "No Lightning response was added",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "LIGHTNING_RESPONSE_ADDED"
+      },
+      {
+        "label": "Celestial Power was not negated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "magic_negated"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: This card cannot be negated when played. Atk: +8. Hit: +8. SPD: +8."
+    ],
+    "riskNotes": [
+      "Per user rule clarification, Celestial Power should not create a chain response prompt at all."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_002_celestial_power-002-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_002_celestial_power-002-e01",
+      "tags": [
+        "MAGIC",
+        "ON_PLAY",
+        "SET_CAN_BE_NEGATED"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_002_celestial_power:002-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
