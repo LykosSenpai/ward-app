@@ -103,6 +103,7 @@ function isStaticStatEffect(effect: WardEngineEffect): boolean {
       "WHILE_FIELD_ACTIVE",
       "STATIC_WHILE_ON_FIELD",
       "WHILE_ON_FIELD",
+      "ON_SUMMON",
       "ON_EQUIP",
       "ON_EQUIP_OR_PLAY",
       "DURING_DAMAGE_CALC_OR_STATIC",
@@ -158,6 +159,7 @@ function isNonEffectCreature(definition: CreatureDefinition): boolean {
 
 function effectAppliesToCreature(source: FieldSource, effect: WardEngineEffect, target: CreatureLocation): boolean {
   const text = effectText(effect);
+  const actionType = effect.actionType.trim().toUpperCase();
 
   if (source.card.attachedToInstanceId) {
     return source.card.attachedToInstanceId === target.card.instanceId;
@@ -165,6 +167,13 @@ function effectAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
 
   if (text.includes("equipped creature")) {
     return source.card.attachedToInstanceId === target.card.instanceId;
+  }
+
+  if (
+    actionType === "APPLY_SOURCE_LINKED_STAT_SET_AURA" &&
+    (text.includes("opponent") || text.includes("opposing"))
+  ) {
+    return source.player.id !== target.player.id;
   }
 
   if (text.includes("this creature") || text.includes("this card")) {

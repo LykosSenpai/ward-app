@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_103_witch",
+  "effectId": "103-E01",
+  "title": "Witch reduces opponent creature AL to one on summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_103_witch",
+      "cardName": "Witch",
+      "cardType": "CREATURE",
+      "cardNumber": "103",
+      "generation": "1",
+      "rawText": "When summoned, your opponents' creatures AL is reduced to 1 until this creature leaves the field or this effect is negated."
+    },
+    "effect": {
+      "effectId": "103-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "APPLY_SOURCE_LINKED_STAT_SET_AURA",
+      "effectGroup": "Stat Set Aura",
+      "target": "Opponents creatures",
+      "value": "AL = 1",
+      "durationText": "Until source leaves/negated",
+      "reusableFunction": "applySourceLinkedStatSetAura"
+    },
+    "title": "Witch reduces opponent creature AL to one on summon",
+    "summary": "Summon Witch and verify its source-linked aura sets the opponent primary creature's effective AL to 1.",
+    "setup": {
+      "phase": "SUMMON_CREATURE",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_103_witch"
+      ],
+      "player2Cards": [
+        "test_defender_al_6_hp_50"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Witch's rules text applies when Witch is summoned.",
+        "Set player_2 primary to an AL6 creature so the source-linked aura has a visible AL reduction."
+      ]
+    },
+    "steps": [
+      "Player 1 summons Witch.",
+      "Read player_2 primary effective AL while Witch remains on the field."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Witch is summoned as primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen1_103_witch"
+      },
+      {
+        "label": "Opponent AL set to 1",
+        "path": "player_2.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Witch stays on field as aura source",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen1_103_witch"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the AL reduction lasts only while Witch remains on the field or until Witch's effect is negated."
+    ],
+    "riskNotes": [
+      "This mirrors Curse's AL-set aura, but verifies the source-linked creature ON_SUMMON version."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Witch's source-linked opponent AL reduction."
+    },
+    "regression": {
+      "fixtureName": "witch-source-linked-opponent-al-to-one",
+      "tags": [
+        "creature",
+        "summon",
+        "stat-set-aura",
+        "source-linked"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_103_witch:103-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

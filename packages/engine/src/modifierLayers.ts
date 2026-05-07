@@ -89,6 +89,7 @@ function isStaticEffect(effect: WardEngineEffect): boolean {
       "WHILE_FIELD_ACTIVE",
       "STATIC_WHILE_ON_FIELD",
       "WHILE_ON_FIELD",
+      "ON_SUMMON",
       "ON_EQUIP",
       "ON_EQUIP_OR_PLAY",
       "DURING_BATTLE",
@@ -133,10 +134,15 @@ function collectSources(state: MatchState): FieldSource[] {
 
 function sourceAppliesToCreature(source: FieldSource, effect: WardEngineEffect, target: CreatureLocation): boolean {
   const text = effectText(effect);
+  const actionType = effect.actionType.trim().toUpperCase();
   if (source.card.attachedToInstanceId) return source.card.attachedToInstanceId === target.card.instanceId;
   if (text.includes("equipped creature")) return source.card.attachedToInstanceId === target.card.instanceId;
   if (text.includes("your primary creature") || text.includes("controller's primary creature")) return source.player.id === target.player.id && target.zone === "PRIMARY_CREATURE";
   if (text.includes("your creature") || text.includes("you control") || text.includes("your side")) return source.player.id === target.player.id;
+  if (
+    actionType === "APPLY_SOURCE_LINKED_STAT_SET_AURA" &&
+    (text.includes("opponent") || text.includes("opposing"))
+  ) return source.player.id !== target.player.id;
   if (text.includes("this creature") || (text.includes("this card") && !text.includes("this card only affects"))) return source.card.instanceId === target.card.instanceId;
   if (text.includes("opponent") || text.includes("opposing")) return source.player.id !== target.player.id;
   if (text.includes("non-effect creature") || text.includes("non effect creature")) return !target.definition.effects?.length;
