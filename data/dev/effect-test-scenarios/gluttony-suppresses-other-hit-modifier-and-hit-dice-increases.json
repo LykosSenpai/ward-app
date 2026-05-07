@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_083_gluttony",
+  "effectId": "083-E02",
+  "title": "Gluttony suppresses other Hit Modifier and Hit Dice increases",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_083_gluttony",
+      "cardName": "Gluttony",
+      "cardType": "CREATURE",
+      "cardNumber": "083",
+      "generation": "3",
+      "rawText": "When summoned, destroy all magic cards on the field. For each magic card destroyed, add +1 Modifier to this card. This card is unaffected by other Hit Modifier and Hit Dice Roll increases."
+    },
+    "effect": {
+      "effectId": "083-E02",
+      "trigger": "ON_SUMMON",
+      "actionType": "UNAFFECTED_BY_MAGIC",
+      "effectGroup": "Immunity",
+      "target": "This creature",
+      "value": "Unaffected by other Hit Modifier and Hit Dice Roll increases",
+      "durationText": "While on field",
+      "reusableFunction": "applyImmunity"
+    },
+    "title": "Gluttony suppresses other Hit Modifier and Hit Dice increases",
+    "summary": "Place Gluttony with positive Hit Modifier and Hit Dice Roll equip buffs and verify those other increases are ignored.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_083_gluttony",
+        "gen2_040_the_career_buccaneer",
+        "gen2_126_warming_glow"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Do not summon Gluttony in this fixture; set it directly as the primary creature so the separate destroy-all-magic trigger does not remove the test buff cards.",
+        "Pre-place The Career Buccaneer and Warming Glow as field magic equipped to Gluttony.",
+        "The Career Buccaneer would normally add Modifier +6, and Warming Glow would normally add Hit Dice Rolls +1.",
+        "Gluttony's own base Modifier is 0, and this fixture does not destroy magic for its separate +1-per-destroyed-magic clause."
+      ]
+    },
+    "steps": [
+      "Set Gluttony as player_1 primary creature.",
+      "Equip The Career Buccaneer and Warming Glow to Gluttony.",
+      "Run a follow-up battle and inspect Gluttony's effective Modifier and hit roll dice count."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Other positive Modifier increase is suppressed",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 0
+      },
+      {
+        "label": "Other positive Hit Dice Roll increase is suppressed",
+        "path": "battle.lastHitRoll.dice.length",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "The Career Buccaneer remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_040_the_career_buccaneer"
+      },
+      {
+        "label": "Warming Glow remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_126_warming_glow"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Gluttony's own +1 Modifier per destroyed magic still applies separately."
+    ],
+    "riskNotes": [
+      "This fixture isolates suppression of other positive Hit Modifier and Hit Dice Roll increases."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Gluttony's immunity to other Hit Modifier and Hit Dice Roll increases."
+    },
+    "regression": {
+      "fixtureName": "gluttony-suppresses-other-hit-modifier-and-hit-dice-increases",
+      "tags": [
+        "creature",
+        "immunity",
+        "modifier",
+        "hit-dice",
+        "suppression"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

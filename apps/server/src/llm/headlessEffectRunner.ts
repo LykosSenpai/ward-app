@@ -2239,10 +2239,12 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   if (!source) throw new Error(`No source card instance was found for ${plan.card.cardId}.`);
 
   const text = normalizeText(planText(plan), effectText(effect));
+  const setupText = normalizeText(plan.setup.notes, plan.steps);
   const trigger = normalizeText(effect?.trigger);
   const actionType = normalizeText(effect?.actionType);
 
   const shouldRunSummon = definition.cardType === "CREATURE" &&
+    !setupText.includes("do not summon") &&
     (
       trigger.includes("summon_requirement") ||
       trigger.includes("on_summon") ||

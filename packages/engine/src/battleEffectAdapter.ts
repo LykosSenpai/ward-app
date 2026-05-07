@@ -13,6 +13,7 @@ import type {
 import { getCardEngineEffects } from "./effectResolver.js";
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { getRuntimeBattleBlockPlan, getRuntimeBlockActionType, getRuntimeBlockStatChanges, getRuntimeBlockText, runtimeBattlePlanToStrikeModifiers } from "./effectBlockRuntime.js";
+import { collectRuntimeModifierLayers } from "./modifierLayers.js";
 
 const BATTLE_RELEVANT_TRIGGERS = new Set([
   "STATIC_WHILE_ON_FIELD",
@@ -179,6 +180,45 @@ function getBattleCreatures(session: PendingBattleSession): BattleCreatureRef[] 
       role: "DECLARED_DEFENDER"
     }
   ];
+}
+
+function getCreatureLocation(state: MatchState, creatureInstanceId: string) {
+  for (const player of state.players) {
+    if (player.field.primaryCreature?.instanceId === creatureInstanceId) {
+      const definition = state.cardCatalog[player.field.primaryCreature.cardId];
+      return definition?.cardType === "CREATURE"
+        ? { player, card: player.field.primaryCreature, definition, zone: "PRIMARY_CREATURE" as const }
+        : undefined;
+    }
+
+    for (const limited of player.field.limitedSummons) {
+      if (limited.instanceId === creatureInstanceId) {
+        const definition = state.cardCatalog[limited.cardId];
+        return definition?.cardType === "CREATURE"
+          ? { player, card: limited, definition, zone: "LIMITED_SUMMON" as const }
+          : undefined;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function isPositiveStrikeModifierSuppressed(state: MatchState, suggestion: BattleEffectSuggestion): boolean {
+  if (suggestion.kind !== "STRIKE" || !suggestion.strikeModifiers) return false;
+  if (!suggestion.appliesToCreatureInstanceId) return false;
+
+  const location = getCreatureLocation(state, suggestion.appliesToCreatureInstanceId);
+  if (!location) return false;
+
+  const layers = collectRuntimeModifierLayers(state, location);
+  const suppressesHitDice = layers.some(layer => layer.stat === "hitDiceDelta" && layer.operation === "SUPPRESS_POSITIVE");
+  const suppressesHitFlat = layers.some(layer => layer.stat === "hitFlatBonus" && layer.operation === "SUPPRESS_POSITIVE");
+
+  return Boolean(
+    (suggestion.strikeModifiers.hitDiceDelta ?? 0) > 0 && suppressesHitDice ||
+    (suggestion.strikeModifiers.hitFlatBonus ?? 0) > 0 && suppressesHitFlat
+  );
 }
 
 function sourceAppliesToCreature(
@@ -761,8 +801,10 @@ export function collectBattleEffectSuggestions(
     }
   }
 
+  const unsuppressed = suggestions.filter(suggestion => !isPositiveStrikeModifierSuppressed(state, suggestion));
+
   const unique = new Map<string, BattleEffectSuggestion>();
-  for (const suggestion of suggestions) {
+  for (const suggestion of unsuppressed) {
     unique.set(suggestion.id, suggestion);
   }
 

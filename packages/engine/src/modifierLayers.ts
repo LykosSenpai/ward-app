@@ -109,6 +109,7 @@ function isStaticEffect(effect: WardEngineEffect): boolean {
     "APPLY_DAMAGE_MULTIPLIER_AURA",
     "SUPPRESS_MODIFIER_LAYER",
     "APPLY_STAT_AND_DICE_MULTIPLIER",
+    "UNAFFECTED_BY_MAGIC",
     "REPLACE_ATTACK_PROFILE",
     "APPLY_TEMPORARY_STAT_SET",
     "APPLY_SOURCE_LINKED_STAT_SET_AURA",
@@ -319,11 +320,12 @@ function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: 
     }
   }
 
-  if (actionType === "SUPPRESS_MODIFIER_LAYER" || text.includes("ignore positive") || text.includes("negate other")) {
+  if (actionType === "SUPPRESS_MODIFIER_LAYER" || actionType === "UNAFFECTED_BY_MAGIC" || text.includes("ignore positive") || text.includes("negate other") || text.includes("unaffected by other")) {
     if (text.includes("spd") || text.includes("speed")) layers.push(makeLayer(source, effect, "suppress-positive-speed", "speed", "SUPPRESS_POSITIVE", 0));
     if (text.includes("al") || text.includes("armor")) layers.push(makeLayer(source, effect, "suppress-positive-al", "armorLevel", "SUPPRESS_POSITIVE", 0));
     if (text.includes("modifier")) layers.push(makeLayer(source, effect, "suppress-positive-modifier", "modifier", "SUPPRESS_POSITIVE", 0));
     if (text.includes("hit")) layers.push(makeLayer(source, effect, "suppress-positive-hit", "hitFlatBonus", "SUPPRESS_POSITIVE", 0));
+    if (text.includes("hit dice") || text.includes("hit dice roll")) layers.push(makeLayer(source, effect, "suppress-positive-hit-dice", "hitDiceDelta", "SUPPRESS_POSITIVE", 0));
   }
 
   if (actionType === "APPLY_STAT_AND_DICE_MULTIPLIER" || text.includes("x 1/2") || text.includes("× 1/2")) {
