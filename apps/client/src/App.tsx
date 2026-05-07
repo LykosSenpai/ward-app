@@ -752,6 +752,24 @@ export default function App() {
     setActivePage("card-library");
   }
 
+  function importDeckCodeIntoBuilder(payload: {
+    name?: string;
+    deckId?: string;
+    cardIds: string[];
+    cardArtKeys?: string[];
+  }) {
+    const importedName = payload.name?.trim() || "Imported Deck";
+    const importedDeckId = normalizeId(payload.deckId || importedName) || "imported-deck";
+
+    setError("");
+    setDeckBuilderName(importedName);
+    setDeckBuilderId(importedDeckId);
+    setDeckBuilderCardIds(payload.cardIds);
+    setDeckBuilderCardArtKeys(normalizeDeckArtKeys(payload.cardArtKeys, payload.cardIds.length));
+    setSaveMessage(`Imported ${payload.cardIds.length} cards into the deck editor.`);
+    setActivePage("card-library");
+  }
+
   function saveBuiltDeck() {
     setError("");
     setSaveMessage("");
@@ -1579,6 +1597,7 @@ export default function App() {
             onEditDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "edit")}
             onCloneDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "clone")}
             onDeleteDeck={deleteDeck}
+            onImportDeckCode={importDeckCodeIntoBuilder}
           />
         ) : activePage === "saved-matches" ? (
           <SaveLoadPanel

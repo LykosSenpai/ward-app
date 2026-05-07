@@ -154,14 +154,15 @@ export function HolographicCardImage({
   onError
 }: HolographicCardImageProps) {
   const clampedIntensity = clampIntensity(intensity);
-  const shards = useMemo(() => createShardPolygons(seed), [seed]);
+  const showHolo = enabled && clampedIntensity > 0;
+  const shards = useMemo(() => showHolo ? createShardPolygons(seed) : [], [seed, showHolo]);
   const style = { "--holo-intensity": clampedIntensity } as CSSProperties;
   const wrapClassName = className ? `holo-card-wrap ${className}` : "holo-card-wrap";
 
   return (
     <span className={wrapClassName} style={style}>
-      <img className="holo-card-base-image" src={src} alt={alt} onError={onError} />
-      {enabled && clampedIntensity > 0 ? (
+      <img className="holo-card-base-image" src={src} alt={alt} loading="lazy" decoding="async" onError={onError} />
+      {showHolo ? (
         <>
           <span className="holo-rainbow-layer" aria-hidden="true" />
           <svg className="holo-shard-layer" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true">

@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, sanitizeDownloadFileName } from "../deckShare";
@@ -12,6 +12,10 @@ type OwnershipFilter = "ALL" | "OWNED" | "MISSING";
 type SortMode = "number" | "name" | "generation" | "deckCount" | "ownedCount" | "armorLevel" | "hp" | "speed";
 
 const FIXED_HOLO_INTENSITY = 10;
+const INITIAL_VISIBLE_CARD_COUNT = 72;
+const VISIBLE_CARD_INCREMENT = 72;
+const MAX_RENDERED_CARD_COUNT = 216;
+const OFFSCREEN_UNLOAD_DELAY_MS = 20000;
 
 type CardLibraryPanelProps = {
   cardLibrary: CardLibraryCardSummary[];
@@ -114,6 +118,13 @@ export function CardLibraryPanel({
   const [deckShareString, setDeckShareString] = useState("");
   const [deckImportString, setDeckImportString] = useState("");
   const [deckShareMessage, setDeckShareMessage] = useState("");
+  const [unloadedCardCount, setUnloadedCardCount] = useState(0);
+  const [visibleCardCount, setVisibleCardCount] = useState(INITIAL_VISIBLE_CARD_COUNT);
+  const [gridColumnCount, setGridColumnCount] = useState(1);
+  const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
+  const cardGridRef = useRef<HTMLDivElement | null>(null);
+  const loadPreviousSentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
 
   const deckCounts = useMemo(() => getDeckBuilderCounts(), [deckBuilderCardIds, getDeckBuilderCounts]);
 
@@ -266,6 +277,147 @@ export function CardLibraryPanel({
         return getCardSortNumber(a).localeCompare(getCardSortNumber(b), undefined, { numeric: true }) || a.name.localeCompare(b.name);
       });
   }, [cardLibrary, creatureTypeFilter, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
+
+  const visibleCards = useMemo(
+    () => filteredCards.slice(unloadedCardCount, visibleCardCount),
+    [filteredCards, unloadedCardCount, visibleCardCount]
+  );
+  const renderedCardCount = visibleCardCount - unloadedCardCount;
+  const unloadedTopSpacerHeight = Math.ceil(unloadedCardCount / gridColumnCount) * estimatedCardBlockSize;
+  const hiddenAboveCardCount = unloadedCardCount;
+  const hiddenBelowCardCount = Math.max(0, filteredCards.length - visibleCardCount);
+
+  useEffect(() => {
+    setUnloadedCardCount(0);
+    setVisibleCardCount(INITIAL_VISIBLE_CARD_COUNT);
+  }, [
+    creatureTypeFilter,
+    deckMembershipFilter,
+    effectTypeFilter,
+    generationFilter,
+    magicTypeFilter,
+    ownershipFilter,
+    rarityFilter,
+    searchText,
+    sortMode,
+    typeFilter
+  ]);
+
+  useEffect(() => {
+    const sentinel = loadMoreSentinelRef.current;
+    const root = cardGridRef.current;
+
+    if (!sentinel || !root || hiddenBelowCardCount === 0) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      entries => {
+        if (!entries.some(entry => entry.isIntersecting)) {
+          return;
+        }
+
+        setVisibleCardCount(current => Math.min(current + VISIBLE_CARD_INCREMENT, filteredCards.length));
+      },
+      {
+        root,
+        rootMargin: "700px 0px 900px 0px",
+        threshold: 0.01
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [filteredCards.length, hiddenBelowCardCount, visibleCardCount]);
+
+  useEffect(() => {
+    const sentinel = loadPreviousSentinelRef.current;
+    const root = cardGridRef.current;
+
+    if (!sentinel || !root || hiddenAboveCardCount === 0) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      entries => {
+        if (!entries.some(entry => entry.isIntersecting)) {
+          return;
+        }
+
+        setUnloadedCardCount(current => Math.max(0, current - VISIBLE_CARD_INCREMENT));
+      },
+      {
+        root,
+        rootMargin: "900px 0px 700px 0px",
+        threshold: 0.01
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [hiddenAboveCardCount, unloadedCardCount]);
+
+  useEffect(() => {
+    if (renderedCardCount <= MAX_RENDERED_CARD_COUNT) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setUnloadedCardCount(current => {
+        const renderedNow = visibleCardCount - current;
+        const excessCount = renderedNow - MAX_RENDERED_CARD_COUNT;
+
+        if (excessCount <= 0) {
+          return current;
+        }
+
+        const unloadCount = Math.floor(excessCount / VISIBLE_CARD_INCREMENT) * VISIBLE_CARD_INCREMENT;
+        if (unloadCount <= 0) {
+          return current;
+        }
+
+        return Math.min(current + unloadCount, Math.max(0, visibleCardCount - INITIAL_VISIBLE_CARD_COUNT));
+      });
+    }, OFFSCREEN_UNLOAD_DELAY_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [renderedCardCount, visibleCardCount]);
+
+  useEffect(() => {
+    const grid = cardGridRef.current;
+
+    if (!grid) {
+      return;
+    }
+
+    function updateGridMeasurements() {
+      if (!grid) {
+        return;
+      }
+
+      const computedStyle = window.getComputedStyle(grid);
+      const columnCount = computedStyle.gridTemplateColumns
+        .split(" ")
+        .filter(column => column.trim() !== "").length;
+      const rowGap = Number.parseFloat(computedStyle.rowGap) || 0;
+      const firstCard = grid.querySelector<HTMLElement>(".library-option-a-card-entry");
+      const cardHeight = firstCard?.getBoundingClientRect().height;
+
+      setGridColumnCount(Math.max(1, columnCount));
+      if (cardHeight && Number.isFinite(cardHeight)) {
+        setEstimatedCardBlockSize(Math.max(260, cardHeight + rowGap));
+      }
+    }
+
+    updateGridMeasurements();
+
+    const resizeObserver = new ResizeObserver(updateGridMeasurements);
+    resizeObserver.observe(grid);
+
+    return () => resizeObserver.disconnect();
+  }, [visibleCards.length]);
 
   function clearFilters() {
     setSearchText("");
@@ -595,8 +747,23 @@ export function CardLibraryPanel({
           ) : filteredCards.length === 0 ? (
             <p className="empty-zone">No cards match the current filters.</p>
           ) : (
-            <div className="library-card-grid unified-library-card-grid library-option-a-card-grid">
-              {filteredCards.map(card => {
+            <div className="library-card-grid unified-library-card-grid library-option-a-card-grid" ref={cardGridRef}>
+              {hiddenAboveCardCount > 0 && (
+                <div
+                  className="library-option-a-unloaded-spacer top"
+                  ref={loadPreviousSentinelRef}
+                  style={{ minHeight: unloadedTopSpacerHeight }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setUnloadedCardCount(current => Math.max(0, current - VISIBLE_CARD_INCREMENT))}
+                  >
+                    Restore Earlier Cards
+                  </button>
+                  <span>{hiddenAboveCardCount} earlier cards unloaded after idle time</span>
+                </div>
+              )}
+              {visibleCards.map(card => {
                 const selectedArtKey = getSelectedArtKey(card.id);
                 const selectedArtLabel = getCardArtLabel(selectedArtKey);
                 const ownedCount = getOwnedCopiesForSelectedArt(card.id);
@@ -669,6 +836,17 @@ export function CardLibraryPanel({
                   </article>
                 );
               })}
+              {hiddenBelowCardCount > 0 && (
+                <div className="library-option-a-load-more" ref={loadMoreSentinelRef}>
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCardCount(current => Math.min(current + VISIBLE_CARD_INCREMENT, filteredCards.length))}
+                  >
+                    Load More Now
+                  </button>
+                  <span>Loading more automatically near the bottom. {hiddenBelowCardCount} still hidden.</span>
+                </div>
+              )}
             </div>
           )}
         </section>

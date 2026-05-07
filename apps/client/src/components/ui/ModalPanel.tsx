@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 type ModalPanelProps = {
   title?: string;
@@ -27,7 +28,7 @@ export function ModalPanel({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [blocking, onClose]);
 
-  return (
+  const panel = (
     <div
       className={blocking ? "modal-backdrop blocking" : "modal-backdrop"}
       role="dialog"
@@ -54,4 +55,6 @@ export function ModalPanel({
       </div>
     </div>
   );
+
+  return createPortal(panel, document.body);
 }

@@ -4840,6 +4840,11 @@
   padding: 0.5rem;
 }
 
+.library-option-a-card-entry {
+  content-visibility: auto;
+  contain-intrinsic-size: 23rem 12rem;
+}
+
 .library-option-a-card-content {
   grid-template-columns: 1fr;
 }
@@ -5093,22 +5098,65 @@
   width: 100%;
 }
 
+.library-option-a-load-more,
+.library-option-a-unloaded-spacer {
+  align-items: center;
+  border: 1px dashed rgba(250, 204, 21, 0.42);
+  border-radius: 0.45rem;
+  background: rgba(250, 204, 21, 0.06);
+  display: grid;
+  gap: 0.45rem;
+  grid-column: 1 / -1;
+  justify-items: center;
+  min-height: 11rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.library-option-a-unloaded-spacer {
+  align-content: center;
+  background:
+    linear-gradient(180deg, rgba(250, 204, 21, 0.03), rgba(14, 165, 233, 0.035)),
+    rgba(15, 23, 42, 0.28);
+}
+
+.library-option-a-load-more button,
+.library-option-a-unloaded-spacer button {
+  width: min(18rem, 100%);
+}
+
+.library-option-a-load-more span,
+.library-option-a-unloaded-spacer span {
+  color: #fde68a;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
 /* Deck Library */
 .deck-library-page {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .deck-library-header {
-  align-items: center;
-  display: flex;
+  align-items: stretch;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 0.55rem;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(34, 197, 94, 0.08)),
+    rgba(7, 24, 39, 0.9);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   justify-content: space-between;
   gap: 1rem;
+  padding: 0.9rem;
 }
 
 .deck-library-header h2 {
   margin: 0;
-  font-size: 1.05rem;
+  color: #f8fafc;
+  font-size: 1.28rem;
+  line-height: 1.1;
 }
 
 .deck-library-header span {
@@ -5117,16 +5165,110 @@
   font-weight: 800;
 }
 
+.deck-library-header > div:first-child {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.deck-library-header-stats {
+  align-content: stretch;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(6.2rem, auto));
+  gap: 0.45rem;
+}
+
+.deck-library-header-stats span {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 0.45rem;
+  background: rgba(15, 23, 42, 0.64);
+  display: grid;
+  gap: 0.08rem;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+}
+
+.deck-library-header-stats strong {
+  color: #f8fafc;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.deck-library-import-panel {
+  align-items: center;
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  border-radius: 0.55rem;
+  background: rgba(6, 78, 59, 0.22);
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.75fr) minmax(16rem, 1.35fr) auto;
+  gap: 0.7rem;
+  padding: 0.75rem;
+}
+
+.deck-library-import-panel > div {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.deck-library-import-panel strong {
+  color: #dcfce7;
+}
+
+.deck-library-import-panel span,
+.deck-library-message {
+  color: #bbf7d0;
+  font-size: 0.82rem;
+}
+
+.deck-library-import-panel textarea {
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.76);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 0.45rem;
+  min-height: 3.1rem;
+  padding: 0.55rem;
+  resize: vertical;
+}
+
+.deck-library-message {
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  border-radius: 0.45rem;
+  background: rgba(6, 78, 59, 0.2);
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+}
+
+.deck-library-empty {
+  border: 1px dashed rgba(125, 211, 252, 0.34);
+  border-radius: 0.55rem;
+  background: rgba(15, 23, 42, 0.42);
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem;
+}
+
+.deck-library-empty strong {
+  color: #f8fafc;
+}
+
+.deck-library-empty span {
+  color: #cbd5e1;
+}
+
 .deck-library-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 0.85rem;
 }
 
 .deck-library-card {
   border: 1px solid rgba(56, 189, 248, 0.24);
   border-radius: 0.45rem;
-  background: rgba(7, 24, 39, 0.88);
+  background:
+    linear-gradient(180deg, rgba(14, 165, 233, 0.12), rgba(15, 23, 42, 0) 42%),
+    rgba(7, 24, 39, 0.9);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
   display: grid;
   gap: 0.65rem;
   min-width: 0;
@@ -5177,6 +5319,22 @@
   padding: 0.18rem 0.45rem;
 }
 
+.deck-library-mix-row {
+  border-block: 1px solid rgba(148, 163, 184, 0.14);
+  color: #cbd5e1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  justify-content: space-between;
+  padding: 0.45rem 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.deck-library-mix-row strong {
+  color: #7dd3fc;
+}
+
 .deck-library-preview-row {
   align-items: center;
   display: flex;
@@ -5194,8 +5352,12 @@
 .deck-library-actions,
 .deck-detail-action-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.8fr) minmax(0, 0.8fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 0.78fr) minmax(0, 0.78fr);
   gap: 0.35rem;
+}
+
+.deck-detail-action-row {
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.15fr) minmax(0, 0.85fr);
 }
 
 .deck-library-actions button,
@@ -5273,6 +5435,15 @@
 }
 
 @media (max-width: 980px) {
+  .deck-library-header,
+  .deck-library-import-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .deck-library-header-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .deck-detail-summary {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -5285,9 +5456,1184 @@
 @media (max-width: 640px) {
   .deck-library-grid,
   .deck-detail-summary,
+  .deck-library-header-stats,
   .deck-library-actions,
   .deck-detail-action-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* Responsive viewport pass: keep wide workspaces usable without letting them
+   dictate the page width on tablets and phones. */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-shell,
+.panel,
+.app-page-nav,
+.app-header,
+.app-header-actions,
+.match-workspace,
+.play-lobby-workspace,
+.library-decks-page,
+.deck-library-page,
+.effect-dev-option-a-page,
+.effect-coverage-option-a-page,
+.llm-test-lab-page,
+.profile-page {
+  min-width: 0;
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+}
+
+pre,
+code,
+.socket-id,
+.server-pill,
+.account-pill,
+.event-meta {
+  overflow-wrap: anywhere;
+}
+
+.app-page-nav {
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  scrollbar-width: thin;
+}
+
+.app-page-nav-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.modal-backdrop {
+  min-width: 0;
+  padding: clamp(0.65rem, 2.5vw, 1.75rem);
+}
+
+.modal-panel,
+.modal-panel-wide {
+  max-width: min(100%, 1120px);
+}
+
+.modal-content {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.effect-coverage-option-a-table-card,
+.effect-coverage-option-a-table-wrap {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.effect-coverage-option-a-table-wrap {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 1501px) {
+  .match-board-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .player-card {
+    max-height: calc(100vh - 230px);
+    overflow: auto;
+  }
+}
+
+@media (max-width: 1320px) {
+  .app-shell {
+    padding: 14px;
+  }
+
+  .app-header {
+    align-items: start;
+  }
+
+  .app-header-actions {
+    justify-items: start;
+  }
+
+  .profile-grid,
+  .match-lobby-layout,
+  .play-setup-workspace,
+  .play-setup-workspace.saves-open,
+  .play-setup-workspace.saves-collapsed,
+  .library-option-a-toolbar,
+  .library-option-a-grid,
+  .library-option-a-deck-fields,
+  .effect-dev-grid,
+  .effect-dev-editor-grid,
+  .effect-dev-test-grid,
+  .effect-dev-three-pane-grid,
+  .effect-dev-three-pane-grid.card-picker-collapsed,
+  .effect-dev-option-a-page .effect-dev-three-pane-grid,
+  .effect-dev-option-a-page .effect-dev-three-pane-grid.card-picker-collapsed,
+  .effect-dev-three-pane-grid.block-layout-mode,
+  .llm-test-lab-grid,
+  .llm-test-lab-grid-wide,
+  .llm-workflow-grid,
+  .deck-detail-breakdown {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .play-setup-workspace .play-setup-main,
+  .library-option-a-filter-panel,
+  .library-option-a-current-deck-panel,
+  .effect-dev-option-a-card-picker,
+  .effect-dev-option-a-test-rail,
+  .llm-card-picker-compact,
+  .llm-regression-panel-compact {
+    max-width: none;
+    position: static;
+    width: 100%;
+  }
+
+  .library-option-a-card-grid,
+  .library-option-a-current-deck-panel,
+  .effect-dev-option-a-card-picker,
+  .effect-dev-option-a-test-rail,
+  .effect-dev-option-a-editor,
+  .llm-card-picker-compact,
+  .llm-regression-panel-compact {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .effect-dev-option-a-page {
+    overflow-x: visible;
+  }
+
+  .effect-dev-option-a-card-list,
+  .effect-dev-option-a-preview,
+  .effect-dev-rail-decks,
+  .llm-card-list-compact,
+  .llm-effect-checkbox-list-compact,
+  .llm-batch-plan-list-compact,
+  .llm-bulk-queue-list-compact,
+  .llm-regression-list-compact {
+    max-height: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .app-header {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .app-header h1 {
+    font-size: clamp(1.35rem, 6vw, 1.9rem);
+    line-height: 1.05;
+  }
+
+  .app-header-actions,
+  .account-pill,
+  .server-pill {
+    width: 100%;
+  }
+
+  .account-pill,
+  .server-pill {
+    border-radius: 0.55rem;
+    justify-content: space-between;
+  }
+
+  .app-page-nav {
+    flex-wrap: nowrap;
+    margin-inline: -0.25rem;
+    padding-inline: 0.25rem;
+  }
+
+  .compact-match-control-card,
+  .llm-sticky-toolbar,
+  .effect-dev-command-panel {
+    position: static;
+  }
+
+  .compact-match-main,
+  .compact-primary-actions,
+  .compact-utility-actions,
+  .match-board-grid,
+  .battle-control-strip,
+  .setup-quick-grid,
+  .match-lobby-deck-pick,
+  .match-lobby-active-panel .match-lobby-seat,
+  .deck-library-card-header,
+  .deck-library-actions,
+  .deck-detail-action-row,
+  .llm-phase-step-row,
+  .llm-bulk-grid,
+  .llm-bulk-decks-grid,
+  .llm-batch-editor-grid,
+  .llm-coverage-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-primary-actions,
+  .compact-utility-actions {
+    display: grid;
+  }
+
+  .compact-primary-actions button,
+  .compact-utility-actions button,
+  .library-option-a-actions button,
+  .effect-dev-toolbar-actions button,
+  .effect-coverage-toolbar-actions button,
+  .llm-button-row button {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .player-card {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .effect-coverage-toolbar-title-row,
+  .effect-coverage-filter-row,
+  .effect-coverage-chip-filter-section,
+  .llm-test-lab-hero,
+  .llm-pack-row,
+  .llm-phase-header,
+  .llm-plan-title-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .effect-coverage-toolbar-actions,
+  .library-option-a-actions,
+  .effect-dev-toolbar-actions,
+  .effect-dev-rail-action-grid,
+  .effect-dev-tab-row,
+  .llm-phase-action-grid,
+  .llm-mini-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 10px;
+  }
+
+  .card,
+  .profile-card,
+  .match-lobby-create-panel,
+  .match-lobby-list-panel,
+  .match-lobby-active-panel,
+  .compact-match-control-card,
+  .player-card,
+  .modal-content,
+  .library-option-a-section,
+  .library-option-a-filter-panel,
+  .library-option-a-browser-panel,
+  .library-option-a-current-deck-panel,
+  .deck-library-card,
+  .effect-dev-command-panel,
+  .effect-dev-option-a-card-picker,
+  .effect-dev-option-a-editor,
+  .effect-dev-option-a-test-rail,
+  .effect-coverage-option-a-toolbar,
+  .effect-coverage-option-a-controls,
+  .effect-coverage-option-a-table-card {
+    padding: 0.65rem;
+  }
+
+  .profile-readonly-grid,
+  .profile-stat-grid,
+  .zone-summary,
+  .match-lobby-list,
+  .match-lobby-pack-grid,
+  .library-option-a-card-grid,
+  .library-option-a-card-content,
+  .library-option-a-current-deck-topline,
+  .visual-deck-stack-entry,
+  .expanded-card-detail-layout,
+  .deck-library-grid,
+  .deck-detail-summary,
+  .llm-effect-checkbox-row,
+  .llm-include-row,
+  .llm-bulk-queue-card,
+  .llm-bulk-deck-card,
+  .effect-block-summary-grid,
+  .effect-block-action-row,
+  .effect-block-flow,
+  .coverage-row-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .library-option-a-card-content .card-image-frame,
+  .card-image-frame {
+    width: min(220px, 100%);
+  }
+
+  .library-option-a-current-deck-actions {
+    grid-template-columns: 2rem minmax(2.5rem, 1fr) 2rem;
+  }
+
+  .library-option-a-current-deck-actions button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .effect-dev-toolbar-actions,
+  .effect-dev-rail-action-grid,
+  .effect-dev-tab-row,
+  .effect-coverage-toolbar-actions,
+  .library-option-a-actions,
+  .llm-phase-action-grid,
+  .llm-mini-grid,
+  .llm-button-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .modal-header {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .expanded-card-image-wrap,
+  .expanded-card-holo-image,
+  .expanded-card-holo-image .holo-card-base-image,
+  .expanded-card-image-wrap img {
+    max-width: calc(100vw - 2.5rem);
+  }
+}
+
+@media (max-width: 420px) {
+  .app-shell {
+    padding: 8px;
+  }
+
+  .login-page {
+    padding: 0.75rem;
+  }
+
+  .login-panel,
+  .modal-panel,
+  .modal-panel-wide {
+    border-radius: 0.45rem;
+  }
+
+  .app-page-nav-button,
+  button {
+    padding-inline: 0.65rem;
+  }
+
+  .deck-library-preview-row {
+    overflow-x: auto;
+  }
+
+  .effect-coverage-option-a-table {
+    min-width: 980px;
+  }
+}
+
+/* Desktop polish pass from full-width screenshots. */
+@media (min-width: 981px) {
+  .match-lobby-page,
+  .profile-page,
+  .deck-library-page,
+  .compact-save-load-card {
+    max-width: none;
+  }
+
+  .match-lobby-header,
+  .profile-header,
+  .save-load-header {
+    align-items: center;
+  }
+
+  .match-lobby-header button,
+  .profile-header button,
+  .save-load-primary-actions {
+    flex: 0 0 auto;
+  }
+
+  .match-lobby-layout {
+    align-items: start;
+    grid-template-columns: minmax(340px, 360px) minmax(0, 1fr);
+  }
+
+  .match-lobby-main,
+  .match-lobby-side {
+    height: auto;
+  }
+
+  .match-lobby-list-panel {
+    min-height: clamp(18rem, 42vh, 29rem);
+  }
+
+  .match-lobby-list {
+    max-height: clamp(13rem, 32vh, 22rem);
+  }
+
+  .deck-library-grid {
+    align-items: start;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 460px));
+  }
+
+  .deck-library-card {
+    min-height: 18.75rem;
+  }
+
+  .deck-library-preview-row {
+    min-height: 4rem;
+  }
+
+  .deck-library-preview-row .card-image-thumb {
+    width: 2.7rem;
+  }
+
+  .profile-grid {
+    grid-template-columns: minmax(420px, 1.05fr) minmax(320px, 0.72fr);
+  }
+
+  .profile-grid .profile-card:first-child,
+  .profile-grid .profile-card:nth-child(3) {
+    max-width: 68rem;
+  }
+
+  .profile-form button {
+    justify-self: stretch;
+  }
+
+  .saved-match-grid {
+    grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+  }
+}
+
+@media (min-width: 1500px) {
+  .saved-match-grid {
+    grid-template-columns: repeat(auto-fill, minmax(292px, 1fr));
+  }
+
+  .library-option-a-grid {
+    grid-template-columns: minmax(180px, 205px) minmax(0, 1fr) minmax(390px, 500px);
+  }
+
+  .library-option-a-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(460px, auto);
+  }
+}
+
+.expanded-card-art-select-label {
+  justify-self: stretch;
+  margin-top: 0.75rem;
+  max-width: min(336px, calc(100vw - 5rem));
+  width: 100%;
+}
+
+/* Keep the loaded deck list bounded inside the deck rail instead of scrolling
+   underneath the panel's visible bottom edge. */
+.library-option-a-current-deck-panel {
+  display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  max-height: min(760px, calc(100vh - 8rem));
+  min-height: 0;
+  overflow: hidden;
+}
+
+.library-option-a-current-deck-list,
+.unified-current-deck-list,
+.current-deck-list.library-option-a-current-deck-list {
+  align-content: start;
+  max-height: none;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 0.35rem 1rem 0;
+}
+
+.library-option-a-current-deck-list .visual-deck-stack-entry:last-child {
+  margin-bottom: 0.35rem;
+}
+
+@media (max-width: 1320px) {
+  .library-option-a-current-deck-panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .library-option-a-current-deck-list,
+  .unified-current-deck-list,
+  .current-deck-list.library-option-a-current-deck-list {
+    max-height: 28rem;
+    overflow-y: auto;
+  }
+}
+
+/* Modern polish pass */
+:root {
+  --ward-page-bg: #0d1017;
+  --ward-surface: rgba(24, 27, 36, 0.92);
+  --ward-surface-strong: #1d222d;
+  --ward-surface-soft: rgba(255, 255, 255, 0.045);
+  --ward-border: rgba(255, 255, 255, 0.11);
+  --ward-border-strong: rgba(255, 255, 255, 0.18);
+  --ward-text: #eef2f7;
+  --ward-muted: #a9b3c3;
+  --ward-faint: #727e91;
+  --ward-accent: #f6c453;
+  --ward-accent-hover: #ffd873;
+  --ward-blue: #5cc8ff;
+  --ward-green: #5de19a;
+  --ward-red: #ff6b7a;
+  --ward-purple: #b894ff;
+  --ward-radius: 8px;
+  --ward-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
+  --ward-shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.18);
+}
+
+html {
+  background: var(--ward-page-bg);
+}
+
+body {
+  color: var(--ward-text);
+  background:
+    linear-gradient(180deg, rgba(32, 35, 47, 0.58) 0, rgba(13, 16, 23, 0.94) 21rem),
+    var(--ward-page-bg);
+  font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  letter-spacing: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+button,
+input,
+select,
+textarea {
+  letter-spacing: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--ward-text);
+  font-weight: 780;
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.05;
+}
+
+h2 {
+  font-size: 1.28rem;
+  line-height: 1.15;
+}
+
+h3 {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+p,
+span,
+small,
+label {
+  line-height: 1.45;
+}
+
+.app-shell {
+  background: transparent;
+  padding: 18px;
+}
+
+.panel {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--ward-radius);
+  background: rgba(13, 16, 23, 0.42);
+  box-shadow: var(--ward-shadow-soft);
+  padding: 14px;
+}
+
+.app-header {
+  align-items: center;
+  border: 1px solid var(--ward-border);
+  border-radius: var(--ward-radius);
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: var(--ward-shadow-soft);
+  margin-bottom: 12px;
+  padding: 14px;
+}
+
+.app-header h1 {
+  margin: 0;
+}
+
+.subtitle,
+.socket-id,
+.event-meta,
+.empty-zone,
+.profile-header p,
+.match-setup-header p,
+.pack-chip span,
+.available-effect-copy span,
+.available-effect-copy small {
+  color: var(--ward-muted);
+}
+
+.socket-id {
+  margin: 0 0 12px;
+}
+
+.server-pill,
+.account-pill {
+  border: 1px solid var(--ward-border);
+  border-radius: var(--ward-radius);
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: var(--ward-text);
+}
+
+.status-dot {
+  background: var(--ward-green);
+  box-shadow: 0 0 0 4px rgba(93, 225, 154, 0.16);
+}
+
+.app-page-nav {
+  border: 1px solid var(--ward-border);
+  border-radius: var(--ward-radius);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: var(--ward-shadow-soft);
+  gap: 0.25rem;
+  margin: 0 0 12px;
+  padding: 0.35rem;
+}
+
+.app-page-nav-button {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ward-muted);
+  min-height: 2.15rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.app-page-nav-button:hover {
+  border-color: var(--ward-border);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ward-text);
+}
+
+.app-page-nav-button.active {
+  border-color: rgba(246, 196, 83, 0.5);
+  background: rgba(246, 196, 83, 0.16);
+  color: #fff6d6;
+}
+
+button {
+  border: 1px solid rgba(246, 196, 83, 0.46);
+  border-radius: 7px;
+  background: var(--ward-accent);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  color: #17130a;
+  font-weight: 820;
+  min-height: 2.25rem;
+  padding: 0.48rem 0.75rem;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+button:hover {
+  background: var(--ward-accent-hover);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled,
+button:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  color: rgba(238, 242, 247, 0.45);
+  transform: none;
+}
+
+.delete-save-button,
+.discard-button,
+.manual-hp-actions button:first-child,
+.manual-effect-buttons button:first-child {
+  border-color: rgba(255, 107, 122, 0.5);
+  background: rgba(255, 107, 122, 0.18);
+  color: #ffd9de;
+}
+
+.delete-save-button:hover,
+.discard-button:hover,
+.manual-hp-actions button:first-child:hover,
+.manual-effect-buttons button:first-child:hover {
+  background: rgba(255, 107, 122, 0.26);
+}
+
+.lightning-button,
+.destroy-magic-button {
+  border-color: rgba(92, 200, 255, 0.5);
+  background: rgba(92, 200, 255, 0.18);
+  color: #d9f4ff;
+}
+
+.lightning-button:hover,
+.destroy-magic-button:hover {
+  background: rgba(92, 200, 255, 0.28);
+}
+
+.manual-hp-actions button:nth-child(2),
+.manual-effect-buttons button:nth-child(2) {
+  border-color: rgba(93, 225, 154, 0.5);
+  background: rgba(93, 225, 154, 0.18);
+  color: #d8ffe9;
+}
+
+.manual-hp-actions button:nth-child(2):hover,
+.manual-effect-buttons button:nth-child(2):hover {
+  background: rgba(93, 225, 154, 0.27);
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--ward-border);
+  border-radius: 7px;
+  background: rgba(8, 10, 15, 0.7);
+  color: var(--ward-text);
+  min-height: 2.3rem;
+  padding: 0.55rem 0.65rem;
+  outline: none;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(92, 200, 255, 0.72);
+  box-shadow: 0 0 0 3px rgba(92, 200, 255, 0.14);
+  background: rgba(8, 10, 15, 0.9);
+}
+
+textarea {
+  resize: vertical;
+}
+
+.card,
+.profile-card,
+.setup-section,
+.validation-box,
+.zone-box,
+.mini-card,
+.battle-speed-box,
+.battle-strike,
+.chain-link-card,
+.manual-hp-box,
+.manual-effect-entry,
+.manual-effect-target,
+.attachment-box,
+.save-load-card,
+.match-setup-card,
+.match-control-box,
+.match-complete-card,
+.available-effect-row,
+.revealed-hand-panel,
+.effect-coverage-header-card,
+.effect-coverage-pack-card,
+.effect-coverage-filter-card,
+.effect-coverage-table-card,
+.effect-debug-card,
+.dev-test-controls-card,
+.forced-roll-queue-item,
+.deck-library-card,
+.deck-library-header,
+.deck-library-import-panel,
+.deck-library-empty,
+.current-deck-panel,
+.library-option-a-section,
+.library-option-a-filter-panel,
+.library-option-a-browser-panel,
+.library-option-a-current-deck-panel,
+.library-option-a-details-drawer,
+.match-lobby-create-panel,
+.match-lobby-list-panel,
+.match-lobby-active-panel,
+.compact-match-control-card,
+.player-card,
+.modal-content,
+.effect-dev-command-panel,
+.effect-dev-option-a-card-picker,
+.effect-dev-option-a-editor,
+.effect-dev-option-a-test-rail,
+.effect-coverage-option-a-toolbar,
+.effect-coverage-option-a-controls,
+.effect-coverage-option-a-table-card,
+.llm-test-lab-hero,
+.llm-card-picker-compact,
+.llm-regression-panel-compact,
+.llm-phase-card,
+.saved-match-entry {
+  border: 1px solid var(--ward-border);
+  border-radius: var(--ward-radius);
+  background: var(--ward-surface);
+  box-shadow: var(--ward-shadow-soft);
+}
+
+.card:hover,
+.profile-card:hover,
+.deck-library-card:hover,
+.library-option-a-card-entry:hover,
+.visual-deck-stack-entry:hover,
+.saved-match-entry:hover,
+.pack-chip:hover,
+.available-effect-row:hover {
+  border-color: var(--ward-border-strong);
+}
+
+.card,
+.profile-card,
+.setup-section,
+.zone-box,
+.mini-card,
+.deck-library-card,
+.library-option-a-section,
+.current-deck-panel,
+.player-card,
+.compact-match-control-card {
+  margin-bottom: 14px;
+}
+
+.label,
+.deck-detail-summary .label,
+.profile-readonly-grid span,
+.profile-stat-grid span,
+.effect-coverage-table th {
+  color: var(--ward-blue);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+strong {
+  color: var(--ward-text);
+}
+
+.grid,
+.players-grid,
+.zone-summary,
+.profile-grid,
+.profile-stat-grid,
+.deck-library-grid,
+.deck-select-grid,
+.setup-status,
+.manual-effect-targets,
+.stat-modifier-controls {
+  gap: 0.75rem;
+}
+
+.player-stat,
+.deck-detail-summary > div,
+.profile-stat-grid div,
+.active-modifier-list,
+.deck-library-header-stats span,
+.deck-library-stat-row span,
+.deck-detail-chip-row span,
+.effect-debug-turn-grid span,
+.revealed-card-pill,
+.runtime-support-badge,
+.needs-review-pill,
+.test-status-badge {
+  border-color: var(--ward-border);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.deck-library-stat-row span,
+.deck-detail-chip-row span {
+  color: #dbeafe;
+}
+
+.pack-chip,
+.sacrifice-chip {
+  border: 1px solid var(--ward-border);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--ward-text);
+}
+
+.pack-chip.selected,
+.sacrifice-chip.selected {
+  border-color: rgba(246, 196, 83, 0.5);
+  background: rgba(246, 196, 83, 0.14);
+  color: #fff3c4;
+}
+
+.creature-card,
+.prompt-card,
+.manual-effect-card,
+.match-setup-card {
+  border-color: rgba(246, 196, 83, 0.38);
+}
+
+.magic-card,
+.chain-card,
+.available-effects-panel {
+  border-color: rgba(92, 200, 255, 0.38);
+}
+
+.battle-result-card {
+  border-color: rgba(184, 148, 255, 0.38);
+}
+
+.save-load-card,
+.success-box,
+.match-complete-card {
+  border-color: rgba(93, 225, 154, 0.38);
+}
+
+.success-box,
+.active-player-banner {
+  background: rgba(93, 225, 154, 0.12);
+  color: #c8ffdd;
+}
+
+.warning-box,
+.lightning-note,
+.active-modifier {
+  background: rgba(246, 196, 83, 0.12);
+  color: #fff2c1;
+}
+
+.error-box,
+.issue-error {
+  background: rgba(255, 107, 122, 0.12);
+  color: #ffd3d9;
+}
+
+.issue-warning {
+  background: rgba(246, 196, 83, 0.12);
+  color: #fff2c1;
+}
+
+.event-log-entry pre,
+pre,
+code {
+  border: 1px solid var(--ward-border);
+  border-radius: 7px;
+  background: rgba(8, 10, 15, 0.78);
+  color: #d7deea;
+}
+
+.modal-backdrop {
+  background: rgba(5, 7, 11, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.modal-panel,
+.modal-panel-wide {
+  border: 1px solid var(--ward-border-strong);
+  border-radius: var(--ward-radius);
+  background: #171b24;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--ward-border);
+  padding-bottom: 0.65rem;
+}
+
+.effect-coverage-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.effect-coverage-table th {
+  background: #1c222d;
+}
+
+.effect-coverage-table th,
+.effect-coverage-table td {
+  border-bottom: 1px solid var(--ward-border);
+}
+
+.login-page {
+  background:
+    linear-gradient(180deg, rgba(32, 35, 47, 0.64), rgba(13, 16, 23, 0.96)),
+    var(--ward-page-bg);
+}
+
+.login-panel {
+  border-color: var(--ward-border-strong);
+  border-radius: var(--ward-radius);
+  background: var(--ward-surface);
+}
+
+.login-title span {
+  color: var(--ward-accent);
+}
+
+::-webkit-scrollbar {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(13, 16, 23, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.34);
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 10px;
+  }
+
+  .panel,
+  .app-header,
+  .app-page-nav {
+    padding: 10px;
+  }
+}
+
+/* Button hierarchy refinement */
+button {
+  border-color: var(--ward-border);
+  background: rgba(255, 255, 255, 0.065);
+  box-shadow: none;
+  color: var(--ward-text);
+}
+
+button:hover {
+  border-color: var(--ward-border-strong);
+  background: rgba(255, 255, 255, 0.105);
+  color: var(--ward-text);
+}
+
+.attention-button,
+.match-lobby-create-panel > button,
+.library-option-a-actions button:nth-child(3),
+.library-option-a-actions button:nth-child(5),
+.library-option-a-current-deck-actions button:last-child,
+.deck-share-actions button:nth-child(1),
+.deck-share-actions button:nth-child(2),
+.deck-library-import-panel button,
+.deck-library-actions button:nth-child(2),
+.deck-detail-action-row button:nth-child(2),
+.save-load-primary-actions button:first-child,
+.login-form button[type="submit"] {
+  border-color: rgba(246, 196, 83, 0.5);
+  background: var(--ward-accent);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  color: #17130a;
+}
+
+.attention-button:hover,
+.match-lobby-create-panel > button:hover,
+.library-option-a-actions button:nth-child(3):hover,
+.library-option-a-actions button:nth-child(5):hover,
+.library-option-a-current-deck-actions button:last-child:hover,
+.deck-share-actions button:nth-child(1):hover,
+.deck-share-actions button:nth-child(2):hover,
+.deck-library-import-panel button:hover,
+.deck-library-actions button:nth-child(2):hover,
+.deck-detail-action-row button:nth-child(2):hover,
+.save-load-primary-actions button:first-child:hover,
+.login-form button[type="submit"]:hover {
+  background: var(--ward-accent-hover);
+  color: #17130a;
+}
+
+.secondary-button,
+.modal-close-button,
+.match-lobby-card-body,
+.linklike-card-button,
+.card-image-button {
+  border-color: var(--ward-border);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--ward-text);
+}
+
+.secondary-button:hover,
+.modal-close-button:hover,
+.match-lobby-card-body:hover,
+.linklike-card-button:hover,
+.card-image-button:hover {
+  border-color: var(--ward-border-strong);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.match-lobby-pack-chip,
+.pack-chip,
+.sacrifice-chip {
+  box-shadow: none;
+  text-align: left;
+}
+
+.match-lobby-pack-chip.selected,
+.pack-chip.selected,
+.sacrifice-chip.selected {
+  border-color: rgba(246, 196, 83, 0.5);
+  background: rgba(246, 196, 83, 0.14);
+  color: #fff3c4;
+}
+
+button.delete-save-button,
+button.discard-button,
+.manual-hp-actions button:first-child,
+.manual-effect-buttons button:first-child {
+  border-color: rgba(255, 107, 122, 0.5);
+  background: rgba(255, 107, 122, 0.18);
+  color: #ffd9de;
+}
+
+button.delete-save-button:hover,
+button.discard-button:hover,
+.manual-hp-actions button:first-child:hover,
+.manual-effect-buttons button:first-child:hover {
+  background: rgba(255, 107, 122, 0.27);
+  color: #ffd9de;
+}
+
+button:disabled,
+button:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  box-shadow: none !important;
+  color: rgba(238, 242, 247, 0.45) !important;
+  transform: none;
 }
 

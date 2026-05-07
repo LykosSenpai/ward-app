@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { CardLibraryCardSummary, DeckDetail, DeckSummary } from "../clientTypes";
+import { decodeWardDeckString, encodeWardDeckString } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { CardImageThumbnail } from "./CardImagePreview";
 import { ModalPanel } from "./ui/ModalPanel";
@@ -11,6 +12,12 @@ type DeckLibraryPageProps = {
   onEditDeck: (deckId: string) => void;
   onCloneDeck: (deckId: string) => void;
   onDeleteDeck: (deckId: string) => void;
+  onImportDeckCode: (payload: {
+    name?: string;
+    deckId?: string;
+    cardIds: string[];
+    cardArtKeys?: string[];
+  }) => void;
 };
 
 type DeckCardCount = {
@@ -73,9 +80,12 @@ export function DeckLibraryPage({
   cardLibrary,
   onEditDeck,
   onCloneDeck,
-  onDeleteDeck
+  onDeleteDeck,
+  onImportDeckCode
 }: DeckLibraryPageProps) {
   const [selectedDeckId, setSelectedDeckId] = useState("");
+  const [importCode, setImportCode] = useState("");
+  const [deckMessage, setDeckMessage] = useState("");
   const cardById = useMemo(() => new Map(cardLibrary.map(card => [card.id, card])), [cardLibrary]);
   const deckDetailById = useMemo(() => new Map(deckDetails.map(deck => [deck.id, deck])), [deckDetails]);
   const selectedDeck = selectedDeckId ? deckDetailById.get(selectedDeckId) : undefined;
@@ -84,18 +94,96 @@ export function DeckLibraryPage({
     ? getDeckCounts(selectedDeck).map(item => ({ ...item, card: cardById.get(item.cardId) }))
     : [];
   const selectedStats = getDeckStats(selectedDeck, cardLibrary);
+  const libraryStats = useMemo(() => {
+    const loadedDecks = decks.filter(deck => deckDetailById.has(deck.id)).length;
+    const totalCards = deckDetails.reduce((total, deck) => total + deck.cardIds.length, 0);
+    const largestDeck = deckDetails.reduce((largest, deck) => Math.max(largest, deck.cardIds.length), 0);
+
+    return {
+      loadedDecks,
+      totalCards,
+      largestDeck
+    };
+  }, [deckDetailById, deckDetails, decks]);
+
+  async function copyDeckExportCode(deck: DeckSummary, detail: DeckDetail | undefined) {
+    if (!detail) {
+      setDeckMessage("Deck details are still loading. Try again in a moment.");
+      return;
+    }
+
+    const value = encodeWardDeckString({
+      name: deck.name,
+      deckId: deck.id,
+      cardIds: detail.cardIds,
+      cardArtKeys: detail.cardArtKeys
+    });
+
+    try {
+      await navigator.clipboard.writeText(value);
+      setDeckMessage(`Copied export code for ${deck.name}.`);
+    } catch {
+      setDeckMessage(`Export code for ${deck.name}: ${value}`);
+    }
+  }
+
+  function importDeckCode() {
+    try {
+      const payload = decodeWardDeckString(importCode);
+      const unknownCards = payload.cardIds.filter(cardId => !cardById.has(cardId));
+
+      onImportDeckCode({
+        name: payload.name,
+        deckId: payload.deckId,
+        cardIds: payload.cardIds,
+        cardArtKeys: payload.cardArtKeys
+      });
+      setImportCode("");
+      setDeckMessage(
+        unknownCards.length > 0
+          ? `Imported ${payload.cardIds.length} cards. ${unknownCards.length} card ID(s) are not in the loaded packs.`
+          : `Imported ${payload.cardIds.length} cards into the Card Library editor.`
+      );
+    } catch (error) {
+      setDeckMessage(error instanceof Error ? error.message : "Could not import deck code.");
+    }
+  }
 
   return (
     <section className="deck-library-page">
       <div className="deck-library-header">
         <div>
           <h2>Deck Library</h2>
-          <span>{decks.length} saved decks</span>
+          <span>{decks.length} saved decks ready for play, edits, and sharing</span>
+        </div>
+        <div className="deck-library-header-stats" aria-label="Deck library summary">
+          <span><strong>{libraryStats.loadedDecks}</strong> loaded</span>
+          <span><strong>{libraryStats.totalCards}</strong> cards indexed</span>
+          <span><strong>{libraryStats.largestDeck}</strong> max size</span>
         </div>
       </div>
 
+      <div className="deck-library-import-panel">
+        <div>
+          <strong>Import Deck Code</strong>
+          <span>Paste a WARDDECK1 code to open it in the Card Library deck editor.</span>
+        </div>
+        <textarea
+          value={importCode}
+          onChange={event => setImportCode(event.target.value)}
+          rows={2}
+          placeholder="WARDDECK1:..."
+        />
+        <button onClick={importDeckCode} disabled={!importCode.trim()}>Import</button>
+      </div>
+
+      {deckMessage && <p className="deck-library-message">{deckMessage}</p>}
+
       {decks.length === 0 ? (
-        <p className="empty-zone">No saved decks found.</p>
+        <div className="deck-library-empty">
+          <strong>No saved decks found.</strong>
+          <span>Build one in the Card Library, or import a deck code above to start from a shared list.</span>
+        </div>
       ) : (
         <div className="deck-library-grid">
           {decks.map(deck => {
@@ -122,6 +210,11 @@ export function DeckLibraryPage({
                   <span>{stats.magic} magic</span>
                 </div>
 
+                <div className="deck-library-mix-row">
+                  <span>Avg AL <strong>{stats.averageArmorLevel.toFixed(1)}</strong></span>
+                  <span>{stats.missingCount > 0 ? `${stats.missingCount} missing card records` : "All card records loaded"}</span>
+                </div>
+
                 <div className="deck-library-preview-row">
                   {previewCards.length === 0 ? (
                     <span className="event-meta">Deck details loading...</span>
@@ -132,6 +225,7 @@ export function DeckLibraryPage({
 
                 <div className="deck-library-actions">
                   <button onClick={() => onEditDeck(deck.id)}>Edit in Card Library</button>
+                  <button onClick={() => copyDeckExportCode(deck, detail)} disabled={!detail}>Export Code</button>
                   <button onClick={() => onCloneDeck(deck.id)}>Clone</button>
                   <button
                     className="delete-save-button"

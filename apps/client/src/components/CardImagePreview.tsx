@@ -41,6 +41,16 @@ type ImageCandidate = {
   url: string;
 };
 
+type ExpandedCardImageProps = {
+  card: CardLibraryCardSummary;
+  activeArtKey: CardArtKey;
+  selectedArtLabel: string;
+  holoSeed: string;
+  holoEnabled: boolean;
+  holoIntensity: number;
+  onArtChange: (artKey: CardArtKey) => void;
+};
+
 function formatCardStats(card: CardLibraryCardSummary): string {
   if (card.cardType === "CREATURE") {
     return [
@@ -159,10 +169,67 @@ export function getCardArtLabel(artKey: CardArtKey): string {
   return CARD_ART_OPTIONS.find(option => option.key === artKey)?.label ?? "Default";
 }
 
+function ExpandedCardImage({
+  card,
+  activeArtKey,
+  selectedArtLabel,
+  holoSeed,
+  holoEnabled,
+  holoIntensity,
+  onArtChange
+}: ExpandedCardImageProps) {
+  const [expandedCandidateIndex, setExpandedCandidateIndex] = useState(0);
+  const imageArtKey = activeArtKey === "holo" ? "default" : activeArtKey;
+  const imageCandidates = useMemo(
+    () => getImageCandidates(card, imageArtKey),
+    [card, imageArtKey]
+  );
+  const imageCandidate = imageCandidates[expandedCandidateIndex] ?? imageCandidates[0];
+
+  useEffect(() => {
+    setExpandedCandidateIndex(0);
+  }, [card.id, imageArtKey]);
+
+  return (
+    <div className="expanded-card-image-wrap">
+      {imageCandidate ? (
+        <HolographicCardImage
+          key={`${card.id}:${activeArtKey}:${imageCandidate.url}:expanded`}
+          src={imageCandidate.url}
+          alt={`${card.name} expanded ${selectedArtLabel} card`}
+          seed={holoSeed}
+          enabled={holoEnabled}
+          intensity={holoIntensity}
+          className="expanded-card-holo-image"
+          onError={() => setExpandedCandidateIndex(current => current + 1)}
+        />
+      ) : (
+        <div className="card-image-placeholder">
+          <strong>No image</strong>
+          <span>{imageCandidates[0]?.fileName ?? `${card.id}.webp`}</span>
+          <span>This art variant can still be tracked as owned.</span>
+        </div>
+      )}
+
+      <label className="card-art-select-label expanded-card-art-select-label">
+        Artwork
+        <select
+          value={activeArtKey}
+          onChange={event => onArtChange(event.target.value as CardArtKey)}
+        >
+          {ACTIVE_CARD_ART_OPTIONS.map(option => (
+            <option value={option.key} key={option.key}>{option.label}</option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+}
+
 export function CardImageThumbnail({ card, className }: CardImageThumbnailProps) {
   const [candidateIndex, setCandidateIndex] = useState(0);
   const imageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
-  const imageCandidate = imageCandidates[candidateIndex];
+  const imageCandidate = imageCandidates[candidateIndex] ?? imageCandidates[0];
 
   useEffect(() => {
     setCandidateIndex(0);
@@ -205,10 +272,15 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
 
   useEffect(() => {
     setCandidateIndex(0);
-    setPreviewOpen(false);
   }, [card.id, activeArtKey]);
 
+  useEffect(() => {
+    setPreviewOpen(false);
+  }, [card.id]);
+
   function handleArtChange(nextArtKey: CardArtKey) {
+    setCandidateIndex(0);
+
     if (onSelectedArtKeyChange) {
       onSelectedArtKeyChange(nextArtKey);
       return;
@@ -231,6 +303,7 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
             title={`Expand ${card.name} image`}
           >
             <HolographicCardImage
+              key={`${card.id}:${activeArtKey}:${imageCandidate.url}:thumbnail`}
               src={imageCandidate.url}
               alt={`${card.name} ${selectedArtLabel} card art`}
               seed={holoSeed}
@@ -263,17 +336,15 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
       {previewOpen && imageCandidate && (
         <ModalPanel title={`${card.name}  -  ${selectedArtLabel}`} onClose={() => setPreviewOpen(false)}>
           <div className="expanded-card-detail-layout">
-            <div className="expanded-card-image-wrap">
-              <HolographicCardImage
-                src={imageCandidate.url}
-                alt={`${card.name} expanded ${selectedArtLabel} card`}
-                seed={holoSeed}
-                enabled={holoEnabled}
-                intensity={holoIntensity}
-                className="expanded-card-holo-image"
-                onError={() => setCandidateIndex(current => current + 1)}
-              />
-            </div>
+            <ExpandedCardImage
+              card={card}
+              activeArtKey={activeArtKey}
+              selectedArtLabel={selectedArtLabel}
+              holoSeed={holoSeed}
+              holoEnabled={holoEnabled}
+              holoIntensity={holoIntensity}
+              onArtChange={handleArtChange}
+            />
 
             <div className="expanded-card-info">
               <div>
