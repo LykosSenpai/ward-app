@@ -2802,7 +2802,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
             ? "HEADLESS_STATIC_MAGIC_IMMUNITY_AVAILABLE"
             : actionType.includes("apply_negation_window_restriction")
               ? "HEADLESS_STATIC_NEGATION_WINDOW_RESTRICTION_AVAILABLE"
-          : actionType.includes("global_creature_effect_negation")
+            : actionType.includes("global_creature_effect_negation")
             ? "HEADLESS_STATIC_CREATURE_EFFECT_NEGATION_AVAILABLE"
             : actionType.includes("apply_status") || actionType.includes("apply_damage_immunity")
               ? "HEADLESS_STATIC_STATUS_AVAILABLE"
