@@ -213,10 +213,42 @@ function parseReplacementAttackProfile(text: string): { dice?: number; modifier?
   };
 }
 
+function opponentPrimaryBaseStatValue(
+  opponentDefinition: Extract<CardDefinition, { cardType: "CREATURE" }>,
+  source: unknown
+): number | undefined {
+  const value = String(source ?? "").trim().toUpperCase();
+  if (!value.startsWith("OPPONENT_PRIMARY_CREATURE.BASE_")) return undefined;
+  if (value.endsWith("BASE_AL") || value.endsWith("BASE_ARMOR_LEVEL")) return opponentDefinition.armorLevel;
+  if (value.endsWith("BASE_SPD") || value.endsWith("BASE_SPEED")) return opponentDefinition.speed;
+  if (value.endsWith("BASE_ATK_DICE_ROLLS") || value.endsWith("BASE_ATTACK_DICE_ROLLS")) return opponentDefinition.attackDice;
+  if (value.endsWith("BASE_MODIFIER")) return opponentDefinition.modifier;
+  return undefined;
+}
+
 function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: WardEngineEffect, target: CreatureLocation): RuntimeModifierLayer[] {
   const actionType = effect.actionType.trim().toUpperCase();
   const text = effectText(effect);
   const layers: RuntimeModifierLayer[] = [];
+  const opponentPrimary = getOpponent(state, source.player.id)?.field.primaryCreature;
+  const opponentDefinition = opponentPrimary ? state.cardCatalog[opponentPrimary.cardId] : undefined;
+  let usedStructuredOpponentPrimaryBaseStats = false;
+
+  if (actionType === "APPLY_DYNAMIC_STAT_MODIFIER" && opponentDefinition?.cardType === "CREATURE") {
+    for (const [index, change] of (effect.params?.statChanges ?? []).entries()) {
+      const stat = normalizeModifierStatName(change.stat);
+      const operation = String(change.operation ?? "").trim().toUpperCase();
+      const copiedValue = opponentPrimaryBaseStatValue(opponentDefinition, (change as { source?: unknown }).source);
+      if (!stat || copiedValue === undefined) continue;
+      if (operation === "COPY") {
+        layers.push(makeLayer(source, effect, `structured-copy-${index}`, stat, "SET", copiedValue));
+        usedStructuredOpponentPrimaryBaseStats = true;
+      } else if (operation === "ADD_DYNAMIC") {
+        layers.push(makeLayer(source, effect, `structured-add-${index}`, stat, "ADD", copiedValue));
+        usedStructuredOpponentPrimaryBaseStats = true;
+      }
+    }
+  }
 
   if (actionType === "APPLY_DYNAMIC_STAT_MODIFIER" || actionType === "APPLY_SCALING_MODIFIER_FROM_ZONE_COUNT" || text.includes("for every card") || text.includes("for each card")) {
     let count = 0;
@@ -245,9 +277,7 @@ function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: 
     if (over > 0) layers.push(makeLayer(source, effect, "spd-over-12-modifier", "modifier", "ADD", over, `Base SPD over 12: ${over}`));
   }
 
-  if ((actionType === "APPLY_DYNAMIC_STAT_MODIFIER" || actionType === "APPLY_STAT_MODIFIER") && text.includes("opponent") && text.includes("primary") && text.includes("base")) {
-    const opponentPrimary = getOpponent(state, source.player.id)?.field.primaryCreature;
-    const opponentDefinition = opponentPrimary ? state.cardCatalog[opponentPrimary.cardId] : undefined;
+  if (!usedStructuredOpponentPrimaryBaseStats && (actionType === "APPLY_DYNAMIC_STAT_MODIFIER" || actionType === "APPLY_STAT_MODIFIER") && text.includes("opponent") && text.includes("primary") && text.includes("base")) {
     if (opponentDefinition?.cardType === "CREATURE") {
       if (text.includes("copy") && text.includes("base al")) layers.push(makeLayer(source, effect, "copy-base-al", "armorLevel", "SET", opponentDefinition.armorLevel));
       if (text.includes("copy") && text.includes("base spd")) layers.push(makeLayer(source, effect, "copy-base-spd", "speed", "SET", opponentDefinition.speed));

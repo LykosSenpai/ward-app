@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_075_jerry",
+  "effectId": "075-E01",
+  "title": "Jerry copies opponent primary base stats",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_075_jerry",
+      "cardName": "Jerry",
+      "cardType": "CREATURE",
+      "cardNumber": "075",
+      "generation": "2",
+      "rawText": "This creature copies the base stats of your opponent's primary creature. This includes: AL, SPD, Atk Dice Rolls, Modifier, and Type. Switch stats if a new primary creature enters the field."
+    },
+    "effect": {
+      "effectId": "075-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Dynamic Stat Copy",
+      "target": "This creature",
+      "value": "Copy opponent primary base AL, SPD, Atk Dice Rolls, Modifier, and Type",
+      "durationText": "While on field",
+      "reusableFunction": "applyDynamicStatModifier"
+    },
+    "title": "Jerry copies opponent primary base stats",
+    "summary": "Place Jerry across from the synthetic primary creature and verify Jerry's effective AL, SPD, Atk Dice Rolls, and Modifier copy the opponent primary's base stats.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_075_jerry"
+      ],
+      "player2Cards": [
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Jerry as player_1 primary.",
+        "Set the opponent synthetic primary creature with base AL 3, SPD 10, Atk Dice Rolls 2, and Modifier 1."
+      ]
+    },
+    "steps": [
+      "Set Jerry as player_1 primary creature.",
+      "Set the synthetic creature as player_2 primary creature.",
+      "Read Jerry's effective copied stats."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Jerry copies opponent primary base AL",
+        "path": "player_1.primaryCreature.effectiveStats.armorLevel",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Jerry copies opponent primary base SPD",
+        "path": "player_1.primaryCreature.effectiveStats.speed",
+        "operator": "equals",
+        "value": 10
+      },
+      {
+        "label": "Jerry copies opponent primary base attack dice",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Jerry copies opponent primary base Modifier",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 1
+      }
+    ],
+    "manualVerification": [
+      "Confirm Jerry recalculates when the opponent primary creature changes.",
+      "Confirm creature Type copying is represented once type-layer support exists."
+    ],
+    "riskNotes": [
+      "This fixture covers copied numeric stats; creature Type is documented as a manual follow-up because effectiveStats currently exposes numeric combat stats."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Jerry's opponent-primary numeric stat copy."
+    },
+    "regression": {
+      "fixtureName": "jerry-copies-opponent-primary-base-stats",
+      "tags": [
+        "creature",
+        "dynamic-stat",
+        "copy",
+        "opponent-primary"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_075_jerry:075-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
