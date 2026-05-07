@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_086_frost_wyrms",
+  "effectId": "086-E01",
+  "title": "Frost Wyrms sets equipped creature SPD and modifier to zero",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_086_frost_wyrms",
+      "cardName": "Frost Wyrms",
+      "cardType": "MAGIC",
+      "cardNumber": "086",
+      "generation": "3",
+      "rawText": "The equipped creature's SPD and base Modifier are changed to 0. The equipped creature cannot be used as a sacrifice."
+    },
+    "effect": {
+      "effectId": "086-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "CHANGE_CREATURE_TYPE",
+      "effectGroup": "Type Change",
+      "target": "Equipped creature",
+      "value": "The equipped creature's SPD and base Modifier are changed to 0. The equipped creature cannot be used as a sacrifice.",
+      "durationText": "While equipped",
+      "reusableFunction": "changeCreatureType"
+    },
+    "title": "Frost Wyrms sets equipped creature SPD and modifier to zero",
+    "summary": "Equip Frost Wyrms and verify the SPD/base Modifier zeroing and sacrifice restriction route is represented.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_086_frost_wyrms",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: The equipped creature's SPD and base Modifier are changed to 0. The equipped creature cannot be used as a sacrifice."
+      ]
+    },
+    "steps": [
+      "Equip Frost Wyrms to a primary creature.",
+      "Inspect effective SPD/modifier and sacrifice restriction markers."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Frost Wyrms route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Frost Wyrms"
+      },
+      {
+        "label": "Equipped creature SPD is zero",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 0
+      },
+      {
+        "label": "Equipped creature modifier is zero",
+        "path": "player_1.primaryCreature.modifier",
+        "operator": "equals",
+        "value": 0
+      }
+    ],
+    "manualVerification": [
+      "The equipped creature also cannot be used as a sacrifice while Frost Wyrms remains equipped."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Frost Wyrms and verify the SPD/base Modifier zeroing and sacrifice restriction route is represented."
+    },
+    "regression": {
+      "fixtureName": "frost-wyrms-sets-spd-and-modifier-zero",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "stat-set"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_086_frost_wyrms:086-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

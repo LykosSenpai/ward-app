@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_096_demon_blood",
+  "effectId": "096-E01",
+  "title": "Demon Blood changes equipped creature to Demon type",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_096_demon_blood",
+      "cardName": "Demon Blood",
+      "cardType": "MAGIC",
+      "cardNumber": "096",
+      "generation": "3",
+      "rawText": "Atk: +3. The equipped creature is changed to Demon-type."
+    },
+    "effect": {
+      "effectId": "096-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "CHANGE_CREATURE_TYPE",
+      "effectGroup": "Type Change",
+      "target": "Equipped creature",
+      "value": "Atk: +3. The equipped creature is changed to Demon-type.",
+      "durationText": "While equipped",
+      "reusableFunction": "changeCreatureType"
+    },
+    "title": "Demon Blood changes equipped creature to Demon type",
+    "summary": "Equip Demon Blood and verify the type-change route is represented alongside its known Atk bonus.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_096_demon_blood",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Atk: +3. The equipped creature is changed to Demon-type."
+      ]
+    },
+    "steps": [
+      "Equip Demon Blood to player_1 primary.",
+      "Inspect type-change evidence for Demon-type."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Demon Blood route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Demon Blood"
+      },
+      {
+        "label": "Demon type marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "CHANGE_CREATURE_TYPE"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Demon Blood and verify the type-change route is represented alongside its known Atk bonus."
+    },
+    "regression": {
+      "fixtureName": "demon-blood-changes-equipped-creature-to-demon",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "type-change"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_096_demon_blood:096-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

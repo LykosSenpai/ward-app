@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_082_gnarled_hand",
+  "effectId": "082-E02",
+  "title": "Gnarled Hand destroyed sends linked Limited Summon to cemetery",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_082_gnarled_hand",
+      "cardName": "Gnarled Hand",
+      "cardType": "MAGIC",
+      "cardNumber": "082",
+      "generation": "3",
+      "rawText": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery."
+    },
+    "effect": {
+      "effectId": "082-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "target": "Your primary creature",
+      "value": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery.",
+      "durationText": "While equipped",
+      "reusableFunction": "sendToCemetery"
+    },
+    "title": "Gnarled Hand destroyed sends linked Limited Summon to cemetery",
+    "summary": "Verify the linked Limited Summon cleanup route when Gnarled Hand is destroyed.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_082_gnarled_hand",
+        "test_creature_hp100",
+        "gen3_064_frog_bard"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery.",
+        "Seed or create the linked Limited Summon before resolving the destruction cleanup."
+      ]
+    },
+    "steps": [
+      "Equip Gnarled Hand and establish a linked Limited Summon.",
+      "Destroy Gnarled Hand.",
+      "Verify the linked Limited Summon goes to cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Gnarled Hand cleanup route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Gnarled Hand"
+      },
+      {
+        "label": "Linked summon moved to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen3_064_frog_bard"
+      }
+    ],
+    "manualVerification": [
+      "The linked summon should go to the controller cemetery named by the card text."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify the linked Limited Summon cleanup route when Gnarled Hand is destroyed."
+    },
+    "regression": {
+      "fixtureName": "gnarled-hand-destroyed-sends-linked-summon-cemetery",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "linked-cleanup"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_082_gnarled_hand:082-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

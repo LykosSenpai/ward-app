@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_105_bound_fate",
+  "effectId": "105-E01",
+  "title": "Bound Fate mirrors damage from your primary to opponent primary",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_105_bound_fate",
+      "cardName": "Bound Fate",
+      "cardType": "MAGIC",
+      "cardNumber": "105",
+      "generation": "3",
+      "rawText": "During this turn all damage inflicted on your primary creature is also inflicted on your opponents' primary creature."
+    },
+    "effect": {
+      "effectId": "105-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Opponent's primary creature",
+      "value": "During this turn all damage inflicted on your primary creature is also inflicted on your opponents' primary creature.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "damage"
+    },
+    "title": "Bound Fate mirrors damage from your primary to opponent primary",
+    "summary": "Play Bound Fate and verify damage inflicted on your primary is also inflicted on the opponent primary this turn.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_105_bound_fate",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: During this turn all damage inflicted on your primary creature is also inflicted on your opponents' primary creature.",
+        "After Bound Fate resolves, apply a deterministic damage event to player_1 primary and verify mirrored damage."
+      ]
+    },
+    "steps": [
+      "Play Bound Fate.",
+      "Inflict damage to player_1 primary during the same turn.",
+      "Verify player_2 primary takes matching damage."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Bound Fate route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Bound Fate"
+      },
+      {
+        "label": "Opponent primary received mirrored damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 0
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Bound Fate and verify damage inflicted on your primary is also inflicted on the opponent primary this turn."
+    },
+    "regression": {
+      "fixtureName": "bound-fate-mirrors-primary-damage-to-opponent",
+      "tags": [
+        "gen3",
+        "magic",
+        "damage",
+        "mirror"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_105_bound_fate:105-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

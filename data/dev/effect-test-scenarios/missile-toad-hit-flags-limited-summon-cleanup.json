@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_107_missile_toad",
+  "effectId": "107-E01",
+  "title": "Missile-Toad hit flags all Limited Summons for cleanup",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_107_missile_toad",
+      "cardName": "Missile-Toad",
+      "cardType": "CREATURE",
+      "cardNumber": "107",
+      "generation": "3",
+      "rawText": "If this creature hits, send all Limited Summons on the field to their original owner's cemetery."
+    },
+    "effect": {
+      "effectId": "107-E01",
+      "trigger": "ON_HIT",
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "target": "Limited Summon card(s)",
+      "value": "If this creature hits, send all Limited Summons on the field to their original owner's cemetery.",
+      "durationText": "Immediate",
+      "reusableFunction": "limitedSummon"
+    },
+    "title": "Missile-Toad hit flags all Limited Summons for cleanup",
+    "summary": "Run Missile-Toad through a hit and verify its all-Limited-Summon cleanup route is represented.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_107_missile_toad"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: If this creature hits, send all Limited Summons on the field to their original owner's cemetery."
+      ]
+    },
+    "steps": [
+      "Start battle with Missile-Toad.",
+      "Force the hit route.",
+      "Inspect Limited Summon cleanup evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Missile-Toad battle route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Missile-Toad Limited Summon cleanup was automated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "BATTLE_EFFECT_ROUTE_NOT_AUTOMATED"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run Missile-Toad through a hit and verify its all-Limited-Summon cleanup route is represented."
+    },
+    "regression": {
+      "fixtureName": "missile-toad-hit-flags-limited-summon-cleanup",
+      "tags": [
+        "gen3",
+        "creature",
+        "on-hit",
+        "limited-summon"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_107_missile_toad:107-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

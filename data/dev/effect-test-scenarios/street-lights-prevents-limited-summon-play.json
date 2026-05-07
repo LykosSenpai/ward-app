@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_099_street_lights",
+  "effectId": "099-E02",
+  "title": "Street Lights prevents Limited Summons while active",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_099_street_lights",
+      "cardName": "Street Lights",
+      "cardType": "MAGIC",
+      "cardNumber": "099",
+      "generation": "3",
+      "rawText": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field."
+    },
+    "effect": {
+      "effectId": "099-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "PREVENT_CARD_PLAY",
+      "effectGroup": "Play Restriction",
+      "target": "Limited Summon card(s)",
+      "value": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field.",
+      "durationText": "While on field",
+      "reusableFunction": "preventCardPlay"
+    },
+    "title": "Street Lights prevents Limited Summons while active",
+    "summary": "Place Street Lights as field magic and verify the play restriction against Limited Summons is represented.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_099_street_lights",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field."
+      ]
+    },
+    "steps": [
+      "Place Street Lights as field magic.",
+      "Attempt or inspect Limited Summon play restriction.",
+      "Verify prevention evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Street Lights prevention route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Street Lights"
+      },
+      {
+        "label": "Limited Summon prevention marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "PREVENT_CARD_PLAY"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Place Street Lights as field magic and verify the play restriction against Limited Summons is represented."
+    },
+    "regression": {
+      "fixtureName": "street-lights-prevents-limited-summon-play",
+      "tags": [
+        "gen3",
+        "magic",
+        "field",
+        "prevent-play"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_099_street_lights:099-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

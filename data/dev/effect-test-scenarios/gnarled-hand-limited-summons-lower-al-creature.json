@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_082_gnarled_hand",
+  "effectId": "082-E01",
+  "title": "Gnarled Hand Limited Summons lower-AL hand creature",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_082_gnarled_hand",
+      "cardName": "Gnarled Hand",
+      "cardType": "MAGIC",
+      "cardNumber": "082",
+      "generation": "3",
+      "rawText": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery."
+    },
+    "effect": {
+      "effectId": "082-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "target": "Your primary creature",
+      "value": "Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery.",
+      "durationText": "While equipped",
+      "reusableFunction": "limitedSummon"
+    },
+    "title": "Gnarled Hand Limited Summons lower-AL hand creature",
+    "summary": "Equip Gnarled Hand and verify it can Limited Summon a hand creature with AL less than the equipped primary creature.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_082_gnarled_hand",
+        "test_creature_hp100",
+        "gen3_064_frog_bard"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Summon a creature with an AL less than your primary creature from your hand as a Limited Summon. If this card is destroyed, send the Limited Summoned creature to your cemetery."
+      ]
+    },
+    "steps": [
+      "Equip Gnarled Hand to the primary creature.",
+      "Choose a lower-AL creature from hand as a Limited Summon.",
+      "Verify the Limited Summon is source-linked to Gnarled Hand."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Gnarled Hand Limited Summon route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED"
+      },
+      {
+        "label": "Limited Summon entered player_1 field",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "LIMITED_SUMMON"
+      }
+    ],
+    "manualVerification": [
+      "Confirm AL must be less than the primary creature, not less-than-or-equal."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Gnarled Hand and verify it can Limited Summon a hand creature with AL less than the equipped primary creature."
+    },
+    "regression": {
+      "fixtureName": "gnarled-hand-limited-summons-lower-al-creature",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "limited-summon"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_082_gnarled_hand:082-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

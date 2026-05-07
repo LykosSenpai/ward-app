@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_109_negative",
+  "effectId": "109-E01",
+  "title": "Negative destroys one magic card on field after discard cost",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_109_negative",
+      "cardName": "Negative",
+      "cardType": "MAGIC",
+      "cardNumber": "109",
+      "generation": "3",
+      "rawText": "Discard 1 magic card from your hand and destroy 1 magic card on the field."
+    },
+    "effect": {
+      "effectId": "109-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "DESTROY_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "target": "Magic card(s) on the field",
+      "value": "Discard 1 magic card from your hand and destroy 1 magic card on the field.",
+      "durationText": "Immediate",
+      "reusableFunction": "destroyMagic"
+    },
+    "title": "Negative destroys one magic card on field after discard cost",
+    "summary": "Play Negative with a discardable magic card and verify it destroys a chosen magic card on the field.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_109_negative",
+        "gen1_061_health_potion",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "gen1_070_lucky_charm",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Discard 1 magic card from your hand and destroy 1 magic card on the field."
+      ]
+    },
+    "steps": [
+      "Play Negative from hand.",
+      "Discard one magic card from hand.",
+      "Choose and destroy one magic card on the field."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Negative destruction route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_DESTROY_MAGIC_RESOLVED"
+      },
+      {
+        "label": "Target field magic moved to cemetery",
+        "path": "player_2.cemetery",
+        "operator": "contains",
+        "value": "gen1_070_lucky_charm"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Negative with a discardable magic card and verify it destroys a chosen magic card on the field."
+    },
+    "regression": {
+      "fixtureName": "negative-destroys-field-magic-after-discard-cost",
+      "tags": [
+        "gen3",
+        "magic",
+        "destroy-magic",
+        "discard"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_109_negative:109-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

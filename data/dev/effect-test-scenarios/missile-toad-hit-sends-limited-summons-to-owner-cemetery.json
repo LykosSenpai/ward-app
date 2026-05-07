@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_107_missile_toad",
+  "effectId": "107-E02",
+  "title": "Missile-Toad hit sends Limited Summons to original owner cemetery",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_107_missile_toad",
+      "cardName": "Missile-Toad",
+      "cardType": "CREATURE",
+      "cardNumber": "107",
+      "generation": "3",
+      "rawText": "If this creature hits, send all Limited Summons on the field to their original owner's cemetery."
+    },
+    "effect": {
+      "effectId": "107-E02",
+      "trigger": "ON_HIT",
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "target": "Limited Summon card(s)",
+      "value": "If this creature hits, send all Limited Summons on the field to their original owner's cemetery.",
+      "durationText": "Immediate",
+      "reusableFunction": "sendToCemetery"
+    },
+    "title": "Missile-Toad hit sends Limited Summons to original owner cemetery",
+    "summary": "Run Missile-Toad through a hit and verify all Limited Summons move to original owner cemeteries.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_107_missile_toad",
+        "gen3_064_frog_bard"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: If this creature hits, send all Limited Summons on the field to their original owner's cemetery.",
+        "Seed a Limited Summon before the on-hit cleanup check."
+      ]
+    },
+    "steps": [
+      "Start battle with Missile-Toad.",
+      "Force a hit.",
+      "Verify Limited Summons move to original owner cemeteries."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Missile-Toad battle route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Limited Summon moved to owner cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen3_064_frog_bard"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run Missile-Toad through a hit and verify all Limited Summons move to original owner cemeteries."
+    },
+    "regression": {
+      "fixtureName": "missile-toad-hit-sends-limited-summons-to-owner-cemetery",
+      "tags": [
+        "gen3",
+        "creature",
+        "on-hit",
+        "send-to-cemetery"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_107_missile_toad:107-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

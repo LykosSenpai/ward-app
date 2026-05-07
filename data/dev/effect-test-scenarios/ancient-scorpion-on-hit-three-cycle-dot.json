@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_085_ancient_scorpion",
+  "effectId": "085-E01",
+  "title": "Ancient Scorpion applies 20 damage over 3 turn cycles on hit",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_085_ancient_scorpion",
+      "cardName": "Ancient Scorpion",
+      "cardType": "CREATURE",
+      "cardNumber": "085",
+      "generation": "3",
+      "rawText": "When this creature hits, the targeted creature receives 20 damage, once per turn cycle, for 3 turn cycles."
+    },
+    "effect": {
+      "effectId": "085-E01",
+      "trigger": "ON_HIT",
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "target": "This creature",
+      "value": "When this creature hits, the targeted creature receives 20 damage, once per turn cycle, for 3 turn cycles.",
+      "durationText": "3 turn cycles",
+      "reusableFunction": "applyDamageOverTime"
+    },
+    "title": "Ancient Scorpion applies 20 damage over 3 turn cycles on hit",
+    "summary": "Run Ancient Scorpion through a hit and verify the targeted creature receives a 20 damage recurring effect for 3 turn cycles.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_085_ancient_scorpion"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: When this creature hits, the targeted creature receives 20 damage, once per turn cycle, for 3 turn cycles."
+      ]
+    },
+    "steps": [
+      "Start battle with Ancient Scorpion.",
+      "Force the hit route.",
+      "Verify the defender receives the three-cycle 20 damage effect."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Ancient Scorpion battle route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Ancient Scorpion recurring damage effect applied",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_RECURRING_EFFECT_APPLIED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the effect does not stack and ticks once per turn cycle for three cycles."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run Ancient Scorpion through a hit and verify the targeted creature receives a 20 damage recurring effect for 3 turn cycles."
+    },
+    "regression": {
+      "fixtureName": "ancient-scorpion-on-hit-three-cycle-dot",
+      "tags": [
+        "gen3",
+        "creature",
+        "on-hit",
+        "dot"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_085_ancient_scorpion:085-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

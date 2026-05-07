@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_109_negative",
+  "effectId": "109-E02",
+  "title": "Negative discards one magic card from hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_109_negative",
+      "cardName": "Negative",
+      "cardType": "MAGIC",
+      "cardNumber": "109",
+      "generation": "3",
+      "rawText": "Discard 1 magic card from your hand and destroy 1 magic card on the field."
+    },
+    "effect": {
+      "effectId": "109-E02",
+      "trigger": "ON_PLAY",
+      "actionType": "DISCARD_CARD",
+      "effectGroup": "Discard",
+      "target": "Magic card(s) on the field",
+      "value": "Discard 1 magic card from your hand and destroy 1 magic card on the field.",
+      "durationText": "Immediate",
+      "reusableFunction": "discardCard"
+    },
+    "title": "Negative discards one magic card from hand",
+    "summary": "Play Negative and verify the discard cost sends a magic card from hand to cemetery.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_109_negative",
+        "gen1_061_health_potion",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "gen1_070_lucky_charm",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Discard 1 magic card from your hand and destroy 1 magic card on the field."
+      ]
+    },
+    "steps": [
+      "Play Negative from hand.",
+      "Discard one magic card from player_1 hand.",
+      "Verify the discarded magic reaches cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Negative discard route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Negative"
+      },
+      {
+        "label": "Discarded hand magic moved to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_061_health_potion"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Negative and verify the discard cost sends a magic card from hand to cemetery."
+    },
+    "regression": {
+      "fixtureName": "negative-discards-magic-card-from-hand",
+      "tags": [
+        "gen3",
+        "magic",
+        "discard"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_109_negative:109-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

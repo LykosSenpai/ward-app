@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_084_bramble_field",
+  "effectId": "084-E01",
+  "title": "Bramble Field damages non-winged creatures at turn start",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_084_bramble_field",
+      "cardName": "Bramble Field",
+      "cardType": "MAGIC",
+      "cardNumber": "084",
+      "generation": "3",
+      "rawText": "At the beginning of your turn, inflict 5 damage to all creatures that do not have wings."
+    },
+    "effect": {
+      "effectId": "084-E01",
+      "trigger": "BEGINNING_OF_YOUR_TURN",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "All creatures matching condition",
+      "value": "At the beginning of your turn, inflict 5 damage to all creatures that do not have wings.",
+      "durationText": "While on field",
+      "reusableFunction": "damage"
+    },
+    "title": "Bramble Field damages non-winged creatures at turn start",
+    "summary": "Place Bramble Field as field magic and verify start-turn damage to creatures without wings.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_084_bramble_field",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: At the beginning of your turn, inflict 5 damage to all creatures that do not have wings."
+      ]
+    },
+    "steps": [
+      "Place Bramble Field as field magic.",
+      "Advance or simulate the beginning of player_1 turn.",
+      "Verify non-winged creatures take 5 damage."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Bramble Field route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Bramble Field"
+      },
+      {
+        "label": "Player 1 non-winged primary took 5 damage",
+        "path": "player_1.primary.damageTaken",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Player 2 non-winged primary took 5 damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 5
+      }
+    ],
+    "manualVerification": [
+      "Winged creatures should be excluded once wing trait tagging is available."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Place Bramble Field as field magic and verify start-turn damage to creatures without wings."
+    },
+    "regression": {
+      "fixtureName": "bramble-field-damages-non-winged-creatures",
+      "tags": [
+        "gen3",
+        "magic",
+        "field",
+        "start-turn-damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_084_bramble_field:084-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

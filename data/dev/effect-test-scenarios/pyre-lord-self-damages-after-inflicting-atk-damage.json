@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_092_pyre_lord",
+  "effectId": "092-E01",
+  "title": "Pyre Lord receives 5 damage when it inflicts Atk damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_092_pyre_lord",
+      "cardName": "Pyre Lord",
+      "cardType": "CREATURE",
+      "cardNumber": "092",
+      "generation": "3",
+      "rawText": "This creature receives 5 damage when it inflicts Atk damage."
+    },
+    "effect": {
+      "effectId": "092-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "This creature",
+      "value": "This creature receives 5 damage when it inflicts Atk damage.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Pyre Lord receives 5 damage when it inflicts Atk damage",
+    "summary": "Run Pyre Lord through battle and verify it damages itself after inflicting attack damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_092_pyre_lord"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: This creature receives 5 damage when it inflicts Atk damage."
+      ]
+    },
+    "steps": [
+      "Start battle with Pyre Lord.",
+      "Resolve a hit and attack damage.",
+      "Verify Pyre Lord takes the 5 self-damage rider."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Pyre Lord battle route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Pyre Lord took self damage after inflicting Atk damage",
+        "path": "player_1.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 4
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run Pyre Lord through battle and verify it damages itself after inflicting attack damage."
+    },
+    "regression": {
+      "fixtureName": "pyre-lord-self-damages-after-inflicting-atk-damage",
+      "tags": [
+        "gen3",
+        "creature",
+        "battle",
+        "self-damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_092_pyre_lord:092-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

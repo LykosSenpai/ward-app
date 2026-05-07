@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_087_orc_hunter",
+  "effectId": "087-E01",
+  "title": "Orc Hunter Limited Summons one Common or Uncommon Beast from hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_087_orc_hunter",
+      "cardName": "Orc Hunter",
+      "cardType": "CREATURE",
+      "cardNumber": "087",
+      "generation": "3",
+      "rawText": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+    },
+    "effect": {
+      "effectId": "087-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "target": "Limited Summon card(s)",
+      "value": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+      "durationText": "Immediate",
+      "reusableFunction": "limitedSummon"
+    },
+    "title": "Orc Hunter Limited Summons one Common or Uncommon Beast from hand",
+    "summary": "Activate Orc Hunter and verify a Common/Uncommon Beast from hand enters as a max-one linked Limited Summon.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_087_orc_hunter",
+        "gen3_064_frog_bard"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+      ]
+    },
+    "steps": [
+      "Activate Orc Hunter during player_1 turn.",
+      "Choose an eligible Common/Uncommon Beast from hand.",
+      "Verify the Limited Summon resolves."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Orc Hunter Limited Summon route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED"
+      },
+      {
+        "label": "Orc Hunter action used Limited Summon",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "LIMITED_SUMMON"
+      }
+    ],
+    "manualVerification": [
+      "The target should be Common/Uncommon Beast-type only and max one."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Activate Orc Hunter and verify a Common/Uncommon Beast from hand enters as a max-one linked Limited Summon."
+    },
+    "regression": {
+      "fixtureName": "orc-hunter-limited-summons-common-beast",
+      "tags": [
+        "gen3",
+        "creature",
+        "activated",
+        "limited-summon"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_087_orc_hunter:087-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

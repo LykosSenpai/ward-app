@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_099_street_lights",
+  "effectId": "099-E01",
+  "title": "Street Lights returns existing Limited Summons to original zones",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_099_street_lights",
+      "cardName": "Street Lights",
+      "cardType": "MAGIC",
+      "cardNumber": "099",
+      "generation": "3",
+      "rawText": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field."
+    },
+    "effect": {
+      "effectId": "099-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "target": "Limited Summon card(s)",
+      "value": "Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field.",
+      "durationText": "While on field",
+      "reusableFunction": "limitedSummon"
+    },
+    "title": "Street Lights returns existing Limited Summons to original zones",
+    "summary": "Place Street Lights and verify all Limited Summons on field return to their original summon zones.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_099_street_lights",
+        "test_primary_creature_mod_0",
+        "gen3_064_frog_bard"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Send all Limited Summons on the field back to where they were originally summoned from. Limited Summons cannot be played while this card is on the field.",
+        "Seed or create an existing Limited Summon before resolving Street Lights."
+      ]
+    },
+    "steps": [
+      "Place Street Lights as field magic.",
+      "Resolve the Limited Summon return effect.",
+      "Verify Limited Summons leave the field."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Street Lights limited summon return route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Street Lights"
+      },
+      {
+        "label": "Limited Summon returned to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "gen3_064_frog_bard"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Place Street Lights and verify all Limited Summons on field return to their original summon zones."
+    },
+    "regression": {
+      "fixtureName": "street-lights-returns-existing-limited-summons",
+      "tags": [
+        "gen3",
+        "magic",
+        "field",
+        "limited-summon"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_099_street_lights:099-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

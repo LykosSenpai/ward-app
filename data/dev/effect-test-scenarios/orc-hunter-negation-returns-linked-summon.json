@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_087_orc_hunter",
+  "effectId": "087-E02",
+  "title": "Orc Hunter negation returns linked Limited Summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_087_orc_hunter",
+      "cardName": "Orc Hunter",
+      "cardType": "CREATURE",
+      "cardNumber": "087",
+      "generation": "3",
+      "rawText": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+    },
+    "effect": {
+      "effectId": "087-E02",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "NEGATE_CARD_EFFECT",
+      "effectGroup": "Negation",
+      "target": "Limited Summon card(s)",
+      "value": "During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+      "durationText": "Immediate",
+      "reusableFunction": "negateCardEffect"
+    },
+    "title": "Orc Hunter negation returns linked Limited Summon",
+    "summary": "Verify Orc Hunter?s source-linked Limited Summon return path when its effect is negated.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_087_orc_hunter",
+        "gen3_064_frog_bard"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: During your turn, you may Limited Summon 1 Common / Uncommon Beast-type creature from your hand, max 1. Return that creature to your hand if this card leaves the field, changes control, or this effect is negated."
+      ]
+    },
+    "steps": [
+      "Create an Orc Hunter linked Limited Summon.",
+      "Negate Orc Hunter effect.",
+      "Verify the linked Limited Summon returns to hand."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Orc Hunter linked summon cleanup returned the summon",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "RETURN_LINKED_SUMMON"
+      },
+      {
+        "label": "Orc Hunter did not fall back to manual handling",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "CARD_EFFECT_ACTIVATED_MANUAL_FALLBACK"
+      }
+    ],
+    "manualVerification": [
+      "Also confirm cleanup when Orc Hunter leaves field or changes control."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Orc Hunter?s source-linked Limited Summon return path when its effect is negated."
+    },
+    "regression": {
+      "fixtureName": "orc-hunter-negation-returns-linked-summon",
+      "tags": [
+        "gen3",
+        "creature",
+        "linked-cleanup",
+        "negation"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_087_orc_hunter:087-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

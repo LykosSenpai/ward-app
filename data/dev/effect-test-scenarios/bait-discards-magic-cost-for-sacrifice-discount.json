@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_104_bait",
+  "effectId": "104-E01",
+  "title": "Bait discards a magic card as cost for sacrifice discount",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_104_bait",
+      "cardName": "Bait",
+      "cardType": "MAGIC",
+      "cardNumber": "104",
+      "generation": "3",
+      "rawText": "Discard 1 magic card to the cemetery to play this card. For this turn, your creatures require 1 less sacrifice than normal."
+    },
+    "effect": {
+      "effectId": "104-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "DISCARD_CARD",
+      "effectGroup": "Discard",
+      "target": "Magic card(s) on the field",
+      "value": "Discard 1 magic card to the cemetery to play this card. For this turn, your creatures require 1 less sacrifice than normal.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "discardCard"
+    },
+    "title": "Bait discards a magic card as cost for sacrifice discount",
+    "summary": "Play Bait and verify a magic card is discarded to cemetery before the temporary sacrifice discount is represented.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_104_bait",
+        "gen1_061_health_potion",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Discard 1 magic card to the cemetery to play this card. For this turn, your creatures require 1 less sacrifice than normal."
+      ]
+    },
+    "steps": [
+      "Play Bait from hand.",
+      "Discard one magic card to cemetery as its play cost.",
+      "Verify the temporary one-less-sacrifice rule is represented."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Bait route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Bait"
+      },
+      {
+        "label": "A magic card was discarded for Bait",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_061_health_potion"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Bait and verify a magic card is discarded to cemetery before the temporary sacrifice discount is represented."
+    },
+    "regression": {
+      "fixtureName": "bait-discards-magic-cost-for-sacrifice-discount",
+      "tags": [
+        "gen3",
+        "magic",
+        "discard",
+        "summon-discount"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_104_bait:104-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

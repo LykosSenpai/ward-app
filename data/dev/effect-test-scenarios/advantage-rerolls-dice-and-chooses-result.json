@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_100_advantage",
+  "effectId": "100-E01",
+  "title": "Advantage rerolls one of your dice rolls and chooses a result",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_100_advantage",
+      "cardName": "Advantage",
+      "cardType": "MAGIC",
+      "cardNumber": "100",
+      "generation": "3",
+      "rawText": "On any of your Dice Rolls, play this card from your hand. You may re-roll and choose 1 of the two results."
+    },
+    "effect": {
+      "effectId": "100-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "REROLL_DICE",
+      "effectGroup": "Dice Reroll",
+      "target": "Target / controller as specified by card text",
+      "value": "On any of your Dice Rolls, play this card from your hand. You may re-roll and choose 1 of the two results.",
+      "durationText": "Immediate",
+      "reusableFunction": "rerollDice"
+    },
+    "title": "Advantage rerolls one of your dice rolls and chooses a result",
+    "summary": "Play Advantage from hand on a dice roll and verify the reroll/choose route is represented.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_100_advantage",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Original low roll"
+        },
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Advantage reroll high result"
+        }
+      ],
+      "notes": [
+        "Read text first: On any of your Dice Rolls, play this card from your hand. You may re-roll and choose 1 of the two results."
+      ]
+    },
+    "steps": [
+      "Begin a player_1 dice roll.",
+      "Play Advantage from hand.",
+      "Reroll and choose one of the two results."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Advantage route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Advantage"
+      },
+      {
+        "label": "Reroll dice marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "REROLL_DICE"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Advantage from hand on a dice roll and verify the reroll/choose route is represented."
+    },
+    "regression": {
+      "fixtureName": "advantage-rerolls-dice-and-chooses-result",
+      "tags": [
+        "gen3",
+        "magic",
+        "lightning",
+        "reroll"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_100_advantage:100-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
