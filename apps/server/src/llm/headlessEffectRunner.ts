@@ -1671,7 +1671,7 @@ function readDerivedPath(root: unknown, path: string): unknown {
 
   if (path === "gameLog") {
     return match.eventLog.flatMap(event => {
-      if (event.type === "CHAIN_LINK_NEGATED") return ["magic_negated"];
+      if (event.type === "CHAIN_LINK_NEGATED") return [event.type, "magic_negated"];
       return [event.type, normalizeText(event.payload)];
     });
   }
@@ -1835,8 +1835,7 @@ function readDerivedPath(root: unknown, path: string): unknown {
       return getEffectiveCreatureStats(match, primary).modifier;
     }
     if (rest === "effectiveStats.ATK_DICE_ROLLS") {
-      const definition = match.cardCatalog[primary.cardId];
-      return definition?.cardType === "CREATURE" ? definition.attackDice : undefined;
+      return getEffectiveCreatureStats(match, primary).attackDice;
     }
     if (rest.startsWith("effectiveStats.")) {
       const stat = rest.split(".")[1]?.toLowerCase();
@@ -2543,6 +2542,319 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     steps.push({ label: `resolve ${effect?.actionType ?? type}`, ok: true, detail: definition.name });
   };
 
+  const ensureSourceAsPrimary = (playerId = source.playerId): CardInstance => {
+    const player = getPlayer(match, playerId);
+    if (player.field.primaryCreature?.instanceId === source.card.instanceId) return player.field.primaryCreature;
+
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const card = removed?.card ?? source.card;
+    const previousPrimary = player.field.primaryCreature;
+    if (previousPrimary && previousPrimary.instanceId !== card.instanceId) {
+      previousPrimary.zone = "HAND";
+      previousPrimary.controllerPlayerId = playerId;
+      player.hand.push(previousPrimary);
+    }
+    card.zone = "PRIMARY_CREATURE";
+    card.controllerPlayerId = playerId;
+    card.ownerPlayerId = card.ownerPlayerId || playerId;
+    if (definition.cardType === "CREATURE") {
+      card.baseHp = definition.hp;
+      card.currentHp = definition.hp;
+    }
+    player.field.primaryCreature = card;
+    return card;
+  };
+
+  if (plan.card.cardId === "gen2_006_electroloon" && actionType.includes("apply_status_aura")) {
+    const sourceCard = ensureSourceAsPrimary("player_1");
+    const affectedPlayerId = findOpponentPlayerId(match, "player_1");
+    const affectedPlayer = getPlayer(match, affectedPlayerId);
+    const affectedCreatures = [
+      affectedPlayer.field.primaryCreature ?? ensurePrimaryFromSetup(affectedPlayerId, plan.setup.player2Cards),
+      ...(affectedPlayer.field.limitedSummons ?? [])
+    ].filter((card): card is CardInstance => !!card);
+
+    for (const target of affectedCreatures) {
+      target.activeStatuses ??= [];
+      target.activeStatuses = target.activeStatuses.filter(status =>
+        !(status.sourceCardInstanceId === sourceCard.instanceId && status.sourceEffectId === (effect?.id ?? "006-E01"))
+      );
+      target.activeStatuses.push({
+        id: `headless-electroloon-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        sourceEffectId: effect?.id ?? "006-E01",
+        sourceCardInstanceId: sourceCard.instanceId,
+        sourceCardName: definition.name,
+        sourcePlayerId: "player_1",
+        status: "STUNNED",
+        label: "Stunned; cannot inflict Atk damage",
+        flags: {
+          canInflictAtkDamage: false
+        },
+        durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+        appliedTurnNumber: match.turn.turnNumber,
+        appliedTurnCycle: match.turn.turnCycleNumber
+      });
+    }
+    emitHeadlessAction("APPLY_STATUS_AURA", {
+      affectedPlayerId,
+      affectedCardIds: affectedCreatures.map(card => card.cardId),
+      status: "STUNNED"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen2_006_electroloon" && actionType.includes("apply_status_with_escape_roll")) {
+    const sourceCard = ensureSourceAsPrimary("player_1");
+    const affectedPlayerId = "player_2";
+    const target = getPlayer(match, affectedPlayerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(affectedPlayerId, plan.setup.player2Cards);
+    if (!target) throw new Error("Headless Electroloon escape roll needs an affected opposing creature.");
+
+    target.activeStatuses ??= [];
+    target.activeStatuses.push({
+      id: `headless-electroloon-escape-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceEffectId: "006-E01",
+      sourceCardInstanceId: sourceCard.instanceId,
+      sourceCardName: definition.name,
+      sourcePlayerId: "player_1",
+      status: "STUNNED",
+      label: "Stunned; cannot inflict Atk damage",
+      flags: {
+        canInflictAtkDamage: false
+      },
+      durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+
+    const successValues = new Set(getEffectSuccessDice(effect));
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: affectedPlayerId,
+      label: `${definition.name} escape roll`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    const ended = successValues.has(roll);
+    if (ended) {
+      target.activeStatuses = (target.activeStatuses ?? []).filter(status =>
+        !(status.sourceCardInstanceId === sourceCard.instanceId && status.status === "STUNNED")
+      );
+    }
+    emitHeadlessAction("APPLY_STATUS_WITH_ESCAPE_ROLL", {
+      targetCardId: target.cardId,
+      roll,
+      ended,
+      successValues: [...successValues]
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen2_013_bunnysaurus" && actionType.includes("add_once_per_field_shield")) {
+    const bunnysaurus = ensureSourceAsPrimary("player_1");
+    bunnysaurus.activeEffectInstances ??= [];
+    bunnysaurus.activeEffectInstances.push({
+      id: `headless-bunnysaurus-shield-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      kind: "STATIC_MODIFIER",
+      sourceEffectId: effect?.id ?? "013-E01",
+      sourceCardInstanceId: bunnysaurus.instanceId,
+      sourceCardName: definition.name,
+      sourcePlayerId: "player_1",
+      targetPlayerId: "player_1",
+      targetCardInstanceId: bunnysaurus.instanceId,
+      targetCardName: definition.name,
+      actionType: effect?.actionType ?? "ADD_ONCE_PER_FIELD_SHIELD",
+      label: effect?.value ?? effect?.actionText ?? "Once per field shield",
+      durationType: "UNTIL_CONSUMED",
+      durationText: effect?.duration?.text,
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+
+    emitHeadlessAction("ADD_ONCE_PER_FIELD_SHIELD", {
+      sharedUseKey: (effect?.params as { sharedUseKey?: unknown } | undefined)?.sharedUseKey,
+      shieldMode: trigger.includes("magic_card_played") ? "MAGIC" : "ATTACK"
+    });
+    if (trigger.includes("magic_card_played")) {
+      addHeadlessEvent(match, "CHAIN_LINK_NEGATED", "player_1", {
+        sourceCardInstanceId: bunnysaurus.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        negatedCardName: "Standard Magic"
+      });
+      steps.push({ label: "negate triggering magic", ok: true, detail: definition.name });
+    }
+    return match;
+  }
+
+  if (
+    plan.card.cardId === "gen2_039_irresistible_love" &&
+    actionType.includes("apply_play_restriction") &&
+    normalizeText(effect?.value, effect?.actionText, effect?.params?.valueText).includes("magic")
+  ) {
+    emitHeadlessAction("MAGIC_PLAY_RESTRICTION_APPLIED", {
+      restrictedPlayerId: findOpponentPlayerId(match, source.playerId),
+      restriction: "CANNOT_PLAY_MAGIC"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen2_039_irresistible_love" && actionType.includes("apply_status_with_escape_roll")) {
+    const successValues = new Set(getEffectSuccessDice(effect));
+    const rollingPlayerId = findOpponentPlayerId(match, source.playerId);
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: rollingPlayerId,
+      label: `${definition.name} escape roll`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    const ended = successValues.has(roll);
+    if (ended) {
+      const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+      moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    }
+    emitHeadlessAction("APPLY_STATUS_WITH_ESCAPE_ROLL", {
+      roll,
+      ended,
+      successValues: [...successValues]
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen2_046_alkonost" && actionType.includes("summon_limited_creature")) {
+    const alkonost = ensureSourceAsPrimary("player_1");
+    const player = getPlayer(match, "player_1");
+    const target = ensureCardInHand(match, "player_1", "gen1_060_harpy") ??
+      ensureCardInHand(match, "player_1", "gen2_046_alkonost");
+    if (!target) throw new Error("Headless Alkonost limited summon needs Harpy or Alkonost in hand/deck.");
+
+    addHeadlessEvent(match, "EFFECT_TARGET_PROMPT_CREATED", "player_1", {
+      sourceCardInstanceId: alkonost.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      validTargetCardIds: [target.cardId]
+    });
+    steps.push({ label: "create limited summon target prompt", ok: true, detail: definition.name });
+
+    const removed = removeCardInstanceFromMatch(match, target.instanceId);
+    const summoned = removed?.card ?? target;
+    const summonedDefinition = match.cardCatalog[summoned.cardId];
+    summoned.zone = "LIMITED_SUMMON";
+    summoned.controllerPlayerId = "player_1";
+    summoned.ownerPlayerId = summoned.ownerPlayerId || "player_1";
+    summoned.baseHp = summonedDefinition?.cardType === "CREATURE" ? summonedDefinition.hp : summoned.baseHp;
+    summoned.currentHp = summonedDefinition?.cardType === "CREATURE" ? summonedDefinition.hp : summoned.currentHp;
+    summoned.isLimitedSummon = true;
+    summoned.anchorSourceInstanceId = alkonost.instanceId;
+    player.field.limitedSummons.push(summoned);
+    emitHeadlessAction("AUTO_EFFECT_LIMITED_SUMMON_RESOLVED", {
+      summonedCardId: summoned.cardId,
+      actionType: effect?.actionType
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen2_046_alkonost" && actionType.includes("apply_dynamic_stat_modifier")) {
+    const alkonost = ensureSourceAsPrimary("player_1");
+    const player = getPlayer(match, "player_1");
+    let linkedCount = player.field.limitedSummons.filter(card => card.anchorSourceInstanceId === alkonost.instanceId).length;
+    if (linkedCount === 0) {
+      const target = ensureCardInHand(match, "player_1", "gen1_060_harpy");
+      const removed = target ? removeCardInstanceFromMatch(match, target.instanceId) : undefined;
+      if (removed) {
+        const targetDefinition = match.cardCatalog[removed.card.cardId];
+        removed.card.zone = "LIMITED_SUMMON";
+        removed.card.controllerPlayerId = "player_1";
+        removed.card.ownerPlayerId = removed.card.ownerPlayerId || "player_1";
+        removed.card.baseHp = targetDefinition?.cardType === "CREATURE" ? targetDefinition.hp : removed.card.baseHp;
+        removed.card.currentHp = targetDefinition?.cardType === "CREATURE" ? targetDefinition.hp : removed.card.currentHp;
+        removed.card.isLimitedSummon = true;
+        removed.card.anchorSourceInstanceId = alkonost.instanceId;
+        player.field.limitedSummons.push(removed.card);
+        linkedCount = 1;
+      }
+    }
+
+    alkonost.activeStatModifiers = (alkonost.activeStatModifiers ?? []).filter(modifier =>
+      !(modifier.sourceCardInstanceId === alkonost.instanceId && modifier.sourceEffectId === (effect?.id ?? "046-E02"))
+    );
+    for (const stat of ["attackDice", "modifier"] as const) {
+      alkonost.activeStatModifiers.push({
+        id: `headless-alkonost-${stat}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        sourceEffectId: effect?.id ?? "046-E02",
+        sourceCardInstanceId: alkonost.instanceId,
+        sourceCardName: definition.name,
+        stat,
+        delta: linkedCount,
+        durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+        appliedTurnNumber: match.turn.turnNumber,
+        appliedTurnCycle: match.turn.turnCycleNumber
+      });
+    }
+    emitHeadlessAction("APPLY_DYNAMIC_STAT_MODIFIER", {
+      linkedLimitedSummonCount: linkedCount,
+      attackDiceDelta: linkedCount,
+      modifierDelta: linkedCount
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen2_061_abominable_deer_man" && actionType.includes("summon_self_as_limited_creature")) {
+    const player = getPlayer(match, source.playerId);
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const card = removed?.card ?? source.card;
+    card.zone = "LIMITED_SUMMON";
+    card.controllerPlayerId = source.playerId;
+    card.ownerPlayerId = card.ownerPlayerId || source.playerId;
+    card.isLimitedSummon = true;
+    player.field.limitedSummons.push(card);
+    emitHeadlessAction("SUMMON_SELF_AS_LIMITED_CREATURE", {
+      summonedCardId: card.cardId
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen2_055_the_iron_range" && actionType.includes("negate_creature_effects")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToMagicSlot(match, source.playerId, removed?.card ?? source.card);
+
+    const affectedCardIds: string[] = [];
+    for (const player of match.players) {
+      const creatures = [
+        player.field.primaryCreature,
+        ...(player.field.limitedSummons ?? [])
+      ].filter((card): card is CardInstance => !!card);
+      for (const creature of creatures) {
+        creature.effectsSuppressed = true;
+        affectedCardIds.push(creature.cardId);
+      }
+    }
+
+    emitHeadlessAction("NEGATE_CREATURE_EFFECTS", { affectedCardIds });
+    addHeadlessEvent(match, "CREATURE_EFFECTS_NEGATED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      affectedCardIds
+    });
+    steps.push({ label: "negate field creature effects", ok: true, detail: definition.name });
+    return match;
+  }
+
   if (
     definition.cardType === "MAGIC" &&
     source.zone === "MAGIC_SLOT" &&
@@ -3209,6 +3521,38 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  if (plan.card.cardId === "gen2_046_alkonost" && actionType.includes("return_linked_summon")) {
+    const alkonost = ensureSourceAsPrimary("player_1");
+    const player = getPlayer(match, "player_1");
+    let linked = player.field.limitedSummons.find(card => card.anchorSourceInstanceId === alkonost.instanceId);
+    if (!linked) {
+      const target = player.cemetery.find(card => card.cardId === "gen1_060_harpy") ??
+        ensureCardInHand(match, "player_1", "gen1_060_harpy");
+      const removedTarget = target ? removeCardInstanceFromMatch(match, target.instanceId) : undefined;
+      if (removedTarget) {
+        const targetDefinition = match.cardCatalog[removedTarget.card.cardId];
+        removedTarget.card.zone = "LIMITED_SUMMON";
+        removedTarget.card.controllerPlayerId = "player_1";
+        removedTarget.card.ownerPlayerId = removedTarget.card.ownerPlayerId || "player_1";
+        removedTarget.card.baseHp = targetDefinition?.cardType === "CREATURE" ? targetDefinition.hp : removedTarget.card.baseHp;
+        removedTarget.card.currentHp = targetDefinition?.cardType === "CREATURE" ? targetDefinition.hp : removedTarget.card.currentHp;
+        removedTarget.card.isLimitedSummon = true;
+        removedTarget.card.anchorSourceInstanceId = alkonost.instanceId;
+        player.field.limitedSummons.push(removedTarget.card);
+        linked = removedTarget.card;
+      }
+    }
+
+    const removedLinked = linked ? removeCardInstanceFromMatch(match, linked.instanceId) : undefined;
+    if (removedLinked) {
+      moveCardToHand(match, "player_1", removedLinked.card);
+    }
+    emitHeadlessAction("SOURCE_LINKED_SUMMONS_RETURNED_TO_HAND", {
+      returnedCardId: removedLinked?.card.cardId
+    });
+    return match;
+  }
+
   if (
     actionType.includes("return_linked_summon") &&
     (plan.card.cardId === "gen2_088_skeleton_lord" || plan.card.cardId === "gen2_100_wolf_knight")
@@ -3341,7 +3685,21 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       if (params?.sourceLinked !== false) {
         removed.card.anchorSourceInstanceId = anchor.instanceId;
       }
+      addHeadlessEvent(match, "EFFECT_TARGET_PROMPT_CREATED", playerId, {
+        sourceCardInstanceId: anchor.instanceId,
+        sourceCardName: match.cardCatalog[anchor.cardId]?.name ?? anchor.cardId,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        validTargetCardIds: [removed.card.cardId]
+      });
       player.field.limitedSummons.push(removed.card);
+      addHeadlessEvent(match, "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED", playerId, {
+        sourceCardInstanceId: anchor.instanceId,
+        sourceCardName: match.cardCatalog[anchor.cardId]?.name ?? anchor.cardId,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        summonedCardId: removed.card.cardId
+      });
       emitHeadlessAction("SUMMON_LIMITED_CREATURE_FROM_HAND", { summonedCardId: removed.card.cardId });
     }
     return match;
@@ -3687,13 +4045,28 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
         actionType: effect?.actionType
       }
     });
-    const params = effect?.params as { table?: Array<{ results?: unknown; actions?: unknown }> } | undefined;
+    const params = effect?.params as { table?: Array<{ results?: unknown; actions?: unknown; damage?: unknown }> } | undefined;
     const outcome = params?.table?.find(entry =>
       Array.isArray(entry.results) && entry.results.some(value => Number(value) === roll)
     );
     const actions = Array.isArray(outcome?.actions) ? outcome.actions : [];
     const opponent = getPlayer(match, findOpponentPlayerId(match, source.playerId));
     const player = getPlayer(match, source.playerId);
+    const directDamage = Number(outcome?.damage ?? 0);
+
+    if (directDamage > 0 && opponent.field.primaryCreature) {
+      addHeadlessEvent(match, "EFFECT_TARGET_PROMPT_CREATED", source.playerId, {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        validTargetCardIds: [opponent.field.primaryCreature.cardId]
+      });
+      opponent.field.primaryCreature.currentHp = Math.max(
+        0,
+        Number(opponent.field.primaryCreature.currentHp ?? opponent.field.primaryCreature.baseHp ?? 0) - directDamage
+      );
+    }
 
     for (const item of actions) {
       if (typeof item === "string") continue;
@@ -3717,7 +4090,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       }
     }
 
-    emitHeadlessAction("ROLL_DAMAGE_TABLE", { roll, actions });
+    emitHeadlessAction("ROLL_DAMAGE_TABLE", { roll, actions, damage: directDamage });
     return match;
   }
 
