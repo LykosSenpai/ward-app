@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_072_moon_cat",
+  "effectId": "072-E02",
+  "title": "Moon Cat receives Full Moon stat effects",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_072_moon_cat",
+      "cardName": "Moon Cat",
+      "cardType": "CREATURE",
+      "cardNumber": "072",
+      "generation": "2",
+      "rawText": "This card inflicts 2x Atk damage to any creature with \"Were\" in its name. It also receives the effects of the \"Full Moon\" magic card."
+    },
+    "effect": {
+      "effectId": "072-E02",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "This card",
+      "value": "AL ADD 5; HIT_DICE_ROLLS ADD 1; ATK_DICE_ROLLS ADD 1",
+      "durationText": "While \"Full Moon\" effect applies",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Moon Cat receives Full Moon stat effects",
+    "summary": "Verify Moon Cat receives the Full Moon AL and Atk Dice Roll bonuses from its own printed effect.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_072_moon_cat"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "This fixture covers Moon Cat's printed Full Moon self-buff, not the Were-target damage multiplier."
+      ]
+    },
+    "steps": [
+      "Set Moon Cat as player_1 primary and Test Creature Defender as player_2 primary.",
+      "Read Moon Cat's effective AL and attack dice."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Moon Cat AL increased by 5",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 9
+      },
+      {
+        "label": "Moon Cat attack dice increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 3
+      }
+    ],
+    "manualVerification": [
+      "Confirm whether this self-buff should require the Full Moon field card to be active; current card metadata applies it directly while Moon Cat is on field.",
+      "Hit Dice Roll bonus needs a separate runner route because creature stat-modifier fixtures otherwise trigger duplicate combat."
+    ],
+    "riskNotes": [
+      "This fixture follows the current card source, which hard-codes Full Moon effects onto Moon Cat."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Moon Cat's Full Moon stat self-buff."
+    },
+    "regression": {
+      "fixtureName": "moon-cat-full-moon-stat-suite",
+      "tags": [
+        "creature",
+        "stat-modifier",
+        "al",
+        "attack-dice"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_072_moon_cat:072-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

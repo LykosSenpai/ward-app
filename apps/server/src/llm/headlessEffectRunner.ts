@@ -2274,6 +2274,37 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return next;
   }
 
+  const shouldAcceptStaticCreatureModifier = definition.cardType === "CREATURE" &&
+    (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
+    (
+      trigger.includes("while_on_field") ||
+      trigger.includes("static_while_on_field")
+    ) &&
+    (
+      actionType.includes("apply_stat_modifier") ||
+      actionType.includes("apply_dynamic_stat_modifier") ||
+      actionType.includes("apply_multi_modifier")
+    );
+
+  if (shouldAcceptStaticCreatureModifier) {
+    match.eventLog.push({
+      id: `headless-static-creature-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sequenceNumber: match.eventLog.length + 1,
+      timestamp: new Date().toISOString(),
+      type: "HEADLESS_STATIC_CREATURE_STAT_MODIFIER_AVAILABLE",
+      playerId: source.playerId,
+      payload: {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        zone: source.zone
+      }
+    });
+    steps.push({ label: "accept static creature modifier", ok: true, detail: `${definition.name} ${effect?.id ?? ""}` });
+    return match;
+  }
+
   const shouldRunBattle = definition.cardType === "CREATURE" && (
     trigger.includes("on_hit") ||
     trigger.includes("hit") ||
