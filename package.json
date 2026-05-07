@@ -23,9 +23,15 @@
     "check:exports": "node tools/check-engine-exports.mjs",
     "check:files": "node tools/check-project-files.mjs",
     "check:types": "pnpm --filter @ward/shared check && pnpm --filter @ward/engine check && pnpm --filter @ward/server check && pnpm --filter @ward/client check",
-    "effects:audit": "node tools/card-generation/audit-effect-runtime-coverage.mjs"
+    "effects:audit": "node tools/card-generation/audit-effect-runtime-coverage.mjs",
+    "qa:effects": "pnpm --filter @ward/server exec tsx ../../tools/run-headless-effect-qa.ts",
+    "qa:gen1:deck-sweep": "pnpm --filter @ward/server exec tsx ../../tools/run-gen1-full-deck-engine-sweep.ts",
+    "qa:gen1:setup-users": "pnpm --filter @ward/server exec tsx ../../tools/setup-gen1-qa-users.ts",
+    "qa:gen1:lobby-smoke": "pnpm --filter @ward/client exec tsx ../../tools/run-gen1-lobby-smoke.ts",
+    "qa:gen1:lobby-sweep": "pnpm qa:gen1:lobby-smoke"
   },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "typescript": "^5.0.0"
   }
 }
