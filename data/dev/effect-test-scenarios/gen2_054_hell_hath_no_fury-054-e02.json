@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:35:57.810Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_054_hell_hath_no_fury",
+  "effectId": "054-E02",
+  "title": "Hell Hath No Fury halves opponent primary remaining HP after Lightning",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:35:57.810Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_054_hell_hath_no_fury",
+      "cardName": "Hell Hath No Fury",
+      "cardType": "MAGIC",
+      "cardNumber": "054",
+      "generation": "2",
+      "rawText": "Play this card from your hand when your opponent plays a Lightning card. Take away 1/2 of the remaining HP of their primary creature. This card cannot be negated."
+    },
+    "effect": {
+      "effectId": "054-E02",
+      "trigger": "ON_OPPONENT_PLAYS_LIGHTNING",
+      "actionType": "DEAL_PERCENTAGE_DAMAGE",
+      "effectGroup": "HP Reduction",
+      "target": "Opponent primary creature",
+      "value": "Remove 1/2 remaining HP",
+      "durationText": "Instant",
+      "reusableFunction": "dealPercentageDamage"
+    },
+    "title": "Hell Hath No Fury halves opponent primary remaining HP after Lightning",
+    "summary": "Respond to an opponent Lightning card and verify Hell Hath No Fury removes half of the opponent primary creature remaining HP, rounded up.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_054_hell_hath_no_fury",
+        "test_creature_defender"
+      ],
+      "player2Cards": [
+        "gen1_028_blade_in_the_dark",
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Player_2 plays a Lightning card.",
+        "Player_1 responds from hand with Hell Hath No Fury.",
+        "Opponent primary creature starts at 50 HP; taking away half leaves 25 HP."
+      ]
+    },
+    "steps": [
+      "Player_2 plays a Lightning card.",
+      "Player_1 responds with Hell Hath No Fury.",
+      "Resolve the half-remaining-HP damage against player_2 primary creature."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Percentage damage route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "DEAL_PERCENTAGE_DAMAGE"
+      },
+      {
+        "label": "Opponent primary is reduced to half remaining HP",
+        "path": "player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 25
+      },
+      {
+        "label": "Hell Hath No Fury leaves hand after resolving",
+        "path": "player_1.hand",
+        "operator": "notContains",
+        "value": "gen2_054_hell_hath_no_fury"
+      }
+    ],
+    "manualVerification": [
+      "Half values round up per global rules."
+    ],
+    "riskNotes": [
+      "This fixture depends on opponent-Lightning response routing for a Lightning-vs-Lightning response."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_054_hell_hath_no_fury-054-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_054_hell_hath_no_fury-054-e02",
+      "tags": [
+        "MAGIC",
+        "ON_OPPONENT_PLAYS_LIGHTNING",
+        "DEAL_PERCENTAGE_DAMAGE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_054_hell_hath_no_fury:054-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

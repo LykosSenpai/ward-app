@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:35:57.810Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_039_irresistible_love",
+  "effectId": "039-E02",
+  "title": "Irresistible Love prevents opponent magic plays while active",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:35:57.810Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_039_irresistible_love",
+      "cardName": "Irresistible Love",
+      "cardType": "MAGIC",
+      "cardNumber": "039",
+      "generation": "2",
+      "rawText": "Your opponent cannot inflict damage or play magic cards. During each player's turn, your opponent may roll 1 die. If the result is 1-3, this effect ends and this card is sent to your cemetery."
+    },
+    "effect": {
+      "effectId": "039-E02",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "target": "Opponent",
+      "value": "Cannot play magic cards",
+      "durationText": "Until escape roll succeeds",
+      "reusableFunction": "applyPlayRestriction"
+    },
+    "title": "Irresistible Love prevents opponent magic plays while active",
+    "summary": "Play Irresistible Love as a field card and verify its opponent magic-play restriction is applied.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_039_irresistible_love",
+        "test_creature_defender"
+      ],
+      "player2Cards": [
+        "test_standard_magic_draw_or_buff",
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Irresistible Love field text: your opponent cannot play magic cards while this effect is active."
+      ]
+    },
+    "steps": [
+      "Player_1 plays Irresistible Love.",
+      "Resolve its opponent magic-play restriction.",
+      "Verify the target player is under a Magic play restriction."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Irresistible Love is active on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_039_irresistible_love"
+      },
+      {
+        "label": "Magic play restriction was applied",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MAGIC_PLAY_RESTRICTION_APPLIED"
+      },
+      {
+        "label": "Restriction action type is visible",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_PLAY_RESTRICTION"
+      }
+    ],
+    "manualVerification": [
+      "Player_2 should be unable to play Magic until the 1-3 escape roll ends this card."
+    ],
+    "riskNotes": [
+      "This fixture checks the magic-play branch, not the separate damage-prevention branch."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_039_irresistible_love-039-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_039_irresistible_love-039-e02",
+      "tags": [
+        "MAGIC",
+        "WHILE_FIELD_ACTIVE",
+        "APPLY_PLAY_RESTRICTION"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_039_irresistible_love:039-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

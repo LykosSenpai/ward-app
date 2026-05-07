@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:35:57.810Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_044_summoner",
+  "effectId": "044-E02",
+  "title": "Summoner returns its linked Limited Summon at end of turn",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:35:57.810Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_044_summoner",
+      "cardName": "Summoner",
+      "cardType": "CREATURE",
+      "cardNumber": "044",
+      "generation": "2",
+      "rawText": "During your turn, roll 2 dice. You may summon a creature from your hand with an AL less than or equal to the result of the dice roll as a Limited Summon. Send the summoned creature back to your hand at the end of your turn."
+    },
+    "effect": {
+      "effectId": "044-E02",
+      "trigger": "AT_END_OF_YOUR_TURN",
+      "actionType": "SCHEDULE_RETURN_TO_HAND",
+      "effectGroup": "Zone Movement",
+      "target": "Summoned creature",
+      "value": "Return to your hand",
+      "durationText": "Instant",
+      "reusableFunction": "scheduleReturnToHand"
+    },
+    "title": "Summoner returns its linked Limited Summon at end of turn",
+    "summary": "Start with a Summoner-linked Limited Summon and verify the end-of-turn schedule returns it to hand.",
+    "setup": {
+      "phase": "END",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_044_summoner",
+        "gen2_019_sharkling"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place Summoner on player_1 field as primary.",
+        "Start with Sharkling Limited Summoned by and anchored to Summoner.",
+        "At the end of your turn, send the summoned creature back to your hand."
+      ]
+    },
+    "steps": [
+      "Begin the end-of-turn cleanup for Summoner.",
+      "Resolve the scheduled return to hand.",
+      "Inspect player_1 field creatures and hand."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Schedule-return route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SCHEDULE_RETURN_TO_HAND"
+      },
+      {
+        "label": "Linked Sharkling returned to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "gen2_019_sharkling"
+      },
+      {
+        "label": "Linked Sharkling left the field",
+        "path": "player_1.field.creatures",
+        "operator": "notContains",
+        "value": "gen2_019_sharkling"
+      }
+    ],
+    "manualVerification": [
+      "Only the creature summoned by Summoner should return at end of turn."
+    ],
+    "riskNotes": [
+      "This validates end-turn cleanup, not source invalidation cleanup."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_044_summoner-044-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_044_summoner-044-e02",
+      "tags": [
+        "CREATURE",
+        "AT_END_OF_YOUR_TURN",
+        "SCHEDULE_RETURN_TO_HAND"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_044_summoner:044-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

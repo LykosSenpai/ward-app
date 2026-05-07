@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:35:57.810Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_021_perfect_shark",
+  "effectId": "021-E03",
+  "title": "Perfect Shark linked materials follow source when invalidated",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:35:57.810Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_021_perfect_shark",
+      "cardName": "Perfect Shark",
+      "cardType": "CREATURE",
+      "cardNumber": "021",
+      "generation": "2",
+      "rawText": "Can only be summoned by placing \"Sharkling\" and \"Great White\" on the field under this card. If this card leaves the field, changes control, or is killed, \"Sharkling\" and \"Great White\" follow it."
+    },
+    "effect": {
+      "effectId": "021-E03",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "actionType": "RETURN_LINKED_CARDS",
+      "effectGroup": "Zone Movement",
+      "target": "Attached Sharkling and Great White",
+      "value": "Follow this card",
+      "durationText": "Instant",
+      "reusableFunction": "returnLinkedCards"
+    },
+    "title": "Perfect Shark linked materials follow source when invalidated",
+    "summary": "After Sharkling and Great White are attached under Perfect Shark, invalidate Perfect Shark and verify linked cards move with the source.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_021_perfect_shark",
+        "gen2_019_sharkling",
+        "gen2_020_great_white"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Perfect Shark text: if this card leaves the field, changes control, or is killed, Sharkling and Great White follow it."
+      ]
+    },
+    "steps": [
+      "Summon Perfect Shark with both materials attached under it.",
+      "Invalidate Perfect Shark by moving it from field.",
+      "Verify attached materials follow the source card."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Return-linked-cards route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "RETURN_LINKED_CARDS"
+      },
+      {
+        "label": "Moved source retains both linked materials",
+        "path": "movedSource.attachedUnder.count",
+        "operator": "equals",
+        "value": 2
+      }
+    ],
+    "manualVerification": [
+      "Exact destination should follow the source movement event: field leave, control change, or killed."
+    ],
+    "riskNotes": [
+      "This is separate from the summon attachment branch and requires RETURN_LINKED_CARDS routing."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_021_perfect_shark-021-e03 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_021_perfect_shark-021-e03",
+      "tags": [
+        "CREATURE",
+        "ON_SOURCE_INVALIDATED",
+        "RETURN_LINKED_CARDS"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_021_perfect_shark:021-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:35:57.810Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_044_summoner",
+  "effectId": "044-E01",
+  "title": "Summoner limited summons a hand creature within the 2d6 AL result",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:35:57.810Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_044_summoner",
+      "cardName": "Summoner",
+      "cardType": "CREATURE",
+      "cardNumber": "044",
+      "generation": "2",
+      "rawText": "During your turn, roll 2 dice. You may summon a creature from your hand with an AL less than or equal to the result of the dice roll as a Limited Summon. Send the summoned creature back to your hand at the end of your turn."
+    },
+    "effect": {
+      "effectId": "044-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "SUMMON_LIMITED_CREATURE_FROM_HAND",
+      "effectGroup": "Limited Summon",
+      "target": "Creature from your hand",
+      "value": "Limited Summon creature with AL <= 2D6 result",
+      "durationText": "Until end of your turn",
+      "reusableFunction": "summonLimitedFromHand"
+    },
+    "title": "Summoner limited summons a hand creature within the 2d6 AL result",
+    "summary": "Activate Summoner, force a 2d6 total of 6, and verify a hand creature with AL 5 enters as a Limited Summon.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_044_summoner",
+        "gen2_019_sharkling"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            3,
+            3
+          ],
+          "label": "Summoner AL gate succeeds with total 6"
+        }
+      ],
+      "notes": [
+        "Place Summoner on player_1 field as primary.",
+        "Keep Sharkling in player_1 hand as the AL 1 Limited Summon target.",
+        "Roll 2 dice; summoned creature AL must be less than or equal to the total."
+      ]
+    },
+    "steps": [
+      "Activate Summoner during player_1 turn.",
+      "Resolve the forced 2d6 roll as 6.",
+      "Choose the AL 5 hand creature as the Limited Summon target."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hand creature was Limited Summoned",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED"
+      },
+      {
+        "label": "Summon target prompt was created",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EFFECT_TARGET_PROMPT_CREATED"
+      },
+      {
+        "label": "Limited Summon resolution used Summoner action",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SUMMON_LIMITED_CREATURE_FROM_HAND"
+      }
+    ],
+    "manualVerification": [
+      "A creature with AL above the roll total should not be a valid target; this fixture confirms the successful AL-gated Limited Summon route."
+    ],
+    "riskNotes": [
+      "This fixture proves the successful AL-gated Limited Summon branch."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_044_summoner-044-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_044_summoner-044-e01",
+      "tags": [
+        "CREATURE",
+        "DURING_YOUR_TURN_ACTIVATED",
+        "SUMMON_LIMITED_CREATURE_FROM_HAND"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_044_summoner:044-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

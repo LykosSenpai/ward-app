@@ -2256,7 +2256,9 @@ function statusForStaticEquipEffect(
   const text = normalizeText(effectText(effect));
   const isFrozen = text.includes("frozen") || text.includes("freeze") || text.includes("cannot inflict");
   const isFlight = text.includes("flying") || text.includes("flight") || text.includes("take flight");
-  if (!isFrozen && !isFlight) return undefined;
+  const isDamageImmunity = normalizeText(effect?.actionType).includes("apply_damage_immunity") ||
+    text.includes("cannot be damaged");
+  if (!isFrozen && !isFlight && !isDamageImmunity) return undefined;
 
   return {
     id: `headless-status-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -2264,9 +2266,13 @@ function statusForStaticEquipEffect(
     sourceCardInstanceId: source.card.instanceId,
     sourceCardName: definition.name,
     sourcePlayerId: source.playerId,
-    status: isFrozen ? "FROZEN" : "FLYING",
+    status: isDamageImmunity ? "DAMAGE_IMMUNITY" : isFrozen ? "FROZEN" : "FLYING",
     label: effect?.value ?? effect?.params?.valueText ?? effect?.actionText ?? "Status",
-    flags: isFrozen
+    flags: isDamageImmunity
+      ? {
+        canReceiveDamage: false
+      }
+      : isFrozen
       ? {
         canInflictAtkDamage: false,
         canBeSacrificed: text.includes("sacrific")
@@ -2676,6 +2682,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("apply_stat_set_aura") ||
       actionType.includes("apply_temporary_stat_set") ||
       actionType.includes("apply_status") ||
+      actionType.includes("apply_damage_immunity") ||
       actionType.includes("suppress_modifier_layer") ||
       actionType.includes("apply_magic_immunity") ||
       actionType.includes("apply_negation_window_restriction") ||
@@ -2736,7 +2743,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           appliedTurnNumber: match.turn.turnNumber,
           appliedTurnCycle: match.turn.turnCycleNumber
         });
-      } else if (actionType.includes("apply_status") && attachedTarget?.card) {
+      } else if ((actionType.includes("apply_status") || actionType.includes("apply_damage_immunity")) && attachedTarget?.card) {
         const status = statusForStaticEquipEffect(match, source, definition, effect);
         if (status) {
           attachedTarget.card.activeStatuses ??= [];
@@ -2758,7 +2765,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
               ? "HEADLESS_STATIC_NEGATION_WINDOW_RESTRICTION_AVAILABLE"
           : actionType.includes("global_creature_effect_negation")
             ? "HEADLESS_STATIC_CREATURE_EFFECT_NEGATION_AVAILABLE"
-            : actionType.includes("apply_status")
+            : actionType.includes("apply_status") || actionType.includes("apply_damage_immunity")
               ? "HEADLESS_STATIC_STATUS_AVAILABLE"
               : "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE",
         playerId: source.playerId,

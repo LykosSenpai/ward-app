@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:35:57.810Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_046_alkonost",
+  "effectId": "046-E03",
+  "title": "Alkonost returns linked Limited Summons when source invalidates",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:35:57.810Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_046_alkonost",
+      "cardName": "Alkonost",
+      "cardType": "CREATURE",
+      "cardNumber": "046",
+      "generation": "2",
+      "rawText": "During your turn, you may summon a 'Harpy' or 'Alkonost' from your deck or hand as a Limited Summon. For each, add +1 Atk Dice and +1 Modifier to this card. Return Limited Summons to your hand if this creature leaves the field or this effect is negated."
+    },
+    "effect": {
+      "effectId": "046-E03",
+      "trigger": "ON_SOURCE_INVALIDATED",
+      "actionType": "RETURN_LINKED_SUMMON",
+      "effectGroup": "Zone Movement",
+      "target": "Linked Limited Summon(s)",
+      "value": "Return to your hand",
+      "durationText": "Instant",
+      "reusableFunction": "returnLinkedSummon"
+    },
+    "title": "Alkonost returns linked Limited Summons when source invalidates",
+    "summary": "Start with an Alkonost-linked Limited Summon and verify it returns to hand when Alkonost leaves or the effect is negated.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_046_alkonost",
+        "gen1_060_harpy"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place Alkonost on player_1 field as primary.",
+        "Put Harpy in player_1 cemetery before the source invalidation route seeds the anchored Limited Summon.",
+        "Return Limited Summons to your hand if this creature leaves the field or this effect is negated."
+      ]
+    },
+    "steps": [
+      "Invalidate Alkonost source/effect.",
+      "Return linked Limited Summon(s) to hand.",
+      "Inspect player_1 field creatures and hand."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Linked summon returned to hand",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SOURCE_LINKED_SUMMONS_RETURNED_TO_HAND"
+      },
+      {
+        "label": "Linked Harpy left the field",
+        "path": "player_1.field.creatures",
+        "operator": "notContains",
+        "value": "gen1_060_harpy"
+      },
+      {
+        "label": "Linked Harpy returned to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "gen1_060_harpy"
+      }
+    ],
+    "manualVerification": [
+      "Cleanup should also run if the Alkonost effect is negated without the source leaving field."
+    ],
+    "riskNotes": [
+      "This validates source-linked Limited Summon cleanup to hand."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_046_alkonost-046-e03 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_046_alkonost-046-e03",
+      "tags": [
+        "CREATURE",
+        "ON_SOURCE_INVALIDATED",
+        "RETURN_LINKED_SUMMON"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_046_alkonost:046-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

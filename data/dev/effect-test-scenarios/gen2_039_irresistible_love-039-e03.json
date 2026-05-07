@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:35:57.810Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_039_irresistible_love",
+  "effectId": "039-E03",
+  "title": "Irresistible Love escape roll ends effect and sends card to cemetery",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:35:57.810Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_039_irresistible_love",
+      "cardName": "Irresistible Love",
+      "cardType": "MAGIC",
+      "cardNumber": "039",
+      "generation": "2",
+      "rawText": "Your opponent cannot inflict damage or play magic cards. During each player's turn, your opponent may roll 1 die. If the result is 1-3, this effect ends and this card is sent to your cemetery."
+    },
+    "effect": {
+      "effectId": "039-E03",
+      "trigger": "DURING_EACH_PLAYER_TURN",
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status Escape Roll",
+      "target": "Opponent",
+      "value": "On 1-3 effect ends and this card goes to your cemetery",
+      "durationText": "Instant",
+      "reusableFunction": "applyStatusWithEscapeRoll"
+    },
+    "title": "Irresistible Love escape roll ends effect and sends card to cemetery",
+    "summary": "With Irresistible Love active, force the opponent escape roll to 1 and verify the effect ends and the field card goes to its controller cemetery.",
+    "setup": {
+      "phase": "DRAW",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_039_irresistible_love",
+        "test_creature_defender"
+      ],
+      "player2Cards": [
+        "test_primary_creature"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Irresistible Love escape succeeds"
+        }
+      ],
+      "notes": [
+        "Pre-place Irresistible Love as active field magic for player_1.",
+        "During each player turn, opponent may roll 1 die; 1-3 ends this effect and sends this card to your cemetery."
+      ]
+    },
+    "steps": [
+      "Start with Irresistible Love active.",
+      "Resolve the forced escape roll as 1.",
+      "Verify the field effect ends and Irresistible Love is sent to player_1 cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Escape-roll route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_STATUS_WITH_ESCAPE_ROLL"
+      },
+      {
+        "label": "Irresistible Love leaves the field after successful escape roll",
+        "path": "player_1.magicSlots",
+        "operator": "notContains",
+        "value": "gen2_039_irresistible_love"
+      },
+      {
+        "label": "Irresistible Love is sent to its controller cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen2_039_irresistible_love"
+      }
+    ],
+    "manualVerification": [
+      "A failed 4-6 roll should leave both restrictions active."
+    ],
+    "riskNotes": [
+      "This fixture requires field-card escape cleanup, not just status application."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_039_irresistible_love-039-e03 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_039_irresistible_love-039-e03",
+      "tags": [
+        "MAGIC",
+        "DURING_EACH_PLAYER_TURN",
+        "APPLY_STATUS_WITH_ESCAPE_ROLL"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_039_irresistible_love:039-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

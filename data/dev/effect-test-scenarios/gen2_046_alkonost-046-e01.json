@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:35:57.810Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_046_alkonost",
+  "effectId": "046-E01",
+  "title": "Alkonost limited summons a matching Alkonost from hand or deck",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:35:57.810Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_046_alkonost",
+      "cardName": "Alkonost",
+      "cardType": "CREATURE",
+      "cardNumber": "046",
+      "generation": "2",
+      "rawText": "During your turn, you may summon a 'Harpy' or 'Alkonost' from your deck or hand as a Limited Summon. For each, add +1 Atk Dice and +1 Modifier to this card. Return Limited Summons to your hand if this creature leaves the field or this effect is negated."
+    },
+    "effect": {
+      "effectId": "046-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "SUMMON_LIMITED_CREATURE",
+      "effectGroup": "Limited Summon",
+      "target": "Harpy or Alkonost from deck or hand",
+      "value": "Limited Summon matching creature(s)",
+      "durationText": "While source effect remains active",
+      "reusableFunction": "summonLimitedFromZone"
+    },
+    "title": "Alkonost limited summons a matching Alkonost from hand or deck",
+    "summary": "Activate Alkonost and verify it can summon a matching Alkonost as a source-linked Limited Summon.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_046_alkonost",
+        "gen1_060_harpy"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place Alkonost on player_1 field as primary.",
+        "Keep Harpy available in player_1 hand or deck as the matching Limited Summon target."
+      ]
+    },
+    "steps": [
+      "Activate Alkonost during player_1 turn.",
+      "Choose a Harpy or Alkonost from deck or hand.",
+      "Verify the matching card enters as a Limited Summon."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Matching Harpy was Limited Summoned",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED"
+      },
+      {
+        "label": "Summon target prompt was created",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EFFECT_TARGET_PROMPT_CREATED"
+      },
+      {
+        "label": "Harpy appears on player_1 field",
+        "path": "player_1.field.creatures",
+        "operator": "contains",
+        "value": "gen1_060_harpy"
+      }
+    ],
+    "manualVerification": [
+      "The target set should be limited to Harpy or Alkonost from hand/deck."
+    ],
+    "riskNotes": [
+      "The Gen 2 data set currently has Alkonost but no separate Harpy source card, so this fixture uses a second Alkonost copy."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_046_alkonost-046-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_046_alkonost-046-e01",
+      "tags": [
+        "CREATURE",
+        "DURING_YOUR_TURN_ACTIVATED",
+        "SUMMON_LIMITED_CREATURE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_046_alkonost:046-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

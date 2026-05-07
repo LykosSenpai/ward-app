@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T14:35:57.810Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_054_hell_hath_no_fury",
+  "effectId": "054-E01",
+  "title": "Hell Hath No Fury cannot be negated when played",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T14:35:57.810Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_054_hell_hath_no_fury",
+      "cardName": "Hell Hath No Fury",
+      "cardType": "MAGIC",
+      "cardNumber": "054",
+      "generation": "2",
+      "rawText": "Play this card from your hand when your opponent plays a Lightning card. Take away 1/2 of the remaining HP of their primary creature. This card cannot be negated."
+    },
+    "effect": {
+      "effectId": "054-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SET_CAN_BE_NEGATED",
+      "effectGroup": "Negation Rule",
+      "target": "This card",
+      "value": "Cannot be negated",
+      "durationText": "While resolving",
+      "reusableFunction": "setCanBeNegated"
+    },
+    "title": "Hell Hath No Fury cannot be negated when played",
+    "summary": "Respond to an opponent Lightning card with Hell Hath No Fury and verify its cannot-be-negated flag suppresses negation.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_054_hell_hath_no_fury",
+        "test_creature_defender"
+      ],
+      "player2Cards": [
+        "gen1_028_blade_in_the_dark",
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Player_2 plays a Lightning card.",
+        "Player_1 responds from hand with Hell Hath No Fury, which cannot be negated."
+      ]
+    },
+    "steps": [
+      "Player_2 plays a Lightning card.",
+      "Player_1 plays Hell Hath No Fury from hand in response.",
+      "Verify Hell Hath No Fury cannot be negated while resolving."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Cannot-be-negated route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SET_CAN_BE_NEGATED"
+      },
+      {
+        "label": "Hell Hath No Fury was not negated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "magic_negated"
+      },
+      {
+        "label": "No negation response was added against Hell Hath No Fury",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "LIGHTNING_RESPONSE_ADDED"
+      }
+    ],
+    "manualVerification": [
+      "The card still has to be played only in response to an opponent Lightning card."
+    ],
+    "riskNotes": [
+      "This fixture checks the negation rule, while 054-E02 checks the HP reduction."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_054_hell_hath_no_fury-054-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_054_hell_hath_no_fury-054-e01",
+      "tags": [
+        "MAGIC",
+        "ON_PLAY",
+        "SET_CAN_BE_NEGATED"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_054_hell_hath_no_fury:054-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
