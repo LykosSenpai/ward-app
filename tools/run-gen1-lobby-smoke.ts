@@ -32,9 +32,18 @@ type CardInstance = {
 type CardDefinition = {
   id: string;
   name: string;
+  creatureType?: string;
   text?: string;
   cardType: "CREATURE" | "MAGIC";
   armorLevel?: number;
+  effects?: Array<{
+    actionText?: string;
+    value?: string;
+    notes?: string;
+    params?: {
+      valueText?: string;
+    };
+  }>;
 };
 
 type PlayerState = {
@@ -81,6 +90,7 @@ type LobbyPlayer = {
 type LobbyState = {
   id: string;
   name: string;
+  matchId?: string;
   players: LobbyPlayer[];
 };
 
@@ -222,12 +232,83 @@ function getCardName(match: MatchState, card?: CardInstance): string {
   return match.cardCatalog[card.cardId]?.name ?? card.cardId;
 }
 
-function getPlayableHandCreature(match: MatchState, playerId: string): CardInstance | undefined {
+function getRequiredSacrifices(definition: CardDefinition): number {
+  if (definition.cardType !== "CREATURE") {
+    return 0;
+  }
+
+  const text = [
+    definition.text,
+    ...(definition.effects ?? []).flatMap(effect => [
+      effect.actionText,
+      effect.value,
+      effect.params?.valueText,
+      effect.notes
+    ])
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  const numeric = text.match(/requires?\s+(\d+)\s+sacrifices?/);
+  if (numeric) return Number(numeric[1]);
+
+  if ((definition.armorLevel ?? 0) >= 1 && (definition.armorLevel ?? 0) <= 6) return 0;
+  if ((definition.armorLevel ?? 0) >= 7 && (definition.armorLevel ?? 0) <= 11) return 1;
+  if (definition.armorLevel === 12) return 2;
+
+  return 0;
+}
+
+function requiresDragonSacrifices(definition: CardDefinition): boolean {
+  const text = [
+    definition.text,
+    ...(definition.effects ?? []).flatMap(effect => [
+      effect.actionText,
+      effect.value,
+      effect.params?.valueText,
+      effect.notes
+    ])
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return text.includes("dragon-named") || text.includes("dragon-type") || text.includes("dragon named");
+}
+
+function isDragonQualifiedSacrifice(match: MatchState, card: CardInstance): boolean {
+  const definition = match.cardCatalog[card.cardId];
+  if (!definition) return false;
+  return `${definition.name} ${definition.creatureType ?? ""}`.toLowerCase().includes("dragon");
+}
+
+function getSummonPlan(
+  match: MatchState,
+  playerId: string
+): { creature: CardInstance; sacrificeCardInstanceIds: string[] } | undefined {
   const player = getPlayer(match, playerId);
-  return player.hand.find(card => {
+  const creatures = player.hand.filter(card => {
     const definition = match.cardCatalog[card.cardId];
-    return definition?.cardType === "CREATURE" && Number(definition.armorLevel ?? 99) <= 6;
+    return definition?.cardType === "CREATURE";
   });
+
+  for (const creature of creatures) {
+    const definition = match.cardCatalog[creature.cardId];
+    if (!definition) continue;
+
+    const requiredSacrifices = getRequiredSacrifices(definition);
+    const possibleSacrifices = creatures.filter(candidate => {
+      if (candidate.instanceId === creature.instanceId) return false;
+      if (!requiresDragonSacrifices(definition)) return true;
+      return isDragonQualifiedSacrifice(match, candidate);
+    });
+
+    if (possibleSacrifices.length >= requiredSacrifices) {
+      return {
+        creature,
+        sacrificeCardInstanceIds: possibleSacrifices
+          .slice(0, requiredSacrifices)
+          .map(card => card.instanceId)
+      };
+    }
+  }
+
+  return undefined;
 }
 
 function collectDeckCardIds(client: SmokeClient, deckId: string): string[] {
@@ -278,7 +359,13 @@ async function drawAndEnsureCreature(
     `${playerId} opening draw`
   );
 
-  for (let attempt = 0; attempt < 3 && !getPlayableHandCreature(nextMatch, playerId); attempt += 1) {
+  for (let attempt = 0; attempt < 3 && !getSummonPlan(nextMatch, playerId); attempt += 1) {
+    const player = getPlayer(nextMatch, playerId);
+    const hasCreature = player.hand.some(card => nextMatch.cardCatalog[card.cardId]?.cardType === "CREATURE");
+    if (hasCreature) {
+      break;
+    }
+
     activeClient.socket.emit("match:requestNoCreatureRedrawReveal", {
       matchId: nextMatch.matchId,
       playerId
@@ -297,8 +384,8 @@ async function drawAndEnsureCreature(
     throwClientErrors(activeClient, approvingClient);
   }
 
-  if (!getPlayableHandCreature(nextMatch, playerId)) {
-    throw new Error(`${playerId} has no playable creature after redraw handling.`);
+  if (!getSummonPlan(nextMatch, playerId)) {
+    throw new Error(`${playerId} has no summonable creature after redraw handling.`);
   }
 
   return nextMatch;
@@ -329,9 +416,9 @@ async function playPrimaryWithUndoCheck(
   match: MatchState,
   playerId: "player_1" | "player_2"
 ): Promise<{ match: MatchState; undoChecks: number }> {
-  const firstCreature = getPlayableHandCreature(match, playerId);
-  if (!firstCreature) {
-    throw new Error(`${playerId} has no playable creature.`);
+  const firstPlan = getSummonPlan(match, playerId);
+  if (!firstPlan) {
+    throw new Error(`${playerId} has no summonable creature.`);
   }
 
   let nextMatch = await emitAndWait(
@@ -340,7 +427,8 @@ async function playPrimaryWithUndoCheck(
     {
       matchId: match.matchId,
       playerId,
-      cardInstanceId: firstCreature.instanceId
+      cardInstanceId: firstPlan.creature.instanceId,
+      sacrificeCardInstanceIds: firstPlan.sacrificeCardInstanceIds
     },
     () => getPlayer(client.state.match!, playerId).field.primaryCreature && client.state.match,
     `${playerId} primary summon`
@@ -353,9 +441,9 @@ async function playPrimaryWithUndoCheck(
     `${playerId} undo primary summon`
   );
 
-  const replayCreature = getPlayableHandCreature(nextMatch, playerId);
-  if (!replayCreature) {
-    throw new Error(`${playerId} has no playable creature after undo.`);
+  const replayPlan = getSummonPlan(nextMatch, playerId);
+  if (!replayPlan) {
+    throw new Error(`${playerId} has no summonable creature after undo.`);
   }
 
   nextMatch = await emitAndWait(
@@ -364,7 +452,8 @@ async function playPrimaryWithUndoCheck(
     {
       matchId: nextMatch.matchId,
       playerId,
-      cardInstanceId: replayCreature.instanceId
+      cardInstanceId: replayPlan.creature.instanceId,
+      sacrificeCardInstanceIds: replayPlan.sacrificeCardInstanceIds
     },
     () => getPlayer(client.state.match!, playerId).field.primaryCreature && client.state.match,
     `${playerId} replay primary summon`
@@ -540,8 +629,10 @@ async function runDeckPairGame(
   alpha.socket.emit("lobby:startMatch", lobby.id);
   let match = await waitFor(
     `match started ${lobbyName}`,
-    () => alpha.state.match?.matchId &&
-      bravo.state.match?.matchId === alpha.state.match.matchId &&
+    () => alpha.state.lobby?.id === lobby.id &&
+      alpha.state.lobby.matchId &&
+      alpha.state.match?.matchId === alpha.state.lobby.matchId &&
+      bravo.state.match?.matchId === alpha.state.lobby.matchId &&
       alpha.state.match
   );
   throwClientErrors(alpha, bravo);

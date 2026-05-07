@@ -65,8 +65,8 @@ function buildGen1QaDecks(catalog: Record<string, CardDefinition>): Gen1QaDeck[]
     const cardIds = [
       ...takeCyclic(al12, deckIndex * 2, 2),
       ...takeCyclic(al7To11, deckIndex * 3, 3),
-      ...takeCyclic(al1To6, deckIndex * 7, 7),
-      ...takeCyclic(magic, deckIndex * 18, 18)
+      ...takeCyclic(al1To6, deckIndex * 15, 15),
+      ...takeCyclic(magic, deckIndex * 10, 10)
     ].map(card => card.id);
 
     return {
@@ -126,9 +126,9 @@ for (const deck of decks) {
   }
 
   const bands = getArmorLevelBandCounts(deck.cardIds, catalog);
-  if (bands.al12 !== 2 || bands.al7To11 !== 3 || bands.al1To6 !== 7) {
+  if (bands.al12 !== 2 || bands.al7To11 !== 3 || bands.al1To6 !== 15) {
     throw new Error(
-      `${deck.name} must contain 2 AL12, 3 AL7-11, and 7 AL1-6 creatures. ` +
+      `${deck.name} must contain 2 AL12, 3 AL7-11, and 15 AL1-6 creatures. ` +
       `Actual: ${JSON.stringify(bands)}`
     );
   }
