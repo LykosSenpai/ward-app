@@ -2439,6 +2439,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     ) &&
     (
       actionType.includes("apply_immunity") ||
+      actionType.includes("apply_damage_type_immunity") ||
       actionType.includes("apply_magic_immunity") ||
       actionType.includes("unaffected_by_magic")
     );
