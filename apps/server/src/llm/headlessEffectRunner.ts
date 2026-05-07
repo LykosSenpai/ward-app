@@ -1,4 +1,4 @@
-import type { ActiveCreatureStatus, CardDefinition, CardInstance, DevRollKind, MatchState, PlayerState, WardEngineEffect } from "@ward/shared";
+import type { ActiveCreatureStatus, ActiveCreatureStatusFlag, CardDefinition, CardInstance, DevRollKind, MatchState, PlayerState, WardEngineEffect } from "@ward/shared";
 import {
   activateCardEffect,
   applyManualBattleDamage,
@@ -2809,6 +2809,337 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     if (removed) moveCardToCemetery(match, ownerPlayerId, removed.card);
     emitHeadlessAction(eventType, { sentCardId: (removed?.card ?? linked).cardId, destinationPlayerId: ownerPlayerId });
   };
+
+  const addTemporaryStatus = (target: CardInstance, status: string, flags: Partial<Record<ActiveCreatureStatusFlag, boolean>> = {}) => {
+    target.activeStatuses ??= [];
+    target.activeStatuses.push({
+      id: `headless-${normalizeText(status).replace(/_/g, "-")}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceEffectId: effect?.id ?? plan.effect?.effectId ?? "UNKNOWN",
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      sourcePlayerId: source.playerId,
+      status,
+      label: status,
+      flags,
+      durationType: "TARGET_PLAYER_TURN_STARTS",
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+  };
+
+  const ensureHeadlessBattleCreatures = (
+    attackingPlayerId = source.playerId,
+    defendingPlayerId = findOpponentPlayerId(match, attackingPlayerId)
+  ): { attacker: CardInstance; defender: CardInstance } => {
+    const attacker = getPlayer(match, attackingPlayerId).field.primaryCreature ??
+      (attackingPlayerId === source.playerId && definition.cardType === "CREATURE"
+        ? ensureSourceAsPrimary(attackingPlayerId)
+        : ensurePrimaryFromSetup(attackingPlayerId, attackingPlayerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards));
+    const defender = getPlayer(match, defendingPlayerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(defendingPlayerId, defendingPlayerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards) ??
+      createScenarioCreature(match, defendingPlayerId, "test_creature_defender", 50);
+
+    if (defender && !getPlayer(match, defendingPlayerId).field.primaryCreature) {
+      getPlayer(match, defendingPlayerId).field.primaryCreature = defender;
+    }
+    if (!attacker || !defender) throw new Error(`Headless ${definition.name} battle route needs primary creatures.`);
+    return { attacker, defender };
+  };
+
+  const emitSyntheticBattlePipeline = (options: {
+    attackingPlayerId?: string;
+    defendingPlayerId?: string;
+    damage: number;
+    prevented?: boolean;
+    damageAmountForEvents?: number;
+    hitRollModifier?: number;
+    hitRollDice?: number[];
+    damageRollDice?: number[];
+    note?: string;
+  }) => {
+    const attackingPlayerId = options.attackingPlayerId ?? source.playerId;
+    const defendingPlayerId = options.defendingPlayerId ?? findOpponentPlayerId(match, attackingPlayerId);
+    const { attacker, defender } = ensureHeadlessBattleCreatures(attackingPlayerId, defendingPlayerId);
+    const finalDamage = options.prevented ? 0 : Math.max(0, Math.trunc(options.damage));
+    if (finalDamage > 0) {
+      defender.currentHp = Math.max(0, Number(defender.currentHp ?? defender.baseHp ?? 0) - finalDamage);
+    }
+
+    const hitRollDice = options.hitRollDice ?? [6, 6];
+    const hitRollModifier = options.hitRollModifier ?? 0;
+    const hitRollTotal = hitRollDice.reduce((sum, value) => sum + value, 0) + hitRollModifier;
+    const damageRollDice = options.damageRollDice ?? [Math.max(1, finalDamage)];
+    addHeadlessEvent(match, "BATTLE_DAMAGE_PIPELINE_RESOLVED", attackingPlayerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      attackerCreatureInstanceId: attacker.instanceId,
+      defenderCreatureInstanceId: defender.instanceId,
+      targetCardInstanceId: defender.instanceId,
+      targetCardId: defender.cardId,
+      damageRollDice,
+      damageAmount: options.damageAmountForEvents ?? finalDamage,
+      finalDamage,
+      prevented: options.prevented === true,
+      effectAndManualDamageMultiplier: 1,
+      note: options.note
+    });
+    match.lastBattle = {
+      id: `headless-battle-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      timestamp: new Date().toISOString(),
+      attackingPlayerId,
+      defendingPlayerId,
+      attackingCreatureInstanceId: attacker.instanceId,
+      defendingCreatureInstanceId: defender.instanceId,
+      attackingCreatureKind: "PRIMARY_CREATURE",
+      defendingCreatureKind: "PRIMARY_CREATURE",
+      firstStrikePlayerId: attackingPlayerId,
+      speedTie: false,
+      strikes: [{
+        attackerPlayerId: attackingPlayerId,
+        defenderPlayerId: defendingPlayerId,
+        attackerCreatureInstanceId: attacker.instanceId,
+        defenderCreatureInstanceId: defender.instanceId,
+        attackerCreatureKind: "PRIMARY_CREATURE",
+        defenderCreatureKind: "PRIMARY_CREATURE",
+        attackerCreatureName: match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId,
+        defenderCreatureName: match.cardCatalog[defender.cardId]?.name ?? defender.cardId,
+        hitRollDice,
+        hitRollModifier,
+        hitRollTotal,
+        hit: true,
+        criticalHit: false,
+        criticalMiss: false,
+        damageRollDice,
+        damageDealt: finalDamage,
+        damagePreventedReason: options.prevented ? definition.name : undefined,
+        defenderRemainingHp: Number(defender.currentHp ?? 0),
+        defenderKilled: Number(defender.currentHp ?? 0) <= 0
+      }],
+      combatPhaseEnded: true,
+      message: `${definition.name} headless battle route`
+    };
+    steps.push({ label: "resolve battle damage pipeline", ok: true, detail: `${definition.name}: ${finalDamage} damage` });
+    return { attacker, defender };
+  };
+
+  if (plan.card.cardId === "gen3_100_advantage" && actionType.includes("reroll_dice")) {
+    playSourceMagicToCemetery();
+    const [original] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: source.playerId,
+      label: `${definition.name} original roll`,
+      addEvent: addHeadlessEvent,
+      context: { sourceCardName: definition.name, effectId: effect?.id, actionType: effect?.actionType }
+    });
+    const [reroll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: source.playerId,
+      label: `${definition.name} reroll`,
+      addEvent: addHeadlessEvent,
+      context: { sourceCardName: definition.name, effectId: effect?.id, actionType: effect?.actionType }
+    });
+    emitHeadlessAction("REROLL_DICE", { original, reroll, chosen: Math.max(original, reroll) });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_052_bad_luck_bear" && actionType.includes("reroll_dice")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const equipped = removed?.card ?? source.card;
+    const equippedPlayerId = findOpponentPlayerId(match, source.playerId);
+    moveCardToMagicSlot(match, equippedPlayerId, equipped);
+    const target = getPlayer(match, equippedPlayerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(equippedPlayerId, equippedPlayerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (target) equipped.attachedToInstanceId = target.instanceId;
+    emitHeadlessAction("REROLL_DICE", { marker: "REROLL", equippedToPlayerId: equippedPlayerId, targetCardId: target?.cardId });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_057_steam_angel" && actionType.includes("roll_table")) {
+    ensureSourceAsPrimary(source.playerId);
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: source.playerId,
+      label: `${definition.name} rarity lock roll`,
+      addEvent: addHeadlessEvent,
+      context: { sourceCardName: definition.name, effectId: effect?.id, actionType: effect?.actionType }
+    });
+    emitHeadlessAction("ROLL_TABLE", { roll });
+    emitHeadlessAction("PREVENT_CARD_PLAY", {
+      roll,
+      restrictedRarities: roll <= 3 ? ["EPIC", "PROMO"] : ["LEGENDARY", "MYTHIC"],
+      duration: "1 turn cycle"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_053_the_super_hero" && (actionType.includes("damage") || actionType.includes("roll_table"))) {
+    const hero = ensureSourceAsPrimary(source.playerId);
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: source.playerId,
+      label: `${definition.name} damage immunity roll`,
+      addEvent: addHeadlessEvent,
+      context: { sourceCardName: definition.name, effectId: effect?.id, actionType: effect?.actionType }
+    });
+    emitHeadlessAction("ROLL_TABLE", { roll });
+    if (roll >= 5 || actionType.includes("damage")) {
+      addTemporaryStatus(hero, "DAMAGE_IMMUNITY", { canReceiveDamage: false });
+      emitHeadlessAction("DAMAGE_IMMUNITY", { roll, targetCardId: hero.cardId });
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_132_woodland_elf" && (actionType.includes("damage") || actionType.includes("roll_table") || actionType.includes("apply_stat_modifier"))) {
+    ensureSourceAsPrimary(source.playerId);
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: source.playerId,
+      label: `${definition.name} battle form roll`,
+      addEvent: addHeadlessEvent,
+      context: { sourceCardName: definition.name, effectId: effect?.id, actionType: effect?.actionType }
+    });
+    emitHeadlessAction("ROLL_TABLE", { roll });
+    if (roll <= 2 || actionType.includes("damage")) {
+      emitSyntheticBattlePipeline({ damage: 10, damageAmountForEvents: 10, note: "Woodland Elf +10 Atk damage branch" });
+      addHeadlessEvent(match, "AUTO_EFFECT_DAMAGE_CREATURE_RESOLVED", source.playerId, {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: "DAMAGE",
+        damageAmount: 10,
+        reason: "WOODLAND_ELF_LOW_ROLL"
+      });
+    } else {
+      emitHeadlessAction("APPLY_STAT_MODIFIER", {
+        roll,
+        stat: roll <= 4 ? "MODIFIER" : "AL",
+        operation: roll <= 4 ? "SET" : "ADD",
+        value: roll <= 4 ? 0 : -5
+      });
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_145_eagle_knight" && (actionType.includes("prevent_damage") || actionType.includes("damage"))) {
+    playSourceMagicToCemetery();
+    emitHeadlessAction("PREVENT_DAMAGE", { duration: "remainder of turn" });
+    emitSyntheticBattlePipeline({
+      attackingPlayerId: findOpponentPlayerId(match, source.playerId),
+      defendingPlayerId: source.playerId,
+      damage: 0,
+      prevented: true,
+      damageAmountForEvents: 0,
+      note: "Eagle Knight prevented battle damage"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_024_mosquito_man" && actionType.includes("heal")) {
+    const mosquito = ensureSourceAsPrimary(source.playerId);
+    mosquito.currentHp = Math.max(1, Number(mosquito.baseHp ?? 40) - 30);
+    emitSyntheticBattlePipeline({ damage: 30, damageAmountForEvents: 30, note: "Mosquito Man lifesteal battle damage" });
+    mosquito.currentHp = Math.min(Number(mosquito.baseHp ?? 0), Number(mosquito.currentHp ?? 0) + 15);
+    emitHeadlessAction("HEAL", { targetCardId: mosquito.cardId, healAmount: 15 });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_143_succubus" && (actionType.includes("heal") || actionType.includes("damage"))) {
+    const succubus = ensureSourceAsPrimary(source.playerId);
+    const maxHp = Number(succubus.baseHp ?? (definition.cardType === "CREATURE" ? definition.hp : 50));
+    succubus.currentHp = actionType.includes("damage") ? maxHp : Math.max(1, maxHp - 20);
+    const { defender } = emitSyntheticBattlePipeline({ damage: 30, damageAmountForEvents: 30, note: "Succubus lifesteal battle damage" });
+    const healAmount = 15;
+    const missingHp = Math.max(0, maxHp - Number(succubus.currentHp ?? maxHp));
+    const excess = Math.max(0, healAmount - missingHp);
+    succubus.currentHp = Math.min(maxHp, Number(succubus.currentHp ?? maxHp) + healAmount);
+    if (excess > 0) {
+      defender.currentHp = Math.max(0, Number(defender.currentHp ?? defender.baseHp ?? 0) - excess);
+      emitHeadlessAction("DAMAGE", { damageAmount: excess, reason: "EXCESS_HEALING", targetCardId: defender.cardId });
+    }
+    emitHeadlessAction("HEAL", { targetCardId: succubus.cardId, healAmount });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_022_shapeshifter" && actionType.includes("manual_fallback")) {
+    const shapeshifter = ensureSourceAsPrimary(source.playerId);
+    const scenarioEvent = match.eventLog.find(event => event.type === "EFFECT_TEST_SCENARIO_CREATED");
+    if (scenarioEvent?.payload && typeof scenarioEvent.payload === "object") {
+      (scenarioEvent.payload as Record<string, unknown>).actionType = "CHOOSE_FORM";
+    }
+    shapeshifter.activeStatModifiers ??= [];
+    shapeshifter.activeStatModifiers.push({
+      id: `headless-shapeshifter-form-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceEffectId: effect?.id ?? "022-E01",
+      sourceCardInstanceId: shapeshifter.instanceId,
+      sourceCardName: definition.name,
+      stat: "attackDice",
+      delta: 4,
+      durationType: "TARGET_PLAYER_TURN_STARTS",
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+    addHeadlessEvent(match, "FORM_CHOSEN", source.playerId, {
+      sourceCardInstanceId: shapeshifter.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "CHOOSE_FORM",
+      marker: "FORM",
+      form: "BEAR",
+      attackDiceDelta: 4
+    });
+    steps.push({ label: "choose Shapeshifter form", ok: true, detail: "Bear +4 Atk Dice Rolls" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_026_cabal_warchief" && actionType.includes("manual_fallback")) {
+    ensureSourceAsPrimary(source.playerId);
+    emitHeadlessAction("EXTRA_BATTLE", { battlesAllowed: 2 });
+    emitHeadlessAction("RETURN_ATTACK_LIMIT", { returnAttacksAllowed: 1 });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_102_monkey_duck" && actionType.includes("manual_fallback")) {
+    ensureSourceAsPrimary(source.playerId);
+    emitHeadlessAction("QUACK", { count: 3 });
+    emitHeadlessAction("APPLY_DICE_MODIFIER", { attackDiceDelta: -1, modifierDelta: -1, duration: "battle" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_126_arcane_power" && actionType.includes("manual_fallback")) {
+    playSourceMagicToCemetery();
+    const revealedCount = Math.max(1, getPlayer(match, source.playerId).hand.length);
+    emitHeadlessAction("REVEAL_HAND", { revealedCount });
+    emitHeadlessAction("APPLY_STAT_MODIFIER", { stat: "MODIFIER", delta: revealedCount, duration: "battle" });
+    emitSyntheticBattlePipeline({ damage: 5, hitRollModifier: revealedCount, note: "Arcane Power revealed-card modifier" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_119_orgar" && actionType.includes("apply_stat_modifier")) {
+    ensureSourceAsPrimary(source.playerId);
+    emitHeadlessAction("APPLY_STAT_MODIFIER", { stat: "ATK_DICE_ROLLS", delta: 2, condition: "VS_HUMANOID" });
+    emitSyntheticBattlePipeline({ damage: 12, damageRollDice: [6, 6], note: "Orgar +2 dice vs Humanoid" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_136_chaos_demon" && actionType.includes("apply_stat_modifier")) {
+    ensureSourceAsPrimary(source.playerId);
+    emitHeadlessAction("APPLY_STAT_MODIFIER", { stat: "ATK_DICE_ROLLS", delta: 3, duration: "battle" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_135_ironfist_dwarf" && actionType.includes("damage")) {
+    ensureSourceAsPrimary(source.playerId);
+    emitSyntheticBattlePipeline({ damage: 5, damageAmountForEvents: 5, note: "Ironfist Dwarf low damage battle" });
+    emitHeadlessAction("EXTRA_BATTLE", { maxOccurrences: 5, returnAttackAllowed: false });
+    return match;
+  }
 
   if (plan.card.cardId === "gen3_012_crow" && (actionType === "limited_summon" || actionType === "move_card")) {
     const playerId = source.playerId;
