@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_006_ball_demon",
+  "effectId": "006-E02",
+  "title": "Ball Demon applies Atk plus two while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_006_ball_demon",
+      "cardName": "Ball Demon",
+      "cardType": "MAGIC",
+      "cardNumber": "006",
+      "generation": "3",
+      "rawText": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2."
+    },
+    "effect": {
+      "effectId": "006-E02",
+      "trigger": "END_OF_YOUR_TURN",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +2",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Ball Demon applies Atk plus two while equipped",
+    "summary": "Equip Ball Demon to a modifier-zero primary creature and verify its Atk damage gains +2.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_006_ball_demon",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use a modifier-zero, one-attack-die creature so the +2 Atk bonus is isolated."
+      ]
+    },
+    "steps": [
+      "Player 1 equips Ball Demon to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the attack damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Attack damage includes the +2 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Ball Demon remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_006_ball_demon"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the separate end-turn 2 damage effect is covered independently from the Atk bonus."
+    ],
+    "riskNotes": [
+      "The deterministic damage roll is 1; the equipped Atk +2 bonus makes the first strike deal 3."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Ball Demon equipped Atk bonus."
+    },
+    "regression": {
+      "fixtureName": "ball-demon-atk-plus-two",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

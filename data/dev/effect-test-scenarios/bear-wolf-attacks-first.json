@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_015_bear_wolf",
+  "effectId": "015-E01",
+  "title": "Bear Wolf attacks first during battle",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_015_bear_wolf",
+      "cardName": "Bear Wolf",
+      "cardType": "CREATURE",
+      "cardNumber": "015",
+      "generation": "2",
+      "rawText": "This creature always attacks first during battle."
+    },
+    "effect": {
+      "effectId": "015-E01",
+      "trigger": "DURING_BATTLE_PRIORITY",
+      "actionType": "APPLY_ATTACK_PRIORITY_OVERRIDE",
+      "effectGroup": "Attack Priority",
+      "target": "This creature",
+      "value": "Always attacks first",
+      "durationText": "While on field",
+      "reusableFunction": "applyAttackPriorityOverride"
+    },
+    "title": "Bear Wolf attacks first during battle",
+    "summary": "Put Bear Wolf into battle against a faster defender and verify Bear Wolf still takes the first strike.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_015_bear_wolf"
+      ],
+      "player2Cards": [
+        "test_fast_defender_al_12_hp_100"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use a synthetic SPD 12 defender so normal speed comparison would put Bear Wolf second."
+      ]
+    },
+    "steps": [
+      "Set Bear Wolf as player_1 primary and the faster synthetic creature as player_2 primary.",
+      "Declare battle and run the speed check.",
+      "Inspect the first strike attacker."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Bear Wolf takes the first strike despite lower SPD",
+        "path": "lastBattle.firstAttacker.cardId",
+        "operator": "equals",
+        "value": "gen2_015_bear_wolf"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the priority override only affects battle order, not hit or damage math."
+    ],
+    "riskNotes": [
+      "This fixture uses a faster synthetic defender to prove the priority override matters."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Bear Wolf battle priority override."
+    },
+    "regression": {
+      "fixtureName": "bear-wolf-attacks-first",
+      "tags": [
+        "creature",
+        "combat",
+        "priority"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

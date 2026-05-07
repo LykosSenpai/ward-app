@@ -58,10 +58,10 @@
         "value": 1
       },
       {
-        "label": "Attack damage reflects one low damage die and Modifier minus one",
+        "label": "Attack damage reflects one low damage die and zero Modifier",
         "path": "player_2.primary.damageTaken",
         "operator": "equals",
-        "value": 0
+        "value": 1
       },
       {
         "label": "Soul Drain remains equipped/on field",
@@ -71,10 +71,10 @@
       }
     ],
     "manualVerification": [
-      "Confirm Atk Dice Rolls cannot be reduced to 0; damage may still be reduced to 0 by the Modifier penalty."
+      "Confirm Atk Dice Rolls cannot be reduced to 0; the Modifier penalty is counted once in hit and damage math."
     ],
     "riskNotes": [
-      "Uses battle damage as the observable Modifier output."
+      "Uses battle damage as the observable Modifier output: a 1 damage roll plus effective Modifier 0 deals 1."
     ],
     "coverageSuggestion": {
       "status": "UNTESTED",

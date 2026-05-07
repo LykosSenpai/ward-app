@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_124_titan_s_amulet",
+  "effectId": "124-E02",
+  "title": "Titan's Amulet applies Modifier plus ten",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_124_titan_s_amulet",
+      "cardName": "Titan's Amulet",
+      "cardType": "MAGIC",
+      "cardNumber": "124",
+      "generation": "3",
+      "rawText": "Inflict 10 damage to your primary creature. For 1 turn cycle add Modifier: +10."
+    },
+    "effect": {
+      "effectId": "124-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Modifier +10",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Titan's Amulet applies Modifier plus ten",
+    "summary": "Equip Titan's Amulet to a modifier-zero primary creature and verify the +10 Modifier affects hit and attack damage.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_124_titan_s_amulet",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use a modifier-zero attacker and high-HP defender so the +10 Modifier is easy to inspect."
+      ]
+    },
+    "steps": [
+      "Player 1 equips Titan's Amulet to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect hit modifier and attack damage."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hit roll modifier increased by 10",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 10
+      },
+      {
+        "label": "Attack damage includes the +10 Modifier",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 11
+      },
+      {
+        "label": "Titan's Amulet remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_124_titan_s_amulet"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the separate 10 self-damage effect and 1-turn-cycle expiry are covered independently."
+    ],
+    "riskNotes": [
+      "The deterministic damage roll is 1; the equipped Modifier +10 makes the first strike deal 11."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Titan's Amulet equipped Modifier bonus."
+    },
+    "regression": {
+      "fixtureName": "titans-amulet-modifier-plus-ten",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

@@ -347,10 +347,6 @@ function suggestionFromStatChange(
   const strikeModifiers: Partial<ManualBattleStrikeModifiers> = {};
 
   if (stat === "attackDice") strikeModifiers.damageDiceDelta = delta;
-  if (stat === "modifier") {
-    strikeModifiers.hitFlatBonus = delta;
-    strikeModifiers.damageFlatBonus = delta;
-  }
   if (stat === "hitDice") strikeModifiers.hitDiceDelta = delta;
   if (stat === "hitFlat") strikeModifiers.hitFlatBonus = delta;
   if (stat === "hitRollMultiplier") strikeModifiers.hitRollMultiplier = multiplier;
