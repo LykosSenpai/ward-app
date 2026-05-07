@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:10:51.119Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_083_demonic_turtle",
+  "effectId": "083-E01",
+  "title": "Demonic Turtle halves Atk damage when slower",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:10:51.119Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_083_demonic_turtle",
+      "cardName": "Demonic Turtle",
+      "cardType": "CREATURE",
+      "cardNumber": "083",
+      "generation": "2",
+      "rawText": "If this card has a lower SPD stat than your opponent's primary creature, reduce all Atk damage this card receives by 1/2. Inflict the reduced damage back on the attacking creature."
+    },
+    "effect": {
+      "effectId": "083-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_DAMAGE_REDUCTION",
+      "effectGroup": "Damage Reduction",
+      "target": "This card",
+      "value": "Reduce all Atk damage received by 1/2",
+      "durationText": "Current battle",
+      "reusableFunction": "applyDamageReduction"
+    },
+    "title": "Demonic Turtle halves Atk damage when slower",
+    "summary": "Verify Demonic Turtle reduces incoming Atk damage by half when its SPD is lower than the opposing primary creature.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_083_demonic_turtle"
+      ],
+      "player2Cards": [
+        "test_fast_defender_al12_hp100"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place Demonic Turtle as player_1 primary creature and run a deterministic battle.",
+        "If this card has a lower SPD stat than your opponent's primary creature, reduce all Atk damage this card receives by 1/2. Inflict the reduced damage back on the attacking creature."
+      ]
+    },
+    "steps": [
+      "Run battle where Demonic Turtle is slower.",
+      "Apply incoming Atk damage.",
+      "Verify damage reduction route."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "083-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_DAMAGE_REDUCTION"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: If this card has a lower SPD stat than your opponent's primary creature, reduce all Atk damage this card receives by 1/2. Inflict the reduced damage back on the attacking creature."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_083_demonic_turtle-083-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_083_demonic_turtle-083-e01",
+      "tags": [
+        "CREATURE",
+        "DURING_DAMAGE_CALC",
+        "APPLY_DAMAGE_REDUCTION"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_083_demonic_turtle:083-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

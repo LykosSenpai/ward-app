@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:10:51.119Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_078_magic_watch",
+  "effectId": "078-E01",
+  "title": "Magic Watch grants one battle reroll",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:10:51.119Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_078_magic_watch",
+      "cardName": "Magic Watch",
+      "cardType": "MAGIC",
+      "cardNumber": "078",
+      "generation": "2",
+      "rawText": "The equipped creature may re-roll either their Hit Dice Roll or Atk Dice Roll once per battle."
+    },
+    "effect": {
+      "effectId": "078-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_REROLL_PERMISSION",
+      "effectGroup": "Reroll Permission",
+      "target": "Equipped creature",
+      "value": "May re-roll Hit Dice Roll or Atk Dice Roll once per battle",
+      "durationText": "While equipped",
+      "reusableFunction": "applyRerollPermission"
+    },
+    "title": "Magic Watch grants one battle reroll",
+    "summary": "Verify equipped creature has permission to reroll either Hit Dice or Atk Dice once per battle.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_078_magic_watch",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Magic Watch on field magic slot attached to player_1 primary creature.",
+        "The equipped creature may re-roll either their Hit Dice Roll or Atk Dice Roll once per battle."
+      ]
+    },
+    "steps": [
+      "Keep Magic Watch equipped during battle.",
+      "Represent the once-per-battle reroll permission."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "078-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_REROLL_PERMISSION"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: The equipped creature may re-roll either their Hit Dice Roll or Atk Dice Roll once per battle."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_078_magic_watch-078-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_078_magic_watch-078-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_EQUIPPED",
+        "APPLY_REROLL_PERMISSION"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_078_magic_watch:078-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

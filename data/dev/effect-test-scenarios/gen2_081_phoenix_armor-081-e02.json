@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:10:51.119Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_081_phoenix_armor",
+  "effectId": "081-E02",
+  "title": "Phoenix Armor restores killed equipped creature to half HP",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:10:51.119Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_081_phoenix_armor",
+      "cardName": "Phoenix Armor",
+      "cardType": "MAGIC",
+      "cardNumber": "081",
+      "generation": "2",
+      "rawText": "The equipped creature receives 10 damage at the beginning of their turns. If the equipped creature is killed, send this card to the cemetery and restore equipped creature's HP to 50%."
+    },
+    "effect": {
+      "effectId": "081-E02",
+      "trigger": "IF_EQUIPPED_CREATURE_KILLED",
+      "actionType": "HEAL_CREATURE",
+      "effectGroup": "Replacement/Healing",
+      "target": "Equipped creature",
+      "value": "Restore HP to 50%",
+      "durationText": "Instant",
+      "reusableFunction": "healFlat"
+    },
+    "title": "Phoenix Armor restores killed equipped creature to half HP",
+    "summary": "If the equipped creature is killed, verify Phoenix Armor goes to cemetery and restores the creature to 50% HP.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_081_phoenix_armor",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Phoenix Armor on field magic slot attached to player_1 primary creature.",
+        "The equipped creature receives 10 damage at the beginning of their turns. If the equipped creature is killed, send this card to the cemetery and restore equipped creature's HP to 50%."
+      ]
+    },
+    "steps": [
+      "Mark the equipped creature as killed.",
+      "Resolve Phoenix Armor linked heal.",
+      "Verify heal route evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "081-E02 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEAL_CREATURE"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: The equipped creature receives 10 damage at the beginning of their turns. If the equipped creature is killed, send this card to the cemetery and restore equipped creature's HP to 50%."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_081_phoenix_armor-081-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_081_phoenix_armor-081-e02",
+      "tags": [
+        "MAGIC",
+        "IF_EQUIPPED_CREATURE_KILLED",
+        "HEAL_CREATURE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_081_phoenix_armor:081-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

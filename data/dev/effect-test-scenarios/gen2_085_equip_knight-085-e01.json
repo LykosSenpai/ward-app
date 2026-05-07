@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:10:51.119Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_085_equip_knight",
+  "effectId": "085-E01",
+  "title": "Equip Knight searches two equip cards on summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:10:51.119Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_085_equip_knight",
+      "cardName": "Equip Knight",
+      "cardType": "CREATURE",
+      "cardNumber": "085",
+      "generation": "2",
+      "rawText": "When summoned, you may search your deck for 2 equip magic cards. Equip them to this creature. Shuffle."
+    },
+    "effect": {
+      "effectId": "085-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "SEARCH_DECK_TO_EQUIP",
+      "effectGroup": "Deck Search",
+      "target": "Your deck",
+      "value": "Search for 2 equip magic cards and equip them to this creature",
+      "durationText": "Instant",
+      "reusableFunction": "searchDeckToEquip"
+    },
+    "title": "Equip Knight searches two equip cards on summon",
+    "summary": "When summoned, verify Equip Knight can search two equip magic cards, equip them, and shuffle.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_085_equip_knight",
+        "gen2_069_unicorn_might",
+        "gen2_073_metallic_bone"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Summon Equip Knight with equip magic cards available in deck.",
+        "When summoned, you may search your deck for 2 equip magic cards. Equip them to this creature. Shuffle."
+      ]
+    },
+    "steps": [
+      "Summon Equip Knight.",
+      "Search deck for two equip magic cards.",
+      "Equip them to Equip Knight and shuffle."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "085-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SEARCH_DECK_TO_EQUIP"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: When summoned, you may search your deck for 2 equip magic cards. Equip them to this creature. Shuffle."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_085_equip_knight-085-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_085_equip_knight-085-e01",
+      "tags": [
+        "CREATURE",
+        "ON_SUMMON",
+        "SEARCH_DECK_TO_EQUIP"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_085_equip_knight:085-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

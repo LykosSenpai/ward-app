@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:10:51.119Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_076_lead_boots",
+  "effectId": "076-E01",
+  "title": "Lead Boots only equips to a primary creature",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:10:51.119Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_076_lead_boots",
+      "cardName": "Lead Boots",
+      "cardType": "MAGIC",
+      "cardNumber": "076",
+      "generation": "2",
+      "rawText": "Can only be equipped to a primary creature. The equipped creature cannot leave the field or change control unless killed. This card cannot be removed from the field unless destroyed."
+    },
+    "effect": {
+      "effectId": "076-E01",
+      "trigger": "EQUIP_REQUIREMENT",
+      "actionType": "VALIDATE_SUMMON_REQUIREMENT",
+      "effectGroup": "Equip Requirement",
+      "target": "Target creature",
+      "value": "Must be a primary creature",
+      "durationText": "Before equip",
+      "reusableFunction": "validateSummonRequirement"
+    },
+    "title": "Lead Boots only equips to a primary creature",
+    "summary": "Verify Lead Boots validates that its equip target is a primary creature.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_076_lead_boots",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Lead Boots on field magic slot attached to player_1 primary creature.",
+        "Can only be equipped to a primary creature. The equipped creature cannot leave the field or change control unless killed. This card cannot be removed from the field unless destroyed."
+      ]
+    },
+    "steps": [
+      "Attempt to equip Lead Boots to a primary creature.",
+      "Verify the equip requirement route is represented."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "076-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "VALIDATE_SUMMON_REQUIREMENT"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Can only be equipped to a primary creature. The equipped creature cannot leave the field or change control unless killed. This card cannot be removed from the field unless destroyed."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_076_lead_boots-076-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_076_lead_boots-076-e01",
+      "tags": [
+        "MAGIC",
+        "EQUIP_REQUIREMENT",
+        "VALIDATE_SUMMON_REQUIREMENT"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_076_lead_boots:076-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

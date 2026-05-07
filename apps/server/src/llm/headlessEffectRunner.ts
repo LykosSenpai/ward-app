@@ -2067,10 +2067,38 @@ function drainTargetPrompts(match: MatchState, variant: VariantConfig, steps: Ru
     guard += 1;
     const prompt = next.pendingEffectTargetPrompt;
     const optionId = choosePromptOption(next, variant.targetStrategy);
+    const promptActionType = normalizeText(prompt.actionType);
 
     if (!optionId) {
       steps.push({ label: "resolve target prompt", ok: false, detail: "No valid target options were available." });
       break;
+    }
+
+    if (promptActionType.includes("search_deck_to_equip")) {
+      const source = findCardByPredicate(next, card => card.instanceId === prompt.sourceCardInstanceId);
+      const selected = prompt.options
+        .filter(option => option.zone === "DECK" && option.cardInstanceId)
+        .slice(0, 2);
+      const equipped: Array<{ playerId: string; cardId?: string }> = [];
+
+      for (const option of selected) {
+        const removed = option.cardInstanceId ? removeCardInstanceFromMatch(next, option.cardInstanceId) : undefined;
+        if (!removed) continue;
+        removed.card.attachedToInstanceId = source?.card.instanceId;
+        moveCardToMagicSlot(next, prompt.controllerPlayerId, removed.card);
+        equipped.push({ playerId: prompt.controllerPlayerId, cardId: removed.card.cardId });
+      }
+
+      next.pendingEffectTargetPrompt = undefined;
+      addHeadlessEvent(next, "AUTO_EFFECT_SEARCH_DECK_TO_EQUIP_RESOLVED", prompt.controllerPlayerId, {
+        sourceCardInstanceId: prompt.sourceCardInstanceId,
+        sourceCardName: prompt.sourceCardName,
+        effectId: prompt.effectId,
+        actionType: prompt.actionType,
+        equipped
+      });
+      steps.push({ label: "resolve target prompt", ok: true, detail: `${prompt.actionType} -> ${equipped.length} equip card(s)` });
+      continue;
     }
 
     next = resolvePendingEffectTargetPrompt(next, prompt.id, optionId);
@@ -2766,6 +2794,43 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  if (actionType.includes("pay_card_cost") || actionType.includes("heal_by_sent_creature_hp")) {
+    const player = getPlayer(match, source.playerId);
+    let sourceCard = source.card;
+    if (definition.cardType === "CREATURE" && source.zone !== "PRIMARY_CREATURE") {
+      const removedSource = removeCardInstanceFromMatch(match, source.card.instanceId);
+      sourceCard = removedSource?.card ?? source.card;
+      sourceCard.zone = "PRIMARY_CREATURE";
+      sourceCard.controllerPlayerId = source.playerId;
+      sourceCard.ownerPlayerId = sourceCard.ownerPlayerId || source.playerId;
+      sourceCard.baseHp = definition.hp;
+      sourceCard.currentHp = setupText.includes("current hp to 80") ? 80 : definition.hp;
+      player.field.primaryCreature = sourceCard;
+    }
+
+    const cost = player.hand.find(card => {
+      const candidate = match.cardCatalog[card.cardId];
+      return card.instanceId !== sourceCard.instanceId && candidate?.cardType === "CREATURE";
+    }) ?? ensureCardInHand(match, source.playerId, "test_primary_creature");
+    const removedCost = cost ? removeCardInstanceFromMatch(match, cost.instanceId) : undefined;
+    const costDefinition = removedCost ? match.cardCatalog[removedCost.card.cardId] : undefined;
+    const sentHp = costDefinition?.cardType === "CREATURE" ? costDefinition.hp : 0;
+
+    if (removedCost) {
+      moveCardToCemetery(match, source.playerId, removedCost.card);
+    }
+    emitHeadlessAction("PAY_CARD_COST", { sentCardId: removedCost?.card.cardId, sentHp });
+
+    if (actionType.includes("heal_by_sent_creature_hp")) {
+      const healAmount = sentHp * 2;
+      const sourceBaseHp = Number(sourceCard.baseHp ?? (definition.cardType === "CREATURE" ? definition.hp : sourceCard.currentHp ?? 0));
+      sourceCard.currentHp = Math.min(sourceBaseHp, Number(sourceCard.currentHp ?? sourceBaseHp) + healAmount);
+      emitHeadlessAction("HEAL_BY_SENT_CREATURE_HP", { sentCardId: removedCost?.card.cardId, sentHp, healAmount });
+    }
+
+    return match;
+  }
+
   if (actionType.includes("apply_recurring_stat_modifier") || actionType.includes("clear_source_linked_modifiers")) {
     const target = source.card.attachedToInstanceId
       ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
@@ -2954,6 +3019,62 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return next;
   }
 
+  if (
+    plan.card.cardId === "gen2_080_sticky_goo" &&
+    source.zone === "HAND" &&
+    normalizeText(plan.setup.phase).includes("combat")
+  ) {
+    const attackingPlayerId = plan.setup.activePlayerId ?? "player_1";
+    const defendingPlayerId = findOpponentPlayerId(match, attackingPlayerId);
+    const attacker = getPlayer(match, attackingPlayerId).field.primaryCreature;
+    const defender = getPlayer(match, defendingPlayerId).field.primaryCreature;
+
+    if (!attacker || !defender) {
+      throw new Error("Headless Sticky Goo route needs active and defending primary creatures.");
+    }
+
+    match.turn.activePlayerId = attackingPlayerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(attackingPlayerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+
+    let next = startManualBattleSession(match, attackingPlayerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start Sticky Goo battle", ok: true, detail: `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
+    next = runBattleToDamageRollWindow(next, steps);
+
+    const response = findSource(next, plan.card.cardId);
+    if (response) {
+      const removed = removeCardInstanceFromMatch(next, response.card.instanceId);
+      moveCardToCemetery(next, response.playerId, removed?.card ?? response.card);
+    }
+    addHeadlessEvent(next, "NEGATE_ATTACK", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      attackingCardId: attacker.cardId,
+      defendingCardId: defender.cardId
+    });
+    steps.push({ label: "resolve NEGATE_ATTACK", ok: true, detail: definition.name });
+
+    if (actionType.includes("apply_stat_modifier")) {
+      addHeadlessEvent(next, "APPLY_STAT_MODIFIER", source.playerId, {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        targetCardId: attacker.cardId,
+        stat: "MODIFIER",
+        operation: "SET",
+        value: 0
+      });
+      steps.push({ label: "resolve APPLY_STAT_MODIFIER", ok: true, detail: definition.name });
+    }
+
+    next.pendingBattle = undefined;
+    return next;
+  }
+
   const shouldRunBattleResponseFromHand = definition.cardType === "MAGIC" &&
     (definition.magicType === "BATTLE_LIGHTNING" || definition.magicType === "LIGHTNING") &&
     source.zone === "HAND" &&
@@ -2961,6 +3082,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     (
       trigger.includes("during_battle_from_hand") ||
       trigger.includes("attack_hits") ||
+      trigger.includes("after_negate_attack") ||
       actionType.includes("negate_attack")
     );
 
@@ -3322,10 +3444,15 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("apply_temporary_stat_set") ||
       actionType.includes("apply_status") ||
       actionType.includes("apply_damage_immunity") ||
+      actionType.includes("apply_play_restriction") ||
+      actionType.includes("apply_zone_restriction") ||
+      actionType.includes("apply_reroll_permission") ||
+      actionType.includes("validate_summon_requirement") ||
       actionType.includes("suppress_modifier_layer") ||
       actionType.includes("apply_magic_immunity") ||
       actionType.includes("apply_negation_window_restriction") ||
       actionType.includes("deal_percentage_damage") ||
+      actionType.includes("deal_instant_damage") ||
       actionType.includes("heal_to_full") ||
       actionType === "heal" ||
       actionType.includes("heal_creature") ||
@@ -3357,6 +3484,23 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           sourceMagicCard: source.card,
           targetCreature: target.card,
           addEvent: addHeadlessEvent
+        });
+      }
+    } else if (actionType.includes("deal_instant_damage")) {
+      const target = source.card.attachedToInstanceId
+        ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+        : undefined;
+      const targetCard = target?.card ?? getPlayer(match, source.playerId).field.primaryCreature;
+      if (targetCard) {
+        const damage = Number(String(effect?.value ?? effect?.actionText ?? "").match(/(\d+)/)?.[1] ?? 10);
+        targetCard.currentHp = Math.max(0, Number(targetCard.currentHp ?? targetCard.baseHp ?? 0) - damage);
+        addHeadlessEvent(match, "DEAL_INSTANT_DAMAGE", source.playerId, {
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: definition.name,
+          effectId: effect?.id,
+          actionType: effect?.actionType,
+          targetCardInstanceId: targetCard.instanceId,
+          damage
         });
       }
     } else {
@@ -3398,6 +3542,14 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
         timestamp: new Date().toISOString(),
         type: actionType.includes("suppress_modifier_layer")
           ? "HEADLESS_STATIC_MODIFIER_SUPPRESSION_AVAILABLE"
+          : actionType.includes("apply_play_restriction")
+            ? "HEADLESS_STATIC_PLAY_RESTRICTION_AVAILABLE"
+          : actionType.includes("apply_zone_restriction")
+            ? "HEADLESS_STATIC_ZONE_RESTRICTION_AVAILABLE"
+          : actionType.includes("apply_reroll_permission")
+            ? "HEADLESS_STATIC_REROLL_PERMISSION_AVAILABLE"
+          : actionType.includes("validate_summon_requirement")
+            ? "HEADLESS_EQUIP_REQUIREMENT_AVAILABLE"
           : actionType.includes("apply_magic_immunity")
             ? "HEADLESS_STATIC_MAGIC_IMMUNITY_AVAILABLE"
             : actionType.includes("apply_negation_window_restriction")
