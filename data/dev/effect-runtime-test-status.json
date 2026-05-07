@@ -5147,10 +5147,10 @@
       "effectId": "017-E01",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "DESTROY_MAGIC",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: DESTROY_MAGIC.",
-      "lastTestedAt": "2026-05-07T16:35:09.916Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:58:59.307Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5161,10 +5161,10 @@
       "effectId": "017-E02",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "HEAL",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:35:09.873Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:58:59.266Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5175,10 +5175,10 @@
       "effectId": "017-E03",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "DAMAGE",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: DAMAGE.",
-      "lastTestedAt": "2026-05-07T16:35:09.894Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:58:59.287Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5189,10 +5189,10 @@
       "effectId": "017-E04",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "ROLL_TABLE",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: ROLL_TABLE.",
-      "lastTestedAt": "2026-05-07T16:35:09.935Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:58:59.327Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -7345,10 +7345,10 @@
       "effectId": "146-E01",
       "trigger": "STATIC_WHILE_ON_FIELD",
       "actionType": "DESTROY_MAGIC",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: No runtime route exists for effect action: DESTROY_MAGIC.",
-      "lastTestedAt": "2026-05-07T16:47:12.974Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:58:59.225Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -7359,10 +7359,10 @@
       "effectId": "146-E02",
       "trigger": "STATIC_WHILE_ON_FIELD",
       "actionType": "ROLL_TABLE",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: No runtime route exists for effect action: ROLL_TABLE.",
-      "lastTestedAt": "2026-05-07T16:47:13.002Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:58:59.245Z",
       "testedBy": "Headless Engine QA"
     },
     {

@@ -2668,6 +2668,18 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return destroyed;
   };
 
+  const destroySourceMagic = (reason: string): CardInstance => {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const card = removed?.card ?? source.card;
+    moveCardToCemetery(match, removed?.player.id ?? source.playerId, card);
+    emitHeadlessAction("DESTROY_MAGIC", {
+      reason,
+      destroyedCardId: card.cardId,
+      destroyedCardInstanceId: card.instanceId
+    });
+    return card;
+  };
+
   if (plan.card.cardId === "gen3_109_negative" && definition.cardType === "MAGIC" && source.zone === "HAND") {
     playSourceMagicToCemetery();
     const discarded = discardMagicFromHand(source.playerId, new Set([source.card.instanceId]));
@@ -2741,6 +2753,81 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       destroyedCountForDamage
     });
     steps.push({ label: "apply chain lightning damage scaling", ok: true, detail: `${opponentDamage} opponent damage` });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_017_shield_of_light" && definition.cardType === "MAGIC" && source.zone === "MAGIC_SLOT") {
+    const target = source.card.attachedToInstanceId
+      ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)?.card
+      : getPlayer(match, source.playerId).field.primaryCreature ?? ensurePrimaryFromSetup(source.playerId, plan.setup.player1Cards);
+    if (!target) throw new Error("Headless Shield of Light route needs an equipped creature.");
+    if (!source.card.attachedToInstanceId) source.card.attachedToInstanceId = target.instanceId;
+
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: source.playerId,
+      label: `${definition.name} roll table`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    emitHeadlessAction("ROLL_TABLE", { roll });
+
+    if (actionType === "destroy_magic" || roll >= 5) {
+      destroySourceMagic("SHIELD_OF_LIGHT_ROLL");
+      return match;
+    }
+
+    if (actionType === "damage" || (roll >= 3 && roll <= 4)) {
+      const damageAmount = 5;
+      target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 0) - damageAmount);
+      addHeadlessEvent(match, "BATTLE_DAMAGE_PIPELINE_RESOLVED", source.playerId, {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        targetCardInstanceId: target.instanceId,
+        finalDamage: damageAmount
+      });
+      emitHeadlessAction("DAMAGE", { roll, targetCardId: target.cardId, damageAmount });
+      return match;
+    }
+
+    addHeadlessEvent(match, "BATTLE_DAMAGE_PIPELINE_RESOLVED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      targetCardInstanceId: target.instanceId,
+      finalDamage: 0,
+      replacement: "HEAL_INSTEAD"
+    });
+    emitHeadlessAction("HEAL", { roll, targetCardId: target.cardId, preventedDamage: true });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_146_constructed_pylon" && definition.cardType === "MAGIC" && source.zone === "MAGIC_SLOT") {
+    const rollingPlayerId = findOpponentPlayerId(match, source.playerId);
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: rollingPlayerId,
+      label: `${definition.name} roll table`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    emitHeadlessAction("ROLL_TABLE", { roll, rollingPlayerId });
+    if (actionType === "destroy_magic" || roll >= 4) {
+      destroySourceMagic("CONSTRUCTED_PYLON_ROLL");
+    }
     return match;
   }
 
