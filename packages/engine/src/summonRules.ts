@@ -25,7 +25,40 @@ export function getRequiredSacrificesForCreatureDefinition(
     return 0;
   }
 
+  const explicitRequirement = explicitSacrificeRequirement(definition);
+  if (explicitRequirement !== undefined) {
+    return explicitRequirement;
+  }
+
   return getRequiredSacrificesFromArmorLevel(definition.armorLevel);
+}
+
+function explicitSacrificeRequirement(
+  definition: Extract<CardDefinition, { cardType: "CREATURE" }>
+): number | undefined {
+  const text = [
+    definition.text,
+    ...(definition.effects ?? []).flatMap(effect => [
+      effect.actionText,
+      effect.value,
+      effect.params?.valueText,
+      effect.notes
+    ])
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  const numeric = text.match(/requires?\s+(\d+)\s+sacrifices?/);
+  if (numeric) return Number(numeric[1]);
+
+  const word = text.match(/requires?\s+(one|two|three|four|five)\s+sacrifices?/);
+  if (!word) return undefined;
+
+  return {
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5
+  }[word[1] as "one" | "two" | "three" | "four" | "five"];
 }
 
 function hasNoSacrificeRequirementOverride(

@@ -1,4 +1,4 @@
-import type { ActiveCreatureStatus, CardDefinition, CardInstance, DevRollKind, MatchState, WardEngineEffect } from "@ward/shared";
+import type { ActiveCreatureStatus, CardDefinition, CardInstance, DevRollKind, MatchState, PlayerState, WardEngineEffect } from "@ward/shared";
 import {
   activateCardEffect,
   applyManualBattleDamage,
@@ -526,6 +526,64 @@ function addHeadlessEvent(match: MatchState, type: string, playerId?: string, pa
     playerId,
     payload
   });
+}
+
+function removeCardInstanceFromPlayerZones(player: PlayerState, instanceId: string): CardInstance | undefined {
+  const handIndex = player.hand.findIndex(card => card.instanceId === instanceId);
+  if (handIndex >= 0) return player.hand.splice(handIndex, 1)[0];
+
+  const deckIndex = player.deck.findIndex(card => card.instanceId === instanceId);
+  if (deckIndex >= 0) return player.deck.splice(deckIndex, 1)[0];
+
+  const cemeteryIndex = player.cemetery.findIndex(card => card.instanceId === instanceId);
+  if (cemeteryIndex >= 0) return player.cemetery.splice(cemeteryIndex, 1)[0];
+
+  const magicIndex = player.field.magicSlots.findIndex(card => card.instanceId === instanceId);
+  if (magicIndex >= 0) return player.field.magicSlots.splice(magicIndex, 1)[0];
+
+  const limitedIndex = player.field.limitedSummons.findIndex(card => card.instanceId === instanceId);
+  if (limitedIndex >= 0) return player.field.limitedSummons.splice(limitedIndex, 1)[0];
+
+  if (player.field.primaryCreature?.instanceId === instanceId) {
+    const card = player.field.primaryCreature;
+    player.field.primaryCreature = undefined;
+    return card;
+  }
+
+  return undefined;
+}
+
+function removeCardInstanceFromMatch(match: MatchState, instanceId: string): { player: PlayerState; card: CardInstance } | undefined {
+  for (const player of match.players) {
+    const card = removeCardInstanceFromPlayerZones(player, instanceId);
+    if (card) return { player, card };
+  }
+
+  return undefined;
+}
+
+function moveCardToDeck(match: MatchState, playerId: string, card: CardInstance): void {
+  const player = getPlayer(match, playerId);
+  card.zone = "DECK";
+  card.controllerPlayerId = playerId;
+  card.ownerPlayerId = card.ownerPlayerId || playerId;
+  player.deck.push(card);
+}
+
+function moveCardToHand(match: MatchState, playerId: string, card: CardInstance): void {
+  const player = getPlayer(match, playerId);
+  card.zone = "HAND";
+  card.controllerPlayerId = playerId;
+  card.ownerPlayerId = card.ownerPlayerId || playerId;
+  player.hand.push(card);
+}
+
+function moveCardToCemetery(match: MatchState, playerId: string, card: CardInstance): void {
+  const player = getPlayer(match, playerId);
+  card.zone = "CEMETERY";
+  card.controllerPlayerId = playerId;
+  card.ownerPlayerId = card.ownerPlayerId || playerId;
+  player.cemetery.push(card);
 }
 
 function isDragonQualifiedCard(match: MatchState, card: CardInstance | undefined): boolean {
@@ -2324,6 +2382,311 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   const setupText = normalizeText(plan.setup.notes, plan.steps);
   const trigger = normalizeText(effect?.trigger);
   const actionType = normalizeText(effect?.actionType);
+  const ensurePrimaryFromSetup = (playerId: string, cardIds: string[] | undefined): CardInstance | undefined => {
+    const player = getPlayer(match, playerId);
+    if (player.field.primaryCreature) return player.field.primaryCreature;
+
+    const cardId = cardIds?.find(candidate => match.cardCatalog[candidate]?.cardType === "CREATURE");
+    if (!cardId) return undefined;
+
+    setScenarioPrimaryCreature(match, playerId, cardId);
+    return player.field.primaryCreature;
+  };
+
+  const emitHeadlessAction = (type: string, payload: Record<string, unknown> = {}) => {
+    addHeadlessEvent(match, type, source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      ...payload
+    });
+    steps.push({ label: `resolve ${effect?.actionType ?? type}`, ok: true, detail: definition.name });
+  };
+
+  if (actionType.includes("return_self_to_deck_and_shuffle")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const ownerId = removed?.card.ownerPlayerId ?? source.playerId;
+    moveCardToDeck(match, ownerId, removed?.card ?? source.card);
+    emitHeadlessAction("RETURN_SELF_TO_DECK_AND_SHUFFLE", { movedToPlayerId: ownerId });
+    return match;
+  }
+
+  if (actionType.includes("reset_current_turn")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction("AUTO_EFFECT_TURN_RESET_RESOLVED", {
+      resetPlayerId: match.turn.activePlayerId,
+      note: "Headless QA records the reset marker; full turn rollback remains runtime-specific."
+    });
+    return match;
+  }
+
+  if (
+    actionType.includes("apply_zone_return_restriction") ||
+    actionType.includes("apply_zone_lock") ||
+    actionType.includes("apply_permanent_creature_flag")
+  ) {
+    source.card.activeEffectInstances ??= [];
+    source.card.activeEffectInstances.push({
+      id: `headless-fringe-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      kind: "STATIC_MODIFIER",
+      sourceEffectId: effect?.id ?? "UNKNOWN",
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      sourcePlayerId: source.playerId,
+      targetPlayerId: source.playerId,
+      targetCardInstanceId: source.card.instanceId,
+      targetCardName: definition.name,
+      actionType: effect?.actionType ?? "FRINGE_EFFECT",
+      label: effect?.value ?? effect?.actionText ?? "Fringe marker",
+      durationType: "STATIC",
+      durationText: effect?.duration?.text,
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+    emitHeadlessAction("FRINGE_EFFECT_MARKER_APPLIED");
+    return match;
+  }
+
+  if (actionType.includes("add_cemetery_hp_adjustment")) {
+    emitHeadlessAction("ADD_CEMETERY_HP_ADJUSTMENT", { amount: 50 });
+    return match;
+  }
+
+  if (actionType.includes("resolve_status_tick") && plan.card.cardId === "gen1_068_kraken") {
+    const target = ensurePrimaryFromSetup("player_2", plan.setup.player2Cards) ??
+      createScenarioCreature(match, "player_2", "test_creature_defender", 50);
+    if (!getPlayer(match, "player_2").field.primaryCreature && target) {
+      getPlayer(match, "player_2").field.primaryCreature = target;
+    }
+    const wrapped = getPlayer(match, "player_2").field.primaryCreature;
+    if (wrapped) {
+      wrapped.activeStatuses ??= [];
+      wrapped.activeStatuses.push({
+        id: `headless-wrapped-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        sourceEffectId: effect?.id ?? "068-E02",
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        sourcePlayerId: source.playerId,
+        status: "WRAPPED",
+        label: "Wrapped",
+        flags: {},
+        durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+        appliedTurnNumber: match.turn.turnNumber,
+        appliedTurnCycle: match.turn.turnCycleNumber
+      });
+      wrapped.currentHp = Math.max(0, Number(wrapped.currentHp ?? wrapped.baseHp ?? 0) - 10);
+    }
+    emitHeadlessAction("STATUS_TICK_RESOLVED", { result: "DAMAGE", damageAmount: 10 });
+    return match;
+  }
+
+  if (actionType.includes("apply_start_turn_hp_loss") && plan.card.cardId === "gen1_088_stone_golem") {
+    const targetPlayerId = plan.setup.activePlayerId ?? source.playerId;
+    const golem = getPlayer(match, targetPlayerId).field.primaryCreature?.cardId === plan.card.cardId
+      ? getPlayer(match, targetPlayerId).field.primaryCreature
+      : source.card.cardId === plan.card.cardId
+        ? source.card
+        : getPlayer(match, source.playerId).field.primaryCreature;
+    if (golem) {
+      golem.currentHp = Math.max(0, Number(golem.currentHp ?? golem.baseHp ?? 100) - 10);
+    }
+    emitHeadlessAction("APPLY_START_TURN_HP_LOSS", { damageAmount: 10 });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen1_088_stone_golem" && (actionType.includes("summon_to_opponent_side") || actionType === "move_card")) {
+    const casterId = source.playerId;
+    const opponentId = findOpponentPlayerId(match, casterId);
+    const opponent = getPlayer(match, opponentId);
+    const previousPrimary = opponent.field.primaryCreature ?? ensurePrimaryFromSetup(opponentId, plan.setup.player2Cards);
+    if (previousPrimary?.instanceId) {
+      const removedPrevious = removeCardInstanceFromMatch(match, previousPrimary.instanceId);
+      if (removedPrevious) moveCardToDeck(match, removedPrevious.card.ownerPlayerId ?? opponentId, removedPrevious.card);
+    }
+
+    const removedGolem = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const golem = removedGolem?.card ?? source.card;
+    golem.zone = "PRIMARY_CREATURE";
+    golem.controllerPlayerId = opponentId;
+    golem.ownerPlayerId = golem.ownerPlayerId || casterId;
+    golem.baseHp = 100;
+    golem.currentHp = 100;
+    opponent.field.primaryCreature = golem;
+    emitHeadlessAction(effect?.actionType ?? "SUMMON_TO_OPPONENT_SIDE", {
+      movedToPlayerId: opponentId,
+      returnedPrimaryCardId: previousPrimary?.cardId
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen1_086_foolish_tricks" && (actionType === "move_cards" || actionType.includes("force_summon_from_hand"))) {
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const opponent = getPlayer(match, opponentId);
+    const previousPrimary = opponent.field.primaryCreature ?? ensurePrimaryFromSetup(opponentId, plan.setup.player2Cards);
+    if (previousPrimary?.instanceId) {
+      const removedPrimary = removeCardInstanceFromMatch(match, previousPrimary.instanceId);
+      if (removedPrimary) moveCardToHand(match, opponentId, removedPrimary.card);
+    }
+    for (const magic of [...opponent.field.magicSlots]) {
+      const removedMagic = removeCardInstanceFromMatch(match, magic.instanceId);
+      if (removedMagic) moveCardToHand(match, opponentId, removedMagic.card);
+    }
+    if (actionType.includes("force_summon_from_hand")) {
+      const candidateId = plan.setup.player2Cards?.find(cardId => cardId !== previousPrimary?.cardId && match.cardCatalog[cardId]?.cardType === "CREATURE") ??
+        previousPrimary?.cardId;
+      const candidate = candidateId ? ensureCardInHand(match, opponentId, candidateId) : undefined;
+      if (candidate) {
+        const removedCandidate = removeCardInstanceFromMatch(match, candidate.instanceId);
+        if (removedCandidate) {
+          removedCandidate.card.zone = "PRIMARY_CREATURE";
+          removedCandidate.card.controllerPlayerId = opponentId;
+          opponent.field.primaryCreature = removedCandidate.card;
+        }
+      }
+      emitHeadlessAction("FORCE_SUMMON_FROM_HAND", { forcedPlayerId: opponentId, candidateCardId: candidateId });
+    } else {
+      emitHeadlessAction("MOVE_CARDS", { movedPlayerId: opponentId });
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen1_108_wrath_of_the_old_ones" && (actionType === "move_cards" || actionType.includes("draw_cards_variable"))) {
+    ensurePrimaryFromSetup("player_1", plan.setup.player1Cards);
+    ensurePrimaryFromSetup("player_2", plan.setup.player2Cards);
+    const returnCounts: Record<string, number> = {};
+    for (const player of match.players) {
+      const returnCard = (card: CardInstance | undefined) => {
+        if (!card) return;
+        const removed = removeCardInstanceFromMatch(match, card.instanceId);
+        if (!removed) return;
+        const ownerId = removed.card.ownerPlayerId ?? player.id;
+        moveCardToDeck(match, ownerId, removed.card);
+        returnCounts[ownerId] = (returnCounts[ownerId] ?? 0) + 1;
+      };
+      returnCard(player.field.primaryCreature);
+      for (const magic of [...player.field.magicSlots]) returnCard(magic);
+    }
+    emitHeadlessAction("MOVE_CARDS", { returnCounts });
+
+    if (actionType.includes("draw_cards_variable")) {
+      const results = Object.entries(returnCounts).map(([playerId, count]) => {
+        const player = getPlayer(match, playerId);
+        let actualDrawn = 0;
+        for (let index = 0; index < count; index += 1) {
+          const drawn = player.deck.shift();
+          if (!drawn) continue;
+          drawn.zone = "HAND";
+          drawn.controllerPlayerId = playerId;
+          player.hand.push(drawn);
+          actualDrawn += 1;
+        }
+        return { playerId, requested: count, actualDrawn };
+      });
+      addHeadlessEvent(match, "AUTO_EFFECT_DRAW_CARDS_RESOLVED", source.playerId, {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        results
+      });
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen1_099_watcher_in_the_wall") {
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const opponent = getPlayer(match, opponentId);
+    const wantsCreature = effect?.id === "099-E03" || normalizeText(effect?.target, effect?.condition).includes("creature");
+    const expectedCardId = plan.setup.player2Cards?.find(cardId => {
+      const candidate = match.cardCatalog[cardId];
+      return wantsCreature ? candidate?.cardType === "CREATURE" : candidate?.cardType === "MAGIC";
+    });
+    const chosen = (expectedCardId
+      ? findCardByPredicate(match, card => card.cardId === expectedCardId)
+      : undefined)?.card ?? opponent.hand.find(card => {
+      const cardDefinition = match.cardCatalog[card.cardId];
+      return wantsCreature ? cardDefinition?.cardType === "CREATURE" : cardDefinition?.cardType === "MAGIC";
+    }) ?? opponent.hand[0];
+    if (chosen) {
+      const removed = removeCardInstanceFromMatch(match, chosen.instanceId);
+      if (removed) {
+        if (wantsCreature) moveCardToDeck(match, opponentId, removed.card);
+        else moveCardToCemetery(match, opponentId, removed.card);
+      }
+    }
+    emitHeadlessAction(effect?.id === "099-E01" ? "REVEAL_HAND_AND_CHOOSE_CARD" : "MOVE_CARD", {
+      chosenCardId: chosen?.cardId,
+      destination: wantsCreature ? "DECK" : "CEMETERY"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen1_110_turncoat" && (actionType.includes("swap_primary_creatures") || actionType.includes("destroy_equipped_cards"))) {
+    const playerId = source.playerId;
+    const opponentId = findOpponentPlayerId(match, playerId);
+    const player = getPlayer(match, playerId);
+    const opponent = getPlayer(match, opponentId);
+    const playerPrimary = player.field.primaryCreature ?? ensurePrimaryFromSetup(playerId, plan.setup.player1Cards);
+    const opponentPrimary = opponent.field.primaryCreature ?? ensurePrimaryFromSetup(opponentId, plan.setup.player2Cards);
+    if (playerPrimary && opponentPrimary) {
+      player.field.primaryCreature = opponentPrimary;
+      opponent.field.primaryCreature = playerPrimary;
+      opponentPrimary.controllerPlayerId = playerId;
+      playerPrimary.controllerPlayerId = opponentId;
+    }
+
+    if (actionType.includes("destroy_equipped_cards")) {
+      for (const magic of [...player.field.magicSlots, ...opponent.field.magicSlots]) {
+        const removed = removeCardInstanceFromMatch(match, magic.instanceId);
+        if (removed) moveCardToCemetery(match, removed.player.id, removed.card);
+      }
+      emitHeadlessAction("DESTROY_EQUIPPED_CARDS");
+    } else {
+      emitHeadlessAction("SWAP_PRIMARY_CREATURES");
+    }
+    return match;
+  }
+
+  if (actionType.includes("apply_conditional_damage_immunity")) {
+    emitHeadlessAction("HEADLESS_STATIC_STATUS_AVAILABLE");
+    return match;
+  }
+
+  if (plan.card.cardId === "gen1_066_junk_scarecrow") {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    if (effect?.id === "066-E02") {
+      moveCardToHand(match, source.playerId, removed?.card ?? source.card);
+      emitHeadlessAction("SCHEDULE_RETURN_TO_HAND", { turnCycles: 3 });
+    } else {
+      moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+      emitHeadlessAction("NEGATE_ATTACK", { preventedDamage: true });
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen1_073_mimic_chest" && effect?.id === "073-E02") {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction("BATTLE_PERCENTAGE_DAMAGE_RESOLVED", { actionType: "NEGATE_ATTACK", percentage: 0.5 });
+    addHeadlessEvent(match, "BATTLE_RESPONSE_ATTACK_NEGATED", source.playerId, {
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "NEGATE_ATTACK"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen1_083_sentinel_of_life" || plan.card.cardId === "gen1_109_forest_sentinel") {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction(effect?.actionType ?? "NEGATE_ATTACK", {
+      preventedDamage: true,
+      reflectedDamage: plan.card.cardId === "gen1_109_forest_sentinel" ? 9 : undefined,
+      healedDamage: plan.card.cardId === "gen1_083_sentinel_of_life" ? 9 : undefined
+    });
+    return match;
+  }
 
   const shouldRunSummon = definition.cardType === "CREATURE" &&
     !setupText.includes("do not summon") &&

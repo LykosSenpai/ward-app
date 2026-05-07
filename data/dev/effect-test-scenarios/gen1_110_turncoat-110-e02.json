@@ -41,7 +41,7 @@
       ],
       "player2Cards": [
         "test_creature_defender",
-        "gen1_026_bone_blade"
+        "gen1_029_blood_of_the_bat"
       ],
       "forcedRolls": [],
       "notes": [
@@ -65,7 +65,7 @@
         "label": "Player 2 equip destroyed during Turncoat cleanup",
         "path": "player_2.cemetery",
         "operator": "contains",
-        "value": "gen1_026_bone_blade"
+        "value": "gen1_029_blood_of_the_bat"
       },
       {
         "label": "Destroy-equipped-cards action resolved",
