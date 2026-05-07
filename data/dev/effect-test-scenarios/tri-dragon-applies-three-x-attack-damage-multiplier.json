@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_150_tri_dragon",
+  "effectId": "150-E02",
+  "title": "Tri-Dragon applies 3x attack damage multiplier",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_150_tri_dragon",
+      "cardName": "Tri-Dragon",
+      "cardType": "CREATURE",
+      "cardNumber": "150",
+      "generation": "3",
+      "rawText": "If this creature's Hit Dice match, it inflicts 3x Atk damage. This creature cannot critical Hit/Miss."
+    },
+    "effect": {
+      "effectId": "150-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "This creature",
+      "value": "If this creature's Hit Dice match, it inflicts 3x Atk damage. This creature cannot critical Hit/Miss.",
+      "durationText": "Immediate",
+      "reusableFunction": "applyAttackDamageMultiplier"
+    },
+    "title": "Tri-Dragon applies 3x attack damage multiplier",
+    "summary": "Verify Tri-Dragon applies the 3x Atk damage multiplier when Hit Dice match.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_150_tri_dragon"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            4,
+            4,
+            4
+          ],
+          "label": "Tri-Dragon matching hit dice"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2
+          ],
+          "label": "Tri-Dragon damage"
+        }
+      ],
+      "notes": [
+        "Read text first: If this creature's Hit Dice match, it inflicts 3x Atk damage. This creature cannot critical Hit/Miss."
+      ]
+    },
+    "steps": [
+      "Set up Tri-Dragon according to its printed text.",
+      "Verify Tri-Dragon applies the 3x Atk damage multiplier when Hit Dice match.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Tri-Dragon route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Tri-Dragon"
+      },
+      {
+        "label": "Attack damage multiplier marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Damage multiplier greater than normal",
+        "path": "battle.lastDamage.multiplier",
+        "operator": "greaterThan",
+        "value": 1
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: If this creature's Hit Dice match, it inflicts 3x Atk damage. This creature cannot critical Hit/Miss."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Tri-Dragon applies the 3x Atk damage multiplier when Hit Dice match."
+    },
+    "regression": {
+      "fixtureName": "tri-dragon-applies-three-x-attack-damage-multiplier",
+      "tags": [
+        "gen3",
+        "creature",
+        "dragon",
+        "apply-attack-damage-multiplier"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_150_tri_dragon:150-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

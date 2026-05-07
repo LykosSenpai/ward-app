@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_039_m_o_o_n_sgt",
+  "effectId": "039-E02",
+  "title": "M.O.O.N. Sgt. negation returns linked Limited Summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_039_m_o_o_n_sgt",
+      "cardName": "M.O.O.N. Sgt.",
+      "cardType": "CREATURE",
+      "cardNumber": "039",
+      "generation": "3",
+      "rawText": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated."
+    },
+    "effect": {
+      "effectId": "039-E02",
+      "trigger": "ON_SUMMON",
+      "actionType": "NEGATE_CARD_EFFECT",
+      "effectGroup": "Negation",
+      "target": "Limited Summon card(s)",
+      "value": "When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated.",
+      "durationText": "Immediate",
+      "reusableFunction": "negateCardEffect"
+    },
+    "title": "M.O.O.N. Sgt. negation returns linked Limited Summon",
+    "summary": "When M.O.O.N. Sgt. effect is negated, verify the linked Limited Summon returns to hand.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_039_m_o_o_n_sgt",
+        "gen3_040_m_o_o_n_soldier"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated."
+      ]
+    },
+    "steps": [
+      "Set up M.O.O.N. Sgt. according to its printed text.",
+      "When M.O.O.N. Sgt. effect is negated, verify the linked Limited Summon returns to hand.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "M.O.O.N. Sgt. route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "M.O.O.N. Sgt."
+      },
+      {
+        "label": "Effect negation marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "NEGATE_CARD_EFFECT"
+      },
+      {
+        "label": "Linked M.O.O.N. Limited Summon was created before negation",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SUMMON_LIMITED_CREATURE_FROM_HAND"
+      },
+      {
+        "label": "Linked M.O.O.N. creature returned to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "gen3_040_m_o_o_n_soldier"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: When summoned, you may summon 1 \"M.O.O.N.\" named creature from your hand or deck as a Limited Summon. Return the summoned creature to your hand if this card leaves the field, changes control, or this effect is negated."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "When M.O.O.N. Sgt. effect is negated, verify the linked Limited Summon returns to hand."
+    },
+    "regression": {
+      "fixtureName": "moon-sgt-negation-returns-linked-limited-summon",
+      "tags": [
+        "gen3",
+        "creature",
+        "humanoid",
+        "negate-card-effect"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_039_m_o_o_n_sgt:039-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

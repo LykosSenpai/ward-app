@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_077_possession",
+  "effectId": "077-E01",
+  "title": "Possession forces target creature to battle itself",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_077_possession",
+      "cardName": "Possession",
+      "cardType": "MAGIC",
+      "cardNumber": "077",
+      "generation": "3",
+      "rawText": "The target creature must battle itself this turn. All standard combat rules apply. Other creatures cannot battle this turn."
+    },
+    "effect": {
+      "effectId": "077-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "Target creature",
+      "value": "The target creature must battle itself this turn. All standard combat rules apply. Other creatures cannot battle this turn.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Possession forces target creature to battle itself",
+    "summary": "Play Possession and verify the target creature must battle itself this turn while other creatures cannot battle.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_077_possession",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: The target creature must battle itself this turn. All standard combat rules apply. Other creatures cannot battle this turn."
+      ]
+    },
+    "steps": [
+      "Set up Possession according to its printed text.",
+      "Play Possession and verify the target creature must battle itself this turn while other creatures cannot battle.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Possession route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Possession"
+      },
+      {
+        "label": "Self-battle marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SELF_BATTLE"
+      },
+      {
+        "label": "Other battle lock marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_LOCK"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: The target creature must battle itself this turn. All standard combat rules apply. Other creatures cannot battle this turn."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Possession and verify the target creature must battle itself this turn while other creatures cannot battle."
+    },
+    "regression": {
+      "fixtureName": "possession-forces-target-creature-to-battle-itself",
+      "tags": [
+        "gen3",
+        "magic",
+        "none",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_077_possession:077-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

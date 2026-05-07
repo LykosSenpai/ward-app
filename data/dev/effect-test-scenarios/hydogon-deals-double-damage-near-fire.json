@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_070_hydogon",
+  "effectId": "070-E01",
+  "title": "Hydogon deals double Atk damage near fire",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_070_hydogon",
+      "cardName": "Hydogon",
+      "cardType": "CREATURE",
+      "cardNumber": "070",
+      "generation": "3",
+      "rawText": "This creature inflicts 2x Atk damage to any creature in or near fire."
+    },
+    "effect": {
+      "effectId": "070-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "This creature",
+      "value": "This creature inflicts 2x Atk damage to any creature in or near fire.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Hydogon deals double Atk damage near fire",
+    "summary": "Verify Hydogon inflicts 2x Atk damage to a creature in or near fire.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_070_hydogon"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: This creature inflicts 2x Atk damage to any creature in or near fire."
+      ]
+    },
+    "steps": [
+      "Set up Hydogon according to its printed text.",
+      "Verify Hydogon inflicts 2x Atk damage to a creature in or near fire.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hydogon route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Hydogon"
+      },
+      {
+        "label": "Hydogon double damage marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Target took amplified damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 12
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: This creature inflicts 2x Atk damage to any creature in or near fire."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Hydogon inflicts 2x Atk damage to a creature in or near fire."
+    },
+    "regression": {
+      "fixtureName": "hydogon-deals-double-damage-near-fire",
+      "tags": [
+        "gen3",
+        "creature",
+        "dragon",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_070_hydogon:070-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

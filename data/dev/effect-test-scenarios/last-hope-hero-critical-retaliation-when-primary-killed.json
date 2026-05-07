@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_106_last_hope_hero",
+  "effectId": "106-E01",
+  "title": "Last Hope Hero makes critical retaliation when primary is killed",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_106_last_hope_hero",
+      "cardName": "Last Hope Hero",
+      "cardType": "MAGIC",
+      "cardNumber": "106",
+      "generation": "3",
+      "rawText": "Play this from your hand when your primary creature is killed. Roll its base Atk Dice Rolls and Modifier against the creature that killed it. This attack is treated as a Critical Hit."
+    },
+    "effect": {
+      "effectId": "106-E01",
+      "trigger": "WHEN_YOUR_PRIMARY_CREATURE_KILLED",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Your primary creature",
+      "value": "Play this from your hand when your primary creature is killed. Roll its base Atk Dice Rolls and Modifier against the creature that killed it. This attack is treated as a Critical Hit.",
+      "durationText": "Immediate",
+      "reusableFunction": "applyAttackDamageMultiplier"
+    },
+    "title": "Last Hope Hero makes critical retaliation when primary is killed",
+    "summary": "Play Last Hope Hero from hand when your primary is killed and verify its attack against the killer is treated as a Critical Hit.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_106_last_hope_hero",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: Play this from your hand when your primary creature is killed. Roll its base Atk Dice Rolls and Modifier against the creature that killed it. This attack is treated as a Critical Hit."
+      ]
+    },
+    "steps": [
+      "Set up Last Hope Hero according to its printed text.",
+      "Play Last Hope Hero from hand when your primary is killed and verify its attack against the killer is treated as a Critical Hit.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Last Hope Hero route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Last Hope Hero"
+      },
+      {
+        "label": "Critical retaliation marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "CRITICAL"
+      },
+      {
+        "label": "Killer took Last Hope Hero damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 0
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Play this from your hand when your primary creature is killed. Roll its base Atk Dice Rolls and Modifier against the creature that killed it. This attack is treated as a Critical Hit."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Last Hope Hero from hand when your primary is killed and verify its attack against the killer is treated as a Critical Hit."
+    },
+    "regression": {
+      "fixtureName": "last-hope-hero-critical-retaliation-when-primary-killed",
+      "tags": [
+        "gen3",
+        "magic",
+        "none",
+        "apply-attack-damage-multiplier"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_106_last_hope_hero:106-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

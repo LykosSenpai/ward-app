@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_043_the_villain",
+  "effectId": "043-E01",
+  "title": "The Villain makes opponent pay 10 primary damage to play magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_043_the_villain",
+      "cardName": "The Villain",
+      "cardType": "CREATURE",
+      "cardNumber": "043",
+      "generation": "3",
+      "rawText": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+    },
+    "effect": {
+      "effectId": "043-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Opponent's primary creature",
+      "value": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures.",
+      "durationText": "While on field",
+      "reusableFunction": "damage"
+    },
+    "title": "The Villain makes opponent pay 10 primary damage to play magic",
+    "summary": "While The Villain is on field, verify opponent takes 10 damage to their primary creature to play a magic card.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_043_the_villain"
+      ],
+      "player2Cards": [
+        "gen1_014_smokescreen",
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+      ]
+    },
+    "steps": [
+      "Set up The Villain according to its printed text.",
+      "While The Villain is on field, verify opponent takes 10 damage to their primary creature to play a magic card.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "The Villain route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "The Villain"
+      },
+      {
+        "label": "Opponent primary takes 10 magic play cost damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 10
+      },
+      {
+        "label": "Magic play cost marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "PLAY_MAGIC_COST"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "While The Villain is on field, verify opponent takes 10 damage to their primary creature to play a magic card."
+    },
+    "regression": {
+      "fixtureName": "villain-opponent-pays-ten-primary-damage-to-play-magic",
+      "tags": [
+        "gen3",
+        "creature",
+        "cosmic",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_043_the_villain:043-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

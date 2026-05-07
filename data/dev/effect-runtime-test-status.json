@@ -5462,6 +5462,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_037_galactic_suit:037-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_037_galactic_suit",
+      "cardName": "Galactic Suit",
+      "effectId": "037-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MANUAL_FALLBACK.",
+      "lastTestedAt": "2026-05-07T16:47:13.162Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_038_army_of_the_orcs:038-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_038_army_of_the_orcs",
@@ -5473,6 +5487,48 @@
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
       "lastTestedAt": "2026-05-07T13:43:45.010Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_039_m_o_o_n_sgt:039-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_039_m_o_o_n_sgt",
+      "cardName": "M.O.O.N. Sgt.",
+      "effectId": "039-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "LIMITED_SUMMON",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.507Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_039_m_o_o_n_sgt:039-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_039_m_o_o_n_sgt",
+      "cardName": "M.O.O.N. Sgt.",
+      "effectId": "039-E02",
+      "trigger": "ON_SUMMON",
+      "actionType": "NEGATE_CARD_EFFECT",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.525Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_039_m_o_o_n_sgt:039-E03",
+      "packId": "ward-gen3",
+      "cardId": "gen3_039_m_o_o_n_sgt",
+      "cardName": "M.O.O.N. Sgt.",
+      "effectId": "039-E03",
+      "trigger": "ON_SUMMON",
+      "actionType": "MOVE_CARD",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.491Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5518,6 +5574,34 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_043_the_villain:043-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_043_the_villain",
+      "cardName": "The Villain",
+      "effectId": "043-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: No runtime route exists for effect action: DAMAGE.",
+      "lastTestedAt": "2026-05-07T16:47:13.841Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_043_the_villain:043-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_043_the_villain",
+      "cardName": "The Villain",
+      "effectId": "043-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "status": "BROKEN",
+      "issueType": "WRONG_DAMAGE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.938Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_044_wood_axe:044-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_044_wood_axe",
@@ -5560,6 +5644,34 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_048_owl_god:048-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_048_owl_god",
+      "cardName": "Owl God",
+      "effectId": "048-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "SUMMON_REQUIREMENT",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.574Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_049_gremlin:049-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_049_gremlin",
+      "cardName": "Gremlin",
+      "effectId": "049-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MANUAL_FALLBACK.",
+      "lastTestedAt": "2026-05-07T16:47:13.194Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_050_adam_bomb:050-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_050_adam_bomb",
@@ -5588,6 +5700,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_051_deercrow:051-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_051_deercrow",
+      "cardName": "Deercrow",
+      "effectId": "051-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "SUMMON_REQUIREMENT",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.035Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_051_deercrow:051-E02",
       "packId": "ward-gen3",
       "cardId": "gen3_051_deercrow",
@@ -5599,6 +5725,34 @@
       "issueType": "NONE",
       "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
       "lastTestedAt": "2026-05-07T16:13:56.553Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_052_bad_luck_bear:052-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_052_bad_luck_bear",
+      "cardName": "Bad Luck Bear",
+      "effectId": "052-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "REROLL_DICE",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: REROLL_DICE.",
+      "lastTestedAt": "2026-05-07T16:47:12.911Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_053_the_super_hero:053-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_053_the_super_hero",
+      "cardName": "The Super Hero",
+      "effectId": "053-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "DAMAGE",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.691Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5700,6 +5854,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_059_lumber:059-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_059_lumber",
+      "cardName": "Lumber",
+      "effectId": "059-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: Selected attacker is not on the active player's field.",
+      "lastTestedAt": "2026-05-07T16:47:13.359Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_062_graft:062-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_062_graft",
@@ -5711,6 +5879,20 @@
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
       "lastTestedAt": "2026-05-07T16:13:56.700Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_063_old_logging_road:063-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_063_old_logging_road",
+      "cardName": "Old Logging Road",
+      "effectId": "063-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: No runtime route exists for effect action: DAMAGE.",
+      "lastTestedAt": "2026-05-07T16:47:13.542Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -5770,6 +5952,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_070_hydogon:070-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_070_hydogon",
+      "cardName": "Hydogon",
+      "effectId": "070-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: No runtime route exists for effect action: DAMAGE.",
+      "lastTestedAt": "2026-05-07T16:47:13.208Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_070_hydogon:070-E02",
       "packId": "ward-gen3",
       "cardId": "gen3_070_hydogon",
@@ -5812,6 +6008,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_075_orc_champion:075-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_075_orc_champion",
+      "cardName": "Orc Champion",
+      "effectId": "075-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "SUMMON_REQUIREMENT",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.558Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_076_thresher:076-E02",
       "packId": "ward-gen3",
       "cardId": "gen3_076_thresher",
@@ -5823,6 +6033,20 @@
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
       "lastTestedAt": "2026-05-07T13:43:59.638Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_077_possession:077-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_077_possession",
+      "cardName": "Possession",
+      "effectId": "077-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run reached manual fallback instead of a reusable runtime route.",
+      "lastTestedAt": "2026-05-07T16:47:13.621Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6218,6 +6442,34 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_102_monkey_duck:102-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_102_monkey_duck",
+      "cardName": "Monkey Duck",
+      "effectId": "102-E01",
+      "trigger": "DURING_BATTLE",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.474Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_103_bio_dino:103-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_103_bio_dino",
+      "cardName": "Bio-Dino",
+      "effectId": "103-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MANUAL_FALLBACK.",
+      "lastTestedAt": "2026-05-07T16:47:12.931Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_104_bait:104-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_104_bait",
@@ -6246,6 +6498,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_106_last_hope_hero:106-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_106_last_hope_hero",
+      "cardName": "Last Hope Hero",
+      "effectId": "106-E01",
+      "trigger": "WHEN_YOUR_PRIMARY_CREATURE_KILLED",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "status": "BROKEN",
+      "issueType": "WRONG_DAMAGE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:47:13.297Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_107_missile_toad:107-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_107_missile_toad",
@@ -6271,6 +6537,20 @@
       "issueType": "NONE",
       "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
       "lastTestedAt": "2026-05-07T16:20:16.657Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_108_lava_golem:108-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_108_lava_golem",
+      "cardName": "Lava Golem",
+      "effectId": "108-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "status": "BROKEN",
+      "issueType": "WRONG_DAMAGE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: Selected attacker is not on the active player's field.",
+      "lastTestedAt": "2026-05-07T16:47:13.329Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6327,6 +6607,48 @@
       "issueType": "WRONG_DAMAGE",
       "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
       "lastTestedAt": "2026-05-07T16:09:21.456Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_111_final_form:111-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_111_final_form",
+      "cardName": "Final Form",
+      "effectId": "111-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "NEGATE_CREATURE_EFFECTS",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: NEGATE_CREATURE_EFFECTS.",
+      "lastTestedAt": "2026-05-07T16:47:13.122Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_111_final_form:111-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_111_final_form",
+      "cardName": "Final Form",
+      "effectId": "111-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "REPLACE_ATTACK_PROFILE",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: REPLACE_ATTACK_PROFILE.",
+      "lastTestedAt": "2026-05-07T16:47:13.100Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_112_bulwark:112-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_112_bulwark",
+      "cardName": "Bulwark",
+      "effectId": "112-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MANUAL_FALLBACK.",
+      "lastTestedAt": "2026-05-07T16:47:12.943Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6596,6 +6918,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_126_arcane_power:126-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_126_arcane_power",
+      "cardName": "Arcane Power",
+      "effectId": "126-E01",
+      "trigger": "DURING_BATTLE",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MANUAL_FALLBACK.",
+      "lastTestedAt": "2026-05-07T16:47:12.888Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_127_the_merchant:127-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_127_the_merchant",
@@ -6635,6 +6971,20 @@
       "issueType": "NONE",
       "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: Complete all pending Magic effects before battling.",
       "lastTestedAt": "2026-05-07T16:28:52.064Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_128_eye_for_an_eye:128-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_128_eye_for_an_eye",
+      "cardName": "Eye For An Eye",
+      "effectId": "128-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run reached manual fallback instead of a reusable runtime route.",
+      "lastTestedAt": "2026-05-07T16:47:13.079Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6806,6 +7156,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_137_gnometheon:137-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_137_gnometheon",
+      "cardName": "Gnometheon",
+      "effectId": "137-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MANUAL_FALLBACK.",
+      "lastTestedAt": "2026-05-07T16:47:13.184Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_138_flame_sentinel:138-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_138_flame_sentinel",
@@ -6876,6 +7240,34 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_141_the_iron_man:141-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_141_the_iron_man",
+      "cardName": "The Iron Man",
+      "effectId": "141-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MANUAL_FALLBACK.",
+      "lastTestedAt": "2026-05-07T16:47:13.247Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_142_inversion:142-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_142_inversion",
+      "cardName": "Inversion",
+      "effectId": "142-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MANUAL_FALLBACK.",
+      "lastTestedAt": "2026-05-07T16:47:13.227Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_143_succubus:143-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_143_succubus",
@@ -6943,6 +7335,118 @@
       "issueType": "NONE",
       "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
       "lastTestedAt": "2026-05-07T16:28:51.688Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_146_constructed_pylon:146-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_146_constructed_pylon",
+      "cardName": "Constructed Pylon",
+      "effectId": "146-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DESTROY_MAGIC",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: No runtime route exists for effect action: DESTROY_MAGIC.",
+      "lastTestedAt": "2026-05-07T16:47:12.974Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_146_constructed_pylon:146-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_146_constructed_pylon",
+      "cardName": "Constructed Pylon",
+      "effectId": "146-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "ROLL_TABLE",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: No runtime route exists for effect action: ROLL_TABLE.",
+      "lastTestedAt": "2026-05-07T16:47:13.002Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_147_friend_like_you:147-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_147_friend_like_you",
+      "cardName": "Friend Like You",
+      "effectId": "147-E01",
+      "trigger": "WHEN_THIS_CREATURE_KILLED",
+      "actionType": "DAMAGE",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: DAMAGE.",
+      "lastTestedAt": "2026-05-07T16:47:13.143Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_147_friend_like_you:147-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_147_friend_like_you",
+      "cardName": "Friend Like You",
+      "effectId": "147-E02",
+      "trigger": "WHEN_THIS_CREATURE_KILLED",
+      "actionType": "SHUFFLE_DECK",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: SHUFFLE_DECK.",
+      "lastTestedAt": "2026-05-07T16:47:13.133Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_149_sprite:149-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_149_sprite",
+      "cardName": "Sprite",
+      "effectId": "149-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "status": "BROKEN",
+      "issueType": "NONE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: Selected attacker is not on the active player's field.",
+      "lastTestedAt": "2026-05-07T16:47:13.654Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_150_tri_dragon:150-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_150_tri_dragon",
+      "cardName": "Tri-Dragon",
+      "effectId": "150-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "status": "BROKEN",
+      "issueType": "UNSUPPORTED_ACTION_TYPE",
+      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: No runtime route exists for effect action: DAMAGE.",
+      "lastTestedAt": "2026-05-07T16:47:13.827Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_150_tri_dragon:150-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_150_tri_dragon",
+      "cardName": "Tri-Dragon",
+      "effectId": "150-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:47:13.798Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_151_eagle_family:151-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_151_eagle_family",
+      "cardName": "Eagle Family",
+      "effectId": "151-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "status": "BROKEN",
+      "issueType": "WRONG_DAMAGE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: The source card is no longer on the field.",
+      "lastTestedAt": "2026-05-07T16:47:13.053Z",
       "testedBy": "Headless Engine QA"
     }
   ]

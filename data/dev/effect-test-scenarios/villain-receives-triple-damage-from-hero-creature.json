@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_043_the_villain",
+  "effectId": "043-E02",
+  "title": "The Villain receives triple damage from The Hero or The Heroine",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_043_the_villain",
+      "cardName": "The Villain",
+      "cardType": "CREATURE",
+      "cardNumber": "043",
+      "generation": "3",
+      "rawText": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+    },
+    "effect": {
+      "effectId": "043-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Opponent's primary creature",
+      "value": "While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures.",
+      "durationText": "While on field",
+      "reusableFunction": "applyAttackDamageMultiplier"
+    },
+    "title": "The Villain receives triple damage from The Hero or The Heroine",
+    "summary": "Battle The Villain against The Hero and verify The Villain receives 3x Atk damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen3_043_the_villain"
+      ],
+      "player2Cards": [
+        "gen1_139_the_hero"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+      ]
+    },
+    "steps": [
+      "Set up The Villain according to its printed text.",
+      "Battle The Villain against The Hero and verify The Villain receives 3x Atk damage.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "The Villain route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "The Villain"
+      },
+      {
+        "label": "Triple damage multiplier marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "The Villain took amplified damage",
+        "path": "player_1.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 18
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: While this card is on the field, your opponent(s) must deal 10 damage to their primary creature to play a magic card. This creature receives 3x Atk damage from \"The Hero\" and \"The Heroine\" creatures."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Battle The Villain against The Hero and verify The Villain receives 3x Atk damage."
+    },
+    "regression": {
+      "fixtureName": "villain-receives-triple-damage-from-hero-creature",
+      "tags": [
+        "gen3",
+        "creature",
+        "cosmic",
+        "apply-attack-damage-multiplier"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_043_the_villain:043-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_147_friend_like_you",
+  "effectId": "147-E01",
+  "title": "Friend Like You summons The Creator when killed by Atk damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_147_friend_like_you",
+      "cardName": "Friend Like You",
+      "cardType": "CREATURE",
+      "cardNumber": "147",
+      "generation": "3",
+      "rawText": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle."
+    },
+    "effect": {
+      "effectId": "147-E01",
+      "trigger": "WHEN_THIS_CREATURE_KILLED",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Your primary creature",
+      "value": "If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Friend Like You summons The Creator when killed by Atk damage",
+    "summary": "When Friend Like You is killed by Atk damage, verify a The Creator creature may be summoned as primary at no sacrifice cost.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_147_friend_like_you",
+        "gen1_092_the_creator"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle."
+      ]
+    },
+    "steps": [
+      "Set up Friend Like You according to its printed text.",
+      "When Friend Like You is killed by Atk damage, verify a The Creator creature may be summoned as primary at no sacrifice cost.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Friend Like You route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Friend Like You"
+      },
+      {
+        "label": "The Creator summon marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "PRIMARY_CREATURE_PLAYED"
+      },
+      {
+        "label": "The Creator became primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen1_092_the_creator"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: If this card is killed by Atk damage, you may summon 1 \"The Creator\" creature from your hand or deck as your primary creature at no sacrifice cost. Shuffle."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "When Friend Like You is killed by Atk damage, verify a The Creator creature may be summoned as primary at no sacrifice cost."
+    },
+    "regression": {
+      "fixtureName": "friend-like-you-summons-creator-when-killed-by-attack-damage",
+      "tags": [
+        "gen3",
+        "creature",
+        "beast",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_147_friend_like_you:147-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

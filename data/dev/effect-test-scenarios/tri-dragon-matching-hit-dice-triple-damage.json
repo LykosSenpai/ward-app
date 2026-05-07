@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_150_tri_dragon",
+  "effectId": "150-E01",
+  "title": "Tri-Dragon matching Hit Dice triples damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_150_tri_dragon",
+      "cardName": "Tri-Dragon",
+      "cardType": "CREATURE",
+      "cardNumber": "150",
+      "generation": "3",
+      "rawText": "If this creature's Hit Dice match, it inflicts 3x Atk damage. This creature cannot critical Hit/Miss."
+    },
+    "effect": {
+      "effectId": "150-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "This creature",
+      "value": "If this creature's Hit Dice match, it inflicts 3x Atk damage. This creature cannot critical Hit/Miss.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Tri-Dragon matching Hit Dice triples damage",
+    "summary": "Force matching Hit Dice and verify Tri-Dragon inflicts 3x Atk damage without critical hit behavior.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_150_tri_dragon"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            4,
+            4,
+            4
+          ],
+          "label": "Tri-Dragon matching hit dice"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2
+          ],
+          "label": "Tri-Dragon damage"
+        }
+      ],
+      "notes": [
+        "Read text first: If this creature's Hit Dice match, it inflicts 3x Atk damage. This creature cannot critical Hit/Miss."
+      ]
+    },
+    "steps": [
+      "Set up Tri-Dragon according to its printed text.",
+      "Force matching Hit Dice and verify Tri-Dragon inflicts 3x Atk damage without critical hit behavior.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Tri-Dragon route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Tri-Dragon"
+      },
+      {
+        "label": "Tri-Dragon triple damage marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Target took triple damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 18
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: If this creature's Hit Dice match, it inflicts 3x Atk damage. This creature cannot critical Hit/Miss."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Force matching Hit Dice and verify Tri-Dragon inflicts 3x Atk damage without critical hit behavior."
+    },
+    "regression": {
+      "fixtureName": "tri-dragon-matching-hit-dice-triple-damage",
+      "tags": [
+        "gen3",
+        "creature",
+        "dragon",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_150_tri_dragon:150-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

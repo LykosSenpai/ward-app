@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_128_eye_for_an_eye",
+  "effectId": "128-E01",
+  "title": "Eye For An Eye exchanges hand and cemetery cards",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_128_eye_for_an_eye",
+      "cardName": "Eye For An Eye",
+      "cardType": "MAGIC",
+      "cardNumber": "128",
+      "generation": "3",
+      "rawText": "All players may each exchange 1 card from their hand with 1 card in their cemetery. Creature for a Creature. Magic for a Magic."
+    },
+    "effect": {
+      "effectId": "128-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "Target creature",
+      "value": "All players may each exchange 1 card from their hand with 1 card in their cemetery. Creature for a Creature. Magic for a Magic.",
+      "durationText": "Immediate",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Eye For An Eye exchanges hand and cemetery cards",
+    "summary": "Play Eye For An Eye and verify each player may exchange one same-kind hand card with one cemetery card.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_128_eye_for_an_eye",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: All players may each exchange 1 card from their hand with 1 card in their cemetery. Creature for a Creature. Magic for a Magic."
+      ]
+    },
+    "steps": [
+      "Set up Eye For An Eye according to its printed text.",
+      "Play Eye For An Eye and verify each player may exchange one same-kind hand card with one cemetery card.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Eye For An Eye route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Eye For An Eye"
+      },
+      {
+        "label": "Exchange marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EXCHANGE"
+      },
+      {
+        "label": "Eye For An Eye resolved to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen3_128_eye_for_an_eye"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: All players may each exchange 1 card from their hand with 1 card in their cemetery. Creature for a Creature. Magic for a Magic."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Eye For An Eye and verify each player may exchange one same-kind hand card with one cemetery card."
+    },
+    "regression": {
+      "fixtureName": "eye-for-an-eye-exchanges-hand-and-cemetery-card",
+      "tags": [
+        "gen3",
+        "magic",
+        "none",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_128_eye_for_an_eye:128-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

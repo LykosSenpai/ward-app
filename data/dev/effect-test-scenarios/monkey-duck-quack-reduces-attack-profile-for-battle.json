@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_102_monkey_duck",
+  "effectId": "102-E01",
+  "title": "Monkey Duck quack reduces attack profile for battle",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_102_monkey_duck",
+      "cardName": "Monkey Duck",
+      "cardType": "CREATURE",
+      "cardNumber": "102",
+      "generation": "3",
+      "rawText": "During battle, your opponent may \"Quack\" out loud 3 times. If they do, reduce this card's base Atk Dice Rolls and Modifier by -1 for this battle."
+    },
+    "effect": {
+      "effectId": "102-E01",
+      "trigger": "DURING_BATTLE",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "This creature",
+      "value": "During battle, your opponent may \"Quack\" out loud 3 times. If they do, reduce this card's base Atk Dice Rolls and Modifier by -1 for this battle.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Monkey Duck quack reduces attack profile for battle",
+    "summary": "During battle, verify opponent quacking three times reduces Monkey Duck base Atk Dice Rolls and Modifier by 1 for that battle.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_102_monkey_duck"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: During battle, your opponent may \"Quack\" out loud 3 times. If they do, reduce this card's base Atk Dice Rolls and Modifier by -1 for this battle."
+      ]
+    },
+    "steps": [
+      "Set up Monkey Duck according to its printed text.",
+      "During battle, verify opponent quacking three times reduces Monkey Duck base Atk Dice Rolls and Modifier by 1 for that battle.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Monkey Duck route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Monkey Duck"
+      },
+      {
+        "label": "Quack choice marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "QUACK"
+      },
+      {
+        "label": "Temporary attack profile reduction marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_DICE_MODIFIER"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: During battle, your opponent may \"Quack\" out loud 3 times. If they do, reduce this card's base Atk Dice Rolls and Modifier by -1 for this battle."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "During battle, verify opponent quacking three times reduces Monkey Duck base Atk Dice Rolls and Modifier by 1 for that battle."
+    },
+    "regression": {
+      "fixtureName": "monkey-duck-quack-reduces-attack-profile-for-battle",
+      "tags": [
+        "gen3",
+        "creature",
+        "beast",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_102_monkey_duck:102-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

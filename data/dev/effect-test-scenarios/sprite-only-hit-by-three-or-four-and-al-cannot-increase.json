@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_149_sprite",
+  "effectId": "149-E01",
+  "title": "Sprite only hit by 3 or 4 and AL cannot increase",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_149_sprite",
+      "cardName": "Sprite",
+      "cardType": "CREATURE",
+      "cardNumber": "149",
+      "generation": "3",
+      "rawText": "This creature can only be hit in battle if one of the attacking creature's Hit Dice Rolls is a 3 or 4. This creature's AL cannot increase."
+    },
+    "effect": {
+      "effectId": "149-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "This creature",
+      "value": "This creature can only be hit in battle if one of the attacking creature's Hit Dice Rolls is a 3 or 4. This creature's AL cannot increase.",
+      "durationText": "Immediate",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Sprite only hit by 3 or 4 and AL cannot increase",
+    "summary": "Verify Sprite can only be hit if an attacking Hit Die is 3 or 4, and Sprite AL cannot increase.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen3_149_sprite"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5,
+            6,
+            6,
+            6
+          ],
+          "label": "Sprite miss without 3 or 4"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2
+          ],
+          "label": "Sprite blocked damage"
+        }
+      ],
+      "notes": [
+        "Read text first: This creature can only be hit in battle if one of the attacking creature's Hit Dice Rolls is a 3 or 4. This creature's AL cannot increase."
+      ]
+    },
+    "steps": [
+      "Set up Sprite according to its printed text.",
+      "Verify Sprite can only be hit if an attacking Hit Die is 3 or 4, and Sprite AL cannot increase.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Sprite route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Sprite"
+      },
+      {
+        "label": "Sprite hit override marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HIT_OUTCOME_OVERRIDE"
+      },
+      {
+        "label": "Sprite took no damage without 3 or 4",
+        "path": "player_1.primary.damageTaken",
+        "operator": "equals",
+        "value": 0
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: This creature can only be hit in battle if one of the attacking creature's Hit Dice Rolls is a 3 or 4. This creature's AL cannot increase."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Sprite can only be hit if an attacking Hit Die is 3 or 4, and Sprite AL cannot increase."
+    },
+    "regression": {
+      "fixtureName": "sprite-only-hit-by-three-or-four-and-al-cannot-increase",
+      "tags": [
+        "gen3",
+        "creature",
+        "cosmic",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_149_sprite:149-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

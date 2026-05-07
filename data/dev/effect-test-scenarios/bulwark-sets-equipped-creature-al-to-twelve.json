@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_112_bulwark",
+  "effectId": "112-E01",
+  "title": "Bulwark sets equipped creature AL to 12",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_112_bulwark",
+      "cardName": "Bulwark",
+      "cardType": "MAGIC",
+      "cardNumber": "112",
+      "generation": "3",
+      "rawText": "Increase the equipped creature's AL to 12 for 3 turn cycles."
+    },
+    "effect": {
+      "effectId": "112-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "Equipped creature",
+      "value": "Increase the equipped creature's AL to 12 for 3 turn cycles.",
+      "durationText": "3 turn cycles",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Bulwark sets equipped creature AL to 12",
+    "summary": "Equip Bulwark and verify equipped creature AL becomes 12 for three turn cycles.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_112_bulwark",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Increase the equipped creature's AL to 12 for 3 turn cycles."
+      ]
+    },
+    "steps": [
+      "Set up Bulwark according to its printed text.",
+      "Equip Bulwark and verify equipped creature AL becomes 12 for three turn cycles.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Bulwark route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Bulwark"
+      },
+      {
+        "label": "Equipped creature AL is 12",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 12
+      },
+      {
+        "label": "Bulwark remains equipped",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_112_bulwark"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Increase the equipped creature's AL to 12 for 3 turn cycles."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Bulwark and verify equipped creature AL becomes 12 for three turn cycles."
+    },
+    "regression": {
+      "fixtureName": "bulwark-sets-equipped-creature-al-to-twelve",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_112_bulwark:112-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

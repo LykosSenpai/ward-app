@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_142_inversion",
+  "effectId": "142-E01",
+  "title": "Inversion reveals bottom deck card",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_142_inversion",
+      "cardName": "Inversion",
+      "cardType": "MAGIC",
+      "cardNumber": "142",
+      "generation": "3",
+      "rawText": "Players must play with their decks flipped upside down. Their bottom card will be showing face up."
+    },
+    "effect": {
+      "effectId": "142-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "Target / controller as specified by card text",
+      "value": "Players must play with their decks flipped upside down. Their bottom card will be showing face up.",
+      "durationText": "While on field",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Inversion reveals bottom deck card",
+    "summary": "Play Inversion and verify decks are effectively flipped so bottom card is face up.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_142_inversion",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Players must play with their decks flipped upside down. Their bottom card will be showing face up."
+      ]
+    },
+    "steps": [
+      "Set up Inversion according to its printed text.",
+      "Play Inversion and verify decks are effectively flipped so bottom card is face up.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Inversion route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Inversion"
+      },
+      {
+        "label": "Deck inversion marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "INVERSION"
+      },
+      {
+        "label": "Bottom-deck reveal marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BOTTOM_CARD"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Players must play with their decks flipped upside down. Their bottom card will be showing face up."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Inversion and verify decks are effectively flipped so bottom card is face up."
+    },
+    "regression": {
+      "fixtureName": "inversion-reveals-bottom-deck-card",
+      "tags": [
+        "gen3",
+        "magic",
+        "field",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_142_inversion:142-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

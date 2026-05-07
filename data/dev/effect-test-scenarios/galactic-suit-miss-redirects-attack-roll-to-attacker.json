@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_037_galactic_suit",
+  "effectId": "037-E01",
+  "title": "Galactic Suit redirects missed attack roll to attacker",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_037_galactic_suit",
+      "cardName": "Galactic Suit",
+      "cardType": "MAGIC",
+      "cardNumber": "037",
+      "generation": "3",
+      "rawText": "If your opponent misses their Hit Roll against the equipped creature, they must roll their Atk Roll against their primary creature."
+    },
+    "effect": {
+      "effectId": "037-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "Opponent's primary creature",
+      "value": "If your opponent misses their Hit Roll against the equipped creature, they must roll their Atk Roll against their primary creature.",
+      "durationText": "While equipped",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Galactic Suit redirects missed attack roll to attacker",
+    "summary": "Equip Galactic Suit and verify a missed Hit Roll redirects the opponent Atk Roll against their own primary creature.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_037_galactic_suit",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Headless Gen3 QA miss route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA redirected damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: If your opponent misses their Hit Roll against the equipped creature, they must roll their Atk Roll against their primary creature."
+      ]
+    },
+    "steps": [
+      "Set up Galactic Suit according to its printed text.",
+      "Equip Galactic Suit and verify a missed Hit Roll redirects the opponent Atk Roll against their own primary creature.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Galactic Suit route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Galactic Suit"
+      },
+      {
+        "label": "Miss redirect marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "REDIRECT"
+      },
+      {
+        "label": "Opponent primary took redirected attack damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 0
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: If your opponent misses their Hit Roll against the equipped creature, they must roll their Atk Roll against their primary creature."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Galactic Suit and verify a missed Hit Roll redirects the opponent Atk Roll against their own primary creature."
+    },
+    "regression": {
+      "fixtureName": "galactic-suit-miss-redirects-attack-roll-to-attacker",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_037_galactic_suit:037-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

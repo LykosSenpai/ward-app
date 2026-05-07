@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_103_bio_dino",
+  "effectId": "103-E01",
+  "title": "Bio-Dino adds sacrificed creatures attack profile",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_103_bio_dino",
+      "cardName": "Bio-Dino",
+      "cardType": "CREATURE",
+      "cardNumber": "103",
+      "generation": "3",
+      "rawText": "Creatures used as sacrifice for this card have their base Atk Dice Rolls and base Modifier added to this creature."
+    },
+    "effect": {
+      "effectId": "103-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "This creature",
+      "value": "Creatures used as sacrifice for this card have their base Atk Dice Rolls and base Modifier added to this creature.",
+      "durationText": "Immediate",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Bio-Dino adds sacrificed creatures attack profile",
+    "summary": "Summon Bio-Dino and verify creatures used as sacrifice add their base Atk Dice Rolls and Modifier to Bio-Dino.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_103_bio_dino",
+        "test_creature_hp100",
+        "gen1_012_orc"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Creatures used as sacrifice for this card have their base Atk Dice Rolls and base Modifier added to this creature."
+      ]
+    },
+    "steps": [
+      "Set up Bio-Dino according to its printed text.",
+      "Summon Bio-Dino and verify creatures used as sacrifice add their base Atk Dice Rolls and Modifier to Bio-Dino.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Bio-Dino route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Bio-Dino"
+      },
+      {
+        "label": "Sacrifice stat inheritance marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "SACRIFICE"
+      },
+      {
+        "label": "Bio-Dino attack dice increased",
+        "path": "player_1.primaryCreature.effectiveStats.ATK_DICE_ROLLS",
+        "operator": "greaterThan",
+        "value": 2
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Creatures used as sacrifice for this card have their base Atk Dice Rolls and base Modifier added to this creature."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Summon Bio-Dino and verify creatures used as sacrifice add their base Atk Dice Rolls and Modifier to Bio-Dino."
+    },
+    "regression": {
+      "fixtureName": "bio-dino-adds-sacrifice-attack-profile",
+      "tags": [
+        "gen3",
+        "creature",
+        "elemental",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_103_bio_dino:103-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

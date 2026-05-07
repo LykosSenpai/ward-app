@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_137_gnometheon",
+  "effectId": "137-E01",
+  "title": "Gnometheon scales with Gnome cards in hand and under source",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_137_gnometheon",
+      "cardName": "Gnometheon",
+      "cardType": "CREATURE",
+      "cardNumber": "137",
+      "generation": "3",
+      "rawText": "Gain +1 Atk Dice Rolls and +1 Modifier for each \"Gnome\" named card in your hand. Gnomes sacrificed to summon this card are placed under it and count as cards in your hand. If this card leaves the field or changes control, the cards under follow it."
+    },
+    "effect": {
+      "effectId": "137-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "This creature",
+      "value": "Gain +1 Atk Dice Rolls and +1 Modifier for each \"Gnome\" named card in your hand. Gnomes sacrificed to summon this card are placed under it and count as cards in your hand. If this card leaves the field or changes control, the cards under follow it.",
+      "durationText": "Immediate",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Gnometheon scales with Gnome cards in hand and under source",
+    "summary": "Verify Gnometheon gains Atk Dice Rolls and Modifier for each Gnome named card in hand and under it.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_137_gnometheon",
+        "gen1_134_gnome",
+        "gen2_089_gnome_dragoon"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Gain +1 Atk Dice Rolls and +1 Modifier for each \"Gnome\" named card in your hand. Gnomes sacrificed to summon this card are placed under it and count as cards in your hand. If this card leaves the field or changes control, the cards under follow it."
+      ]
+    },
+    "steps": [
+      "Set up Gnometheon according to its printed text.",
+      "Verify Gnometheon gains Atk Dice Rolls and Modifier for each Gnome named card in hand and under it.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Gnometheon route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Gnometheon"
+      },
+      {
+        "label": "Gnome scaling marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "GNOME"
+      },
+      {
+        "label": "Gnometheon attack dice increased",
+        "path": "player_1.primaryCreature.effectiveStats.ATK_DICE_ROLLS",
+        "operator": "greaterThan",
+        "value": 2
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Gain +1 Atk Dice Rolls and +1 Modifier for each \"Gnome\" named card in your hand. Gnomes sacrificed to summon this card are placed under it and count as cards in your hand. If this card leaves the field or changes control, the cards under follow it."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Gnometheon gains Atk Dice Rolls and Modifier for each Gnome named card in hand and under it."
+    },
+    "regression": {
+      "fixtureName": "gnometheon-scales-with-gnome-cards-in-hand-and-under-source",
+      "tags": [
+        "gen3",
+        "creature",
+        "mechanical",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_137_gnometheon:137-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

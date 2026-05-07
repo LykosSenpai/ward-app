@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_059_lumber",
+  "effectId": "059-E01",
+  "title": "Lumber halves forest creature base modifier",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_059_lumber",
+      "cardName": "Lumber",
+      "cardType": "CREATURE",
+      "cardNumber": "059",
+      "generation": "3",
+      "rawText": "Creatures in a forest that battle this card have their base Modifier reduced by 1/2."
+    },
+    "effect": {
+      "effectId": "059-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "This creature",
+      "value": "Creatures in a forest that battle this card have their base Modifier reduced by 1/2.",
+      "durationText": "Immediate",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Lumber halves forest creature base modifier",
+    "summary": "When a forest creature battles Lumber, verify that creature base Modifier is reduced by half.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen3_059_lumber"
+      ],
+      "player2Cards": [
+        "test_primary_creature_mod_0"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: Creatures in a forest that battle this card have their base Modifier reduced by 1/2."
+      ]
+    },
+    "steps": [
+      "Set up Lumber according to its printed text.",
+      "When a forest creature battles Lumber, verify that creature base Modifier is reduced by half.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Lumber route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Lumber"
+      },
+      {
+        "label": "Modifier reduction marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MODIFIER"
+      },
+      {
+        "label": "Forest attacker modifier reduced",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 0
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Creatures in a forest that battle this card have their base Modifier reduced by 1/2."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "When a forest creature battles Lumber, verify that creature base Modifier is reduced by half."
+    },
+    "regression": {
+      "fixtureName": "lumber-halves-forest-creature-base-modifier",
+      "tags": [
+        "gen3",
+        "creature",
+        "elemental",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_059_lumber:059-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

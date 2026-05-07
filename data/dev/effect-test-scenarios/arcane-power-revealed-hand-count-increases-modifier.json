@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_126_arcane_power",
+  "effectId": "126-E01",
+  "title": "Arcane Power increases modifier by revealed hand count",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_126_arcane_power",
+      "cardName": "Arcane Power",
+      "cardType": "MAGIC",
+      "cardNumber": "126",
+      "generation": "3",
+      "rawText": "During battle, reveal any number of cards from your hand. Increase the equipped creature's Modifier for that battle by the number of cards revealed."
+    },
+    "effect": {
+      "effectId": "126-E01",
+      "trigger": "DURING_BATTLE",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "Equipped creature",
+      "value": "During battle, reveal any number of cards from your hand. Increase the equipped creature's Modifier for that battle by the number of cards revealed.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Arcane Power increases modifier by revealed hand count",
+    "summary": "During battle, reveal cards from hand and verify equipped creature Modifier increases by the number revealed for that battle.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_126_arcane_power",
+        "test_primary_creature_mod_0",
+        "gen1_012_orc",
+        "gen1_079_owl"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: During battle, reveal any number of cards from your hand. Increase the equipped creature's Modifier for that battle by the number of cards revealed."
+      ]
+    },
+    "steps": [
+      "Set up Arcane Power according to its printed text.",
+      "During battle, reveal cards from hand and verify equipped creature Modifier increases by the number revealed for that battle.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Arcane Power route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Arcane Power"
+      },
+      {
+        "label": "Reveal hand marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "REVEAL_HAND"
+      },
+      {
+        "label": "Battle hit modifier increased by revealed count",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "greaterThan",
+        "value": 0
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: During battle, reveal any number of cards from your hand. Increase the equipped creature's Modifier for that battle by the number of cards revealed."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "During battle, reveal cards from hand and verify equipped creature Modifier increases by the number revealed for that battle."
+    },
+    "regression": {
+      "fixtureName": "arcane-power-revealed-hand-count-increases-modifier",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_126_arcane_power:126-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
