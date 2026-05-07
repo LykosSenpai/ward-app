@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_125_gaseous_horror",
+  "effectId": "125-E01",
+  "title": "Gaseous Horror damages attacker when hit",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_125_gaseous_horror",
+      "cardName": "Gaseous Horror",
+      "cardType": "CREATURE",
+      "cardNumber": "125",
+      "generation": "3",
+      "rawText": "When this creature is hit, the attacking creature receives 5 damage. If this card is killed in battle, inflict 10 damage to the creature that killed it."
+    },
+    "effect": {
+      "effectId": "125-E01",
+      "trigger": "WHEN_THIS_CREATURE_IS_HIT",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "This creature",
+      "value": "When this creature is hit, the attacking creature receives 5 damage. If this card is killed in battle, inflict 10 damage to the creature that killed it.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Gaseous Horror damages attacker when hit",
+    "summary": "Attack Gaseous Horror and verify the attacking creature receives 5 damage when the hit lands.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "gen3_125_gaseous_horror"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: When this creature is hit, the attacking creature receives 5 damage. If this card is killed in battle, inflict 10 damage to the creature that killed it."
+      ]
+    },
+    "steps": [
+      "Attack Gaseous Horror.",
+      "Force a hit.",
+      "Verify attacker receives retaliatory damage."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Gaseous Horror route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Gaseous Horror"
+      },
+      {
+        "label": "Attacker received hit retaliation damage",
+        "path": "player_1.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 4
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Attack Gaseous Horror and verify the attacking creature receives 5 damage when the hit lands."
+    },
+    "regression": {
+      "fixtureName": "gaseous-horror-damages-attacker-when-hit",
+      "tags": [
+        "gen3",
+        "creature",
+        "hit-response",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_125_gaseous_horror:125-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

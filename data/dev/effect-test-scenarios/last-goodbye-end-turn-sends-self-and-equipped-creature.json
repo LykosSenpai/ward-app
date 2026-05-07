@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_139_last_goodbye",
+  "effectId": "139-E02",
+  "title": "Last Goodbye sends itself and equipped creature at end turn",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_139_last_goodbye",
+      "cardName": "Last Goodbye",
+      "cardType": "MAGIC",
+      "cardNumber": "139",
+      "generation": "3",
+      "rawText": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery."
+    },
+    "effect": {
+      "effectId": "139-E02",
+      "trigger": "END_OF_YOUR_TURN",
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "target": "Equipped creature",
+      "value": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery.",
+      "durationText": "While equipped",
+      "reusableFunction": "sendToCemetery"
+    },
+    "title": "Last Goodbye sends itself and equipped creature at end turn",
+    "summary": "At end of turn verify Last Goodbye and the equipped/linked creature go to cemetery.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_139_last_goodbye",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery."
+      ]
+    },
+    "steps": [
+      "Equip Last Goodbye.",
+      "Advance to end of turn.",
+      "Verify this card and the equipped creature are sent to cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Last Goodbye route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Last Goodbye"
+      },
+      {
+        "label": "Last Goodbye moved to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen3_139_last_goodbye"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "At end of turn verify Last Goodbye and the equipped/linked creature go to cemetery."
+    },
+    "regression": {
+      "fixtureName": "last-goodbye-end-turn-sends-self-and-equipped-creature",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "send-to-cemetery"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_139_last_goodbye:139-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

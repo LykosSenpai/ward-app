@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_129_mysterious_orb",
+  "effectId": "129-E01",
+  "title": "Mysterious Orb roll table low branch gives SPD",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_129_mysterious_orb",
+      "cardName": "Mysterious Orb",
+      "cardType": "MAGIC",
+      "cardNumber": "129",
+      "generation": "3",
+      "rawText": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6."
+    },
+    "effect": {
+      "effectId": "129-E01",
+      "trigger": "BEGINNING_OF_YOUR_TURN",
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "target": "Equipped creature",
+      "value": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6.",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "resolveRollTable"
+    },
+    "title": "Mysterious Orb roll table low branch gives SPD",
+    "summary": "Force Mysterious Orb roll table to 1 and verify the low SPD branch is represented.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_129_mysterious_orb",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Mysterious Orb low branch"
+        }
+      ],
+      "notes": [
+        "Read text first: At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6."
+      ]
+    },
+    "steps": [
+      "Equip Mysterious Orb.",
+      "Force a 1 on the beginning-turn roll table.",
+      "Verify SPD branch evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Mysterious Orb roll table route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Mysterious Orb"
+      },
+      {
+        "label": "Roll table marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "ROLL_TABLE"
+      }
+    ],
+    "manualVerification": [
+      "High branch is covered by mysterious-orb-roll-six-hit-atk-bonus."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Force Mysterious Orb roll table to 1 and verify the low SPD branch is represented."
+    },
+    "regression": {
+      "fixtureName": "mysterious-orb-roll-table-low-spd-branch",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "roll-table"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_129_mysterious_orb:129-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

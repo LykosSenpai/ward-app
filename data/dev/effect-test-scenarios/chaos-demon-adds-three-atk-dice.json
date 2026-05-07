@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_136_chaos_demon",
+  "effectId": "136-E02",
+  "title": "Chaos Demon adds 3 Atk Dice Rolls for battle",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_136_chaos_demon",
+      "cardName": "Chaos Demon",
+      "cardType": "CREATURE",
+      "cardNumber": "136",
+      "generation": "3",
+      "rawText": "During your turn, this card may add +3 Atk Dice Rolls for this battle. If this effect is used and it fails to kill the targeted creature, this creature receives 1/2 the damage it dealt."
+    },
+    "effect": {
+      "effectId": "136-E02",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "This creature",
+      "value": "During your turn, this card may add +3 Atk Dice Rolls for this battle. If this effect is used and it fails to kill the targeted creature, this creature receives 1/2 the damage it dealt.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Chaos Demon adds 3 Atk Dice Rolls for battle",
+    "summary": "Activate Chaos Demon and verify the +3 attack dice branch is represented in battle.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_136_chaos_demon"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: During your turn, this card may add +3 Atk Dice Rolls for this battle. If this effect is used and it fails to kill the targeted creature, this creature receives 1/2 the damage it dealt."
+      ]
+    },
+    "steps": [
+      "Activate Chaos Demon during your turn.",
+      "Resolve battle.",
+      "Inspect damage dice increase evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Chaos Demon route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Chaos Demon"
+      },
+      {
+        "label": "Stat modifier route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_STAT_MODIFIER"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Activate Chaos Demon and verify the +3 attack dice branch is represented in battle."
+    },
+    "regression": {
+      "fixtureName": "chaos-demon-adds-three-atk-dice",
+      "tags": [
+        "gen3",
+        "creature",
+        "activated",
+        "stat-modifier"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_136_chaos_demon:136-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

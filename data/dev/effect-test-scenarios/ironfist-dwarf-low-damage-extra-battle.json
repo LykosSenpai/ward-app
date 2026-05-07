@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_135_ironfist_dwarf",
+  "effectId": "135-E01",
+  "title": "Ironfist Dwarf can battle again after low damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_135_ironfist_dwarf",
+      "cardName": "Ironfist Dwarf",
+      "cardType": "CREATURE",
+      "cardNumber": "135",
+      "generation": "3",
+      "rawText": "During your turn, if this creature inflicts 5 or less Atk damage during battle, it may initiate battle again without the targeted creature being able to return attack. This effect can occur up to 5 times."
+    },
+    "effect": {
+      "effectId": "135-E01",
+      "trigger": "DURING_BATTLE",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "This creature",
+      "value": "During your turn, if this creature inflicts 5 or less Atk damage during battle, it may initiate battle again without the targeted creature being able to return attack. This effect can occur up to 5 times.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "damage"
+    },
+    "title": "Ironfist Dwarf can battle again after low damage",
+    "summary": "Deal 5 or less Atk damage with Ironfist Dwarf and verify the extra-battle/no-retaliation route.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_135_ironfist_dwarf"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Headless Gen3 QA low damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: During your turn, if this creature inflicts 5 or less Atk damage during battle, it may initiate battle again without the targeted creature being able to return attack. This effect can occur up to 5 times."
+      ]
+    },
+    "steps": [
+      "Start battle with Ironfist Dwarf.",
+      "Inflict 5 or less attack damage.",
+      "Verify extra battle route is represented."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Ironfist Dwarf battle route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Extra battle marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EXTRA_BATTLE"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Deal 5 or less Atk damage with Ironfist Dwarf and verify the extra-battle/no-retaliation route."
+    },
+    "regression": {
+      "fixtureName": "ironfist-dwarf-low-damage-extra-battle",
+      "tags": [
+        "gen3",
+        "creature",
+        "battle",
+        "extra-attack"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_135_ironfist_dwarf:135-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

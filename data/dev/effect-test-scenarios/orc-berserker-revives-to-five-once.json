@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_134_orc_berserker",
+  "effectId": "134-E01",
+  "title": "Orc Berserker revives to 5 HP once",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_134_orc_berserker",
+      "cardName": "Orc Berserker",
+      "cardType": "CREATURE",
+      "cardNumber": "134",
+      "generation": "3",
+      "rawText": "If this card is killed, instead, heal it to 5 HP. This effect can only occur once while this card is on the field."
+    },
+    "effect": {
+      "effectId": "134-E01",
+      "trigger": "WHEN_THIS_CREATURE_KILLED",
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "target": "This creature",
+      "value": "If this card is killed, instead, heal it to 5 HP. This effect can only occur once while this card is on the field.",
+      "durationText": "While on field",
+      "reusableFunction": "heal"
+    },
+    "title": "Orc Berserker revives to 5 HP once",
+    "summary": "Kill Orc Berserker and verify it heals to 5 HP instead once while on field.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "gen3_134_orc_berserker"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: If this card is killed, instead, heal it to 5 HP. This effect can only occur once while this card is on the field."
+      ]
+    },
+    "steps": [
+      "Attack and kill Orc Berserker.",
+      "Verify replacement heal to 5 HP."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Orc Berserker route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Orc Berserker"
+      },
+      {
+        "label": "Orc Berserker remains at 5 HP",
+        "path": "player_2.primary.currentHp",
+        "operator": "equals",
+        "value": 5
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Kill Orc Berserker and verify it heals to 5 HP instead once while on field."
+    },
+    "regression": {
+      "fixtureName": "orc-berserker-revives-to-five-once",
+      "tags": [
+        "gen3",
+        "creature",
+        "death-replacement",
+        "heal"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_134_orc_berserker:134-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

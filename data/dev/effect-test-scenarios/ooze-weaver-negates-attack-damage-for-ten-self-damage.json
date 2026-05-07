@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_120_ooze_weaver",
+  "effectId": "120-E01",
+  "title": "Ooze Weaver negates Atk damage for 10 self damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_120_ooze_weaver",
+      "cardName": "Ooze Weaver",
+      "cardType": "CREATURE",
+      "cardNumber": "120",
+      "generation": "3",
+      "rawText": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+    },
+    "effect": {
+      "effectId": "120-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "PREVENT_DAMAGE",
+      "effectGroup": "Damage Prevention",
+      "target": "Magic card(s) on the field",
+      "value": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards.",
+      "durationText": "Immediate",
+      "reusableFunction": "preventDamage"
+    },
+    "title": "Ooze Weaver negates Atk damage for 10 self damage",
+    "summary": "Battle into Ooze Weaver and verify the choice-based Atk damage prevention route is represented.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "gen3_120_ooze_weaver"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+      ]
+    },
+    "steps": [
+      "Attack Ooze Weaver.",
+      "Choose the 10 self-damage damage-prevention option."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Ooze Weaver route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Ooze Weaver"
+      },
+      {
+        "label": "Damage prevention marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "PREVENT_DAMAGE"
+      },
+      {
+        "label": "Ooze Weaver pays 10 self damage to prevent attack damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 10
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Battle into Ooze Weaver and verify the choice-based Atk damage prevention route is represented."
+    },
+    "regression": {
+      "fixtureName": "ooze-weaver-negates-attack-damage-for-ten-self-damage",
+      "tags": [
+        "gen3",
+        "creature",
+        "damage-prevention"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_120_ooze_weaver:120-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

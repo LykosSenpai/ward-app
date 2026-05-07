@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_145_eagle_knight",
+  "effectId": "145-E02",
+  "title": "Eagle Knight prevents damage application",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_145_eagle_knight",
+      "cardName": "Eagle Knight",
+      "cardType": "MAGIC",
+      "cardNumber": "145",
+      "generation": "3",
+      "rawText": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn."
+    },
+    "effect": {
+      "effectId": "145-E02",
+      "trigger": "DURING_BATTLE",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Target creature",
+      "value": "During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "damage"
+    },
+    "title": "Eagle Knight prevents damage application",
+    "summary": "Verify Eagle Knight keeps the protected creature from taking damage for the rest of the turn.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "gen3_145_eagle_knight",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: During battle play this card from your hand. Negate any damage for a creature for the remainder of this turn."
+      ]
+    },
+    "steps": [
+      "Start battle.",
+      "Play Eagle Knight.",
+      "Resolve damage application.",
+      "Verify protected creature HP stays unchanged."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Eagle Knight route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Eagle Knight"
+      },
+      {
+        "label": "Protected creature took no damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 0
+      },
+      {
+        "label": "Battle pipeline resolved with Eagle Knight active",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Eagle Knight keeps the protected creature from taking damage for the rest of the turn."
+    },
+    "regression": {
+      "fixtureName": "eagle-knight-negates-damage-application",
+      "tags": [
+        "gen3",
+        "magic",
+        "lightning",
+        "damage-prevention"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_145_eagle_knight:145-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

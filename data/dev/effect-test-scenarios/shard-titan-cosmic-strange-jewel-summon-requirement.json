@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_115_shard_titan",
+  "effectId": "115-E01",
+  "title": "Shard Titan requires Cosmic primary with Strange Jewel",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_115_shard_titan",
+      "cardName": "Shard Titan",
+      "cardType": "CREATURE",
+      "cardNumber": "115",
+      "generation": "3",
+      "rawText": "Summon Requirement: Can only be summoned if your primary creature is Cosmic-type and has \"Strange Jewel\" equipped. You may sacrifice it to summon this card as your primary creature. If this card leaves the field, it returns to a magic card."
+    },
+    "effect": {
+      "effectId": "115-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "SUMMON_REQUIREMENT",
+      "effectGroup": "Summon Requirement",
+      "target": "Your primary creature",
+      "value": "Summon Requirement: Can only be summoned if your primary creature is Cosmic-type and has \"Strange Jewel\" equipped. You may sacrifice it to summon this card as your primary creature. If this card leaves the field, it returns to a magic card.",
+      "durationText": "Immediate",
+      "reusableFunction": "validateSummonRequirement"
+    },
+    "title": "Shard Titan requires Cosmic primary with Strange Jewel",
+    "summary": "Verify Shard Titan summon requirement only succeeds with a Cosmic primary creature equipped with Strange Jewel.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_115_shard_titan",
+        "gen3_116_strange_jewel",
+        "gen3_043_the_villain"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Summon Requirement: Can only be summoned if your primary creature is Cosmic-type and has \"Strange Jewel\" equipped. You may sacrifice it to summon this card as your primary creature. If this card leaves the field, it returns to a magic card.",
+        "Use The Villain as the Cosmic primary and Strange Jewel as the required equip."
+      ]
+    },
+    "steps": [
+      "Equip Strange Jewel to a Cosmic primary.",
+      "Attempt to summon Shard Titan.",
+      "Verify the custom summon requirement route."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Shard Titan summon route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Shard Titan"
+      },
+      {
+        "label": "Shard Titan entered as primary creature",
+        "path": "player_1.primary.cardId",
+        "operator": "equals",
+        "value": "gen3_115_shard_titan"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Shard Titan summon requirement only succeeds with a Cosmic primary creature equipped with Strange Jewel."
+    },
+    "regression": {
+      "fixtureName": "shard-titan-cosmic-strange-jewel-summon-requirement",
+      "tags": [
+        "gen3",
+        "creature",
+        "summon-requirement"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_115_shard_titan:115-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

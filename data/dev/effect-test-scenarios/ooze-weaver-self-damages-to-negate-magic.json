@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_120_ooze_weaver",
+  "effectId": "120-E02",
+  "title": "Ooze Weaver pays self damage to negate magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_120_ooze_weaver",
+      "cardName": "Ooze Weaver",
+      "cardType": "CREATURE",
+      "cardNumber": "120",
+      "generation": "3",
+      "rawText": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+    },
+    "effect": {
+      "effectId": "120-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Magic card(s) on the field",
+      "value": "When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Ooze Weaver pays self damage to negate magic",
+    "summary": "Verify the self-damage branch used when Ooze Weaver negates a magic card.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_120_ooze_weaver"
+      ],
+      "player2Cards": [
+        "gen1_061_health_potion",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: When a magic card is played or this card would receive Atk damage, choose 1 of the following: Take 15 damage to negate the magic card. Take 10 damage to negate the Atk damage. This creature is unaffected by magic cards."
+      ]
+    },
+    "steps": [
+      "Opponent plays a magic card.",
+      "Ooze Weaver chooses the 15 self-damage negate-magic branch."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Ooze Weaver route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Ooze Weaver"
+      },
+      {
+        "label": "Ooze Weaver paid self damage",
+        "path": "player_1.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 14
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify the self-damage branch used when Ooze Weaver negates a magic card."
+    },
+    "regression": {
+      "fixtureName": "ooze-weaver-self-damages-to-negate-magic",
+      "tags": [
+        "gen3",
+        "creature",
+        "magic-negation",
+        "self-damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_120_ooze_weaver:120-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_119_orgar",
+  "effectId": "119-E01",
+  "title": "Orgar gains attack dice against Humanoid targets",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_119_orgar",
+      "cardName": "Orgar",
+      "cardType": "CREATURE",
+      "cardNumber": "119",
+      "generation": "3",
+      "rawText": "Apply the following to this card during battle: Atk Dice Rolls +2 against Humanoid-type creatures. Atk Dice Rolls -2 against Beast-type creatures."
+    },
+    "effect": {
+      "effectId": "119-E01",
+      "trigger": "DURING_BATTLE",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "This creature",
+      "value": "Apply the following to this card during battle: Atk Dice Rolls +2 against Humanoid-type creatures. Atk Dice Rolls -2 against Beast-type creatures.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Orgar gains attack dice against Humanoid targets",
+    "summary": "Battle Orgar into a Humanoid target and verify the +2 attack dice route is represented.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_119_orgar"
+      ],
+      "player2Cards": [
+        "gen3_053_the_super_hero"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: Apply the following to this card during battle: Atk Dice Rolls +2 against Humanoid-type creatures. Atk Dice Rolls -2 against Beast-type creatures."
+      ]
+    },
+    "steps": [
+      "Start battle with Orgar.",
+      "Attack a Humanoid target.",
+      "Inspect damage dice count or modifier trace."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Orgar battle route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Orgar modifier evidence emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Orgar"
+      }
+    ],
+    "manualVerification": [
+      "A Beast target should receive the -2 dice branch separately."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Battle Orgar into a Humanoid target and verify the +2 attack dice route is represented."
+    },
+    "regression": {
+      "fixtureName": "orgar-plus-two-dice-vs-humanoid",
+      "tags": [
+        "gen3",
+        "creature",
+        "battle",
+        "stat-modifier"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_119_orgar:119-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_122_dart_frog",
+  "effectId": "122-E01",
+  "title": "Dart Frog equips to its killer and deals end-turn damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_122_dart_frog",
+      "cardName": "Dart Frog",
+      "cardType": "CREATURE",
+      "cardNumber": "122",
+      "generation": "3",
+      "rawText": "If this card is killed by a creature that is not holding a weapon, equip it to that creature as an Infinite equip magic card. The equipped creature receives 5 damage at the end of your turn."
+    },
+    "effect": {
+      "effectId": "122-E01",
+      "trigger": "WHEN_THIS_CREATURE_KILLED",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Equipped creature",
+      "value": "If this card is killed by a creature that is not holding a weapon, equip it to that creature as an Infinite equip magic card. The equipped creature receives 5 damage at the end of your turn.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Dart Frog equips to its killer and deals end-turn damage",
+    "summary": "Kill Dart Frog with an unequipped creature and verify the equip-to-killer plus 5 end-turn damage route.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "gen3_122_dart_frog"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: If this card is killed by a creature that is not holding a weapon, equip it to that creature as an Infinite equip magic card. The equipped creature receives 5 damage at the end of your turn."
+      ]
+    },
+    "steps": [
+      "Attack and kill Dart Frog with a creature holding no weapon.",
+      "Verify Dart Frog becomes an equip on the killer.",
+      "Verify end-turn 5 damage route."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Dart Frog route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Dart Frog"
+      },
+      {
+        "label": "Killer receives Dart Frog end-turn damage",
+        "path": "player_1.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 4
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Kill Dart Frog with an unequipped creature and verify the equip-to-killer plus 5 end-turn damage route."
+    },
+    "regression": {
+      "fixtureName": "dart-frog-killed-equips-to-killer-and-damages",
+      "tags": [
+        "gen3",
+        "creature",
+        "killed",
+        "equip-transfer"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_122_dart_frog:122-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

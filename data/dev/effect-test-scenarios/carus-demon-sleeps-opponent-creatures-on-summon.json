@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_114_carus_demon",
+  "effectId": "114-E02",
+  "title": "Carus Demon sleeps opponent creatures on summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_114_carus_demon",
+      "cardName": "Carus Demon",
+      "cardType": "CREATURE",
+      "cardNumber": "114",
+      "generation": "3",
+      "rawText": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice."
+    },
+    "effect": {
+      "effectId": "114-E02",
+      "trigger": "ON_SUMMON",
+      "actionType": "APPLY_STATUS",
+      "effectGroup": "Status",
+      "target": "All creatures matching condition",
+      "value": "When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice.",
+      "durationText": "2 turn cycles",
+      "reusableFunction": "applyStatus"
+    },
+    "title": "Carus Demon sleeps opponent creatures on summon",
+    "summary": "Summon Carus Demon and verify opponent creatures receive a two-turn-cycle sleep/no-battle status.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_114_carus_demon"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: When summoned, all creatures on your opponent's side of the field are put to sleep and cannot battle for 2 turn cycles. Any damage to the sleeping creatures ends this effect and destroys 1 magic card on the field of your choice."
+      ]
+    },
+    "steps": [
+      "Summon Carus Demon as primary.",
+      "Inspect opponent creature status markers."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Carus Demon summon route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Carus Demon"
+      },
+      {
+        "label": "Opponent creature received sleep status",
+        "path": "player_2.primary.statuses",
+        "operator": "contains",
+        "value": "SLEEP"
+      }
+    ],
+    "manualVerification": [
+      "Damage to sleeping creatures should end the status and trigger a chosen magic destruction route later."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Summon Carus Demon and verify opponent creatures receive a two-turn-cycle sleep/no-battle status."
+    },
+    "regression": {
+      "fixtureName": "carus-demon-sleeps-opponent-creatures-on-summon",
+      "tags": [
+        "gen3",
+        "creature",
+        "on-summon",
+        "status"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_114_carus_demon:114-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

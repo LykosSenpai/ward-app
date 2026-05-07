@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_118_contaminate",
+  "effectId": "118-E01",
+  "title": "Contaminate applies 5 recurring damage while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_118_contaminate",
+      "cardName": "Contaminate",
+      "cardType": "MAGIC",
+      "cardNumber": "118",
+      "generation": "3",
+      "rawText": "Equip this card to your primary creature. Once per turn cycle the equipped creature receives 5 damage. When the equipped creature is killed by Atk damage, equip this card to the creature that killed it."
+    },
+    "effect": {
+      "effectId": "118-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_DAMAGE_OVER_TIME",
+      "effectGroup": "Damage Over Time",
+      "target": "Your primary creature",
+      "value": "Equip this card to your primary creature. Once per turn cycle the equipped creature receives 5 damage. When the equipped creature is killed by Atk damage, equip this card to the creature that killed it.",
+      "durationText": "While equipped",
+      "reusableFunction": "applyDamageOverTime"
+    },
+    "title": "Contaminate applies 5 recurring damage while equipped",
+    "summary": "Equip Contaminate and verify the equipped primary gets a non-stacking 5 damage recurring effect.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_118_contaminate",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Equip this card to your primary creature. Once per turn cycle the equipped creature receives 5 damage. When the equipped creature is killed by Atk damage, equip this card to the creature that killed it."
+      ]
+    },
+    "steps": [
+      "Equip Contaminate to player_1 primary.",
+      "Inspect recurring damage marker."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Contaminate route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Contaminate"
+      },
+      {
+        "label": "Equipped creature has 5 damage over time",
+        "path": "player_1.primary.statusEffects",
+        "operator": "contains",
+        "value": "DAMAGE_OVER_TIME:5"
+      }
+    ],
+    "manualVerification": [
+      "A later route should verify transfer to the killing creature after attack-damage death."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Contaminate and verify the equipped primary gets a non-stacking 5 damage recurring effect."
+    },
+    "regression": {
+      "fixtureName": "contaminate-applies-five-damage-dot-while-equipped",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "dot"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_118_contaminate:118-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

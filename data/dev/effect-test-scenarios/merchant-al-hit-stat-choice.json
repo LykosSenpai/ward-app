@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_127_the_merchant",
+  "effectId": "127-E03",
+  "title": "The Merchant stat choice grants AL or Hit",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_127_the_merchant",
+      "cardName": "The Merchant",
+      "cardType": "MAGIC",
+      "cardNumber": "127",
+      "generation": "3",
+      "rawText": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card."
+    },
+    "effect": {
+      "effectId": "127-E03",
+      "trigger": "ON_PLAY",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "The Merchant stat choice grants AL or Hit",
+    "summary": "Play/equip The Merchant and verify the AL/Hit stat branch is represented.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_127_the_merchant",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card."
+      ]
+    },
+    "steps": [
+      "Play The Merchant.",
+      "Choose AL/Hit stat branch.",
+      "Inspect static stat modifier route."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Merchant static stat route emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Merchant remains equipped",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_127_the_merchant"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play/equip The Merchant and verify the AL/Hit stat branch is represented."
+    },
+    "regression": {
+      "fixtureName": "merchant-al-hit-stat-choice",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "choice",
+        "stat-modifier"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_127_the_merchant:127-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

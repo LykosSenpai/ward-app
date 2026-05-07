@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_127_the_merchant",
+  "effectId": "127-E02",
+  "title": "The Merchant heal choice restores 20 HP",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_127_the_merchant",
+      "cardName": "The Merchant",
+      "cardType": "MAGIC",
+      "cardNumber": "127",
+      "generation": "3",
+      "rawText": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card."
+    },
+    "effect": {
+      "effectId": "127-E02",
+      "trigger": "ON_PLAY",
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "target": "Equipped creature",
+      "value": "When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+      "durationText": "While equipped",
+      "reusableFunction": "heal"
+    },
+    "title": "The Merchant heal choice restores 20 HP",
+    "summary": "Play/equip The Merchant and choose Heal 20 HP.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_127_the_merchant",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: When this card is played pick 1 of the following effects: AL: +4. Hit: +4. Heal 20 HP. Destroy 1 magic card.",
+        "Set player_1 primary current HP to 60 before play."
+      ]
+    },
+    "steps": [
+      "Play The Merchant.",
+      "Choose Heal 20 HP.",
+      "Verify the equipped/primary creature heals."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Merchant heal route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "The Merchant"
+      },
+      {
+        "label": "Primary healed by 20",
+        "path": "player_1.primary.currentHp",
+        "operator": "equals",
+        "value": 80
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play/equip The Merchant and choose Heal 20 HP."
+    },
+    "regression": {
+      "fixtureName": "merchant-heals-twenty-choice",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "choice",
+        "heal"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_127_the_merchant:127-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

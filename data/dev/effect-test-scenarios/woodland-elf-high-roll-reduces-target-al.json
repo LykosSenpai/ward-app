@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_132_woodland_elf",
+  "effectId": "132-E03",
+  "title": "Woodland Elf high roll reduces target AL",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_132_woodland_elf",
+      "cardName": "Woodland Elf",
+      "cardType": "CREATURE",
+      "cardNumber": "132",
+      "generation": "3",
+      "rawText": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5."
+    },
+    "effect": {
+      "effectId": "132-E03",
+      "trigger": "BEFORE_HIT_ROLL",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "This creature",
+      "value": "During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5.",
+      "durationText": "Immediate",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Woodland Elf high roll reduces target AL",
+    "summary": "Force Woodland Elf pre-hit roll to 6 and verify the target AL reduction branch.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_132_woodland_elf"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Woodland Elf AL reduction branch"
+        },
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: During each battle, prior to your Hit Dice Roll, roll 1 die. If the result is: 1-2: +10 Atk damage. 3-4: Target's Modifier reduced to 0. 5-6: Target's AL reduced by 5."
+      ]
+    },
+    "steps": [
+      "Start battle with Woodland Elf.",
+      "Force pre-hit roll to 6.",
+      "Verify target AL reduction evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Woodland Elf route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Woodland Elf"
+      },
+      {
+        "label": "Stat modifier marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_STAT_MODIFIER"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Force Woodland Elf pre-hit roll to 6 and verify the target AL reduction branch."
+    },
+    "regression": {
+      "fixtureName": "woodland-elf-high-roll-reduces-target-al",
+      "tags": [
+        "gen3",
+        "creature",
+        "before-hit-roll",
+        "stat-modifier"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_132_woodland_elf:132-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

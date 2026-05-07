@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_139_last_goodbye",
+  "effectId": "139-E01",
+  "title": "Last Goodbye Limited Summons from cemetery",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_139_last_goodbye",
+      "cardName": "Last Goodbye",
+      "cardType": "MAGIC",
+      "cardNumber": "139",
+      "generation": "3",
+      "rawText": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery."
+    },
+    "effect": {
+      "effectId": "139-E01",
+      "trigger": "END_OF_YOUR_TURN",
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "target": "Equipped creature",
+      "value": "Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery.",
+      "durationText": "While equipped",
+      "reusableFunction": "limitedSummon"
+    },
+    "title": "Last Goodbye Limited Summons from cemetery",
+    "summary": "Equip Last Goodbye and verify it summons a creature from cemetery as a Limited Summon.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_139_last_goodbye",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Summon a creature from your cemetery as a Limited Summon. At the end of your turn, send this card and the equipped creature to the cemetery.",
+        "Seed a creature in player_1 cemetery before resolving the summon route."
+      ]
+    },
+    "steps": [
+      "Equip Last Goodbye.",
+      "Choose a cemetery creature.",
+      "Verify Limited Summon from cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Last Goodbye route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Last Goodbye"
+      },
+      {
+        "label": "Limited Summon marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "LIMITED_SUMMON"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Last Goodbye and verify it summons a creature from cemetery as a Limited Summon."
+    },
+    "regression": {
+      "fixtureName": "last-goodbye-limited-summons-from-cemetery",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "limited-summon"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_139_last_goodbye:139-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

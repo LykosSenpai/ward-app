@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_143_succubus",
+  "effectId": "143-E01",
+  "title": "Succubus heals half of inflicted attack damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_143_succubus",
+      "cardName": "Succubus",
+      "cardType": "CREATURE",
+      "cardNumber": "143",
+      "generation": "3",
+      "rawText": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage."
+    },
+    "effect": {
+      "effectId": "143-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "target": "This creature",
+      "value": "This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage.",
+      "durationText": "Immediate",
+      "reusableFunction": "heal"
+    },
+    "title": "Succubus heals half of inflicted attack damage",
+    "summary": "Damage Succubus before battle, then verify it heals for half of its inflicted attack damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_143_succubus"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: This creature heals for 1/2 the Atk damage it inflicts. Any excess healing above its max HP is also dealt to the target as damage.",
+        "Set player_1 primary current HP to 20 before battle."
+      ]
+    },
+    "steps": [
+      "Start battle with Succubus.",
+      "Resolve attack damage.",
+      "Verify self-healing."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Succubus battle route ran",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Succubus healed above setup damage",
+        "path": "player_1.primary.currentHp",
+        "operator": "greaterThan",
+        "value": 20
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Damage Succubus before battle, then verify it heals for half of its inflicted attack damage."
+    },
+    "regression": {
+      "fixtureName": "succubus-heals-half-attack-damage",
+      "tags": [
+        "gen3",
+        "creature",
+        "battle",
+        "heal"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_143_succubus:143-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
