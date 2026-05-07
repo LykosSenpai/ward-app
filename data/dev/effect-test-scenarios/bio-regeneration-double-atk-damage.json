@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_009_bio_regeneration",
+  "effectId": "009-E04",
+  "title": "Bio-Regeneration doubles attack damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_009_bio_regeneration",
+      "cardName": "Bio-Regeneration",
+      "cardType": "MAGIC",
+      "cardNumber": "009",
+      "generation": "2",
+      "rawText": "Can only be equipped to a creature with 9 or less remaining HP. Heal 30 HP. 2x Hit Roll results for this creature. 2x Atk Damage for this creature."
+    },
+    "effect": {
+      "effectId": "009-E04",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Equipped creature attack",
+      "value": "2x Atk damage",
+      "durationText": "While equipped",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Bio-Regeneration doubles attack damage",
+    "summary": "Equip Bio-Regeneration to a modifier-zero creature and verify its deterministic attack damage is doubled.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_009_bio_regeneration",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set player_1 primary current hp to 5 so Bio-Regeneration can be equipped.",
+        "Use test_primary_creature_mod_0 so the deterministic damage roll is easy to inspect."
+      ]
+    },
+    "steps": [
+      "Equip Bio-Regeneration to player_1 primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect damage dealt to player_2 primary creature."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Attack damage is doubled from 2 to 4",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 4
+      },
+      {
+        "label": "Bio-Regeneration remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_009_bio_regeneration"
+      }
+    ],
+    "manualVerification": [
+      "Confirm 009-E03 separately doubles Hit Roll results."
+    ],
+    "riskNotes": [
+      "The focused route showed the deterministic damage roll resolves as 2 before the 2x multiplier, for 4 total damage."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Bio-Regeneration attack damage multiplier."
+    },
+    "regression": {
+      "fixtureName": "bio-regeneration-double-atk-damage",
+      "tags": [
+        "magic",
+        "equip",
+        "damage-multiplier"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_009_bio_regeneration:009-E04"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

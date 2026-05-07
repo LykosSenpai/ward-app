@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_093_heroism",
+  "effectId": "093-E02",
+  "title": "Heroism grants magic immunity while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_093_heroism",
+      "cardName": "Heroism",
+      "cardType": "MAGIC",
+      "cardNumber": "093",
+      "generation": "1",
+      "rawText": "AL: +2. Hit: +2. Atk: +2. This card and the equipped creature are unaffected by magic cards. This card can only be negated when played."
+    },
+    "effect": {
+      "effectId": "093-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_MAGIC_IMMUNITY",
+      "effectGroup": "Immunity",
+      "target": "This card and equipped creature",
+      "value": "Magic immunity",
+      "durationText": "While equipped",
+      "reusableFunction": "applyMagicImmunity"
+    },
+    "title": "Heroism grants magic immunity while equipped",
+    "summary": "Equip Heroism and verify the headless route recognizes its printed magic immunity while it remains equipped.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_093_heroism",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Equip Heroism to player_1 primary creature."
+      ]
+    },
+    "steps": [
+      "Player 1 equips Heroism to their primary creature.",
+      "Accept the while-equipped magic immunity static rule."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Magic immunity rule is available",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_MAGIC_IMMUNITY_AVAILABLE"
+      },
+      {
+        "label": "Heroism remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_093_heroism"
+      }
+    ],
+    "manualVerification": [
+      "Confirm future targeted magic effects cannot affect either Heroism or the equipped creature after Heroism resolves."
+    ],
+    "riskNotes": [
+      "This fixture validates static-rule recognition, not a full opposing magic targeting attempt."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Heroism magic immunity branch."
+    },
+    "regression": {
+      "fixtureName": "heroism-magic-immunity",
+      "tags": [
+        "magic",
+        "equip",
+        "immunity"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_093_heroism:093-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

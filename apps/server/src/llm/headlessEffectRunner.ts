@@ -2407,6 +2407,8 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("apply_temporary_stat_set") ||
       actionType.includes("apply_status") ||
       actionType.includes("suppress_modifier_layer") ||
+      actionType.includes("apply_magic_immunity") ||
+      actionType.includes("apply_negation_window_restriction") ||
       actionType.includes("deal_percentage_damage") ||
       actionType.includes("heal_to_full") ||
       actionType === "heal" ||
@@ -2480,6 +2482,10 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
         timestamp: new Date().toISOString(),
         type: actionType.includes("suppress_modifier_layer")
           ? "HEADLESS_STATIC_MODIFIER_SUPPRESSION_AVAILABLE"
+          : actionType.includes("apply_magic_immunity")
+            ? "HEADLESS_STATIC_MAGIC_IMMUNITY_AVAILABLE"
+            : actionType.includes("apply_negation_window_restriction")
+              ? "HEADLESS_STATIC_NEGATION_WINDOW_RESTRICTION_AVAILABLE"
           : actionType.includes("global_creature_effect_negation")
             ? "HEADLESS_STATIC_CREATURE_EFFECT_NEGATION_AVAILABLE"
             : actionType.includes("apply_status")

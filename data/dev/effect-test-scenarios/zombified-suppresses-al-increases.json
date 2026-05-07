@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_120_zombified",
+  "effectId": "120-E03",
+  "title": "Zombified negates other AL increases",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_120_zombified",
+      "cardName": "Zombified",
+      "cardType": "MAGIC",
+      "cardNumber": "120",
+      "generation": "1",
+      "rawText": "Equipped creature loses 2 AL per turn cycle. Creature's AL returns to normal if this card is removed from the field. Negates other AL increases on the equipped creature."
+    },
+    "effect": {
+      "effectId": "120-E03",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "SUPPRESS_MODIFIER_LAYER",
+      "effectGroup": "Modifier Suppression",
+      "target": "Equipped creature",
+      "value": "Ignore positive AL modifiers",
+      "durationText": "While equipped",
+      "reusableFunction": "applyModifierSuppression"
+    },
+    "title": "Zombified negates other AL increases",
+    "summary": "Equip a positive AL card and Zombified to the same creature, then verify the AL increase is suppressed while Zombified's AL loss is active.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_120_zombified",
+        "gen1_062_hero_shield",
+        "test_defender_al_6_hp_50"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Hero Shield on player_1 field so it supplies a competing +4 AL increase.",
+        "Equip Zombified to the same player_1 primary creature."
+      ]
+    },
+    "steps": [
+      "Attach Hero Shield and Zombified to player_1 primary creature.",
+      "Read the equipped creature's effective AL."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Positive AL increase is suppressed and Zombified AL loss applies",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 4
+      },
+      {
+        "label": "Zombified remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_120_zombified"
+      },
+      {
+        "label": "Hero Shield remains as competing AL source",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_062_hero_shield"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Zombified suppresses only positive AL increases.",
+      "Confirm 120-E01 timing separately; current static layer model applies the printed -2 AL while equipped."
+    ],
+    "riskNotes": [
+      "Because all while-equipped text is active on the card, the expected AL includes the current -2 AL layer plus suppression of Hero Shield's +4 AL."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Zombified AL modifier suppression."
+    },
+    "regression": {
+      "fixtureName": "zombified-suppresses-al-increases",
+      "tags": [
+        "magic",
+        "equip",
+        "modifier-suppression",
+        "al"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_120_zombified:120-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
