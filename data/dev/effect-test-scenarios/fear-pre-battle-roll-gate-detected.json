@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_051_fear",
+  "effectId": "051-E01",
+  "title": "Fear detects equipped creature pre-battle roll gate",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_051_fear",
+      "cardName": "Fear",
+      "cardType": "MAGIC",
+      "cardNumber": "051",
+      "generation": "1",
+      "rawText": "The equipped creature must roll 1 die prior to battle. If the result is 1-4: Creature may battle as normal. If the result is 5-6: Creature cannot cause damage."
+    },
+    "effect": {
+      "effectId": "051-E01",
+      "trigger": "PRIOR_TO_BATTLE",
+      "actionType": "APPLY_PRE_BATTLE_ROLL_GATE",
+      "effectGroup": "Battle Gate",
+      "target": "Equipped creature",
+      "value": "1-4 normal; 5-6 cannot cause damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyPreBattleRollGate"
+    },
+    "title": "Fear detects equipped creature pre-battle roll gate",
+    "summary": "Equip Fear, start a battle with the equipped creature, and verify the battle timing trigger is detected before battle resolution.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_051_fear",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Equip Fear to player_1 primary creature.",
+        "Run a battle with the equipped creature attacking."
+      ]
+    },
+    "steps": [
+      "Equip Fear to player_1 primary creature.",
+      "Declare battle with the equipped creature.",
+      "Verify Fear is detected as a prior-to-battle roll gate."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Prior-to-battle trigger is detected",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_TIMING_TRIGGER_DETECTED"
+      },
+      {
+        "label": "Fear remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_051_fear"
+      }
+    ],
+    "manualVerification": [
+      "Resolve the missing roll table manually: 1-4 allows battle as normal; 5-6 means the equipped creature cannot cause damage for the current battle."
+    ],
+    "riskNotes": [
+      "This fixture validates battle trigger detection only. It does not automate the 1D6 branch result yet."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Fear's pre-battle roll gate detection before implementing full branch resolution."
+    },
+    "regression": {
+      "fixtureName": "fear-pre-battle-roll-gate-detected",
+      "tags": [
+        "magic",
+        "equip",
+        "battle",
+        "roll-gate"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

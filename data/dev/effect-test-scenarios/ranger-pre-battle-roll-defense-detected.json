@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_080_ranger",
+  "effectId": "080-E01",
+  "title": "Ranger detects opponent pre-battle defense roll",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_080_ranger",
+      "cardName": "Ranger",
+      "cardType": "CREATURE",
+      "cardNumber": "080",
+      "generation": "1",
+      "rawText": "Your opponent must roll 1 die prior to each battle with this creature. If the result is: 1-2: This card cannot receive damage. 3-6: This card receives damage as normal."
+    },
+    "effect": {
+      "effectId": "080-E01",
+      "trigger": "PRIOR_TO_EACH_BATTLE_WITH_THIS_CREATURE",
+      "actionType": "APPLY_PRE_BATTLE_ROLL_DEFENSE",
+      "effectGroup": "Damage Prevention",
+      "target": "This card",
+      "value": "Cannot receive damage on 1-2",
+      "durationText": "Current battle",
+      "reusableFunction": "applyPreBattleRollDefense"
+    },
+    "title": "Ranger detects opponent pre-battle defense roll",
+    "summary": "Put Ranger in battle and verify its prior-to-each-battle defense roll is surfaced by the battle trigger detector.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_080_ranger"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Ranger as player_1 primary creature.",
+        "Run a battle involving Ranger."
+      ]
+    },
+    "steps": [
+      "Set Ranger as player_1 primary creature.",
+      "Declare battle involving Ranger.",
+      "Verify Ranger is detected as a prior-to-battle defense roll source."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Prior-to-each-battle trigger is detected",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_TIMING_TRIGGER_DETECTED"
+      },
+      {
+        "label": "Ranger remains primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen1_080_ranger"
+      }
+    ],
+    "manualVerification": [
+      "Resolve the missing roll table manually: opponent rolls 1D6; 1-2 prevents damage to Ranger for the current battle, 3-6 damage is normal."
+    ],
+    "riskNotes": [
+      "This fixture validates battle trigger detection only. It does not automate the defensive 1D6 branch result yet."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Ranger's pre-battle defense roll detection before implementing full branch resolution."
+    },
+    "regression": {
+      "fixtureName": "ranger-pre-battle-roll-defense-detected",
+      "tags": [
+        "creature",
+        "battle",
+        "roll-defense",
+        "damage-prevention"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

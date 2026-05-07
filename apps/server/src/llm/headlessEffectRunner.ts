@@ -2662,6 +2662,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     source.zone === "MAGIC_SLOT" &&
     (
       actionType.includes("damage_multiplier") ||
+      actionType.includes("pre_battle_roll") ||
       text.includes("damage multiplier") ||
       text.includes("atk damage")
     );
