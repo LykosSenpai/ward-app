@@ -1,16 +1,19 @@
 import { io, type Socket } from "socket.io-client";
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL?.trim() || "http://localhost:3001";
-const QA_PASSWORD = process.env.WARD_GEN1_QA_PASSWORD?.trim() || "WardGen1QA!2026";
+const QA_GENERATION = process.env.WARD_QA_GENERATION?.trim() || "1";
+const QA_LABEL = `Gen${QA_GENERATION}`;
+const PACK_ID = `ward-gen${QA_GENERATION}`;
+const QA_PASSWORD = process.env[`WARD_GEN${QA_GENERATION}_QA_PASSWORD`]?.trim() || `WardGen${QA_GENERATION}QA!2026`;
 const WAIT_TIMEOUT_MS = 12_000;
 
-const DECK_PAIRS = [
-  ["gen1-qa-01", "gen1-qa-02"],
-  ["gen1-qa-03", "gen1-qa-04"],
-  ["gen1-qa-05", "gen1-qa-06"],
-  ["gen1-qa-07", "gen1-qa-08"],
-  ["gen1-qa-09", "gen1-qa-10"]
-] as const;
+const DECK_PAIRS = Array.from({ length: 5 }, (_item, index) => {
+  const firstDeck = index * 2 + 1;
+  return [
+    `gen${QA_GENERATION}-qa-${String(firstDeck).padStart(2, "0")}`,
+    `gen${QA_GENERATION}-qa-${String(firstDeck + 1).padStart(2, "0")}`
+  ] as const;
+});
 
 const BATTLE_ROLL_PLANS = [
   { speed: [6, 1], hit: [6, 6], damage: [3, 3, 3, 3], label: "critical hit" },
@@ -475,7 +478,7 @@ async function runBattleWithUndoCheck(
     client.socket.emit("match:devForceRolls", {
       matchId: match.matchId,
       ...roll,
-      label: `Gen1 live lobby sweep: ${rollPlan.label}`
+      label: `${QA_LABEL} live lobby sweep: ${rollPlan.label}`
     });
   }
   await delay(300);
@@ -589,13 +592,13 @@ async function runDeckPairGame(
   alphaDeckId: string,
   bravoDeckId: string
 ): Promise<GameSummary> {
-  const lobbyName = `Gen1 QA Sweep ${pairIndex + 1}`;
+  const lobbyName = `${QA_LABEL} QA Sweep ${pairIndex + 1}`;
   const rollPlan = BATTLE_ROLL_PLANS[pairIndex % BATTLE_ROLL_PLANS.length]!;
   let undoChecks = 0;
 
   alpha.socket.emit("lobby:create", {
     name: lobbyName,
-    selectedPackIds: ["ward-gen1"],
+    selectedPackIds: [PACK_ID],
     selectedDeckId: alphaDeckId
   });
   const lobby = await waitFor(
@@ -711,8 +714,8 @@ async function runDeckPairGame(
 }
 
 async function main(): Promise<void> {
-  const alphaLogin = await login("gen1_qa_alpha");
-  const bravoLogin = await login("gen1_qa_bravo");
+  const alphaLogin = await login(`gen${QA_GENERATION}_qa_alpha`);
+  const bravoLogin = await login(`gen${QA_GENERATION}_qa_bravo`);
   console.log(`Logged in ${alphaLogin.user.username} and ${bravoLogin.user.username}`);
 
   const alpha = connectClient("alpha", alphaLogin.cookie);
@@ -728,7 +731,7 @@ async function main(): Promise<void> {
       })
     );
     throwClientErrors(alpha, bravo);
-    console.log("All Gen1 QA decks are visible over authenticated sockets.");
+    console.log(`All ${QA_LABEL} QA decks are visible over authenticated sockets.`);
 
     const summaries: GameSummary[] = [];
     const coveredCardIds = new Set<string>();
@@ -744,8 +747,9 @@ async function main(): Promise<void> {
       );
     }
 
-    if (coveredCardIds.size !== 151) {
-      throw new Error(`Expected live deck sweep to cover 151 Gen1 cards, covered ${coveredCardIds.size}.`);
+    const expectedCoveredCards = Number(process.env.WARD_QA_EXPECTED_CARD_COUNT?.trim() || (QA_GENERATION === "1" ? "151" : "150"));
+    if (coveredCardIds.size !== expectedCoveredCards) {
+      throw new Error(`Expected live deck sweep to cover ${expectedCoveredCards} ${QA_LABEL} cards, covered ${coveredCardIds.size}.`);
     }
 
     const totalUndoChecks = summaries.reduce((sum, summary) => sum + summary.undoChecks, 0);
@@ -761,7 +765,8 @@ async function main(): Promise<void> {
         eventCount: summary.eventCount,
         undoChecks: summary.undoChecks
       })),
-      coveredGen1Cards: coveredCardIds.size,
+      packId: PACK_ID,
+      coveredCards: coveredCardIds.size,
       totalUndoChecks
     }, null, 2));
   } finally {

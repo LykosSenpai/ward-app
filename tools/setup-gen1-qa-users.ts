@@ -10,23 +10,26 @@ import {
   saveUserDeckListToDisk
 } from "../apps/server/src/dataStore.js";
 
-const QA_PASSWORD = "WardGen1QA!2026";
+const QA_GENERATION = process.env.WARD_QA_GENERATION?.trim() || "1";
+const QA_LABEL = `Gen${QA_GENERATION}`;
+const PACK_ID = `ward-gen${QA_GENERATION}`;
+const QA_PASSWORD = process.env[`WARD_GEN${QA_GENERATION}_QA_PASSWORD`]?.trim() || `WardGen${QA_GENERATION}QA!2026`;
 const DECK_COUNT = 10;
 
 const QA_USERS = [
   {
-    username: "gen1_qa_alpha",
-    email: "gen1_qa_alpha@example.test",
-    displayName: "Gen1 QA Alpha"
+    username: `gen${QA_GENERATION}_qa_alpha`,
+    email: `gen${QA_GENERATION}_qa_alpha@example.test`,
+    displayName: `${QA_LABEL} QA Alpha`
   },
   {
-    username: "gen1_qa_bravo",
-    email: "gen1_qa_bravo@example.test",
-    displayName: "Gen1 QA Bravo"
+    username: `gen${QA_GENERATION}_qa_bravo`,
+    email: `gen${QA_GENERATION}_qa_bravo@example.test`,
+    displayName: `${QA_LABEL} QA Bravo`
   }
 ];
 
-type Gen1QaDeck = {
+type GenerationQaDeck = {
   id: string;
   name: string;
   userIndex: number;
@@ -49,7 +52,7 @@ function takeCyclic<T>(items: T[], startIndex: number, count: number): T[] {
   });
 }
 
-function buildGen1QaDecks(catalog: Record<string, CardDefinition>): Gen1QaDeck[] {
+function buildGenerationQaDecks(catalog: Record<string, CardDefinition>): GenerationQaDeck[] {
   const cards = Object.values(catalog).sort(byCardNumber);
   const creatures = cards.filter(
     (card): card is CreatureCard => card.cardType === "CREATURE"
@@ -70,8 +73,8 @@ function buildGen1QaDecks(catalog: Record<string, CardDefinition>): Gen1QaDeck[]
     ].map(card => card.id);
 
     return {
-      id: `gen1-qa-${String(deckNumber).padStart(2, "0")}`,
-      name: `Gen1 QA Deck ${String(deckNumber).padStart(2, "0")}`,
+      id: `gen${QA_GENERATION}-qa-${String(deckNumber).padStart(2, "0")}`,
+      name: `${QA_LABEL} QA Deck ${String(deckNumber).padStart(2, "0")}`,
       userIndex,
       cardIds
     };
@@ -94,8 +97,8 @@ function getArmorLevelBandCounts(cardIds: string[], catalog: Record<string, Card
   );
 }
 
-function assertDecksCoverGen1(
-  decks: Gen1QaDeck[],
+function assertDecksCoverGeneration(
+  decks: GenerationQaDeck[],
   catalog: Record<string, CardDefinition>
 ): void {
   const coveredCardIds = new Set(decks.flatMap(deck => deck.cardIds));
@@ -104,12 +107,12 @@ function assertDecksCoverGen1(
     .filter(cardId => !coveredCardIds.has(cardId));
 
   if (missingCardIds.length > 0) {
-    throw new Error(`Gen1 QA decks missed ${missingCardIds.length} card(s): ${missingCardIds.join(", ")}`);
+    throw new Error(`${QA_LABEL} QA decks missed ${missingCardIds.length} card(s): ${missingCardIds.join(", ")}`);
   }
 }
 
-const catalog = loadCardCatalog(["ward-gen1"]);
-const decks = buildGen1QaDecks(catalog);
+const catalog = loadCardCatalog([PACK_ID]);
+const decks = buildGenerationQaDecks(catalog);
 
 for (const deck of decks) {
   const validation = validateDeckCardIds({
@@ -140,7 +143,7 @@ for (const deck of decks) {
   );
 }
 
-assertDecksCoverGen1(decks, catalog);
+assertDecksCoverGeneration(decks, catalog);
 
 async function main(): Promise<void> {
   const passwordHash = await bcrypt.hash(QA_PASSWORD, 12);

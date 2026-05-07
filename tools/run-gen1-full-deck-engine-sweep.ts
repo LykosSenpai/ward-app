@@ -25,7 +25,10 @@ import type {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "..");
-const GEN1_PACK_PATH = path.join(ROOT_DIR, "data/cards/packs/ward-gen1.json");
+const QA_GENERATION = process.env.WARD_QA_GENERATION?.trim() || "1";
+const QA_LABEL = `Gen${QA_GENERATION}`;
+const PACK_ID = `ward-gen${QA_GENERATION}`;
+const PACK_PATH = path.join(ROOT_DIR, `data/cards/packs/${PACK_ID}.json`);
 const STATUS_PATH = path.join(ROOT_DIR, "data/dev/effect-runtime-test-status.json");
 
 type CardPack = {
@@ -97,7 +100,7 @@ function chooseStarterCreatureId(cards: CardDefinition[]): string {
   const starter = simpleStarter ?? creatures.find(card => card.armorLevel <= 6);
 
   if (!starter) {
-    throw new Error("Gen1 pack has no AL 6 or lower creature available for starter draw.");
+    throw new Error(`${QA_LABEL} pack has no AL 6 or lower creature available for starter draw.`);
   }
 
   return starter.id;
@@ -157,17 +160,17 @@ function runBattleSmoke(state: MatchState): MatchState {
   nextState = forceNextDevRolls(nextState, {
     kind: "SPEED_TIE_ROLL",
     dice: [6, 1],
-    label: "Gen1 full deck sweep speed tie"
+    label: `${QA_LABEL} full deck sweep speed tie`
   });
   nextState = forceNextDevRolls(nextState, {
     kind: "HIT_ROLL",
     dice: [6, 6],
-    label: "Gen1 full deck sweep hit"
+    label: `${QA_LABEL} full deck sweep hit`
   });
   nextState = forceNextDevRolls(nextState, {
     kind: "ATTACK_DAMAGE_ROLL",
     dice: [3, 3, 3, 3, 3, 3],
-    label: "Gen1 full deck sweep damage"
+    label: `${QA_LABEL} full deck sweep damage`
   });
 
   nextState = startManualBattleSession(
@@ -199,7 +202,7 @@ function runBattleSmoke(state: MatchState): MatchState {
   return normalizeMatch(nextState);
 }
 
-const pack = readJson<CardPack>(GEN1_PACK_PATH);
+const pack = readJson<CardPack>(PACK_PATH);
 const statusFile = readJson<StatusFile>(STATUS_PATH);
 const catalog = Object.fromEntries(pack.cards.map(card => [card.id, card]));
 const fullDeck = buildFullDeckWithStarterFirst(pack.cards);
@@ -224,7 +227,7 @@ const unverifiedEffects = effectRows.filter(row => {
 
 if (unverifiedEffects.length > 0) {
   throw new Error(
-    `Gen1 still has ${unverifiedEffects.length} unverified effect(s): ${unverifiedEffects
+    `${QA_LABEL} still has ${unverifiedEffects.length} unverified effect(s): ${unverifiedEffects
       .slice(0, 10)
       .map(row => `${row.cardId}/${row.effectId}`)
       .join(", ")}`
@@ -235,8 +238,8 @@ let match = create1v1MatchFromDeckCardIds({
   cardCatalog: catalog,
   player1DeckCardIds: fullDeck,
   player2DeckCardIds: fullDeck,
-  player1Name: "Gen1 Sweep A",
-  player2Name: "Gen1 Sweep B",
+  player1Name: `${QA_LABEL} Sweep A`,
+  player2Name: `${QA_LABEL} Sweep B`,
   exactDeckSize: null,
   defaultCopyLimit: 999
 });
@@ -259,8 +262,8 @@ if (!player1Primary || !player2Primary) {
 
 const summary = {
   packId: pack.id,
-  gen1Cards: pack.cards.length,
-  gen1Effects: effectRows.length,
+  cardCount: pack.cards.length,
+  effectCount: effectRows.length,
   verifiedWorkingEffects: effectRows.length - unverifiedEffects.length,
   fullDeckSizePerPlayer: initialDeckSize,
   player1RemainingDeck: player1.deck.length,
