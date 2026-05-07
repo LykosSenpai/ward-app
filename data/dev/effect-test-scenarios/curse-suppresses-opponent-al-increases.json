@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_049_curse",
+  "effectId": "049-E02",
+  "title": "Curse supersedes opponent AL increases",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_049_curse",
+      "cardName": "Curse",
+      "cardType": "MAGIC",
+      "cardNumber": "049",
+      "generation": "1",
+      "rawText": "All creatures on your opponent's side of the field have their AL reduced to 1. This card supersedes other AL increases."
+    },
+    "effect": {
+      "effectId": "049-E02",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "SUPPRESS_MODIFIER_LAYER",
+      "effectGroup": "Modifier Suppression",
+      "target": "Opponent creatures",
+      "value": "Suppress AL increases",
+      "durationText": "While field active",
+      "reusableFunction": "applyModifierSuppression"
+    },
+    "title": "Curse supersedes opponent AL increases",
+    "summary": "Put a positive AL aura on the opponent's creature, then play Curse and verify its AL stays reduced to 1.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_049_curse",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen2_036_full_moon",
+        "test_were_named_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Full Moon on player_2's field so the opponent Were creature has a competing +5 AL aura.",
+        "Curse stays in player_1 hand until the fixture plays it as field magic."
+      ]
+    },
+    "steps": [
+      "Pre-place Full Moon as player_2 field magic.",
+      "Player 1 plays Curse as field magic.",
+      "Read player_2 primary effective AL after Curse and Full Moon both apply."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Curse suppresses the competing AL increase",
+        "path": "player_2.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Curse remains in player 1 magic slot",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_049_curse"
+      },
+      {
+        "label": "Full Moon remains as the competing AL source",
+        "path": "player_2.magicSlots",
+        "operator": "contains",
+        "value": "gen2_036_full_moon"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Curse suppresses positive AL increases only for opponent creatures while it remains field-active."
+    ],
+    "riskNotes": [
+      "This fixture validates Curse's printed supersedes clause through final effective AL with a competing Full Moon aura."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Curse modifier suppression against a positive AL aura."
+    },
+    "regression": {
+      "fixtureName": "curse-suppresses-opponent-al-increases",
+      "tags": [
+        "magic",
+        "field",
+        "modifier-suppression",
+        "al"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_049_curse:049-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
