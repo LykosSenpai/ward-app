@@ -2515,10 +2515,10 @@
       "effectId": "007-E01",
       "trigger": "ON_OPPONENT_DRAW_CARD",
       "actionType": "DEAL_DAMAGE_ON_DRAW",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: DEAL_DAMAGE_ON_DRAW.",
-      "lastTestedAt": "2026-05-07T16:44:39.750Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:49:03.960Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2529,10 +2529,10 @@
       "effectId": "009-E01",
       "trigger": "EQUIP_REQUIREMENT",
       "actionType": "VALIDATE_SUMMON_REQUIREMENT",
-      "status": "BROKEN",
-      "issueType": "WRONG_DAMAGE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:44:39.770Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:49:58.689Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2546,7 +2546,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T16:44:39.790Z",
+      "lastTestedAt": "2026-05-07T16:49:58.715Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2560,7 +2560,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T16:44:39.923Z",
+      "lastTestedAt": "2026-05-07T16:49:58.853Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2574,7 +2574,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T16:44:40.040Z",
+      "lastTestedAt": "2026-05-07T16:49:58.958Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2697,10 +2697,10 @@
       "effectId": "018-E01",
       "trigger": "ON_OPPONENT_DRAW_CARD",
       "actionType": "DEAL_DAMAGE_ON_DRAW",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: DEAL_DAMAGE_ON_DRAW.",
-      "lastTestedAt": "2026-05-07T16:44:40.151Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:49:03.980Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2711,10 +2711,10 @@
       "effectId": "018-E02",
       "trigger": "ON_OPPONENT_DRAW_CARD",
       "actionType": "HEAL_CREATURE",
-      "status": "BROKEN",
-      "issueType": "WRONG_DAMAGE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:44:40.169Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:49:04.001Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2728,7 +2728,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T16:44:40.198Z",
+      "lastTestedAt": "2026-05-07T16:50:57.809Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2742,7 +2742,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T16:44:40.227Z",
+      "lastTestedAt": "2026-05-07T16:50:57.842Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2753,10 +2753,10 @@
       "effectId": "020-E03",
       "trigger": "ON_SOURCE_INVALIDATED",
       "actionType": "RETURN_LINKED_CARDS",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:44:40.247Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:50:57.862Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2770,7 +2770,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T16:44:40.279Z",
+      "lastTestedAt": "2026-05-07T16:50:57.892Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2784,7 +2784,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T16:44:40.308Z",
+      "lastTestedAt": "2026-05-07T16:50:57.922Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2795,10 +2795,10 @@
       "effectId": "021-E03",
       "trigger": "ON_SOURCE_INVALIDATED",
       "actionType": "RETURN_LINKED_CARDS",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:44:40.329Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:50:57.943Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3218,7 +3218,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T16:44:40.499Z",
+      "lastTestedAt": "2026-05-07T16:49:58.979Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -3229,10 +3229,10 @@
       "effectId": "054-E02",
       "trigger": "ON_OPPONENT_PLAYS_LIGHTNING",
       "actionType": "DEAL_PERCENTAGE_DAMAGE",
-      "status": "BROKEN",
-      "issueType": "WRONG_DAMAGE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:44:40.517Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:49:58.989Z",
       "testedBy": "Headless Engine QA"
     },
     {

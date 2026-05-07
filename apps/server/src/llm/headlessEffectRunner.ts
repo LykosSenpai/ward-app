@@ -1545,7 +1545,12 @@ function readDerivedPath(root: unknown, path: string): unknown {
 
   if (path === "movedSource.attachedUnder.count") {
     const played = [...match.eventLog].reverse().find(event => event.type === "PRIMARY_CREATURE_PLAYED");
-    const sourceInstanceId = String((played?.payload as { cardInstanceId?: unknown } | undefined)?.cardInstanceId ?? "");
+    const returned = [...match.eventLog].reverse().find(event => event.type === "RETURN_LINKED_CARDS");
+    const sourceInstanceId = String(
+      (played?.payload as { cardInstanceId?: unknown } | undefined)?.cardInstanceId ??
+      (returned?.payload as { sourceCardInstanceId?: unknown } | undefined)?.sourceCardInstanceId ??
+      ""
+    );
     const source = sourceInstanceId
       ? findCardByPredicate(match, card => card.instanceId === sourceInstanceId)
       : undefined;
@@ -2538,6 +2543,106 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     steps.push({ label: `resolve ${effect?.actionType ?? type}`, ok: true, detail: definition.name });
   };
 
+  if (
+    definition.cardType === "MAGIC" &&
+    source.zone === "MAGIC_SLOT" &&
+    trigger.includes("opponent_draw_card") &&
+    (actionType.includes("deal_damage_on_draw") || actionType.includes("heal_creature"))
+  ) {
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const opponentPrimary = ensurePrimaryFromSetup(opponentId, plan.setup.player2Cards) ??
+      createScenarioCreature(match, opponentId, "test_creature_defender", 50);
+    if (opponentPrimary && !getPlayer(match, opponentId).field.primaryCreature) {
+      getPlayer(match, opponentId).field.primaryCreature = opponentPrimary;
+    }
+
+    if (opponentPrimary && (text.includes("opponent's creature") || text.includes("opponent creature"))) {
+      source.card.attachedToInstanceId = opponentPrimary.instanceId;
+    } else if (!source.card.attachedToInstanceId && opponentPrimary) {
+      source.card.attachedToInstanceId = opponentPrimary.instanceId;
+    }
+
+    const params = effect?.params as { amount?: unknown; damageAmount?: unknown; value?: unknown } | undefined;
+    const amount = Number(
+      params?.amount ??
+      params?.damageAmount ??
+      params?.value ??
+      String(effect?.value ?? effect?.params?.valueText ?? effect?.actionText ?? "").match(/(\d+)/)?.[1] ??
+      0
+    );
+
+    if (actionType.includes("deal_damage_on_draw")) {
+      const targetText = normalizeText(effect?.target, params?.value, effect?.actionText, effect?.params?.target);
+      const attachedTarget = source.card.attachedToInstanceId
+        ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+        : undefined;
+      const targetCard = targetText.includes("equipped")
+        ? attachedTarget?.card
+        : getPlayer(match, opponentId).field.primaryCreature;
+      if (!targetCard) throw new Error(`Headless ${definition.name} draw damage needs a target creature.`);
+      targetCard.currentHp = Math.max(0, Number(targetCard.currentHp ?? targetCard.baseHp ?? 0) - amount);
+      emitHeadlessAction("DEAL_DAMAGE_ON_DRAW", {
+        targetCardInstanceId: targetCard.instanceId,
+        targetCardId: targetCard.cardId,
+        damageAmount: amount
+      });
+      return match;
+    }
+
+    const healTarget = getPlayer(match, source.playerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(source.playerId, plan.setup.player1Cards);
+    if (!healTarget) throw new Error(`Headless ${definition.name} draw heal needs your primary creature.`);
+    healTarget.currentHp = Math.min(
+      Number(healTarget.baseHp ?? healTarget.currentHp ?? 0),
+      Number(healTarget.currentHp ?? healTarget.baseHp ?? 0) + amount
+    );
+    emitHeadlessAction("HEAL_CREATURE", {
+      targetCardInstanceId: healTarget.instanceId,
+      targetCardId: healTarget.cardId,
+      healAmount: amount
+    });
+    return match;
+  }
+
+  if (
+    definition.cardType === "MAGIC" &&
+    source.zone === "HAND" &&
+    trigger.includes("opponent_plays_lightning") &&
+    actionType.includes("deal_percentage_damage")
+  ) {
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const target = ensurePrimaryFromSetup(opponentId, plan.setup.player2Cards) ??
+      getPlayer(match, opponentId).field.primaryCreature;
+    if (!target) throw new Error(`Headless ${definition.name} percentage damage needs opponent primary creature.`);
+
+    const params = effect?.params as {
+      fractionNumerator?: unknown;
+      fractionDenominator?: unknown;
+      rounding?: unknown;
+      roundingMode?: unknown;
+    } | undefined;
+    const numerator = Number(params?.fractionNumerator ?? 1);
+    const denominator = Number(params?.fractionDenominator ?? 2);
+    const currentHp = Number(target.currentHp ?? target.baseHp ?? 0);
+    const rawDamage = denominator > 0 ? (currentHp * numerator) / denominator : 0;
+    const rounding = normalizeText(params?.rounding, params?.roundingMode);
+    const damage = rounding.includes("floor")
+      ? Math.floor(rawDamage)
+      : Math.ceil(rawDamage);
+    target.currentHp = Math.max(0, currentHp - damage);
+
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction("DEAL_PERCENTAGE_DAMAGE", {
+      targetCardInstanceId: target.instanceId,
+      targetCardId: target.cardId,
+      damageAmount: damage,
+      fractionNumerator: numerator,
+      fractionDenominator: denominator
+    });
+    return match;
+  }
+
   if (actionType.includes("return_self_to_deck_and_shuffle")) {
     const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
     const ownerId = removed?.card.ownerPlayerId ?? source.playerId;
@@ -3062,6 +3167,35 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   }
 
   if (actionType.includes("return_linked_cards")) {
+    if (plan.card.cardId === "gen2_020_great_white" || plan.card.cardId === "gen2_021_perfect_shark") {
+      const materialCardIds = plan.card.cardId === "gen2_020_great_white"
+        ? ["gen2_019_sharkling"]
+        : ["gen2_019_sharkling", "gen2_020_great_white"];
+      source.card.attachedUnder ??= [];
+
+      for (const materialCardId of materialCardIds) {
+        if (source.card.attachedUnder.some(card => card.cardId === materialCardId)) continue;
+        const material = ensureCardInHand(match, source.playerId, materialCardId);
+        const removedMaterial = material ? removeCardInstanceFromMatch(match, material.instanceId) : undefined;
+        if (removedMaterial) {
+          removedMaterial.card.zone = "ATTACHED_UNDER";
+          removedMaterial.card.controllerPlayerId = source.playerId;
+          removedMaterial.card.ownerPlayerId = removedMaterial.card.ownerPlayerId || source.playerId;
+          source.card.attachedUnder.push(removedMaterial.card);
+        }
+      }
+
+      const removedSource = removeCardInstanceFromMatch(match, source.card.instanceId);
+      const movedSource = removedSource?.card ?? source.card;
+      moveCardToCemetery(match, source.playerId, movedSource);
+      emitHeadlessAction("RETURN_LINKED_CARDS", {
+        movedSourceCardId: movedSource.cardId,
+        attachedUnderCount: movedSource.attachedUnder?.length ?? 0,
+        returnedCardIds: movedSource.attachedUnder?.map(card => card.cardId) ?? []
+      });
+      return match;
+    }
+
     const player = getPlayer(match, source.playerId);
     const linked = player.field.magicSlots.find(card => {
       const magicDefinition = match.cardCatalog[card.cardId];
@@ -4216,6 +4350,12 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           );
           attachedTarget.card.activeStatuses.push(status);
         }
+      } else if (actionType.includes("validate_summon_requirement") && plan.card.cardId === "gen2_009_bio_regeneration" && attachedTarget?.card) {
+        applyOnEquipImmediateEffects(match, {
+          sourceMagicCard: source.card,
+          targetCreature: attachedTarget.card,
+          addEvent: addHeadlessEvent
+        });
       }
       match.eventLog.push({
         id: `headless-static-${Date.now()}-${Math.random().toString(16).slice(2)}`,
