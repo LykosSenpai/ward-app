@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_062_martial_arts_man",
+  "effectId": "062-E01",
+  "title": "Martial Arts Man deals twenty damage after hit",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_062_martial_arts_man",
+      "cardName": "Martial Arts Man",
+      "cardType": "MAGIC",
+      "cardNumber": "062",
+      "generation": "2",
+      "rawText": "On hit, play this card from your hand. Inflict 20 damage to the creature you are battling."
+    },
+    "effect": {
+      "effectId": "062-E01",
+      "trigger": "ON_HIT_FROM_HAND",
+      "actionType": "DEAL_INSTANT_DAMAGE",
+      "effectGroup": "Direct Damage",
+      "target": "Creature you are battling",
+      "value": "20 damage",
+      "durationText": "Instant",
+      "reusableFunction": "dealDirectDamage"
+    },
+    "title": "Martial Arts Man deals twenty damage after hit",
+    "summary": "After a successful hit, play Martial Arts Man from hand and verify the battling creature takes its 20 direct damage before battle damage completes.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_062_martial_arts_man",
+        "test_attacker_2dice_mod0"
+      ],
+      "player2Cards": [
+        "test_defender_al5_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            4,
+            4
+          ],
+          "label": "Hit succeeds"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1,
+            1
+          ],
+          "label": "Base two attack dice"
+        }
+      ],
+      "notes": [
+        "Martial Arts Man is in player_1 hand before combat."
+      ]
+    },
+    "steps": [
+      "Attack with player_1 primary creature.",
+      "Resolve forced successful hit.",
+      "In the post-hit Lightning window, play Martial Arts Man.",
+      "Resolve Martial Arts Man's direct damage and the normal battle damage."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Defender HP reduced by direct and battle damage",
+        "path": "player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 78
+      },
+      {
+        "label": "Martial Arts Man goes to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen2_062_martial_arts_man"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the card cannot be played before a hit lands."
+    ],
+    "riskNotes": [
+      "Expected HP assumes 20 direct damage plus 2 normal battle damage."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate on-hit-from-hand direct damage."
+    },
+    "regression": {
+      "fixtureName": "martial-arts-man-on-hit-damage",
+      "tags": [
+        "magic",
+        "lightning",
+        "combat",
+        "direct-damage"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

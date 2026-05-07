@@ -2106,6 +2106,36 @@ function playOnHitDiceModifierFromHand(match: MatchState, plan: LlmEffectTestPla
   player.cemetery.push(card);
   steps.push({ label: "play post-hit magic from hand", ok: true, detail: definition.name });
 
+  const actionType = normalizeText(effect?.actionType);
+  if (actionType.includes("deal_instant_damage") || actionType === "damage" || actionType.includes("damage_creature")) {
+    const damageAmount = Number(
+      effect?.params?.amount ??
+      effect?.params?.damageAmount ??
+      effect?.params?.value ??
+      effect?.value ??
+      effectText(effect).match(/\b(\d+)\s+damage\b/)?.[1] ??
+      0
+    );
+    const defender = findCardByPredicate(next, candidate => candidate.instanceId === strike.defender.creatureInstanceId);
+    const defenderDefinition = defender ? next.cardCatalog[defender.card.cardId] : undefined;
+
+    if (defender?.card && defenderDefinition?.cardType === "CREATURE" && Number.isFinite(damageAmount) && damageAmount > 0) {
+      const previousHp = defender.card.currentHp ?? defender.card.baseHp ?? defenderDefinition.hp;
+      const remainingHp = Math.max(0, previousHp - damageAmount);
+      defender.card.currentHp = remainingHp;
+      addHeadlessEvent(next, "HEADLESS_POST_HIT_INSTANT_DAMAGE_APPLIED", source.playerId, {
+        sourceCardId: definition.id,
+        sourceCardName: definition.name,
+        sourceEffectId: effect?.id,
+        targetCardInstanceId: defender.card.instanceId,
+        targetCardName: defenderDefinition.name,
+        damageAmount,
+        remainingHp
+      });
+      steps.push({ label: "apply post-hit instant damage", ok: true, detail: `${damageAmount} damage to ${defenderDefinition.name}` });
+    }
+  }
+
   const diceDelta = Number(
     effect?.params?.statChanges?.find(change => normalizeText(change?.stat).includes("atk_dice"))?.value ?? 0
   );
@@ -2806,6 +2836,18 @@ function runFollowupBattleForStatModifier(match: MatchState, plan: LlmEffectTest
   const opponent = getPlayer(match, findOpponentPlayerId(match, playerId));
   const defender = opponent.field.primaryCreature;
   if (!attacker || !defender) return match;
+
+  const source = findSource(match, plan.card.cardId);
+  const sourceDefinition = source ? match.cardCatalog[source.card.cardId] : undefined;
+  if (
+    source?.zone === "MAGIC_SLOT" &&
+    sourceDefinition?.cardType === "MAGIC" &&
+    sourceDefinition.magicSubType === "EQUIP" &&
+    !source.card.attachedToInstanceId
+  ) {
+    source.card.attachedToInstanceId = attacker.instanceId;
+    steps.push({ label: "attach stat magic for follow-up", ok: true, detail: `${sourceDefinition.name} to ${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId}` });
+  }
 
   match.turn.activePlayerId = playerId;
   match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(playerId));

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_066_arzulian",
+  "effectId": "066-E01",
+  "title": "Arzulian gains modifier from SPD over twelve",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_066_arzulian",
+      "cardName": "Arzulian",
+      "cardType": "CREATURE",
+      "cardNumber": "066",
+      "generation": "3",
+      "rawText": "For each point in this card's SPD stat over 12, gain Modifier +1."
+    },
+    "effect": {
+      "effectId": "066-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "This creature",
+      "value": "For each point in this card's SPD stat over 12, gain Modifier +1.",
+      "durationText": "Immediate",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Arzulian gains modifier from SPD over twelve",
+    "summary": "Put Arzulian on field with Common Boots raising SPD to 15 and verify its modifier gains +3.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_066_arzulian",
+        "gen2_025_common_boots"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Common Boots on field equipped to Arzulian so its current SPD is 15."
+      ]
+    },
+    "steps": [
+      "Set Arzulian as player_1 primary creature.",
+      "Equip Common Boots to raise Arzulian's SPD over 12.",
+      "Read Arzulian's effective modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "SPD increased to 15",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 15
+      },
+      {
+        "label": "Modifier gained three from SPD over twelve",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 5
+      }
+    ],
+    "manualVerification": [
+      "Confirm the bonus dynamically recalculates if Arzulian's SPD changes."
+    ],
+    "riskNotes": [
+      "Arzulian has base Modifier +2, so current SPD 15 should produce effective Modifier +5."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Arzulian's current-SPD scaling modifier."
+    },
+    "regression": {
+      "fixtureName": "arzulian-spd-over-twelve-modifier",
+      "tags": [
+        "creature",
+        "dynamic-stat-modifier",
+        "spd",
+        "modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

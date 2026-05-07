@@ -83,6 +83,7 @@ function isStaticEffect(effect: WardEngineEffect): boolean {
   const trigger = (effect.trigger ?? "").trim().toUpperCase();
   const actionType = effect.actionType.trim().toUpperCase();
   if (effect.params?.statChanges?.length) {
+    const durationType = (effect.duration?.type ?? effect.params.duration?.type ?? "").trim().toUpperCase();
     return [
       "WHILE_EQUIPPED",
       "STATIC_WHILE_EQUIPPED",
@@ -95,7 +96,7 @@ function isStaticEffect(effect: WardEngineEffect): boolean {
       "DURING_BATTLE",
       "DURING_DAMAGE_CALC_OR_STATIC",
       "DURING_DAMAGE_CALC_OR_WHILE_IN_HAND_COUNT"
-    ].includes(trigger);
+    ].includes(trigger) || (trigger === "ON_PLAY" && durationType === "WHILE_EQUIPPED");
   }
   return [
     "APPLY_STAT_SET_AURA",
@@ -361,8 +362,17 @@ export function collectRuntimeModifierLayers(state: MatchState, target: Creature
       const alreadyMaterializedOnTarget = (target.card.activeStatModifiers ?? []).some(
         modifier => modifier.sourceCardInstanceId === source.card.instanceId && modifier.sourceEffectId === effect.id
       );
+      const usesCurrentSpeedOverTwelveFormula =
+        (effect.actionType === "APPLY_DYNAMIC_STAT_MODIFIER" || effect.actionType === "APPLY_STAT_MODIFIER") &&
+        text.includes("spd") &&
+        text.includes("over 12") &&
+        text.includes("modifier");
 
-      if (!alreadyMaterializedOnTarget && effect.actionType !== "APPLY_SCALING_MODIFIER_FROM_ZONE_COUNT") {
+      if (
+        !alreadyMaterializedOnTarget &&
+        effect.actionType !== "APPLY_SCALING_MODIFIER_FROM_ZONE_COUNT" &&
+        !usesCurrentSpeedOverTwelveFormula
+      ) {
         for (let index = 0; index < (effect.params?.statChanges ?? []).length; index++) {
           const layer = layerFromStatChange(source, effect, effect.params!.statChanges![index], index);
           if (layer) layers.push(layer);

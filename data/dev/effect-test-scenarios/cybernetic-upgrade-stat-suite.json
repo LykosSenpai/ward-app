@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_008_cybernetic_upgrade",
+  "effectId": "008-E02",
+  "title": "Cybernetic Upgrade applies equipped stat suite",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_008_cybernetic_upgrade",
+      "cardName": "Cybernetic Upgrade",
+      "cardType": "MAGIC",
+      "cardNumber": "008",
+      "generation": "3",
+      "rawText": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12."
+    },
+    "effect": {
+      "effectId": "008-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "Atk +30; Hit +10; AL +12",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Cybernetic Upgrade applies equipped stat suite",
+    "summary": "Equip Cybernetic Upgrade to a modifier-zero primary creature and verify the printed battle stat bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_008_cybernetic_upgrade",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Cybernetic Upgrade on field equipped to player_1 primary creature to isolate the stat suite from battle-response timing."
+      ]
+    },
+    "steps": [
+      "Treat Cybernetic Upgrade as equipped to player_1 primary creature.",
+      "Read equipped creature effective AL.",
+      "Run a follow-up battle and inspect Hit and Atk output."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL capped at 12 after +12",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 12
+      },
+      {
+        "label": "Hit roll modifier increased by 10",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 10
+      },
+      {
+        "label": "Attack damage includes the +30 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 31
+      },
+      {
+        "label": "Cybernetic Upgrade remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_008_cybernetic_upgrade"
+      }
+    ],
+    "manualVerification": [
+      "Confirm battle-response timing and end-of-battle cleanup are covered by separate scenarios."
+    ],
+    "riskNotes": [
+      "This fixture intentionally isolates the while-equipped stat suite."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Cybernetic Upgrade's equipped stat bonuses."
+    },
+    "regression": {
+      "fixtureName": "cybernetic-upgrade-stat-suite",
+      "tags": [
+        "magic",
+        "lightning",
+        "equip",
+        "stat-modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
