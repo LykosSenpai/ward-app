@@ -21,7 +21,8 @@ import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import {
   applyDamageToCreatureTarget,
   applyStatModifierToCreatureTarget,
-  healCreatureTarget
+  healCreatureTarget,
+  moveMagicSlotCardToCemetery
 } from "./cardMovement.js";
 import {
   getFollowingRecurringEffectTickSchedule,
@@ -55,7 +56,7 @@ type ActiveEffectSource = {
   player: PlayerState;
   card: CardInstance;
   definition: CardDefinition;
-  zone: "PRIMARY_CREATURE" | "LIMITED_SUMMON" | "MAGIC_SLOT";
+  zone: "PRIMARY_CREATURE" | "LIMITED_SUMMON" | "MAGIC_SLOT" | "CEMETERY";
 };
 
 function normalize(value: unknown): string {
@@ -183,6 +184,26 @@ function collectActiveEffectSources(state: MatchState): ActiveEffectSource[] {
   return sources;
 }
 
+function collectKilledBattleEffectSources(state: MatchState, strike: ManualBattleStrike): ActiveEffectSource[] {
+  const killedIds = new Set<string>();
+  if (strike.defenderKilled) killedIds.add(strike.defender.creatureInstanceId);
+  if (strike.attackerKilledByCriticalMiss) killedIds.add(strike.attacker.creatureInstanceId);
+  if (killedIds.size === 0) return [];
+
+  const sources: ActiveEffectSource[] = [];
+  for (const player of state.players) {
+    for (const card of player.cemetery) {
+      if (!killedIds.has(card.instanceId)) continue;
+      const definition = state.cardCatalog[card.cardId];
+      if (!definition) continue;
+      if (definition.cardType === "CREATURE" && areCreatureEffectsSuppressed(state, card)) continue;
+      sources.push({ player, card, definition, zone: "CEMETERY" });
+    }
+  }
+
+  return sources;
+}
+
 function sourceControlsStrikeAttacker(source: ActiveEffectSource, strike: ManualBattleStrike): boolean {
   return source.card.instanceId === strike.attacker.creatureInstanceId ||
     source.card.attachedToInstanceId === strike.attacker.creatureInstanceId;
@@ -231,6 +252,18 @@ function equippedCreatureWasDamagedByStrike(source: ActiveEffectSource, strike: 
 
   if (strike.damageTarget === "ATTACKER" && strike.attacker.creatureInstanceId === attachedToInstanceId) {
     return Number(strike.selfDamageDealt ?? 0) > 0;
+  }
+
+  return false;
+}
+
+function sourceWasKilledByStrike(source: ActiveEffectSource, strike: ManualBattleStrike): boolean {
+  if (source.card.instanceId === strike.defender.creatureInstanceId) {
+    return Boolean(strike.defenderKilled);
+  }
+
+  if (source.card.instanceId === strike.attacker.creatureInstanceId) {
+    return Boolean(strike.attackerKilledByCriticalMiss);
   }
 
   return false;
@@ -321,6 +354,11 @@ function conditionPasses(
   addEvent?: AddEventFn
 ): boolean {
   const condition = getRollCondition(effect);
+  const trigger = normalize(effect.trigger);
+
+  if (timing === "WHEN_CREATURE_KILLED_IN_BATTLE" || trigger.includes("KILLED_IN_BATTLE")) {
+    if (!sourceWasKilledByStrike(source, strike)) return false;
+  }
 
   if (!condition) {
     const text = textForEffect(effect);
@@ -395,6 +433,89 @@ function conditionPasses(
   });
 
   return success;
+}
+
+function namedCardToSendToCemetery(effect: WardEngineEffect): string | undefined {
+  const candidates = [
+    effect.target,
+    effect.params?.target,
+    effect.actionText,
+    effect.value,
+    effect.params?.valueText,
+    effect.condition && typeof effect.condition === "object"
+      ? (effect.condition as { text?: unknown }).text
+      : undefined,
+    getRuntimeBlockText(effect)
+  ].filter(Boolean).join(" ");
+
+  const quoted = candidates.match(/"([^"]+)"/);
+  if (quoted?.[1]) return quoted[1].trim().toLowerCase();
+
+  const sendTarget = candidates.match(/\bsend\s+([A-Za-z][A-Za-z0-9 '\-]*?)\s+to\s+(?:the\s+)?cemetery\b/i);
+  if (sendTarget?.[1]) return sendTarget[1].trim().toLowerCase();
+
+  const fieldCondition = candidates.match(/\b([A-Za-z][A-Za-z0-9 '\-]*?)\s+is\s+on\s+(?:the\s+)?field\b/i);
+  if (fieldCondition?.[1]) return fieldCondition[1].trim().toLowerCase();
+
+  const cardTarget = candidates.match(/\b([A-Za-z][A-Za-z0-9 '\-]*?)\s+card\b/i);
+  if (cardTarget?.[1]) return cardTarget[1].trim().toLowerCase();
+
+  return undefined;
+}
+
+function sendNamedFieldMagicToCemetery(
+  state: MatchState,
+  source: ActiveEffectSource,
+  effect: WardEngineEffect,
+  addEvent?: AddEventFn
+): void {
+  const wantedName = namedCardToSendToCemetery(effect);
+  if (!wantedName) {
+    addEvent?.(state, "BATTLE_NAMED_CARD_TO_CEMETERY_SKIPPED", source.player.id, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      reason: "No named card could be inferred."
+    });
+    return;
+  }
+
+  for (const player of state.players) {
+    const magic = player.field.magicSlots.find(card => {
+      const definition = state.cardCatalog[card.cardId];
+      return definition?.name.trim().toLowerCase() === wantedName;
+    });
+    if (!magic) continue;
+
+    const result = moveMagicSlotCardToCemetery(
+      state,
+      player.id,
+      magic.instanceId,
+      addEvent,
+      "NAMED_CARD_SENT_TO_CEMETERY_BY_BATTLE_EFFECT"
+    );
+    addEvent?.(state, "BATTLE_NAMED_CARD_SENT_TO_CEMETERY", source.player.id, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      namedCardName: result.destroyedCardName,
+      namedCardInstanceId: result.magicCard.instanceId,
+      fieldOwnerPlayerId: result.fieldOwnerPlayerId,
+      ownerPlayerId: result.cardOwnerPlayerId
+    });
+    return;
+  }
+
+  addEvent?.(state, "BATTLE_NAMED_CARD_TO_CEMETERY_SKIPPED", source.player.id, {
+    sourceCardInstanceId: source.card.instanceId,
+    sourceCardName: source.definition.name,
+    effectId: effect.id,
+    actionType: effect.actionType,
+    namedCardName: wantedName,
+    reason: "Named card was not in a field Magic slot."
+  });
 }
 
 function statusFromEffect(effect: WardEngineEffect): { status: string; label: string; flags: ActiveCreatureStatus["flags"] } {
@@ -731,9 +852,14 @@ function targetForBattleEffect(
 ): FieldCreatureLocation | undefined {
   const targetText = explicitTargetText(effect);
   const fullText = textForEffect(effect);
+  const actionType = normalize(getRuntimeBlockActionType(effect));
 
   const attacker = strikeAttackerLocation(state, strike);
   const defender = strikeDefenderLocation(state, strike);
+
+  if (actionType === "SEND_NAMED_CARD_TO_CEMETERY") {
+    return attacker ?? defender;
+  }
 
   const parsedTargetMeansBattleOpponent =
     targetText.includes("target creature") ||
@@ -1256,6 +1382,11 @@ function resolveEffectAction(
     return;
   }
 
+  if (actionType === "SEND_NAMED_CARD_TO_CEMETERY") {
+    sendNamedFieldMagicToCemetery(state, source, effect, addEvent);
+    return;
+  }
+
   if (actionType === "APPLY_STAT_MODIFIER" || actionType === "APPLY_DICE_MODIFIER" || actionType === "APPLY_CONDITIONAL_DICE_MODIFIER") {
     applyTemporaryStatModifiers(state, source, target, effect, addEvent);
     return;
@@ -1281,7 +1412,19 @@ export function resolveBattleTriggeredRuntimeEffects(
 ): void {
   if (!args.strike) return;
 
-  for (const source of collectActiveEffectSources(state)) {
+  const activeSources = collectActiveEffectSources(state);
+  const killedSources = args.timing === "WHEN_CREATURE_KILLED_IN_BATTLE"
+    ? collectKilledBattleEffectSources(state, args.strike)
+    : [];
+  const seen = new Set<string>();
+  const sources = [...activeSources, ...killedSources].filter(source => {
+    const key = `${source.card.instanceId}:${source.zone}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  for (const source of sources) {
     const effects = getCardEngineEffects(source.definition);
 
     for (const effect of effects) {

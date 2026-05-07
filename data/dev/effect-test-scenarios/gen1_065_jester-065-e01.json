@@ -1,15 +1,14 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-07T13:53:44.184Z",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
   "source": "WARD LLM Test Lab",
   "cardId": "gen1_065_jester",
   "effectId": "065-E01",
-  "title": "Test Jester: 065-E01 DEAL_INSTANT_DAMAGE",
+  "title": "Jester damages attacking creature when killed in battle",
   "plan": {
     "schemaVersion": 1,
-    "generatedAt": "2026-05-07T13:53:44.180Z",
-    "mode": "LOCAL_FALLBACK",
-    "providerWarning": "No WARD_LLM_API_KEY or OPENAI_API_KEY found. The app will use local fallback plans until a server key is configured.",
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
     "card": {
       "packId": "ward-gen1",
       "cardId": "gen1_065_jester",
@@ -29,46 +28,28 @@
       "durationText": "Instant",
       "reusableFunction": "dealDirectDamage"
     },
-    "title": "Test Jester: 065-E01 DEAL_INSTANT_DAMAGE",
-    "summary": "Create a deterministic dev scenario for Jester and verify that 065-E01 DEAL_INSTANT_DAMAGE resolves according to the parsed effect and WARD rules.",
+    "title": "Jester damages attacking creature when killed in battle",
+    "summary": "Have the opponent attack and kill Jester in battle, then verify Jester inflicts 10 damage to the attacking creature.",
     "setup": {
       "phase": "COMBAT",
       "activePlayerId": "player_1",
       "player1Cards": [
         "gen1_065_jester"
       ],
-      "player2Cards": [],
-      "forcedRolls": [
-        {
-          "kind": "HIT_ROLL",
-          "dice": [
-            6,
-            5
-          ],
-          "label": "LLM test: force hit"
-        },
-        {
-          "kind": "ATTACK_DAMAGE_ROLL",
-          "dice": [
-            4,
-            4,
-            3,
-            3
-          ],
-          "label": "LLM test: stable attack damage"
-        }
+      "player2Cards": [
+        "test_lethal_attacker_mod40"
       ],
+      "forcedRolls": [],
       "notes": [
-        "Local fallback created this plan because no LLM provider was configured or the provider call failed.",
-        "Use the generated scenario match, then verify the expected assertions manually."
+        "Rules text: if Jester is killed in battle, inflict 10 damage to the attacking creature.",
+        "Set Jester as player_1 primary creature.",
+        "Set a deterministic lethal attacker as player_2 primary creature."
       ]
     },
     "steps": [
-      "Create the effect scenario match from this plan.",
-      "Confirm Player 1 controls or can play the source card.",
-      "Run a battle or hit sequence using the forced rolls.",
-      "Resolve any target, card-selection, chain, battle, or effect-roll prompts.",
-      "Review the event log and the affected card/player state."
+      "Player_2 attacks Jester.",
+      "Resolve lethal battle damage to Jester.",
+      "Verify Jester's death trigger damages the attacking creature."
     ],
     "expectedAssertions": [
       {
@@ -79,24 +60,27 @@
       },
       {
         "label": "Attacking creature took Jester's 10 damage",
-        "path": "player_2.primaryCreature.currentHp",
+        "path": "players.player_2.field.primaryCreature.currentHp",
         "operator": "equals",
-        "value": 50
+        "value": 90
+      },
+      {
+        "label": "Jester was moved to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_065_jester"
       }
     ],
     "manualVerification": [
-      "Verify target behavior: Attacking creature.",
-      "Verify value/effect result: 10 damage.",
-      "Verify duration cleanup: Instant."
+      "Confirm Jester only damages the attacking creature when Jester is killed in battle."
     ],
     "riskNotes": [
-      "Fallback plan cannot infer every WARD edge case.",
-      "The engine remains source of truth; the LLM/fallback only proposes a QA plan."
+      "This fixture uses a synthetic high-damage attacker so the expected-success route remains lethal even with low damage dice."
     ],
     "coverageSuggestion": {
       "status": "UNTESTED",
       "issueType": "NONE",
-      "notes": "Run the generated scenario and update after reviewing result."
+      "notes": "Validate Jester's battle-death damage trigger."
     },
     "regression": {
       "fixtureName": "gen1_065_jester-065-e01",
@@ -105,11 +89,10 @@
         "IF_KILLED_IN_BATTLE",
         "DEAL_INSTANT_DAMAGE"
       ]
-    },
-    "requestKey": "ward-gen1:gen1_065_jester:065-E01"
+    }
   },
   "runnerNotes": [
     "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
-    "The LLM only proposes the fixture. The deterministic engine and manual QA status remain source of truth."
+    "The deterministic engine and manual QA status remain source of truth."
   ]
 }

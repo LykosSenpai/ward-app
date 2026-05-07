@@ -863,10 +863,10 @@
       "effectId": "065-E01",
       "trigger": "IF_KILLED_IN_BATTLE",
       "actionType": "DEAL_INSTANT_DAMAGE",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T13:56:17.893Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T14:38:44.910Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -877,10 +877,10 @@
       "effectId": "065-E02",
       "trigger": "IF_KILLED_IN_BATTLE",
       "actionType": "SEND_NAMED_CARD_TO_CEMETERY",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: Selected attacker is not on the active player's field.",
-      "lastTestedAt": "2026-05-07T14:09:51.291Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T14:38:45.006Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1241,10 +1241,10 @@
       "effectId": "087-E01",
       "trigger": "SUMMON_REQUIREMENT",
       "actionType": "OVERRIDE_SUMMON_SACRIFICE_REQUIREMENT",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T13:56:18.415Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T14:38:45.038Z",
       "testedBy": "Headless Engine QA"
     },
     {

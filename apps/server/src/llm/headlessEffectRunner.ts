@@ -279,6 +279,18 @@ const SYNTHETIC_CREATURES: Record<string, Extract<CardDefinition, { cardType: "C
     modifier: 3,
     text: "Synthetic headless QA attacker."
   },
+  test_lethal_attacker_mod40: {
+    id: "test_lethal_attacker_mod40",
+    name: "Test Lethal Attacker +40",
+    cardType: "CREATURE",
+    creatureType: "WARRIOR",
+    armorLevel: 1,
+    speed: 10,
+    hp: 100,
+    attackDice: 1,
+    modifier: 40,
+    text: "Synthetic headless QA lethal attacker."
+  },
   test_defender_al5_hp100: {
     id: "test_defender_al5_hp100",
     name: "Test Defender AL5",
@@ -1133,6 +1145,8 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
 
   for (const magic of sourcePlayer.field.magicSlots) {
     const definition = match.cardCatalog[magic.cardId];
+    const shouldKeepUnattached = text.includes("do not attach") && text.includes(definition?.name.toLowerCase() ?? "");
+    if (shouldKeepUnattached) continue;
     if (definition?.cardType === "MAGIC" && definition.magicSubType === "EQUIP" && !magic.attachedToInstanceId && sourcePlayer.field.primaryCreature) {
       magic.attachedToInstanceId = sourcePlayer.field.primaryCreature.instanceId;
     }
@@ -2408,6 +2422,31 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       next = drainChain(next, steps);
     }
 
+    next = runPendingBattle(next, steps);
+    return next;
+  }
+
+  const shouldRunKilledInBattle = definition.cardType === "CREATURE" &&
+    (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
+    trigger.includes("killed_in_battle");
+
+  if (shouldRunKilledInBattle) {
+    const defenderPlayerId = source.playerId;
+    const attackerPlayerId = findOpponentPlayerId(match, defenderPlayerId);
+    const attacker = getPlayer(match, attackerPlayerId).field.primaryCreature;
+    const defender = source.card;
+
+    if (!attacker) {
+      throw new Error("Headless killed-in-battle route needs an opposing primary creature to attack.");
+    }
+
+    match.turn.activePlayerId = attackerPlayerId;
+    match.turn.currentTurnIndex = Math.max(0, match.turn.currentTurnOrder.indexOf(attackerPlayerId));
+    match.turn.phase = "COMBAT";
+    match.turn.firstTurnCycleComplete = true;
+
+    let next = startManualBattleSession(match, attackerPlayerId, attacker.instanceId, defender.instanceId);
+    steps.push({ label: "start killed-in-battle route", ok: true, detail: `${match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId} into ${definition.name}` });
     next = runPendingBattle(next, steps);
     return next;
   }

@@ -2047,6 +2047,13 @@ export function applyManualBattleDamage(
       strike,
       addEvent
     });
+
+    resolveBattleTriggeredRuntimeEffects(nextState, {
+      timing: "WHEN_CREATURE_KILLED_IN_BATTLE",
+      battleSession: session,
+      strike,
+      addEvent
+    });
   }
 
   strike.status = "RESOLVED";
