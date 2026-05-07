@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_025_common_boots",
+  "effectId": "025-E01",
+  "title": "Common Boots applies SPD plus three while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_025_common_boots",
+      "cardName": "Common Boots",
+      "cardType": "MAGIC",
+      "cardNumber": "025",
+      "generation": "2",
+      "rawText": "SPD: +3."
+    },
+    "effect": {
+      "effectId": "025-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "SPD ADD 3",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Common Boots applies SPD plus three while equipped",
+    "summary": "Equip Common Boots to a primary creature and verify the printed SPD bonus.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_025_common_boots",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place test_primary_creature on player_1 field as primary."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Common Boots and equips it to their primary creature.",
+      "Read equipped creature effective SPD."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "SPD increased by 3",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 13
+      },
+      {
+        "label": "Common Boots remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_025_common_boots"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the SPD bonus applies only while Common Boots remains equipped."
+    ],
+    "riskNotes": [
+      "SPD bonus is verified through effective stat output."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Common Boots SPD equip modifier."
+    },
+    "regression": {
+      "fixtureName": "common-boots-spd-plus-three",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "spd"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

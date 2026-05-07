@@ -167,6 +167,25 @@ function parseDrawAmount(effect: WardEngineEffect): number | undefined {
   return Number.isInteger(amount) && amount > 0 ? amount : undefined;
 }
 
+function effectTargetsAllCreaturesOnField(effect: WardEngineEffect): boolean {
+  const actionType = getRuntimeBlockActionType(effect).trim().toUpperCase();
+  const targetScope = String(effect.params?.targetScope ?? "").trim().toUpperCase();
+  const text = [
+    getRuntimeBlockText(effect),
+    effect.actionText,
+    effect.target,
+    effect.params?.target,
+    effect.value,
+    effect.params?.valueText
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return actionType === "DEAL_INSTANT_DAMAGE" && (
+    targetScope === "ALL_CREATURES_ON_FIELD" ||
+    text.includes("all creatures on the field") ||
+    text.includes("all creatures in play")
+  );
+}
+
 function drawCardsForPlayer(player: PlayerState, count: number): number {
   let drawn = 0;
 
@@ -201,6 +220,59 @@ function getDrawTargetPlayers(
   }
 
   return [getPlayerOrThrow(state, controllerPlayerId)];
+}
+
+function applyDamageToAllCreaturesOnField(
+  state: MatchState,
+  args: {
+    effect: WardEngineEffect;
+    controllerPlayerId: string;
+    sourceCardName: string;
+    addEvent: AddEventFn;
+  }
+): boolean {
+  const amount = Number(args.effect.params?.amount ?? parseFirstPositiveNumberFromEffect(args.effect) ?? 0);
+  if (!Number.isFinite(amount) || amount <= 0) return false;
+
+  const damagedCreatures: Array<{
+    playerId: string;
+    creatureInstanceId: string;
+    creatureName: string;
+    previousHp: number;
+    damageAmount: number;
+    remainingHp: number;
+  }> = [];
+
+  for (const player of state.players) {
+    const creatures = [
+      player.field.primaryCreature,
+      ...player.field.limitedSummons
+    ].filter((card): card is CardInstance => Boolean(card));
+
+    for (const creature of creatures) {
+      const previousHp = creature.currentHp ?? creature.baseHp ?? 0;
+      const damageAmount = Math.min(previousHp, Math.trunc(amount));
+      creature.currentHp = Math.max(0, previousHp - damageAmount);
+      damagedCreatures.push({
+        playerId: player.id,
+        creatureInstanceId: creature.instanceId,
+        creatureName: getCardName(state, creature),
+        previousHp,
+        damageAmount,
+        remainingHp: creature.currentHp
+      });
+    }
+  }
+
+  args.addEvent(state, "AUTO_EFFECT_ALL_CREATURES_DAMAGE_RESOLVED", args.controllerPlayerId, {
+    sourceCardName: args.sourceCardName,
+    effectId: args.effect.id,
+    actionType: args.effect.actionType,
+    damageAmount: Math.trunc(amount),
+    damagedCreatures
+  });
+
+  return true;
 }
 
 function parseMultiplierFromEffect(effect: WardEngineEffect, fallback: number): number {
@@ -364,6 +436,7 @@ export function isAutomaticMagicEffectSupported(
 
   return actionType === "DRAW_CARDS" ||
     effectTargetsAllMagicCards(effect) ||
+    effectTargetsAllCreaturesOnField(effect) ||
     actionType === "APPLY_TEMPORARY_HIT_OVERRIDE" ||
     actionType === "APPLY_FORCED_FIRST_AUTO_HIT_MULTIPLIER" ||
     actionType === "APPLY_OPPONENT_MAGIC_PLAY_LOCK" ||
@@ -451,6 +524,10 @@ export function tryResolveAutomaticMagicEffect(
     });
 
     return true;
+  }
+
+  if (effectTargetsAllCreaturesOnField(effect)) {
+    return applyDamageToAllCreaturesOnField(state, args);
   }
 
   if (actionType !== "DRAW_CARDS") {

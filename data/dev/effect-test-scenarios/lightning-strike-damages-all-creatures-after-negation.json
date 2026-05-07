@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_127_lightning_strike",
+  "effectId": "127-E02",
+  "title": "Lightning Strike damages all creatures after negation",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_127_lightning_strike",
+      "cardName": "Lightning Strike",
+      "cardType": "MAGIC",
+      "cardNumber": "127",
+      "generation": "2",
+      "rawText": "Play this card from your hand when your opponent plays a magic card. Negate the magic card and then inflict 20 damage to all creatures on the field."
+    },
+    "effect": {
+      "effectId": "127-E02",
+      "trigger": "AFTER_NEGATE_MAGIC",
+      "actionType": "DEAL_INSTANT_DAMAGE",
+      "effectGroup": "Area Damage",
+      "target": "All creatures on the field",
+      "value": "20 damage",
+      "durationText": "Instant",
+      "reusableFunction": "dealDirectDamage"
+    },
+    "title": "Lightning Strike damages all creatures after negation",
+    "summary": "Resolve Lightning Strike as a response to opponent magic and verify the follow-up area damage hits creatures on the field.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_127_lightning_strike",
+        "test_creature_primary"
+      ],
+      "player2Cards": [
+        "test_standard_magic_draw_or_buff",
+        "test_creature_primary"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Lightning Strike is in player_1 hand.",
+        "Player_2 plays a standard magic card with a visible effect.",
+        "After 127-E01 negates the triggering magic, 127-E02 should deal 20 damage to every creature currently on the field."
+      ]
+    },
+    "steps": [
+      "Player_2 plays the target standard magic.",
+      "Open the Lightning response window for player_1.",
+      "Player_1 plays Lightning Strike targeting the chain magic.",
+      "Resolve the chain in reverse order."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Area damage resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_ALL_CREATURES_DAMAGE_RESOLVED"
+      },
+      {
+        "label": "Opponent primary creature took 20 damage",
+        "path": "player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 40
+      },
+      {
+        "label": "Opponent magic sent to cemetery",
+        "path": "player_2.cemetery",
+        "operator": "contains",
+        "value": "test_standard_magic_draw_or_buff"
+      },
+      {
+        "label": "Lightning Strike sent to cemetery",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen2_127_lightning_strike"
+      },
+      {
+        "label": "No illegal self-response",
+        "path": "chain.validationErrors",
+        "operator": "notExists"
+      }
+    ],
+    "manualVerification": [],
+    "riskNotes": [
+      "The damage is only valid after Lightning Strike successfully negates the triggering magic card."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Lightning Strike's follow-up 20 damage after a successful magic negation."
+    },
+    "regression": {
+      "fixtureName": "lightning-strike-damages-all-creatures-after-negation",
+      "tags": [
+        "magic",
+        "lightning",
+        "chain",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_127_lightning_strike:127-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

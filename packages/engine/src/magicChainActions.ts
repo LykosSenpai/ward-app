@@ -431,7 +431,9 @@ export function resolveOrQueueResolvedMagicEffects(
     return;
   }
 
-  const effectsThatResolveNow = effects.filter(effectShouldResolveWhenCardIsPlayed);
+  const effectsThatResolveNow = effects
+    .filter(effectShouldResolveWhenCardIsPlayed)
+    .filter(effect => !(link.isLightningResponse && effectNegatesMagicChainLink(effect)));
 
   const effectsThatResolveNowWithoutPreChainCosts = isSilenceFromTheGraveLink(state, link)
     ? effectsThatResolveNow.filter(effect => !isSilenceFromTheGravePreChainCostEffect(effect))
@@ -476,6 +478,7 @@ export function resolveOrQueueResolvedMagicEffects(
 
   if (
     immediateEffects.length === 1 &&
+    !isAutomaticMagicEffectSupported(immediateEffects[0]) &&
     (
       getEffectResolutionMode(immediateEffects[0]) === "TARGET_PROMPT" ||
       getEffectResolutionMode(immediateEffects[0]) === "CARD_SELECTION_PROMPT"

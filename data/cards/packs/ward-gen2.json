@@ -9245,7 +9245,7 @@
       "edition": "2nd Edition",
       "rarity": "Epic",
       "cardNumber": "127",
-      "text": "Play this card from your hand when your opponent plays a magic card. Negate the magic card and then inflict 30 damage to all creatures on the field.",
+      "text": "Play this card from your hand when your opponent plays a magic card. Negate the magic card and then inflict 20 damage to all creatures on the field.",
       "effects": [
         {
           "id": "127-E01",
@@ -9295,9 +9295,9 @@
           },
           "actionType": "DEAL_INSTANT_DAMAGE",
           "effectGroup": "Area Damage",
-          "actionText": "Deal 30 damage to all creatures on the field",
+          "actionText": "Deal 20 damage to all creatures on the field",
           "target": "All creatures on the field",
-          "value": "30 damage",
+          "value": "20 damage",
           "duration": {
             "text": "Instant",
             "type": "INSTANT"
@@ -9305,7 +9305,7 @@
           "reusableFunction": "dealDirectDamage",
           "params": {
             "target": "All creatures on the field",
-            "valueText": "30 damage",
+            "valueText": "20 damage",
             "statChanges": [],
             "condition": {
               "type": "TEXT",
@@ -9321,7 +9321,7 @@
             "roundingMode": null,
             "stackRule": null,
             "tickTiming": null,
-            "amount": 30,
+            "amount": 20,
             "targetScope": "ALL_CREATURES_ON_FIELD"
           },
           "notes": "",

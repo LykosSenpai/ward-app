@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_024_common_sword",
+  "effectId": "024-E01",
+  "title": "Common Sword applies Atk plus four while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_024_common_sword",
+      "cardName": "Common Sword",
+      "cardType": "MAGIC",
+      "cardNumber": "024",
+      "generation": "2",
+      "rawText": "Atk: +4."
+    },
+    "effect": {
+      "effectId": "024-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "ATK_BONUS ADD 4",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Common Sword applies Atk plus four while equipped",
+    "summary": "Equip Common Sword to a modifier-zero primary creature and verify the printed Atk bonus in battle damage.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_024_common_sword",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Atk bonus comes only from Common Sword."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Common Sword and equips it to their primary creature.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Attack damage includes the +4 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Common Sword remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen2_024_common_sword"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the Atk bonus applies only while Common Sword remains equipped."
+    ],
+    "riskNotes": [
+      "Atk is verified through resolved battle damage."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Common Sword Atk equip modifier."
+    },
+    "regression": {
+      "fixtureName": "common-sword-atk-plus-four",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "atk"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

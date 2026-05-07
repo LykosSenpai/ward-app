@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_076_necromancer",
+  "effectId": "076-E01",
+  "title": "Necromancer summons from cemetery as a Limited Summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_076_necromancer",
+      "cardName": "Necromancer",
+      "cardType": "CREATURE",
+      "cardNumber": "076",
+      "generation": "1",
+      "rawText": "During your turn, you may summon 1 creature from your cemetery as a Limited Summon (MAX-1). Return the summoned creature to your cemetery if this card leaves the field, changes control, or this effect is negated."
+    },
+    "effect": {
+      "effectId": "076-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "SUMMON_LIMITED_CREATURE",
+      "effectGroup": "Limited Summon",
+      "target": "1 creature",
+      "value": "Limited Summon MAX-1",
+      "durationText": "While source remains valid",
+      "reusableFunction": "summonLimitedFromZone"
+    },
+    "title": "Necromancer summons from cemetery as a Limited Summon",
+    "summary": "During player_1's turn, activate Necromancer, choose a creature from player_1 cemetery, and verify it enters the field as a Limited Summon.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_076_necromancer"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place Necromancer on player_1 field as primary.",
+        "Put a creature in player_1 cemetery before activation."
+      ]
+    },
+    "steps": [
+      "Player_1 activates Necromancer's effect.",
+      "Choose the cemetery creature as the Limited Summon target.",
+      "Inspect player_1 field creatures and cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Cemetery creature was Limited Summoned",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED"
+      },
+      {
+        "label": "Summon target prompt was created",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EFFECT_TARGET_PROMPT_CREATED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the MAX-1 Limited Summon cap blocks a second Necromancer summon."
+    ],
+    "riskNotes": [
+      "This covers the successful cemetery Limited Summon branch. Source invalidation cleanup is covered by 076-E02."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Necromancer's cemetery Limited Summon."
+    },
+    "regression": {
+      "fixtureName": "necromancer-limited-summon-from-cemetery",
+      "tags": [
+        "creature",
+        "activated",
+        "limited-summon",
+        "cemetery"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_076_necromancer:076-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
