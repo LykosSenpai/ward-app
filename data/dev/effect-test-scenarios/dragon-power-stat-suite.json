@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_118_dragon_power",
+  "effectId": "118-E01",
+  "title": "Dragon Power applies Hit Atk and AL while equipped",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_118_dragon_power",
+      "cardName": "Dragon Power",
+      "cardType": "MAGIC",
+      "cardNumber": "118",
+      "generation": "1",
+      "rawText": "Hit: +5. Atk: +10. Increase AL to 12. The equipped card must do damage during your turn, or this card is destroyed."
+    },
+    "effect": {
+      "effectId": "118-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier/Set",
+      "target": "Equipped card",
+      "value": "Hit +5; Atk +10; AL set to 12",
+      "durationText": "While equipped",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Dragon Power applies Hit Atk and AL while equipped",
+    "summary": "Equip Dragon Power to a modifier-zero primary creature, verify AL becomes 12, and run a battle to verify the printed Hit and Atk bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_118_dragon_power",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the Hit and Atk bonuses come only from Dragon Power.",
+        "This fixture covers the while-equipped stat package, not the end-of-turn self-destroy clause."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Dragon Power and equips it to their primary creature.",
+      "Read equipped creature effective AL.",
+      "Run a follow-up battle with the equipped creature attacking.",
+      "Inspect the resolved hit roll modifier and damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL set to 12",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 12
+      },
+      {
+        "label": "Hit roll modifier increased by 5",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 5
+      },
+      {
+        "label": "Attack damage includes the +10 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 11
+      },
+      {
+        "label": "Dragon Power remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_118_dragon_power"
+      }
+    ],
+    "manualVerification": [
+      "Confirm 118-E02 separately: Dragon Power is destroyed at end of turn if the equipped card did not do damage during your turn."
+    ],
+    "riskNotes": [
+      "The source metadata was updated so the printed AL-to-12 clause is represented as an AL SET 12 stat change."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Dragon Power equipped stat suite."
+    },
+    "regression": {
+      "fixtureName": "dragon-power-stat-suite",
+      "tags": [
+        "magic",
+        "equip",
+        "stat-modifier",
+        "hit",
+        "atk",
+        "al"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_118_dragon_power:118-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

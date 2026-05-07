@@ -281,6 +281,10 @@ function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: 
     if (text.includes("al") || text.includes("armor")) layers.push(makeLayer(source, effect, "set-al-1", "armorLevel", "SET", 1));
   }
 
+  if (actionType === "APPLY_STAT_MODIFIER" && (text.includes("al to 12") || text.includes("al set to 12") || text.includes("increase al to 12"))) {
+    layers.push(makeLayer(source, effect, "set-al-12", "armorLevel", "SET", 12));
+  }
+
   return layers;
 }
 

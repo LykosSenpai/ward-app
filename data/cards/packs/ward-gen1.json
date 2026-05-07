@@ -8003,6 +8003,12 @@
                 "operation": "ADD",
                 "value": 10,
                 "rounding": null
+              },
+              {
+                "stat": "AL",
+                "operation": "SET",
+                "value": 12,
+                "rounding": null
               }
             ],
             "condition": {
