@@ -53,10 +53,16 @@
     ],
     "expectedAssertions": [
       {
-        "label": "Attack damage is doubled from 2 to 4",
-        "path": "player_2.primary.damageTaken",
+        "label": "Attack damage multiplier is applied",
+        "path": "battle.lastDamage.multiplier",
         "operator": "equals",
-        "value": 4
+        "value": 2
+      },
+      {
+        "label": "Attack damage is doubled from 1 to 2",
+        "path": "battle.lastDamage.amount",
+        "operator": "equals",
+        "value": 2
       },
       {
         "label": "Bio-Regeneration remains equipped/on field",
@@ -69,7 +75,7 @@
       "Confirm 009-E03 separately doubles Hit Roll results."
     ],
     "riskNotes": [
-      "The focused route showed the deterministic damage roll resolves as 2 before the 2x multiplier, for 4 total damage."
+      "The focused route rolls 1 attack damage before the 2x multiplier, for 2 total damage."
     ],
     "coverageSuggestion": {
       "status": "UNTESTED",

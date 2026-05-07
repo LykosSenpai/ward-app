@@ -1408,6 +1408,13 @@ function readDerivedPath(root: unknown, path: string): unknown {
   }
 
   const firstDamagePipeline = match.eventLog.find(event => event.type === "BATTLE_DAMAGE_PIPELINE_RESOLVED");
+  const firstDamagePayload = firstDamagePipeline?.payload as {
+    damageBeforeCritical?: unknown;
+    effectAndManualDamageMultiplier?: unknown;
+    damageAfterModifiers?: unknown;
+    damageAfterCritical?: unknown;
+    finalDamage?: unknown;
+  } | undefined;
   if (path === "battle.lastDamage.amount" || path === "lastBattle.damageApplied") {
     if (match.eventLog.some(event => event.type === "AUTO_EFFECT_NEXT_ATTACK_SHIELD_APPLIED")) return 0;
     const prevented = match.eventLog.find(event => {
@@ -1415,7 +1422,23 @@ function readDerivedPath(root: unknown, path: string): unknown {
       return event.type === "BATTLE_DAMAGE_PIPELINE_RESOLVED" && payload?.prevented === true && Number(payload?.finalDamage) === 0;
     });
     if (prevented) return 0;
-    return (firstDamagePipeline?.payload as { finalDamage?: unknown } | undefined)?.finalDamage;
+    return firstDamagePayload?.finalDamage;
+  }
+
+  if (path === "battle.lastDamage.beforeModifiers") {
+    return firstDamagePayload?.damageBeforeCritical;
+  }
+
+  if (path === "battle.lastDamage.multiplier") {
+    return firstDamagePayload?.effectAndManualDamageMultiplier;
+  }
+
+  if (path === "battle.lastDamage.afterModifiers") {
+    return firstDamagePayload?.damageAfterModifiers;
+  }
+
+  if (path === "battle.lastDamage.afterCritical") {
+    return firstDamagePayload?.damageAfterCritical;
   }
 
   if (path === "lastBattle.firstAttacker.cardId") {
