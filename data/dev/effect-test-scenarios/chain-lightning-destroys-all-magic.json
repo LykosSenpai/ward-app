@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_110_chain_lightning",
+  "effectId": "110-E01",
+  "title": "Chain Lightning destroys all magic cards on the field",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_110_chain_lightning",
+      "cardName": "Chain Lightning",
+      "cardType": "MAGIC",
+      "cardNumber": "110",
+      "generation": "3",
+      "rawText": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature."
+    },
+    "effect": {
+      "effectId": "110-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "DESTROY_ALL_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "target": "Opponent's primary creature",
+      "value": "Inflict 5 damage to your primary creature. Then, destroy all magic cards on the field. For each magic card destroyed, inflict 5 damage to your opponent's primary creature.",
+      "durationText": "Immediate",
+      "reusableFunction": "destroyAllMagic"
+    },
+    "title": "Chain Lightning destroys all magic cards on the field",
+    "summary": "Play Chain Lightning with field magic present and verify printed self-damage, destroy-all, and opponent damage expectations.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_110_chain_lightning",
+        "test_primary_creature",
+        "test_magic_field_a"
+      ],
+      "player2Cards": [
+        "test_creature_defender",
+        "test_magic_field_b"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: inflict 5 damage to your primary, destroy all magic, then inflict 5 damage to opponent primary for each magic destroyed."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Chain Lightning.",
+      "Resolve the standard magic chain.",
+      "Inspect both primary creatures and destroyed field magic."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Destroy all magic route fired",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_DESTROY_ALL_MAGIC_RESOLVED"
+      },
+      {
+        "label": "Self primary takes the printed 5 damage cost/effect",
+        "path": "players.player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 45
+      },
+      {
+        "label": "Opponent primary takes 5 per destroyed magic card",
+        "path": "players.player_2.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 40
+      }
+    ],
+    "manualVerification": [
+      "Confirm the opponent damage scales with every magic card destroyed, including both players field magic."
+    ],
+    "riskNotes": [
+      "This fixture is expected to catch current gaps if self-damage or destroyed-count scaling is not implemented."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Chain Lightning with field magic present and verify printed self-damage, destroy-all, and opponent damage expectations."
+    },
+    "regression": {
+      "fixtureName": "chain-lightning-destroys-all-magic",
+      "tags": [
+        "gen3",
+        "magic",
+        "damage",
+        "destroy"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

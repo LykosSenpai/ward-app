@@ -68,6 +68,29 @@ function toStatus(resultStatus: string): string {
   return resultStatus === "BLOCKED_RUNTIME" ? "BROKEN" : resultStatus;
 }
 
+function inferIssueType(result: {
+  issueType?: string;
+  assertionResults?: Array<{
+    label: string;
+    path: string;
+    status: string;
+  }>;
+}): string {
+  if (result.issueType && result.issueType !== "NONE") {
+    return result.issueType;
+  }
+
+  const failedAssertions = result.assertionResults?.filter(assertion => assertion.status === "FAIL") ?? [];
+  if (failedAssertions.some(assertion => {
+    const text = `${assertion.label} ${assertion.path}`.toLowerCase();
+    return text.includes("damage") || text.includes("hp") || text.includes("currenthp");
+  })) {
+    return "WRONG_DAMAGE";
+  }
+
+  return result.issueType ?? "NONE";
+}
+
 function summarizeEvidence(evidence: string[]): string {
   const useful = evidence.find(line => /expected-success:/i.test(line)) ?? evidence[0] ?? "";
   return useful.replace(/\s+/g, " ").trim();
@@ -101,7 +124,7 @@ let created = 0;
 
 for (const item of results) {
   const status = toStatus(item.result.status);
-  const issueType = item.result.issueType ?? "NONE";
+  const issueType = inferIssueType(item.result);
   const key = item.result.key;
   const existing = recordsByKey.get(key);
   const notes = `${item.result.summary} ${summarizeEvidence(item.result.evidence)}`.trim();

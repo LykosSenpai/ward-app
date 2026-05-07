@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_113_sasquatch",
+  "effectId": "113-E01",
+  "title": "Sasquatch negates opponent magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_113_sasquatch",
+      "cardName": "Sasquatch",
+      "cardType": "MAGIC",
+      "cardNumber": "113",
+      "generation": "3",
+      "rawText": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle."
+    },
+    "effect": {
+      "effectId": "113-E01",
+      "trigger": "WHEN_OPPONENT_PLAYS_MAGIC",
+      "actionType": "NEGATE_CARD_EFFECT",
+      "effectGroup": "Negation",
+      "target": "Magic card(s) on the field",
+      "value": "Play this card from your hand when your opponent plays a magic card. Negate the card effect and send it to their cemetery. Your opponent then cannot use Lightning cards for 1 turn cycle.",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "negateCardEffect"
+    },
+    "title": "Sasquatch negates opponent magic",
+    "summary": "Respond to an opponent magic card with Sasquatch and verify the negation/cemetery branch resolves.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen3_113_sasquatch",
+        "gen3_004_repair_bear",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Sasquatch negates opponent magic, sends it to cemetery, then prevents opponent Lightning for 1 turn cycle."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Repair Bear.",
+      "Player 2 responds with Sasquatch.",
+      "Pass priority and resolve the chain."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Sasquatch was played as a Lightning response",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "LIGHTNING_RESPONSE_ADDED"
+      },
+      {
+        "label": "Opponent magic was negated",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "magic_negated"
+      },
+      {
+        "label": "Negated magic was sent to cemetery",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "CHAIN_LINK_SENT_TO_CEMETERY_NEGATED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the 1 turn-cycle Lightning restriction is enforced after the negation branch."
+    ],
+    "riskNotes": [
+      "This fixture proves negation/cemetery behavior; the follow-up Lightning lock needs a dedicated live-turn scenario."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Respond to an opponent magic card with Sasquatch and verify the negation/cemetery branch resolves."
+    },
+    "regression": {
+      "fixtureName": "sasquatch-negates-opponent-magic",
+      "tags": [
+        "gen3",
+        "magic",
+        "lightning",
+        "negation"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

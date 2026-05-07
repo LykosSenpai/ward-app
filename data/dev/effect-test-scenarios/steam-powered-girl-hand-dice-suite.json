@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_013_steam_powered_girl",
+  "effectId": "013-E01",
+  "title": "Steam Powered Girl adds Hit Dice and Atk Dice from hand size",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_013_steam_powered_girl",
+      "cardName": "Steam Powered Girl",
+      "cardType": "MAGIC",
+      "cardNumber": "013",
+      "generation": "3",
+      "rawText": "For 1 turn cycle, for every card in your hand, add Hit Dice Rolls +1 and Atk Dice Rolls +1."
+    },
+    "effect": {
+      "effectId": "013-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "For 1 turn cycle, for every card in your hand, add Hit Dice Rolls +1 and Atk Dice Rolls +1.",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Steam Powered Girl adds Hit Dice and Atk Dice from hand size",
+    "summary": "Equip Steam Powered Girl and verify the battle pipeline uses the extra Hit Dice Rolls and Atk Dice Rolls from the hand-scaling text.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_013_steam_powered_girl",
+        "test_primary_creature_mod_0",
+        "gen1_061_health_potion",
+        "gen1_070_lucky_charm"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            5,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: for 1 turn cycle, every card in hand adds Hit Dice Rolls +1 and Atk Dice Rolls +1."
+      ]
+    },
+    "steps": [
+      "Equip Steam Powered Girl to player_1 primary.",
+      "Run a deterministic battle.",
+      "Inspect hit dice, damage dice, and final damage."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Steam Powered Girl battle modifier event emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Extra attack die increases first strike damage to 3",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 3
+      },
+      {
+        "label": "Battle log includes Steam Powered Girl modifier note",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Steam Powered Girl: ATK_DICE_ROLLS +1"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the bonus is tied to the 1 turn-cycle duration and the hand-count scaling remains visible in battle output."
+    ],
+    "riskNotes": [
+      "The current runner proves one hand-scaling increment through battle dice output."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Steam Powered Girl and verify the battle pipeline uses the extra Hit Dice Rolls and Atk Dice Rolls from the hand-scaling text."
+    },
+    "regression": {
+      "fixtureName": "steam-powered-girl-hand-dice-suite",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "stat-modifier",
+        "dice"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

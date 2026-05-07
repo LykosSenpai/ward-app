@@ -3922,6 +3922,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_013_steam_powered_girl:013-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_013_steam_powered_girl",
+      "cardName": "Steam Powered Girl",
+      "effectId": "013-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:22.145Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_014_monster_armor:014-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_014_monster_armor",
@@ -3947,6 +3961,20 @@
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
       "lastTestedAt": "2026-05-07T13:43:59.437Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_018_enchantment:018-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_018_enchantment",
+      "cardName": "Enchantment",
+      "effectId": "018-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "DAMAGE",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.549Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -4017,6 +4045,34 @@
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
       "lastTestedAt": "2026-05-07T13:43:57.054Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_042_orc_mischief:042-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_042_orc_mischief",
+      "cardName": "Orc Mischief",
+      "effectId": "042-E01",
+      "trigger": "WHEN_OPPONENT_PLAYS_MAGIC",
+      "actionType": "NEGATE_CARD_EFFECT",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.707Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_042_orc_mischief:042-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_042_orc_mischief",
+      "cardName": "Orc Mischief",
+      "effectId": "042-E02",
+      "trigger": "WHEN_OPPONENT_PLAYS_MAGIC",
+      "actionType": "SEND_TO_CEMETERY",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.736Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -4118,6 +4174,34 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_056_soul_eater:056-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_056_soul_eater",
+      "cardName": "Soul Eater",
+      "effectId": "056-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "LIMITED_SUMMON",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:22.020Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_056_soul_eater:056-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_056_soul_eater",
+      "cardName": "Soul Eater",
+      "effectId": "056-E02",
+      "trigger": "ON_PLAY",
+      "actionType": "SEND_TO_CEMETERY",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.945Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_065_skol:065-E01",
       "packId": "ward-gen3",
       "cardId": "gen3_065_skol",
@@ -4157,6 +4241,20 @@
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
       "lastTestedAt": "2026-05-07T13:43:51.616Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_074_ancient_book:074-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_074_ancient_book",
+      "cardName": "Ancient Book",
+      "effectId": "074-E01",
+      "trigger": "WHEN_OPPONENT_PLAYS_LIGHTNING",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.418Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -4244,6 +4342,20 @@
       "testedBy": "Headless Engine QA"
     },
     {
+      "key": "ward-gen3:gen3_094_shuffling_bones:094-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_094_shuffling_bones",
+      "cardName": "Shuffling Bones",
+      "effectId": "094-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SHUFFLE_DECK",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.876Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
       "key": "ward-gen3:gen3_096_demon_blood:096-E02",
       "packId": "ward-gen3",
       "cardId": "gen3_096_demon_blood",
@@ -4297,6 +4409,76 @@
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
       "lastTestedAt": "2026-05-07T13:43:54.741Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_110_chain_lightning:110-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_110_chain_lightning",
+      "cardName": "Chain Lightning",
+      "effectId": "110-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "DESTROY_ALL_MAGIC",
+      "status": "BROKEN",
+      "issueType": "WRONG_DAMAGE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:09:21.487Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_110_chain_lightning:110-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_110_chain_lightning",
+      "cardName": "Chain Lightning",
+      "effectId": "110-E02",
+      "trigger": "ON_PLAY",
+      "actionType": "DAMAGE",
+      "status": "BROKEN",
+      "issueType": "WRONG_DAMAGE",
+      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
+      "lastTestedAt": "2026-05-07T16:09:21.456Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_113_sasquatch:113-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_113_sasquatch",
+      "cardName": "Sasquatch",
+      "effectId": "113-E01",
+      "trigger": "WHEN_OPPONENT_PLAYS_MAGIC",
+      "actionType": "NEGATE_CARD_EFFECT",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.799Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_113_sasquatch:113-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_113_sasquatch",
+      "cardName": "Sasquatch",
+      "effectId": "113-E02",
+      "trigger": "WHEN_OPPONENT_PLAYS_MAGIC",
+      "actionType": "PREVENT_CARD_PLAY",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.768Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_113_sasquatch:113-E03",
+      "packId": "ward-gen3",
+      "cardId": "gen3_113_sasquatch",
+      "cardName": "Sasquatch",
+      "effectId": "113-E03",
+      "trigger": "WHEN_OPPONENT_PLAYS_MAGIC",
+      "actionType": "SEND_TO_CEMETERY",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.827Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -4367,6 +4549,20 @@
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
       "lastTestedAt": "2026-05-07T13:43:59.757Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_129_mysterious_orb:129-E02",
+      "packId": "ward-gen3",
+      "cardId": "gen3_129_mysterious_orb",
+      "cardName": "Mysterious Orb",
+      "effectId": "129-E02",
+      "trigger": "BEGINNING_OF_YOUR_TURN",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T16:09:21.679Z",
       "testedBy": "Headless Engine QA"
     },
     {

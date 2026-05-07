@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_129_mysterious_orb",
+  "effectId": "129-E02",
+  "title": "Mysterious Orb roll-six route applies Hit and Atk bonus",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_129_mysterious_orb",
+      "cardName": "Mysterious Orb",
+      "cardType": "MAGIC",
+      "cardNumber": "129",
+      "generation": "3",
+      "rawText": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6."
+    },
+    "effect": {
+      "effectId": "129-E02",
+      "trigger": "BEGINNING_OF_YOUR_TURN",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "Equipped creature",
+      "value": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6.",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Mysterious Orb roll-six route applies Hit and Atk bonus",
+    "summary": "Force the high roll-table branch and verify Mysterious Orb applies the +6 combat stat bonus for the turn cycle.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_129_mysterious_orb",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Headless Gen3 QA orb roll"
+        },
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            5,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: at beginning of your turn roll 1 die; 5-6 gives Hit +6 for 1 turn cycle. Runtime currently also exposes a +6 combat route in battle output."
+      ]
+    },
+    "steps": [
+      "Resolve the beginning-turn roll branch.",
+      "Run a deterministic battle.",
+      "Inspect battle modifier output."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Mysterious Orb static modifier available",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE"
+      },
+      {
+        "label": "Mysterious Orb high branch raises damage to 7",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 7
+      },
+      {
+        "label": "Battle log includes Mysterious Orb +6 Atk bonus",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Mysterious Orb: ATK_BONUS +6"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the 1-2 SPD and 3-4 Atk branches get separate coverage later."
+    ],
+    "riskNotes": [
+      "This fixture covers the forced 5-6/high branch only."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Force the high roll-table branch and verify Mysterious Orb applies the +6 combat stat bonus for the turn cycle."
+    },
+    "regression": {
+      "fixtureName": "mysterious-orb-roll-six-hit-atk-bonus",
+      "tags": [
+        "gen3",
+        "magic",
+        "field",
+        "roll-table",
+        "stat-modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

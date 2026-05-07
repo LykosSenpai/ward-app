@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_056_soul_eater",
+  "effectId": "056-E01",
+  "title": "Soul Eater uses a Limited Summon as a sacrifice",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_056_soul_eater",
+      "cardName": "Soul Eater",
+      "cardType": "MAGIC",
+      "cardNumber": "056",
+      "generation": "3",
+      "rawText": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it."
+    },
+    "effect": {
+      "effectId": "056-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "LIMITED_SUMMON",
+      "effectGroup": "Limited Summon",
+      "target": "Limited Summon card(s)",
+      "value": "You may use a Limited Summon on the field as a sacrifice for summoning. Send the Limited Summon to the cemetery of the player that currently controls it.",
+      "durationText": "Immediate",
+      "reusableFunction": "limitedSummon"
+    },
+    "title": "Soul Eater uses a Limited Summon as a sacrifice",
+    "summary": "Play Soul Eater with a Limited Summon on field and verify the Limited Summon sacrifice/cemetery routing.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_056_soul_eater",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: a Limited Summon on the field can be used as sacrifice and is sent to the cemetery of its current controller."
+      ]
+    },
+    "steps": [
+      "Create the Limited Summon setup.",
+      "Play Soul Eater.",
+      "Resolve the Limited Summon target prompt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Limited Summon route resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED"
+      },
+      {
+        "label": "Limited Summon was sent to cemetery",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_SEND_TO_CEMETERY_RESOLVED"
+      },
+      {
+        "label": "Soul Eater goes to cemetery",
+        "path": "players.player_1.cemetery",
+        "operator": "contains",
+        "value": "gen3_056_soul_eater"
+      }
+    ],
+    "manualVerification": [
+      "Confirm ownership/controller cemetery routing in live play when the Limited Summon changed control."
+    ],
+    "riskNotes": [
+      "The headless fixture proves the current-controller sacrifice route."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Soul Eater with a Limited Summon on field and verify the Limited Summon sacrifice/cemetery routing."
+    },
+    "regression": {
+      "fixtureName": "soul-eater-uses-limited-summon-as-sacrifice",
+      "tags": [
+        "gen3",
+        "magic",
+        "limited-summon",
+        "cemetery"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

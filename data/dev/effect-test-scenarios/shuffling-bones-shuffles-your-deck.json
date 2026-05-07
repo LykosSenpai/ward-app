@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_094_shuffling_bones",
+  "effectId": "094-E01",
+  "title": "Shuffling Bones shuffles your deck",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_094_shuffling_bones",
+      "cardName": "Shuffling Bones",
+      "cardType": "MAGIC",
+      "cardNumber": "094",
+      "generation": "3",
+      "rawText": "Shuffle your deck."
+    },
+    "effect": {
+      "effectId": "094-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "SHUFFLE_DECK",
+      "effectGroup": "Deck",
+      "target": "Target / controller as specified by card text",
+      "value": "Shuffle your deck.",
+      "durationText": "Immediate",
+      "reusableFunction": "shuffleDeck"
+    },
+    "title": "Shuffling Bones shuffles your deck",
+    "summary": "Play Shuffling Bones and verify the automatic deck shuffle route resolves for its controller.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_094_shuffling_bones",
+        "test_primary_creature",
+        "gen3_004_repair_bear"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Shuffle your deck."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Shuffling Bones.",
+      "Resolve the standard magic chain.",
+      "Inspect shuffle event and cemetery."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Shuffle event emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_SHUFFLE_DECK_RESOLVED"
+      },
+      {
+        "label": "Shuffling Bones goes to cemetery",
+        "path": "players.player_1.cemetery",
+        "operator": "contains",
+        "value": "gen3_094_shuffling_bones"
+      }
+    ],
+    "manualVerification": [
+      "Confirm opponent deck cut remains a non-modeled local-app step."
+    ],
+    "riskNotes": [
+      "Deck order is randomized, so the assertion keys off the deterministic shuffle event."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Shuffling Bones and verify the automatic deck shuffle route resolves for its controller."
+    },
+    "regression": {
+      "fixtureName": "shuffling-bones-shuffles-your-deck",
+      "tags": [
+        "gen3",
+        "magic",
+        "shuffle"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

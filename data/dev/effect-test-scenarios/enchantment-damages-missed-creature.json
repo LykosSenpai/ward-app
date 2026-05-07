@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_018_enchantment",
+  "effectId": "018-E01",
+  "title": "Enchantment inflicts 10 damage to the missed creature",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_018_enchantment",
+      "cardName": "Enchantment",
+      "cardType": "MAGIC",
+      "cardNumber": "018",
+      "generation": "3",
+      "rawText": "If you miss your Hit Roll, play this card from your hand. Inflict 10 damage to the missed creature."
+    },
+    "effect": {
+      "effectId": "018-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Target creature",
+      "value": "If you miss your Hit Roll, play this card from your hand. Inflict 10 damage to the missed creature.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Enchantment inflicts 10 damage to the missed creature",
+    "summary": "Play Enchantment through the Lightning-style prompt path and verify its 10 damage target resolution.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_018_enchantment",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            1,
+            1
+          ],
+          "label": "Headless Gen3 QA miss route"
+        }
+      ],
+      "notes": [
+        "Read text first: this is playable when your Hit Roll misses, then damages the missed creature by 10."
+      ]
+    },
+    "steps": [
+      "Create a missed-hit setup.",
+      "Play Enchantment.",
+      "Resolve the damage target prompt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Damage prompt resolved",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "AUTO_EFFECT_DAMAGE_CREATURE_RESOLVED"
+      },
+      {
+        "label": "Targeted creature took 10 damage",
+        "path": "players.player_1.primaryCreature.currentHp",
+        "operator": "equals",
+        "value": 40
+      },
+      {
+        "label": "Enchantment goes to cemetery",
+        "path": "players.player_1.cemetery",
+        "operator": "contains",
+        "value": "gen3_018_enchantment"
+      }
+    ],
+    "manualVerification": [
+      "Confirm live battle timing only exposes this card after a missed Hit Roll."
+    ],
+    "riskNotes": [
+      "The headless runner exercises the prompt and damage resolution; live timing remains a UI/battle-response concern."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Enchantment through the Lightning-style prompt path and verify its 10 damage target resolution."
+    },
+    "regression": {
+      "fixtureName": "enchantment-damages-missed-creature",
+      "tags": [
+        "gen3",
+        "magic",
+        "lightning",
+        "damage"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
