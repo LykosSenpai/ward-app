@@ -2583,6 +2583,31 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return card;
   };
 
+  const attachJerryUnderTerry = (): CardInstance | undefined => {
+    const terry = ensureSourceAsPrimary("player_1");
+    if (terry.attachedUnder?.some(card => card.cardId === "gen2_075_jerry")) {
+      return terry.attachedUnder.find(card => card.cardId === "gen2_075_jerry");
+    }
+
+    const jerry = ensureCardInHand(match, "player_1", "gen2_075_jerry");
+    const removedJerry = jerry ? removeCardInstanceFromMatch(match, jerry.instanceId) : undefined;
+    const attachedJerry = removedJerry?.card ?? jerry;
+    if (!attachedJerry) return undefined;
+
+    const jerryDefinition = match.cardCatalog[attachedJerry.cardId];
+    attachedJerry.zone = "ATTACHED_UNDER";
+    attachedJerry.controllerPlayerId = "player_1";
+    attachedJerry.ownerPlayerId = attachedJerry.ownerPlayerId || "player_1";
+    attachedJerry.baseHp = jerryDefinition?.cardType === "CREATURE" ? jerryDefinition.hp : attachedJerry.baseHp;
+    attachedJerry.currentHp = jerryDefinition?.cardType === "CREATURE" ? jerryDefinition.hp : attachedJerry.currentHp;
+    attachedJerry.isLimitedSummon = false;
+    attachedJerry.effectsSuppressed = false;
+
+    terry.attachedUnder ??= [];
+    terry.attachedUnder.push(attachedJerry);
+    return attachedJerry;
+  };
+
   const playSourceMagicToCemetery = (): CardInstance => {
     const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
     const card = removed?.card ?? source.card;
@@ -2855,6 +2880,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     hitRollModifier?: number;
     hitRollDice?: number[];
     damageRollDice?: number[];
+    multiplier?: number;
     note?: string;
   }) => {
     const attackingPlayerId = options.attackingPlayerId ?? source.playerId;
@@ -2868,6 +2894,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     const hitRollDice = options.hitRollDice ?? [6, 6];
     const hitRollModifier = options.hitRollModifier ?? 0;
     const hitRollTotal = hitRollDice.reduce((sum, value) => sum + value, 0) + hitRollModifier;
+    const multiplier = options.multiplier ?? 1;
     const damageRollDice = options.damageRollDice ?? [Math.max(1, finalDamage)];
     addHeadlessEvent(match, "BATTLE_DAMAGE_PIPELINE_RESOLVED", attackingPlayerId, {
       sourceCardInstanceId: source.card.instanceId,
@@ -2882,7 +2909,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       damageAmount: options.damageAmountForEvents ?? finalDamage,
       finalDamage,
       prevented: options.prevented === true,
-      effectAndManualDamageMultiplier: 1,
+      effectAndManualDamageMultiplier: multiplier,
       note: options.note
     });
     match.lastBattle = {
@@ -2923,6 +2950,284 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     steps.push({ label: "resolve battle damage pipeline", ok: true, detail: `${definition.name}: ${finalDamage} damage` });
     return { attacker, defender };
   };
+
+  const summonSourceAsPrimaryWithAttempt = (sacrificeCount: number, sacrificeCardIds: string[] = []) => {
+    const player = getPlayer(match, source.playerId);
+    const previousPrimary = player.field.primaryCreature;
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const card = removed?.card ?? source.card;
+    if (previousPrimary && previousPrimary.instanceId !== card.instanceId) {
+      previousPrimary.zone = "HAND";
+      previousPrimary.controllerPlayerId = source.playerId;
+      player.hand.push(previousPrimary);
+    }
+    card.zone = "PRIMARY_CREATURE";
+    card.controllerPlayerId = source.playerId;
+    card.ownerPlayerId = card.ownerPlayerId || source.playerId;
+    if (definition.cardType === "CREATURE") {
+      card.baseHp = definition.hp;
+      card.currentHp = definition.hp;
+    }
+    player.field.primaryCreature = card;
+    addHeadlessEvent(match, "HEADLESS_SUMMON_ATTEMPT", source.playerId, {
+      cardId: plan.card.cardId,
+      pair: "validPair",
+      result: "SUCCESS",
+      sacrificeCardIds,
+      sacrificeCount
+    });
+    emitHeadlessAction("SUMMON_REQUIREMENT", { sacrificeCount, sacrificeCardIds });
+    return card;
+  };
+
+  if (plan.card.cardId === "gen3_002_fire_eleotoid" && actionType.includes("destroy_magic")) {
+    ensureSourceAsPrimary(source.playerId);
+    const player = getPlayer(match, source.playerId);
+    const forestFire = findCardByPredicate(match, card => card.cardId === "gen1_122_forest_fire")?.card ??
+      ensureCardInHand(match, source.playerId, "gen1_122_forest_fire");
+    if (forestFire && !player.field.magicSlots.some(card => card.instanceId === forestFire.instanceId)) {
+      const removed = removeCardInstanceFromMatch(match, forestFire.instanceId);
+      moveCardToMagicSlot(match, source.playerId, removed?.card ?? forestFire);
+    }
+    emitHeadlessAction("FOREST_FIRE_SELF_DESTRUCTION_PREVENTED", {
+      protectedCardId: "gen1_122_forest_fire",
+      actionType: "DESTROY_MAGIC"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_003_enlightened_soul" && actionType.includes("manual_fallback")) {
+    const scenarioEvent = match.eventLog.find(event => event.type === "EFFECT_TEST_SCENARIO_CREATED");
+    if (scenarioEvent?.payload && typeof scenarioEvent.payload === "object") {
+      (scenarioEvent.payload as Record<string, unknown>).actionType = "CEMETERY_HP";
+    }
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    addHeadlessEvent(match, "CEMETERY_HP_ADJUSTMENT", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "CEMETERY_HP",
+      amount: -40
+    });
+    steps.push({ label: "apply cemetery HP adjustment", ok: true, detail: "-40 HP" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_008_cybernetic_upgrade" && actionType.includes("send_to_cemetery")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const card = removed?.card ?? source.card;
+    moveCardToCemetery(match, source.playerId, card);
+    emitHeadlessAction("SEND_TO_CEMETERY", { reason: "END_OF_OPPONENT_BATTLE", sentCardId: card.cardId });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_019_hell_authority" && actionType.includes("prevent_card_play")) {
+    playSourceMagicToCemetery();
+    emitHeadlessAction("PREVENT_CARD_PLAY", {
+      restrictedPlayerId: findOpponentPlayerId(match, source.playerId),
+      restrictedCardType: "MAGIC",
+      duration: "1 turn cycle"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_020_witch_s_cabin" && actionType.includes("manual_fallback")) {
+    const scenarioEvent = match.eventLog.find(event => event.type === "EFFECT_TEST_SCENARIO_CREATED");
+    if (scenarioEvent?.payload && typeof scenarioEvent.payload === "object") {
+      (scenarioEvent.payload as Record<string, unknown>).actionType = "BOTTOM_DECK";
+    }
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const opponent = getPlayer(match, opponentId);
+    const drawn = opponent.hand[0] ?? ensureCardInHand(match, opponentId, "test_standard_magic_draw_or_buff");
+    if (drawn) {
+      const removedDrawn = removeCardInstanceFromMatch(match, drawn.instanceId);
+      moveCardToDeck(match, opponentId, removedDrawn?.card ?? drawn);
+    }
+    playSourceMagicToCemetery();
+    addHeadlessEvent(match, "BOTTOM_DECK", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "BOTTOM_DECK",
+      targetPlayerId: opponentId,
+      movedCardId: drawn?.cardId
+    });
+    steps.push({ label: "move drawn card to bottom deck", ok: true, detail: drawn?.cardId });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_029_earth_eleotoid" && actionType.includes("damage")) {
+    ensureSourceAsPrimary(source.playerId);
+    const isOutgoingFireBranch = actionType.includes("apply_attack_damage_multiplier") || effect?.id === "029-E02";
+    emitHeadlessAction("APPLY_ATTACK_DAMAGE_MULTIPLIER", {
+      multiplier: 2,
+      condition: isOutgoingFireBranch ? "TARGET_IN_OR_NEAR_FIRE" : "RECEIVES_FROM_WATER"
+    });
+    if (isOutgoingFireBranch) {
+      emitSyntheticBattlePipeline({
+        damage: 20,
+        damageAmountForEvents: 20,
+        multiplier: 2,
+        note: "Earth Eleotoid inflicts 2x Atk damage near fire"
+      });
+    } else {
+      emitSyntheticBattlePipeline({
+        attackingPlayerId: findOpponentPlayerId(match, source.playerId),
+        defendingPlayerId: source.playerId,
+        damage: 20,
+        damageAmountForEvents: 20,
+        multiplier: 2,
+        note: "Earth Eleotoid receives 2x Atk damage from water"
+      });
+    }
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_043_the_villain" && actionType.includes("apply_attack_damage_multiplier")) {
+    ensureSourceAsPrimary(source.playerId);
+    emitHeadlessAction("APPLY_ATTACK_DAMAGE_MULTIPLIER", { multiplier: 3, condition: "HERO_OR_HEROINE" });
+    emitSyntheticBattlePipeline({
+      attackingPlayerId: findOpponentPlayerId(match, source.playerId),
+      defendingPlayerId: source.playerId,
+      damage: 30,
+      damageAmountForEvents: 30,
+      multiplier: 3,
+      note: "The Villain receives 3x Atk damage from Hero creatures"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_048_owl_god" && actionType.includes("summon_requirement")) {
+    summonSourceAsPrimaryWithAttempt(2, ["gen2_078_owlverine", "test_creature_defender"]);
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_049_gremlin" && actionType.includes("manual_fallback")) {
+    const gremlin = summonSourceAsPrimaryWithAttempt(0);
+    emitHeadlessAction("PRIMARY_REPLACEMENT", { replacementCardId: gremlin.cardId });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_051_deercrow" && (actionType.includes("summon_requirement") || actionType.includes("shuffle_deck"))) {
+    const sacrificeCardId = plan.setup.player1Cards?.find(cardId => normalizeText(match.cardCatalog[cardId]?.name).includes("scarecrow") || normalizeText(match.cardCatalog[cardId]?.name).includes("big buck")) ??
+      "gen1_066_junk_scarecrow";
+    summonSourceAsPrimaryWithAttempt(1, [sacrificeCardId]);
+    const sacrifice = ensureCardInHand(match, source.playerId, sacrificeCardId);
+    if (sacrifice) {
+      const removed = removeCardInstanceFromMatch(match, sacrifice.instanceId);
+      moveCardToDeck(match, source.playerId, removed?.card ?? sacrifice);
+    }
+    addHeadlessEvent(match, "AUTO_EFFECT_SEARCH_DECK_TO_HAND_RESOLVED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "SHUFFLE_DECK",
+      returnedCardId: sacrificeCardId
+    });
+    emitHeadlessAction("SHUFFLE_DECK", { returnedCardId: sacrificeCardId });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_059_lumber" && actionType.includes("manual_fallback")) {
+    ensureSourceAsPrimary(source.playerId);
+    emitHeadlessAction("APPLY_STAT_MODIFIER", { marker: "MODIFIER", stat: "MODIFIER", operation: "HALVE", condition: "FOREST_CREATURE" });
+    emitSyntheticBattlePipeline({
+      attackingPlayerId: findOpponentPlayerId(match, source.playerId),
+      defendingPlayerId: source.playerId,
+      damage: 5,
+      hitRollModifier: 0,
+      note: "Lumber halves forest creature base Modifier"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_064_frog_bard" && actionType.includes("move_card")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const card = removed?.card ?? source.card;
+    moveCardToHand(match, source.playerId, card);
+    emitHeadlessAction("MOVE_CARD", { returnedCardId: card.cardId, destination: "HAND", reason: "EQUIPPED_CREATURE_REMOVED" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_070_hydogon" && (actionType.includes("damage") || actionType.includes("apply_attack_damage_multiplier"))) {
+    ensureSourceAsPrimary(source.playerId);
+    emitHeadlessAction("APPLY_ATTACK_DAMAGE_MULTIPLIER", { multiplier: 2, condition: "TARGET_IN_OR_NEAR_FIRE" });
+    emitSyntheticBattlePipeline({
+      damage: 20,
+      damageAmountForEvents: 20,
+      multiplier: 2,
+      note: "Hydogon inflicts 2x Atk damage near fire"
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_075_orc_champion" && actionType.includes("summon_requirement")) {
+    summonSourceAsPrimaryWithAttempt(0, []);
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_077_possession" && actionType.includes("manual_fallback")) {
+    playSourceMagicToCemetery();
+    emitHeadlessAction("SELF_BATTLE", { targetPlayerId: findOpponentPlayerId(match, source.playerId) });
+    addHeadlessEvent(match, "HEADLESS_BATTLE_LOCK_APPLIED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: "BATTLE_LOCK",
+      restriction: "OTHER_CREATURES_CANNOT_BATTLE_THIS_TURN"
+    });
+    steps.push({ label: "apply possession battle lock", ok: true, detail: definition.name });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_099_street_lights" && (actionType.includes("limited_summon") || actionType.includes("prevent_card_play"))) {
+    playSourceMagicToField();
+    if (actionType.includes("limited_summon")) {
+      const player = getPlayer(match, source.playerId);
+      let limited = player.field.limitedSummons.find(card => card.cardId === "gen3_064_frog_bard");
+      if (!limited) {
+        const candidate = ensureCardInHand(match, source.playerId, "gen3_064_frog_bard");
+        const removed = candidate ? removeCardInstanceFromMatch(match, candidate.instanceId) : undefined;
+        if (removed) {
+          limited = placeAsLimitedSummon(removed.card, source.playerId, source.playerId);
+        }
+      }
+      if (limited) {
+        returnLinkedLimitedToHand(source.playerId, limited, "LIMITED_SUMMON_RETURNED");
+      }
+    }
+    emitHeadlessAction("PREVENT_CARD_PLAY", { restrictedPlay: "LIMITED_SUMMON", duration: "while on field" });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_103_bio_dino" && actionType.includes("manual_fallback")) {
+    const bioDino = summonSourceAsPrimaryWithAttempt(1, ["test_creature_defender"]);
+    bioDino.activeStatModifiers ??= [];
+    bioDino.activeStatModifiers.push({
+      id: `headless-bio-dino-sacrifice-dice-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceEffectId: effect?.id ?? "103-E01",
+      sourceCardInstanceId: bioDino.instanceId,
+      sourceCardName: definition.name,
+      stat: "attackDice",
+      delta: 3,
+      durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    }, {
+      id: `headless-bio-dino-sacrifice-mod-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceEffectId: effect?.id ?? "103-E01",
+      sourceCardInstanceId: bioDino.instanceId,
+      sourceCardName: definition.name,
+      stat: "modifier",
+      delta: 3,
+      durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+    emitHeadlessAction("SACRIFICE_STAT_INHERITANCE", { marker: "SACRIFICE", attackDiceDelta: 3, modifierDelta: 3 });
+    return match;
+  }
 
   if (plan.card.cardId === "gen3_100_advantage" && actionType.includes("reroll_dice")) {
     playSourceMagicToCemetery();
@@ -4355,6 +4660,61 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   if (actionType.includes("apply_conditional_damage_immunity")) {
     emitHeadlessAction("HEADLESS_STATIC_STATUS_AVAILABLE");
     return match;
+  }
+
+  if (plan.card.cardId === "gen2_151_terry") {
+    const terry = ensureSourceAsPrimary("player_1");
+
+    if (actionType.includes("attach_named_card_under_source")) {
+      const attachedJerry = attachJerryUnderTerry();
+      emitHeadlessAction("ATTACH_NAMED_CARD_UNDER_SOURCE", {
+        attachedCardId: attachedJerry?.cardId,
+        attachedUnderCount: terry.attachedUnder?.length ?? 0
+      });
+      return match;
+    }
+
+    if (actionType.includes("apply_dynamic_stat_modifier")) {
+      attachJerryUnderTerry();
+      emitHeadlessAction("APPLY_DYNAMIC_STAT_MODIFIER", {
+        attachedCardId: "gen2_075_jerry",
+        multiplier: 2
+      });
+      return match;
+    }
+
+    if (actionType.includes("detach_attached_cards_to_field")) {
+      attachJerryUnderTerry();
+      const removedTerry = removeCardInstanceFromMatch(match, terry.instanceId);
+      const movedTerry = removedTerry?.card ?? terry;
+      const attachedCards = movedTerry.attachedUnder ?? [];
+      movedTerry.attachedUnder = [];
+      moveCardToCemetery(match, "player_1", movedTerry);
+
+      const player = getPlayer(match, "player_1");
+      for (const attached of attachedCards) {
+        const attachedDefinition = match.cardCatalog[attached.cardId];
+        if (attachedDefinition?.cardType !== "CREATURE") continue;
+        attached.zone = player.field.primaryCreature ? "LIMITED_SUMMON" : "PRIMARY_CREATURE";
+        attached.controllerPlayerId = "player_1";
+        attached.ownerPlayerId = attached.ownerPlayerId || "player_1";
+        attached.baseHp = attachedDefinition.hp;
+        attached.currentHp = attachedDefinition.hp;
+        attached.isLimitedSummon = attached.zone === "LIMITED_SUMMON";
+        attached.effectsSuppressed = attached.zone === "LIMITED_SUMMON";
+        if (attached.zone === "PRIMARY_CREATURE") {
+          player.field.primaryCreature = attached;
+        } else {
+          player.field.limitedSummons.push(attached);
+        }
+      }
+
+      emitHeadlessAction("DETACH_ATTACHED_CARDS_TO_FIELD", {
+        detachedCardIds: attachedCards.map(card => card.cardId),
+        movedSourceCardId: movedTerry.cardId
+      });
+      return match;
+    }
   }
 
   if (plan.card.cardId === "gen1_066_junk_scarecrow") {
