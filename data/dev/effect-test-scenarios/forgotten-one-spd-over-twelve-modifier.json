@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_114_forgotten_one",
+  "effectId": "114-E01",
+  "title": "Forgotten One gains modifier from SPD over twelve",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_114_forgotten_one",
+      "cardName": "Forgotten One",
+      "cardType": "CREATURE",
+      "cardNumber": "114",
+      "generation": "2",
+      "rawText": "Add +1 to this creature's Modifier for each point in this card's SPD stat over 12."
+    },
+    "effect": {
+      "effectId": "114-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "target": "This creature",
+      "value": "Modifier +1 for each point of SPD over 12",
+      "durationText": "While on field",
+      "reusableFunction": "applyDynamicStatModifier"
+    },
+    "title": "Forgotten One gains modifier from SPD over twelve",
+    "summary": "Put Forgotten One on field with Common Boots raising SPD to 15 and verify its modifier becomes +3.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_114_forgotten_one",
+        "gen2_025_common_boots"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Common Boots on field equipped to Forgotten One so its current SPD is 15."
+      ]
+    },
+    "steps": [
+      "Set Forgotten One as player_1 primary creature.",
+      "Equip Common Boots to raise Forgotten One's SPD over 12.",
+      "Read Forgotten One's effective modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "SPD increased to 15",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 15
+      },
+      {
+        "label": "Modifier gained three from SPD over twelve",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 3
+      }
+    ],
+    "manualVerification": [
+      "Confirm the bonus dynamically recalculates if Forgotten One's SPD changes."
+    ],
+    "riskNotes": [
+      "Uses Common Boots as a deterministic SPD source."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate CURRENT_SPD-based dynamic modifier formula."
+    },
+    "regression": {
+      "fixtureName": "forgotten-one-spd-over-twelve-modifier",
+      "tags": [
+        "creature",
+        "dynamic-stat-modifier",
+        "spd",
+        "modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

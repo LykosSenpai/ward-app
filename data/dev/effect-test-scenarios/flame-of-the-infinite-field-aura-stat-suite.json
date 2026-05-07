@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_085_flame_of_the_infinite",
+  "effectId": "085-E01",
+  "title": "Flame of the Infinite buffs your creatures",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_085_flame_of_the_infinite",
+      "cardName": "Flame of the Infinite",
+      "cardType": "MAGIC",
+      "cardNumber": "085",
+      "generation": "1",
+      "rawText": "All creatures under your control: AL: +5. SPD: +5. Atk: +5. Atk Dice Rolls: +1. Hit Dice Rolls: +1. If destroyed, +50 HP to your cemetery."
+    },
+    "effect": {
+      "effectId": "085-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_FIELD_AURA_MODIFIERS",
+      "effectGroup": "Field Aura Stat/Dice Modifier",
+      "target": "Your creatures",
+      "value": "AL +5; SPD +5; Atk +5; Atk Dice Rolls +1; Hit Dice Rolls +1",
+      "durationText": "While field active",
+      "reusableFunction": "applyFieldAuraModifiers"
+    },
+    "title": "Flame of the Infinite buffs your creatures",
+    "summary": "Play Flame of the Infinite as field magic and verify its controller's primary creature gains the printed stat and dice bonuses.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_085_flame_of_the_infinite",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use test_primary_creature_mod_0 so the field aura bonuses come only from Flame of the Infinite."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Flame of the Infinite as field magic.",
+      "Read player_1 primary creature effective AL, SPD, and attack dice.",
+      "Run a follow-up battle and inspect Hit and Atk output."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 5",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 8
+      },
+      {
+        "label": "SPD increased by 5",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 15
+      },
+      {
+        "label": "Attack dice increased by 1",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "Attack damage includes the +5 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 8
+      },
+      {
+        "label": "Flame of the Infinite remains in magic slot",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_085_flame_of_the_infinite"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the field aura affects all of its controller's creatures, not opponent creatures."
+    ],
+    "riskNotes": [
+      "This fixture covers the field aura sentence, not the destroyed cemetery HP sentence."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate owner-scoped field aura modifiers."
+    },
+    "regression": {
+      "fixtureName": "flame-of-the-infinite-field-aura-stat-suite",
+      "tags": [
+        "magic",
+        "field",
+        "field-aura",
+        "stat-modifier"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

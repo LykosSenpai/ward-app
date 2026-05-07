@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_098_visitor_from_beyond",
+  "effectId": "098-E01",
+  "title": "Visitor From Beyond returns cemetery magic to hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_098_visitor_from_beyond",
+      "cardName": "Visitor From Beyond",
+      "cardType": "MAGIC",
+      "cardNumber": "098",
+      "generation": "1",
+      "rawText": "Return 1 magic card from your cemetery to your hand."
+    },
+    "effect": {
+      "effectId": "098-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "target": "Your cemetery/hand",
+      "value": "1 magic card",
+      "durationText": "Instant",
+      "reusableFunction": "returnFromCemeteryToHand"
+    },
+    "title": "Visitor From Beyond returns cemetery magic to hand",
+    "summary": "Play Visitor From Beyond with a magic card in player_1 cemetery and verify that magic card returns to hand.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_098_visitor_from_beyond",
+        "gen2_024_common_sword",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place one player_1 magic card in cemetery before play."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Visitor From Beyond.",
+      "Choose a magic card from player_1 cemetery.",
+      "Resolve the move to hand."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Magic card returned to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "gen2_024_common_sword"
+      },
+      {
+        "label": "Returned magic no longer in cemetery",
+        "path": "player_1.cemetery",
+        "operator": "notContains",
+        "value": "gen2_024_common_sword"
+      }
+    ],
+    "manualVerification": [
+      "Confirm creature cards in cemetery are not legal targets for Visitor From Beyond."
+    ],
+    "riskNotes": [
+      "Target setup specifically seeds a magic card in the cemetery."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate magic-only cemetery-to-hand movement."
+    },
+    "regression": {
+      "fixtureName": "visitor-from-beyond-return-magic-from-cemetery",
+      "tags": [
+        "magic",
+        "zone-movement",
+        "cemetery"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

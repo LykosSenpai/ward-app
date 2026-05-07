@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_112_cosmic_negation",
+  "effectId": "112-E01",
+  "title": "Cosmic Negation destroys all field magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_112_cosmic_negation",
+      "cardName": "Cosmic Negation",
+      "cardType": "MAGIC",
+      "cardNumber": "112",
+      "generation": "1",
+      "rawText": "Destroy all magic cards on the field. Magic cards cannot be played for 3 turn cycles."
+    },
+    "effect": {
+      "effectId": "112-E01",
+      "trigger": "ON_PLAY_FIELD",
+      "actionType": "DESTROY_MAGIC_CARDS",
+      "effectGroup": "Destroy",
+      "target": "All magic cards on field",
+      "value": "Destroy all",
+      "durationText": "Instant",
+      "reusableFunction": "destroyMagicCards"
+    },
+    "title": "Cosmic Negation destroys all field magic",
+    "summary": "Play Cosmic Negation while both players have active magic and verify every field magic is destroyed.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_112_cosmic_negation",
+        "gen1_039_demonic_magic",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen1_044_dragon_s_bane",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Demonic Magic and Dragon's Bane on field before Cosmic Negation is played."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Cosmic Negation.",
+      "Resolve the destroy all magic cards effect.",
+      "Inspect both players' magic slots and cemeteries."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Player 1 magic field empty",
+        "path": "players.player_1.magicSlots",
+        "operator": "equals",
+        "value": []
+      },
+      {
+        "label": "Player 2 magic field empty",
+        "path": "players.player_2.magicSlots",
+        "operator": "equals",
+        "value": []
+      },
+      {
+        "label": "Cosmic Negation in cemetery",
+        "path": "players.player_1.cemetery",
+        "operator": "contains",
+        "value": "gen1_112_cosmic_negation"
+      },
+      {
+        "label": "Destroyed opponent magic in cemetery",
+        "path": "players.player_2.cemetery",
+        "operator": "contains",
+        "value": "gen1_044_dragon_s_bane"
+      }
+    ],
+    "manualVerification": [
+      "Confirm the 3-turn-cycle magic play restriction is covered by a separate scenario."
+    ],
+    "riskNotes": [
+      "This fixture covers the first sentence destroy-all effect only."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Cosmic Negation field-wide magic destruction."
+    },
+    "regression": {
+      "fixtureName": "cosmic-negation-destroys-all-field-magic",
+      "tags": [
+        "magic",
+        "field",
+        "destroy",
+        "global"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

@@ -802,6 +802,19 @@ export function inferTargetQueryForEffect(
     };
   }
 
+  if (
+    effect.actionType === "MOVE_CARD" &&
+    text.includes("hand") &&
+    text.includes("creature")
+  ) {
+    return {
+      kind: "ANY_CREATURE",
+      controllerScope,
+      requireCreature: true,
+      ...getCommonCardFilters(text)
+    };
+  }
+
   if (isLimitedSummonCardSelectionEffect(effect, text)) {
     return {
       kind: inferLimitedSummonSourceKind(effect, text),

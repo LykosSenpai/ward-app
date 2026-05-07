@@ -11,6 +11,7 @@ import {
   finishManualBattleSession,
   forceNextDevRolls,
   getEffectiveCreatureStats,
+  getRequiredSacrificesForCreatureDefinition,
   passMagicChainPriority,
   playBattleResponseFromHand,
   playCreatureFromHandAsPrimary,
@@ -589,13 +590,16 @@ function runHeadlessPrimarySummon(
     summonText.includes("requires 2") ||
     normalizeText(plan.effect?.actionType).includes("attach_cards_under_source");
 
+  const requiredSacrifices = getRequiredSacrificesForCreatureDefinition(definition);
+
   const validSacrifices = needsTwoDragonSacrifices
     ? uniqueSacrificesByCardId(
         findSummonSacrificeCards(match, playerId, plan.card.cardId, card =>
           isDragonQualifiedCard(match, card)
         )
       ).slice(0, 2)
-    : [];
+    : findSummonSacrificeCards(match, playerId, plan.card.cardId, () => true)
+      .slice(0, requiredSacrifices);
 
   if (needsTwoDragonSacrifices && validSacrifices.length < 2) {
     throw new Error(`Headless summon needs two Dragon-qualified sacrifices for ${definition.name}.`);
@@ -894,6 +898,37 @@ function moveFirstCreatureToCemetery(match: MatchState, playerId: string, avoidC
   }
 }
 
+function moveFirstMagicToCemetery(match: MatchState, playerId: string, avoidCardId?: string): void {
+  const player = getPlayer(match, playerId);
+  const moveCard = (card: CardInstance) => {
+    card.zone = "CEMETERY";
+    card.controllerPlayerId = playerId;
+    card.ownerPlayerId = card.ownerPlayerId || playerId;
+    player.cemetery.push(card);
+  };
+
+  const deckIndex = player.deck.findIndex(card => {
+    const definition = match.cardCatalog[card.cardId];
+    return definition?.cardType === "MAGIC" && card.cardId !== avoidCardId;
+  });
+
+  if (deckIndex >= 0) {
+    const [card] = player.deck.splice(deckIndex, 1);
+    moveCard(card);
+    return;
+  }
+
+  const handIndex = player.hand.findIndex(card => {
+    const definition = match.cardCatalog[card.cardId];
+    return definition?.cardType === "MAGIC" && card.cardId !== avoidCardId;
+  });
+
+  if (handIndex >= 0) {
+    const [card] = player.hand.splice(handIndex, 1);
+    moveCard(card);
+  }
+}
+
 function ensureCreatureTypeInCemetery(match: MatchState, playerId: string, creatureTypeText: string, avoidCardId?: string): void {
   const player = getPlayer(match, playerId);
   const wanted = creatureTypeText.toLowerCase();
@@ -1068,6 +1103,8 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
 
   if (text.includes("opponent") && (text.includes("cemetery") || text.includes("graveyard"))) {
     moveFirstCreatureToCemetery(match, opponentPlayerId, plan.card.cardId);
+  } else if ((text.includes("cemetery") || text.includes("graveyard")) && text.includes("magic card")) {
+    moveFirstMagicToCemetery(match, sourcePlayerId, plan.card.cardId);
   } else if ((text.includes("cemetery") || text.includes("graveyard")) && text.includes("undead")) {
     ensureCreatureTypeInCemetery(match, sourcePlayerId, "undead", plan.card.cardId);
   } else if (text.includes("cemetery") || text.includes("graveyard")) {
@@ -2453,6 +2490,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     (
       actionType.includes("apply_stat_modifier") ||
       actionType.includes("apply_dynamic_stat_modifier") ||
+      actionType.includes("apply_field_aura_modifiers") ||
       actionType.includes("apply_multi_modifier") ||
       actionType.includes("apply_stat_set_aura") ||
       actionType.includes("apply_temporary_stat_set") ||
@@ -2756,6 +2794,7 @@ function runFollowupBattleForStatModifier(match: MatchState, plan: LlmEffectTest
   if (
     !actionType.includes("apply_stat_modifier") &&
     !actionType.includes("apply_dynamic_stat_modifier") &&
+    !actionType.includes("apply_field_aura_modifiers") &&
     !actionType.includes("apply_multi_modifier")
   ) return match;
   if (!text.includes("hit") && !text.includes("damage") && !text.includes("atk") && !text.includes("modifier")) return match;

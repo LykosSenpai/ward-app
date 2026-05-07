@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_123_ashen_knight",
+  "effectId": "123-E01",
+  "title": "Ashen Knight gains stats below forty HP",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_123_ashen_knight",
+      "cardName": "Ashen Knight",
+      "cardType": "CREATURE",
+      "cardNumber": "123",
+      "generation": "3",
+      "rawText": "While this creature is below 40 HP, it gains Atk: +10. Hit: +10. AL: +2. SPD: +3."
+    },
+    "effect": {
+      "effectId": "123-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "target": "This creature",
+      "value": "Atk +10; Hit +10; AL +2; SPD +3",
+      "durationText": "While on field",
+      "reusableFunction": "applyStatModifier"
+    },
+    "title": "Ashen Knight gains stats below forty HP",
+    "summary": "Put Ashen Knight on field at 30 current HP and verify its below-40 HP stat suite.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_123_ashen_knight"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Ashen Knight current HP to 30 before reading stats."
+      ]
+    },
+    "steps": [
+      "Set Ashen Knight as player_1 primary creature with current HP below 40.",
+      "Read effective AL and SPD.",
+      "Run a follow-up battle and inspect Hit and Atk output."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "AL increased by 2",
+        "path": "player_1.primaryCreature.effectiveStats.AL",
+        "operator": "equals",
+        "value": 12
+      },
+      {
+        "label": "SPD increased by 3",
+        "path": "player_1.primaryCreature.effectiveStats.SPD",
+        "operator": "equals",
+        "value": 13
+      },
+      {
+        "label": "Hit roll modifier increased by 10",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 13
+      },
+      {
+        "label": "Attack damage includes the +10 Atk bonus",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 16
+      }
+    ],
+    "manualVerification": [
+      "Confirm the bonus turns off once Ashen Knight is no longer below 40 HP."
+    ],
+    "riskNotes": [
+      "AL is capped at 12, so base AL 10 plus 2 reaches the cap exactly."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate HP-threshold static creature stat modifier."
+    },
+    "regression": {
+      "fixtureName": "ashen-knight-low-hp-stat-suite",
+      "tags": [
+        "creature",
+        "static",
+        "stat-modifier",
+        "hp-threshold"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

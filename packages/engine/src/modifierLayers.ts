@@ -232,6 +232,29 @@ function opponentPrimaryBaseStatValue(
   return undefined;
 }
 
+function currentSpeedForDynamicFormula(
+  state: MatchState,
+  target: CreatureLocation,
+  skippedSource: FieldSource,
+  skippedEffect: WardEngineEffect
+): number {
+  const speedLayers: RuntimeModifierLayer[] = [];
+
+  for (const source of collectSources(state)) {
+    for (const effect of getCardEngineEffects(source.definition).filter(isStaticEffect)) {
+      if (source.card.instanceId === skippedSource.card.instanceId && effect.id === skippedEffect.id) continue;
+      if (!sourceAppliesToCreature(source, effect, target)) continue;
+
+      for (let index = 0; index < (effect.params?.statChanges ?? []).length; index++) {
+        const layer = layerFromStatChange(source, effect, effect.params!.statChanges![index], index);
+        if (layer?.stat === "speed") speedLayers.push(layer);
+      }
+    }
+  }
+
+  return applyBaseStatModifierLayers(target.definition.speed, "speed", speedLayers);
+}
+
 function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: WardEngineEffect, target: CreatureLocation): RuntimeModifierLayer[] {
   const actionType = effect.actionType.trim().toUpperCase();
   const text = effectText(effect);
@@ -279,8 +302,9 @@ function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: 
   }
 
   if ((actionType === "APPLY_DYNAMIC_STAT_MODIFIER" || actionType === "APPLY_STAT_MODIFIER") && text.includes("spd") && text.includes("over 12") && text.includes("modifier")) {
-    const over = Math.max(0, target.definition.speed - 12);
-    if (over > 0) layers.push(makeLayer(source, effect, "spd-over-12-modifier", "modifier", "ADD", over, `Base SPD over 12: ${over}`));
+    const currentSpeed = currentSpeedForDynamicFormula(state, target, source, effect);
+    const over = Math.max(0, currentSpeed - 12);
+    if (over > 0) layers.push(makeLayer(source, effect, "spd-over-12-modifier", "modifier", "ADD", over, `Current SPD over 12: ${over}`));
   }
 
   if (!usedStructuredOpponentPrimaryBaseStats && (actionType === "APPLY_DYNAMIC_STAT_MODIFIER" || actionType === "APPLY_STAT_MODIFIER") && text.includes("opponent") && text.includes("primary") && text.includes("base")) {

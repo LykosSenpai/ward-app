@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_091_terrifying_roar",
+  "effectId": "091-E01",
+  "title": "Terrifying Roar returns opponent creature to hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_091_terrifying_roar",
+      "cardName": "Terrifying Roar",
+      "cardType": "MAGIC",
+      "cardNumber": "091",
+      "generation": "1",
+      "rawText": "Return opponent's creature back to their hand."
+    },
+    "effect": {
+      "effectId": "091-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "target": "Opponent creature",
+      "value": "Move to hand",
+      "durationText": "Instant",
+      "reusableFunction": "returnCreatureToHand"
+    },
+    "title": "Terrifying Roar returns opponent creature to hand",
+    "summary": "Play Terrifying Roar and verify the opponent primary creature is returned to their hand.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_091_terrifying_roar",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set player_2 primary to a creature before Terrifying Roar resolves."
+      ]
+    },
+    "steps": [
+      "Player 1 plays Terrifying Roar.",
+      "Choose the opponent primary creature.",
+      "Resolve the return-to-hand effect."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Opponent creature returned to hand",
+        "path": "player_2.hand",
+        "operator": "contains",
+        "value": "test_creature_defender"
+      },
+      {
+        "label": "Opponent primary creature slot empty",
+        "path": "player_2.primaryCreature",
+        "operator": "notExists",
+        "value": null
+      }
+    ],
+    "manualVerification": [
+      "Confirm any opponent creature, not just primary, can be selected when multiple legal targets exist."
+    ],
+    "riskNotes": [
+      "This fixture uses the opponent primary as the deterministic target."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate opponent creature return-to-hand movement."
+    },
+    "regression": {
+      "fixtureName": "terrifying-roar-return-opponent-creature",
+      "tags": [
+        "magic",
+        "zone-movement",
+        "return-to-hand"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

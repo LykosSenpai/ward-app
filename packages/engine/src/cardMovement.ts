@@ -495,6 +495,41 @@ export function moveSelectedCardToHand(
 } {
   const selected = requireCardTargetOption(option);
 
+  if (selected.zone === "PRIMARY_CREATURE" || selected.zone === "LIMITED_SUMMON") {
+    const sourcePlayer = getPlayer(state, selected.playerId);
+    const card = selected.zone === "PRIMARY_CREATURE"
+      ? sourcePlayer.field.primaryCreature
+      : sourcePlayer.field.limitedSummons.find(item => item.instanceId === selected.cardInstanceId);
+
+    if (!card || card.instanceId !== selected.cardInstanceId) {
+      throw new Error("Selected field creature is no longer in the expected source zone.");
+    }
+
+    if (selected.zone === "PRIMARY_CREATURE") {
+      sourcePlayer.field.primaryCreature = undefined;
+    } else {
+      const index = sourcePlayer.field.limitedSummons.findIndex(item => item.instanceId === selected.cardInstanceId);
+      if (index >= 0) sourcePlayer.field.limitedSummons.splice(index, 1);
+    }
+
+    const definition = getCardDefinition(state, card);
+    const destinationPlayer = getPlayer(state, card.ownerPlayerId);
+    moveAttachedMagicCardsToCemeteryForCreature(state, card.instanceId);
+    removeActiveEffectInstancesFromSource(card, card.instanceId);
+    card.zone = "HAND";
+    card.controllerPlayerId = destinationPlayer.id;
+    card.currentHp = definition.cardType === "CREATURE" ? definition.hp : card.currentHp;
+    destinationPlayer.hand.push(card);
+
+    return {
+      sourcePlayerId: sourcePlayer.id,
+      destinationPlayerId: destinationPlayer.id,
+      card,
+      cardName: definition.name,
+      sourceZone: selected.zone
+    };
+  }
+
   if (
     selected.zone !== "DECK" &&
     selected.zone !== "CEMETERY" &&

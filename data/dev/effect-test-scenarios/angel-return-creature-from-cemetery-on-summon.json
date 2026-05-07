@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_135_angel",
+  "effectId": "135-E01",
+  "title": "Angel returns a cemetery creature on summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_135_angel",
+      "cardName": "Angel",
+      "cardType": "CREATURE",
+      "cardNumber": "135",
+      "generation": "1",
+      "rawText": "When summoned, return a creature from your cemetery to your hand. This card cannot be returned from the cemetery."
+    },
+    "effect": {
+      "effectId": "135-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Zone Movement",
+      "target": "Your cemetery/hand",
+      "value": "1 creature",
+      "durationText": "Instant",
+      "reusableFunction": "returnFromCemeteryToHand"
+    },
+    "title": "Angel returns a cemetery creature on summon",
+    "summary": "Summon Angel with a creature in player_1 cemetery and verify that creature moves to hand.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_135_angel",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Place one player_1 creature in cemetery before Angel is summoned."
+      ]
+    },
+    "steps": [
+      "Player 1 summons Angel.",
+      "Choose a creature from player_1 cemetery.",
+      "Resolve Angel's on-summon return effect."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Creature returned to hand",
+        "path": "player_1.hand",
+        "operator": "contains",
+        "value": "test_primary_creature"
+      },
+      {
+        "label": "Angel is primary after summon",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen1_135_angel"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Angel itself cannot be returned from cemetery by this or another return effect."
+    ],
+    "riskNotes": [
+      "This fixture covers Angel's on-summon movement, not the self-exclusion static rule."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Angel cemetery-to-hand summon trigger."
+    },
+    "regression": {
+      "fixtureName": "angel-return-creature-from-cemetery-on-summon",
+      "tags": [
+        "creature",
+        "on-summon",
+        "zone-movement"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
