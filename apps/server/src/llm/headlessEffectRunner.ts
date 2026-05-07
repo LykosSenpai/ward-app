@@ -3737,6 +3737,20 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
         zone: source.zone
       }
     });
+    match.eventLog.push({
+      id: `headless-static-creature-play-restriction-alias-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sequenceNumber: match.eventLog.length + 1,
+      timestamp: new Date().toISOString(),
+      type: "HEADLESS_STATIC_CREATURE_PLAY_RESTRICTION_AVAILABLE",
+      playerId: source.playerId,
+      payload: {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        zone: source.zone
+      }
+    });
     steps.push({ label: "accept static creature play restriction", ok: true, detail: `${definition.name} ${effect?.id ?? ""}` });
     return match;
   }
@@ -4170,6 +4184,25 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           actionType: effect?.actionType ?? "SUPPRESS_MODIFIER_LAYER",
           label: effect?.value ?? effect?.actionText ?? "Suppress positive modifiers",
           durationType: "WHILE_EQUIPPED",
+          durationText: effect?.duration?.text,
+          appliedTurnNumber: match.turn.turnNumber,
+          appliedTurnCycle: match.turn.turnCycleNumber
+        });
+      } else if (actionType.includes("apply_battle_requirement") && attachedTarget?.card) {
+        attachedTarget.card.activeEffectInstances ??= [];
+        attachedTarget.card.activeEffectInstances.push({
+          id: `headless-battle-requirement-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          kind: "STATIC_MODIFIER",
+          sourceEffectId: effect?.id ?? "UNKNOWN",
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: definition.name,
+          sourcePlayerId: source.playerId,
+          targetPlayerId: attachedTarget.playerId,
+          targetCardInstanceId: attachedTarget.card.instanceId,
+          targetCardName: match.cardCatalog[attachedTarget.card.cardId]?.name ?? attachedTarget.card.cardId,
+          actionType: effect?.actionType ?? "APPLY_BATTLE_REQUIREMENT",
+          label: effect?.value ?? effect?.actionText ?? "Battle requirement",
+          durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
           durationText: effect?.duration?.text,
           appliedTurnNumber: match.turn.turnNumber,
           appliedTurnCycle: match.turn.turnCycleNumber
