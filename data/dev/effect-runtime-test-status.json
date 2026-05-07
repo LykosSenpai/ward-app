@@ -12,7 +12,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.417Z",
+      "lastTestedAt": "2026-05-07T09:42:24.635Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -26,7 +26,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.153Z",
+      "lastTestedAt": "2026-05-07T09:42:22.263Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -40,7 +40,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.939Z",
+      "lastTestedAt": "2026-05-07T09:42:26.254Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -54,7 +54,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.093Z",
+      "lastTestedAt": "2026-05-07T09:42:29.595Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -68,7 +68,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.225Z",
+      "lastTestedAt": "2026-05-07T09:42:30.859Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -82,7 +82,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:17.160Z",
+      "lastTestedAt": "2026-05-07T09:42:31.971Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -96,7 +96,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.675Z",
+      "lastTestedAt": "2026-05-07T09:42:22.828Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -110,7 +110,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.981Z",
+      "lastTestedAt": "2026-05-07T09:42:29.483Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -124,7 +124,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:17.638Z",
+      "lastTestedAt": "2026-05-07T09:42:32.563Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -138,7 +138,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.727Z",
+      "lastTestedAt": "2026-05-07T09:42:34.821Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -152,7 +152,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.051Z",
+      "lastTestedAt": "2026-05-07T09:42:25.316Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -166,7 +166,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.660Z",
+      "lastTestedAt": "2026-05-07T09:42:23.850Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -180,7 +180,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.635Z",
+      "lastTestedAt": "2026-05-07T09:42:23.827Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -194,7 +194,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:03.845Z",
+      "lastTestedAt": "2026-05-07T09:42:17.722Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -208,7 +208,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.893Z",
+      "lastTestedAt": "2026-05-07T09:42:18.879Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -222,7 +222,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.163Z",
+      "lastTestedAt": "2026-05-07T09:42:19.162Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -236,7 +236,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.228Z",
+      "lastTestedAt": "2026-05-07T09:42:19.240Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -250,7 +250,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.239Z",
+      "lastTestedAt": "2026-05-07T09:42:19.251Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -264,7 +264,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.371Z",
+      "lastTestedAt": "2026-05-07T09:42:19.399Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -278,7 +278,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.775Z",
+      "lastTestedAt": "2026-05-07T09:42:19.785Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -292,7 +292,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.809Z",
+      "lastTestedAt": "2026-05-07T09:42:19.814Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -306,7 +306,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.917Z",
+      "lastTestedAt": "2026-05-07T09:42:19.920Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -320,7 +320,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:06.635Z",
+      "lastTestedAt": "2026-05-07T09:42:20.619Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -334,7 +334,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.452Z",
+      "lastTestedAt": "2026-05-07T09:42:21.534Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -348,7 +348,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.525Z",
+      "lastTestedAt": "2026-05-07T09:42:24.742Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -362,7 +362,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.562Z",
+      "lastTestedAt": "2026-05-07T09:42:24.791Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -376,7 +376,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.583Z",
+      "lastTestedAt": "2026-05-07T09:42:24.819Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -390,7 +390,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.716Z",
+      "lastTestedAt": "2026-05-07T09:42:24.967Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -404,7 +404,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.744Z",
+      "lastTestedAt": "2026-05-07T09:42:24.996Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -418,7 +418,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.777Z",
+      "lastTestedAt": "2026-05-07T09:42:25.032Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -432,7 +432,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.902Z",
+      "lastTestedAt": "2026-05-07T09:42:25.161Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -446,7 +446,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.921Z",
+      "lastTestedAt": "2026-05-07T09:42:25.181Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -460,7 +460,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.040Z",
+      "lastTestedAt": "2026-05-07T09:42:22.150Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -474,7 +474,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.313Z",
+      "lastTestedAt": "2026-05-07T09:42:22.422Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -488,7 +488,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.419Z",
+      "lastTestedAt": "2026-05-07T09:42:22.533Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -502,7 +502,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.647Z",
+      "lastTestedAt": "2026-05-07T09:42:22.796Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -516,7 +516,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.591Z",
+      "lastTestedAt": "2026-05-07T09:42:22.738Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -530,7 +530,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.562Z",
+      "lastTestedAt": "2026-05-07T09:42:22.709Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -544,7 +544,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.784Z",
+      "lastTestedAt": "2026-05-07T09:42:22.944Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -558,7 +558,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.896Z",
+      "lastTestedAt": "2026-05-07T09:42:23.063Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -572,7 +572,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.125Z",
+      "lastTestedAt": "2026-05-07T09:42:23.298Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -586,7 +586,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.475Z",
+      "lastTestedAt": "2026-05-07T09:42:23.647Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -600,7 +600,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.331Z",
+      "lastTestedAt": "2026-05-07T09:42:23.518Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -614,7 +614,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.634Z",
+      "lastTestedAt": "2026-05-07T09:42:21.725Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -628,7 +628,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.645Z",
+      "lastTestedAt": "2026-05-07T09:42:21.736Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -642,7 +642,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.998Z",
+      "lastTestedAt": "2026-05-07T09:42:24.228Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -656,7 +656,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.949Z",
+      "lastTestedAt": "2026-05-07T09:42:25.212Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -670,7 +670,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.277Z",
+      "lastTestedAt": "2026-05-07T09:42:25.547Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -684,7 +684,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.705Z",
+      "lastTestedAt": "2026-05-07T09:42:26.023Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -698,7 +698,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.670Z",
+      "lastTestedAt": "2026-05-07T09:42:25.991Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -712,7 +712,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.825Z",
+      "lastTestedAt": "2026-05-07T09:42:26.140Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -726,7 +726,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.027Z",
+      "lastTestedAt": "2026-05-07T09:42:26.346Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -740,7 +740,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.193Z",
+      "lastTestedAt": "2026-05-07T09:42:26.523Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -754,7 +754,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.423Z",
+      "lastTestedAt": "2026-05-07T09:42:26.742Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -768,7 +768,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.041Z",
+      "lastTestedAt": "2026-05-07T09:42:27.408Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -782,7 +782,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.274Z",
+      "lastTestedAt": "2026-05-07T09:42:27.649Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -796,7 +796,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.999Z",
+      "lastTestedAt": "2026-05-07T09:42:26.312Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -810,7 +810,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.863Z",
+      "lastTestedAt": "2026-05-07T09:42:28.293Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -824,7 +824,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.229Z",
+      "lastTestedAt": "2026-05-07T09:42:28.666Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -838,7 +838,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.057Z",
+      "lastTestedAt": "2026-05-07T09:42:28.489Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -852,7 +852,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.519Z",
+      "lastTestedAt": "2026-05-07T09:42:30.094Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -866,7 +866,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.713Z",
+      "lastTestedAt": "2026-05-07T09:42:30.302Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -880,7 +880,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.970Z",
+      "lastTestedAt": "2026-05-07T09:42:30.598Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -894,7 +894,21 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.980Z",
+      "lastTestedAt": "2026-05-07T09:42:30.608Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen1:gen1_078_owlverine:078-E01",
+      "packId": "ward-gen1",
+      "cardId": "gen1_078_owlverine",
+      "cardName": "Owlverine",
+      "effectId": "078-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T09:42:31.121Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -908,7 +922,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.696Z",
+      "lastTestedAt": "2026-05-07T09:42:31.473Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -922,7 +936,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.866Z",
+      "lastTestedAt": "2026-05-07T09:42:29.364Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -936,7 +950,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.750Z",
+      "lastTestedAt": "2026-05-07T09:42:29.217Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -950,7 +964,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.130Z",
+      "lastTestedAt": "2026-05-07T09:42:24.356Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -964,7 +978,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:17.884Z",
+      "lastTestedAt": "2026-05-07T09:42:32.850Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -978,7 +992,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.041Z",
+      "lastTestedAt": "2026-05-07T09:42:33.008Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -992,7 +1006,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.372Z",
+      "lastTestedAt": "2026-05-07T09:42:26.695Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1006,7 +1020,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.217Z",
+      "lastTestedAt": "2026-05-07T09:42:26.549Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1020,7 +1034,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.238Z",
+      "lastTestedAt": "2026-05-07T09:42:26.569Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1034,7 +1048,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.883Z",
+      "lastTestedAt": "2026-05-07T09:42:33.916Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1048,7 +1062,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.983Z",
+      "lastTestedAt": "2026-05-07T09:42:34.030Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1062,7 +1076,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.122Z",
+      "lastTestedAt": "2026-05-07T09:42:34.170Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1076,7 +1090,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.481Z",
+      "lastTestedAt": "2026-05-07T09:42:34.560Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1090,7 +1104,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.597Z",
+      "lastTestedAt": "2026-05-07T09:42:34.679Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1104,7 +1118,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.512Z",
+      "lastTestedAt": "2026-05-07T09:42:34.593Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1118,7 +1132,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.611Z",
+      "lastTestedAt": "2026-05-07T09:42:34.695Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1132,7 +1146,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.742Z",
+      "lastTestedAt": "2026-05-07T09:42:33.760Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1146,7 +1160,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.719Z",
+      "lastTestedAt": "2026-05-07T09:42:33.732Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1160,7 +1174,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.393Z",
+      "lastTestedAt": "2026-05-07T09:42:26.713Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1188,7 +1202,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.010Z",
+      "lastTestedAt": "2026-05-07T09:42:32.980Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1202,7 +1216,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.421Z",
+      "lastTestedAt": "2026-05-07T09:42:21.504Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1244,7 +1258,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.587Z",
+      "lastTestedAt": "2026-05-07T09:42:31.360Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1258,7 +1272,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.557Z",
+      "lastTestedAt": "2026-05-07T09:42:31.330Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1272,7 +1286,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.525Z",
+      "lastTestedAt": "2026-05-07T09:42:31.299Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1286,7 +1300,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.541Z",
+      "lastTestedAt": "2026-05-07T09:42:26.853Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1300,7 +1314,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.533Z",
+      "lastTestedAt": "2026-05-07T09:42:22.679Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1314,7 +1328,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:20.058Z",
+      "lastTestedAt": "2026-05-07T09:42:35.174Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1328,7 +1342,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.256Z",
+      "lastTestedAt": "2026-05-07T09:42:18.218Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1342,7 +1356,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.798Z",
+      "lastTestedAt": "2026-05-07T09:42:23.981Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1356,7 +1370,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.499Z",
+      "lastTestedAt": "2026-05-07T09:42:25.789Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1370,7 +1384,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.408Z",
+      "lastTestedAt": "2026-05-07T09:42:18.377Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1384,7 +1398,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.471Z",
+      "lastTestedAt": "2026-05-07T09:42:33.459Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1398,7 +1412,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.130Z",
+      "lastTestedAt": "2026-05-07T09:42:26.453Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1412,7 +1426,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.821Z",
+      "lastTestedAt": "2026-05-07T09:42:30.432Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1426,7 +1440,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.223Z",
+      "lastTestedAt": "2026-05-07T09:42:34.279Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1440,7 +1454,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.188Z",
+      "lastTestedAt": "2026-05-07T09:42:23.371Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1454,7 +1468,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.307Z",
+      "lastTestedAt": "2026-05-07T09:42:23.498Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1468,7 +1482,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.611Z",
+      "lastTestedAt": "2026-05-07T09:42:23.803Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1482,7 +1496,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:17.764Z",
+      "lastTestedAt": "2026-05-07T09:42:32.718Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1496,7 +1510,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.754Z",
+      "lastTestedAt": "2026-05-07T09:42:31.547Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1510,7 +1524,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.725Z",
+      "lastTestedAt": "2026-05-07T09:42:31.510Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1524,7 +1538,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.783Z",
+      "lastTestedAt": "2026-05-07T09:42:31.588Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1538,7 +1552,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.846Z",
+      "lastTestedAt": "2026-05-07T09:42:31.650Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1552,7 +1566,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.144Z",
+      "lastTestedAt": "2026-05-07T09:42:18.096Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1566,7 +1580,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:06.400Z",
+      "lastTestedAt": "2026-05-07T09:42:20.385Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1580,7 +1594,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:06.528Z",
+      "lastTestedAt": "2026-05-07T09:42:20.512Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1594,7 +1608,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.774Z",
+      "lastTestedAt": "2026-05-07T09:42:33.808Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1608,7 +1622,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.799Z",
+      "lastTestedAt": "2026-05-07T09:42:33.831Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1622,7 +1636,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.490Z",
+      "lastTestedAt": "2026-05-07T09:42:21.573Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1636,7 +1650,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.622Z",
+      "lastTestedAt": "2026-05-07T09:42:21.714Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1650,7 +1664,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.741Z",
+      "lastTestedAt": "2026-05-07T09:42:19.756Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1664,7 +1678,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.720Z",
+      "lastTestedAt": "2026-05-07T09:42:19.736Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1678,7 +1692,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.590Z",
+      "lastTestedAt": "2026-05-07T09:42:19.615Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1692,7 +1706,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:06.362Z",
+      "lastTestedAt": "2026-05-07T09:42:20.347Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1706,7 +1720,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.478Z",
+      "lastTestedAt": "2026-05-07T09:42:19.505Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1720,7 +1734,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.950Z",
+      "lastTestedAt": "2026-05-07T09:42:30.578Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1734,7 +1748,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.019Z",
+      "lastTestedAt": "2026-05-07T09:42:23.192Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1748,7 +1762,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:06.828Z",
+      "lastTestedAt": "2026-05-07T09:42:20.814Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1762,7 +1776,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.283Z",
+      "lastTestedAt": "2026-05-07T09:42:21.345Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1776,7 +1790,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:06.899Z",
+      "lastTestedAt": "2026-05-07T09:42:20.892Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1790,7 +1804,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.023Z",
+      "lastTestedAt": "2026-05-07T09:42:21.054Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1804,7 +1818,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.161Z",
+      "lastTestedAt": "2026-05-07T09:42:21.224Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1818,7 +1832,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.402Z",
+      "lastTestedAt": "2026-05-07T09:42:27.788Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1832,7 +1846,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.524Z",
+      "lastTestedAt": "2026-05-07T09:42:27.915Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1846,7 +1860,21 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.652Z",
+      "lastTestedAt": "2026-05-07T09:42:28.047Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen2:gen2_035_spino:035-E01",
+      "packId": "ward-gen2",
+      "cardId": "gen2_035_spino",
+      "cardName": "Spino",
+      "effectId": "035-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T09:42:32.213Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1860,7 +1888,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.322Z",
+      "lastTestedAt": "2026-05-07T09:42:24.538Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1874,7 +1902,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.904Z",
+      "lastTestedAt": "2026-05-07T09:42:24.132Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1888,7 +1916,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.968Z",
+      "lastTestedAt": "2026-05-07T09:42:26.283Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1902,7 +1930,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.109Z",
+      "lastTestedAt": "2026-05-07T09:42:33.093Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1916,7 +1944,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.397Z",
+      "lastTestedAt": "2026-05-07T09:42:21.473Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1930,7 +1958,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.019Z",
+      "lastTestedAt": "2026-05-07T09:42:22.123Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1944,7 +1972,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.723Z",
+      "lastTestedAt": "2026-05-07T09:42:27.043Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1958,7 +1986,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:09.688Z",
+      "lastTestedAt": "2026-05-07T09:42:23.878Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1972,7 +2000,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.102Z",
+      "lastTestedAt": "2026-05-07T09:42:28.537Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -1986,7 +2014,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.599Z",
+      "lastTestedAt": "2026-05-07T09:42:29.053Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2000,7 +2028,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.167Z",
+      "lastTestedAt": "2026-05-07T09:42:27.540Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2042,7 +2070,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:20.043Z",
+      "lastTestedAt": "2026-05-07T09:42:35.163Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2056,7 +2084,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.092Z",
+      "lastTestedAt": "2026-05-07T09:42:34.139Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2070,7 +2098,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.482Z",
+      "lastTestedAt": "2026-05-07T09:42:28.927Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2084,7 +2112,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:17.392Z",
+      "lastTestedAt": "2026-05-07T09:42:32.309Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2098,7 +2126,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.873Z",
+      "lastTestedAt": "2026-05-07T09:42:33.905Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2112,7 +2140,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.327Z",
+      "lastTestedAt": "2026-05-07T09:42:29.883Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2126,7 +2154,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.449Z",
+      "lastTestedAt": "2026-05-07T09:42:30.018Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2140,7 +2168,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.973Z",
+      "lastTestedAt": "2026-05-07T09:42:27.341Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2154,7 +2182,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.400Z",
+      "lastTestedAt": "2026-05-07T09:42:25.683Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2168,7 +2196,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.630Z",
+      "lastTestedAt": "2026-05-07T09:42:25.944Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2182,7 +2210,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.021Z",
+      "lastTestedAt": "2026-05-07T09:42:19.002Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2210,7 +2238,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.103Z",
+      "lastTestedAt": "2026-05-07T09:42:30.742Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2224,7 +2252,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.385Z",
+      "lastTestedAt": "2026-05-07T09:42:18.354Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2238,7 +2266,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:10.200Z",
+      "lastTestedAt": "2026-05-07T09:42:24.412Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2252,7 +2280,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.608Z",
+      "lastTestedAt": "2026-05-07T09:42:26.911Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2266,7 +2294,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.237Z",
+      "lastTestedAt": "2026-05-07T09:42:33.222Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2280,7 +2308,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.345Z",
+      "lastTestedAt": "2026-05-07T09:42:34.415Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2294,7 +2322,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.737Z",
+      "lastTestedAt": "2026-05-07T09:42:28.139Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2308,7 +2336,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.709Z",
+      "lastTestedAt": "2026-05-07T09:42:28.105Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2322,7 +2350,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.665Z",
+      "lastTestedAt": "2026-05-07T09:42:26.969Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2336,7 +2364,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:06.236Z",
+      "lastTestedAt": "2026-05-07T09:42:20.222Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2350,7 +2378,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.515Z",
+      "lastTestedAt": "2026-05-07T09:42:31.287Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2364,7 +2392,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:05.361Z",
+      "lastTestedAt": "2026-05-07T09:42:19.389Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2378,7 +2406,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.761Z",
+      "lastTestedAt": "2026-05-07T09:42:21.857Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2392,7 +2420,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.642Z",
+      "lastTestedAt": "2026-05-07T09:42:30.228Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2406,7 +2434,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:15.218Z",
+      "lastTestedAt": "2026-05-07T09:42:29.764Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2420,7 +2448,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.360Z",
+      "lastTestedAt": "2026-05-07T09:42:33.347Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2434,7 +2462,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:08.289Z",
+      "lastTestedAt": "2026-05-07T09:42:22.397Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2448,7 +2476,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.362Z",
+      "lastTestedAt": "2026-05-07T09:42:31.002Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2462,7 +2490,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.477Z",
+      "lastTestedAt": "2026-05-07T09:42:18.444Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2476,7 +2504,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.602Z",
+      "lastTestedAt": "2026-05-07T09:42:18.576Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2490,7 +2518,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.255Z",
+      "lastTestedAt": "2026-05-07T09:42:30.887Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2504,7 +2532,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.846Z",
+      "lastTestedAt": "2026-05-07T09:42:34.983Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2518,7 +2546,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.918Z",
+      "lastTestedAt": "2026-05-07T09:42:35.057Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2532,7 +2560,21 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.471Z",
+      "lastTestedAt": "2026-05-07T09:42:34.549Z",
+      "testedBy": "Headless Engine QA"
+    },
+    {
+      "key": "ward-gen3:gen3_050_adam_bomb:050-E01",
+      "packId": "ward-gen3",
+      "cardId": "gen3_050_adam_bomb",
+      "cardName": "Adam Bomb",
+      "effectId": "050-E01",
+      "trigger": "ON_PLAY",
+      "actionType": "DESTROY_ALL_MAGIC",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T09:42:17.778Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2546,7 +2588,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.019Z",
+      "lastTestedAt": "2026-05-07T09:42:17.958Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2574,7 +2616,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:19.024Z",
+      "lastTestedAt": "2026-05-07T09:42:34.065Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2588,7 +2630,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.970Z",
+      "lastTestedAt": "2026-05-07T09:42:31.781Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2602,7 +2644,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.659Z",
+      "lastTestedAt": "2026-05-07T09:42:18.635Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2616,7 +2658,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:11.177Z",
+      "lastTestedAt": "2026-05-07T09:42:25.443Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2630,7 +2672,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.574Z",
+      "lastTestedAt": "2026-05-07T09:42:33.568Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2644,7 +2686,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:12.849Z",
+      "lastTestedAt": "2026-05-07T09:42:27.203Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2658,7 +2700,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:16.486Z",
+      "lastTestedAt": "2026-05-07T09:42:31.253Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2672,7 +2714,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:07.889Z",
+      "lastTestedAt": "2026-05-07T09:42:21.990Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2686,7 +2728,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.371Z",
+      "lastTestedAt": "2026-05-07T09:42:28.810Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2700,7 +2742,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.351Z",
+      "lastTestedAt": "2026-05-07T09:42:28.789Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2714,7 +2756,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:13.991Z",
+      "lastTestedAt": "2026-05-07T09:42:28.422Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2728,7 +2770,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:17.519Z",
+      "lastTestedAt": "2026-05-07T09:42:32.440Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2742,7 +2784,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:17.293Z",
+      "lastTestedAt": "2026-05-07T09:42:32.102Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2756,7 +2798,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:04.775Z",
+      "lastTestedAt": "2026-05-07T09:42:18.754Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2770,7 +2812,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:18.696Z",
+      "lastTestedAt": "2026-05-07T09:42:33.704Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2784,7 +2826,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:06.763Z",
+      "lastTestedAt": "2026-05-07T09:42:20.748Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -2798,7 +2840,7 @@
       "status": "WORKING",
       "issueType": "NONE",
       "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
-      "lastTestedAt": "2026-05-07T09:27:14.721Z",
+      "lastTestedAt": "2026-05-07T09:42:29.187Z",
       "testedBy": "Headless Engine QA"
     }
   ]

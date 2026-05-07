@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_035_spino",
+  "effectId": "035-E01",
+  "title": "Spino doubles damage to water target",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_035_spino",
+      "cardName": "Spino",
+      "cardType": "CREATURE",
+      "cardNumber": "035",
+      "generation": "2",
+      "rawText": "This creature inflicts 2x Atk damage to any creature in or near water."
+    },
+    "effect": {
+      "effectId": "035-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Creature in or near water",
+      "value": "2x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Spino doubles damage to water target",
+    "summary": "Verify Spino doubles attack damage against a water-associated creature.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": ["gen2_035_spino"],
+      "player2Cards": ["gen2_095_water_eleotoid"],
+      "forcedRolls": [
+        { "kind": "HIT_ROLL", "dice": [6, 5], "label": "Spino hits water target" },
+        { "kind": "ATTACK_DAMAGE_ROLL", "dice": [1, 1], "label": "Spino base damage 7" }
+      ],
+      "notes": ["Use Water Eleotoid as the water-named target for the environmental predicate."]
+    },
+    "steps": [
+      "Set Spino as player_1 primary and Water Eleotoid as player_2 primary.",
+      "Resolve hit and damage calculation.",
+      "Observe final damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Multiplier trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Final damage is doubled",
+        "path": "battle.lastDamage.amount",
+        "operator": "equals",
+        "value": 14
+      },
+      {
+        "label": "Water target HP reduced by 14",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 14
+      }
+    ],
+    "manualVerification": ["Confirm non-water targets are not doubled in a separate variant."],
+    "riskNotes": ["This fixture uses the target card name as the water cue."],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Spino's water-target damage multiplier."
+    },
+    "regression": {
+      "fixtureName": "spino-doubles-damage-to-water-target",
+      "tags": ["creature", "combat", "damage-multiplier", "water"]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

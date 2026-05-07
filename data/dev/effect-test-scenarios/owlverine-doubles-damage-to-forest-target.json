@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_078_owlverine",
+  "effectId": "078-E01",
+  "title": "Owlverine doubles damage to forest target",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_078_owlverine",
+      "cardName": "Owlverine",
+      "cardType": "CREATURE",
+      "cardNumber": "078",
+      "generation": "1",
+      "rawText": "This card inflicts 2x Atk damage to any creature in a forest."
+    },
+    "effect": {
+      "effectId": "078-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "target": "Target creature in forest",
+      "value": "2x Atk damage",
+      "durationText": "Current battle",
+      "reusableFunction": "applyConditionalDamageMultiplier"
+    },
+    "title": "Owlverine doubles damage to forest target",
+    "summary": "Verify Owlverine doubles attack damage against a forest-associated creature.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": ["gen1_078_owlverine"],
+      "player2Cards": ["gen1_137_forest_demon"],
+      "forcedRolls": [
+        { "kind": "HIT_ROLL", "dice": [6, 5], "label": "Owlverine hits forest target" },
+        { "kind": "ATTACK_DAMAGE_ROLL", "dice": [2], "label": "Owlverine base damage 7" }
+      ],
+      "notes": ["Use Forest Demon as the forest-named target for the environmental predicate."]
+    },
+    "steps": [
+      "Set Owlverine as player_1 primary and Forest Demon as player_2 primary.",
+      "Resolve hit and damage calculation.",
+      "Observe final damage dealt."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Multiplier trace exists",
+        "path": "battle.debugTrace",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Final damage is doubled",
+        "path": "battle.lastDamage.amount",
+        "operator": "equals",
+        "value": 14
+      },
+      {
+        "label": "Forest target HP reduced by 14",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 14
+      }
+    ],
+    "manualVerification": ["Confirm non-forest targets are not doubled in a separate variant."],
+    "riskNotes": ["This fixture uses the target card name as the forest cue."],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Owlverine's forest-target damage multiplier."
+    },
+    "regression": {
+      "fixtureName": "owlverine-doubles-damage-to-forest-target",
+      "tags": ["creature", "combat", "damage-multiplier", "forest"]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
