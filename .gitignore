@@ -23,6 +23,7 @@ yarn-debug.log*
 
 # generated/local game state
 data/matches/*.json
+data/users/
 
 # OS/editor
 .DS_Store

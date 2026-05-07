@@ -13,6 +13,7 @@ const QA_PASSWORD = process.env[`WARD_${PASSWORD_ENV_KEY}_QA_PASSWORD`]?.trim() 
   process.env[`WARD_GEN${QA_GENERATION}_QA_PASSWORD`]?.trim() ||
   `Ward${QA_LABEL.replace(/[^A-Za-z0-9]+/g, "")}QA!2026`;
 const DECK_COUNT = Number(process.env.WARD_QA_DECK_COUNT?.trim() || "10");
+const CLEANUP_ONLY = process.env.WARD_QA_CLEANUP_ONLY?.trim() === "1";
 const WAIT_TIMEOUT_MS = 12_000;
 
 const DECK_PAIRS = Array.from({ length: Math.ceil(DECK_COUNT / 2) }, (_item, index) => {
@@ -101,6 +102,7 @@ type LobbyPlayer = {
 type LobbyState = {
   id: string;
   name: string;
+  status?: "OPEN" | "IN_MATCH" | "CLOSED";
   matchId?: string;
   players: LobbyPlayer[];
 };
@@ -113,6 +115,7 @@ type DeckSummary = {
 type ClientState = {
   match?: MatchState;
   lobby?: LobbyState;
+  lobbies?: LobbyState[];
   decks?: DeckSummary[];
   errors: string[];
 };
@@ -192,6 +195,9 @@ function connectClient(label: string, cookie: string): SmokeClient {
   });
   socket.on("lobby:updated", lobby => {
     state.lobby = lobby as LobbyState;
+  });
+  socket.on("lobby:list", lobbies => {
+    state.lobbies = lobbies as LobbyState[];
   });
   socket.on("deck:details", decks => {
     state.decks = decks as DeckSummary[];
@@ -360,6 +366,30 @@ async function undoAndWait(
   });
   throwClientErrors(client);
   return match;
+}
+
+async function requestLobbyList(client: SmokeClient): Promise<LobbyState[]> {
+  client.state.lobbies = undefined;
+  client.socket.emit("lobby:list");
+  return waitFor("lobby list", () => client.state.lobbies);
+}
+
+async function cleanupQaLobbies(alpha: SmokeClient, bravo: SmokeClient): Promise<number> {
+  const lobbyNamePrefix = `${QA_LABEL} QA Sweep`;
+  const lobbies = await requestLobbyList(alpha);
+  const staleQaLobbies = lobbies.filter(lobby =>
+    lobby.status !== "CLOSED" &&
+    lobby.name.startsWith(lobbyNamePrefix)
+  );
+
+  for (const lobby of staleQaLobbies) {
+    alpha.socket.emit("lobby:leave", lobby.id);
+    bravo.socket.emit("lobby:leave", lobby.id);
+    await delay(75);
+    throwClientErrors(alpha, bravo);
+  }
+
+  return staleQaLobbies.length;
 }
 
 async function drawAndEnsureCreature(
@@ -740,6 +770,15 @@ async function main(): Promise<void> {
 
   try {
     await waitFor("both sockets", () => alpha.socket.connected && bravo.socket.connected);
+    const preCleaned = await cleanupQaLobbies(alpha, bravo);
+    if (preCleaned > 0) {
+      console.log(`Closed ${preCleaned} stale ${QA_LABEL} QA lobby/lobbies before smoke run.`);
+    }
+    if (CLEANUP_ONLY) {
+      console.log(`Cleanup-only mode finished for ${QA_LABEL}.`);
+      return;
+    }
+
     await waitFor(
       "all QA deck details",
       () => DECK_PAIRS.flat().every((deckId, index) => {
@@ -786,6 +825,11 @@ async function main(): Promise<void> {
       coveredCards: coveredCardIds.size,
       totalUndoChecks
     }, null, 2));
+
+    const postCleaned = await cleanupQaLobbies(alpha, bravo);
+    if (postCleaned > 0) {
+      console.log(`Closed ${postCleaned} ${QA_LABEL} QA lobby/lobbies after smoke run.`);
+    }
   } finally {
     alpha.socket.close();
     bravo.socket.close();

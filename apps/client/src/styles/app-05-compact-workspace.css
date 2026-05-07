@@ -107,6 +107,100 @@
   min-height: 0;
 }
 
+.play-view-toolbar {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 12px;
+  background: rgba(16, 16, 20, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+}
+
+.play-view-toolbar > div:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.play-view-toolbar strong {
+  color: #f8fafc;
+  font-size: 15px;
+}
+
+.segmented-control {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 10px;
+  display: inline-flex;
+  overflow: hidden;
+  flex: 0 0 auto;
+  background: #101014;
+}
+
+.segmented-control button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #cbd5e1;
+  min-height: 36px;
+  padding: 8px 14px;
+}
+
+.segmented-control button:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.segmented-control button.active {
+  background: #facc15;
+  color: #111827;
+}
+
+.match-workspace-board {
+  display: block;
+}
+
+.match-workspace-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.match-workspace-text {
+  display: block;
+}
+
+.text-engine-view {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.match-workspace-split .text-engine-view {
+  max-height: calc(100vh - 230px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.text-engine-player-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+  min-width: 0;
+}
+
+.text-engine-player-grid .player-card,
+.text-engine-view > .card {
+  max-height: none;
+  overflow: visible;
+}
+
+.board-engine-alert {
+  margin-top: 12px;
+}
+
 .duel-board-view {
   position: relative;
   display: grid;
@@ -149,7 +243,7 @@
 
 .duel-player-row .player-card {
   min-width: 0;
-  max-height: min(40vh, 440px);
+  max-height: min(46vh, 520px);
   overflow: auto;
   margin-bottom: 0;
   border-radius: 10px;
@@ -254,6 +348,87 @@
 .duel-phase-core small {
   color: #cbd5e1;
   font-size: 12px;
+}
+
+.board-mode-player-card {
+  display: grid;
+  gap: 12px;
+}
+
+.duel-board-view .player-playmat {
+  margin: 0;
+}
+
+.board-command-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 10px;
+}
+
+.board-command-panel,
+.board-live-zone {
+  min-width: 0;
+}
+
+.board-command-panel .player-summary-card,
+.board-command-panel .zone-box,
+.board-live-zone .zone-box,
+.board-live-zone .available-effects-panel {
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(16, 16, 20, 0.72);
+  margin: 0;
+}
+
+.board-live-zones {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.1fr) repeat(2, minmax(230px, 0.7fr));
+  gap: 10px;
+  align-items: start;
+}
+
+.board-live-zone-hand {
+  grid-row: span 2;
+}
+
+.board-live-zone .zone-box h3,
+.board-command-panel .zone-box h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.board-live-zone .hand-list,
+.board-live-zone .magic-slot-list,
+.board-live-zone .limited-summon-list {
+  max-height: 250px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.board-live-zone-hand .hand-list {
+  max-height: 390px;
+}
+
+.board-live-zone .mini-card {
+  border-radius: 8px;
+  padding: 9px;
+}
+
+.board-live-zone .mini-card strong,
+.board-live-zone .mini-card span,
+.board-live-zone .magic-text,
+.board-command-panel .mini-card span {
+  overflow-wrap: anywhere;
+}
+
+.board-live-zone .mini-card button,
+.board-command-panel .mini-card button,
+.board-command-panel .player-summary-card button {
+  padding: 7px 9px;
+}
+
+.board-live-zone .available-effect-row,
+.board-live-zone .revealed-hand-panel {
+  min-width: 0;
 }
 
 .match-board-grid {
@@ -545,7 +720,10 @@
 
   .duel-player-row,
   .duel-player-row-near,
-  .duel-center-lane {
+  .duel-center-lane,
+  .match-workspace-split,
+  .board-command-grid,
+  .board-live-zones {
     grid-template-columns: 1fr;
   }
 
@@ -569,11 +747,28 @@
     max-height: none;
     overflow: visible;
   }
+
+  .match-workspace-split .text-engine-view {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
 }
 
 @media (max-width: 700px) {
   .app-shell {
     padding: 10px;
+  }
+
+  .play-view-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .segmented-control {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
   }
 
   .compact-match-control-card {

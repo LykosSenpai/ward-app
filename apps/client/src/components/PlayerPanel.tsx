@@ -531,6 +531,48 @@ export function PlayerPanel({
     />
   );
 
+  const handPanel = (
+    <HandZone
+      match={match}
+      player={player}
+      discardRequiredForThisPlayer={discardRequiredForThisPlayer}
+      canPlayPrimaryNow={canPlayPrimaryNow}
+      canPlayMagicNow={canPlayMagicNow}
+      canPlayLightningResponse={canPlayLightningResponse}
+      canPlayBattleResponse={canPlayBattleResponse}
+      selectedSacrificesByCard={selectedSacrificesByCard}
+      onDiscardFromHand={discardFromHand}
+      onToggleSacrifice={toggleSacrifice}
+      onPlayPrimary={playPrimary}
+      onPlayMagic={playMagic}
+      onPlayLightningResponse={playLightningResponse}
+      onPlayBattleResponse={playBattleResponse}
+    />
+  );
+
+  const limitedSummonsPanel = (
+    <LimitedSummonsZone
+      match={match}
+      player={player}
+      canPromoteToPrimary={canPromoteLimitedSummonToPrimary}
+      onPromoteToPrimary={promoteLimitedSummonToPrimary}
+    />
+  );
+
+  const magicSlotsPanel = (
+    <MagicSlotsZone
+      match={match}
+      player={player}
+      anyDiscardRequired={anyDiscardRequired}
+      onAttachEquipMagic={attachEquipMagic}
+      onDestroyMagic={destroyMagic}
+    />
+  );
+
+  const cemeteryPanel = (
+    <CemeteryZone match={match} player={player} />
+  );
+
   const zoneAccordion = (
     <div className="player-zone-accordion">
       <ZoneDetails
@@ -538,22 +580,7 @@ export function PlayerPanel({
         badge={`${player.hand.length} cards`}
         defaultOpen={handShouldOpen}
       >
-        <HandZone
-          match={match}
-          player={player}
-          discardRequiredForThisPlayer={discardRequiredForThisPlayer}
-          canPlayPrimaryNow={canPlayPrimaryNow}
-          canPlayMagicNow={canPlayMagicNow}
-          canPlayLightningResponse={canPlayLightningResponse}
-          canPlayBattleResponse={canPlayBattleResponse}
-          selectedSacrificesByCard={selectedSacrificesByCard}
-          onDiscardFromHand={discardFromHand}
-          onToggleSacrifice={toggleSacrifice}
-          onPlayPrimary={playPrimary}
-          onPlayMagic={playMagic}
-          onPlayLightningResponse={playLightningResponse}
-          onPlayBattleResponse={playBattleResponse}
-        />
+        {handPanel}
       </ZoneDetails>
 
       <ZoneDetails
@@ -561,12 +588,7 @@ export function PlayerPanel({
         badge={`${player.field.limitedSummons.length}/4`}
         defaultOpen={player.field.limitedSummons.length > 0}
       >
-        <LimitedSummonsZone
-          match={match}
-          player={player}
-          canPromoteToPrimary={canPromoteLimitedSummonToPrimary}
-          onPromoteToPrimary={promoteLimitedSummonToPrimary}
-        />
+        {limitedSummonsPanel}
       </ZoneDetails>
 
       <ZoneDetails
@@ -574,20 +596,14 @@ export function PlayerPanel({
         badge={`${player.field.magicSlots.length}/5`}
         defaultOpen={player.field.magicSlots.length > 0}
       >
-        <MagicSlotsZone
-          match={match}
-          player={player}
-          anyDiscardRequired={anyDiscardRequired}
-          onAttachEquipMagic={attachEquipMagic}
-          onDestroyMagic={destroyMagic}
-        />
+        {magicSlotsPanel}
       </ZoneDetails>
 
       <ZoneDetails
         title="Cemetery"
         badge={`${player.cemetery.length} cards / ${player.cemeteryCreatureHpTotal} HP`}
       >
-        <CemeteryZone match={match} player={player} />
+        {cemeteryPanel}
       </ZoneDetails>
     </div>
   );
@@ -597,26 +613,23 @@ export function PlayerPanel({
       <div className={isActivePlayer ? "card player-card active-player-card board-mode-player-card" : "card player-card board-mode-player-card"}>
         {playmatPanel}
 
-        <div className="player-zone-accordion board-mode-accordion">
-          <ZoneDetails
-            title="Player Status & Controls"
-            badge={isActivePlayer ? "Active" : `${player.hand.length} hand`}
-            defaultOpen={isActivePlayer || discardRequiredForThisPlayer || replacementRequiredForThisPlayer}
-          >
+        <div className="board-command-grid">
+          <div className="board-command-panel">
             {summaryPanel}
-          </ZoneDetails>
+          </div>
 
-          <ZoneDetails
-            title="Primary Details"
-            badge={player.field.primaryCreature ? getCardName(match, player.field.primaryCreature) : "Empty"}
-            defaultOpen={false}
-          >
+          <div className="board-command-panel">
             {primaryPanel}
-          </ZoneDetails>
+          </div>
         </div>
 
-        {effectsPanel}
-        {zoneAccordion}
+        <div className="board-live-zones">
+          <div className="board-live-zone board-live-zone-hand">{handPanel}</div>
+          <div className="board-live-zone">{magicSlotsPanel}</div>
+          <div className="board-live-zone">{limitedSummonsPanel}</div>
+          {effectsPanel && <div className="board-live-zone">{effectsPanel}</div>}
+          <div className="board-live-zone">{cemeteryPanel}</div>
+        </div>
       </div>
     );
   }

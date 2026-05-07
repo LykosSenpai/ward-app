@@ -20,6 +20,7 @@ import { MatchLobbyPanel } from "./components/MatchLobbyPanel";
 import { CompactMatchControlPanel } from "./components/CompactMatchControlPanel";
 import { MatchStatePanel } from "./components/MatchStatePanel";
 import { CardBoardView } from "./components/CardBoardView";
+import { PlayerPanel } from "./components/PlayerPanel";
 import { ProfilePage } from "./components/ProfilePage";
 import { SaveLoadPanel } from "./components/SaveLoadPanel";
 import { TargetPromptCard } from "./components/TargetPromptCard";
@@ -57,6 +58,7 @@ import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests";
+type PlayViewMode = "board" | "split" | "text";
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests"]);
 
@@ -119,6 +121,7 @@ export default function App() {
   >({});
   const [dashboardModal, setDashboardModal] = useState<DashboardModal>(null);
   const [activePage, setActivePage] = useState<AppPage>("play");
+  const [playViewMode, setPlayViewMode] = useState<PlayViewMode>("board");
   const [effectDevFocusedCardKey, setEffectDevFocusedCardKey] = useState("");
   const [effectCoverageFocusedCardKey, setEffectCoverageFocusedCardKey] = useState("");
   const [llmStatus, setLlmStatus] = useState<LlmServiceStatus | undefined>();
@@ -1478,6 +1481,9 @@ export default function App() {
         ...match.players.filter(player => player.id !== controlledPlayerId)
       ]
     : match?.players ?? [];
+  const showBoardView = playViewMode !== "text";
+  const showTextEngineView = playViewMode !== "board";
+  const shouldShowMagicChainPanel = !!match && (!match.pendingBattle || !!match.pendingChain) && (showTextEngineView || !!match.pendingChain);
 
   if (!authChecked) {
     return (
@@ -1739,29 +1745,107 @@ export default function App() {
               onOpenEffectDebug={canUseDevTools ? () => setDashboardModal("effect-debug") : undefined}
             />
 
-            {!match.pendingBattle && (
-              <MagicChainCard
-                match={match}
-                onResolve={resolveMagicChain}
-                onUndo={undoLastAction}
-                onPassPriority={passMagicChainPriority}
-              />
-            )}
+            <section className="play-view-toolbar" aria-label="Play table view mode">
+              <div>
+                <span className="label">Table View</span>
+                <strong>
+                  {playViewMode === "board"
+                    ? "Board Only"
+                    : playViewMode === "split"
+                      ? "Board + Text Engine"
+                      : "Text Engine"}
+                </strong>
+              </div>
 
-            {canUseDevTools && (
-              <DevTestControlsPanel
-                match={match}
-                onForceRolls={forceDevRolls}
-                onClearForcedRolls={clearForcedDevRolls}
-              />
-            )}
+              <div className="segmented-control">
+                <button
+                  type="button"
+                  className={playViewMode === "board" ? "active" : undefined}
+                  onClick={() => setPlayViewMode("board")}
+                >
+                  Board
+                </button>
+                <button
+                  type="button"
+                  className={playViewMode === "split" ? "active" : undefined}
+                  onClick={() => setPlayViewMode("split")}
+                >
+                  Split
+                </button>
+                <button
+                  type="button"
+                  className={playViewMode === "text" ? "active" : undefined}
+                  onClick={() => setPlayViewMode("text")}
+                >
+                  Text
+                </button>
+              </div>
+            </section>
 
-            <section className="match-workspace">
-              <CardBoardView
-                match={match}
-                players={displayedPlayers}
-                controlledPlayerId={controlledPlayerId}
-              />
+            <section className={`match-workspace match-workspace-${playViewMode}`}>
+              {showBoardView && (
+                <CardBoardView
+                  match={match}
+                  players={displayedPlayers}
+                  controlledPlayerId={controlledPlayerId}
+                />
+              )}
+
+              {showTextEngineView && (
+                <section className="text-engine-view" aria-label="Text engine">
+                  <MatchStatePanel
+                    match={match}
+                    advanceBlockReason={advanceBlockReason}
+                    controlledPlayerId={controlledPlayerId}
+                    onShuffleAllDecks={shuffleAllDecks}
+                    onUndoLastAction={undoLastAction}
+                    onDrawActivePlayer={drawActivePlayer}
+                    onBattlePrimaryCreatures={battlePrimaryCreatures}
+                    onAdvancePhase={advancePhase}
+                  />
+
+                  {shouldShowMagicChainPanel && (
+                    <MagicChainCard
+                      match={match}
+                      onResolve={resolveMagicChain}
+                      onUndo={undoLastAction}
+                      onPassPriority={passMagicChainPriority}
+                    />
+                  )}
+
+                  {canUseDevTools && (
+                    <DevTestControlsPanel
+                      match={match}
+                      onForceRolls={forceDevRolls}
+                      onClearForcedRolls={clearForcedDevRolls}
+                    />
+                  )}
+
+                  <div className="text-engine-player-grid">
+                    {displayedPlayers.map(player => (
+                      <PlayerPanel
+                        key={player.id}
+                        match={match}
+                        player={player}
+                        controlledPlayerId={controlledPlayerId}
+                      />
+                    ))}
+                  </div>
+
+                  <EventLogCard match={match} />
+                </section>
+              )}
+
+              {!showTextEngineView && shouldShowMagicChainPanel && (
+                <div className="board-engine-alert">
+                  <MagicChainCard
+                    match={match}
+                    onResolve={resolveMagicChain}
+                    onUndo={undoLastAction}
+                    onPassPriority={passMagicChainPriority}
+                  />
+                </div>
+              )}
             </section>
 
             {match.pendingBattle && !match.pendingChain && (
@@ -1783,15 +1867,6 @@ export default function App() {
                   onCancel={cancelManualBattle}
                 />
               </ModalPanel>
-            )}
-
-            {match.pendingBattle && match.pendingChain && (
-              <MagicChainCard
-                match={match}
-                onResolve={resolveMagicChain}
-                onUndo={undoLastAction}
-                onPassPriority={passMagicChainPriority}
-              />
             )}
 
             {match.pendingEffectRoll && (
