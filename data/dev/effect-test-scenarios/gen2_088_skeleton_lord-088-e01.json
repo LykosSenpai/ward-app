@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:17:22.390Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_088_skeleton_lord",
+  "effectId": "088-E01",
+  "title": "Skeleton Lord takes opponent cemetery creature as Limited Summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:17:22.390Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_088_skeleton_lord",
+      "cardName": "Skeleton Lord",
+      "cardType": "CREATURE",
+      "cardNumber": "088",
+      "generation": "2",
+      "rawText": "When summoned, take control of 1 of your opponent's creatures in their cemetery as your Limited Summon. Return it back to your opponent's cemetery if this creature leaves the field, changes control, or this effect is negated."
+    },
+    "effect": {
+      "effectId": "088-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "TAKE_CONTROL_AS_LIMITED_SUMMON",
+      "effectGroup": "Limited Summon/Control",
+      "target": "1 opponent creature in their cemetery",
+      "value": "Take control as your Limited Summon",
+      "durationText": "While source remains active",
+      "reusableFunction": "takeControlAsLimitedSummon"
+    },
+    "title": "Skeleton Lord takes opponent cemetery creature as Limited Summon",
+    "summary": "When summoned, verify Skeleton Lord takes control of an opponent cemetery creature as a Limited Summon.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_088_skeleton_lord"
+      ],
+      "player2Cards": [
+        "test_creature_defender",
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Move an opponent creature to cemetery before Skeleton Lord resolves.",
+        "When summoned, take control of 1 of your opponent's creatures in their cemetery as your Limited Summon. Return it back to your opponent's cemetery if this creature leaves the field, changes control, or this effect is negated."
+      ]
+    },
+    "steps": [
+      "Summon Skeleton Lord.",
+      "Select opponent cemetery creature.",
+      "Summon it under player_1 as a Limited Summon."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "088-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "TAKE_CONTROL_AS_LIMITED_SUMMON"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: When summoned, take control of 1 of your opponent's creatures in their cemetery as your Limited Summon. Return it back to your opponent's cemetery if this creature leaves the field, changes control, or this effect is negated."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_088_skeleton_lord-088-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_088_skeleton_lord-088-e01",
+      "tags": [
+        "CREATURE",
+        "ON_SUMMON",
+        "TAKE_CONTROL_AS_LIMITED_SUMMON"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_088_skeleton_lord:088-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

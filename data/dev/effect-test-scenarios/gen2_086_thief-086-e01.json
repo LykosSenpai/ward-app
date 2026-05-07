@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:17:22.390Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_086_thief",
+  "effectId": "086-E01",
+  "title": "Thief steals opponent equip on summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:17:22.390Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_086_thief",
+      "cardName": "Thief",
+      "cardType": "CREATURE",
+      "cardNumber": "086",
+      "generation": "2",
+      "rawText": "When summoned, steal 1 equip card from your opponent's side of the field and equip it to this card. Send the stolen card to its original owner's cemetery if this card leaves the field, changes control, or this effect is negated."
+    },
+    "effect": {
+      "effectId": "086-E01",
+      "trigger": "ON_SUMMON",
+      "actionType": "STEAL_EQUIP_CARD",
+      "effectGroup": "Control/Equip Steal",
+      "target": "1 opponent equip card",
+      "value": "Steal and equip to this card",
+      "durationText": "While source remains active",
+      "reusableFunction": "stealEquipCard"
+    },
+    "title": "Thief steals opponent equip on summon",
+    "summary": "When summoned, verify Thief steals one equip card from opponent field and equips it to itself.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_086_thief"
+      ],
+      "player2Cards": [
+        "test_creature_defender",
+        "gen2_073_metallic_bone"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Opponent has an equip card on field for Thief to steal.",
+        "When summoned, steal 1 equip card from your opponent's side of the field and equip it to this card. Send the stolen card to its original owner's cemetery if this card leaves the field, changes control, or this effect is negated."
+      ]
+    },
+    "steps": [
+      "Summon Thief.",
+      "Steal one opponent equip card.",
+      "Equip it to Thief."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "086-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "STEAL_EQUIP_CARD"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: When summoned, steal 1 equip card from your opponent's side of the field and equip it to this card. Send the stolen card to its original owner's cemetery if this card leaves the field, changes control, or this effect is negated."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_086_thief-086-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_086_thief-086-e01",
+      "tags": [
+        "CREATURE",
+        "ON_SUMMON",
+        "STEAL_EQUIP_CARD"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_086_thief:086-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

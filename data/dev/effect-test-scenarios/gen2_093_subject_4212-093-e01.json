@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:17:22.390Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_093_subject_4212",
+  "effectId": "093-E01",
+  "title": "Subject #4212 accepts Pumpkin Man as two sacrifices",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:17:22.390Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_093_subject_4212",
+      "cardName": "Subject #4212",
+      "cardType": "CREATURE",
+      "cardNumber": "093",
+      "generation": "2",
+      "rawText": "If \"Pumpkin Man\" is used as a sacrifice, it counts as 2 sacrifices for this card."
+    },
+    "effect": {
+      "effectId": "093-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "APPLY_SACRIFICE_VALUE",
+      "effectGroup": "Sacrifice Value",
+      "target": "Pumpkin Man used for this card",
+      "value": "Counts as 2 sacrifices",
+      "durationText": "Before summon",
+      "reusableFunction": "applySacrificeValue"
+    },
+    "title": "Subject #4212 accepts Pumpkin Man as two sacrifices",
+    "summary": "Verify Pumpkin Man counts as two sacrifices for Subject #4212 summon requirement.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_093_subject_4212",
+        "gen1_087_pumpkin_man"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Use Pumpkin Man as sacrifice for Subject #4212.",
+        "If \"Pumpkin Man\" is used as a sacrifice, it counts as 2 sacrifices for this card."
+      ]
+    },
+    "steps": [
+      "Validate Subject #4212 sacrifice requirement.",
+      "Represent Pumpkin Man as two sacrifices."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "093-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_SACRIFICE_VALUE"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: If \"Pumpkin Man\" is used as a sacrifice, it counts as 2 sacrifices for this card."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_093_subject_4212-093-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_093_subject_4212-093-e01",
+      "tags": [
+        "CREATURE",
+        "SUMMON_REQUIREMENT",
+        "APPLY_SACRIFICE_VALUE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_093_subject_4212:093-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

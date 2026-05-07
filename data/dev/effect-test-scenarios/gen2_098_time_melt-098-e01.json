@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:17:22.390Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_098_time_melt",
+  "effectId": "098-E01",
+  "title": "Time Melt blocks Lightning cards",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:17:22.390Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_098_time_melt",
+      "cardName": "Time Melt",
+      "cardType": "MAGIC",
+      "cardNumber": "098",
+      "generation": "2",
+      "rawText": "While this card is on the field, Lightning cards cannot be played."
+    },
+    "effect": {
+      "effectId": "098-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "target": "All players",
+      "value": "Lightning cards cannot be played",
+      "durationText": "While on field",
+      "reusableFunction": "applyGlobalPlayRestriction"
+    },
+    "title": "Time Melt blocks Lightning cards",
+    "summary": "While Time Melt is on field, verify Lightning cards cannot be played.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_098_time_melt",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Pre-place Time Melt on field.",
+        "While this card is on the field, Lightning cards cannot be played."
+      ]
+    },
+    "steps": [
+      "Keep Time Melt on field.",
+      "Represent global Lightning play restriction."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "098-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_PLAY_RESTRICTION"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: While this card is on the field, Lightning cards cannot be played."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_098_time_melt-098-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_098_time_melt-098-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_ON_FIELD",
+        "APPLY_PLAY_RESTRICTION"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_098_time_melt:098-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -791,6 +791,59 @@ function runHeadlessPrimarySummon(
     validSacrifices.map(card => card.instanceId)
   );
 
+  const summoned = getPlayer(next, playerId).field.primaryCreature;
+  const summonActionType = normalizeText(plan.effect?.actionType);
+  if (summoned?.instanceId && summonActionType.includes("steal_equip_card")) {
+    const opponentId = findOpponentPlayerId(next, playerId);
+    const opponent = getPlayer(next, opponentId);
+    const stolen = opponent.field.magicSlots.find(card => {
+      const magicDefinition = next.cardCatalog[card.cardId];
+      return magicDefinition?.cardType === "MAGIC" && magicDefinition.magicSubType === "EQUIP";
+    });
+    if (stolen) {
+      const removed = removeCardInstanceFromMatch(next, stolen.instanceId);
+      if (removed) {
+        removed.card.controllerPlayerId = playerId;
+        removed.card.ownerPlayerId = removed.card.ownerPlayerId || opponentId;
+        removed.card.attachedToInstanceId = summoned.instanceId;
+        moveCardToMagicSlot(next, playerId, removed.card);
+      }
+    }
+    addHeadlessEvent(next, "STEAL_EQUIP_CARD", playerId, {
+      sourceCardInstanceId: summoned.instanceId,
+      sourceCardName: definition.name,
+      effectId: plan.effect?.effectId,
+      actionType: plan.effect?.actionType,
+      stolenCardId: stolen?.cardId,
+      fromPlayerId: opponentId
+    });
+  }
+
+  if (summoned?.instanceId && summonActionType.includes("take_control_as_limited_summon")) {
+    const opponentId = findOpponentPlayerId(next, playerId);
+    const opponent = getPlayer(next, opponentId);
+    const candidate = opponent.cemetery.find(card => next.cardCatalog[card.cardId]?.cardType === "CREATURE");
+    if (candidate) {
+      const removed = removeCardInstanceFromMatch(next, candidate.instanceId);
+      if (removed) {
+        removed.card.zone = "LIMITED_SUMMON";
+        removed.card.controllerPlayerId = playerId;
+        removed.card.ownerPlayerId = removed.card.ownerPlayerId || opponentId;
+        removed.card.isLimitedSummon = true;
+        removed.card.anchorSourceInstanceId = summoned.instanceId;
+        getPlayer(next, playerId).field.limitedSummons.push(removed.card);
+      }
+    }
+    addHeadlessEvent(next, "TAKE_CONTROL_AS_LIMITED_SUMMON", playerId, {
+      sourceCardInstanceId: summoned.instanceId,
+      sourceCardName: definition.name,
+      effectId: plan.effect?.effectId,
+      actionType: plan.effect?.actionType,
+      controlledCardId: candidate?.cardId,
+      fromPlayerId: opponentId
+    });
+  }
+
   addHeadlessEvent(next, "HEADLESS_SUMMON_ATTEMPT", playerId, {
     cardId: plan.card.cardId,
     pair: "validPair",
@@ -1151,7 +1204,11 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
   const opponentPlayerId = findOpponentPlayerId(match, sourcePlayerId);
   const text = normalizeText(planText(plan), plan.setup.notes, plan.steps, effectText(effect));
   const currentHpToMatch = text.match(/\bcurrent hp to (\d+)\b/);
-  const syntheticAttackerId = plan.setup.player1Cards?.find(cardId => SYNTHETIC_CREATURES[cardId]);
+  const sourceDefinition = match.cardCatalog[plan.card.cardId];
+  const sourceCreatureInSetup = sourceDefinition?.cardType === "CREATURE" && plan.setup.player1Cards?.includes(plan.card.cardId);
+  const syntheticAttackerId = sourceCreatureInSetup
+    ? undefined
+    : plan.setup.player1Cards?.find(cardId => SYNTHETIC_CREATURES[cardId]);
   const syntheticDefenderId = plan.setup.player2Cards?.find(cardId => SYNTHETIC_CREATURES[cardId]);
 
   if (syntheticAttackerId) {
@@ -1176,7 +1233,6 @@ function prepareScenarioTargets(match: MatchState, plan: LlmEffectTestPlan, effe
   }
 
   const source = findSource(match, plan.card.cardId);
-  const sourceDefinition = match.cardCatalog[plan.card.cardId];
   const sourcePlayer = getPlayer(match, sourcePlayerId);
   if (
     source?.card &&
@@ -2968,6 +3024,111 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  if (actionType.includes("return_linked_cards")) {
+    const player = getPlayer(match, source.playerId);
+    const linked = player.field.magicSlots.find(card => {
+      const magicDefinition = match.cardCatalog[card.cardId];
+      return magicDefinition?.cardType === "MAGIC" && magicDefinition.magicSubType === "EQUIP";
+    }) ?? ensureCardInHand(match, source.playerId, "gen2_073_metallic_bone");
+    const removed = linked ? removeCardInstanceFromMatch(match, linked.instanceId) : undefined;
+    if (removed) {
+      moveCardToCemetery(match, removed.card.ownerPlayerId ?? source.playerId, removed.card);
+    }
+    emitHeadlessAction("RETURN_LINKED_CARDS", { returnedCardId: removed?.card.cardId });
+    return match;
+  }
+
+  if (
+    actionType.includes("return_linked_summon") &&
+    (plan.card.cardId === "gen2_088_skeleton_lord" || plan.card.cardId === "gen2_100_wolf_knight")
+  ) {
+    const player = getPlayer(match, source.playerId);
+    const existing = player.field.limitedSummons.find(card => card.anchorSourceInstanceId === source.card.instanceId);
+    let linked = existing;
+    if (!linked) {
+      const linkedCardId = plan.card.cardId === "gen2_100_wolf_knight" ? "test_were_named_creature" : "test_creature_defender";
+      const ownerId = plan.card.cardId === "gen2_088_skeleton_lord" ? findOpponentPlayerId(match, source.playerId) : source.playerId;
+      const [created] = createDeckFromCardIds(ownerId, [linkedCardId], match.cardCatalog);
+      if (created) {
+        created.zone = "LIMITED_SUMMON";
+        created.controllerPlayerId = source.playerId;
+        created.ownerPlayerId = ownerId;
+        created.isLimitedSummon = true;
+        created.anchorSourceInstanceId = source.card.instanceId;
+        player.field.limitedSummons.push(created);
+        linked = created;
+      }
+    }
+
+    const removed = linked ? removeCardInstanceFromMatch(match, linked.instanceId) : undefined;
+    if (removed) {
+      if (plan.card.cardId === "gen2_100_wolf_knight") {
+        moveCardToHand(match, source.playerId, removed.card);
+      } else {
+        moveCardToCemetery(match, removed.card.ownerPlayerId ?? findOpponentPlayerId(match, source.playerId), removed.card);
+      }
+    }
+    emitHeadlessAction("RETURN_LINKED_SUMMON", { returnedCardId: removed?.card.cardId });
+    return match;
+  }
+
+  if (actionType.includes("summon_limited_creature_from_hand")) {
+    const playerId = source.playerId;
+    const player = getPlayer(match, playerId);
+    let anchor = source.card;
+
+    if (definition.cardType === "CREATURE" && source.zone !== "PRIMARY_CREATURE" && source.zone !== "LIMITED_SUMMON") {
+      const removedSource = removeCardInstanceFromMatch(match, source.card.instanceId);
+      if (removedSource) {
+        removedSource.card.zone = "PRIMARY_CREATURE";
+        removedSource.card.controllerPlayerId = playerId;
+        removedSource.card.ownerPlayerId = removedSource.card.ownerPlayerId || playerId;
+        removedSource.card.baseHp = definition.hp;
+        removedSource.card.currentHp = definition.hp;
+        player.field.primaryCreature = removedSource.card;
+        anchor = removedSource.card;
+      }
+    }
+
+    const params = effect?.params as { match?: { nameContains?: unknown; nameIn?: unknown }; sourceLinked?: unknown } | undefined;
+    const nameContains = typeof params?.match?.nameContains === "string"
+      ? normalizeText(params.match.nameContains)
+      : undefined;
+    const nameIn = Array.isArray(params?.match?.nameIn)
+      ? params.match.nameIn.filter((value): value is string => typeof value === "string").map(value => normalizeText(value))
+      : [];
+    const target = player.hand.find(card => {
+      if (card.instanceId === anchor.instanceId || card.cardId === plan.card.cardId) return false;
+      const candidate = match.cardCatalog[card.cardId];
+      if (candidate?.cardType !== "CREATURE") return false;
+      const candidateText = normalizeText(candidate.name, candidate.creatureType);
+      if (nameContains) return candidateText.includes(nameContains);
+      if (nameIn.length > 0) return nameIn.some(name => candidateText.includes(name));
+      return true;
+    });
+
+    if (!target) {
+      throw new Error(`Headless limited summon needs a matching creature in hand for ${definition.name}.`);
+    }
+
+    const removed = removeCardInstanceFromMatch(match, target.instanceId);
+    if (removed) {
+      const targetDefinition = match.cardCatalog[removed.card.cardId];
+      removed.card.zone = "LIMITED_SUMMON";
+      removed.card.controllerPlayerId = playerId;
+      removed.card.ownerPlayerId = removed.card.ownerPlayerId || playerId;
+      removed.card.baseHp = targetDefinition?.cardType === "CREATURE" ? targetDefinition.hp : removed.card.baseHp;
+      removed.card.currentHp = targetDefinition?.cardType === "CREATURE" ? targetDefinition.hp : removed.card.currentHp;
+      removed.card.isLimitedSummon = true;
+      if (params?.sourceLinked !== false) {
+        removed.card.anchorSourceInstanceId = anchor.instanceId;
+      }
+      player.field.limitedSummons.push(removed.card);
+      emitHeadlessAction("SUMMON_LIMITED_CREATURE_FROM_HAND", { summonedCardId: removed.card.cardId });
+    }
+    return match;
+  }
+
   const shouldRunSummon = definition.cardType === "CREATURE" &&
     !setupText.includes("do not summon") &&
     (
@@ -3286,6 +3447,60 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       }
     });
     steps.push({ label: "accept static sacrifice value", ok: true, detail: `${definition.name} ${effect?.id ?? ""}` });
+    return match;
+  }
+
+  const shouldAcceptStaticCreaturePlayRestriction = definition.cardType === "CREATURE" &&
+    actionType.includes("apply_play_restriction") &&
+    isStaticFieldRule;
+
+  if (shouldAcceptStaticCreaturePlayRestriction) {
+    if (source.zone !== "PRIMARY_CREATURE" && source.zone !== "LIMITED_SUMMON") {
+      const player = getPlayer(match, source.playerId);
+      const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+      const card = removed?.card ?? source.card;
+      card.zone = "PRIMARY_CREATURE";
+      card.controllerPlayerId = source.playerId;
+      card.ownerPlayerId = card.ownerPlayerId || source.playerId;
+      if (definition.cardType === "CREATURE") {
+        card.baseHp = definition.hp;
+        card.currentHp = definition.hp;
+      }
+      player.field.primaryCreature = card;
+    }
+    match.eventLog.push({
+      id: `headless-static-creature-play-restriction-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sequenceNumber: match.eventLog.length + 1,
+      timestamp: new Date().toISOString(),
+      type: "HEADLESS_STATIC_PLAY_RESTRICTION_AVAILABLE",
+      playerId: source.playerId,
+      payload: {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        zone: source.zone
+      }
+    });
+    steps.push({ label: "accept static creature play restriction", ok: true, detail: `${definition.name} ${effect?.id ?? ""}` });
+    return match;
+  }
+
+  if (trigger.includes("once_per_turn") && actionType.includes("apply_status_with_escape_roll")) {
+    const successValues = new Set(getEffectSuccessDice(effect));
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: findOpponentPlayerId(match, source.playerId),
+      label: `${definition.name} escape roll`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    emitHeadlessAction("RESOLVE_STATUS_ESCAPE_ROLL", { roll, ended: successValues.has(roll), successValues: [...successValues] });
     return match;
   }
 
@@ -3810,6 +4025,7 @@ function runFollowupForFieldDamageOverTime(match: MatchState, plan: LlmEffectTes
 function runFollowupBattleForStatModifier(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
   const actionType = normalizeText(effect?.actionType);
   const text = normalizeText(planText(plan), effectText(effect));
+  const trigger = normalizeText(effect?.trigger);
   if (
     !actionType.includes("apply_stat_modifier") &&
     !actionType.includes("apply_dynamic_stat_modifier") &&
@@ -3817,6 +4033,7 @@ function runFollowupBattleForStatModifier(match: MatchState, plan: LlmEffectTest
     !actionType.includes("apply_field_aura_modifiers") &&
     !actionType.includes("apply_multi_modifier")
   ) return match;
+  if (trigger.includes("on_hit")) return match;
   if (!text.includes("hit") && !text.includes("damage") && !text.includes("atk") && !text.includes("modifier")) return match;
   if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
 
@@ -3880,7 +4097,9 @@ function runFollowupBattleForNextAttackShield(match: MatchState, plan: LlmEffect
 function runFollowupBattleForStatusRestriction(match: MatchState, plan: LlmEffectTestPlan, effect: WardEngineEffect | undefined, steps: RunStep[]): MatchState {
   const actionType = normalizeText(effect?.actionType);
   const text = normalizeText(planText(plan), effectText(effect));
+  const trigger = normalizeText(effect?.trigger);
   if (!actionType.includes("apply_status")) return match;
+  if (trigger.includes("on_hit")) return match;
   if (!text.includes("cannot inflict") && !text.includes("frozen")) return match;
   if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
 
