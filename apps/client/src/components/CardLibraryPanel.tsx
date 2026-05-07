@@ -11,12 +11,15 @@ type DeckMembershipFilter = "ALL" | "IN_DECK" | "NOT_IN_DECK";
 type OwnershipFilter = "ALL" | "OWNED" | "MISSING";
 type SortMode = "number" | "name" | "generation" | "deckCount" | "ownedCount" | "armorLevel" | "hp" | "speed";
 
+const FIXED_HOLO_INTENSITY = 10;
+
 type CardLibraryPanelProps = {
   cardLibrary: CardLibraryCardSummary[];
   selectedPackCount: number;
   deckBuilderName: string;
   deckBuilderId: string;
   deckBuilderCardIds: string[];
+  deckBuilderCardArtKeys: CardArtKey[];
   ownershipCounts: Record<string, number>;
   normalizeId: (value: string) => string;
   getDeckBuilderCounts: () => Record<string, number>;
@@ -26,9 +29,9 @@ type CardLibraryPanelProps = {
   onRefreshCardLibrary: () => void;
   onClearDeckBuilder: () => void;
   onNewDeck: () => void;
-  onAddCard: (cardId: string) => void;
-  onRemoveCard: (cardId: string) => void;
-  onSetCardCopies: (cardId: string, copyCount: number) => void;
+  onAddCard: (cardId: string, artKey?: CardArtKey) => void;
+  onRemoveCard: (cardId: string, artKey?: CardArtKey) => void;
+  onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
 };
@@ -80,6 +83,7 @@ export function CardLibraryPanel({
   deckBuilderName,
   deckBuilderId,
   deckBuilderCardIds,
+  deckBuilderCardArtKeys,
   ownershipCounts,
   normalizeId,
   getDeckBuilderCounts,
@@ -105,7 +109,7 @@ export function CardLibraryPanel({
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>("ALL");
   const [sortMode, setSortMode] = useState<SortMode>("number");
   const [selectedArtKeysByCardId, setSelectedArtKeysByCardId] = useState<Record<string, CardArtKey>>({});
-  const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
+  const [draggedCard, setDraggedCard] = useState<{ cardId: string; artKey: CardArtKey } | null>(null);
   const [deckDropActive, setDeckDropActive] = useState(false);
   const [deckShareString, setDeckShareString] = useState("");
   const [deckImportString, setDeckImportString] = useState("");
@@ -135,14 +139,35 @@ export function CardLibraryPanel({
   );
 
   const deckCards = useMemo(() => {
-    return Object.entries(deckCounts)
-      .map(([cardId, count]) => ({
+    const variantCounts = deckBuilderCardIds.reduce<Record<string, { cardId: string; artKey: CardArtKey; count: number }>>(
+      (result, cardId, index) => {
+        const artKey = deckBuilderCardArtKeys[index] ?? "default";
+        const key = `${cardId}__${artKey}`;
+        const existing = result[key];
+
+        if (existing) {
+          existing.count += 1;
+        } else {
+          result[key] = { cardId, artKey, count: 1 };
+        }
+
+        return result;
+      },
+      {}
+    );
+
+    return Object.values(variantCounts)
+      .map(({ cardId, artKey, count }) => ({
         cardId,
+        artKey,
         count,
         card: cardLibrary.find(item => item.id === cardId)
       }))
-      .sort((a, b) => (a.card?.name ?? a.cardId).localeCompare(b.card?.name ?? b.cardId));
-  }, [cardLibrary, deckCounts]);
+      .sort((a, b) =>
+        (a.card?.name ?? a.cardId).localeCompare(b.card?.name ?? b.cardId) ||
+        getCardArtLabel(a.artKey).localeCompare(getCardArtLabel(b.artKey))
+      );
+  }, [cardLibrary, deckBuilderCardArtKeys, deckBuilderCardIds]);
 
   const deckStats = useMemo(() => {
     const creatureCards = deckBuilderCardIds
@@ -191,7 +216,8 @@ export function CardLibraryPanel({
     if (deckStats.creatureCount < 8) warnings.push("Recommended minimum is 8 creatures.");
     if (deckStats.creatureCount > 12) warnings.push("Recommended maximum is 12 creatures.");
 
-    for (const { card, cardId, count } of deckCards) {
+    for (const [cardId, count] of Object.entries(deckCounts)) {
+      const card = cardLibrary.find(item => item.id === cardId);
       const deckLimit = card?.deckLimit ?? 3;
       const ownedCount = getTotalOwnedCopiesForCard(cardId);
 
@@ -201,7 +227,7 @@ export function CardLibraryPanel({
     }
 
     return warnings;
-  }, [deckCards, deckStats.creatureCount, deckStats.total, ownershipCounts, selectedArtKeysByCardId]);
+  }, [cardLibrary, deckCounts, deckStats.creatureCount, deckStats.total, ownershipCounts, selectedArtKeysByCardId]);
 
   const filteredCards = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
@@ -254,8 +280,8 @@ export function CardLibraryPanel({
     setSortMode("number");
   }
 
-  function setDeckCopiesFromInput(cardId: string, value: string) {
-    onSetCardCopies(cardId, sanitizeCopies(value));
+  function setDeckCopiesFromInput(cardId: string, value: string, artKey: CardArtKey = "default") {
+    onSetCardCopies(cardId, sanitizeCopies(value), artKey);
   }
 
   function getSelectedArtKey(cardId: string): CardArtKey {
@@ -300,20 +326,21 @@ export function CardLibraryPanel({
     return !!card && deckLimit > 0 && deckCount < deckLimit && deckBuilderCardIds.length < 30;
   }
 
-  function handleCardDragStart(event: DragEvent<HTMLElement>, cardId: string) {
+  function handleCardDragStart(event: DragEvent<HTMLElement>, cardId: string, artKey: CardArtKey) {
     if (!getCanAddCardToDeck(cardId)) {
       event.preventDefault();
       return;
     }
 
-    setDraggedCardId(cardId);
+    setDraggedCard({ cardId, artKey });
     event.dataTransfer.effectAllowed = "copy";
     event.dataTransfer.setData("text/plain", cardId);
     event.dataTransfer.setData("application/x-ward-card-id", cardId);
+    event.dataTransfer.setData("application/x-ward-card-art-key", artKey);
   }
 
   function handleDeckDragOver(event: DragEvent<HTMLElement>) {
-    const cardId = draggedCardId || event.dataTransfer.getData("application/x-ward-card-id") || event.dataTransfer.getData("text/plain");
+    const cardId = draggedCard?.cardId || event.dataTransfer.getData("application/x-ward-card-id") || event.dataTransfer.getData("text/plain");
 
     if (!cardId || !getCanAddCardToDeck(cardId)) return;
     event.preventDefault();
@@ -324,11 +351,12 @@ export function CardLibraryPanel({
   function handleDeckDrop(event: DragEvent<HTMLElement>) {
     event.preventDefault();
 
-    const cardId = event.dataTransfer.getData("application/x-ward-card-id") || event.dataTransfer.getData("text/plain") || draggedCardId;
+    const cardId = event.dataTransfer.getData("application/x-ward-card-id") || event.dataTransfer.getData("text/plain") || draggedCard?.cardId;
+    const artKey = (event.dataTransfer.getData("application/x-ward-card-art-key") || draggedCard?.artKey || "default") as CardArtKey;
     setDeckDropActive(false);
-    setDraggedCardId(null);
+    setDraggedCard(null);
 
-    if (cardId && getCanAddCardToDeck(cardId)) onAddCard(cardId);
+    if (cardId && getCanAddCardToDeck(cardId)) onAddCard(cardId, artKey);
   }
 
   async function copyCurrentDeckString() {
@@ -340,7 +368,8 @@ export function CardLibraryPanel({
     const value = encodeWardDeckString({
       name: deckBuilderName,
       deckId: normalizeId(deckBuilderId),
-      cardIds: deckBuilderCardIds
+      cardIds: deckBuilderCardIds,
+      cardArtKeys: deckBuilderCardArtKeys
     });
 
     setDeckShareString(value);
@@ -357,18 +386,22 @@ export function CardLibraryPanel({
     try {
       const payload = decodeWardDeckString(deckImportString);
       const unknownCards = payload.cardIds.filter(cardId => !cardLibrary.some(card => card.id === cardId));
+      const artKeys = payload.cardArtKeys ?? Array.from({ length: payload.cardIds.length }, () => "default");
 
       if (payload.name) onDeckNameChange(payload.name);
       if (payload.deckId) onDeckIdChange(normalizeId(payload.deckId));
       onClearDeckBuilder();
 
-      const counts = payload.cardIds.reduce<Record<string, number>>((result, cardId) => {
-        result[cardId] = (result[cardId] ?? 0) + 1;
+      const counts = payload.cardIds.reduce<Record<string, { cardId: string; artKey: CardArtKey; count: number }>>((result, cardId, index) => {
+        const artKey = (artKeys[index] === "holo" || artKeys[index] === "zero-art" ? artKeys[index] : "default") as CardArtKey;
+        const key = `${cardId}__${artKey}`;
+        result[key] = result[key] ?? { cardId, artKey, count: 0 };
+        result[key].count += 1;
         return result;
       }, {});
 
-      for (const [cardId, count] of Object.entries(counts)) {
-        onSetCardCopies(cardId, count);
+      for (const { cardId, artKey, count } of Object.values(counts)) {
+        onSetCardCopies(cardId, count, artKey);
       }
 
       setDeckShareMessage(
@@ -390,12 +423,14 @@ export function CardLibraryPanel({
     const deckString = encodeWardDeckString({
       name: deckBuilderName,
       deckId: normalizeId(deckBuilderId),
-      cardIds: deckBuilderCardIds
+      cardIds: deckBuilderCardIds,
+      cardArtKeys: deckBuilderCardArtKeys
     });
     const markdown = buildDeckNotesMarkdown({
       name: deckBuilderName || "WARD Deck",
       deckId: normalizeId(deckBuilderId),
       cardIds: deckBuilderCardIds,
+      cardArtKeys: deckBuilderCardArtKeys,
       cardLibrary,
       sourceLabel: "Regular Deck Builder",
       deckString
@@ -549,8 +584,10 @@ export function CardLibraryPanel({
 
         <section className="library-option-a-browser-panel">
           <div className="library-option-a-panel-header">
-            <h4>Cards</h4>
-            <span>Drag, double-click, or use + Deck</span>
+            <div>
+              <h4>Cards</h4>
+              <span>Drag, double-click, or use + Deck</span>
+            </div>
           </div>
 
           {cardLibrary.length === 0 ? (
@@ -572,12 +609,12 @@ export function CardLibraryPanel({
                     className={`library-card-entry unified-library-card-entry library-option-a-card-entry ${!canAdd ? "cannot-add" : ""}`}
                     draggable={canAdd}
                     key={`${card.packId}-${card.id}`}
-                    onDoubleClick={() => { if (canAdd) onAddCard(card.id); }}
+                    onDoubleClick={() => { if (canAdd) onAddCard(card.id, selectedArtKey); }}
                     onDragEnd={() => {
-                      setDraggedCardId(null);
+                      setDraggedCard(null);
                       setDeckDropActive(false);
                     }}
-                    onDragStart={event => handleCardDragStart(event, card.id)}
+                    onDragStart={event => handleCardDragStart(event, card.id, selectedArtKey)}
                     title={canAdd ? "Drag to Current Deck or double-click to add 1 copy." : "Deck limit, ban, or 30-card cap prevents adding this card."}
                   >
                     <div className="library-card-content-grid library-option-a-card-content">
@@ -585,6 +622,7 @@ export function CardLibraryPanel({
                         <CardImagePreview
                           card={card}
                           selectedArtKey={selectedArtKey}
+                          holoIntensity={FIXED_HOLO_INTENSITY}
                           onSelectedArtKeyChange={artKey => setSelectedArtKey(card.id, artKey)}
                         />
                       </div>
@@ -595,7 +633,7 @@ export function CardLibraryPanel({
                         <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
                         <button
                           className="library-option-a-mini-deck-add"
-                          onClick={() => onAddCard(card.id)}
+                          onClick={() => onAddCard(card.id, selectedArtKey)}
                           disabled={!canAdd}
                           title="Add 1 copy to the current deck. You can also drag or double-click this card."
                         >
@@ -686,45 +724,46 @@ export function CardLibraryPanel({
           </div>
 
           <div className="library-option-a-drop-hint">
-            {draggedCardId && getCanAddCardToDeck(draggedCardId) ? "Drop to add 1 copy" : "Drag cards here to add them"}
+            {draggedCard && getCanAddCardToDeck(draggedCard.cardId) ? `Drop to add 1 ${getCardArtLabel(draggedCard.artKey)} copy` : "Drag cards here to add them"}
           </div>
 
           {deckBuilderCardIds.length === 0 ? (
             <p className="empty-zone">No cards added yet.</p>
           ) : (
             <div className="builder-card-list current-deck-list unified-current-deck-list library-option-a-current-deck-list">
-              {deckCards.map(({ cardId, count, card }) => {
+              {deckCards.map(({ cardId, artKey, count, card }) => {
                 const deckLimit = card?.deckLimit ?? 3;
                 const ownedCount = getTotalOwnedCopiesForCard(cardId);
+                const artLabel = getCardArtLabel(artKey);
 
                 return (
-                  <div className="builder-card-entry current-deck-entry library-option-a-current-deck-entry visual-deck-stack-entry" key={cardId}>
+                  <div className="builder-card-entry current-deck-entry library-option-a-current-deck-entry visual-deck-stack-entry" key={`${cardId}-${artKey}`}>
                     <div className="visual-deck-card-stack">
                       {card ? <CardImageThumbnail card={card} className="visual-deck-card-image" /> : <span className="card-image-thumb missing visual-deck-card-image">{cardId.slice(0, 1)}</span>}
                       <span className="visual-deck-card-counter">{count}x</span>
                     </div>
 
                     <div className="visual-deck-card-copy">
-                      <strong>{card?.name ?? cardId}</strong>
+                      <strong>{card?.name ?? cardId} {artKey !== "default" ? `(${artLabel})` : ""}</strong>
                       <div className="event-meta">
-                        {card?.cardType ?? "UNKNOWN"} | {count}/{deckLimit} copies | Owned total: {ownedCount}
+                        {card?.cardType ?? "UNKNOWN"} | {artLabel} | {count}/{deckLimit} copies | Owned total: {ownedCount}
                       </div>
 
                       <div className="builder-card-actions compact-deck-actions library-option-a-current-deck-actions">
-                        <button onClick={() => onRemoveCard(cardId)} aria-label={`Remove one ${card?.name ?? cardId}`}>-</button>
+                        <button onClick={() => onRemoveCard(cardId, artKey)} aria-label={`Remove one ${artLabel} ${card?.name ?? cardId}`}>-</button>
                         <input
                           value={count}
-                          onChange={event => setDeckCopiesFromInput(cardId, event.target.value)}
-                          aria-label={`${card?.name ?? cardId} copies`}
+                          onChange={event => setDeckCopiesFromInput(cardId, event.target.value, artKey)}
+                          aria-label={`${card?.name ?? cardId} ${artLabel} copies`}
                         />
                         <button
-                          onClick={() => onAddCard(cardId)}
+                          onClick={() => onAddCard(cardId, artKey)}
                           disabled={count >= deckLimit || deckBuilderCardIds.length >= 30 || deckLimit <= 0}
-                          aria-label={`Add one ${card?.name ?? cardId}`}
+                          aria-label={`Add one ${artLabel} ${card?.name ?? cardId}`}
                         >
                           +
                         </button>
-                        <button onClick={() => onSetCardCopies(cardId, 0)}>Remove</button>
+                        <button onClick={() => onSetCardCopies(cardId, 0, artKey)}>Remove</button>
                       </div>
                     </div>
                   </div>

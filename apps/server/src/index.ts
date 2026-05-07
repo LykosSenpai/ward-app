@@ -67,7 +67,6 @@ import {
   deleteMatchFromDisk,
   listCardLibraryForPacks,
   listDefaultCardLibrary,
-  loadCardOwnershipMap,
   loadEffectRuntimeTestStatusMap,
   saveEffectRuntimeTestStatusRecord,
   saveEffectRuntimeTestStatusRecords,
@@ -78,7 +77,6 @@ import {
   loadDeckList,
   loadMatchFromDisk,
   saveDeckListToDisk,
-  setCardOwnershipCount,
   updateCardEffectsInPack,
   saveMatchToDisk,
   validateDataFileId
@@ -98,18 +96,52 @@ import { saveLlmPhase4VerificationReport } from "./llm/phase4Reports.js";
 import { runLlmHeadlessEffectTest } from "./llm/headlessEffectRunner.js";
 import type { EffectRuntimeTestStatusRecord } from "./dataStore.js";
 import type { LlmDirectEffectSmokeTestResult, LlmEffectResultReview, LlmEffectTestPlan } from "./llm/types.js";
+import { sessionMiddleware } from "./auth/session.js";
+import type { AuthUser } from "./auth/session.js";
+import { createUser, verifyUserLogin } from "./auth/userStore.js";
+import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 
 const app = express();
 
-app.use(cors());
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
+const LOCAL_CLIENT_ORIGIN_PATTERN = /^http:\/\/(?:localhost|127\.0\.0\.1):\d+$/;
+
+function isAllowedClientOrigin(origin?: string): boolean {
+  if (!origin) return true;
+  if (origin === CLIENT_ORIGIN) return true;
+  return process.env.NODE_ENV !== "production" && LOCAL_CLIENT_ORIGIN_PATTERN.test(origin);
+}
+
+app.use(cors({
+  origin(origin, callback) {
+    callback(null, isAllowedClientOrigin(origin));
+  },
+  credentials: true
+}));
 app.use(express.json());
+app.use(sessionMiddleware);
 
 const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
 
 const MAX_UNDO_STEPS = 25;
+
+function getSocketUser(socket: { request: unknown }): AuthUser | null {
+  const request = socket.request as { session?: { user?: AuthUser } };
+  return request.session?.user ?? null;
+}
+
+function requireSocketUser(socket: { request: unknown }): AuthUser {
+  const user = getSocketUser(socket);
+
+  if (!user) {
+    throw new Error("Login required.");
+  }
+
+  return user;
+}
 
 
 
@@ -260,6 +292,19 @@ function normalizeBulkDeckCardIds(cardIds: string[], label: string): string[] {
   }
 
   return normalized;
+}
+
+function normalizeDeckCardArtKeys(cardArtKeys: string[] | undefined, cardCount: number): string[] | undefined {
+  if (!Array.isArray(cardArtKeys)) {
+    return undefined;
+  }
+
+  const normalized = Array.from({ length: cardCount }, (_, index) => {
+    const artKey = String(cardArtKeys[index] ?? "default").trim();
+    return artKey === "holo" || artKey === "zero-art" ? artKey : "default";
+  });
+
+  return normalized.some(artKey => artKey !== "default") ? normalized : undefined;
 }
 
 function prepareLlmBulkDeckPlayer(match: MatchState, playerId: string): void {
@@ -737,17 +782,75 @@ app.get("/health", (_req, res) => {
   });
 });
 
+app.get("/api/auth/me", (req, res) => {
+  res.json({
+    user: req.session.user ?? null
+  });
+});
+
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const user = await createUser({
+      username: String(req.body?.username ?? ""),
+      email: String(req.body?.email ?? ""),
+      password: String(req.body?.password ?? ""),
+      displayName: String(req.body?.displayName ?? "")
+    });
+
+    req.session.user = user;
+    res.status(201).json({ user });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to register."
+    });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const user = await verifyUserLogin({
+      login: String(req.body?.login ?? req.body?.username ?? ""),
+      password: String(req.body?.password ?? "")
+    });
+
+    req.session.user = user;
+    res.json({ user });
+  } catch (error) {
+    res.status(401).json({
+      message: error instanceof Error ? error.message : "Unable to login."
+    });
+  }
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  req.session.destroy(error => {
+    if (error) {
+      res.status(500).json({ message: "Unable to logout." });
+      return;
+    }
+
+    res.clearCookie("ward.sid");
+    res.json({ ok: true });
+  });
+});
+
 const httpServer = http.createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173",
+    origin(origin, callback) {
+      callback(null, isAllowedClientOrigin(origin));
+    },
+    credentials: true,
     methods: ["GET", "POST"]
   }
 });
 
-io.on("connection", socket => {
+io.engine.use(sessionMiddleware);
+
+io.on("connection", async socket => {
   console.log(`Client connected: ${socket.id}`);
+  const connectedUser = getSocketUser(socket);
 
   socket.emit("server:welcome", {
     message: "Connected to WARD server",
@@ -757,14 +860,15 @@ io.on("connection", socket => {
   socket.emit("match:savedList", listSavedMatches());
   socket.emit("setup:options", listSetupOptions());
   socket.emit("cards:library", listDefaultCardLibrary());
-  socket.emit("collection:ownership", loadCardOwnershipMap());
+  socket.emit("collection:ownership", connectedUser ? await loadUserCardOwnershipMap(connectedUser.id) : {});
   socket.emit("deck:details", listSetupOptions().decks.map(deckSummary => {
     const deck = loadDeckList(deckSummary.id);
 
     return {
       id: deck.id,
       name: deck.name,
-      cardIds: deck.cardIds
+      cardIds: deck.cardIds,
+      cardArtKeys: deck.cardArtKeys
     };
   }));
 
@@ -1804,11 +1908,12 @@ io.on("connection", socket => {
       }
     }
   );
-  socket.on("setup:listOptions", () => {
+  socket.on("setup:listOptions", async () => {
     try {
+      const user = getSocketUser(socket);
       socket.emit("setup:options", listSetupOptions());
       socket.emit("cards:library", listDefaultCardLibrary());
-      socket.emit("collection:ownership", loadCardOwnershipMap());
+      socket.emit("collection:ownership", user ? await loadUserCardOwnershipMap(user.id) : {});
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -1824,7 +1929,8 @@ io.on("connection", socket => {
         return {
           id: deck.id,
           name: deck.name,
-          cardIds: deck.cardIds
+          cardIds: deck.cardIds,
+          cardArtKeys: deck.cardArtKeys
         };
       });
 
@@ -1849,9 +1955,10 @@ io.on("connection", socket => {
     }
   });
 
-  socket.on("collection:listOwnership", () => {
+  socket.on("collection:listOwnership", async () => {
     try {
-      socket.emit("collection:ownership", loadCardOwnershipMap());
+      const user = getSocketUser(socket);
+      socket.emit("collection:ownership", user ? await loadUserCardOwnershipMap(user.id) : {});
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -1861,10 +1968,15 @@ io.on("connection", socket => {
 
   socket.on(
     "collection:setCardOwnership",
-    (data: { cardId: string; ownedCount: number }) => {
+    async (data: { cardId: string; ownedCount: number }) => {
       try {
-        const ownershipMap = setCardOwnershipCount(data.cardId, data.ownedCount);
-        io.emit("collection:ownership", ownershipMap);
+        const user = requireSocketUser(socket);
+        const ownershipMap = await setUserCardOwnershipCount({
+          userId: user.id,
+          ownershipKey: data.cardId,
+          ownedCount: data.ownedCount
+        });
+        socket.emit("collection:ownership", ownershipMap);
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -2650,6 +2762,7 @@ io.on("connection", socket => {
           id: deck.id,
           name: deck.name,
           cardIds: deck.cardIds,
+          cardArtKeys: deck.cardArtKeys,
           mode: data.mode === "clone" ? "clone" : "edit"
         });
       } catch (error) {
@@ -2666,6 +2779,7 @@ io.on("connection", socket => {
       name: string;
       packIds: string[];
       cardIds: string[];
+      cardArtKeys?: string[];
       overwrite?: boolean;
     }) => {
       try {
@@ -2677,7 +2791,8 @@ io.on("connection", socket => {
               deckId: data.deckId,
               name: data.name,
               packIds: data.packIds,
-              cardIds: data.cardIds
+              cardIds: data.cardIds,
+              cardArtKeys: data.cardArtKeys
             });
 
             return;
@@ -2711,7 +2826,8 @@ io.on("connection", socket => {
         const deck: DeckListDefinition = {
           id: data.deckId,
           name: data.name.trim(),
-          cardIds: data.cardIds
+          cardIds: data.cardIds,
+          cardArtKeys: normalizeDeckCardArtKeys(data.cardArtKeys, data.cardIds.length)
         };
 
         saveDeckListToDisk(deck);
@@ -2729,7 +2845,8 @@ io.on("connection", socket => {
           return {
             id: savedDeck.id,
             name: savedDeck.name,
-            cardIds: savedDeck.cardIds
+            cardIds: savedDeck.cardIds,
+            cardArtKeys: savedDeck.cardArtKeys
           };
         }));
       } catch (error) {
@@ -2763,7 +2880,8 @@ io.on("connection", socket => {
       return {
         id: deck.id,
         name: deck.name,
-        cardIds: deck.cardIds
+        cardIds: deck.cardIds,
+        cardArtKeys: deck.cardArtKeys
       };
     }));
   } catch (error) {

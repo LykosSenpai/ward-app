@@ -25,6 +25,107 @@
   background: rgba(255, 193, 7, 0.14);
 }
 
+.login-page {
+  align-items: center;
+  background:
+    radial-gradient(circle at 35% 20%, rgba(250, 204, 21, 0.18), transparent 32rem),
+    linear-gradient(rgba(2, 6, 23, 0.58), rgba(2, 6, 23, 0.72)),
+    #0b1522;
+  color: #f8fafc;
+  display: grid;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.login-panel {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.45rem;
+  background: rgba(7, 24, 39, 0.92);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.35);
+  display: grid;
+  gap: 1rem;
+  justify-self: center;
+  max-width: 360px;
+  padding: 1rem;
+  width: 100%;
+}
+
+.login-title {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.login-title span {
+  color: #facc15;
+  font-size: 0.8rem;
+  font-weight: 950;
+}
+
+.login-title h1 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.login-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.login-form label {
+  color: #cbd5e1;
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 850;
+  gap: 0.28rem;
+}
+
+.login-form input {
+  min-height: 2.15rem;
+}
+
+.login-error {
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 0.45rem;
+  background: rgba(127, 29, 29, 0.28);
+  color: #fecaca;
+  margin: 0;
+  padding: 0.55rem;
+}
+
+.login-mode-toggle {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #dbeafe;
+}
+
+.app-header-actions {
+  align-items: end;
+  display: grid;
+  gap: 0.45rem;
+  justify-items: end;
+}
+
+.account-pill {
+  align-items: center;
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.09);
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.25rem 0.35rem 0.25rem 0.65rem;
+}
+
+.account-pill span {
+  color: #fef3c7;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.account-pill button {
+  min-height: 1.55rem;
+  padding: 0.18rem 0.55rem;
+}
+
 .effect-dev-page {
   display: flex;
   flex-direction: column;

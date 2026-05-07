@@ -5,6 +5,12 @@ export type ServerWelcome = {
   socketId: string;
 };
 
+export type AuthUser = {
+  id: string;
+  username: string;
+  displayName: string;
+};
+
 export type SavedMatchSummary = {
   matchId: string;
   format: string;
@@ -32,6 +38,7 @@ export type DeckDetail = {
   id: string;
   name: string;
   cardIds: string[];
+  cardArtKeys?: string[];
 };
 
 export type SetupOptions = {

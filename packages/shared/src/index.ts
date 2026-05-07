@@ -505,6 +505,7 @@ export type DeckListDefinition = {
   id: string;
   name: string;
   cardIds: string[];
+  cardArtKeys?: string[];
 };
 
 export type RevealedCardInfo = {

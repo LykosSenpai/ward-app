@@ -911,6 +911,114 @@
   display: block;
 }
 
+.holo-card-wrap {
+  --holo-intensity: 0.45;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.holo-card-base-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.holo-rainbow-layer,
+.holo-shard-layer,
+.holo-facet-shine-layer,
+.holo-soft-band-layer,
+.holo-speckle-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.holo-rainbow-layer {
+  opacity: min(calc(var(--holo-intensity) * 0.055), 0.68);
+  mix-blend-mode: color-dodge;
+  background:
+    linear-gradient(115deg, rgba(45, 212, 191, 0.18), transparent 24%, rgba(244, 114, 182, 0.22) 42%, transparent 61%, rgba(250, 204, 21, 0.2) 78%, rgba(96, 165, 250, 0.18)),
+    linear-gradient(38deg, rgba(255, 255, 255, 0.16), transparent 18%, rgba(74, 222, 128, 0.18) 36%, transparent 58%, rgba(168, 85, 247, 0.2) 82%);
+}
+
+.holo-shard-layer {
+  opacity: min(calc(var(--holo-intensity) * 0.095), 0.92);
+  mix-blend-mode: screen;
+  filter: saturate(1.2);
+}
+
+.holo-facet-shine-layer {
+  opacity: min(calc(var(--holo-intensity) * 0.08), 0.85);
+  mix-blend-mode: color-dodge;
+  filter: brightness(1.55) saturate(1.85);
+}
+
+.holo-facet-shine {
+  --holo-facet-delay: 0s;
+  --holo-facet-duration: 6s;
+  --holo-facet-peak: 0.4;
+  opacity: 0;
+  animation: holo-facet-shimmer var(--holo-facet-duration) ease-in-out var(--holo-facet-delay) infinite;
+}
+
+.holo-soft-band-layer {
+  opacity: min(calc(var(--holo-intensity) * 0.04), 0.5);
+  mix-blend-mode: overlay;
+  background:
+    repeating-linear-gradient(72deg, transparent 0 11px, rgba(255, 255, 255, 0.18) 12px, transparent 15px),
+    radial-gradient(circle at 30% 25%, rgba(125, 249, 255, 0.28), transparent 28%),
+    radial-gradient(circle at 76% 70%, rgba(244, 114, 182, 0.25), transparent 30%);
+}
+
+.holo-speckle-layer {
+  opacity: min(calc(var(--holo-intensity) * 0.04), 0.52);
+  mix-blend-mode: screen;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.42) 0 0.6px, transparent 0.8px),
+    radial-gradient(circle, rgba(125, 249, 255, 0.34) 0 0.7px, transparent 0.9px),
+    radial-gradient(circle, rgba(244, 114, 182, 0.28) 0 0.7px, transparent 0.9px);
+  background-position: 0 0, 7px 11px, 17px 5px;
+  background-size: 19px 23px, 29px 31px, 37px 41px;
+}
+
+@keyframes holo-facet-shimmer {
+  0% {
+    opacity: 0;
+  }
+
+  42% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: var(--holo-facet-peak);
+  }
+
+  58% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-facet-shine {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 .expanded-card-image-wrap img {
   width: auto;
   height: auto;
@@ -918,6 +1026,20 @@
   max-height: min(470px, calc(100vh - 10rem));
   object-fit: contain;
   display: block;
+}
+
+.expanded-card-holo-image {
+  width: auto;
+  height: auto;
+  max-width: min(336px, calc(100vw - 5rem));
+  max-height: min(470px, calc(100vh - 10rem));
+}
+
+.expanded-card-holo-image .holo-card-base-image {
+  width: auto;
+  height: auto;
+  max-width: min(336px, calc(100vw - 5rem));
+  max-height: min(470px, calc(100vh - 10rem));
 }
 
 .card-image-placeholder {

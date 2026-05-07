@@ -31,6 +31,7 @@ const DEFAULT_SPEED_MODIFIERS: ManualBattleSpeedModifiers = {
 const DEFAULT_STRIKE_MODIFIERS: ManualBattleStrikeModifiers = {
   hitDiceDelta: 0,
   hitFlatBonus: 0,
+  hitRollMultiplier: 1,
   forceHitResult: "AUTO",
   damageDiceDelta: 0,
   damageFlatBonus: 0,
@@ -131,6 +132,7 @@ function normalizeStrikeModifiers(
     hitDiceDelta: Number(modifiers?.hitDiceDelta ?? DEFAULT_STRIKE_MODIFIERS.hitDiceDelta),
     hitDiceLimit: Number.isFinite(hitDiceLimitValue) && hitDiceLimitValue > 0 ? Math.trunc(hitDiceLimitValue) : undefined,
     hitFlatBonus: Number(modifiers?.hitFlatBonus ?? DEFAULT_STRIKE_MODIFIERS.hitFlatBonus),
+    hitRollMultiplier: Number(modifiers?.hitRollMultiplier ?? DEFAULT_STRIKE_MODIFIERS.hitRollMultiplier),
     forceHitResult:
       modifiers?.forceHitResult === "FORCE_HIT" || modifiers?.forceHitResult === "FORCE_MISS"
         ? modifiers.forceHitResult

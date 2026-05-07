@@ -7,6 +7,7 @@ export type WardDeckSharePayload = {
   name?: string;
   deckId?: string;
   cardIds: string[];
+  cardArtKeys?: string[];
   startingHandSize?: number;
   notes?: string;
 };
@@ -59,13 +60,34 @@ function normalizeImportedCardIds(cardIds: unknown): string[] {
   return result;
 }
 
+function normalizeImportedCardArtKeys(cardArtKeys: unknown, cardCount: number): string[] | undefined {
+  if (!Array.isArray(cardArtKeys)) {
+    return undefined;
+  }
+
+  const result = cardArtKeys
+    .slice(0, cardCount)
+    .map(artKey => String(artKey ?? "default").trim() || "default");
+
+  if (result.every(artKey => artKey === "default")) {
+    return undefined;
+  }
+
+  return [
+    ...result,
+    ...Array.from({ length: Math.max(0, cardCount - result.length) }, () => "default")
+  ];
+}
+
 export function encodeWardDeckString(payload: Omit<WardDeckSharePayload, "v" | "kind">): string {
+  const cardIds = normalizeImportedCardIds(payload.cardIds);
   const normalizedPayload: WardDeckSharePayload = {
     v: 1,
     kind: "WARD_DECK",
     name: payload.name?.trim() || undefined,
     deckId: payload.deckId?.trim() || undefined,
-    cardIds: normalizeImportedCardIds(payload.cardIds),
+    cardIds,
+    cardArtKeys: normalizeImportedCardArtKeys(payload.cardArtKeys, cardIds.length),
     startingHandSize: Number.isFinite(payload.startingHandSize)
       ? Math.max(0, Math.floor(payload.startingHandSize ?? 0))
       : undefined,
@@ -89,12 +111,15 @@ export function decodeWardDeckString(value: string): WardDeckSharePayload {
     throw new Error("Deck string is not a WARD deck string v1 payload.");
   }
 
+  const cardIds = normalizeImportedCardIds(parsed.cardIds);
+
   return {
     v: 1,
     kind: "WARD_DECK",
     name: parsed.name ? String(parsed.name) : undefined,
     deckId: parsed.deckId ? String(parsed.deckId) : undefined,
-    cardIds: normalizeImportedCardIds(parsed.cardIds),
+    cardIds,
+    cardArtKeys: normalizeImportedCardArtKeys(parsed.cardArtKeys, cardIds.length),
     startingHandSize: Number.isFinite(parsed.startingHandSize)
       ? Math.max(0, Math.floor(parsed.startingHandSize ?? 0))
       : undefined,
@@ -142,6 +167,7 @@ export function buildDeckNotesMarkdown(args: {
   name: string;
   deckId?: string;
   cardIds: string[];
+  cardArtKeys?: string[];
   cardLibrary: CardLibraryCardSummary[];
   sourceLabel: string;
   deckString?: string;
@@ -174,6 +200,7 @@ export function buildDeckNotesMarkdown(args: {
       name: args.name,
       deckId: args.deckId,
       cardIds: args.cardIds,
+      cardArtKeys: args.cardArtKeys,
       startingHandSize: args.startingHandSize
     }),
     "",

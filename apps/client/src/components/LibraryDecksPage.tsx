@@ -1,5 +1,6 @@
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { CardLibraryPanel } from "./CardLibraryPanel";
+import type { CardArtKey } from "./CardImagePreview";
 
 type LibraryDecksPageProps = {
   selectedPackCount: number;
@@ -7,6 +8,7 @@ type LibraryDecksPageProps = {
   deckBuilderName: string;
   deckBuilderId: string;
   deckBuilderCardIds: string[];
+  deckBuilderCardArtKeys: CardArtKey[];
   ownershipCounts: Record<string, number>;
   normalizeId: (value: string) => string;
   getDeckBuilderCounts: () => Record<string, number>;
@@ -16,9 +18,9 @@ type LibraryDecksPageProps = {
   onRefreshCardLibrary: () => void;
   onClearDeckBuilder: () => void;
   onNewDeck: () => void;
-  onAddCard: (cardId: string) => void;
-  onRemoveCard: (cardId: string) => void;
-  onSetCardCopies: (cardId: string, copyCount: number) => void;
+  onAddCard: (cardId: string, artKey?: CardArtKey) => void;
+  onRemoveCard: (cardId: string, artKey?: CardArtKey) => void;
+  onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
 };
@@ -29,6 +31,7 @@ export function LibraryDecksPage({
   deckBuilderName,
   deckBuilderId,
   deckBuilderCardIds,
+  deckBuilderCardArtKeys,
   ownershipCounts,
   normalizeId,
   getDeckBuilderCounts,
@@ -52,6 +55,7 @@ export function LibraryDecksPage({
         deckBuilderName={deckBuilderName}
         deckBuilderId={deckBuilderId}
         deckBuilderCardIds={deckBuilderCardIds}
+        deckBuilderCardArtKeys={deckBuilderCardArtKeys}
         ownershipCounts={ownershipCounts}
         normalizeId={normalizeId}
         getDeckBuilderCounts={getDeckBuilderCounts}

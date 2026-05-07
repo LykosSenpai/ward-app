@@ -11,6 +11,7 @@ import { EventLogCard } from "./components/EventLogCard";
 import { EffectRollModal } from "./components/EffectRollModal";
 import { LibraryDecksPage } from "./components/LibraryDecksPage";
 import { LlmEffectTestLabPage } from "./components/LlmEffectTestLabPage";
+import { LoginPage } from "./components/LoginPage";
 import { HandRevealPromptCard } from "./components/HandRevealPromptCard";
 import { MagicChainCard } from "./components/MagicChainCard";
 import { ManualEffectQueueCard } from "./components/ManualEffectQueueCard";
@@ -22,10 +23,12 @@ import { PlayerPanel } from "./components/PlayerPanel";
 import { SaveLoadPanel } from "./components/SaveLoadPanel";
 import { TargetPromptCard } from "./components/TargetPromptCard";
 import { ModalPanel } from "./components/ui/ModalPanel";
+import type { CardArtKey } from "./components/CardImagePreview";
 import { socket } from "./socket";
 import type { DevRollKind, WardEngineEffect } from "@ward/shared";
 import type {
   AppMatchState,
+  AuthUser,
   CardLibraryCardSummary,
   CardOwnershipMap,
   CardPackSummary,
@@ -63,6 +66,8 @@ type DashboardModal =
   | null;
 
 export default function App() {
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [serverMessage, setServerMessage] = useState("Connecting...");
   const [socketId, setSocketId] = useState("");
   const [match, setMatch] = useState<AppMatchState | null>(null);
@@ -81,6 +86,7 @@ export default function App() {
   const [deckBuilderName, setDeckBuilderName] = useState("New Test Deck");
   const [deckBuilderId, setDeckBuilderId] = useState("new-test-deck");
   const [deckBuilderCardIds, setDeckBuilderCardIds] = useState<string[]>([]);
+  const [deckBuilderCardArtKeys, setDeckBuilderCardArtKeys] = useState<CardArtKey[]>([]);
   const [manualEffectAmounts, setManualEffectAmounts] = useState<Record<string, string>>({});
   const [manualEffectStats, setManualEffectStats] = useState<Record<string, ManualEffectStatKey>>({});
   const [manualEffectDurations, setManualEffectDurations] = useState<Record<string, string>>({});
@@ -99,6 +105,22 @@ export default function App() {
   const [llmBatchProgress, setLlmBatchProgress] = useState<LlmBatchProgress | undefined>();
   const [llmDirectTestResults, setLlmDirectTestResults] = useState<Record<string, LlmDirectEffectSmokeTestResult>>({});
   const [llmBusy, setLlmBusy] = useState(false);
+
+  useEffect(() => {
+    fetch("http://localhost:3001/api/auth/me", {
+      credentials: "include"
+    })
+      .then(response => response.json())
+      .then((data: { user?: AuthUser | null }) => {
+        setAuthUser(data.user ?? null);
+      })
+      .catch(() => {
+        setAuthUser(null);
+      })
+      .finally(() => {
+        setAuthChecked(true);
+      });
+  }, []);
 
   useEffect(() => {
     socket.on("server:welcome", (data: ServerWelcome) => {
@@ -248,6 +270,7 @@ export default function App() {
         }
 
         setDeckBuilderCardIds(data.cardIds);
+        setDeckBuilderCardArtKeys(normalizeDeckArtKeys(data.cardArtKeys, data.cardIds.length));
         setSaveMessage(
           data.mode === "clone"
             ? `Loaded clone source: ${data.name}`
@@ -264,6 +287,7 @@ export default function App() {
         name: string;
         packIds: string[];
         cardIds: string[];
+        cardArtKeys?: CardArtKey[];
       }) => {
         const confirmed = window.confirm(
           `${data.message}\n\nOverwrite "${data.deckId}"?`
@@ -279,6 +303,7 @@ export default function App() {
           name: data.name,
           packIds: data.packIds,
           cardIds: data.cardIds,
+          cardArtKeys: data.cardArtKeys,
           overwrite: true
         });
       }
@@ -543,6 +568,14 @@ export default function App() {
       .replace(/^-|-$/g, "");
   }
 
+  function normalizeDeckArtKey(value: string | undefined): CardArtKey {
+    return value === "holo" || value === "zero-art" ? value : "default";
+  }
+
+  function normalizeDeckArtKeys(values: string[] | undefined, cardCount: number): CardArtKey[] {
+    return Array.from({ length: cardCount }, (_, index) => normalizeDeckArtKey(values?.[index]));
+  }
+
   function getDeckBuilderCounts(): Record<string, number> {
     return deckBuilderCardIds.reduce<Record<string, number>>((counts, cardId) => {
       counts[cardId] = (counts[cardId] ?? 0) + 1;
@@ -575,7 +608,7 @@ export default function App() {
     return getDeckBuilderCounts()[cardId] ?? 0;
   }
 
-  function addCardToDeckBuilder(cardId: string) {
+  function addCardToDeckBuilder(cardId: string, artKey: CardArtKey = "default") {
     const card = cardLibrary.find(item => item.id === cardId);
     const deckLimit = card?.deckLimit ?? 3;
     const count = getDeckBuilderCardCount(cardId);
@@ -599,11 +632,25 @@ export default function App() {
 
     setError("");
     setDeckBuilderCardIds(current => [...current, cardId]);
+    setDeckBuilderCardArtKeys(current => [...current, normalizeDeckArtKey(artKey)]);
   }
 
-  function removeCardFromDeckBuilder(cardId: string) {
+  function removeCardFromDeckBuilder(cardId: string, artKey?: CardArtKey) {
     setDeckBuilderCardIds(current => {
-      const index = current.indexOf(cardId);
+      const index = current.findIndex((currentCardId, currentIndex) =>
+        currentCardId === cardId && (!artKey || normalizeDeckArtKey(deckBuilderCardArtKeys[currentIndex]) === artKey)
+      );
+
+      if (index === -1) {
+        return current;
+      }
+
+      return [...current.slice(0, index), ...current.slice(index + 1)];
+    });
+    setDeckBuilderCardArtKeys(current => {
+      const index = deckBuilderCardIds.findIndex((currentCardId, currentIndex) =>
+        currentCardId === cardId && (!artKey || normalizeDeckArtKey(current[currentIndex]) === artKey)
+      );
 
       if (index === -1) {
         return current;
@@ -615,17 +662,19 @@ export default function App() {
 
   function clearDeckBuilder() {
     setDeckBuilderCardIds([]);
+    setDeckBuilderCardArtKeys([]);
   }
 
   function startNewDeckBuilder() {
     setDeckBuilderName("New Test Deck");
     setDeckBuilderId("new-test-deck");
     setDeckBuilderCardIds([]);
+    setDeckBuilderCardArtKeys([]);
     setError("");
     setSaveMessage("Started a new deck.");
   }
 
-  function setDeckBuilderCardCopies(cardId: string, requestedCopyCount: number) {
+  function setDeckBuilderCardCopies(cardId: string, requestedCopyCount: number, artKey: CardArtKey = "default") {
     const card = cardLibrary.find(item => item.id === cardId);
     const deckLimit = card?.deckLimit ?? 3;
     const safeRequestedCount = Math.max(0, Math.floor(requestedCopyCount));
@@ -638,11 +687,24 @@ export default function App() {
 
     setError("");
     setDeckBuilderCardIds(current => {
-      const withoutCard = current.filter(currentCardId => currentCardId !== cardId);
+      const normalizedArtKey = normalizeDeckArtKey(artKey);
+      const withoutCard = current.filter((currentCardId, index) =>
+        currentCardId !== cardId || normalizeDeckArtKey(deckBuilderCardArtKeys[index]) !== normalizedArtKey
+      );
       const availableSlots = Math.max(0, 30 - withoutCard.length);
       const finalCopyCount = Math.min(nextCopyCount, availableSlots);
 
       return [...withoutCard, ...Array.from({ length: finalCopyCount }, () => cardId)];
+    });
+    setDeckBuilderCardArtKeys(current => {
+      const normalizedArtKey = normalizeDeckArtKey(artKey);
+      const withoutCard = current.filter((currentArtKey, index) =>
+        deckBuilderCardIds[index] !== cardId || normalizeDeckArtKey(currentArtKey) !== normalizedArtKey
+      );
+      const availableSlots = Math.max(0, 30 - withoutCard.length);
+      const finalCopyCount = Math.min(nextCopyCount, availableSlots);
+
+      return [...withoutCard, ...Array.from({ length: finalCopyCount }, () => normalizedArtKey)];
     });
   }
 
@@ -715,6 +777,7 @@ export default function App() {
       name: deckBuilderName.trim(),
       packIds: selectedPackIds,
       cardIds: deckBuilderCardIds,
+      cardArtKeys: normalizeDeckArtKeys(deckBuilderCardArtKeys, deckBuilderCardIds.length),
       overwrite: false
     });
   }
@@ -1292,9 +1355,46 @@ export default function App() {
     setMatch(null);
   }
 
+  async function logout() {
+    await fetch("http://localhost:3001/api/auth/logout", {
+      method: "POST",
+      credentials: "include"
+    });
+
+    setAuthUser(null);
+    setMatch(null);
+    setSavedMatches([]);
+    setDeckDetails([]);
+    setCardOwnershipCounts({});
+    socket.disconnect();
+    socket.connect();
+  }
+
   const advanceBlockReason = match ? getAdvanceBlockReason(match) : "";
   const hasPendingManualEffects =
     match?.manualEffectQueue.some(effect => !effect.completed) ?? false;
+
+  if (!authChecked) {
+    return (
+      <main className="login-page">
+        <section className="login-panel">
+          <div className="login-title">
+            <span>WARD</span>
+            <h1>Loading</h1>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (!authUser) {
+    return <LoginPage onAuthenticated={user => {
+      setAuthUser(user);
+      socket.disconnect();
+      socket.connect();
+      requestInitialData();
+    }} />;
+  }
 
   return (
     <main className={activePage === "card-library" || activePage === "deck-library" ? "app-shell app-shell-library-decks" : "app-shell"}>
@@ -1305,9 +1405,16 @@ export default function App() {
             <p className="subtitle">Local rules-assisted 1v1 prototype</p>
           </div>
 
-          <div className="server-pill">
-            <span className="status-dot" />
-            {serverMessage}
+          <div className="app-header-actions">
+            <div className="account-pill">
+              <span>{authUser.displayName}</span>
+              <button onClick={logout}>Logout</button>
+            </div>
+
+            <div className="server-pill">
+              <span className="status-dot" />
+              {serverMessage}
+            </div>
           </div>
         </header>
 
@@ -1427,6 +1534,7 @@ export default function App() {
             deckBuilderName={deckBuilderName}
             deckBuilderId={deckBuilderId}
             deckBuilderCardIds={deckBuilderCardIds}
+            deckBuilderCardArtKeys={deckBuilderCardArtKeys}
             ownershipCounts={cardOwnershipCounts}
             normalizeId={normalizeId}
             getDeckBuilderCounts={getDeckBuilderCounts}

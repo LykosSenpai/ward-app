@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
+import { HolographicCardImage } from "./HolographicCardImage";
 import { ModalPanel } from "./ui/ModalPanel";
 
 export type CardArtKey =
@@ -26,6 +27,7 @@ export type CardArtOption = {
 type CardImagePreviewProps = {
   card: CardLibraryCardSummary;
   selectedArtKey?: CardArtKey;
+  holoIntensity?: number;
   onSelectedArtKeyChange?: (artKey: CardArtKey) => void;
 };
 
@@ -186,16 +188,19 @@ export function CardImageThumbnail({ card, className }: CardImageThumbnailProps)
   );
 }
 
-export function CardImagePreview({ card, selectedArtKey, onSelectedArtKeyChange }: CardImagePreviewProps) {
+export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, onSelectedArtKeyChange }: CardImagePreviewProps) {
   const [internalSelectedArtKey, setInternalSelectedArtKey] = useState<CardArtKey>("default");
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const activeArtKey = selectedArtKey ?? internalSelectedArtKey;
+  const imageArtKey = activeArtKey === "holo" ? "default" : activeArtKey;
+  const holoEnabled = activeArtKey === "holo";
+  const holoSeed = `${card.packId}:${card.id}:${card.name}`;
 
   const imageCandidates = useMemo(
-    () => getImageCandidates(card, activeArtKey),
-    [card, activeArtKey]
+    () => getImageCandidates(card, imageArtKey),
+    [card, imageArtKey]
   );
 
   useEffect(() => {
@@ -225,9 +230,12 @@ export function CardImagePreview({ card, selectedArtKey, onSelectedArtKeyChange 
             onClick={() => setPreviewOpen(true)}
             title={`Expand ${card.name} image`}
           >
-            <img
+            <HolographicCardImage
               src={imageCandidate.url}
               alt={`${card.name} ${selectedArtLabel} card art`}
+              seed={holoSeed}
+              enabled={holoEnabled}
+              intensity={holoIntensity}
               onError={() => setCandidateIndex(current => current + 1)}
             />
           </button>
@@ -256,7 +264,15 @@ export function CardImagePreview({ card, selectedArtKey, onSelectedArtKeyChange 
         <ModalPanel title={`${card.name}  -  ${selectedArtLabel}`} onClose={() => setPreviewOpen(false)}>
           <div className="expanded-card-detail-layout">
             <div className="expanded-card-image-wrap">
-              <img src={imageCandidate.url} alt={`${card.name} expanded ${selectedArtLabel} card`} />
+              <HolographicCardImage
+                src={imageCandidate.url}
+                alt={`${card.name} expanded ${selectedArtLabel} card`}
+                seed={holoSeed}
+                enabled={holoEnabled}
+                intensity={holoIntensity}
+                className="expanded-card-holo-image"
+                onError={() => setCandidateIndex(current => current + 1)}
+              />
             </div>
 
             <div className="expanded-card-info">
