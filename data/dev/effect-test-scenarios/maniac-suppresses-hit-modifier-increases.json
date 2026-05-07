@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_068_maniac",
+  "effectId": "068-E02",
+  "title": "Maniac suppresses Hit Modifier increases",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_068_maniac",
+      "cardName": "Maniac",
+      "cardType": "CREATURE",
+      "cardNumber": "068",
+      "generation": "2",
+      "rawText": "When this creature rolls to hit, ignore the target's AL. Use the following outcomes instead: 1-7: Critical Fail. 8-12: Critical Hit. 13+: Normal Hit. This card is unaffected by Hit Modifier increases."
+    },
+    "effect": {
+      "effectId": "068-E02",
+      "trigger": "STATIC_RULE",
+      "actionType": "APPLY_IMMUNITY",
+      "effectGroup": "Modifier Immunity",
+      "target": "This creature",
+      "value": "Unaffected by Hit Modifier increases",
+      "durationText": "While on field",
+      "reusableFunction": "applyImmunity"
+    },
+    "title": "Maniac suppresses Hit Modifier increases",
+    "summary": "Equip Lucky Charm to Maniac and verify Maniac ignores the positive Hit +3 increase during the hit roll.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_068_maniac",
+        "gen1_070_lucky_charm"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Maniac as player_1 primary creature.",
+        "Pre-place Lucky Charm as field magic equipped to Maniac.",
+        "Lucky Charm would normally add Hit +3, but Maniac is unaffected by Hit Modifier increases."
+      ]
+    },
+    "steps": [
+      "Set Maniac as player_1 primary creature.",
+      "Equip Lucky Charm to Maniac.",
+      "Run a follow-up battle and inspect Maniac's hit roll modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Lucky Charm Hit +3 is suppressed",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 0
+      },
+      {
+        "label": "Lucky Charm remains equipped/on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_070_lucky_charm"
+      }
+    ],
+    "manualVerification": [
+      "Confirm Maniac's separate custom hit outcome table is covered independently from this Hit Modifier immunity."
+    ],
+    "riskNotes": [
+      "This fixture isolates the static Hit Modifier increase immunity and does not fully validate Maniac's custom hit outcome table."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Maniac ignores positive Hit Modifier increases."
+    },
+    "regression": {
+      "fixtureName": "maniac-suppresses-hit-modifier-increases",
+      "tags": [
+        "creature",
+        "immunity",
+        "hit",
+        "suppression"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

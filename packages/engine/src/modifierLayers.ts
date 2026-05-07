@@ -110,6 +110,7 @@ function isStaticEffect(effect: WardEngineEffect): boolean {
     "SUPPRESS_MODIFIER_LAYER",
     "APPLY_STAT_AND_DICE_MULTIPLIER",
     "UNAFFECTED_BY_MAGIC",
+    "APPLY_IMMUNITY",
     "REPLACE_ATTACK_PROFILE",
     "APPLY_TEMPORARY_STAT_SET",
     "APPLY_SOURCE_LINKED_STAT_SET_AURA",
@@ -320,7 +321,15 @@ function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: 
     }
   }
 
-  if (actionType === "SUPPRESS_MODIFIER_LAYER" || actionType === "UNAFFECTED_BY_MAGIC" || text.includes("ignore positive") || text.includes("negate other") || text.includes("unaffected by other")) {
+  if (
+    actionType === "SUPPRESS_MODIFIER_LAYER" ||
+    actionType === "UNAFFECTED_BY_MAGIC" ||
+    actionType === "APPLY_IMMUNITY" ||
+    text.includes("ignore positive") ||
+    text.includes("negate other") ||
+    text.includes("unaffected by other") ||
+    text.includes("modifier increases")
+  ) {
     if (text.includes("spd") || text.includes("speed")) layers.push(makeLayer(source, effect, "suppress-positive-speed", "speed", "SUPPRESS_POSITIVE", 0));
     if (text.includes("al") || text.includes("armor")) layers.push(makeLayer(source, effect, "suppress-positive-al", "armorLevel", "SUPPRESS_POSITIVE", 0));
     if (text.includes("modifier")) layers.push(makeLayer(source, effect, "suppress-positive-modifier", "modifier", "SUPPRESS_POSITIVE", 0));

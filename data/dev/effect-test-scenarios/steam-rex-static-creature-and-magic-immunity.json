@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_064_steam_rex",
+  "effectId": "064-E01",
+  "title": "Steam Rex is unaffected by creature effects and magic",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_064_steam_rex",
+      "cardName": "Steam Rex",
+      "cardType": "CREATURE",
+      "cardNumber": "064",
+      "generation": "2",
+      "rawText": "This creature is unaffected by creature effects and magic cards. If your opponent plays a Lightning card, this creature inflicts 2x Atk damage the turn it was used."
+    },
+    "effect": {
+      "effectId": "064-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_EFFECT_IMMUNITY",
+      "effectGroup": "Immunity",
+      "target": "This creature",
+      "value": "Unaffected by creature effects and magic cards",
+      "durationText": "While on field",
+      "reusableFunction": "applyEffectImmunity"
+    },
+    "title": "Steam Rex is unaffected by creature effects and magic",
+    "summary": "Put Steam Rex on the field and verify the headless route recognizes its static creature-effect and Magic immunity rule.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_064_steam_rex"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Steam Rex as player_1 primary creature.",
+        "This fixture isolates the printed static immunity rule."
+      ]
+    },
+    "steps": [
+      "Set Steam Rex as player_1 primary creature.",
+      "Accept the while-on-field static immunity rule."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Static immunity rule is available",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEADLESS_STATIC_CREATURE_IMMUNITY_AVAILABLE"
+      },
+      {
+        "label": "Steam Rex remains primary creature",
+        "path": "player_1.primaryCreature.cardId",
+        "operator": "equals",
+        "value": "gen2_064_steam_rex"
+      }
+    ],
+    "manualVerification": [
+      "Confirm creature effects and Magic cards do not affect Steam Rex while this static rule is active."
+    ],
+    "riskNotes": [
+      "This fixture validates static-rule recognition. Steam Rex's separate Lightning-triggered 2x Atk damage effect is covered separately."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Steam Rex's static immunity to creature effects and Magic cards."
+    },
+    "regression": {
+      "fixtureName": "steam-rex-static-creature-and-magic-immunity",
+      "tags": [
+        "creature",
+        "immunity",
+        "static"
+      ]
+    }
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}
