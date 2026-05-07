@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_060_vampire_orc",
+  "effectId": "060-E01",
+  "title": "Vampire Orc scales from opponent primary base Modifier",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_060_vampire_orc",
+      "cardName": "Vampire Orc",
+      "cardType": "CREATURE",
+      "cardNumber": "060",
+      "generation": "2",
+      "rawText": "Add your opponent's current primary creature's base Modifier to this card."
+    },
+    "effect": {
+      "effectId": "060-E01",
+      "trigger": "WHILE_ON_FIELD",
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Dynamic Stat Modifier",
+      "target": "This card",
+      "value": "Add opponent current primary creature's base Modifier",
+      "durationText": "While on field",
+      "reusableFunction": "applyDynamicStatModifier"
+    },
+    "title": "Vampire Orc scales from opponent primary base Modifier",
+    "summary": "Put Vampire Orc on field against an opponent primary creature with base Modifier 1 and verify Vampire Orc adds that base Modifier to its own Modifier.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_060_vampire_orc"
+      ],
+      "player2Cards": [
+        "test_primary_creature"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Vampire Orc as player_1 primary.",
+        "Set the synthetic test primary creature as player_2 primary; it has base Modifier 1."
+      ]
+    },
+    "steps": [
+      "Set Vampire Orc as player_1 primary creature.",
+      "Set the opponent synthetic creature as player_2 primary creature.",
+      "Read Vampire Orc's effective Modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Vampire Orc adds opponent primary base Modifier",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 5
+      }
+    ],
+    "manualVerification": [
+      "Confirm Vampire Orc recalculates if the opponent primary creature changes."
+    ],
+    "riskNotes": [
+      "This fixture covers base Modifier copy/add from the current opponent primary creature."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Vampire Orc opponent-primary Modifier scaling."
+    },
+    "regression": {
+      "fixtureName": "vampire-orc-opponent-primary-modifier-scaling",
+      "tags": [
+        "creature",
+        "dynamic-stat",
+        "modifier",
+        "opponent-primary"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_060_vampire_orc:060-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

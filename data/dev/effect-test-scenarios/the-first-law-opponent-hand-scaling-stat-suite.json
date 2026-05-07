@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_124_the_first_law",
+  "effectId": "124-E01",
+  "title": "The First Law scales equipped creature from opponent hand size",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_124_the_first_law",
+      "cardName": "The First Law",
+      "cardType": "MAGIC",
+      "cardNumber": "124",
+      "generation": "2",
+      "rawText": "For every card in your opponents hand the equipped creature receives: Atk Dice Rolls: +1. Modifier: +1."
+    },
+    "effect": {
+      "effectId": "124-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "APPLY_DYNAMIC_STAT_MODIFIER",
+      "effectGroup": "Scaling Modifier",
+      "target": "Equipped creature",
+      "value": "For every card in opponents' hand: Atk Dice Rolls +1; Modifier +1",
+      "durationText": "While equipped",
+      "reusableFunction": "applyDynamicStatModifier"
+    },
+    "title": "The First Law scales equipped creature from opponent hand size",
+    "summary": "Equip The First Law to a zero-Modifier primary creature and verify it gains one attack die and one Modifier for each card in the opponent's hand.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_124_the_first_law",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Equip The First Law to player_1's primary creature.",
+        "Use the default opponent hand produced by the headless setup."
+      ]
+    },
+    "steps": [
+      "Set the zero-Modifier synthetic creature as player_1 primary.",
+      "Play and equip The First Law to that creature.",
+      "Read the equipped creature's effective attack dice and Modifier."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "The First Law adds attack dice per opponent hand card",
+        "path": "player_1.primaryCreature.effectiveStats.attackDice",
+        "operator": "equals",
+        "value": 7
+      },
+      {
+        "label": "The First Law adds Modifier per opponent hand card",
+        "path": "player_1.primaryCreature.effectiveStats.modifier",
+        "operator": "equals",
+        "value": 6
+      }
+    ],
+    "manualVerification": [
+      "Confirm each additional opponent hand card adds another Atk Dice Roll and Modifier."
+    ],
+    "riskNotes": [
+      "This fixture locks the default six-card opponent hand from headless setup."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate The First Law opponent hand scaling."
+    },
+    "regression": {
+      "fixtureName": "the-first-law-opponent-hand-scaling-stat-suite",
+      "tags": [
+        "magic",
+        "equip",
+        "dynamic-stat",
+        "hand-scaling",
+        "attack-dice",
+        "modifier"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_124_the_first_law:124-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

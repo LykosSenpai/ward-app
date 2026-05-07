@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen1_068_kraken",
+  "effectId": "068-E01",
+  "title": "Kraken wraps the target on hit",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen1",
+      "cardId": "gen1_068_kraken",
+      "cardName": "Kraken",
+      "cardType": "CREATURE",
+      "cardNumber": "068",
+      "generation": "1",
+      "rawText": "When this creature hits, the targeted creature is wrapped. During your opponent's turn they must roll 1 die. If the result is 3-5, they are freed, otherwise they receive 10 damage."
+    },
+    "effect": {
+      "effectId": "068-E01",
+      "trigger": "ON_HIT",
+      "actionType": "APPLY_STATUS",
+      "effectGroup": "Status",
+      "target": "Target creature",
+      "value": "Wrapped",
+      "durationText": "Until freed",
+      "reusableFunction": "applyWrappedStatus"
+    },
+    "title": "Kraken wraps the target on hit",
+    "summary": "Kraken hits the opponent primary creature and applies the Wrapped status to that target.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen1_068_kraken"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Set Kraken as player_1 primary.",
+        "Force the opening hit to land; this fixture covers only the on-hit Wrapped status, not the later 3-5 escape roll."
+      ]
+    },
+    "steps": [
+      "Attack with Kraken.",
+      "Resolve a successful hit.",
+      "Inspect the targeted defender's statuses."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Target creature is Wrapped",
+        "path": "player_2.primaryCreature.statuses",
+        "operator": "contains",
+        "value": "WRAPPED"
+      },
+      {
+        "label": "Wrapped status application event emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_EFFECT_STATUS_APPLIED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm 068-E02 separately frees the wrapped creature on 3-5 and deals 10 damage otherwise."
+    ],
+    "riskNotes": [
+      "This fixture validates the on-hit status application only."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Validate Kraken's Wrapped status on hit."
+    },
+    "regression": {
+      "fixtureName": "kraken-wraps-target-on-hit",
+      "tags": [
+        "creature",
+        "status",
+        "wrapped",
+        "on-hit"
+      ]
+    },
+    "requestKey": "ward-gen1:gen1_068_kraken:068-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and manual QA status remain source of truth."
+  ]
+}

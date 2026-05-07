@@ -328,6 +328,10 @@ function statusFromEffect(effect: WardEngineEffect): { status: string; label: st
     flags.canBeSacrificed = false;
   }
 
+  if (text.includes("wrapped")) {
+    status = status === "STATUS" ? "WRAPPED" : status;
+  }
+
   if (text.includes("stun") || text.includes("cannot inflict atk damage") || text.includes("cannot inflict attack damage")) {
     status = status === "STATUS" ? "STUNNED" : status;
     flags.canInflictAtkDamage = false;
