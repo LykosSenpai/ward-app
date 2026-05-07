@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_008_cybernetic_upgrade",
+  "effectId": "008-E01",
+  "title": "Cybernetic Upgrade sends itself after opponent battle",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_008_cybernetic_upgrade",
+      "cardName": "Cybernetic Upgrade",
+      "cardType": "MAGIC",
+      "cardNumber": "008",
+      "generation": "3",
+      "rawText": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12."
+    },
+    "effect": {
+      "effectId": "008-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "SEND_TO_CEMETERY",
+      "effectGroup": "Card Movement",
+      "target": "Equipped creature",
+      "value": "During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12.",
+      "durationText": "While equipped",
+      "reusableFunction": "sendToCemetery"
+    },
+    "title": "Cybernetic Upgrade sends itself after opponent battle",
+    "summary": "Play Cybernetic Upgrade during opponent battle and verify it is sent to cemetery after that battle.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen3_008_cybernetic_upgrade",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12."
+      ]
+    },
+    "steps": [
+      "Set up Cybernetic Upgrade according to its printed text.",
+      "Play Cybernetic Upgrade during opponent battle and verify it is sent to cemetery after that battle.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Cybernetic Upgrade route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Cybernetic Upgrade"
+      },
+      {
+        "label": "Cybernetic Upgrade sent to cemetery after battle",
+        "path": "player_1.cemetery",
+        "operator": "contains",
+        "value": "gen3_008_cybernetic_upgrade"
+      },
+      {
+        "label": "Cybernetic Upgrade no longer in magic slot",
+        "path": "player_1.magicSlots",
+        "operator": "notContains",
+        "value": "gen3_008_cybernetic_upgrade"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: During your opponent's battle play this card. Send this card to the cemetery at the end of that battle. Atk: +30. Hit: +10. AL: +12."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Cybernetic Upgrade during opponent battle and verify it is sent to cemetery after that battle."
+    },
+    "regression": {
+      "fixtureName": "cybernetic-upgrade-sends-self-after-opponent-battle",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "send-to-cemetery"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_008_cybernetic_upgrade:008-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

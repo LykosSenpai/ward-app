@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_021_possessed_dummy",
+  "effectId": "021-E03",
+  "title": "Possessed Dummy source removal returns creature",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_021_possessed_dummy",
+      "cardName": "Possessed Dummy",
+      "cardType": "MAGIC",
+      "cardNumber": "021",
+      "generation": "3",
+      "rawText": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+    },
+    "effect": {
+      "effectId": "021-E03",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Card Movement",
+      "target": "Opponent's primary creature",
+      "value": "Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery.",
+      "durationText": "While equipped",
+      "reusableFunction": "moveCard"
+    },
+    "title": "Possessed Dummy source removal returns creature",
+    "summary": "If Possessed Dummy or your primary leaves the field, verify the Limited Summon returns to opponent cemetery.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_021_possessed_dummy",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+      ]
+    },
+    "steps": [
+      "Set up Possessed Dummy according to its printed text.",
+      "If Possessed Dummy or your primary leaves the field, verify the Limited Summon returns to opponent cemetery.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Possessed Dummy route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Possessed Dummy"
+      },
+      {
+        "label": "Possessed Dummy return marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "MOVE_CARD"
+      },
+      {
+        "label": "Returned creature is in opponent cemetery",
+        "path": "player_2.cemetery",
+        "operator": "contains",
+        "value": "test_creature_defender"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Play this card when your opponent sends a creature to their cemetery. Summon that creature as your Limited Summon. If this card or your primary creature is removed from the field, or this effect is negated, return it to their cemetery."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "If Possessed Dummy or your primary leaves the field, verify the Limited Summon returns to opponent cemetery."
+    },
+    "regression": {
+      "fixtureName": "possessed-dummy-source-removed-returns-creature",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "move-card"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_021_possessed_dummy:021-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

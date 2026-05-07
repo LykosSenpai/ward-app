@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_007_steam_knight_blaster",
+  "effectId": "007-E01",
+  "title": "Steam Knight Blaster suppresses equipped creature effects",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_007_steam_knight_blaster",
+      "cardName": "Steam Knight Blaster",
+      "cardType": "MAGIC",
+      "cardNumber": "007",
+      "generation": "3",
+      "rawText": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3."
+    },
+    "effect": {
+      "effectId": "007-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "NEGATE_CREATURE_EFFECTS",
+      "effectGroup": "Creature Effect Suppression",
+      "target": "Equipped creature",
+      "value": "The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3.",
+      "durationText": "While equipped",
+      "reusableFunction": "negateCreatureEffects"
+    },
+    "title": "Steam Knight Blaster suppresses equipped creature effects",
+    "summary": "Equip Steam Knight Blaster and verify the equipped creature loses its printed effects.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_007_steam_knight_blaster",
+        "gen3_006_ball_demon"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3."
+      ]
+    },
+    "steps": [
+      "Set up Steam Knight Blaster according to its printed text.",
+      "Equip Steam Knight Blaster and verify the equipped creature loses its printed effects.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Steam Knight Blaster route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Steam Knight Blaster"
+      },
+      {
+        "label": "Creature effect negation marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "NEGATE_CREATURE_EFFECTS"
+      },
+      {
+        "label": "Steam Knight Blaster remains equipped",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen3_007_steam_knight_blaster"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: The equipped creature loses its effect. Replace its base Atk Dice Rolls and Modifier with Proto Blast, 3 dice, +3."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Steam Knight Blaster and verify the equipped creature loses its printed effects."
+    },
+    "regression": {
+      "fixtureName": "steam-knight-blaster-suppresses-equipped-creature-effects",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "negate-creature-effects"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_007_steam_knight_blaster:007-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

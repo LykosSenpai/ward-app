@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_026_cabal_warchief",
+  "effectId": "026-E01",
+  "title": "Cabal Warchief battles twice with one return attack",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_026_cabal_warchief",
+      "cardName": "Cabal Warchief",
+      "cardType": "CREATURE",
+      "cardNumber": "026",
+      "generation": "3",
+      "rawText": "This creature may initiate battle twice during your turn. Your opponent can only return attack for 1 of these battles. This creature cannot change control, or be removed from the field unless killed."
+    },
+    "effect": {
+      "effectId": "026-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "This creature",
+      "value": "This creature may initiate battle twice during your turn. Your opponent can only return attack for 1 of these battles. This creature cannot change control, or be removed from the field unless killed.",
+      "durationText": "Immediate",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Cabal Warchief battles twice with one return attack",
+    "summary": "During your turn, verify Cabal Warchief may battle twice and opponent can return attack for only one battle.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_026_cabal_warchief"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: This creature may initiate battle twice during your turn. Your opponent can only return attack for 1 of these battles. This creature cannot change control, or be removed from the field unless killed."
+      ]
+    },
+    "steps": [
+      "Set up Cabal Warchief according to its printed text.",
+      "During your turn, verify Cabal Warchief may battle twice and opponent can return attack for only one battle.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Cabal Warchief route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Cabal Warchief"
+      },
+      {
+        "label": "Extra battle marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "EXTRA_BATTLE"
+      },
+      {
+        "label": "Return attack limit marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "RETURN_ATTACK_LIMIT"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: This creature may initiate battle twice during your turn. Your opponent can only return attack for 1 of these battles. This creature cannot change control, or be removed from the field unless killed."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "During your turn, verify Cabal Warchief may battle twice and opponent can return attack for only one battle."
+    },
+    "regression": {
+      "fixtureName": "cabal-warchief-battles-twice-with-one-return-attack",
+      "tags": [
+        "gen3",
+        "creature",
+        "humanoid",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_026_cabal_warchief:026-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

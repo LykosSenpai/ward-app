@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_006_ball_demon",
+  "effectId": "006-E01",
+  "title": "Ball Demon end turn damages opponent primary",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_006_ball_demon",
+      "cardName": "Ball Demon",
+      "cardType": "MAGIC",
+      "cardNumber": "006",
+      "generation": "3",
+      "rawText": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2."
+    },
+    "effect": {
+      "effectId": "006-E01",
+      "trigger": "END_OF_YOUR_TURN",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Opponent's primary creature",
+      "value": "Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2.",
+      "durationText": "While equipped",
+      "reusableFunction": "damage"
+    },
+    "title": "Ball Demon end turn damages opponent primary",
+    "summary": "End Ball Demon controller turn and verify opponent primary receives 2 damage.",
+    "setup": {
+      "phase": "END",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_006_ball_demon"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2."
+      ]
+    },
+    "steps": [
+      "Set up Ball Demon according to its printed text.",
+      "End Ball Demon controller turn and verify opponent primary receives 2 damage.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Ball Demon route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Ball Demon"
+      },
+      {
+        "label": "Opponent primary takes 2 end-turn damage",
+        "path": "player_2.primary.damageTaken",
+        "operator": "equals",
+        "value": 2
+      },
+      {
+        "label": "End turn damage marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "DAMAGE"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Inflict 2 damage to your opponent's primary creature at the end of your turn. Atk: +2."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "End Ball Demon controller turn and verify opponent primary receives 2 damage."
+    },
+    "regression": {
+      "fixtureName": "ball-demon-end-turn-damages-opponent-primary",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_006_ball_demon:006-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_002_fire_eleotoid",
+  "effectId": "002-E01",
+  "title": "Fire Eleotoid protects Forest Fire from its own destruction",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_002_fire_eleotoid",
+      "cardName": "Fire Eleotoid",
+      "cardType": "CREATURE",
+      "cardNumber": "002",
+      "generation": "3",
+      "rawText": "While this card is on the field, the magic card \"Forest Fire\" cannot be destroyed by its own effect."
+    },
+    "effect": {
+      "effectId": "002-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DESTROY_MAGIC",
+      "effectGroup": "Magic Destruction",
+      "target": "Magic card(s) on the field",
+      "value": "While this card is on the field, the magic card \"Forest Fire\" cannot be destroyed by its own effect.",
+      "durationText": "While on field",
+      "reusableFunction": "destroyMagic"
+    },
+    "title": "Fire Eleotoid protects Forest Fire from its own destruction",
+    "summary": "Keep Fire Eleotoid on field and verify Forest Fire is not destroyed by its printed self-destruction branch.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_002_fire_eleotoid",
+        "gen1_122_forest_fire"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Forest Fire self-destruction branch"
+        }
+      ],
+      "notes": [
+        "Read text first: While this card is on the field, the magic card \"Forest Fire\" cannot be destroyed by its own effect."
+      ]
+    },
+    "steps": [
+      "Set up Fire Eleotoid according to its printed text.",
+      "Keep Fire Eleotoid on field and verify Forest Fire is not destroyed by its printed self-destruction branch.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Fire Eleotoid route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Fire Eleotoid"
+      },
+      {
+        "label": "Forest Fire remains protected on field",
+        "path": "player_1.magicSlots",
+        "operator": "contains",
+        "value": "gen1_122_forest_fire"
+      },
+      {
+        "label": "Fire Eleotoid protection route automated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "UNSUPPORTED_ACTION_TYPE"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: While this card is on the field, the magic card \"Forest Fire\" cannot be destroyed by its own effect."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Keep Fire Eleotoid on field and verify Forest Fire is not destroyed by its printed self-destruction branch."
+    },
+    "regression": {
+      "fixtureName": "fire-eleotoid-protects-forest-fire-self-destruction",
+      "tags": [
+        "gen3",
+        "creature",
+        "elemental",
+        "destroy-magic"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_002_fire_eleotoid:002-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_016_exhaustion",
+  "effectId": "016-E01",
+  "title": "Exhaustion sets Hit and Atk Modifier to zero",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_016_exhaustion",
+      "cardName": "Exhaustion",
+      "cardType": "MAGIC",
+      "cardNumber": "016",
+      "generation": "3",
+      "rawText": "Reduce the target creature's Hit and Atk Modifier to 0 for 1 turn cycle."
+    },
+    "effect": {
+      "effectId": "016-E01",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "Equipped creature",
+      "value": "Reduce the target creature's Hit and Atk Modifier to 0 for 1 turn cycle.",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Exhaustion sets Hit and Atk Modifier to zero",
+    "summary": "Equip Exhaustion and verify target Hit and Atk Modifier are reduced to 0 for one turn cycle.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_016_exhaustion",
+        "test_primary_creature_mod_0"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Reduce the target creature's Hit and Atk Modifier to 0 for 1 turn cycle."
+      ]
+    },
+    "steps": [
+      "Set up Exhaustion according to its printed text.",
+      "Equip Exhaustion and verify target Hit and Atk Modifier are reduced to 0 for one turn cycle.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Exhaustion route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Exhaustion"
+      },
+      {
+        "label": "Target modifier is zero",
+        "path": "player_1.primaryCreature.modifier",
+        "operator": "equals",
+        "value": 0
+      },
+      {
+        "label": "Hit roll modifier is zero",
+        "path": "battle.lastHitRoll.modifier",
+        "operator": "equals",
+        "value": 0
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Reduce the target creature's Hit and Atk Modifier to 0 for 1 turn cycle."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Equip Exhaustion and verify target Hit and Atk Modifier are reduced to 0 for one turn cycle."
+    },
+    "regression": {
+      "fixtureName": "exhaustion-sets-hit-and-atk-modifier-to-zero",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_016_exhaustion:016-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

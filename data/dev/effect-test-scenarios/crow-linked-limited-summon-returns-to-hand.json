@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_012_crow",
+  "effectId": "012-E03",
+  "title": "Crow linked Limited Summon returns to hand",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_012_crow",
+      "cardName": "Crow",
+      "cardType": "CREATURE",
+      "cardNumber": "012",
+      "generation": "3",
+      "rawText": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand."
+    },
+    "effect": {
+      "effectId": "012-E03",
+      "trigger": "SUMMON_REQUIREMENT",
+      "actionType": "MOVE_CARD",
+      "effectGroup": "Card Movement",
+      "target": "Your primary creature",
+      "value": "Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand.",
+      "durationText": "Immediate",
+      "reusableFunction": "moveCard"
+    },
+    "title": "Crow linked Limited Summon returns to hand",
+    "summary": "When the Crow primary leaves field or changes control, verify linked Limited Summon returns to hand.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_012_crow",
+        "gen3_012_crow"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand."
+      ]
+    },
+    "steps": [
+      "Set up Crow according to its printed text.",
+      "When the Crow primary leaves field or changes control, verify linked Limited Summon returns to hand.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Crow route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Crow"
+      },
+      {
+        "label": "Crow return-to-hand marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "LINKED_LIMITED_SUMMON_RETURNED"
+      },
+      {
+        "label": "Crow limited summon is no longer on field",
+        "path": "player_1.limitedSummons",
+        "operator": "notContains",
+        "value": "gen3_012_crow"
+      },
+      {
+        "label": "Crow linked limited summon route was exercised",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "LIMITED_SUMMON"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Summon Requirement: You may summon this creature normally, or Limited Summon it if your primary creature has \"Crow\" in its name. If your primary creature leaves the field or changes control, return this card to your hand."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "When the Crow primary leaves field or changes control, verify linked Limited Summon returns to hand."
+    },
+    "regression": {
+      "fixtureName": "crow-linked-limited-summon-returns-to-hand",
+      "tags": [
+        "gen3",
+        "creature",
+        "beast",
+        "move-card"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_012_crow:012-E03"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

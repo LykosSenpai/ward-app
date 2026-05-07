@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_003_enlightened_soul",
+  "effectId": "003-E01",
+  "title": "Enlightened Soul reduces cemetery HP while in cemetery",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_003_enlightened_soul",
+      "cardName": "Enlightened Soul",
+      "cardType": "CREATURE",
+      "cardNumber": "003",
+      "generation": "3",
+      "rawText": "While this card is in your cemetery, reduce your cemetery by 40 HP."
+    },
+    "effect": {
+      "effectId": "003-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "This creature",
+      "value": "While this card is in your cemetery, reduce your cemetery by 40 HP.",
+      "durationText": "Immediate",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Enlightened Soul reduces cemetery HP while in cemetery",
+    "summary": "Put Enlightened Soul in cemetery and verify the player cemetery HP is reduced by 40.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_003_enlightened_soul",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: While this card is in your cemetery, reduce your cemetery by 40 HP."
+      ]
+    },
+    "steps": [
+      "Set up Enlightened Soul according to its printed text.",
+      "Put Enlightened Soul in cemetery and verify the player cemetery HP is reduced by 40.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Enlightened Soul route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Enlightened Soul"
+      },
+      {
+        "label": "Cemetery HP reduction marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "CEMETERY_HP"
+      },
+      {
+        "label": "Enlightened Soul route automated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "MANUAL_FALLBACK"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: While this card is in your cemetery, reduce your cemetery by 40 HP."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Put Enlightened Soul in cemetery and verify the player cemetery HP is reduced by 40."
+    },
+    "regression": {
+      "fixtureName": "enlightened-soul-reduces-cemetery-hp-from-cemetery",
+      "tags": [
+        "gen3",
+        "creature",
+        "cosmic",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_003_enlightened_soul:003-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

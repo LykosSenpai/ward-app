@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_022_shapeshifter",
+  "effectId": "022-E01",
+  "title": "Shapeshifter chooses a battle form before hit roll",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_022_shapeshifter",
+      "cardName": "Shapeshifter",
+      "cardType": "CREATURE",
+      "cardNumber": "022",
+      "generation": "3",
+      "rawText": "Prior to battle, choose 1 of the forms below for this battle. Eagle: +5 SPD. Deer: +3 Modifier. Bear: +4 Atk Dice Rolls. Turtle: +6 AL."
+    },
+    "effect": {
+      "effectId": "022-E01",
+      "trigger": "BEFORE_HIT_ROLL",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "This creature",
+      "value": "Prior to battle, choose 1 of the forms below for this battle. Eagle: +5 SPD. Deer: +3 Modifier. Bear: +4 Atk Dice Rolls. Turtle: +6 AL.",
+      "durationText": "This turn/battle",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Shapeshifter chooses a battle form before hit roll",
+    "summary": "Before battle, choose one Shapeshifter form and verify the selected battle-only modifier is represented.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_022_shapeshifter"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: Prior to battle, choose 1 of the forms below for this battle. Eagle: +5 SPD. Deer: +3 Modifier. Bear: +4 Atk Dice Rolls. Turtle: +6 AL."
+      ]
+    },
+    "steps": [
+      "Set up Shapeshifter according to its printed text.",
+      "Before battle, choose one Shapeshifter form and verify the selected battle-only modifier is represented.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Shapeshifter route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Shapeshifter"
+      },
+      {
+        "label": "Shapeshifter form choice marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "FORM"
+      },
+      {
+        "label": "Chosen form route automated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "MANUAL_FALLBACK"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Prior to battle, choose 1 of the forms below for this battle. Eagle: +5 SPD. Deer: +3 Modifier. Bear: +4 Atk Dice Rolls. Turtle: +6 AL."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Before battle, choose one Shapeshifter form and verify the selected battle-only modifier is represented."
+    },
+    "regression": {
+      "fixtureName": "shapeshifter-chooses-battle-form-before-hit-roll",
+      "tags": [
+        "gen3",
+        "creature",
+        "humanoid",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_022_shapeshifter:022-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

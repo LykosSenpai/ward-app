@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_010_fazard",
+  "effectId": "010-E01",
+  "title": "Fazard prevents Standard magic cards",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_010_fazard",
+      "cardName": "Fazard",
+      "cardType": "CREATURE",
+      "cardNumber": "010",
+      "generation": "3",
+      "rawText": "While this card is on the field, Standard magic cards cannot be played."
+    },
+    "effect": {
+      "effectId": "010-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "Magic card(s) on the field",
+      "value": "While this card is on the field, Standard magic cards cannot be played.",
+      "durationText": "While on field",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Fazard prevents Standard magic cards",
+    "summary": "Keep Fazard on field and verify Standard magic cards cannot be played.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_010_fazard"
+      ],
+      "player2Cards": [
+        "gen1_014_smokescreen",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Read text first: While this card is on the field, Standard magic cards cannot be played."
+      ]
+    },
+    "steps": [
+      "Set up Fazard according to its printed text.",
+      "Keep Fazard on field and verify Standard magic cards cannot be played.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Fazard route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Fazard"
+      },
+      {
+        "label": "Standard magic play restriction marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "PREVENT_CARD_PLAY"
+      },
+      {
+        "label": "Fazard route automated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "MANUAL_FALLBACK"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: While this card is on the field, Standard magic cards cannot be played."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Keep Fazard on field and verify Standard magic cards cannot be played."
+    },
+    "regression": {
+      "fixtureName": "fazard-prevents-standard-magic-play",
+      "tags": [
+        "gen3",
+        "creature",
+        "cosmic",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_010_fazard:010-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

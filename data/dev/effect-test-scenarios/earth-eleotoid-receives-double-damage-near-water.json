@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_029_earth_eleotoid",
+  "effectId": "029-E01",
+  "title": "Earth Eleotoid receives double Atk damage near water",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_029_earth_eleotoid",
+      "cardName": "Earth Eleotoid",
+      "cardType": "CREATURE",
+      "cardNumber": "029",
+      "generation": "3",
+      "rawText": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water."
+    },
+    "effect": {
+      "effectId": "029-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "This creature",
+      "value": "This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Earth Eleotoid receives double Atk damage near water",
+    "summary": "When Earth Eleotoid is in or near water, verify it receives 2x Atk damage.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen3_029_earth_eleotoid"
+      ],
+      "player2Cards": [
+        "test_creature_hp100"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water."
+      ]
+    },
+    "steps": [
+      "Set up Earth Eleotoid according to its printed text.",
+      "When Earth Eleotoid is in or near water, verify it receives 2x Atk damage.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Earth Eleotoid route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Earth Eleotoid"
+      },
+      {
+        "label": "Earth Eleotoid damage multiplier marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_ATTACK_DAMAGE_MULTIPLIER"
+      },
+      {
+        "label": "Double damage was applied to Earth Eleotoid",
+        "path": "player_1.primary.damageTaken",
+        "operator": "greaterThan",
+        "value": 12
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: This card inflicts 2x Atk damage to creatures in or near fire, but receives 2x Atk damage from creatures in or near water."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "When Earth Eleotoid is in or near water, verify it receives 2x Atk damage."
+    },
+    "regression": {
+      "fixtureName": "earth-eleotoid-receives-double-damage-near-water",
+      "tags": [
+        "gen3",
+        "creature",
+        "elemental",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_029_earth_eleotoid:029-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

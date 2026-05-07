@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_009_hoggan",
+  "effectId": "009-E02",
+  "title": "Hoggan can be damaged as Limited Summon",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_009_hoggan",
+      "cardName": "Hoggan",
+      "cardType": "CREATURE",
+      "cardNumber": "009",
+      "generation": "3",
+      "rawText": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle."
+    },
+    "effect": {
+      "effectId": "009-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "DAMAGE",
+      "effectGroup": "Damage",
+      "target": "Opponent's primary creature",
+      "value": "At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle.",
+      "durationText": "Immediate",
+      "reusableFunction": "damage"
+    },
+    "title": "Hoggan can be damaged as Limited Summon",
+    "summary": "After Hoggan redirects battle, verify damage can be applied to Hoggan as Limited Summon.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "gen3_009_hoggan",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle."
+      ]
+    },
+    "steps": [
+      "Set up Hoggan according to its printed text.",
+      "After Hoggan redirects battle, verify damage can be applied to Hoggan as Limited Summon.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Hoggan route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Hoggan"
+      },
+      {
+        "label": "Battle damage pipeline resolved against Hoggan route",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Hoggan route automated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "BATTLE_EFFECT_ROUTE_NOT_AUTOMATED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: At the beginning of your opponent's battle, play this card from your hand as a Limited Summon. Your opponent must battle this card in place of your primary creature. This card can be damaged as a Limited Summon. Send this card to your cemetery after battle."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "After Hoggan redirects battle, verify damage can be applied to Hoggan as Limited Summon."
+    },
+    "regression": {
+      "fixtureName": "hoggan-can-be-damaged-as-limited-summon",
+      "tags": [
+        "gen3",
+        "creature",
+        "beast",
+        "damage"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_009_hoggan:009-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

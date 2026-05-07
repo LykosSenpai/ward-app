@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_017_shield_of_light",
+  "effectId": "017-E02",
+  "title": "Shield of Light low roll heals damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_017_shield_of_light",
+      "cardName": "Shield of Light",
+      "cardType": "MAGIC",
+      "cardNumber": "017",
+      "generation": "3",
+      "rawText": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+    },
+    "effect": {
+      "effectId": "017-E02",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "target": "Equipped creature",
+      "value": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+      "durationText": "While equipped",
+      "reusableFunction": "heal"
+    },
+    "title": "Shield of Light low roll heals damage",
+    "summary": "Force Shield of Light 1-2 branch and verify incoming damage heals instead.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_017_shield_of_light",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Shield of Light heal branch"
+        },
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+      ]
+    },
+    "steps": [
+      "Set up Shield of Light according to its printed text.",
+      "Force Shield of Light 1-2 branch and verify incoming damage heals instead.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Shield of Light route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Shield of Light"
+      },
+      {
+        "label": "Heal branch marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEAL"
+      },
+      {
+        "label": "Damage prevention battle pipeline was exercised",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "BATTLE_DAMAGE_PIPELINE_RESOLVED"
+      },
+      {
+        "label": "Equipped creature took no damage",
+        "path": "player_1.primary.damageTaken",
+        "operator": "equals",
+        "value": 0
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Force Shield of Light 1-2 branch and verify incoming damage heals instead."
+    },
+    "regression": {
+      "fixtureName": "shield-of-light-low-roll-heals-damage",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "heal"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_017_shield_of_light:017-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

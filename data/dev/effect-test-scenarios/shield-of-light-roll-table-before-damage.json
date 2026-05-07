@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_017_shield_of_light",
+  "effectId": "017-E04",
+  "title": "Shield of Light roll table resolves before damage",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_017_shield_of_light",
+      "cardName": "Shield of Light",
+      "cardType": "MAGIC",
+      "cardNumber": "017",
+      "generation": "3",
+      "rawText": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+    },
+    "effect": {
+      "effectId": "017-E04",
+      "trigger": "WHILE_EQUIPPED",
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "target": "Equipped creature",
+      "value": "Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card.",
+      "durationText": "While equipped",
+      "reusableFunction": "resolveRollTable"
+    },
+    "title": "Shield of Light roll table resolves before damage",
+    "summary": "Verify Shield of Light rolls its prevention table before damage is applied.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_017_shield_of_light",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            1
+          ],
+          "label": "Shield of Light roll table"
+        },
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "label": "Headless Gen3 QA hit route"
+        },
+        {
+          "kind": "ATTACK_DAMAGE_ROLL",
+          "dice": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "label": "Headless Gen3 QA damage route"
+        }
+      ],
+      "notes": [
+        "Read text first: Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+      ]
+    },
+    "steps": [
+      "Set up Shield of Light according to its printed text.",
+      "Verify Shield of Light rolls its prevention table before damage is applied.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Shield of Light route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Shield of Light"
+      },
+      {
+        "label": "Roll table marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "ROLL_TABLE"
+      },
+      {
+        "label": "Shield of Light roll table automated",
+        "path": "gameLog",
+        "operator": "notContains",
+        "value": "BATTLE_EFFECT_ROUTE_NOT_AUTOMATED"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: Roll 1 die prior to any damage the equipped creature receives. If the result is: 1-2: Heal for the damage instead. 3-4: Receive damage as normal. 5-6: Destroy this card."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Verify Shield of Light rolls its prevention table before damage is applied."
+    },
+    "regression": {
+      "fixtureName": "shield-of-light-roll-table-before-damage",
+      "tags": [
+        "gen3",
+        "magic",
+        "equip",
+        "roll-table"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_017_shield_of_light:017-E04"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

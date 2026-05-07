@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen3_035_dark_moon",
+  "effectId": "035-E01",
+  "title": "Dark Moon limits opponent creatures to one Hit Die",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T00:00:00.000Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen3",
+      "cardId": "gen3_035_dark_moon",
+      "cardName": "Dark Moon",
+      "cardType": "MAGIC",
+      "cardNumber": "035",
+      "generation": "3",
+      "rawText": "For 1 turn cycle your opponents' creatures can only roll 1 Hit Die."
+    },
+    "effect": {
+      "effectId": "035-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "actionType": "MANUAL_FALLBACK",
+      "effectGroup": "Manual Fallback",
+      "target": "Target creature",
+      "value": "For 1 turn cycle your opponents' creatures can only roll 1 Hit Die.",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "manualFallback"
+    },
+    "title": "Dark Moon limits opponent creatures to one Hit Die",
+    "summary": "Play Dark Moon and verify opponent creatures can only roll one Hit Die for one turn cycle.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen3_035_dark_moon",
+        "test_creature_hp100"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "HIT_ROLL",
+          "dice": [
+            5
+          ],
+          "label": "Dark Moon capped hit die"
+        }
+      ],
+      "notes": [
+        "Read text first: For 1 turn cycle your opponents' creatures can only roll 1 Hit Die."
+      ]
+    },
+    "steps": [
+      "Set up Dark Moon according to its printed text.",
+      "Play Dark Moon and verify opponent creatures can only roll one Hit Die for one turn cycle.",
+      "Verify deterministic headless assertions."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "Dark Moon route logged",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "Dark Moon"
+      },
+      {
+        "label": "Hit roll dice count capped to one",
+        "path": "battle.lastHitRoll.dice.length",
+        "operator": "equals",
+        "value": 1
+      },
+      {
+        "label": "Dice limit marker emitted",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_DICE_LIMIT"
+      }
+    ],
+    "manualVerification": [
+      "Confirm against printed text: For 1 turn cycle your opponents' creatures can only roll 1 Hit Die."
+    ],
+    "riskNotes": [
+      "Fixture is scoped to the deterministic headless route; red results should identify missing runtime support or assertion drift."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Play Dark Moon and verify opponent creatures can only roll one Hit Die for one turn cycle."
+    },
+    "regression": {
+      "fixtureName": "dark-moon-limits-opponent-creatures-to-one-hit-die",
+      "tags": [
+        "gen3",
+        "magic",
+        "field",
+        "manual-fallback"
+      ]
+    },
+    "requestKey": "ward-gen3:gen3_035_dark_moon:035-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
