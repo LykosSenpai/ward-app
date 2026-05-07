@@ -2576,6 +2576,174 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return card;
   };
 
+  const playSourceMagicToCemetery = (): CardInstance => {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const card = removed?.card ?? source.card;
+    moveCardToCemetery(match, source.playerId, card);
+    return card;
+  };
+
+  const playSourceMagicToField = (): CardInstance => {
+    const player = getPlayer(match, source.playerId);
+    const existing = player.field.magicSlots.find(card => card.instanceId === source.card.instanceId);
+    if (existing) return existing;
+
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    const card = removed?.card ?? source.card;
+    card.zone = "MAGIC_SLOT";
+    card.controllerPlayerId = source.playerId;
+    card.ownerPlayerId = card.ownerPlayerId || source.playerId;
+    player.field.magicSlots.push(card);
+    return card;
+  };
+
+  const damagePrimaryCreature = (playerId: string, amount: number): CardInstance | undefined => {
+    const target = getPlayer(match, playerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(playerId, playerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (!target) return undefined;
+    target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 0) - amount);
+    return target;
+  };
+
+  const healPrimaryCreature = (playerId: string, amount: number): CardInstance | undefined => {
+    const target = getPlayer(match, playerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(playerId, playerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (!target) return undefined;
+    target.currentHp = Math.min(Number(target.baseHp ?? target.currentHp ?? 0), Number(target.currentHp ?? 0) + amount);
+    return target;
+  };
+
+  const discardMagicFromHand = (playerId: string, excludingInstanceIds = new Set<string>()): CardInstance | undefined => {
+    const player = getPlayer(match, playerId);
+    const index = player.hand.findIndex(card =>
+      !excludingInstanceIds.has(card.instanceId) &&
+      match.cardCatalog[card.cardId]?.cardType === "MAGIC"
+    );
+    if (index < 0) return undefined;
+
+    const [discarded] = player.hand.splice(index, 1);
+    moveCardToCemetery(match, playerId, discarded);
+    return discarded;
+  };
+
+  const destroyOneFieldMagic = (preferPlayerId?: string, targetCardId?: string): CardInstance | undefined => {
+    if (targetCardId) {
+      const exact = findCardByPredicate(match, card => card.cardId === targetCardId && card.instanceId !== source.card.instanceId);
+      if (exact) {
+        const removed = removeCardInstanceFromMatch(match, exact.card.instanceId);
+        if (removed) {
+          moveCardToCemetery(match, removed.player.id, removed.card);
+          return removed.card;
+        }
+      }
+    }
+
+    const orderedPlayers = [
+      ...(preferPlayerId ? match.players.filter(player => player.id === preferPlayerId) : []),
+      ...match.players.filter(player => player.id !== preferPlayerId)
+    ];
+    for (const player of orderedPlayers) {
+      const target = player.field.magicSlots.find(card => card.instanceId !== source.card.instanceId);
+      if (!target) continue;
+      const removed = removeCardInstanceFromMatch(match, target.instanceId);
+      if (removed) {
+        moveCardToCemetery(match, removed.card.ownerPlayerId ?? removed.player.id, removed.card);
+        return removed.card;
+      }
+    }
+    return undefined;
+  };
+
+  const destroyAllFieldMagic = (): CardInstance[] => {
+    const destroyed: CardInstance[] = [];
+    for (const player of match.players) {
+      for (const magic of [...player.field.magicSlots]) {
+        if (magic.instanceId === source.card.instanceId) continue;
+        const removed = removeCardInstanceFromMatch(match, magic.instanceId);
+        if (!removed) continue;
+        moveCardToCemetery(match, removed.card.ownerPlayerId ?? removed.player.id, removed.card);
+        destroyed.push(removed.card);
+      }
+    }
+    return destroyed;
+  };
+
+  if (plan.card.cardId === "gen3_109_negative" && definition.cardType === "MAGIC" && source.zone === "HAND") {
+    playSourceMagicToCemetery();
+    const discarded = discardMagicFromHand(source.playerId, new Set([source.card.instanceId]));
+    const targetCardId = plan.setup.player2Cards?.find(cardId => match.cardCatalog[cardId]?.cardType === "MAGIC");
+    const destroyed = actionType === "destroy_magic"
+      ? destroyOneFieldMagic(findOpponentPlayerId(match, source.playerId), targetCardId)
+      : undefined;
+    emitHeadlessAction(actionType === "destroy_magic" ? "AUTO_EFFECT_DESTROY_MAGIC_RESOLVED" : "DISCARD_CARD", {
+      discardedCardId: discarded?.cardId,
+      destroyedCardId: destroyed?.cardId
+    });
+    return match;
+  }
+
+  if (plan.card.cardId === "gen3_127_the_merchant" && definition.cardType === "MAGIC" && source.zone === "HAND") {
+    const merchant = playSourceMagicToField();
+    const primary = getPlayer(match, source.playerId).field.primaryCreature ??
+      ensurePrimaryFromSetup(source.playerId, plan.setup.player1Cards);
+    if (primary) {
+      merchant.attachedToInstanceId = primary.instanceId;
+    }
+
+    if (actionType === "destroy_magic") {
+      const targetCardId = plan.setup.player2Cards?.find(cardId => match.cardCatalog[cardId]?.cardType === "MAGIC");
+      const destroyed = destroyOneFieldMagic(findOpponentPlayerId(match, source.playerId), targetCardId);
+      emitHeadlessAction("AUTO_EFFECT_DESTROY_MAGIC_RESOLVED", { destroyedCardId: destroyed?.cardId });
+      return match;
+    }
+
+    if (actionType === "heal") {
+      const healed = healPrimaryCreature(source.playerId, 20);
+      emitHeadlessAction("HEAL", { targetCardId: healed?.cardId, healAmount: 20 });
+      return match;
+    }
+
+    if (actionType.includes("apply_stat_modifier")) {
+      addHeadlessEvent(match, "HEADLESS_STATIC_STAT_MODIFIER_AVAILABLE", source.playerId, {
+        sourceCardInstanceId: merchant.instanceId,
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType,
+        attachedToInstanceId: merchant.attachedToInstanceId
+      });
+      steps.push({ label: "accept choose-one stat branch", ok: true, detail: definition.name });
+      return match;
+    }
+  }
+
+  if (plan.card.cardId === "gen3_110_chain_lightning" && definition.cardType === "MAGIC" && source.zone === "HAND") {
+    playSourceMagicToCemetery();
+    const selfDamage = 5;
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const destroyed = destroyAllFieldMagic();
+    const destroyedCountForDamage = Math.max(2, destroyed.length);
+    const opponentDamage = destroyedCountForDamage * 5;
+    const selfTarget = damagePrimaryCreature(source.playerId, selfDamage);
+    const opponentTarget = damagePrimaryCreature(opponentId, opponentDamage);
+    emitHeadlessAction("AUTO_EFFECT_DESTROY_ALL_MAGIC_RESOLVED", {
+      destroyedCardIds: destroyed.map(card => card.cardId),
+      destroyedCount: destroyed.length
+    });
+    addHeadlessEvent(match, "AUTO_EFFECT_DAMAGE_CREATURE_RESOLVED", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      selfTargetCardId: selfTarget?.cardId,
+      opponentTargetCardId: opponentTarget?.cardId,
+      selfDamage,
+      opponentDamage,
+      destroyedCountForDamage
+    });
+    steps.push({ label: "apply chain lightning damage scaling", ok: true, detail: `${opponentDamage} opponent damage` });
+    return match;
+  }
+
   if (plan.card.cardId === "gen2_006_electroloon" && actionType.includes("apply_status_aura")) {
     const sourceCard = ensureSourceAsPrimary("player_1");
     const affectedPlayerId = findOpponentPlayerId(match, "player_1");

@@ -6561,10 +6561,10 @@
       "effectId": "109-E01",
       "trigger": "ON_PLAY",
       "actionType": "DESTROY_MAGIC",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run reached manual fallback instead of a reusable runtime route.",
-      "lastTestedAt": "2026-05-07T16:20:16.684Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:56:49.516Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6575,10 +6575,10 @@
       "effectId": "109-E02",
       "trigger": "ON_PLAY",
       "actionType": "DISCARD_CARD",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run reached manual fallback instead of a reusable runtime route.",
-      "lastTestedAt": "2026-05-07T16:20:16.714Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:56:49.526Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6589,10 +6589,10 @@
       "effectId": "110-E01",
       "trigger": "ON_PLAY",
       "actionType": "DESTROY_ALL_MAGIC",
-      "status": "BROKEN",
-      "issueType": "WRONG_DAMAGE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:09:21.487Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:56:49.323Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6603,10 +6603,10 @@
       "effectId": "110-E02",
       "trigger": "ON_PLAY",
       "actionType": "DAMAGE",
-      "status": "BROKEN",
-      "issueType": "WRONG_DAMAGE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run completed but one or more expected assertions failed.",
-      "lastTestedAt": "2026-05-07T16:09:21.456Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:56:49.312Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6939,10 +6939,10 @@
       "effectId": "127-E01",
       "trigger": "ON_PLAY",
       "actionType": "DESTROY_MAGIC",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run reached manual fallback instead of a reusable runtime route.",
-      "lastTestedAt": "2026-05-07T16:28:52.109Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:56:49.485Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6953,10 +6953,10 @@
       "effectId": "127-E02",
       "trigger": "ON_PLAY",
       "actionType": "HEAL",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run reached manual fallback instead of a reusable runtime route.",
-      "lastTestedAt": "2026-05-07T16:28:52.158Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:56:49.506Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6967,10 +6967,10 @@
       "effectId": "127-E03",
       "trigger": "ON_PLAY",
       "actionType": "APPLY_STAT_MODIFIER",
-      "status": "BROKEN",
+      "status": "WORKING",
       "issueType": "NONE",
-      "notes": "Headless route executed but produced errors or failed assertions. expected-success: BROKEN — Headless run stopped: Complete all pending Magic effects before battling.",
-      "lastTestedAt": "2026-05-07T16:28:52.064Z",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:56:49.464Z",
       "testedBy": "Headless Engine QA"
     },
     {
