@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:30:07.848Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_130_scroll_of_silence",
+  "effectId": "130-E02",
+  "title": "Scroll of Silence negate Lightning card effect and send to cemetery",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:30:07.848Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_130_scroll_of_silence",
+      "cardName": "Scroll of Silence",
+      "cardType": "MAGIC",
+      "cardNumber": "130",
+      "generation": "2",
+      "rawText": "Play this card from your hand if your opponent plays a Lightning card. Negate the Lightning card effect and send it to the cemetery. This card cannot be negated."
+    },
+    "effect": {
+      "effectId": "130-E02",
+      "trigger": "ON_OPPONENT_PLAYS_LIGHTNING",
+      "actionType": "NEGATE_LIGHTNING_AND_SEND_TO_CEMETERY",
+      "effectGroup": "Lightning Negation",
+      "target": "Opponent Lightning card",
+      "value": "Negate effect and send to cemetery",
+      "durationText": "Instant",
+      "reusableFunction": "negateLightningToCemetery"
+    },
+    "title": "Scroll of Silence negate Lightning card effect and send to cemetery",
+    "summary": "Verify Scroll of Silence effect 130-E02: Negate Lightning card effect and send to cemetery.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_130_scroll_of_silence",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen1_028_blade_in_the_dark",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Player_2 plays a Lightning card so player_1 can respond with Scroll of Silence.",
+        "Play this card from your hand if your opponent plays a Lightning card. Negate the Lightning card effect and send it to the cemetery. This card cannot be negated."
+      ]
+    },
+    "steps": [
+      "Set up Scroll of Silence according to its rules text.",
+      "Resolve NEGATE_LIGHTNING_AND_SEND_TO_CEMETERY for 130-E02.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "130-E02 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "NEGATE_LIGHTNING_AND_SEND_TO_CEMETERY"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Play this card from your hand if your opponent plays a Lightning card. Negate the Lightning card effect and send it to the cemetery. This card cannot be negated."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_130_scroll_of_silence-130-e02 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_130_scroll_of_silence-130-e02",
+      "tags": [
+        "MAGIC",
+        "ON_OPPONENT_PLAYS_LIGHTNING",
+        "NEGATE_LIGHTNING_AND_SEND_TO_CEMETERY"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_130_scroll_of_silence:130-E02"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

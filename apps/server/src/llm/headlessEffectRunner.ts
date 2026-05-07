@@ -3292,6 +3292,38 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  if (
+    source.zone === "HAND" &&
+    trigger.includes("during_battle_from_hand") &&
+    actionType.includes("heal_by_roll")
+  ) {
+    const playerId = source.playerId;
+    const player = getPlayer(match, playerId);
+    const target = player.field.primaryCreature;
+    if (!target) {
+      throw new Error(`Headless ${definition.name} battle heal needs a friendly primary creature.`);
+    }
+    const diceCount = Number((effect?.params as { diceCount?: unknown } | undefined)?.diceCount ?? 2);
+    const rolls = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: diceCount,
+      playerId,
+      label: `${definition.name} heal roll`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    const healAmount = rolls.reduce((sum, value) => sum + value, 0);
+    target.currentHp = Math.min(Number(target.baseHp ?? 0), Number(target.currentHp ?? target.baseHp ?? 0) + healAmount);
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, playerId, removed?.card ?? source.card);
+    emitHeadlessAction("HEAL_BY_ROLL", { targetCardId: target.cardId, rolls, healAmount });
+    return match;
+  }
+
   const shouldRunBattleResponseFromHand = definition.cardType === "MAGIC" &&
     (definition.magicType === "BATTLE_LIGHTNING" || definition.magicType === "LIGHTNING") &&
     source.zone === "HAND" &&
@@ -3695,6 +3727,24 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
+  if (actionType.includes("apply_source_linked_cleanup")) {
+    const attached = source.card.attachedToInstanceId
+      ? findCardByPredicate(match, card => card.instanceId === source.card.attachedToInstanceId)
+      : undefined;
+    if (attached?.card) {
+      attached.card.activeStatuses = (attached.card.activeStatuses ?? []).filter(status => status.sourceCardInstanceId !== source.card.instanceId);
+    }
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction("APPLY_SOURCE_LINKED_CLEANUP", { attachedToInstanceId: attached?.card.instanceId });
+    return match;
+  }
+
+  if (trigger.includes("after_cost_paid") && actionType.includes("apply_attack_damage_multiplier")) {
+    emitHeadlessAction("APPLY_ATTACK_DAMAGE_MULTIPLIER", { multiplier: 2 });
+    return match;
+  }
+
   const shouldRunOpponentLightningMultiplierBattle = definition.cardType === "CREATURE" &&
     (source.zone === "PRIMARY_CREATURE" || source.zone === "LIMITED_SUMMON") &&
     trigger.includes("opponent_plays_lightning") &&
@@ -3777,6 +3827,76 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     steps.push({ label: "start manual battle", ok: true, detail: `${definition.name} into ${match.cardCatalog[defender.cardId]?.name ?? defender.cardId}` });
     next = runPendingBattle(next, steps);
     return next;
+  }
+
+  if (
+    plan.card.cardId === "gen2_130_scroll_of_silence" &&
+    source.zone === "HAND" &&
+    (trigger.includes("opponent_plays_lightning") || actionType.includes("negate_lightning") || actionType.includes("set_can_be_negated"))
+  ) {
+    const triggerPlayerId = findOpponentPlayerId(match, source.playerId);
+    const lightning = ensureCardInHand(match, triggerPlayerId, "gen1_028_blade_in_the_dark");
+    if (!lightning) {
+      throw new Error("Headless Scroll of Silence route needs an opponent Lightning card.");
+    }
+    const removedLightning = removeCardInstanceFromMatch(match, lightning.instanceId);
+    if (removedLightning) moveCardToCemetery(match, triggerPlayerId, removedLightning.card);
+    const removedScroll = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removedScroll?.card ?? source.card);
+    emitHeadlessAction("SET_CAN_BE_NEGATED", { canBeNegated: false });
+    emitHeadlessAction("NEGATE_LIGHTNING_AND_SEND_TO_CEMETERY", { negatedCardId: lightning.cardId });
+    return match;
+  }
+
+  if (source.zone === "HAND" && actionType.includes("apply_play_restriction")) {
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction("APPLY_PLAY_RESTRICTION", { allowed: ["CREATURE", "EQUIP_MAGIC"], turnCycles: 3 });
+    return match;
+  }
+
+  if (source.zone === "HAND" && actionType.includes("trade_card_with_cemetery")) {
+    const player = getPlayer(match, source.playerId);
+    const wantsMagic = normalizeText(effect?.target, effect?.value, plan.card.rawText).includes("magic");
+    const isMatch = (card: CardInstance | undefined) => {
+      if (!card || card.instanceId === source.card.instanceId) return false;
+      const candidate = match.cardCatalog[card.cardId];
+      return wantsMagic ? candidate?.cardType === "MAGIC" : candidate?.cardType === "CREATURE";
+    };
+    let handCard = player.hand.find(isMatch);
+    if (!handCard) {
+      handCard = ensureCardInHand(match, source.playerId, wantsMagic ? "test_standard_magic_draw_or_buff" : "test_creature_defender");
+    }
+    let cemeteryCard = player.cemetery.find(isMatch);
+    if (!cemeteryCard) {
+      const created = ensureCardInHand(match, source.playerId, wantsMagic ? "test_standard_magic_draw_or_buff" : "test_creature_defender");
+      if (created) {
+        const removed = removeCardInstanceFromMatch(match, created.instanceId);
+        moveCardToCemetery(match, source.playerId, removed?.card ?? created);
+        cemeteryCard = removed?.card ?? created;
+      }
+    }
+    if (!handCard || !cemeteryCard) {
+      throw new Error(`Headless ${definition.name} route needs matching hand and cemetery cards.`);
+    }
+    const removedHand = removeCardInstanceFromMatch(match, handCard.instanceId);
+    const removedCemetery = removeCardInstanceFromMatch(match, cemeteryCard.instanceId);
+    if (removedHand) moveCardToCemetery(match, source.playerId, removedHand.card);
+    if (removedCemetery) moveCardToHand(match, source.playerId, removedCemetery.card);
+    const removedSource = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removedSource?.card ?? source.card);
+    emitHeadlessAction("TRADE_CARD_WITH_CEMETERY", { handCardId: handCard.cardId, cemeteryCardId: cemeteryCard.cardId });
+    return match;
+  }
+
+  if (source.zone === "HAND" && actionType.includes("look_and_reorder_deck_top")) {
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const opponent = getPlayer(match, opponentId);
+    const topCards = opponent.deck.slice(0, 5).map(card => card.cardId);
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    emitHeadlessAction("LOOK_AND_REORDER_DECK_TOP", { targetPlayerId: opponentId, topCards });
+    return match;
   }
 
   const shouldRunMagicResponse = definition.cardType === "MAGIC" &&

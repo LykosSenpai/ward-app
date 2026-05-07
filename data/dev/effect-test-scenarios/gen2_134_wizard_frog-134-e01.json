@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:30:07.848Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_134_wizard_frog",
+  "effectId": "134-E01",
+  "title": "Wizard Frog send card from hand back to deck and shuffle",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:30:07.848Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_134_wizard_frog",
+      "cardName": "Wizard Frog",
+      "cardType": "CREATURE",
+      "cardNumber": "134",
+      "generation": "2",
+      "rawText": "During your turn, you may send a card from your hand back to your deck (shuffle). This creature then inflicts 2x Atk damage for this turn."
+    },
+    "effect": {
+      "effectId": "134-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "actionType": "PAY_CARD_COST",
+      "effectGroup": "Cost",
+      "target": "1 card from your hand",
+      "value": "Return to your deck and shuffle",
+      "durationText": "Instant",
+      "reusableFunction": "payCardCost"
+    },
+    "title": "Wizard Frog send card from hand back to deck and shuffle",
+    "summary": "Verify Wizard Frog effect 134-E01: Send card from hand back to deck and shuffle.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_134_wizard_frog",
+        "test_standard_magic_draw_or_buff"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "During your turn, you may send a card from your hand back to your deck (shuffle). This creature then inflicts 2x Atk damage for this turn."
+      ]
+    },
+    "steps": [
+      "Set up Wizard Frog according to its rules text.",
+      "Resolve PAY_CARD_COST for 134-E01.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "134-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "PAY_CARD_COST"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: During your turn, you may send a card from your hand back to your deck (shuffle). This creature then inflicts 2x Atk damage for this turn."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_134_wizard_frog-134-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_134_wizard_frog-134-e01",
+      "tags": [
+        "CREATURE",
+        "DURING_YOUR_TURN_ACTIVATED",
+        "PAY_CARD_COST"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_134_wizard_frog:134-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

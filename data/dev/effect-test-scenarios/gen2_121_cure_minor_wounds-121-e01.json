@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:30:07.848Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_121_cure_minor_wounds",
+  "effectId": "121-E01",
+  "title": "Cure Minor Wounds play from hand, roll 2 dice, heal a creature by total",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:30:07.848Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_121_cure_minor_wounds",
+      "cardName": "Cure Minor Wounds",
+      "cardType": "MAGIC",
+      "cardNumber": "121",
+      "generation": "2",
+      "rawText": "During battle, play this card from your hand. Roll 2 dice and heal a creature the result of the dice."
+    },
+    "effect": {
+      "effectId": "121-E01",
+      "trigger": "DURING_BATTLE_FROM_HAND",
+      "actionType": "HEAL_BY_ROLL",
+      "effectGroup": "Healing",
+      "target": "A creature",
+      "value": "Roll 2 dice and heal result",
+      "durationText": "Instant",
+      "reusableFunction": "healByRoll"
+    },
+    "title": "Cure Minor Wounds play from hand, roll 2 dice, heal a creature by total",
+    "summary": "Verify Cure Minor Wounds effect 121-E01: Play from hand, roll 2 dice, heal a creature by total.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_121_cure_minor_wounds",
+        "test_primary_creature",
+        "test_creature_defender"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6,
+            6
+          ],
+          "label": "Cure Minor Wounds heal roll"
+        }
+      ],
+      "notes": [
+        "Keep Cure Minor Wounds in player_1 hand for the during-battle play window.",
+        "Use deterministic heal dice.",
+        "During battle, play this card from your hand. Roll 2 dice and heal a creature the result of the dice."
+      ]
+    },
+    "steps": [
+      "Set up Cure Minor Wounds according to its rules text.",
+      "Resolve HEAL_BY_ROLL for 121-E01.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "121-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "HEAL_BY_ROLL"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: During battle, play this card from your hand. Roll 2 dice and heal a creature the result of the dice."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_121_cure_minor_wounds-121-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_121_cure_minor_wounds-121-e01",
+      "tags": [
+        "MAGIC",
+        "DURING_BATTLE_FROM_HAND",
+        "HEAL_BY_ROLL"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_121_cure_minor_wounds:121-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

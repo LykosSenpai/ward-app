@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:30:07.848Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_123_sleepy_scent",
+  "effectId": "123-E01",
+  "title": "Sleepy Scent put equipped creature to sleep",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:30:07.848Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_123_sleepy_scent",
+      "cardName": "Sleepy Scent",
+      "cardType": "MAGIC",
+      "cardNumber": "123",
+      "generation": "2",
+      "rawText": "Equipped creature is put to sleep for 2 turn cycles. It cannot initiate battle, but also heals 10 HP per turn cycle. Any damage wakes the sleeping creature and sends this card to your cemetery."
+    },
+    "effect": {
+      "effectId": "123-E01",
+      "trigger": "ON_EQUIP",
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status",
+      "target": "Equipped creature",
+      "value": "Sleep for 2 turn cycles; cannot initiate battle; heals 10 HP per turn cycle",
+      "durationText": "2 turn cycles",
+      "reusableFunction": "applyStatusWithEscapeRoll"
+    },
+    "title": "Sleepy Scent put equipped creature to sleep",
+    "summary": "Verify Sleepy Scent effect 123-E01: Put equipped creature to sleep.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_123_sleepy_scent",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Equip Sleepy Scent according to its text.",
+        "Equipped creature is put to sleep for 2 turn cycles. It cannot initiate battle, but also heals 10 HP per turn cycle. Any damage wakes the sleeping creature and sends this card to your cemetery."
+      ]
+    },
+    "steps": [
+      "Set up Sleepy Scent according to its rules text.",
+      "Resolve APPLY_STATUS_WITH_ESCAPE_ROLL for 123-E01.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "123-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_STATUS_WITH_ESCAPE_ROLL"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Equipped creature is put to sleep for 2 turn cycles. It cannot initiate battle, but also heals 10 HP per turn cycle. Any damage wakes the sleeping creature and sends this card to your cemetery."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_123_sleepy_scent-123-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_123_sleepy_scent-123-e01",
+      "tags": [
+        "MAGIC",
+        "ON_EQUIP",
+        "APPLY_STATUS_WITH_ESCAPE_ROLL"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_123_sleepy_scent:123-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:30:07.848Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_120_apocalypse",
+  "effectId": "120-E01",
+  "title": "Apocalypse compare all player dice and resolve matching result",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:30:07.848Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_120_apocalypse",
+      "cardName": "Apocalypse",
+      "cardType": "MAGIC",
+      "cardNumber": "120",
+      "generation": "2",
+      "rawText": "All players must roll 1 die each turn. If the result of all dice match, all primary creatures receive 100 damage. If this effect occurs, send this card to the cemetery."
+    },
+    "effect": {
+      "effectId": "120-E01",
+      "trigger": "EACH_TURN",
+      "actionType": "ROLL_DAMAGE_TABLE",
+      "effectGroup": "Apocalypse Roll",
+      "target": "All primary creatures",
+      "value": "If all players' D6 results match, all primary creatures receive 100 damage and this card goes to cemetery",
+      "durationText": "While field effect is active",
+      "reusableFunction": "rollDamageTable"
+    },
+    "title": "Apocalypse compare all player dice and resolve matching result",
+    "summary": "Verify Apocalypse effect 120-E01: Compare all player dice and resolve matching result.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_120_apocalypse",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Apocalypse table roll"
+        }
+      ],
+      "notes": [
+        "Use deterministic 6 rolls for table resolution.",
+        "Play Apocalypse as a field magic card.",
+        "All players must roll 1 die each turn. If the result of all dice match, all primary creatures receive 100 damage. If this effect occurs, send this card to the cemetery."
+      ]
+    },
+    "steps": [
+      "Set up Apocalypse according to its rules text.",
+      "Resolve ROLL_DAMAGE_TABLE for 120-E01.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "120-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "ROLL_DAMAGE_TABLE"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: All players must roll 1 die each turn. If the result of all dice match, all primary creatures receive 100 damage. If this effect occurs, send this card to the cemetery."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_120_apocalypse-120-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_120_apocalypse-120-e01",
+      "tags": [
+        "MAGIC",
+        "EACH_TURN",
+        "ROLL_DAMAGE_TABLE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_120_apocalypse:120-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}
