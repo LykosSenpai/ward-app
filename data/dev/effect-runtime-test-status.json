@@ -4839,10 +4839,10 @@
       "effectId": "001-E01",
       "trigger": "STATIC_WHILE_ON_FIELD",
       "actionType": "MANUAL_FALLBACK",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: MANUAL_FALLBACK.",
-      "lastTestedAt": "2026-05-07T16:35:09.349Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:28:36.316Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -4895,10 +4895,10 @@
       "effectId": "006-E01",
       "trigger": "END_OF_YOUR_TURN",
       "actionType": "DAMAGE",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: DAMAGE.",
-      "lastTestedAt": "2026-05-07T16:35:09.231Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:28:33.364Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -4923,10 +4923,10 @@
       "effectId": "007-E01",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "NEGATE_CREATURE_EFFECTS",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: NEGATE_CREATURE_EFFECTS.",
-      "lastTestedAt": "2026-05-07T16:35:09.975Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:29:00.481Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -4937,10 +4937,10 @@
       "effectId": "007-E02",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "REPLACE_ATTACK_PROFILE",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: REPLACE_ATTACK_PROFILE.",
-      "lastTestedAt": "2026-05-07T16:35:09.955Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:29:00.457Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6617,10 +6617,10 @@
       "effectId": "111-E01",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "NEGATE_CREATURE_EFFECTS",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: NEGATE_CREATURE_EFFECTS.",
-      "lastTestedAt": "2026-05-07T16:47:13.122Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:28:38.914Z",
       "testedBy": "Headless Engine QA"
     },
     {
@@ -6631,10 +6631,10 @@
       "effectId": "111-E02",
       "trigger": "WHILE_EQUIPPED",
       "actionType": "REPLACE_ATTACK_PROFILE",
-      "status": "BROKEN",
-      "issueType": "UNSUPPORTED_ACTION_TYPE",
-      "notes": "All headless routes were blocked by missing runtime support. expected-success: BLOCKED_RUNTIME — Headless run stopped: This effect is not supported by Effect Runtime v1 yet: REPLACE_ATTACK_PROFILE.",
-      "lastTestedAt": "2026-05-07T16:47:13.100Z",
+      "status": "WORKING",
+      "issueType": "NONE",
+      "notes": "Expected-success route worked; control variants did not expose a hard failure. expected-success: WORKING — Headless run completed and all generated assertions passed.",
+      "lastTestedAt": "2026-05-07T18:28:38.896Z",
       "testedBy": "Headless Engine QA"
     },
     {

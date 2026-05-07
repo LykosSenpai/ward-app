@@ -176,6 +176,10 @@ function effectAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
     return source.player.id !== target.player.id;
   }
 
+  if (text.includes("opponents' creatures") || text.includes("opponent's creatures")) {
+    return source.player.id !== target.player.id;
+  }
+
   if (text.includes("this creature") || text.includes("this card")) {
     return source.card.instanceId === target.card.instanceId;
   }

@@ -82,6 +82,7 @@ function effectText(effect: WardEngineEffect): string {
 function isStaticEffect(effect: WardEngineEffect): boolean {
   const trigger = (effect.trigger ?? "").trim().toUpperCase();
   const actionType = effect.actionType.trim().toUpperCase();
+  const text = effectText(effect);
   if (effect.params?.statChanges?.length) {
     const durationType = (effect.duration?.type ?? effect.params.duration?.type ?? "").trim().toUpperCase();
     return [
@@ -98,6 +99,7 @@ function isStaticEffect(effect: WardEngineEffect): boolean {
       "DURING_DAMAGE_CALC_OR_WHILE_IN_HAND_COUNT"
     ].includes(trigger) || (trigger === "ON_PLAY" && durationType === "WHILE_EQUIPPED");
   }
+  if (text.includes("reduced to 1") || text.includes("cannot be increased")) return true;
   return [
     "APPLY_STAT_SET_AURA",
     "APPLY_STAT_MODIFIER",
@@ -147,6 +149,7 @@ function sourceAppliesToCreature(source: FieldSource, effect: WardEngineEffect, 
     actionType === "APPLY_SOURCE_LINKED_STAT_SET_AURA" &&
     (text.includes("opponent") || text.includes("opposing"))
   ) return source.player.id !== target.player.id;
+  if (text.includes("opponents' creatures") || text.includes("opponent's creatures")) return source.player.id !== target.player.id;
   if (text.includes("this creature") || (text.includes("this card") && !text.includes("this card only affects"))) return source.card.instanceId === target.card.instanceId;
   if (text.includes("opponent") || text.includes("opposing")) return source.player.id !== target.player.id;
   if (text.includes("non-effect creature") || text.includes("non effect creature")) return !target.definition.effects?.length;
@@ -328,7 +331,8 @@ function dynamicLayersForEffect(state: MatchState, source: FieldSource, effect: 
     text.includes("ignore positive") ||
     text.includes("negate other") ||
     text.includes("unaffected by other") ||
-    text.includes("modifier increases")
+    text.includes("modifier increases") ||
+    text.includes("cannot be increased")
   ) {
     if (text.includes("spd") || text.includes("speed")) layers.push(makeLayer(source, effect, "suppress-positive-speed", "speed", "SUPPRESS_POSITIVE", 0));
     if (text.includes("al") || text.includes("armor")) layers.push(makeLayer(source, effect, "suppress-positive-al", "armorLevel", "SUPPRESS_POSITIVE", 0));

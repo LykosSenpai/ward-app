@@ -23,12 +23,22 @@ export function isGlobalCreatureEffectNegationActive(state: MatchState): boolean
 }
 
 export function areCreatureEffectsSuppressed(state: MatchState, card: CardInstance): boolean {
+  const hasAttachedStaticSuppression = state.players.some(player =>
+    player.field.magicSlots.some(magic =>
+      magic.attachedToInstanceId === card.instanceId &&
+      (state.cardCatalog[magic.cardId]?.effects ?? []).some(effect =>
+        normalize(effect.actionType) === "NEGATE_CREATURE_EFFECTS"
+      )
+    )
+  );
+
   return Boolean(
     card.isLimitedSummon ||
     card.effectsSuppressed ||
     card.activeEffectInstances?.some(instance =>
       String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_CREATURE_EFFECT_NEGATION"
     ) ||
+    hasAttachedStaticSuppression ||
     hasActiveSilenceReplacementSuppression(state, card) ||
     isGlobalCreatureEffectNegationActive(state) ||
     isCreatureSuppressedBySilenceFromTheGrave(state, card)

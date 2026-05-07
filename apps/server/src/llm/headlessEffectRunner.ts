@@ -2974,6 +2974,31 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
   }
 
   if (
+    definition.cardType === "MAGIC" &&
+    source.zone === "MAGIC_SLOT" &&
+    trigger.includes("end_of_your_turn") &&
+    actionType === "damage"
+  ) {
+    const opponentId = findOpponentPlayerId(match, source.playerId);
+    const target = ensurePrimaryFromSetup(opponentId, plan.setup.player2Cards) ??
+      getPlayer(match, opponentId).field.primaryCreature;
+    if (!target) throw new Error(`Headless ${definition.name} end-turn damage needs opponent primary creature.`);
+
+    const amount = Number(
+      String(effect?.params?.valueText ?? effect?.value ?? effect?.actionText ?? "").match(/(\d+)/)?.[1] ?? 0
+    );
+    target.currentHp = Math.max(0, Number(target.currentHp ?? target.baseHp ?? 0) - amount);
+    emitHeadlessAction("DAMAGE", {
+      trigger: effect?.trigger,
+      targetPlayerId: opponentId,
+      targetCardInstanceId: target.instanceId,
+      targetCardId: target.cardId,
+      damageAmount: amount
+    });
+    return match;
+  }
+
+  if (
     actionType.includes("apply_zone_return_restriction") ||
     actionType.includes("apply_zone_lock") ||
     actionType.includes("apply_permanent_creature_flag")
@@ -4136,7 +4161,8 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     (
       actionType.includes("apply_stat_modifier") ||
       actionType.includes("apply_dynamic_stat_modifier") ||
-      actionType.includes("apply_multi_modifier")
+      actionType.includes("apply_multi_modifier") ||
+      text.includes("reduced to 1")
     );
 
   if (shouldAcceptStaticCreatureModifier) {
@@ -4622,6 +4648,8 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("apply_negation_window_restriction") ||
       actionType.includes("deal_percentage_damage") ||
       actionType.includes("deal_instant_damage") ||
+      actionType.includes("negate_creature_effects") ||
+      actionType.includes("replace_attack_profile") ||
       actionType.includes("heal_to_full") ||
       actionType === "heal" ||
       actionType.includes("heal_creature") ||
@@ -4695,6 +4723,28 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           appliedTurnNumber: match.turn.turnNumber,
           appliedTurnCycle: match.turn.turnCycleNumber
         });
+      } else if (actionType.includes("negate_creature_effects") && attachedTarget?.card) {
+        attachedTarget.card.activeEffectInstances ??= [];
+        attachedTarget.card.activeEffectInstances = attachedTarget.card.activeEffectInstances.filter(instance =>
+          !(instance.sourceCardInstanceId === source.card.instanceId && instance.sourceEffectId === (effect?.id ?? "UNKNOWN"))
+        );
+        attachedTarget.card.activeEffectInstances.push({
+          id: `headless-creature-effect-negation-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          kind: "STATIC_MODIFIER",
+          sourceEffectId: effect?.id ?? "UNKNOWN",
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: definition.name,
+          sourcePlayerId: source.playerId,
+          targetPlayerId: attachedTarget.playerId,
+          targetCardInstanceId: attachedTarget.card.instanceId,
+          targetCardName: match.cardCatalog[attachedTarget.card.cardId]?.name ?? attachedTarget.card.cardId,
+          actionType: "APPLY_CREATURE_EFFECT_NEGATION",
+          label: effect?.value ?? effect?.actionText ?? "Equipped creature loses its effect",
+          durationType: "WHILE_EQUIPPED",
+          durationText: effect?.duration?.text,
+          appliedTurnNumber: match.turn.turnNumber,
+          appliedTurnCycle: match.turn.turnCycleNumber
+        });
       } else if (actionType.includes("apply_battle_requirement") && attachedTarget?.card) {
         attachedTarget.card.activeEffectInstances ??= [];
         attachedTarget.card.activeEffectInstances.push({
@@ -4750,6 +4800,10 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
             ? "APPLY_HIT_OUTCOME_OVERRIDE"
           : actionType.includes("add_next_magic_shield")
             ? "ADD_NEXT_MAGIC_SHIELD"
+          : actionType.includes("negate_creature_effects")
+            ? "NEGATE_CREATURE_EFFECTS"
+          : actionType.includes("replace_attack_profile")
+            ? "REPLACE_ATTACK_PROFILE"
           : actionType.includes("validate_summon_requirement")
             ? "HEADLESS_EQUIP_REQUIREMENT_AVAILABLE"
           : actionType.includes("apply_magic_immunity")
