@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:24:43.973Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_110_winter_sentinel",
+  "effectId": "110-E01",
+  "title": "Winter Sentinel negate the attack",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:24:43.973Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_110_winter_sentinel",
+      "cardName": "Winter Sentinel",
+      "cardType": "MAGIC",
+      "cardNumber": "110",
+      "generation": "2",
+      "rawText": "When your opponent finishes their attack, play this card. Negate the attack and freeze the attacking creature for 1 turn cycle. Frozen creature cannot inflict Atk damage or be sacrificed."
+    },
+    "effect": {
+      "effectId": "110-E01",
+      "trigger": "ON_OPPONENT_ATTACK_FINISHES_FROM_HAND",
+      "actionType": "NEGATE_ATTACK",
+      "effectGroup": "Negation",
+      "target": "Opponent attack",
+      "value": "Negate the attack",
+      "durationText": "Instant",
+      "reusableFunction": "negateAttack"
+    },
+    "title": "Winter Sentinel negate the attack",
+    "summary": "Verify Winter Sentinel effect 110-E01: Negate the attack.",
+    "setup": {
+      "phase": "COMBAT",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "gen2_110_winter_sentinel",
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Keep Winter Sentinel in player_2 hand as the response to player_1's completed attack.",
+        "When your opponent finishes their attack, play this card. Negate the attack and freeze the attacking creature for 1 turn cycle. Frozen creature cannot inflict Atk damage or be sacrificed."
+      ]
+    },
+    "steps": [
+      "Set up Winter Sentinel according to its rules text.",
+      "Resolve NEGATE_ATTACK for 110-E01.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "110-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "NEGATE_ATTACK"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: When your opponent finishes their attack, play this card. Negate the attack and freeze the attacking creature for 1 turn cycle. Frozen creature cannot inflict Atk damage or be sacrificed."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_110_winter_sentinel-110-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_110_winter_sentinel-110-e01",
+      "tags": [
+        "MAGIC",
+        "ON_OPPONENT_ATTACK_FINISHES_FROM_HAND",
+        "NEGATE_ATTACK"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_110_winter_sentinel:110-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:24:43.973Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_117_frenzy",
+  "effectId": "117-E01",
+  "title": "Frenzy require battle declaration",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:24:43.973Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_117_frenzy",
+      "cardName": "Frenzy",
+      "cardType": "MAGIC",
+      "cardNumber": "117",
+      "generation": "2",
+      "rawText": "All players must declare battle during their turn. If any player's creature is unable to battle due to another card effect, this card is destroyed."
+    },
+    "effect": {
+      "effectId": "117-E01",
+      "trigger": "WHILE_FIELD_ACTIVE",
+      "actionType": "APPLY_BATTLE_REQUIREMENT",
+      "effectGroup": "Battle Requirement",
+      "target": "All players",
+      "value": "Must declare battle during their turn",
+      "durationText": "While field effect is active",
+      "reusableFunction": "applyBattleRequirement"
+    },
+    "title": "Frenzy require battle declaration",
+    "summary": "Verify Frenzy effect 117-E01: Require battle declaration.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_117_frenzy",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Play Frenzy as a field magic card.",
+        "All players must declare battle during their turn. If any player's creature is unable to battle due to another card effect, this card is destroyed."
+      ]
+    },
+    "steps": [
+      "Set up Frenzy according to its rules text.",
+      "Resolve APPLY_BATTLE_REQUIREMENT for 117-E01.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "117-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_BATTLE_REQUIREMENT"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: All players must declare battle during their turn. If any player's creature is unable to battle due to another card effect, this card is destroyed."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_117_frenzy-117-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_117_frenzy-117-e01",
+      "tags": [
+        "MAGIC",
+        "WHILE_FIELD_ACTIVE",
+        "APPLY_BATTLE_REQUIREMENT"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_117_frenzy:117-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

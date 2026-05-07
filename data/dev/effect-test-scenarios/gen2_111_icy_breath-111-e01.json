@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:24:43.973Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_111_icy_breath",
+  "effectId": "111-E01",
+  "title": "Icy Breath freeze summoned creature",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:24:43.973Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_111_icy_breath",
+      "cardName": "Icy Breath",
+      "cardType": "MAGIC",
+      "cardNumber": "111",
+      "generation": "2",
+      "rawText": "Play this card when your opponent summons a creature. That creature is frozen and cannot inflict Atk damage or be sacrificed. During their turn they may roll 1 die. If 5-6, this effect ends and this card is sent to the cemetery."
+    },
+    "effect": {
+      "effectId": "111-E01",
+      "trigger": "ON_OPPONENT_SUMMONS_CREATURE",
+      "actionType": "APPLY_STATUS_WITH_ESCAPE_ROLL",
+      "effectGroup": "Status",
+      "target": "Summoned creature",
+      "value": "Frozen; cannot inflict Atk damage or be sacrificed",
+      "durationText": "Until escape roll succeeds",
+      "reusableFunction": "applyStatusWithEscapeRoll"
+    },
+    "title": "Icy Breath freeze summoned creature",
+    "summary": "Verify Icy Breath effect 111-E01: Freeze summoned creature.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_2",
+      "player1Cards": [
+        "gen2_111_icy_breath",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Icy Breath escape succeeds"
+        }
+      ],
+      "notes": [
+        "Player_1 responds when player_2 summons a creature, then the affected creature rolls 6 during its turn to end the effect.",
+        "Play this card when your opponent summons a creature. That creature is frozen and cannot inflict Atk damage or be sacrificed. During their turn they may roll 1 die. If 5-6, this effect ends and this card is sent to the cemetery."
+      ]
+    },
+    "steps": [
+      "Set up Icy Breath according to its rules text.",
+      "Resolve APPLY_STATUS_WITH_ESCAPE_ROLL for 111-E01.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "111-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_STATUS_WITH_ESCAPE_ROLL"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Play this card when your opponent summons a creature. That creature is frozen and cannot inflict Atk damage or be sacrificed. During their turn they may roll 1 die. If 5-6, this effect ends and this card is sent to the cemetery."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_111_icy_breath-111-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_111_icy_breath-111-e01",
+      "tags": [
+        "MAGIC",
+        "ON_OPPONENT_SUMMONS_CREATURE",
+        "APPLY_STATUS_WITH_ESCAPE_ROLL"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_111_icy_breath:111-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

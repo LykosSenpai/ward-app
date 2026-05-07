@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:24:43.973Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_104_claws_of_the_beast",
+  "effectId": "104-E01",
+  "title": "Claws of the Beast apply conditional temporary Atk Dice Rolls bonus",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:24:43.973Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_104_claws_of_the_beast",
+      "cardName": "Claws of the Beast",
+      "cardType": "MAGIC",
+      "cardNumber": "104",
+      "generation": "2",
+      "rawText": "Equipped creature gains +2 Atk Dice Rolls for 1 turn cycle. If \"Wings of the Beast\" is also equipped to this creature, it gains +3 Atk Dice Rolls instead."
+    },
+    "effect": {
+      "effectId": "104-E01",
+      "trigger": "ON_EQUIP",
+      "actionType": "APPLY_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "target": "Equipped creature",
+      "value": "Atk Dice Rolls +2 for 1 turn cycle; +3 instead if Wings of the Beast also equipped",
+      "durationText": "1 turn cycle",
+      "reusableFunction": "applyDiceModifier"
+    },
+    "title": "Claws of the Beast apply conditional temporary Atk Dice Rolls bonus",
+    "summary": "Verify Claws of the Beast effect 104-E01: Apply conditional temporary Atk Dice Rolls bonus.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_104_claws_of_the_beast",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [],
+      "notes": [
+        "Equip Claws of the Beast to player_1 primary creature.",
+        "Equipped creature gains +2 Atk Dice Rolls for 1 turn cycle. If \"Wings of the Beast\" is also equipped to this creature, it gains +3 Atk Dice Rolls instead."
+      ]
+    },
+    "steps": [
+      "Set up Claws of the Beast according to its rules text.",
+      "Resolve APPLY_DICE_MODIFIER for 104-E01.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "104-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "APPLY_DICE_MODIFIER"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: Equipped creature gains +2 Atk Dice Rolls for 1 turn cycle. If \"Wings of the Beast\" is also equipped to this creature, it gains +3 Atk Dice Rolls instead."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_104_claws_of_the_beast-104-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_104_claws_of_the_beast-104-e01",
+      "tags": [
+        "MAGIC",
+        "ON_EQUIP",
+        "APPLY_DICE_MODIFIER"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_104_claws_of_the_beast:104-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

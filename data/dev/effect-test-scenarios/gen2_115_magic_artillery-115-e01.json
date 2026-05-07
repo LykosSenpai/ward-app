@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-07T16:24:43.973Z",
+  "source": "WARD LLM Test Lab",
+  "cardId": "gen2_115_magic_artillery",
+  "effectId": "115-E01",
+  "title": "Magic Artillery resolve Magic Artillery D6 table",
+  "plan": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-05-07T16:24:43.973Z",
+    "mode": "LLM",
+    "card": {
+      "packId": "ward-gen2",
+      "cardId": "gen2_115_magic_artillery",
+      "cardName": "Magic Artillery",
+      "cardType": "MAGIC",
+      "cardNumber": "115",
+      "generation": "2",
+      "rawText": "At the beginning of your turn, you may roll 1 die. If the result is: 6: Opponent must discard 1 Magic card. 2-5: Nothing happens. 1: Destroy this card."
+    },
+    "effect": {
+      "effectId": "115-E01",
+      "trigger": "AT_BEGINNING_OF_YOUR_TURN",
+      "actionType": "ROLL_DAMAGE_TABLE",
+      "effectGroup": "Random Field Effect",
+      "target": "Opponent or this card",
+      "value": "D6: 6 opponent discards 1 Magic; 2-5 nothing; 1 destroy this card",
+      "durationText": "Instant",
+      "reusableFunction": "rollDamageTable"
+    },
+    "title": "Magic Artillery resolve Magic Artillery D6 table",
+    "summary": "Verify Magic Artillery effect 115-E01: Resolve Magic Artillery D6 table.",
+    "setup": {
+      "phase": "SUMMON_MAGIC",
+      "activePlayerId": "player_1",
+      "player1Cards": [
+        "gen2_115_magic_artillery",
+        "test_primary_creature"
+      ],
+      "player2Cards": [
+        "test_creature_defender"
+      ],
+      "forcedRolls": [
+        {
+          "kind": "EFFECT_ROLL",
+          "dice": [
+            6
+          ],
+          "label": "Magic Artillery table roll"
+        }
+      ],
+      "notes": [
+        "Use a deterministic effect roll to exercise the roll table.",
+        "Play Magic Artillery as a field magic card.",
+        "At the beginning of your turn, you may roll 1 die. If the result is: 6: Opponent must discard 1 Magic card. 2-5: Nothing happens. 1: Destroy this card."
+      ]
+    },
+    "steps": [
+      "Set up Magic Artillery according to its rules text.",
+      "Resolve ROLL_DAMAGE_TABLE for 115-E01.",
+      "Verify the headless route emits concrete evidence."
+    ],
+    "expectedAssertions": [
+      {
+        "label": "115-E01 route emitted evidence",
+        "path": "gameLog",
+        "operator": "contains",
+        "value": "ROLL_DAMAGE_TABLE"
+      }
+    ],
+    "manualVerification": [
+      "Verify against card text: At the beginning of your turn, you may roll 1 die. If the result is: 6: Opponent must discard 1 Magic card. 2-5: Nothing happens. 1: Destroy this card."
+    ],
+    "riskNotes": [
+      "A red result marks missing or incomplete runtime support for this rules text."
+    ],
+    "coverageSuggestion": {
+      "status": "UNTESTED",
+      "issueType": "NONE",
+      "notes": "Run gen2_115_magic_artillery-115-e01 through headless Gen 2 effect QA."
+    },
+    "regression": {
+      "fixtureName": "gen2_115_magic_artillery-115-e01",
+      "tags": [
+        "MAGIC",
+        "AT_BEGINNING_OF_YOUR_TURN",
+        "ROLL_DAMAGE_TABLE"
+      ]
+    },
+    "requestKey": "ward-gen2:gen2_115_magic_artillery:115-E01"
+  },
+  "runnerNotes": [
+    "Create a dev match from plan.setup, execute plan.steps, then verify plan.expectedAssertions.",
+    "The deterministic engine and card rules text remain source of truth."
+  ]
+}

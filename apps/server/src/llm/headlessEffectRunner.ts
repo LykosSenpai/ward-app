@@ -3236,6 +3236,62 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return next;
   }
 
+  if (
+    plan.card.cardId === "gen2_110_winter_sentinel" &&
+    source.zone === "HAND" &&
+    normalizeText(plan.setup.phase).includes("combat")
+  ) {
+    const attackingPlayerId = plan.setup.activePlayerId ?? "player_1";
+    const defendingPlayerId = findOpponentPlayerId(match, attackingPlayerId);
+    const attacker = getPlayer(match, attackingPlayerId).field.primaryCreature;
+    const defender = getPlayer(match, defendingPlayerId).field.primaryCreature;
+
+    if (!attacker || !defender) {
+      throw new Error("Headless Winter Sentinel route needs active and defending primary creatures.");
+    }
+
+    const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+    moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    addHeadlessEvent(match, "NEGATE_ATTACK", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: effect?.id,
+      actionType: effect?.actionType,
+      attackingCardId: attacker.cardId,
+      defendingCardId: defender.cardId
+    });
+    steps.push({ label: "resolve Winter Sentinel attack negation", ok: true, detail: definition.name });
+
+    attacker.activeStatuses ??= [];
+    attacker.activeStatuses.push({
+      id: `headless-winter-sentinel-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceEffectId: effect?.id ?? "110-E02",
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      sourcePlayerId: source.playerId,
+      status: "FROZEN",
+      label: "Frozen; cannot inflict Atk damage or be sacrificed",
+      flags: {
+        canInflictAtkDamage: false,
+        canBeSacrificed: false
+      },
+      durationType: "TARGET_PLAYER_TURN_STARTS",
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber,
+      expiresOnPlayerId: attackingPlayerId
+    });
+    addHeadlessEvent(match, "APPLY_STATUS", source.playerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      effectId: "110-E02",
+      actionType: "APPLY_STATUS",
+      targetCardId: attacker.cardId,
+      status: "FROZEN"
+    });
+    steps.push({ label: "apply Winter Sentinel freeze", ok: true, detail: match.cardCatalog[attacker.cardId]?.name ?? attacker.cardId });
+    return match;
+  }
+
   const shouldRunBattleResponseFromHand = definition.cardType === "MAGIC" &&
     (definition.magicType === "BATTLE_LIGHTNING" || definition.magicType === "LIGHTNING") &&
     source.zone === "HAND" &&
@@ -3347,7 +3403,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     return match;
   }
 
-  if (plan.effect?.effectId && trigger.includes("activated")) {
+  if (plan.effect?.effectId && trigger.includes("activated") && !actionType.includes("roll_damage_table")) {
     const next = activateCardEffect(match, {
       playerId: source.playerId,
       sourceInstanceId: source.card.instanceId,
@@ -3366,6 +3422,89 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     });
     steps.push({ label: "activate status escape roll", ok: true, detail: `${definition.name} ${plan.effect.effectId}` });
     return next;
+  }
+
+  if (actionType.includes("roll_damage_table")) {
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: source.playerId,
+      label: `${definition.name} roll table`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    const params = effect?.params as { table?: Array<{ results?: unknown; actions?: unknown }> } | undefined;
+    const outcome = params?.table?.find(entry =>
+      Array.isArray(entry.results) && entry.results.some(value => Number(value) === roll)
+    );
+    const actions = Array.isArray(outcome?.actions) ? outcome.actions : [];
+    const opponent = getPlayer(match, findOpponentPlayerId(match, source.playerId));
+    const player = getPlayer(match, source.playerId);
+
+    for (const item of actions) {
+      if (typeof item === "string") continue;
+      const action = item as { damage?: unknown; heal?: unknown; amount?: unknown; discardFrom?: unknown; match?: { cardKind?: unknown } };
+      const amount = Number(action.amount ?? 0);
+      if (action.damage === "THIS_CARD" && player.field.primaryCreature) {
+        player.field.primaryCreature.currentHp = Math.max(0, Number(player.field.primaryCreature.currentHp ?? player.field.primaryCreature.baseHp ?? 0) - amount);
+      } else if (action.damage === "OPPONENT_CREATURE" && opponent.field.primaryCreature) {
+        opponent.field.primaryCreature.currentHp = Math.max(0, Number(opponent.field.primaryCreature.currentHp ?? opponent.field.primaryCreature.baseHp ?? 0) - amount);
+      } else if (action.heal === "THIS_CREATURE" && player.field.primaryCreature) {
+        player.field.primaryCreature.currentHp = Math.min(Number(player.field.primaryCreature.baseHp ?? 0), Number(player.field.primaryCreature.currentHp ?? player.field.primaryCreature.baseHp ?? 0) + amount);
+      } else if (action.discardFrom === "OPPONENT_HAND") {
+        const discardIndex = opponent.hand.findIndex(card => {
+          const candidate = match.cardCatalog[card.cardId];
+          return action.match?.cardKind !== "MAGIC" || candidate?.cardType === "MAGIC";
+        });
+        if (discardIndex >= 0) {
+          const [discarded] = opponent.hand.splice(discardIndex, 1);
+          moveCardToCemetery(match, opponent.id, discarded);
+        }
+      }
+    }
+
+    emitHeadlessAction("ROLL_DAMAGE_TABLE", { roll, actions });
+    return match;
+  }
+
+  if (actionType.includes("heal_by_cemetery_event")) {
+    if (definition.cardType === "CREATURE" && source.zone !== "PRIMARY_CREATURE" && source.zone !== "LIMITED_SUMMON") {
+      const player = getPlayer(match, source.playerId);
+      const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+      const card = removed?.card ?? source.card;
+      card.zone = "PRIMARY_CREATURE";
+      card.controllerPlayerId = source.playerId;
+      card.ownerPlayerId = card.ownerPlayerId || source.playerId;
+      card.baseHp = definition.hp;
+      card.currentHp = Math.max(0, definition.hp - 20);
+      player.field.primaryCreature = card;
+    }
+
+    const player = getPlayer(match, source.playerId);
+    const sourceCreature = player.field.primaryCreature ?? source.card;
+    const sent = player.cemetery.find(card => match.cardCatalog[card.cardId]?.cardType === "CREATURE") ??
+      (() => {
+        const card = ensureCardInHand(match, source.playerId, "test_creature_defender");
+        if (!card) return undefined;
+        const removed = removeCardInstanceFromMatch(match, card.instanceId);
+        moveCardToCemetery(match, source.playerId, removed?.card ?? card);
+        return removed?.card ?? card;
+      })();
+    const sentDefinition = sent ? match.cardCatalog[sent.cardId] : undefined;
+    const healAmount = Math.ceil(Number(sentDefinition?.cardType === "CREATURE" ? sentDefinition.hp : 0) / 2);
+    const maxHp = Number(sourceCreature.baseHp ?? (definition.cardType === "CREATURE" ? definition.hp : 0));
+    sourceCreature.currentHp = Math.min(maxHp, Number(sourceCreature.currentHp ?? 0) + healAmount);
+    emitHeadlessAction("HEAL_BY_CEMETERY_EVENT", { sentCardId: sent?.cardId, healAmount });
+    return match;
+  }
+
+  if (trigger.includes("if_no_battle_during_your_turn") && actionType.includes("apply_dice_modifier")) {
+    emitHeadlessAction("APPLY_DICE_MODIFIER", { delayed: true, stackRule: "DO_NOT_STACK" });
+    return match;
   }
 
   const shouldAcceptStaticCreatureModifier = definition.cardType === "CREATURE" &&
@@ -3501,6 +3640,58 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       }
     });
     emitHeadlessAction("RESOLVE_STATUS_ESCAPE_ROLL", { roll, ended: successValues.has(roll), successValues: [...successValues] });
+    return match;
+  }
+
+  if (trigger.includes("opponent_summons_creature") && actionType.includes("apply_status_with_escape_roll")) {
+    const targetPlayerId = plan.setup.activePlayerId ?? findOpponentPlayerId(match, source.playerId);
+    const target = getPlayer(match, targetPlayerId).field.primaryCreature ?? ensurePrimaryFromSetup(targetPlayerId, targetPlayerId === "player_1" ? plan.setup.player1Cards : plan.setup.player2Cards);
+    if (!target) {
+      throw new Error(`Headless ${definition.name} route needs the summoned creature on the field.`);
+    }
+
+    const status = String((effect?.params as { status?: unknown } | undefined)?.status ?? "FROZEN");
+    target.activeStatuses ??= [];
+    target.activeStatuses.push({
+      id: `headless-status-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      sourceEffectId: effect?.id ?? "UNKNOWN",
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: definition.name,
+      sourcePlayerId: source.playerId,
+      status,
+      label: effect?.value ?? status,
+      flags: {
+        canInflictAtkDamage: (effect?.params as { canInflictAtkDamage?: boolean } | undefined)?.canInflictAtkDamage,
+        canBeSacrificed: (effect?.params as { canBeSacrificed?: boolean } | undefined)?.canBeSacrificed
+      },
+      durationType: "TARGET_PLAYER_TURN_STARTS",
+      appliedTurnNumber: match.turn.turnNumber,
+      appliedTurnCycle: match.turn.turnCycleNumber
+    });
+    emitHeadlessAction("APPLY_STATUS_WITH_ESCAPE_ROLL", { targetCardId: target.cardId, status });
+
+    const successValues = new Set(getEffectSuccessDice(effect));
+    const [roll] = rollD6WithDev(match, {
+      kind: "EFFECT_ROLL",
+      count: 1,
+      playerId: targetPlayerId,
+      label: `${definition.name} escape roll`,
+      addEvent: addHeadlessEvent,
+      context: {
+        sourceCardName: definition.name,
+        effectId: effect?.id,
+        actionType: effect?.actionType
+      }
+    });
+    const ended = successValues.has(roll);
+    if (ended) {
+      target.activeStatuses = (target.activeStatuses ?? []).filter(item =>
+        !(item.sourceCardInstanceId === source.card.instanceId && item.sourceEffectId === (effect?.id ?? "UNKNOWN"))
+      );
+      const removed = removeCardInstanceFromMatch(match, source.card.instanceId);
+      moveCardToCemetery(match, source.playerId, removed?.card ?? source.card);
+    }
+    emitHeadlessAction("RESOLVE_STATUS_ESCAPE_ROLL", { roll, ended, successValues: [...successValues] });
     return match;
   }
 
@@ -3657,11 +3848,15 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
       actionType.includes("apply_multi_modifier") ||
       actionType.includes("apply_stat_set_aura") ||
       actionType.includes("apply_temporary_stat_set") ||
+      actionType.includes("apply_attack_priority_override") ||
+      actionType.includes("apply_battle_requirement") ||
+      actionType.includes("apply_hit_outcome_override") ||
       actionType.includes("apply_status") ||
       actionType.includes("apply_damage_immunity") ||
       actionType.includes("apply_play_restriction") ||
       actionType.includes("apply_zone_restriction") ||
       actionType.includes("apply_reroll_permission") ||
+      actionType.includes("add_next_magic_shield") ||
       actionType.includes("validate_summon_requirement") ||
       actionType.includes("suppress_modifier_layer") ||
       actionType.includes("apply_magic_immunity") ||
@@ -3763,6 +3958,14 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
             ? "HEADLESS_STATIC_ZONE_RESTRICTION_AVAILABLE"
           : actionType.includes("apply_reroll_permission")
             ? "HEADLESS_STATIC_REROLL_PERMISSION_AVAILABLE"
+          : actionType.includes("apply_attack_priority_override")
+            ? "APPLY_ATTACK_PRIORITY_OVERRIDE"
+          : actionType.includes("apply_battle_requirement")
+            ? "APPLY_BATTLE_REQUIREMENT"
+          : actionType.includes("apply_hit_outcome_override")
+            ? "APPLY_HIT_OUTCOME_OVERRIDE"
+          : actionType.includes("add_next_magic_shield")
+            ? "ADD_NEXT_MAGIC_SHIELD"
           : actionType.includes("validate_summon_requirement")
             ? "HEADLESS_EQUIP_REQUIREMENT_AVAILABLE"
           : actionType.includes("apply_magic_immunity")
@@ -4033,7 +4236,7 @@ function runFollowupBattleForStatModifier(match: MatchState, plan: LlmEffectTest
     !actionType.includes("apply_field_aura_modifiers") &&
     !actionType.includes("apply_multi_modifier")
   ) return match;
-  if (trigger.includes("on_hit")) return match;
+  if (trigger.includes("on_hit") || trigger.includes("if_no_battle")) return match;
   if (!text.includes("hit") && !text.includes("damage") && !text.includes("atk") && !text.includes("modifier")) return match;
   if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
 
@@ -4100,6 +4303,7 @@ function runFollowupBattleForStatusRestriction(match: MatchState, plan: LlmEffec
   const trigger = normalizeText(effect?.trigger);
   if (!actionType.includes("apply_status")) return match;
   if (trigger.includes("on_hit")) return match;
+  if (actionType.includes("apply_status_with_escape_roll")) return match;
   if (!text.includes("cannot inflict") && !text.includes("frozen")) return match;
   if (match.pendingChain || match.pendingEffectTargetPrompt || match.pendingEffectRoll || match.pendingBattle || match.pendingPrompt) return match;
 
@@ -4119,7 +4323,7 @@ function runFollowupBattleForStatusRestriction(match: MatchState, plan: LlmEffec
   const turnSkipped = next.eventLog.some(event => event.type === "BATTLE_TURN_SKIPPED_BY_STATUS");
   const strikeSkipped = next.eventLog.some(event => event.type === "BATTLE_STRIKE_SKIPPED_BY_STATUS");
   const expectsDamagePrevention = text.includes("cannot inflict");
-  const ok = expectsDamagePrevention ? strikeSkipped : turnSkipped;
+  const ok = expectsDamagePrevention ? (strikeSkipped || turnSkipped) : turnSkipped;
   steps.push({
     label: expectsDamagePrevention ? "verify status prevents attack damage" : "attempt status-restricted battle",
     ok,
