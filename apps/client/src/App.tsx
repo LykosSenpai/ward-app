@@ -1507,8 +1507,15 @@ export default function App() {
     }} />;
   }
 
+  const isBoardFocusMode = activePage === "play" && !!match && playViewMode === "board";
+  const appShellClassName = [
+    "app-shell",
+    activePage === "card-library" || activePage === "deck-library" ? "app-shell-library-decks" : "",
+    isBoardFocusMode ? "app-shell-board-focus" : ""
+  ].filter(Boolean).join(" ");
+
   return (
-    <main className={activePage === "card-library" || activePage === "deck-library" ? "app-shell app-shell-library-decks" : "app-shell"}>
+    <main className={appShellClassName}>
       <section className="panel">
         <header className="app-header">
           <div>

@@ -7484,3 +7484,429 @@ button:disabled:hover {
   }
 }
 
+/* Compact mirrored duel board */
+.match-workspace-board {
+  min-height: 0;
+}
+
+.match-workspace-board .duel-board-view {
+  grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
+  gap: clamp(4px, 0.55vh, 7px);
+  height: clamp(430px, calc(100svh - 420px), 640px);
+  min-height: 0;
+  padding: clamp(6px, 0.9vw, 10px);
+}
+
+.match-workspace-board .duel-board-view::before {
+  inset: 6px;
+}
+
+.match-workspace-board .duel-player-row,
+.match-workspace-board .duel-player-row-near {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+}
+
+.match-workspace-board .duel-player-row-far .player-card {
+  transform: rotate(180deg);
+}
+
+.match-workspace-board .duel-player-row .player-card {
+  border-radius: 8px;
+  max-height: none;
+  overflow: visible;
+  padding: 5px;
+}
+
+.match-workspace-board .duel-player-rail {
+  align-content: center;
+  backdrop-filter: blur(8px);
+  background: rgba(2, 6, 23, 0.58);
+  border-radius: 999px;
+  display: flex;
+  gap: 8px;
+  left: 12px;
+  max-width: min(44vw, 520px);
+  min-height: 26px;
+  padding: 4px 10px;
+  position: absolute;
+  top: 10px;
+  z-index: 4;
+}
+
+.match-workspace-board .duel-player-row-near .duel-player-rail {
+  bottom: 10px;
+  left: auto;
+  right: 12px;
+  top: auto;
+}
+
+.match-workspace-board .duel-player-rail span,
+.match-workspace-board .duel-player-rail small {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.match-workspace-board .duel-player-rail strong {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.match-workspace-board .duel-player-rail small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.match-workspace-board .duel-board-view .player-playmat {
+  aspect-ratio: auto;
+  background:
+    linear-gradient(90deg, rgba(2, 6, 23, 0.2), rgba(2, 6, 23, 0.3)),
+    radial-gradient(circle at 52% 30%, rgba(125, 211, 252, 0.24), transparent 32%),
+    linear-gradient(135deg, rgba(20, 124, 96, 0.72), rgba(17, 24, 39, 0.92) 54%, rgba(132, 74, 34, 0.58));
+  gap: clamp(3px, 0.42vw, 6px);
+  grid-template-columns: minmax(90px, 0.48fr) minmax(110px, 0.72fr) minmax(72px, 0.34fr);
+  height: 100%;
+  min-height: 0;
+  padding: clamp(4px, 0.58vw, 7px);
+}
+
+.match-workspace-board .board-mode-player-card {
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+}
+
+.match-workspace-board .playmat-brand {
+  max-width: 6.8rem;
+}
+
+.match-workspace-board .playmat-brand span {
+  font-size: clamp(0.78rem, 1.35vw, 1rem);
+}
+
+.match-workspace-board .playmat-brand strong {
+  font-size: 0.62rem;
+}
+
+.match-workspace-board .playmat-zone-label {
+  font-size: clamp(0.46rem, 0.68vw, 0.56rem);
+  line-height: 1;
+}
+
+.match-workspace-board .playmat-primary-zone {
+  width: min(100%, 132px);
+}
+
+.match-workspace-board .playmat-card,
+.match-workspace-board .playmat-stack-zone {
+  border-width: 1px;
+  gap: 2px;
+  min-height: 0;
+  padding: 4px;
+}
+
+.match-workspace-board .playmat-primary-zone .playmat-card {
+  min-height: 98px;
+}
+
+.match-workspace-board .playmat-limited-zone .playmat-card,
+.match-workspace-board .playmat-magic-zone .playmat-card {
+  min-height: 64px;
+}
+
+.match-workspace-board .playmat-stack-zone {
+  min-height: 54px;
+}
+
+.match-workspace-board .playmat-card-title-row {
+  min-height: 1.75em;
+}
+
+.match-workspace-board .playmat-card-title-row strong,
+.match-workspace-board .playmat-card strong {
+  font-size: clamp(0.5rem, 0.7vw, 0.62rem);
+}
+
+.match-workspace-board .playmat-card span,
+.match-workspace-board .playmat-card-click-hint,
+.match-workspace-board .playmat-attachment-label {
+  font-size: clamp(0.44rem, 0.58vw, 0.52rem);
+}
+
+.match-workspace-board .playmat-stat-chip,
+.match-workspace-board .playmat-effect-badge,
+.match-workspace-board .playmat-stat-chip strong {
+  font-size: 0.46rem;
+  padding: 0.09rem 0.22rem;
+}
+
+.match-workspace-board .playmat-hp-bar {
+  height: 0.28rem;
+}
+
+.match-workspace-board .playmat-card-hp {
+  font-size: 0.48rem;
+  padding: 0.04rem 0.24rem;
+}
+
+.match-workspace-board .playmat-stack-zone span {
+  font-size: 0.52rem;
+}
+
+.match-workspace-board .playmat-stack-zone strong {
+  font-size: 1rem;
+}
+
+.match-workspace-board .playmat-stack-zone small {
+  font-size: 0.56rem;
+}
+
+.match-workspace-board .duel-center-lane {
+  grid-template-columns: minmax(74px, 0.18fr) minmax(180px, 1fr) minmax(74px, 0.18fr);
+  min-height: 34px;
+}
+
+.match-workspace-board .duel-phase-core,
+.match-workspace-board .duel-center-marker {
+  border-radius: 999px;
+  gap: 0;
+  min-height: 28px;
+  padding: 3px 8px;
+}
+
+.match-workspace-board .duel-phase-core {
+  grid-template-columns: auto minmax(0, auto) auto auto;
+  column-gap: 8px;
+}
+
+.match-workspace-board .duel-phase-core span,
+.match-workspace-board .duel-center-marker small {
+  font-size: 9px;
+}
+
+.match-workspace-board .duel-phase-core strong,
+.match-workspace-board .duel-center-marker span {
+  font-size: 12px;
+}
+
+.match-workspace-board .duel-phase-core small,
+.match-workspace-board .duel-phase-core em {
+  font-size: 10px;
+}
+
+.match-workspace-board .table-alert-pill {
+  min-width: 0;
+  padding: 2px 7px;
+}
+
+.match-workspace-board .table-command-dock {
+  align-items: center;
+  display: grid;
+  gap: 5px;
+  grid-template-columns: minmax(300px, 1fr) minmax(250px, auto) minmax(120px, auto);
+  padding: 5px;
+}
+
+.match-workspace-board .table-phase-track,
+.match-workspace-board .table-primary-actions,
+.match-workspace-board .table-utility-strip {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.match-workspace-board .table-phase-step {
+  flex: 1 1 0;
+  font-size: 9px;
+  padding: 3px 5px;
+}
+
+.match-workspace-board .table-primary-actions button,
+.match-workspace-board .table-utility-strip button {
+  min-height: 24px;
+  padding: 4px 7px;
+}
+
+.match-workspace-board .table-battle-buttons {
+  grid-column: 1 / 3;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 4px;
+}
+
+.match-workspace-board .table-battle-buttons button {
+  min-height: 24px;
+  padding: 3px 7px;
+}
+
+.match-workspace-board .table-battle-buttons button span {
+  font-size: 9px;
+}
+
+.match-workspace-board .table-battle-buttons button strong {
+  font-size: 11px;
+}
+
+.match-workspace-board .table-last-event {
+  display: none;
+}
+
+.match-workspace-board .table-utility-strip {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.match-workspace-board .table-player-drawer {
+  margin-top: 4px;
+}
+
+.match-workspace-board .table-player-drawer summary {
+  min-height: 26px;
+  padding: 4px 8px;
+}
+
+.match-workspace-board .table-player-drawer summary span,
+.match-workspace-board .table-player-drawer summary strong {
+  font-size: 10px;
+}
+
+.match-workspace-board .table-player-drawer-grid {
+  max-height: min(48vh, 360px);
+  overflow: auto;
+}
+
+@media (max-width: 1100px) {
+  .match-workspace-board .duel-board-view {
+    height: auto;
+    min-height: 0;
+  }
+
+  .match-workspace-board .duel-player-row-far .player-card {
+    transform: none;
+  }
+
+  .match-workspace-board .duel-player-rail,
+  .match-workspace-board .duel-player-row-near .duel-player-rail {
+    left: auto;
+    max-width: none;
+    position: relative;
+    right: auto;
+    top: auto;
+    bottom: auto;
+  }
+
+  .match-workspace-board .table-command-dock,
+  .match-workspace-board .duel-phase-core {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Board focus mode: give the table the screen, keep only an escape hatch. */
+.app-shell-board-focus {
+  min-height: 100svh;
+  overflow: hidden;
+  padding: 8px;
+}
+
+.app-shell-board-focus .panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  display: grid;
+  grid-template-rows: 1fr;
+  height: calc(100svh - 16px);
+  max-width: none;
+  padding: 0;
+}
+
+.app-shell-board-focus .app-header,
+.app-shell-board-focus .app-page-nav,
+.app-shell-board-focus .socket-id,
+.app-shell-board-focus > .panel > .success-box {
+  display: none;
+}
+
+.app-shell-board-focus .play-view-toolbar {
+  align-items: center;
+  backdrop-filter: blur(10px);
+  background: rgba(2, 6, 23, 0.62);
+  border-color: rgba(250, 204, 21, 0.24);
+  border-radius: 999px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+  gap: 8px;
+  padding: 4px;
+  position: fixed;
+  right: 18px;
+  top: 18px;
+  z-index: 20;
+}
+
+.app-shell-board-focus .play-view-toolbar > div:first-child {
+  display: none;
+}
+
+.app-shell-board-focus .segmented-control {
+  border-radius: 999px;
+}
+
+.app-shell-board-focus .segmented-control button {
+  min-height: 28px;
+  padding: 5px 12px;
+}
+
+.app-shell-board-focus .match-workspace-board {
+  height: 100%;
+  min-height: 0;
+}
+
+.app-shell-board-focus .match-workspace-board .duel-board-view {
+  border-radius: 10px;
+  height: 100%;
+  min-height: 0;
+  padding: 8px;
+}
+
+.app-shell-board-focus .match-workspace-board .duel-board-view::before {
+  inset: 5px;
+}
+
+.app-shell-board-focus .match-workspace-board .duel-player-rail {
+  top: 12px;
+}
+
+.app-shell-board-focus .match-workspace-board .duel-player-row-near .duel-player-rail {
+  bottom: 12px;
+  top: auto;
+}
+
+.app-shell-board-focus .match-workspace-board .playmat-primary-zone .playmat-card {
+  min-height: 122px;
+}
+
+.app-shell-board-focus .match-workspace-board .playmat-limited-zone .playmat-card,
+.app-shell-board-focus .match-workspace-board .playmat-magic-zone .playmat-card {
+  min-height: 78px;
+}
+
+.app-shell-board-focus .match-workspace-board .playmat-stack-zone {
+  min-height: 64px;
+}
+
+@media (max-width: 1100px) {
+  .app-shell-board-focus {
+    overflow: auto;
+  }
+
+  .app-shell-board-focus .panel,
+  .app-shell-board-focus .match-workspace-board .duel-board-view {
+    height: auto;
+  }
+
+  .app-shell-board-focus .play-view-toolbar {
+    position: sticky;
+    top: 8px;
+    justify-self: end;
+    margin-bottom: 8px;
+  }
+}
+

@@ -841,7 +841,7 @@ export function PlayerPanel({
       <div className={isActivePlayer ? "card player-card active-player-card board-mode-player-card" : "card player-card board-mode-player-card"}>
         {playmatPanel}
 
-        <details className="table-player-drawer" open={isActivePlayer && handShouldOpen}>
+        <details className="table-player-drawer">
           <summary>
             <span>{canControlThisPlayer ? "Your Options" : "Field Options"}</span>
             <strong>{player.hand.length} hand</strong>
