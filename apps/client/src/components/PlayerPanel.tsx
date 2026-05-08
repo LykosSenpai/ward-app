@@ -360,12 +360,14 @@ export function PlayerPanel({
   player,
   controlledPlayerId,
   boardMode = false,
+  boardPosition = "near",
   onStartManualBattle
 }: {
   match: AppMatchState;
   player: PlayerState;
   controlledPlayerId?: string;
   boardMode?: boolean;
+  boardPosition?: "near" | "far";
   onStartManualBattle?: (attackerCreatureInstanceId: string) => void;
 }) {
   const [selectedSacrificesByCard, setSelectedSacrificesByCard] = useState<
@@ -862,13 +864,23 @@ export function PlayerPanel({
       "player-card",
       "board-mode-player-card",
       isActivePlayer ? "active-player-card active-turn" : "inactive-turn",
-      canControlThisPlayer ? "controlled-field" : "opponent-field"
+      canControlThisPlayer ? "controlled-field" : "opponent-field",
+      boardPosition === "far" ? "far-field" : "near-field"
     ].filter(Boolean).join(" ");
     const boardHandClassName = [
       "board-hand-strip",
-      canControlThisPlayer ? "own-hand" : "opponent-hand",
+      boardPosition === "far" ? "opponent-hand" : "own-hand",
       isActivePlayer ? "active-turn" : "inactive-turn"
     ].join(" ");
+    const visibleHandPanel = boardPosition === "near" ? (
+      handPanel
+    ) : (
+      <div className="opponent-hand-count" aria-label={`${player.displayName} hidden hand count`}>
+        <span>Opponent Hand</span>
+        <strong>{player.hand.length}</strong>
+        <small>{player.hand.length === 1 ? "card" : "cards"}</small>
+      </div>
+    );
 
     return (
       <div className={boardCardClassName}>
@@ -878,7 +890,7 @@ export function PlayerPanel({
           className={boardHandClassName}
           aria-label={`${player.displayName} ${canControlThisPlayer ? "face-up hand" : "hidden hand"}`}
         >
-          {handPanel}
+          {visibleHandPanel}
         </div>
 
         <details className="table-player-drawer">

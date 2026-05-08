@@ -9332,3 +9332,278 @@ button:disabled:hover {
   }
 }
 
+/* Board layout refinement: readable opponent row, compact action stack, stable hand docks. */
+.match-workspace-board .duel-board-view {
+  padding-right: clamp(48px, 4vw, 60px);
+}
+
+.match-workspace-board .duel-player-row-far .player-card,
+.match-workspace-board .duel-player-row-far .card-hover-preview,
+.match-workspace-board .duel-player-row-far .table-player-drawer,
+.match-workspace-board .duel-player-row-far .board-hand-strip {
+  transform: none;
+}
+
+.match-workspace-board .duel-player-row-far .duel-player-rail {
+  left: var(--table-overlay-safe-x);
+  right: auto;
+  top: var(--table-overlay-safe-y);
+}
+
+.match-workspace-board .duel-player-row-far .player-playmat {
+  grid-template-rows: minmax(58px, 0.42fr) minmax(0, 1fr);
+}
+
+.match-workspace-board .duel-player-row-far .playmat-primary-zone,
+.match-workspace-board .duel-player-row-far .playmat-limited-row {
+  grid-row: 2;
+}
+
+.match-workspace-board .duel-player-row-far .playmat-primary-zone {
+  align-self: start;
+  margin-bottom: 0;
+  margin-top: clamp(2px, 0.4vw, 7px);
+}
+
+.match-workspace-board .duel-player-row-far .playmat-limited-row {
+  align-items: start;
+  padding-bottom: clamp(54px, 7.5vw, 98px);
+  padding-top: 0;
+}
+
+.match-workspace-board .duel-player-row-far .playmat-magic-row {
+  grid-row: 1;
+}
+
+.match-workspace-board .duel-player-row-near .duel-player-rail {
+  bottom: var(--table-overlay-safe-y);
+  right: var(--table-overlay-safe-x);
+}
+
+.match-workspace-board .duel-player-rail {
+  max-width: min(260px, 24vw);
+}
+
+.match-workspace-board .playmat-brand {
+  max-width: clamp(78px, 8vw, 120px);
+}
+
+.match-workspace-board .playmat-brand span {
+  font-size: clamp(0.92rem, 1.5vw, 1.35rem);
+}
+
+.match-workspace-board .playmat-card.empty {
+  background: rgba(218, 246, 255, 0.16);
+  border-color: rgba(215, 234, 240, 0.48);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+    0 3px 8px rgba(0, 0, 0, 0.14);
+}
+
+.match-workspace-board .board-hand-strip {
+  max-width: min(560px, 43vw);
+}
+
+.match-workspace-board .board-hand-strip.own-hand {
+  bottom: var(--table-overlay-safe-y);
+  left: var(--table-overlay-safe-x);
+}
+
+.match-workspace-board .board-hand-strip.opponent-hand {
+  bottom: auto;
+  left: auto;
+  padding: 0;
+  right: var(--table-overlay-safe-x);
+  top: var(--table-overlay-safe-y);
+  width: auto;
+}
+
+.match-workspace-board .board-hand-strip .hand-list {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.match-workspace-board .board-hand-strip.own-hand .hand-card {
+  flex: 0 0 clamp(70px, 5.6vw, 98px);
+}
+
+.match-workspace-board .opponent-hand-count {
+  align-items: center;
+  background: rgba(2, 6, 23, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  color: #f8fafc;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: auto auto;
+  min-width: 112px;
+  padding: 7px 10px;
+}
+
+.match-workspace-board .opponent-hand-count span {
+  color: #93c5fd;
+  font-size: 0.58rem;
+  font-weight: 950;
+  grid-column: 1 / -1;
+  text-transform: uppercase;
+}
+
+.match-workspace-board .opponent-hand-count strong {
+  font-size: 1.22rem;
+  line-height: 1;
+}
+
+.match-workspace-board .opponent-hand-count small {
+  align-self: end;
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.match-workspace-board .board-side-panel {
+  grid-template-columns: 40px minmax(0, 318px);
+  transform: translateX(calc(100% - 40px));
+  width: min(358px, calc(100% - 18px));
+}
+
+.match-workspace-board .board-side-panel.collapsed {
+  grid-template-columns: 40px 0;
+}
+
+.match-workspace-board .board-side-panel-toggle {
+  min-height: 126px;
+  padding: 9px 5px;
+}
+
+.match-workspace-board .board-side-panel-body {
+  gap: 7px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: 7px;
+}
+
+.match-workspace-board .board-side-status-card {
+  align-items: center;
+  background: rgba(3, 10, 20, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+  padding: 8px;
+}
+
+.match-workspace-board .board-side-status-card .table-alert-pill {
+  min-width: 0;
+  padding: 4px 8px;
+}
+
+.match-workspace-board .board-side-status-card div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.match-workspace-board .board-side-status-card strong,
+.match-workspace-board .board-side-status-card small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-workspace-board .board-side-status-card strong {
+  font-size: 0.9rem;
+}
+
+.match-workspace-board .board-side-status-card small {
+  color: #cbd5e1;
+  font-size: 0.68rem;
+}
+
+.match-workspace-board .board-side-empty-chip {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.64);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  color: #dbeafe;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 6px 10px;
+}
+
+.match-workspace-board .board-side-empty-chip span {
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.match-workspace-board .board-side-empty-chip strong {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-workspace-board .board-side-panel .table-command-dock {
+  gap: 5px;
+  padding: 6px;
+}
+
+.match-workspace-board .board-side-panel .table-primary-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.match-workspace-board .board-side-panel .table-primary-actions button,
+.match-workspace-board .board-side-panel .table-utility-strip button,
+.match-workspace-board .board-side-panel .table-battle-buttons button {
+  min-height: 30px;
+  padding: 5px 7px;
+}
+
+.match-workspace-board .board-side-panel .table-primary-actions button:nth-child(3),
+.match-workspace-board .board-side-panel .table-primary-actions button:nth-child(4) {
+  min-height: 34px;
+}
+
+.match-workspace-board .board-side-panel button:disabled {
+  opacity: 0.42;
+}
+
+@media (max-width: 1100px) {
+  .match-workspace-board .duel-player-rail,
+  .match-workspace-board .board-hand-strip,
+  .match-workspace-board .board-hand-strip.opponent-hand {
+    max-width: none;
+    position: relative;
+    width: auto;
+  }
+
+  .match-workspace-board .board-hand-strip.own-hand .hand-card {
+    flex-basis: clamp(76px, 13vw, 112px);
+  }
+}
+
+@media (max-width: 760px) {
+  .match-workspace-board .duel-board-view {
+    padding-right: clamp(6px, 0.8vw, 10px);
+  }
+
+  .match-workspace-board .board-side-panel,
+  .match-workspace-board .board-side-panel.open,
+  .match-workspace-board .board-side-panel.collapsed {
+    grid-template-columns: 1fr;
+    width: calc(100% - 16px);
+  }
+
+  .match-workspace-board .board-side-panel-body {
+    grid-template-rows: auto minmax(0, auto) auto;
+  }
+}
+

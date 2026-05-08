@@ -221,6 +221,10 @@ function BoardSidePanel({
     match.manualEffectQueue.some(effect => !effect.completed)
   );
   const [isOpen, setIsOpen] = useState(hasPendingBoardWork);
+  const tableAlert = getTableAlert(match, actions);
+  const centerStatus = getMatchStatus(match) === "COMPLETE"
+    ? "Complete"
+    : match.turn.phase.replace(/_/g, " ");
 
   useEffect(() => {
     if (hasPendingBoardWork) {
@@ -249,14 +253,21 @@ function BoardSidePanel({
 
       {isOpen && (
         <div className="board-side-panel-body">
+          <section className="board-side-status-card" aria-label="Turn status">
+            <span className={`table-alert-pill ${tableAlert.tone}`}>{tableAlert.label}</span>
+            <div>
+              <strong>{activePlayer?.displayName ?? "Waiting"}</strong>
+              <small>{centerStatus} | Turn {match.turn.turnNumber} | Cycle {match.turn.turnCycleNumber}</small>
+            </div>
+          </section>
+
           {hasPendingBoardWork ? (
             <div className="board-pending-stack">{children}</div>
           ) : (
-            <section className="card board-side-empty-card">
-              <span className="label">Board Actions</span>
-              <h2>No pending action</h2>
-              <p className="empty-zone">Use the board, hand, and controls to continue the match.</p>
-            </section>
+            <div className="board-side-empty-chip">
+              <span>No pending action</span>
+              <strong>{tableAlert.detail}</strong>
+            </div>
           )}
 
           <TableCommandDock
@@ -313,6 +324,7 @@ export function CardBoardView({
             player={farPlayer}
             controlledPlayerId={controlledPlayerId}
             boardMode
+            boardPosition="far"
             onStartManualBattle={actions?.onStartManualBattle}
           />
         </div>
@@ -343,6 +355,7 @@ export function CardBoardView({
             player={nearPlayer}
             controlledPlayerId={controlledPlayerId}
             boardMode
+            boardPosition="near"
             onStartManualBattle={actions?.onStartManualBattle}
           />
           <div className="duel-player-rail">
