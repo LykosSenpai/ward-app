@@ -7905,6 +7905,433 @@ button:disabled:hover {
   font-size: clamp(0.5rem, 0.7vw, 0.62rem);
 }
 
+/* Compact art-backed playmat board */
+.app-shell-board-focus {
+  padding: clamp(8px, 1vw, 14px);
+}
+
+.app-shell-board-focus .panel {
+  max-width: 1920px;
+}
+
+.app-shell-board-focus .app-header,
+.app-shell-board-focus .app-page-nav,
+.app-shell-board-focus .socket-id,
+.app-shell-board-focus .play-view-toolbar {
+  margin-bottom: 8px;
+}
+
+.app-shell-board-focus .app-header h1 {
+  font-size: clamp(20px, 1.55vw, 26px);
+}
+
+.app-shell-board-focus .subtitle,
+.app-shell-board-focus .socket-id {
+  display: none;
+}
+
+.match-workspace-board .duel-board-view {
+  --mat-aspect: 600 / 351;
+  --board-rail-width: clamp(168px, 11.5vw, 230px);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(250, 204, 21, 0.1), transparent 38%),
+    linear-gradient(135deg, #143a31, #1c2528 45%, #342012);
+  border-color: rgba(250, 204, 21, 0.4);
+  border-radius: 12px;
+  display: grid;
+  gap: clamp(5px, 0.7vh, 8px);
+  grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
+  height: clamp(690px, calc(100svh - 106px), 980px);
+  overflow: visible;
+  padding: clamp(6px, 0.8vw, 10px);
+}
+
+.match-workspace-board .duel-board-view::before {
+  border-color: rgba(255, 255, 255, 0.08);
+  inset: 6px;
+}
+
+.match-workspace-board .duel-player-row,
+.match-workspace-board .duel-player-row-near {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--board-rail-width);
+  gap: clamp(6px, 0.7vw, 10px);
+  min-height: 0;
+  padding-right: 0;
+}
+
+.match-workspace-board .duel-player-row-far {
+  grid-template-columns: var(--board-rail-width) minmax(0, 1fr);
+}
+
+.match-workspace-board .duel-player-row-far .duel-player-rail,
+.match-workspace-board .duel-player-row-near .duel-player-rail {
+  inset: auto;
+  max-width: none;
+  min-height: 0;
+  position: relative;
+}
+
+.match-workspace-board .duel-player-row-far .player-card {
+  grid-column: 2;
+  transform: none;
+}
+
+.match-workspace-board .duel-player-row-far .duel-player-rail {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.match-workspace-board .duel-player-row-near .player-card {
+  grid-column: 1;
+}
+
+.match-workspace-board .duel-player-row-near .duel-player-rail {
+  grid-column: 2;
+}
+
+.match-workspace-board .duel-player-rail {
+  align-content: center;
+  border-radius: 10px;
+  display: grid;
+  gap: 5px;
+  justify-items: start;
+  padding: clamp(8px, 0.9vw, 12px);
+}
+
+.match-workspace-board .duel-player-rail span,
+.match-workspace-board .duel-player-rail small,
+.match-workspace-board .duel-player-rail strong {
+  white-space: normal;
+}
+
+.match-workspace-board .duel-player-rail span {
+  font-size: 10px;
+}
+
+.match-workspace-board .duel-player-rail strong {
+  font-size: clamp(14px, 1vw, 17px);
+}
+
+.match-workspace-board .duel-player-rail small {
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.match-workspace-board .duel-player-row .player-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.match-workspace-board .board-mode-player-card {
+  display: grid;
+  gap: clamp(5px, 0.65vh, 8px);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.match-workspace-board .duel-board-view .player-playmat {
+  aspect-ratio: var(--mat-aspect);
+  background:
+    linear-gradient(90deg, rgba(4, 8, 15, 0.05), rgba(4, 8, 15, 0.2)),
+    url("/playmats/steam-angel-2.png") center / cover no-repeat;
+  border: 2px solid rgba(43, 43, 36, 0.76);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 10px 26px rgba(0, 0, 0, 0.24);
+  display: grid;
+  gap: clamp(4px, 0.5vw, 7px);
+  grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(58px, 0.46fr);
+  grid-template-rows: minmax(0, 1fr) minmax(62px, 0.44fr);
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(8px, 1vw, 13px);
+}
+
+.match-workspace-board .duel-board-view .player-playmat::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 34%, rgba(0, 0, 0, 0.12));
+}
+
+.match-workspace-board .player-playmat.active {
+  border-color: rgba(93, 225, 154, 0.85);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(93, 225, 154, 0.34),
+    0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+.match-workspace-board .playmat-brand {
+  left: clamp(10px, 1.2vw, 16px);
+  max-width: clamp(86px, 10vw, 150px);
+  top: clamp(8px, 1vw, 14px);
+}
+
+.match-workspace-board .playmat-brand span {
+  color: #ffdf45;
+  font-size: clamp(1rem, 2vw, 1.8rem);
+  text-shadow:
+    0 2px 0 #8b1a13,
+    0 0 10px rgba(30, 64, 175, 0.74);
+}
+
+.match-workspace-board .playmat-brand strong {
+  color: #ffffff;
+  font-size: clamp(0.54rem, 0.82vw, 0.78rem);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.88);
+}
+
+.match-workspace-board .playmat-primary-zone {
+  align-self: end;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: center;
+  margin-bottom: clamp(2px, 0.4vw, 7px);
+  width: min(100%, clamp(78px, 9vw, 124px));
+}
+
+.match-workspace-board .playmat-limited-row {
+  align-items: end;
+  grid-column: 1 / 6;
+  grid-row: 1;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding-top: clamp(54px, 7.5vw, 98px);
+}
+
+.match-workspace-board .playmat-magic-row {
+  align-items: stretch;
+  grid-column: 1 / 6;
+  grid-row: 2;
+}
+
+.match-workspace-board .playmat-stack-rail {
+  align-content: center;
+  gap: clamp(6px, 0.8vw, 10px);
+  grid-column: 6;
+  grid-row: 1 / 3;
+  width: min(100%, 86px);
+}
+
+.match-workspace-board .playmat-zone {
+  gap: 3px;
+}
+
+.match-workspace-board .playmat-zone-label {
+  background: rgba(12, 18, 28, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-grid;
+  font-size: clamp(0.42rem, 0.58vw, 0.54rem);
+  justify-self: center;
+  line-height: 1.05;
+  max-width: 100%;
+  padding: 2px 5px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+}
+
+.match-workspace-board .playmat-card,
+.match-workspace-board .playmat-stack-zone {
+  backdrop-filter: blur(1px);
+  background: rgba(220, 246, 255, 0.32);
+  border: 3px solid rgba(44, 48, 46, 0.78);
+  border-radius: clamp(10px, 1vw, 16px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 4px 10px rgba(0, 0, 0, 0.2);
+  min-height: 0;
+  padding: clamp(3px, 0.4vw, 5px);
+}
+
+.match-workspace-board .playmat-card.empty {
+  align-content: center;
+  background: rgba(218, 246, 255, 0.28);
+  border-style: solid;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0;
+}
+
+.match-workspace-board .playmat-card.empty span {
+  display: none;
+}
+
+.match-workspace-board .playmat-card.occupied {
+  background: rgba(8, 13, 17, 0.74);
+  border-color: rgba(255, 255, 255, 0.76);
+}
+
+.match-workspace-board .playmat-primary-zone .playmat-card {
+  min-height: clamp(88px, 14vh, 150px);
+}
+
+.match-workspace-board .playmat-limited-zone .playmat-card,
+.match-workspace-board .playmat-magic-zone .playmat-card {
+  min-height: clamp(54px, 8.2vh, 92px);
+}
+
+.match-workspace-board .playmat-card-art-shell {
+  border-radius: 7px;
+  height: clamp(50px, 8.2vh, 86px);
+  width: auto;
+}
+
+.match-workspace-board .playmat-primary-zone .playmat-card-art-shell {
+  height: clamp(72px, 11.5vh, 126px);
+}
+
+.match-workspace-board .playmat-stack-zone {
+  min-height: clamp(58px, 8vh, 86px);
+}
+
+.match-workspace-board .playmat-stack-zone.deck {
+  background: rgba(241, 242, 103, 0.5);
+}
+
+.match-workspace-board .playmat-stack-zone.cemetery {
+  background: rgba(216, 87, 46, 0.52);
+}
+
+.match-workspace-board .playmat-stack-zone span {
+  color: #ffffff;
+  font-size: clamp(0.5rem, 0.65vw, 0.62rem);
+  line-height: 1.05;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.86);
+}
+
+.match-workspace-board .playmat-stack-zone strong {
+  font-size: clamp(1rem, 1.4vw, 1.35rem);
+}
+
+.match-workspace-board .board-hand-strip {
+  min-height: 0;
+}
+
+.match-workspace-board .board-hand-strip .zone-box {
+  background: rgba(2, 6, 23, 0.58);
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.match-workspace-board .board-hand-strip .hand-list {
+  gap: clamp(4px, 0.42vw, 7px);
+  padding: 2px 2px 6px;
+}
+
+.match-workspace-board .board-hand-strip .hand-card {
+  flex-basis: clamp(62px, 5.2vw, 92px);
+  padding: 3px;
+}
+
+.match-workspace-board .board-hand-strip .hand-card .match-card-art {
+  max-height: clamp(58px, 8.4vh, 86px);
+}
+
+.match-workspace-board .board-hand-strip.own-hand.active-turn .hand-card {
+  flex-basis: clamp(72px, 6vw, 108px);
+}
+
+.match-workspace-board .table-player-drawer {
+  display: none;
+}
+
+.match-workspace-board .duel-center-lane {
+  grid-template-columns: minmax(86px, 0.18fr) minmax(180px, 1fr) minmax(86px, 0.18fr);
+  min-height: 46px;
+}
+
+.match-workspace-board .duel-phase-core,
+.match-workspace-board .duel-center-marker {
+  min-height: 42px;
+  padding: 5px 8px;
+}
+
+.match-workspace-board .duel-phase-core strong,
+.match-workspace-board .duel-center-marker span {
+  font-size: clamp(14px, 1.1vw, 18px);
+}
+
+.match-workspace-board .duel-phase-core small,
+.match-workspace-board .duel-phase-core em,
+.match-workspace-board .duel-center-marker small {
+  font-size: 10px;
+}
+
+.match-workspace-board .table-command-dock {
+  background: rgba(2, 6, 23, 0.72);
+  border-radius: 8px;
+  gap: 6px;
+  padding: 6px;
+}
+
+.match-workspace-board .table-phase-step {
+  flex-basis: 74px;
+  font-size: 10px;
+  padding: 4px 6px;
+}
+
+.match-workspace-board .table-primary-actions button,
+.match-workspace-board .table-utility-strip button,
+.match-workspace-board .table-battle-buttons button {
+  min-height: 28px;
+  padding: 5px 8px;
+}
+
+.match-workspace-board .table-battle-buttons {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.match-workspace-board .table-battle-buttons button strong {
+  font-size: 11px;
+}
+
+@media (max-width: 1180px) {
+  .match-workspace-board .duel-board-view {
+    height: auto;
+  }
+
+  .match-workspace-board .duel-player-row,
+  .match-workspace-board .duel-player-row-far,
+  .match-workspace-board .duel-player-row-near {
+    grid-template-columns: 1fr;
+  }
+
+  .match-workspace-board .duel-player-row-far .player-card,
+  .match-workspace-board .duel-player-row-far .duel-player-rail,
+  .match-workspace-board .duel-player-row-near .player-card,
+  .match-workspace-board .duel-player-row-near .duel-player-rail {
+    grid-column: 1;
+  }
+
+  .match-workspace-board .duel-player-row-far .duel-player-rail,
+  .match-workspace-board .duel-player-row-near .duel-player-rail {
+    order: -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .match-workspace-board .duel-board-view .player-playmat {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr) minmax(58px, auto) auto;
+  }
+
+  .match-workspace-board .playmat-stack-rail {
+    grid-column: 1 / 6;
+    grid-row: 3;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: auto;
+  }
+
+  .match-workspace-board .duel-center-lane {
+    grid-template-columns: 1fr;
+  }
+
+  .match-workspace-board .table-phase-track {
+    display: none;
+  }
+}
+
 .match-workspace-board .playmat-card span,
 .match-workspace-board .playmat-card-click-hint,
 .match-workspace-board .playmat-attachment-label {
@@ -8082,6 +8509,272 @@ button:disabled:hover {
   font-size: 10px;
 }
 
+/* Board-first side panel: keep the center lane clean and move pending work to the edge. */
+.match-workspace-board .duel-board-view {
+  position: relative;
+  padding-right: clamp(58px, 4.5vw, 72px);
+}
+
+.match-workspace-board .duel-center-lane {
+  align-self: center;
+  display: grid;
+  grid-template-columns: minmax(180px, 360px);
+  justify-content: center;
+  min-height: 0;
+  position: relative;
+  right: auto;
+  top: auto;
+  width: auto;
+  z-index: 3;
+}
+
+.match-workspace-board .duel-phase-core {
+  background: rgba(2, 6, 23, 0.68);
+  border-color: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 38px;
+  padding: 6px 12px;
+}
+
+.match-workspace-board .duel-phase-core strong,
+.match-workspace-board .duel-phase-core small,
+.match-workspace-board .duel-phase-core em {
+  min-width: 0;
+}
+
+.match-workspace-board .duel-phase-core em {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-workspace-board .board-side-panel {
+  bottom: 10px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 392px);
+  pointer-events: none;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  transform: translateX(calc(100% - 44px));
+  transition: transform 180ms ease, grid-template-columns 180ms ease;
+  width: min(436px, calc(100% - 20px));
+  z-index: 20;
+}
+
+.match-workspace-board .board-side-panel.open {
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.match-workspace-board .board-side-panel.collapsed {
+  grid-template-columns: 44px 0;
+}
+
+.match-workspace-board .board-side-panel-toggle {
+  align-self: start;
+  background: rgba(10, 16, 26, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px 0 0 10px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+  color: #f8fafc;
+  display: grid;
+  gap: 7px;
+  justify-items: center;
+  min-height: 150px;
+  padding: 10px 6px;
+  pointer-events: auto;
+  writing-mode: vertical-rl;
+}
+
+.match-workspace-board .board-side-panel.needs-attention .board-side-panel-toggle {
+  border-color: rgba(250, 204, 21, 0.62);
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(250, 204, 21, 0.2);
+}
+
+.match-workspace-board .board-side-panel-toggle span {
+  font-size: 0.68rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.match-workspace-board .board-side-panel-toggle strong {
+  color: #facc15;
+  font-size: 0.68rem;
+}
+
+.match-workspace-board .board-side-panel-body {
+  background: rgba(7, 12, 21, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.36);
+  display: grid;
+  gap: 8px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px;
+}
+
+.match-workspace-board .board-pending-stack {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.match-workspace-board .board-pending-stack:empty {
+  display: none;
+}
+
+.match-workspace-board .board-pending-stack > .card,
+.match-workspace-board .board-side-empty-card {
+  border-radius: 8px;
+  margin: 0;
+  padding: 10px;
+}
+
+.match-workspace-board .board-pending-stack h2,
+.match-workspace-board .board-side-empty-card h2 {
+  font-size: 1rem;
+}
+
+.match-workspace-board .board-pending-stack h3,
+.match-workspace-board .board-pending-stack h4 {
+  font-size: 0.86rem;
+}
+
+.match-workspace-board .board-pending-stack p,
+.match-workspace-board .board-pending-stack span,
+.match-workspace-board .board-pending-stack small,
+.match-workspace-board .board-side-empty-card p {
+  line-height: 1.25;
+}
+
+.match-workspace-board .board-side-panel .battle-wizard-summary-grid,
+.match-workspace-board .board-side-panel .battle-combatant-grid,
+.match-workspace-board .board-side-panel .battle-modifier-grid {
+  grid-template-columns: 1fr;
+}
+
+.match-workspace-board .board-side-panel .battle-wizard-step-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.match-workspace-board .board-side-panel .battle-wizard-step-list li {
+  font-size: 0.68rem;
+  padding: 5px;
+}
+
+.match-workspace-board .board-side-panel .battle-wizard-action-row,
+.match-workspace-board .board-side-panel .actions,
+.match-workspace-board .board-side-panel .manual-effect-buttons {
+  gap: 6px;
+}
+
+.match-workspace-board .board-side-panel .manual-effect-targets,
+.match-workspace-board .board-side-panel .chain-list,
+.match-workspace-board .board-side-panel .manual-effect-list,
+.match-workspace-board .board-side-panel .battle-wizard-strike-list {
+  gap: 8px;
+}
+
+.match-workspace-board .board-side-panel .table-command-dock {
+  align-items: stretch;
+  background: rgba(2, 6, 23, 0.76);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1fr;
+  padding: 7px;
+  position: relative;
+  right: auto;
+  top: auto;
+  width: auto;
+  z-index: auto;
+}
+
+.match-workspace-board .board-side-panel .table-phase-track {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.match-workspace-board .board-side-panel .table-primary-actions,
+.match-workspace-board .board-side-panel .table-utility-strip {
+  display: grid;
+  gap: 5px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.match-workspace-board .board-side-panel .table-battle-buttons {
+  display: grid;
+  gap: 5px;
+  grid-column: auto;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+}
+
+.match-workspace-board .board-side-panel .table-utility-strip {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+@media (max-width: 1180px) {
+  .match-workspace-board .duel-board-view {
+    padding-right: clamp(50px, 6vw, 64px);
+  }
+
+  .match-workspace-board .board-side-panel {
+    grid-template-columns: 42px minmax(0, min(390px, calc(100vw - 72px)));
+    width: min(432px, calc(100% - 14px));
+  }
+}
+
+@media (max-width: 760px) {
+  .match-workspace-board .duel-board-view {
+    padding-bottom: 58px;
+    padding-right: clamp(6px, 0.8vw, 10px);
+  }
+
+  .match-workspace-board .board-side-panel,
+  .match-workspace-board .board-side-panel.open,
+  .match-workspace-board .board-side-panel.collapsed {
+    bottom: 8px;
+    grid-template-columns: 1fr;
+    right: 8px;
+    top: auto;
+    transform: none;
+    width: calc(100% - 16px);
+  }
+
+  .match-workspace-board .board-side-panel.collapsed .board-side-panel-body {
+    display: none;
+  }
+
+  .match-workspace-board .board-side-panel-toggle {
+    border-radius: 10px;
+    grid-template-columns: 1fr auto;
+    min-height: 40px;
+    padding: 8px 10px;
+    writing-mode: horizontal-tb;
+  }
+
+  .match-workspace-board .board-side-panel-body {
+    border-radius: 10px;
+    max-height: min(72svh, 640px);
+  }
+
+  .match-workspace-board .board-side-panel .table-phase-track {
+    display: none;
+  }
+}
+
 .match-workspace-board .table-player-drawer-grid {
   max-height: min(48vh, 360px);
   overflow: auto;
@@ -8220,6 +8913,422 @@ button:disabled:hover {
     top: 8px;
     justify-self: end;
     margin-bottom: 8px;
+  }
+}
+
+/* Final compact playmat overrides: keep opponent, command lane, and your mat in one readable stack. */
+.match-workspace-board .duel-board-view {
+  --board-rail-width: clamp(168px, 11.5vw, 230px);
+  grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
+  overflow: visible;
+}
+
+.match-workspace-board .duel-center-lane,
+.match-workspace-board .table-command-dock {
+  position: relative;
+  right: auto;
+  top: auto;
+  width: auto;
+}
+
+.match-workspace-board .duel-center-lane {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(86px, 0.18fr) minmax(180px, 1fr) minmax(86px, 0.18fr);
+}
+
+.match-workspace-board .duel-center-lane::before,
+.match-workspace-board .duel-center-lane::after {
+  display: block;
+}
+
+.match-workspace-board .table-command-dock {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.match-workspace-board .table-phase-track,
+.match-workspace-board .table-primary-actions,
+.match-workspace-board .table-utility-strip {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.match-workspace-board .table-battle-buttons,
+.match-workspace-board .table-utility-strip {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+.match-workspace-board .table-player-drawer {
+  display: none;
+}
+
+.app-shell-board-focus .match-workspace-board .duel-board-view {
+  grid-template-rows: minmax(0, 1fr) auto auto minmax(0, 1fr);
+}
+
+.match-workspace-board .duel-board-view .player-playmat,
+.app-shell-board-focus .match-workspace-board .duel-board-view .player-playmat {
+  aspect-ratio: auto;
+  height: 100%;
+  width: 100%;
+}
+
+.match-workspace-board .board-mode-player-card,
+.app-shell-board-focus .match-workspace-board .board-mode-player-card {
+  min-height: 0;
+}
+
+.match-workspace-board .duel-player-row .player-card,
+.app-shell-board-focus .match-workspace-board .duel-player-row .player-card {
+  min-height: 0;
+}
+
+.app-shell-board-focus .match-workspace-board .duel-player-rail,
+.app-shell-board-focus .match-workspace-board .duel-player-row-near .duel-player-rail {
+  bottom: auto;
+  top: auto;
+}
+
+@media (max-width: 760px) {
+  .match-workspace-board .duel-center-lane {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Two-table board pass: the playmats are the window; controls float above them. */
+.match-workspace-board .duel-board-view {
+  --table-overlay-safe-x: clamp(12px, 1.2vw, 22px);
+  --table-overlay-safe-y: clamp(10px, 1vh, 18px);
+  align-items: stretch;
+  background:
+    linear-gradient(180deg, rgba(7, 11, 16, 0.66), rgba(7, 11, 16, 0.16) 42%, rgba(7, 11, 16, 0.66)),
+    radial-gradient(circle at 50% 50%, rgba(250, 204, 21, 0.18), transparent 30%),
+    linear-gradient(90deg, #15251f 0%, #22342d 50%, #15251f 100%);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: min(1000px, calc(100svh - 132px));
+  min-height: 720px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.app-shell-board-focus .match-workspace-board .duel-board-view {
+  height: 100%;
+  min-height: 0;
+}
+
+.match-workspace-board .duel-board-view::before {
+  border: 0;
+  border-radius: 0;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.3;
+}
+
+.match-workspace-board .duel-player-row,
+.match-workspace-board .duel-player-row-near,
+.match-workspace-board .duel-player-row-far {
+  display: grid;
+  flex: 1 1 0;
+  gap: 0;
+  grid-template-columns: 1fr;
+  height: 100%;
+  min-height: 0;
+  position: relative;
+}
+
+.match-workspace-board .duel-player-row-far {
+  border-bottom: 1px solid rgba(250, 204, 21, 0.38);
+  grid-area: far;
+}
+
+.match-workspace-board .duel-player-row-near {
+  border-top: 1px solid rgba(250, 204, 21, 0.18);
+  grid-area: near;
+}
+
+.match-workspace-board .duel-player-row-far .player-card,
+.match-workspace-board .duel-player-row-near .player-card {
+  grid-column: 1;
+  grid-row: 1;
+  height: 100%;
+  min-height: 0;
+  transform: none;
+  width: 100%;
+}
+
+.match-workspace-board .duel-player-row-far .player-card {
+  transform: rotate(180deg);
+}
+
+.match-workspace-board .duel-player-row-far .card-hover-preview,
+.match-workspace-board .duel-player-row-far .table-player-drawer {
+  transform: rotate(180deg);
+}
+
+.match-workspace-board .duel-player-rail,
+.match-workspace-board .duel-player-row-far .duel-player-rail,
+.match-workspace-board .duel-player-row-near .duel-player-rail {
+  backdrop-filter: blur(12px);
+  background: rgba(2, 6, 23, 0.58);
+  border-color: rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+  grid-column: 1;
+  grid-row: 1;
+  max-width: min(300px, 28vw);
+  min-height: 0;
+  padding: 8px 10px;
+  position: absolute;
+  width: max-content;
+  z-index: 7;
+}
+
+.match-workspace-board .duel-player-row-far .duel-player-rail {
+  left: var(--table-overlay-safe-x);
+  top: var(--table-overlay-safe-y);
+}
+
+.match-workspace-board .duel-player-row-near .duel-player-rail {
+  bottom: var(--table-overlay-safe-y);
+  right: var(--table-overlay-safe-x);
+}
+
+.match-workspace-board .duel-board-view .player-playmat,
+.app-shell-board-focus .match-workspace-board .duel-board-view .player-playmat {
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+}
+
+.match-workspace-board .board-mode-player-card {
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+
+.match-workspace-board .board-hand-strip {
+  backdrop-filter: blur(10px);
+  background: rgba(2, 6, 23, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  bottom: var(--table-overlay-safe-y);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+  left: var(--table-overlay-safe-x);
+  max-width: min(760px, 58vw);
+  padding: 5px;
+  position: absolute;
+  right: auto;
+  z-index: 8;
+}
+
+.match-workspace-board .duel-player-row-far .board-hand-strip {
+  bottom: auto;
+  left: auto;
+  right: var(--table-overlay-safe-x);
+  top: var(--table-overlay-safe-y);
+  transform: rotate(180deg);
+  transform-origin: center;
+}
+
+.match-workspace-board .board-hand-strip .zone-box {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.match-workspace-board .board-hand-strip .zone-box h3,
+.match-workspace-board .board-hand-strip .zone-summary,
+.match-workspace-board .board-hand-strip .validation-box,
+.match-workspace-board .board-hand-strip .turn-rule-box {
+  display: none;
+}
+
+.match-workspace-board .duel-center-lane {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-area: far;
+  grid-template-columns: minmax(74px, 0.28fr) minmax(220px, 1fr) minmax(74px, 0.28fr);
+  left: 50%;
+  min-height: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(920px, calc(100% - 32px));
+  z-index: 9;
+}
+
+.match-workspace-board .duel-center-lane::before,
+.match-workspace-board .duel-center-lane::after {
+  display: none;
+}
+
+.match-workspace-board .duel-phase-core,
+.match-workspace-board .duel-center-marker {
+  backdrop-filter: blur(14px);
+  background: rgba(2, 6, 23, 0.7);
+  border-color: rgba(250, 204, 21, 0.3);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  pointer-events: auto;
+}
+
+.match-workspace-board .table-command-dock {
+  backdrop-filter: blur(14px);
+  background: rgba(2, 6, 23, 0.76);
+  border-color: rgba(255, 255, 255, 0.13);
+  border-radius: 10px;
+  bottom: clamp(14px, 2vh, 24px);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.34);
+  display: grid;
+  gap: 6px;
+  grid-area: near;
+  left: 50%;
+  max-width: min(1040px, calc(100% - 32px));
+  padding: 7px;
+  position: absolute;
+  transform: translateX(-50%);
+  width: max-content;
+  z-index: 10;
+}
+
+.match-workspace-board .table-phase-track {
+  display: none;
+}
+
+.match-workspace-board .table-primary-actions,
+.match-workspace-board .table-battle-buttons,
+.match-workspace-board .table-utility-strip {
+  justify-content: center;
+}
+
+.match-workspace-board .table-battle-buttons {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  width: min(880px, 86vw);
+}
+
+@media (max-width: 1100px) {
+  .match-workspace-board .duel-board-view {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .match-workspace-board .duel-player-row-far .player-card,
+  .match-workspace-board .duel-player-row-far .board-hand-strip,
+  .match-workspace-board .duel-player-row-far .card-hover-preview {
+    transform: none;
+  }
+
+  .match-workspace-board .duel-center-lane,
+  .match-workspace-board .table-command-dock,
+  .match-workspace-board .duel-player-rail,
+  .match-workspace-board .board-hand-strip {
+    left: auto;
+    max-width: none;
+    position: relative;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    transform: none;
+    width: auto;
+  }
+
+  .match-workspace-board .duel-center-lane {
+    grid-template-columns: 1fr;
+    margin: 8px;
+  }
+
+  .match-workspace-board .table-command-dock {
+    margin: 8px;
+  }
+}
+
+/* Board drawer final pass: supersede earlier floating command/center experiments. */
+.match-workspace-board .duel-board-view {
+  padding-right: clamp(58px, 4.5vw, 72px);
+}
+
+.match-workspace-board .duel-center-lane {
+  align-items: center;
+  align-self: center;
+  display: grid;
+  gap: 0;
+  grid-area: auto;
+  grid-template-columns: minmax(180px, 360px);
+  justify-content: center;
+  left: auto;
+  margin: 0;
+  min-height: 0;
+  pointer-events: none;
+  position: relative;
+  top: auto;
+  transform: none;
+  width: auto;
+  z-index: 9;
+}
+
+.match-workspace-board .duel-phase-core {
+  border-radius: 999px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 38px;
+  padding: 6px 12px;
+}
+
+.match-workspace-board .duel-phase-core em {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-workspace-board .board-side-panel .table-command-dock {
+  bottom: auto;
+  grid-area: auto;
+  left: auto;
+  margin: 0;
+  max-width: none;
+  position: relative;
+  right: auto;
+  top: auto;
+  transform: none;
+  width: auto;
+}
+
+.match-workspace-board .board-side-panel .table-phase-track {
+  display: grid;
+}
+
+.match-workspace-board .board-side-panel .table-primary-actions,
+.match-workspace-board .board-side-panel .table-battle-buttons,
+.match-workspace-board .board-side-panel .table-utility-strip {
+  justify-content: stretch;
+}
+
+@media (max-width: 760px) {
+  .match-workspace-board .duel-board-view {
+    padding-right: clamp(6px, 0.8vw, 10px);
+  }
+
+  .match-workspace-board .duel-center-lane {
+    grid-template-columns: 1fr;
+    margin: 0;
+    width: min(100%, 360px);
   }
 }
 

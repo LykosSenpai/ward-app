@@ -1484,6 +1484,82 @@ export default function App() {
   const showBoardView = playViewMode !== "text";
   const showTextEngineView = playViewMode !== "board";
   const shouldShowMagicChainPanel = !!match && (!match.pendingBattle || !!match.pendingChain) && (showTextEngineView || !!match.pendingChain);
+  const boardSidePanelContent = match ? (
+    <>
+      {match.pendingBattle && !match.pendingChain && (
+        <BattleResolverModal
+          match={match}
+          battle={match.pendingBattle}
+          onRunSpeedCheck={runBattleSpeedCheck}
+          onUpdateSpeedModifiers={updateBattleSpeedModifiers}
+          onUpdateStrikeModifiers={updateBattleStrikeModifiers}
+          onRollHit={rollBattleHit}
+          onForceRolls={forceDevRolls}
+          enableDevTools={canUseDevTools}
+          onRollDamage={rollBattleDamage}
+          onPlayBattleResponse={playBattleResponseFromHand}
+          onUndo={undoLastAction}
+          onApplyDamage={applyBattleDamage}
+          onFinish={finishManualBattle}
+          onCancel={cancelManualBattle}
+        />
+      )}
+
+      {match.pendingEffectRoll && (
+        <EffectRollModal
+          match={match}
+          effectRoll={match.pendingEffectRoll}
+          onRoll={rollEffectRoll}
+          onApply={applyEffectRoll}
+          onSkip={skipEffectRoll}
+        />
+      )}
+
+      {match.pendingPrompt && (
+        <HandRevealPromptCard
+          match={match}
+          controlledPlayerId={controlledPlayerId}
+          onApprove={approveRevealRedraw}
+        />
+      )}
+
+      {match.pendingEffectTargetPrompt && (
+        <TargetPromptCard
+          prompt={match.pendingEffectTargetPrompt}
+          onUndo={undoLastAction}
+          onResolve={resolveEffectTarget}
+        />
+      )}
+
+      {match.pendingChain && (
+        <MagicChainCard
+          match={match}
+          onResolve={resolveMagicChain}
+          onUndo={undoLastAction}
+          onPassPriority={passMagicChainPriority}
+        />
+      )}
+
+      {hasPendingManualEffects && (
+        <ManualEffectQueueCard
+          match={match}
+          manualEffectAmounts={manualEffectAmounts}
+          manualEffectStats={manualEffectStats}
+          manualEffectDurations={manualEffectDurations}
+          manualEffectDurationTypes={manualEffectDurationTypes}
+          setManualEffectAmounts={setManualEffectAmounts}
+          setManualEffectStats={setManualEffectStats}
+          setManualEffectDurations={setManualEffectDurations}
+          setManualEffectDurationTypes={setManualEffectDurationTypes}
+          onCompleteEffect={completeManualMagicEffect}
+          onDamagePrimary={applyManualMagicDamage}
+          onHealPrimary={applyManualMagicHeal}
+          onApplyStatModifier={applyManualMagicStatModifier}
+          onDestroyMagicWithEffect={destroyMagicWithManualEffect}
+        />
+      )}
+    </>
+  ) : null;
 
   if (!authChecked) {
     return (
@@ -1807,8 +1883,10 @@ export default function App() {
                     onOpenManualEffects: () => setDashboardModal("manual-effects"),
                     onOpenBattleResult: () => setDashboardModal("battle-result"),
                     onOpenEventLog: () => setDashboardModal("event-log"),
-                    onOpenDiceRoller: () => setDashboardModal("dice-roller")
+                    onOpenDiceRoller: () => setDashboardModal("dice-roller"),
+                    onOpenSaveLoad: () => setDashboardModal("save-load")
                   }}
+                  boardPanel={boardSidePanelContent}
                 />
               )}
 
@@ -1857,19 +1935,9 @@ export default function App() {
                 </section>
               )}
 
-              {!showTextEngineView && shouldShowMagicChainPanel && (
-                <div className="board-engine-alert">
-                  <MagicChainCard
-                    match={match}
-                    onResolve={resolveMagicChain}
-                    onUndo={undoLastAction}
-                    onPassPriority={passMagicChainPriority}
-                  />
-                </div>
-              )}
             </section>
 
-            {match.pendingBattle && !match.pendingChain && (
+            {match.pendingBattle && !match.pendingChain && !showBoardView && (
               <ModalPanel title="Manual Battle Resolver" blocking wide>
                 <BattleResolverModal
                   match={match}
@@ -1890,7 +1958,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingEffectRoll && (
+            {match.pendingEffectRoll && !showBoardView && (
               <ModalPanel title="Effect Roll" blocking wide>
                 <EffectRollModal
                   match={match}
@@ -1902,7 +1970,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingPrompt && (
+            {match.pendingPrompt && !showBoardView && (
               <ModalPanel title="Action Required" blocking>
                 <HandRevealPromptCard
                   match={match}
@@ -1912,7 +1980,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingEffectTargetPrompt && (
+            {match.pendingEffectTargetPrompt && !showBoardView && (
               <ModalPanel title="Choose Effect Target" blocking wide>
                 <TargetPromptCard
                   prompt={match.pendingEffectTargetPrompt}

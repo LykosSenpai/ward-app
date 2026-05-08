@@ -1,3 +1,4 @@
+import { useEffect, useState, type ReactNode } from "react";
 import type { PlayerState } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import {
@@ -20,6 +21,7 @@ type BoardActions = {
   onOpenBattleResult: () => void;
   onOpenEventLog: () => void;
   onOpenDiceRoller: () => void;
+  onOpenSaveLoad?: () => void;
 };
 
 const PHASES = ["DRAW", "SUMMON_MAGIC", "COMBAT", "SECOND_MAGIC", "END"] as const;
@@ -180,9 +182,92 @@ function TableCommandDock({
       <div className="table-utility-strip">
         <button type="button" className="secondary-button" onClick={actions.onOpenBattleResult} disabled={!match.lastBattle}>Last Battle</button>
         <button type="button" className="secondary-button" onClick={actions.onOpenEventLog}>Log {match.eventLog.length}</button>
+        {actions.onOpenSaveLoad && <button type="button" className="secondary-button" onClick={actions.onOpenSaveLoad}>Save</button>}
         {lastEvent && <span className="table-last-event">{getEventLabel(lastEvent.type)}</span>}
       </div>
     </div>
+  );
+}
+
+function getBoardPanelTitle(match: AppMatchState): string {
+  if (match.pendingBattle) return "Battle";
+  if (match.pendingEffectRoll) return "Effect Roll";
+  if (match.pendingChain) return "Magic Chain";
+  if (match.pendingEffectTargetPrompt) return "Target";
+  if (match.pendingPrompt) return "Prompt";
+  if (match.manualEffectQueue.some(effect => !effect.completed)) return "Effects";
+  return "Controls";
+}
+
+function BoardSidePanel({
+  match,
+  activePlayer,
+  controlledPlayerId,
+  actions,
+  children
+}: {
+  match: AppMatchState;
+  activePlayer?: PlayerState;
+  controlledPlayerId?: string;
+  actions?: BoardActions;
+  children?: ReactNode;
+}) {
+  const hasPendingBoardWork = Boolean(
+    match.pendingBattle ||
+    match.pendingEffectRoll ||
+    match.pendingChain ||
+    match.pendingEffectTargetPrompt ||
+    match.pendingPrompt ||
+    match.manualEffectQueue.some(effect => !effect.completed)
+  );
+  const [isOpen, setIsOpen] = useState(hasPendingBoardWork);
+
+  useEffect(() => {
+    if (hasPendingBoardWork) {
+      setIsOpen(true);
+    }
+  }, [hasPendingBoardWork]);
+
+  return (
+    <aside
+      className={[
+        "board-side-panel",
+        isOpen ? "open" : "collapsed",
+        hasPendingBoardWork ? "needs-attention" : ""
+      ].filter(Boolean).join(" ")}
+      aria-label="Board controls and pending actions"
+    >
+      <button
+        type="button"
+        className="board-side-panel-toggle"
+        onClick={() => setIsOpen(current => !current)}
+        aria-expanded={isOpen}
+      >
+        <span>{getBoardPanelTitle(match)}</span>
+        <strong>{isOpen ? "Close" : "Open"}</strong>
+      </button>
+
+      {isOpen && (
+        <div className="board-side-panel-body">
+          {hasPendingBoardWork ? (
+            <div className="board-pending-stack">{children}</div>
+          ) : (
+            <section className="card board-side-empty-card">
+              <span className="label">Board Actions</span>
+              <h2>No pending action</h2>
+              <p className="empty-zone">Use the board, hand, and controls to continue the match.</p>
+            </section>
+          )}
+
+          <TableCommandDock
+            match={match}
+            activePlayer={activePlayer}
+            controlledPlayerId={controlledPlayerId}
+            actions={actions}
+          />
+        </div>
+      )}
+    </aside>
   );
 }
 
@@ -190,12 +275,14 @@ export function CardBoardView({
   match,
   players,
   controlledPlayerId,
-  actions
+  actions,
+  boardPanel
 }: {
   match: AppMatchState;
   players: PlayerState[];
   controlledPlayerId?: string;
   actions?: BoardActions;
+  boardPanel?: ReactNode;
 }) {
   const nearPlayer = players[0];
   const farPlayer = players[1] ?? players[0];
@@ -232,30 +319,22 @@ export function CardBoardView({
       )}
 
       <div className="duel-center-lane" aria-label="Battle lane">
-        <div className="duel-center-marker duel-center-marker-left">
-          <span>{farPlayer?.field.limitedSummons.length ?? 0}/4</span>
-          <small>Limited</small>
-        </div>
-
         <div className="duel-phase-core">
           <span className={`table-alert-pill ${tableAlert.tone}`}>{tableAlert.label}</span>
           <strong>{activePlayer?.displayName ?? "Waiting"}</strong>
           <small>{centerStatus} | Turn {match.turn.turnNumber} | Cycle {match.turn.turnCycleNumber}</small>
           <em>{tableAlert.detail}</em>
         </div>
-
-        <div className="duel-center-marker duel-center-marker-right">
-          <span>{nearPlayer?.field.magicSlots.length ?? 0}/5</span>
-          <small>Magic</small>
-        </div>
       </div>
 
-      <TableCommandDock
+      <BoardSidePanel
         match={match}
         activePlayer={activePlayer}
         controlledPlayerId={controlledPlayerId}
         actions={actions}
-      />
+      >
+        {boardPanel}
+      </BoardSidePanel>
 
       {nearPlayer && nearPlayer.id !== farPlayer?.id && (
         <div className="duel-player-row duel-player-row-near">
