@@ -20,6 +20,7 @@ import { MatchLobbyPanel } from "./components/MatchLobbyPanel";
 import { CompactMatchControlPanel } from "./components/CompactMatchControlPanel";
 import { MatchStatePanel } from "./components/MatchStatePanel";
 import { CardBoardView } from "./components/CardBoardView";
+import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { PlayerPanel } from "./components/PlayerPanel";
 import { ProfilePage } from "./components/ProfilePage";
 import { SaveLoadPanel } from "./components/SaveLoadPanel";
@@ -57,10 +58,10 @@ import type {
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
-type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests";
+type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview";
 type PlayViewMode = "board" | "split" | "text";
 
-const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests"]);
+const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
 
 function isDevToolPage(page: AppPage): boolean {
   return DEV_TOOL_PAGES.has(page);
@@ -1583,7 +1584,10 @@ export default function App() {
     }} />;
   }
 
-  const isBoardFocusMode = activePage === "play" && !!match && playViewMode === "board";
+  const isBoardFocusMode =
+    (activePage === "play" && !!match && playViewMode === "board") ||
+    activePage === "board-preview";
+
   const appShellClassName = [
     "app-shell",
     activePage === "card-library" || activePage === "deck-library" ? "app-shell-library-decks" : "",
@@ -1619,6 +1623,14 @@ export default function App() {
           >
             Play Table
           </button>
+
+          <button
+            className={activePage === "board-preview" ? "app-page-nav-button active" : "app-page-nav-button"}
+            onClick={() => setActivePage("board-preview")}
+          >
+            Board Preview
+          </button>
+
           <button
             className={activePage === "card-library" ? "app-page-nav-button active" : "app-page-nav-button"}
             onClick={() => setActivePage("card-library")}
@@ -1743,6 +1755,9 @@ export default function App() {
             onDeleteDeck={deleteDeck}
             onImportDeckCode={importDeckCodeIntoBuilder}
           />
+
+        ) : canUseDevTools && activePage === "board-preview" ? (
+          <BoardPreviewPage cardLibrary={cardLibrary} />
         ) : activePage === "saved-matches" ? (
           <SaveLoadPanel
             savedMatches={savedMatches}
