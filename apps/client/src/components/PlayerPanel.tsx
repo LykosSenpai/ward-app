@@ -189,6 +189,26 @@ function PlaymatCard({
       )}
 
       {clickLabel && <small className="playmat-card-click-hint">{clickLabel}</small>}
+
+      <div className="card-hover-preview" aria-hidden="true">
+        <div className="card-hover-preview-art">
+          <MatchCardImage match={match} card={card} />
+        </div>
+        <div className="card-hover-preview-copy">
+          <strong>{getCardName(match, card)}</strong>
+          <span>{detail}</span>
+          {isCreatureCard && (
+            <div className="card-hover-preview-stats">
+              {statChips.map(([label, value]) => (
+                <span key={label}>{label} {value}</span>
+              ))}
+              <span>HP {currentHp}/{baseHp}</span>
+            </div>
+          )}
+          {isMagicCard && attachmentLabel && <span>{attachmentLabel}</span>}
+          {statuses.length > 0 && <span>{statuses.slice(0, 2).map(status => status.label || status.status).join(" | ")}</span>}
+        </div>
+      </div>
     </div>
   );
 }
@@ -269,7 +289,7 @@ function PlayerPlaymat({
 
       <div className="playmat-limited-row" aria-label="Limited summon area">
         {limitedSlots.map((card, index) => (
-          <div className="playmat-zone playmat-limited-zone" key={card?.instanceId ?? `limited-${index}`}>
+          <div className={`playmat-zone playmat-limited-zone playmat-limited-zone-${index + 1}`} key={card?.instanceId ?? `limited-${index}`}>
             <span className="playmat-zone-label">Limited Summon</span>
             <PlaymatCard
               match={match}
@@ -837,9 +857,29 @@ export function PlayerPanel({
   );
 
   if (boardMode) {
+    const boardCardClassName = [
+      "card",
+      "player-card",
+      "board-mode-player-card",
+      isActivePlayer ? "active-player-card active-turn" : "inactive-turn",
+      canControlThisPlayer ? "controlled-field" : "opponent-field"
+    ].filter(Boolean).join(" ");
+    const boardHandClassName = [
+      "board-hand-strip",
+      canControlThisPlayer ? "own-hand" : "opponent-hand",
+      isActivePlayer ? "active-turn" : "inactive-turn"
+    ].join(" ");
+
     return (
-      <div className={isActivePlayer ? "card player-card active-player-card board-mode-player-card" : "card player-card board-mode-player-card"}>
+      <div className={boardCardClassName}>
         {playmatPanel}
+
+        <div
+          className={boardHandClassName}
+          aria-label={`${player.displayName} ${canControlThisPlayer ? "face-up hand" : "hidden hand"}`}
+        >
+          {handPanel}
+        </div>
 
         <details className="table-player-drawer">
           <summary>
@@ -850,7 +890,6 @@ export function PlayerPanel({
           </summary>
 
           <div className="table-player-drawer-grid">
-            <div className="board-live-zone board-live-zone-hand">{handPanel}</div>
             <div className="board-command-panel">{primaryPanel}</div>
             {effectsPanel && <div className="board-live-zone">{effectsPanel}</div>}
             <div className="board-live-zone">{magicSlotsPanel}</div>

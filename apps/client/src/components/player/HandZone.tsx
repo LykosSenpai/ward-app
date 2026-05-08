@@ -335,6 +335,28 @@ function HandCard({
           <span className="hand-card-action-note lightning">Click to guard</span>
         )}
       </div>
+
+      <div className="card-hover-preview hand-hover-preview" aria-hidden="true">
+        <div className="card-hover-preview-art">
+          <MatchCardImage match={match} card={card} />
+        </div>
+        <div className="card-hover-preview-copy">
+          <strong>{getCardName(match, card)}</strong>
+          <span>{match.cardCatalog[card.cardId]?.cardType}</span>
+          {isCreature(match, card) && (
+            <>
+              <span>{getCreatureStatsLine(match, card)}</span>
+              <span>Required Sacrifices: {requiredSacrifices}</span>
+            </>
+          )}
+          {isMagic(match, card) && (
+            <>
+              <span>{getMagicLine(match, card)}</span>
+              <span>{getCardText(match, card)}</span>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
