@@ -1726,24 +1726,26 @@ export default function App() {
           </section>
         ) : (
           <>
-            <CompactMatchControlPanel
-              match={match}
-              advanceBlockReason={advanceBlockReason}
-              controlledPlayerId={controlledPlayerId}
-              onShuffleAllDecks={shuffleAllDecks}
-              onUndoLastAction={undoLastAction}
-              onDrawActivePlayer={drawActivePlayer}
-              onStartManualBattle={startManualBattle}
-              onUpdateCannotInflictAttackDamageBattlePolicy={updateCannotInflictAttackDamageBattlePolicy}
-              onAdvancePhase={advancePhase}
-              onOpenSaveLoad={() => setDashboardModal("save-load")}
-              onOpenManualEffects={() => setDashboardModal("manual-effects")}
-              onOpenBattleResult={() => setDashboardModal("battle-result")}
-              onOpenDiceRoller={() => setDashboardModal("dice-roller")}
-              onOpenEventLog={() => setDashboardModal("event-log")}
-              onOpenMatchDetails={() => setDashboardModal("match-details")}
-              onOpenEffectDebug={canUseDevTools ? () => setDashboardModal("effect-debug") : undefined}
-            />
+            {showTextEngineView && (
+              <CompactMatchControlPanel
+                match={match}
+                advanceBlockReason={advanceBlockReason}
+                controlledPlayerId={controlledPlayerId}
+                onShuffleAllDecks={shuffleAllDecks}
+                onUndoLastAction={undoLastAction}
+                onDrawActivePlayer={drawActivePlayer}
+                onStartManualBattle={startManualBattle}
+                onUpdateCannotInflictAttackDamageBattlePolicy={updateCannotInflictAttackDamageBattlePolicy}
+                onAdvancePhase={advancePhase}
+                onOpenSaveLoad={() => setDashboardModal("save-load")}
+                onOpenManualEffects={() => setDashboardModal("manual-effects")}
+                onOpenBattleResult={() => setDashboardModal("battle-result")}
+                onOpenDiceRoller={() => setDashboardModal("dice-roller")}
+                onOpenEventLog={() => setDashboardModal("event-log")}
+                onOpenMatchDetails={() => setDashboardModal("match-details")}
+                onOpenEffectDebug={canUseDevTools ? () => setDashboardModal("effect-debug") : undefined}
+              />
+            )}
 
             <section className="play-view-toolbar" aria-label="Play table view mode">
               <div>
@@ -1788,6 +1790,18 @@ export default function App() {
                   match={match}
                   players={displayedPlayers}
                   controlledPlayerId={controlledPlayerId}
+                  actions={{
+                    advanceBlockReason,
+                    onShuffleAllDecks: shuffleAllDecks,
+                    onUndoLastAction: undoLastAction,
+                    onDrawActivePlayer: drawActivePlayer,
+                    onStartManualBattle: startManualBattle,
+                    onAdvancePhase: advancePhase,
+                    onOpenManualEffects: () => setDashboardModal("manual-effects"),
+                    onOpenBattleResult: () => setDashboardModal("battle-result"),
+                    onOpenEventLog: () => setDashboardModal("event-log"),
+                    onOpenDiceRoller: () => setDashboardModal("dice-roller")
+                  }}
                 />
               )}
 

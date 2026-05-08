@@ -5,6 +5,8 @@ import { socket } from "../socket";
 import {
   getCardName,
   getCreatureStatsLine,
+  getEffectiveCreatureStat,
+  getAttachedCreatureLabel,
   getMagicLine,
   getMatchStatus,
   getRequiredSacrificesForCard,
@@ -78,14 +80,72 @@ function PlaymatCard({
     );
   }
 
-  const detail = kind === "magic"
+  const definition = match.cardCatalog[card.cardId];
+  const isCreatureCard = definition?.cardType === "CREATURE";
+  const isMagicCard = definition?.cardType === "MAGIC";
+  const baseHp = isCreatureCard ? Number(card.baseHp ?? definition.hp) : 0;
+  const currentHp = isCreatureCard ? Number(card.currentHp ?? baseHp) : 0;
+  const hpPercent = baseHp > 0 ? Math.max(0, Math.min(100, (currentHp / baseHp) * 100)) : 0;
+  const hpTone = hpPercent <= 30 ? "danger" : hpPercent <= 60 ? "warn" : "healthy";
+  const statuses = card.activeStatuses ?? [];
+  const recurringEffects = card.activeRecurringEffects ?? [];
+  const activeEffects = card.activeEffectInstances ?? [];
+  const detail = isMagicCard
     ? getMagicLine(match, card)
     : getCreatureStatsLine(match, card);
+  const statChips = isCreatureCard
+    ? [
+      ["AL", getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel)],
+      ["SPD", getEffectiveCreatureStat(card, "speed", definition.speed)],
+      ["ATK", `${getEffectiveCreatureStat(card, "attackDice", definition.attackDice)}D6`],
+      ["MOD", getEffectiveCreatureStat(card, "modifier", definition.modifier)]
+    ]
+    : [];
+  const attachmentLabel = isMagicCard ? getAttachedCreatureLabel(match, card.attachedToInstanceId) : "";
 
   return (
-    <div className={`playmat-card occupied ${kind}`}>
-      <strong>{getCardName(match, card)}</strong>
-      <span>{detail}</span>
+    <div className={`playmat-card occupied ${kind} ${hpTone}`}>
+      <div className="playmat-card-title-row">
+        <strong>{getCardName(match, card)}</strong>
+        {isCreatureCard && <span className="playmat-card-hp">{currentHp}/{baseHp}</span>}
+      </div>
+
+      {isCreatureCard && (
+        <>
+          <div className="playmat-hp-bar" aria-label={`${getCardName(match, card)} HP`}>
+            <span style={{ width: `${hpPercent}%` }} />
+          </div>
+
+          <div className="playmat-stat-chip-row">
+            {statChips.map(([label, value]) => (
+              <span className="playmat-stat-chip" key={label}>
+                {label} <strong>{value}</strong>
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+
+      {!isCreatureCard && <span>{detail}</span>}
+
+      {isMagicCard && card.attachedToInstanceId && (
+        <small className="playmat-attachment-label">{attachmentLabel}</small>
+      )}
+
+      {(statuses.length > 0 || recurringEffects.length > 0 || activeEffects.length > 0) && (
+        <div className="playmat-effect-badges" aria-label={`${getCardName(match, card)} active effects`}>
+          {statuses.slice(0, 3).map(status => (
+            <span className="playmat-effect-badge status" key={status.id}>{status.label || status.status}</span>
+          ))}
+          {recurringEffects.slice(0, 2).map(effect => (
+            <span className="playmat-effect-badge recurring" key={effect.id}>{effect.label}</span>
+          ))}
+          {activeEffects.slice(0, 2).map(effect => (
+            <span className="playmat-effect-badge active" key={effect.id}>{effect.label}</span>
+          ))}
+        </div>
+      )}
+
       {actionLabel && onAction && (
         <button type="button" onClick={onAction}>
           {actionLabel}
@@ -613,23 +673,23 @@ export function PlayerPanel({
       <div className={isActivePlayer ? "card player-card active-player-card board-mode-player-card" : "card player-card board-mode-player-card"}>
         {playmatPanel}
 
-        <div className="board-command-grid">
-          <div className="board-command-panel">
-            {summaryPanel}
-          </div>
+        <details className="table-player-drawer" open={isActivePlayer && handShouldOpen}>
+          <summary>
+            <span>{canControlThisPlayer ? "Your Options" : "Field Options"}</span>
+            <strong>{player.hand.length} hand</strong>
+            <strong>{player.field.magicSlots.length}/5 magic</strong>
+            <strong>{player.field.limitedSummons.length}/4 limited</strong>
+          </summary>
 
-          <div className="board-command-panel">
-            {primaryPanel}
+          <div className="table-player-drawer-grid">
+            <div className="board-live-zone board-live-zone-hand">{handPanel}</div>
+            <div className="board-command-panel">{primaryPanel}</div>
+            {effectsPanel && <div className="board-live-zone">{effectsPanel}</div>}
+            <div className="board-live-zone">{magicSlotsPanel}</div>
+            <div className="board-live-zone">{limitedSummonsPanel}</div>
+            <div className="board-live-zone">{cemeteryPanel}</div>
           </div>
-        </div>
-
-        <div className="board-live-zones">
-          <div className="board-live-zone board-live-zone-hand">{handPanel}</div>
-          <div className="board-live-zone">{magicSlotsPanel}</div>
-          <div className="board-live-zone">{limitedSummonsPanel}</div>
-          {effectsPanel && <div className="board-live-zone">{effectsPanel}</div>}
-          <div className="board-live-zone">{cemeteryPanel}</div>
-        </div>
+        </details>
       </div>
     );
   }
