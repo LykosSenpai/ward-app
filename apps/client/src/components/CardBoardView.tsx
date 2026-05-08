@@ -221,7 +221,13 @@ export function CardBoardView({
             <strong>{farPlayer.displayName}</strong>
             <small>{getBattleLine(match, farPlayer)}</small>
           </div>
-          <PlayerPanel match={match} player={farPlayer} controlledPlayerId={controlledPlayerId} boardMode />
+          <PlayerPanel
+            match={match}
+            player={farPlayer}
+            controlledPlayerId={controlledPlayerId}
+            boardMode
+            onStartManualBattle={actions?.onStartManualBattle}
+          />
         </div>
       )}
 
@@ -253,7 +259,13 @@ export function CardBoardView({
 
       {nearPlayer && nearPlayer.id !== farPlayer?.id && (
         <div className="duel-player-row duel-player-row-near">
-          <PlayerPanel match={match} player={nearPlayer} controlledPlayerId={controlledPlayerId} boardMode />
+          <PlayerPanel
+            match={match}
+            player={nearPlayer}
+            controlledPlayerId={controlledPlayerId}
+            boardMode
+            onStartManualBattle={actions?.onStartManualBattle}
+          />
           <div className="duel-player-rail">
             <span>{getPlayerRoleLabel(nearPlayer, controlledPlayerId)}</span>
             <strong>{nearPlayer.displayName}</strong>

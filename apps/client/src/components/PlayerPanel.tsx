@@ -1,16 +1,21 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type DragEvent, type ReactNode } from "react";
 import type { CardInstance, PlayerState } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import { socket } from "../socket";
 import {
   getCardName,
+  getBattleBlockReason,
   getCreatureStatsLine,
   getEffectiveCreatureStat,
   getAttachedCreatureLabel,
   getMagicLine,
   getMatchStatus,
   getRequiredSacrificesForCard,
-  playerHasSummonableCreatureInHand
+  playerHasSummonableCreatureInHand,
+  canSummonCreatureFromHand,
+  creatureCannotBeSacrificed,
+  isCreature,
+  isMagic
 } from "../gameViewHelpers";
 import { PlayerSummaryPanel } from "./player/PlayerSummaryPanel";
 import { PrimaryCreatureZone } from "./player/PrimaryCreatureZone";
@@ -19,6 +24,7 @@ import { HandZone } from "./player/HandZone";
 import { MagicSlotsZone } from "./player/MagicSlotsZone";
 import { CemeteryZone } from "./player/CemeteryZone";
 import { AvailableEffectsPanel } from "./AvailableEffectsPanel";
+import { MatchCardImage } from "./MatchCardImage";
 
 type ZoneDetailsProps = {
   title: string;
@@ -63,7 +69,9 @@ function PlaymatCard({
   emptyLabel,
   kind,
   actionLabel,
-  onAction
+  onAction,
+  clickLabel,
+  onCardClick
 }: {
   match: AppMatchState;
   card?: CardInstance;
@@ -71,6 +79,8 @@ function PlaymatCard({
   kind: "creature" | "magic" | "stack";
   actionLabel?: string;
   onAction?: () => void;
+  clickLabel?: string;
+  onCardClick?: () => void;
 }) {
   if (!card) {
     return (
@@ -104,10 +114,33 @@ function PlaymatCard({
   const attachmentLabel = isMagicCard ? getAttachedCreatureLabel(match, card.attachedToInstanceId) : "";
 
   return (
-    <div className={`playmat-card occupied ${kind} ${hpTone}`}>
+    <div
+      className={[
+        "playmat-card",
+        "occupied",
+        kind,
+        hpTone,
+        onCardClick ? "clickable" : ""
+      ].filter(Boolean).join(" ")}
+      role={onCardClick ? "button" : undefined}
+      tabIndex={onCardClick ? 0 : undefined}
+      onClick={onCardClick}
+      onKeyDown={event => {
+        if (!onCardClick) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onCardClick();
+        }
+      }}
+      title={clickLabel}
+    >
+      <div className="playmat-card-art-shell">
+        <MatchCardImage match={match} card={card} />
+        {isCreatureCard && <span className="playmat-card-hp">{currentHp}/{baseHp}</span>}
+      </div>
+
       <div className="playmat-card-title-row">
         <strong>{getCardName(match, card)}</strong>
-        {isCreatureCard && <span className="playmat-card-hp">{currentHp}/{baseHp}</span>}
       </div>
 
       {isCreatureCard && (
@@ -147,10 +180,15 @@ function PlaymatCard({
       )}
 
       {actionLabel && onAction && (
-        <button type="button" onClick={onAction}>
+        <button type="button" onClick={event => {
+          event.stopPropagation();
+          onAction();
+        }}>
           {actionLabel}
         </button>
       )}
+
+      {clickLabel && <small className="playmat-card-click-hint">{clickLabel}</small>}
     </div>
   );
 }
@@ -163,7 +201,12 @@ function PlayerPlaymat({
   canPromoteLimitedSummonToPrimary,
   onPromoteLimitedSummonToPrimary,
   onDestroyMagic,
-  onShuffleDeck
+  onShuffleDeck,
+  onStartBattle,
+  dragOverZone,
+  onPlaymatDragOver,
+  onPlaymatDragLeave,
+  onPlaymatDrop
 }: {
   match: AppMatchState;
   player: PlayerState;
@@ -173,11 +216,26 @@ function PlayerPlaymat({
   onPromoteLimitedSummonToPrimary: (cardInstanceId: string) => void;
   onDestroyMagic: (cardInstanceId: string) => void;
   onShuffleDeck: () => void;
+  onStartBattle?: (cardInstanceId: string) => void;
+  dragOverZone?: "primary" | "magic" | "cemetery" | null;
+  onPlaymatDragOver: (event: DragEvent<HTMLElement>, zone: "primary" | "magic" | "cemetery") => void;
+  onPlaymatDragLeave: () => void;
+  onPlaymatDrop: (event: DragEvent<HTMLElement>, zone: "primary" | "magic" | "cemetery") => void;
 }) {
   const limitedSlots = Array.from({ length: 4 }, (_, index) => player.field.limitedSummons[index]);
   const magicSlots = Array.from({ length: 5 }, (_, index) => player.field.magicSlots[index]);
   const deckCount = player.deck.length;
   const cemeteryCount = player.cemetery.length;
+  const battleBlockReason = getBattleBlockReason(match);
+  const usedBattleCreatureIds = player.turnFlags.battleUsedCreatureInstanceIds ?? [];
+  const canBattleWithCard = (card?: CardInstance) =>
+    !!card &&
+    !!onStartBattle &&
+    canControlThisPlayer &&
+    isActivePlayer &&
+    !battleBlockReason &&
+    !usedBattleCreatureIds.includes(card.instanceId);
+  const dragClass = (zone: "primary" | "magic" | "cemetery") => dragOverZone === zone ? " drag-over" : "";
 
   return (
     <section className={`player-playmat ${isActivePlayer ? "active" : ""}`} aria-label={`${player.displayName} play mat`}>
@@ -186,13 +244,26 @@ function PlayerPlaymat({
         <strong>{player.displayName}</strong>
       </div>
 
-      <div className="playmat-zone playmat-primary-zone">
+      <div
+        className={`playmat-zone playmat-primary-zone${dragClass("primary")}`}
+        onDragOver={event => onPlaymatDragOver(event, "primary")}
+        onDragLeave={onPlaymatDragLeave}
+        onDrop={event => onPlaymatDrop(event, "primary")}
+      >
         <span className="playmat-zone-label">Primary Creature</span>
         <PlaymatCard
           match={match}
           card={player.field.primaryCreature}
           emptyLabel="No primary"
           kind="creature"
+          clickLabel={canBattleWithCard(player.field.primaryCreature) ? "Click to battle" : undefined}
+          onCardClick={canBattleWithCard(player.field.primaryCreature)
+            ? () => {
+              if (player.field.primaryCreature) {
+                onStartBattle?.(player.field.primaryCreature.instanceId);
+              }
+            }
+            : undefined}
         />
       </div>
 
@@ -207,12 +278,22 @@ function PlayerPlaymat({
               kind="creature"
               actionLabel={card && canPromoteLimitedSummonToPrimary ? "Promote" : undefined}
               onAction={card && canPromoteLimitedSummonToPrimary ? () => onPromoteLimitedSummonToPrimary(card.instanceId) : undefined}
+              clickLabel={canBattleWithCard(card) && !canPromoteLimitedSummonToPrimary ? "Click to battle" : undefined}
+              onCardClick={canBattleWithCard(card) && card && !canPromoteLimitedSummonToPrimary
+                ? () => onStartBattle?.(card.instanceId)
+                : undefined}
             />
           </div>
         ))}
       </div>
 
-      <div className="playmat-magic-row" aria-label="Magic slots">
+      <div
+        className={`playmat-magic-row${dragClass("magic")}`}
+        aria-label="Magic slots"
+        onDragOver={event => onPlaymatDragOver(event, "magic")}
+        onDragLeave={onPlaymatDragLeave}
+        onDrop={event => onPlaymatDrop(event, "magic")}
+      >
         {magicSlots.map((card, index) => (
           <div className="playmat-zone playmat-magic-zone" key={card?.instanceId ?? `magic-${index}`}>
             <span className="playmat-zone-label">Magic Slot</span>
@@ -239,7 +320,12 @@ function PlayerPlaymat({
           <strong>{deckCount}</strong>
         </button>
 
-        <div className="playmat-stack-zone cemetery">
+        <div
+          className={`playmat-stack-zone cemetery${dragClass("cemetery")}`}
+          onDragOver={event => onPlaymatDragOver(event, "cemetery")}
+          onDragLeave={onPlaymatDragLeave}
+          onDrop={event => onPlaymatDrop(event, "cemetery")}
+        >
           <span>Card Cemetery</span>
           <strong>{cemeteryCount}</strong>
           <small>{player.cemeteryCreatureHpTotal} HP</small>
@@ -253,17 +339,20 @@ export function PlayerPanel({
   match,
   player,
   controlledPlayerId,
-  boardMode = false
+  boardMode = false,
+  onStartManualBattle
 }: {
   match: AppMatchState;
   player: PlayerState;
   controlledPlayerId?: string;
   boardMode?: boolean;
+  onStartManualBattle?: (attackerCreatureInstanceId: string) => void;
 }) {
   const [selectedSacrificesByCard, setSelectedSacrificesByCard] = useState<
     Record<string, string[]>
   >({});
   const [manualHpAmount, setManualHpAmount] = useState("10");
+  const [dragOverZone, setDragOverZone] = useState<"primary" | "magic" | "cemetery" | null>(null);
 
   const isActivePlayer = match.turn.activePlayerId === player.id;
   const isMatchComplete = getMatchStatus(match) === "COMPLETE";
@@ -472,6 +561,80 @@ export function PlayerPanel({
     });
   }
 
+  function getDraggedHandCard(event: DragEvent<HTMLElement>): CardInstance | undefined {
+    const payload = event.dataTransfer.getData("application/x-ward-hand-card");
+    if (!payload) return undefined;
+
+    try {
+      const data = JSON.parse(payload) as { playerId?: string; cardInstanceId?: string };
+      if (data.playerId !== player.id || !data.cardInstanceId) return undefined;
+
+      return player.hand.find(card => card.instanceId === data.cardInstanceId);
+    } catch {
+      return undefined;
+    }
+  }
+
+  function canDropHandCardOnZone(card: CardInstance | undefined, zone: "primary" | "magic" | "cemetery"): boolean {
+    if (!card || !canControlThisPlayer) return false;
+
+    if (zone === "cemetery") {
+      return discardRequiredForThisPlayer;
+    }
+
+    if (zone === "magic") {
+      return canPlayMagicNow && isMagic(match, card);
+    }
+
+    if (!canPlayPrimaryNow || !isCreature(match, card) || !canSummonCreatureFromHand(match, player, card)) {
+      return false;
+    }
+
+    const requiredSacrifices = getRequiredSacrificesForCard(match, card);
+    const primaryCreature = player.field.primaryCreature;
+    const primarySacrificeRequired = !!primaryCreature && !creatureCannotBeSacrificed(primaryCreature);
+    const selectedSacrifices = selectedSacrificesByCard[card.instanceId] ?? [];
+    const selectedPrimarySacrifice =
+      !primarySacrificeRequired ||
+      (primaryCreature ? selectedSacrifices.includes(primaryCreature.instanceId) : true);
+
+    return selectedPrimarySacrifice && selectedSacrifices.length === requiredSacrifices;
+  }
+
+  function handlePlaymatDragOver(event: DragEvent<HTMLElement>, zone: "primary" | "magic" | "cemetery") {
+    const card = getDraggedHandCard(event);
+    if (!canDropHandCardOnZone(card, zone)) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverZone(zone);
+  }
+
+  function handlePlaymatDragLeave() {
+    setDragOverZone(null);
+  }
+
+  function handlePlaymatDrop(event: DragEvent<HTMLElement>, zone: "primary" | "magic" | "cemetery") {
+    const card = getDraggedHandCard(event);
+    setDragOverZone(null);
+
+    if (!canDropHandCardOnZone(card, zone) || !card) return;
+
+    event.preventDefault();
+
+    if (zone === "cemetery") {
+      discardFromHand(card.instanceId);
+      return;
+    }
+
+    if (zone === "magic") {
+      playMagic(card.instanceId);
+      return;
+    }
+
+    playPrimary(card.instanceId);
+  }
+
   function activateCardEffect(sourceInstanceId: string, effectId: string) {
     if (!canControlThisPlayer) return;
     socket.emit("match:activateCardEffect", {
@@ -562,6 +725,11 @@ export function PlayerPanel({
       onPromoteLimitedSummonToPrimary={promoteLimitedSummonToPrimary}
       onDestroyMagic={destroyMagic}
       onShuffleDeck={shuffleDeck}
+      onStartBattle={onStartManualBattle}
+      dragOverZone={dragOverZone}
+      onPlaymatDragOver={handlePlaymatDragOver}
+      onPlaymatDragLeave={handlePlaymatDragLeave}
+      onPlaymatDrop={handlePlaymatDrop}
     />
   );
 

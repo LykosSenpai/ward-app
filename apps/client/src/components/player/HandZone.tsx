@@ -1,5 +1,6 @@
 import type { CardInstance, PlayerState } from "@ward/shared";
 import type { AppMatchState } from "../../clientTypes";
+import { MatchCardImage } from "../MatchCardImage";
 import {
   canSummonCreatureFromHand,
   creatureCannotBeSacrificed,
@@ -169,115 +170,171 @@ function HandCard({
   const isSilenceCard = isSilenceFromTheGraveCard(match, card);
   const isMinotaurBodyguard = isMinotaurBodyguardCard(match, card);
   const silenceCanPayCost = !isSilenceCard || canPaySilenceFromTheGraveCost(match, player, card);
+  const canPerformCardClick =
+    discardRequiredForThisPlayer ||
+    isPlayableCreature ||
+    (isMagic(match, card) && canPlayMagicNow && silenceCanPayCost) ||
+    (isChainLightningMagic(match, card) && canPlayLightningResponse) ||
+    (isMinotaurBodyguard && canPlayBattleResponse);
+
+  function performCardClick() {
+    if (discardRequiredForThisPlayer) {
+      onDiscardFromHand(card.instanceId);
+      return;
+    }
+
+    if (isPlayableCreature) {
+      onPlayPrimary(card.instanceId);
+      return;
+    }
+
+    if (isMagic(match, card) && canPlayMagicNow && silenceCanPayCost) {
+      onPlayMagic(card.instanceId);
+      return;
+    }
+
+    if (isChainLightningMagic(match, card) && canPlayLightningResponse) {
+      onPlayLightningResponse(card.instanceId);
+      return;
+    }
+
+    if (isMinotaurBodyguard && canPlayBattleResponse) {
+      onPlayBattleResponse(card.instanceId);
+    }
+  }
 
   return (
-    <div className="mini-card">
-      <strong>{getCardName(match, card)}</strong>
-      <span>{match.cardCatalog[card.cardId]?.cardType}</span>
+    <div
+      className={[
+        "mini-card",
+        "hand-card",
+        isCreature(match, card) ? "creature-card" : "magic-card",
+        canPerformCardClick ? "playable" : ""
+      ].filter(Boolean).join(" ")}
+      role={canPerformCardClick ? "button" : undefined}
+      tabIndex={canPerformCardClick ? 0 : undefined}
+      draggable
+      onClick={canPerformCardClick ? performCardClick : undefined}
+      onDragStart={event => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("application/x-ward-hand-card", JSON.stringify({
+          playerId: player.id,
+          cardInstanceId: card.instanceId,
+          cardId: card.cardId
+        }));
+      }}
+      onKeyDown={event => {
+        if (!canPerformCardClick) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          performCardClick();
+        }
+      }}
+      title="Click to play when legal, or drag to a matching board zone"
+    >
+      <MatchCardImage match={match} card={card} />
 
-      {discardRequiredForThisPlayer && (
-        <button
-          className="discard-button"
-          onClick={() => onDiscardFromHand(card.instanceId)}
-        >
-          Discard for Hand Size
-        </button>
-      )}
+      <div className="hand-card-body">
+        <strong>{getCardName(match, card)}</strong>
+        <span>{match.cardCatalog[card.cardId]?.cardType}</span>
 
-      {isCreature(match, card) && (
-        <>
-          <span>{getCreatureStatsLine(match, card)}</span>
-          <span>Required Sacrifices: {requiredSacrifices}</span>
-        </>
-      )}
+        {discardRequiredForThisPlayer && (
+          <span className="hand-card-action-note discard">Click or drag to cemetery</span>
+        )}
 
-      {isMagic(match, card) && (
-        <>
-          <span>{getMagicLine(match, card)}</span>
-          <span className="magic-text">{getCardText(match, card)}</span>
-        </>
-      )}
+        {isCreature(match, card) && (
+          <>
+            <span>{getCreatureStatsLine(match, card)}</span>
+            <span>Required Sacrifices: {requiredSacrifices}</span>
+          </>
+        )}
 
-      {isCreature(match, card) && canPlayPrimaryNow && autoRemoveCurrentPrimary && (
-        <div className="warning-box compact-warning">
-          Current field primary cannot be sacrificed. Playing this creature will send the current primary to the cemetery separately, then pay any required sacrifices from hand.
-        </div>
-      )}
+        {isMagic(match, card) && (
+          <>
+            <span>{getMagicLine(match, card)}</span>
+            <span className="magic-text">{getCardText(match, card)}</span>
+          </>
+        )}
 
-      {isCreature(match, card) && canPlayPrimaryNow && requiredSacrifices > 0 && (
-        <div className="sacrifice-box">
-          <span className="label">
-            Select {requiredSacrifices} sacrifice(s) from {autoRemoveCurrentPrimary ? "hand" : "hand or field"}:
+        {isCreature(match, card) && canPlayPrimaryNow && autoRemoveCurrentPrimary && (
+          <div className="warning-box compact-warning">
+            Current field primary cannot be sacrificed. Playing this creature will send the current primary to the cemetery separately, then pay any required sacrifices from hand.
+          </div>
+        )}
+
+        {isCreature(match, card) && canPlayPrimaryNow && requiredSacrifices > 0 && (
+          <div className="sacrifice-box" onClick={event => event.stopPropagation()}>
+            <span className="label">
+              Select {requiredSacrifices} sacrifice(s) from {autoRemoveCurrentPrimary ? "hand" : "hand or field"}:
+            </span>
+
+            {primaryCreatureCannotBeSacrificed && (
+              <div className="warning-box compact-warning">
+                Current field primary cannot be used as sacrifice material.
+              </div>
+            )}
+
+            {sacrificeCandidates.length < requiredSacrifices && (
+              <div className="warning-box compact-warning">
+                Not enough valid hand/field creatures to summon this card.
+              </div>
+            )}
+
+            {sacrificeCandidates.map(candidate => {
+              const selected = selectedSacrifices.includes(candidate.instanceId);
+              const isPrimarySacrifice =
+                player.field.primaryCreature?.instanceId === candidate.instanceId;
+
+              return (
+                <span
+                  className={selected ? "sacrifice-chip selected" : "sacrifice-chip"}
+                  key={candidate.instanceId}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onToggleSacrifice(card.instanceId, candidate.instanceId)}
+                  onKeyDown={event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onToggleSacrifice(card.instanceId, candidate.instanceId);
+                    }
+                  }}
+                >
+                  {selected ? "Selected: " : ""}
+                  {isPrimarySacrifice ? "Field Primary: " : "Hand: "}
+                  {getCardName(match, candidate)}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {isCreature(match, card) && canPlayPrimaryNow && (
+          <span className={isPlayableCreature ? "hand-card-action-note" : "hand-card-action-note blocked"}>
+            {isPlayableCreature ? "Click or drag to Primary" : "Select sacrifices first"}
           </span>
+        )}
 
-          {primaryCreatureCannotBeSacrificed && (
-            <div className="warning-box compact-warning">
-              Current field primary cannot be used as sacrifice material.
-            </div>
-          )}
+        {isMagic(match, card) && canPlayMagicNow && (
+          <>
+            {isSilenceCard && !silenceCanPayCost && (
+              <div className="warning-box compact-warning">
+                Silence From The Grave requires 1 other Magic card in hand to discard before it can enter the Magic Chain.
+              </div>
+            )}
+            <span className={silenceCanPayCost ? "hand-card-action-note" : "hand-card-action-note blocked"}>
+              {silenceCanPayCost ? "Click or drag to Magic" : "Needs another Magic card"}
+            </span>
+          </>
+        )}
 
-          {sacrificeCandidates.length < requiredSacrifices && (
-            <div className="warning-box compact-warning">
-              Not enough valid hand/field creatures to summon this card.
-            </div>
-          )}
+        {isChainLightningMagic(match, card) && canPlayLightningResponse && (
+          <span className="hand-card-action-note lightning">Click to respond</span>
+        )}
 
-          {sacrificeCandidates.map(candidate => {
-            const selected = selectedSacrifices.includes(candidate.instanceId);
-            const isPrimarySacrifice =
-              player.field.primaryCreature?.instanceId === candidate.instanceId;
-
-            return (
-              <button
-                className={selected ? "sacrifice-chip selected" : "sacrifice-chip"}
-                key={candidate.instanceId}
-                onClick={() => onToggleSacrifice(card.instanceId, candidate.instanceId)}
-              >
-                {selected ? "Selected: " : ""}
-                {isPrimarySacrifice ? "Field Primary: " : "Hand: "}
-                {getCardName(match, candidate)}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {isCreature(match, card) && canPlayPrimaryNow && (
-        <button onClick={() => onPlayPrimary(card.instanceId)} disabled={!isPlayableCreature}>
-          Set as Primary
-        </button>
-      )}
-
-      {isMagic(match, card) && canPlayMagicNow && (
-        <>
-          {isSilenceCard && !silenceCanPayCost && (
-            <div className="warning-box compact-warning">
-              Silence From The Grave requires 1 other Magic card in hand to discard before it can enter the Magic Chain.
-            </div>
-          )}
-          <button onClick={() => onPlayMagic(card.instanceId)} disabled={!silenceCanPayCost}>
-            Play Magic
-          </button>
-        </>
-      )}
-
-      {isChainLightningMagic(match, card) && canPlayLightningResponse && (
-        <button
-          className="lightning-button"
-          onClick={() => onPlayLightningResponse(card.instanceId)}
-        >
-          Play Lightning Response
-        </button>
-      )}
-
-      {isMinotaurBodyguard && canPlayBattleResponse && (
-        <button
-          className="lightning-button"
-          onClick={() => onPlayBattleResponse(card.instanceId)}
-        >
-          Play Battle Response
-        </button>
-      )}
+        {isMinotaurBodyguard && canPlayBattleResponse && (
+          <span className="hand-card-action-note lightning">Click to guard</span>
+        )}
+      </div>
     </div>
   );
 }

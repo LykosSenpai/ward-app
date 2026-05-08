@@ -7128,3 +7128,359 @@ button:disabled:hover {
   transform: none;
 }
 
+/* Tabletop board pass */
+.duel-board-view {
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(251, 191, 36, 0.06) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(251, 191, 36, 0.06) 1px, transparent 1px),
+    linear-gradient(135deg, #174238, #141e25 52%, #2d241b);
+  background-size: 52px 52px, 52px 52px, auto;
+  padding: clamp(10px, 1.4vw, 18px);
+}
+
+.duel-player-row {
+  grid-template-columns: minmax(118px, 0.13fr) minmax(0, 1fr);
+}
+
+.duel-player-row-near {
+  grid-template-columns: minmax(0, 1fr) minmax(118px, 0.13fr);
+}
+
+.duel-player-row .player-card {
+  background: rgba(8, 13, 17, 0.82);
+}
+
+.duel-player-rail {
+  background: rgba(2, 6, 23, 0.38);
+}
+
+.duel-center-lane {
+  min-height: 80px;
+}
+
+.duel-phase-core,
+.duel-center-marker,
+.table-command-dock,
+.table-player-drawer {
+  border-radius: 8px;
+}
+
+.table-command-dock {
+  gap: 8px;
+  padding: 8px;
+}
+
+.table-phase-step {
+  flex-basis: 96px;
+  padding: 5px 8px;
+}
+
+.table-primary-actions button,
+.table-utility-strip button {
+  min-height: 32px;
+  padding: 6px 9px;
+}
+
+.board-mode-player-card {
+  padding: 10px;
+}
+
+.duel-board-view .player-playmat {
+  aspect-ratio: 18 / 9;
+  background:
+    linear-gradient(90deg, rgba(2, 6, 23, 0.18), rgba(2, 6, 23, 0.34)),
+    linear-gradient(135deg, rgba(16, 91, 72, 0.78), rgba(17, 24, 39, 0.94) 55%, rgba(79, 52, 28, 0.72));
+  border-color: rgba(250, 204, 21, 0.28);
+  border-radius: 8px;
+  gap: clamp(7px, 0.8vw, 11px);
+  grid-template-columns: minmax(112px, 0.62fr) minmax(140px, 0.86fr) minmax(118px, 0.58fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 254px;
+  padding: clamp(8px, 1.1vw, 14px);
+}
+
+.duel-board-view .player-playmat::before {
+  background:
+    linear-gradient(90deg, transparent 49.5%, rgba(250, 204, 21, 0.18) 50%, transparent 50.5%),
+    linear-gradient(0deg, transparent 49.5%, rgba(250, 204, 21, 0.08) 50%, transparent 50.5%);
+}
+
+.playmat-brand {
+  max-width: 9rem;
+}
+
+.playmat-brand span {
+  font-size: 1.1rem;
+}
+
+.playmat-brand strong {
+  font-size: 0.78rem;
+}
+
+.playmat-primary-zone {
+  width: min(100%, 172px);
+}
+
+.playmat-limited-row,
+.playmat-magic-row {
+  gap: clamp(5px, 0.7vw, 9px);
+}
+
+.playmat-zone.drag-over,
+.playmat-magic-row.drag-over,
+.playmat-stack-zone.drag-over {
+  border-radius: 8px;
+  outline: 2px solid rgba(93, 225, 154, 0.82);
+  outline-offset: 3px;
+}
+
+.playmat-card,
+.playmat-stack-zone {
+  border-radius: 8px;
+  gap: 0.26rem;
+  padding: 0.34rem;
+}
+
+.playmat-primary-zone .playmat-card {
+  min-height: 210px;
+}
+
+.playmat-limited-zone .playmat-card,
+.playmat-magic-zone .playmat-card {
+  min-height: 150px;
+}
+
+.playmat-card.occupied {
+  align-content: start;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.08), rgba(2, 6, 23, 0.86));
+  border-color: rgba(226, 232, 240, 0.72);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.24);
+}
+
+.playmat-card.clickable {
+  cursor: pointer;
+}
+
+.playmat-card.clickable:hover {
+  border-color: rgba(93, 225, 154, 0.8);
+  transform: translateY(-2px);
+}
+
+.playmat-card-art-shell {
+  aspect-ratio: 5 / 7;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.playmat-card-art-shell .match-card-art,
+.match-card-art {
+  background: #111827;
+  height: 100%;
+  width: 100%;
+}
+
+.match-card-art img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.match-card-art.missing {
+  align-content: center;
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  color: #e2e8f0;
+  display: grid;
+  justify-items: center;
+}
+
+.playmat-card-art-shell .playmat-card-hp {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+}
+
+.playmat-card-title-row {
+  display: block;
+  min-height: 2.1em;
+  text-align: center;
+}
+
+.playmat-card-title-row strong {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+.playmat-card .playmat-hp-bar,
+.playmat-stat-chip-row,
+.playmat-effect-badges {
+  width: 100%;
+}
+
+.playmat-card-click-hint {
+  color: #bbf7d0;
+  font-size: 0.58rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.playmat-stack-zone {
+  border-radius: 8px;
+  min-height: 108px;
+}
+
+.table-player-drawer-grid {
+  grid-template-columns: minmax(320px, 1.35fr) repeat(2, minmax(220px, 0.82fr));
+}
+
+.board-live-zone-hand .zone-box {
+  padding-bottom: 6px;
+}
+
+.board-live-zone-hand .hand-list {
+  align-items: stretch;
+  display: flex;
+  gap: 8px;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 4px 12px;
+}
+
+.hand-card {
+  align-content: start;
+  border-radius: 8px;
+  cursor: grab;
+  flex: 0 0 clamp(122px, 9.5vw, 154px);
+  gap: 7px;
+  padding: 6px;
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.hand-card:active {
+  cursor: grabbing;
+}
+
+.hand-card.playable {
+  border-color: rgba(93, 225, 154, 0.58);
+  box-shadow: 0 0 0 1px rgba(93, 225, 154, 0.18);
+}
+
+.hand-card.playable:hover {
+  transform: translateY(-4px);
+}
+
+.hand-card .match-card-art {
+  aspect-ratio: 5 / 7;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hand-card-body {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.hand-card-body strong,
+.hand-card-body span {
+  overflow-wrap: anywhere;
+}
+
+.hand-card-body strong {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  font-size: 0.74rem;
+  line-height: 1.08;
+  overflow: hidden;
+}
+
+.hand-card-body > span:not(.magic-text):not(.hand-card-action-note) {
+  color: #cbd5e1;
+  font-size: 0.62rem;
+  line-height: 1.16;
+}
+
+.hand-card .magic-text {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  display: -webkit-box;
+  font-size: 0.64rem;
+  overflow: hidden;
+}
+
+.hand-card-action-note {
+  border: 1px solid rgba(93, 225, 154, 0.32);
+  border-radius: 999px;
+  background: rgba(20, 83, 45, 0.26);
+  color: #bbf7d0;
+  font-size: 0.58rem;
+  font-weight: 950;
+  line-height: 1.1;
+  padding: 0.24rem 0.42rem;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.hand-card-action-note.blocked {
+  border-color: rgba(251, 146, 60, 0.32);
+  background: rgba(124, 45, 18, 0.26);
+  color: #fed7aa;
+}
+
+.hand-card-action-note.discard {
+  border-color: rgba(255, 107, 122, 0.36);
+  background: rgba(127, 29, 29, 0.28);
+  color: #fecaca;
+}
+
+.hand-card-action-note.lightning {
+  border-color: rgba(96, 165, 250, 0.38);
+  background: rgba(30, 64, 175, 0.28);
+  color: #bfdbfe;
+}
+
+.hand-card .sacrifice-box {
+  display: grid;
+  gap: 5px;
+}
+
+.hand-card .sacrifice-chip {
+  display: block;
+  font-size: 0.62rem;
+  line-height: 1.18;
+  padding: 0.28rem 0.38rem;
+}
+
+@media (max-width: 1100px) {
+  .duel-board-view .player-playmat {
+    aspect-ratio: auto;
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .table-player-drawer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .board-live-zone-hand .hand-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+    overflow: visible;
+  }
+
+  .hand-card {
+    flex-basis: auto;
+  }
+}
+
