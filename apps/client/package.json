@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "check": "tsc -b --pretty false",
     "check:dispatch-guards": "tsx scripts/boardPreview3dDispatchChecks.ts",
-    "check:board-preview-integration": "pnpm check && pnpm check:dispatch-guards"
+    "check:board-render-adapter": "tsx scripts/boardRenderAdapterChecks.ts",
+    "check:board-preview-integration": "pnpm check && pnpm check:dispatch-guards && pnpm check:board-render-adapter"
   },
   "dependencies": {
     "@ward/shared": "workspace:*",
