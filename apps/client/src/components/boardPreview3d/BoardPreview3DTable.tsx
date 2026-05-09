@@ -2,6 +2,7 @@
 import { useRef, useState, type PointerEvent, type WheelEvent } from "react";
 import { BOARD_SLOTS, STACK_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
 import type { BoardObject } from "../boardPreview3dAdapter";
+import type { BoardRenderEventType } from "../boardRenderContracts";
 
 const MIN_ZOOM_SCALE = 0.5;
 const MAX_ZOOM_SCALE = 2.2;
@@ -30,6 +31,9 @@ type Props = {
   resolveSlotPosition: (slotId: string, fallbackX: number, fallbackZ: number) => { xPercent: number; zPercent: number };
   onSelectSlot: (slotId: string) => void;
   onSelectPiece?: (pieceId: string) => void;
+  highlightedSlotIds?: string[];
+  highlightedPieceIds?: string[];
+  activeEventType?: BoardRenderEventType | null;
 };
 
 <<<<<<< ours
@@ -55,7 +59,10 @@ export function BoardPreview3DTable({
   filteredBoardObjects,
   resolveSlotPosition,
   onSelectSlot,
-  onSelectPiece
+  onSelectPiece,
+  highlightedSlotIds = [],
+  highlightedPieceIds = [],
+  activeEventType
 }: Props) {
   const cameraRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{ pointerId: number; x: number; y: number; panX: number; panY: number } | null>(null);
@@ -132,7 +139,7 @@ export function BoardPreview3DTable({
           {BOARD_SLOTS.map((slot) => (
             <div
               key={slot.id}
-              className={`board-preview-3d__slot board-preview-3d__slot--${slot.owner}${selectedSlotId === slot.id ? " is-selected" : ""}`}
+              className={`board-preview-3d__slot board-preview-3d__slot--${slot.owner}${selectedSlotId === slot.id ? " is-selected" : ""}${highlightedSlotIds.includes(slot.id) ? " is-animated-target" : ""}`}
               style={{
                 left: `${resolveSlotPosition(slot.id, slot.xPercent, slot.zPercent).xPercent}%`,
                 top: `${resolveSlotPosition(slot.id, slot.xPercent, slot.zPercent).zPercent}%`
@@ -148,7 +155,7 @@ export function BoardPreview3DTable({
           {filteredBoardObjects.map((object) => (
             <article
               key={object.id}
-              className={`board-preview-3d__piece board-preview-3d__piece--${object.owner}`}
+              className={`board-preview-3d__piece board-preview-3d__piece--${object.owner}${highlightedPieceIds.includes(object.id) ? " is-animated-target" : ""}${activeEventType === "BATTLE_STARTED" ? " is-battle-window" : ""}`}
               style={{
                 left: `${resolveSlotPosition(object.slotId, object.xPercent, object.zPercent).xPercent}%`,
                 top: `${resolveSlotPosition(object.slotId, object.xPercent, object.zPercent).zPercent}%`,
