@@ -477,11 +477,8 @@ export function BoardPreview3D({
         <section className="board-preview-3d__board-column">
           <BoardPreview3DTable
             zoomScale={zoomScale}
-            setZoomScale={setZoomScale}
             cameraPanX={cameraPanX}
-            setCameraPanX={setCameraPanX}
             cameraPanY={cameraPanY}
-            setCameraPanY={setCameraPanY}
             tiltDegrees={tiltDegrees}
             heightScale={heightScale}
             showAnchors={showAnchors}

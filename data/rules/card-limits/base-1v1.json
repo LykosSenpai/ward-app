@@ -3,6 +3,100 @@
   "name": "Base 1v1 Card Limits",
   "version": "1.0.0",
   "rules": [
-    
+    {
+      "cardId": "gen1_042_dragon_rage",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_053_ghost_of_the_past",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_055_giant_rat",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_063_holy_light",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_066_junk_scarecrow",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_086_foolish_tricks",
+      "limit": 0,
+      "reason": "Tournament banned"
+    },
+    {
+      "cardId": "gen1_088_stone_golem",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_091_terrifying_roar",
+      "limit": 0,
+      "reason": "Tournament banned"
+    },
+    {
+      "cardId": "gen1_098_visitor_from_beyond",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_105_twister",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_108_wrath_of_the_old_ones",
+      "limit": 0,
+      "reason": "Tournament banned"
+    },
+    {
+      "cardId": "gen1_110_turncoat",
+      "limit": 0,
+      "reason": "Tournament banned"
+    },
+    {
+      "cardId": "gen1_112_cosmic_negation",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_113_judgement",
+      "limit": 0,
+      "reason": "Tournament banned"
+    },
+    {
+      "cardId": "gen1_115_revival_priest",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_116_magic_steal",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_119_mysterious_door",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen1_132_psychic_toad",
+      "limit": 1,
+      "reason": "Tournament limited"
+    },
+    {
+      "cardId": "gen2_039_irresistible_love",
+      "limit": 1,
+      "reason": "Tournament limited"
+    }
   ]
 }

@@ -2425,6 +2425,27 @@
   gap: 0.35rem;
 }
 
+.library-option-a-format-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0.25rem 0 0.45rem;
+  max-width: 360px;
+}
+
+.library-option-a-format-toggle button {
+  border-radius: 0.45rem;
+  font-size: 0.72rem;
+  min-height: 1.8rem;
+  padding: 0.22rem 0.55rem;
+}
+
+.library-option-a-format-toggle button.active {
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.76);
+  color: #dcfce7;
+}
+
 .library-option-a-chip-row span,
 .library-option-a-deck-stat-strip span {
   border: 1px solid rgba(96, 165, 250, 0.28);
@@ -2841,10 +2862,38 @@
   grid-template-columns: auto minmax(0, 1fr);
 }
 
+.library-option-a-limit-add-row:has(.library-option-a-limit-editor) {
+  grid-template-columns: auto minmax(82px, 0.85fr) minmax(0, 1fr);
+}
+
 .library-option-a-limit-add-row .limit-badge {
   font-size: 0.58rem;
   min-width: 0;
   padding: 0.17rem 0.38rem;
+}
+
+.library-option-a-limit-editor {
+  display: grid;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.library-option-a-limit-editor span {
+  color: #bfdbfe;
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.library-option-a-limit-editor select {
+  border-radius: 0.38rem;
+  font-size: 0.58rem;
+  min-height: 1.22rem;
+  min-width: 0;
+  padding: 0.08rem 0.16rem;
+  width: 100%;
 }
 
 .library-option-a-mini-deck-add {
@@ -2884,6 +2933,20 @@
 .library-option-a-card-content .card-art-select-label {
   display: grid;
   gap: 0.15rem;
+}
+
+.library-option-a-card-content .card-art-holo-label {
+  align-items: center;
+  display: inline-grid;
+  grid-template-columns: 0.72rem max-content;
+  gap: 0.22rem;
+  justify-content: start;
+}
+
+.library-option-a-card-content .card-art-holo-label input[type="checkbox"] {
+  height: 0.72rem;
+  margin: 0;
+  width: 0.72rem;
 }
 
 .library-option-a-card-content .card-image-placeholder {
@@ -5313,7 +5376,7 @@
 .deck-library-card-header {
   align-items: start;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 0.6rem;
 }
 
@@ -5334,6 +5397,128 @@
   color: #cbd5e1;
   font-size: 0.76rem;
   overflow-wrap: anywhere;
+}
+
+.deck-format-badge {
+  align-self: start;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 999px;
+  color: #e2e8f0;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.28rem 0.48rem;
+  white-space: nowrap;
+}
+
+.deck-format-badge.tournament {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.62);
+  color: #bbf7d0;
+}
+
+.deck-format-badge.free-play {
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(96, 165, 250, 0.55);
+  color: #bfdbfe;
+}
+
+.deck-verification-badge {
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 0.22rem 0.44rem;
+}
+
+.deck-verification-badge.pending {
+  border-color: rgba(250, 204, 21, 0.58);
+  color: #fde68a;
+}
+
+.deck-verification-badge.verified {
+  border-color: rgba(34, 197, 94, 0.66);
+  color: #bbf7d0;
+}
+
+.deck-verification-badge.rejected {
+  border-color: rgba(248, 113, 113, 0.66);
+  color: #fecaca;
+}
+
+.deck-proof-upload {
+  border: 1px dashed rgba(96, 165, 250, 0.42);
+  border-radius: 0.45rem;
+  color: #bfdbfe;
+  cursor: pointer;
+  display: grid;
+  font-size: 0.75rem;
+  font-weight: 900;
+  gap: 0.25rem;
+  padding: 0.5rem;
+}
+
+.deck-proof-upload input {
+  font-size: 0.7rem;
+  max-width: 100%;
+}
+
+.deck-proof-section,
+.tournament-review-panel,
+.tournament-review-card {
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 0.65rem;
+  background: rgba(15, 23, 42, 0.62);
+  padding: 0.75rem;
+}
+
+.deck-proof-section h3 {
+  margin: 0 0 0.55rem;
+}
+
+.deck-proof-photo-grid {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+.deck-proof-photo-grid a {
+  color: #bfdbfe;
+  display: grid;
+  gap: 0.28rem;
+  text-decoration: none;
+}
+
+.deck-proof-photo-grid img {
+  aspect-ratio: 4 / 3;
+  border-radius: 0.45rem;
+  object-fit: cover;
+  width: 100%;
+}
+
+.deck-proof-photo-grid span {
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
+.tournament-review-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.tournament-review-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.tournament-review-card {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.tournament-review-card textarea {
+  min-height: 4rem;
 }
 
 .deck-library-stat-row,
@@ -7346,6 +7531,7 @@ button:disabled:hover {
 .playmat-card-title-row strong {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   display: -webkit-box;
   overflow: hidden;
 }
@@ -7557,6 +7743,7 @@ button:disabled:hover {
 .hand-card-body strong {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   display: -webkit-box;
   font-size: 0.74rem;
   line-height: 1.08;
@@ -7572,6 +7759,7 @@ button:disabled:hover {
 .hand-card .magic-text {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   display: -webkit-box;
   font-size: 0.64rem;
   overflow: hidden;

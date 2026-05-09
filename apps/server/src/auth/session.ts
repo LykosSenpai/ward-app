@@ -6,7 +6,7 @@ export type AuthUser = {
   id: string;
   username: string;
   displayName: string;
-  role: "PLAYER" | "DEVELOPER" | "ADMIN";
+  role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   canAccessDevTools: boolean;
   devToolsEnabled: boolean;
 };

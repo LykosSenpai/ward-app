@@ -67,7 +67,8 @@ import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview";
-type PlayViewMode = "board3d";
+type PlayViewMode = "board" | "board3d" | "split" | "text";
+type DeckFormat = "FREE_PLAY" | "TOURNAMENT";
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
 
@@ -150,6 +151,7 @@ export default function App() {
   const [cardPacks, setCardPacks] = useState<CardPackSummary[]>([]);
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [deckDetails, setDeckDetails] = useState<DeckDetail[]>([]);
+  const [tournamentDeckSubmissions, setTournamentDeckSubmissions] = useState<DeckDetail[]>([]);
   const [matchLobbies, setMatchLobbies] = useState<MatchLobby[]>([]);
   const [activeLobby, setActiveLobby] = useState<MatchLobby | undefined>();
   const [selectedPackIds, setSelectedPackIds] = useState<string[]>([]);
@@ -161,6 +163,7 @@ export default function App() {
   const [deckBuilderId, setDeckBuilderId] = useState("new-test-deck");
   const [deckBuilderCardIds, setDeckBuilderCardIds] = useState<string[]>([]);
   const [deckBuilderCardArtKeys, setDeckBuilderCardArtKeys] = useState<CardArtKey[]>([]);
+  const [deckBuilderFormat, setDeckBuilderFormat] = useState<DeckFormat>("FREE_PLAY");
   const [manualEffectAmounts, setManualEffectAmounts] = useState<Record<string, string>>({});
   const [manualEffectStats, setManualEffectStats] = useState<Record<string, ManualEffectStatKey>>({});
   const [manualEffectDurations, setManualEffectDurations] = useState<Record<string, string>>({});
@@ -368,6 +371,9 @@ export default function App() {
     socket.on("deck:details", (data: DeckDetail[]) => {
       setDeckDetails(data);
     });
+    socket.on("deck:tournamentSubmissions", (data: DeckDetail[]) => {
+      setTournamentDeckSubmissions(data);
+    });
 
     socket.on("lobby:list", (data: MatchLobby[]) => {
       const sortedLobbies = sortLobbiesByCreatedAt(data);
@@ -414,6 +420,10 @@ export default function App() {
       socket.emit("setup:listOptions");
       socket.emit("deck:listDetails");
     });
+    socket.on("deck:tournamentSubmissionReviewed", (data: { message: string }) => {
+      setSaveMessage(data.message);
+      socket.emit("deck:listDetails");
+    });
 
     socket.on(
       "deck:loaded",
@@ -428,6 +438,7 @@ export default function App() {
 
         setDeckBuilderCardIds(data.cardIds);
         setDeckBuilderCardArtKeys(normalizeDeckArtKeys(data.cardArtKeys, data.cardIds.length));
+        setDeckBuilderFormat(data.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY");
         setSaveMessage(
           data.mode === "clone"
             ? `Loaded clone source: ${data.name}`
@@ -445,6 +456,7 @@ export default function App() {
         packIds: string[];
         cardIds: string[];
         cardArtKeys?: CardArtKey[];
+        format?: DeckFormat;
       }) => {
         const confirmed = window.confirm(
           `${data.message}\n\nOverwrite "${data.deckId}"?`
@@ -461,6 +473,7 @@ export default function App() {
           packIds: data.packIds,
           cardIds: data.cardIds,
           cardArtKeys: data.cardArtKeys,
+          format: data.format,
           overwrite: true
         });
       }
@@ -590,6 +603,7 @@ export default function App() {
       socket.off("setup:options");
       socket.off("cards:library");
       socket.off("deck:details");
+      socket.off("deck:tournamentSubmissions");
       socket.off("lobby:list");
       socket.off("lobby:updated");
       socket.off("lobby:cleanupComplete");
@@ -597,6 +611,7 @@ export default function App() {
       socket.off("dev:effectCoverage");
       socket.off("dev:effectRuntimeTestStatusSaved");
       socket.off("deck:saved");
+      socket.off("deck:tournamentSubmissionReviewed");
       socket.off("deck:loaded");
       socket.off("deck:overwriteRequired");
       socket.off("deck:deleted");
@@ -675,6 +690,20 @@ export default function App() {
 
     socket.emit("cards:listForPacks", {
       packIds
+    });
+  }
+
+  function saveCardTournamentLimit(cardId: string, status: "LEGAL" | "LIMITED" | "BANNED") {
+    const packIds =
+      selectedPackIds.length > 0
+        ? selectedPackIds
+        : cardPacks.map(pack => pack.id);
+    const limit = status === "BANNED" ? 0 : status === "LIMITED" ? 1 : 3;
+
+    socket.emit("dev:saveCardLimit", {
+      packIds,
+      cardId,
+      limit
     });
   }
 
@@ -784,9 +813,15 @@ export default function App() {
     return getDeckBuilderCounts()[cardId] ?? 0;
   }
 
+  function getEffectiveDeckLimit(cardId: string): number {
+    if (deckBuilderFormat !== "TOURNAMENT") return 3;
+    const card = cardLibrary.find(item => item.id === cardId);
+    return card?.deckLimit ?? 3;
+  }
+
   function addCardToDeckBuilder(cardId: string, artKey: CardArtKey = "default") {
     const card = cardLibrary.find(item => item.id === cardId);
-    const deckLimit = card?.deckLimit ?? 3;
+    const deckLimit = getEffectiveDeckLimit(cardId);
     const count = getDeckBuilderCardCount(cardId);
 
     if (deckLimit <= 0) {
@@ -846,13 +881,14 @@ export default function App() {
     setDeckBuilderId("new-test-deck");
     setDeckBuilderCardIds([]);
     setDeckBuilderCardArtKeys([]);
+    setDeckBuilderFormat("FREE_PLAY");
     setError("");
     setSaveMessage("Started a new deck.");
   }
 
   function setDeckBuilderCardCopies(cardId: string, requestedCopyCount: number, artKey: CardArtKey = "default") {
     const card = cardLibrary.find(item => item.id === cardId);
-    const deckLimit = card?.deckLimit ?? 3;
+    const deckLimit = getEffectiveDeckLimit(cardId);
     const safeRequestedCount = Math.max(0, Math.floor(requestedCopyCount));
     const nextCopyCount = Math.min(safeRequestedCount, deckLimit, 30);
 
@@ -915,6 +951,7 @@ export default function App() {
     deckId?: string;
     cardIds: string[];
     cardArtKeys?: string[];
+    format?: DeckFormat;
   }) {
     const importedName = payload.name?.trim() || "Imported Deck";
     const importedDeckId = normalizeId(payload.deckId || importedName) || "imported-deck";
@@ -924,6 +961,7 @@ export default function App() {
     setDeckBuilderId(importedDeckId);
     setDeckBuilderCardIds(payload.cardIds);
     setDeckBuilderCardArtKeys(normalizeDeckArtKeys(payload.cardArtKeys, payload.cardIds.length));
+    setDeckBuilderFormat(payload.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY");
     setSaveMessage(`Imported ${payload.cardIds.length} cards into the deck editor.`);
     setActivePage("card-library");
   }
@@ -956,13 +994,12 @@ export default function App() {
 
     const counts = getDeckBuilderCounts();
     const overLimit = Object.entries(counts).filter(([cardId, count]) => {
-      const card = cardLibrary.find(item => item.id === cardId);
-      const deckLimit = card?.deckLimit ?? 3;
+      const deckLimit = getEffectiveDeckLimit(cardId);
 
       return count > deckLimit;
     });
 
-    if (overLimit.length > 0) {
+    if (deckBuilderFormat === "TOURNAMENT" && overLimit.length > 0) {
       setError("Deck contains cards over their banned/limited restriction.");
       return;
     }
@@ -973,6 +1010,7 @@ export default function App() {
       packIds: selectedPackIds,
       cardIds: deckBuilderCardIds,
       cardArtKeys: normalizeDeckArtKeys(deckBuilderCardArtKeys, deckBuilderCardIds.length),
+      format: deckBuilderFormat,
       overwrite: false
     });
   }
@@ -1577,7 +1615,10 @@ export default function App() {
         ...match.players.filter(player => player.id !== controlledPlayerId)
       ]
     : match?.players ?? [];
+  const showBoardView = playViewMode === "board" || playViewMode === "split";
   const show3dBoardView = playViewMode === "board3d";
+  const showTextEngineView = playViewMode === "split" || playViewMode === "text";
+  const shouldShowMagicChainPanel = !!match && (!match.pendingBattle || !!match.pendingChain) && (showTextEngineView || !!match.pendingChain);
   const boardSidePanelContent = match ? (
     <>
       {match.pendingBattle && !match.pendingChain && (
@@ -1842,11 +1883,17 @@ export default function App() {
           <DeckLibraryPage
             decks={decks}
             deckDetails={deckDetails}
+            tournamentDeckSubmissions={tournamentDeckSubmissions}
+            currentUser={authUser}
             cardLibrary={cardLibrary}
             onEditDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "edit")}
             onCloneDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "clone")}
             onDeleteDeck={deleteDeck}
             onImportDeckCode={importDeckCodeIntoBuilder}
+            onRefreshDeckDetails={() => socket.emit("deck:listDetails")}
+            onReviewTournamentDeck={(ownerUserId, deckId, status, notes) => {
+              socket.emit("deck:reviewTournamentSubmission", { ownerUserId, deckId, status, notes });
+            }}
           />
 
         ) : activePage === "board-preview" ? (
@@ -1879,6 +1926,7 @@ export default function App() {
             deckBuilderId={deckBuilderId}
             deckBuilderCardIds={deckBuilderCardIds}
             deckBuilderCardArtKeys={deckBuilderCardArtKeys}
+            deckBuilderFormat={deckBuilderFormat}
             ownershipCounts={cardOwnershipCounts}
             normalizeId={normalizeId}
             getDeckBuilderCounts={getDeckBuilderCounts}
@@ -1888,6 +1936,7 @@ export default function App() {
               setDeckBuilderId(normalizeId(value));
             }}
             onDeckIdChange={value => setDeckBuilderId(normalizeId(value))}
+            onDeckFormatChange={setDeckBuilderFormat}
             onRefreshCardLibrary={refreshCardLibrary}
             onClearDeckBuilder={clearDeckBuilder}
             onNewDeck={startNewDeckBuilder}
@@ -1896,6 +1945,8 @@ export default function App() {
             onSetCardCopies={setDeckBuilderCardCopies}
             onSetOwnedCopies={setOwnedCardCopies}
             onSaveDeck={saveBuiltDeck}
+            canUseDevTools={canUseDevTools}
+            onSaveCardLimit={saveCardTournamentLimit}
           />
         ) : !match ? (
           <section className="play-lobby-workspace">
@@ -1924,11 +1975,80 @@ export default function App() {
             <section className="play-view-toolbar" aria-label="Play table view mode">
               <div>
                 <span className="label">Table View</span>
-                <strong>3D Board (Only)</strong>
+                <strong>
+                  {playViewMode === "board"
+                    ? "Board Only"
+                    : playViewMode === "board3d"
+                      ? "3D Board"
+                      : playViewMode === "split"
+                      ? "Board + Text Engine"
+                      : "Text Engine"}
+                </strong>
+              </div>
+
+              <div className="segmented-control">
+                <button
+                  type="button"
+                  className={playViewMode === "board" ? "active" : undefined}
+                  onClick={() => setPlayViewMode("board")}
+                >
+                  Board
+                </button>
+                <button
+                  type="button"
+                  className={playViewMode === "board3d" ? "active" : undefined}
+                  onClick={() => setPlayViewMode("board3d")}
+                >
+                  3D Board
+                </button>
+                <button
+                  type="button"
+                  className={playViewMode === "split" ? "active" : undefined}
+                  onClick={() => setPlayViewMode("split")}
+                >
+                  Split
+                </button>
+                <button
+                  type="button"
+                  className={playViewMode === "text" ? "active" : undefined}
+                  onClick={() => setPlayViewMode("text")}
+                >
+                  Text
+                </button>
               </div>
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
+              {show3dBoardView && (
+                <BoardPreviewPage
+                  cardLibrary={cardLibrary}
+                  controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
+                  liveMatch={match}
+                />
+              )}
+
+              {showBoardView && (
+                <CardBoardView
+                  match={match}
+                  players={displayedPlayers}
+                  controlledPlayerId={controlledPlayerId}
+                  actions={{
+                    advanceBlockReason,
+                    onShuffleAllDecks: shuffleAllDecks,
+                    onUndoLastAction: undoLastAction,
+                    onDrawActivePlayer: drawActivePlayer,
+                    onStartManualBattle: startManualBattle,
+                    onAdvancePhase: advancePhase,
+                    onOpenManualEffects: () => setDashboardModal("manual-effects"),
+                    onOpenBattleResult: () => setDashboardModal("battle-result"),
+                    onOpenEventLog: () => setDashboardModal("event-log"),
+                    onOpenDiceRoller: () => setDashboardModal("dice-roller"),
+                    onOpenSaveLoad: () => setDashboardModal("save-load")
+                  }}
+                  boardPanel={boardSidePanelContent}
+                />
+              )}
+
               {show3dBoardView && (
                 <section className="live-3d-board-view" aria-label="Live 3D game board">
                   <div className="live-3d-board-stage">

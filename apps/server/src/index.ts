@@ -4,6 +4,7 @@ console.log("BOOTING WARD SERVER...");
 import express from "express";
 import cors from "cors";
 import http from "http";
+import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -76,8 +77,10 @@ import {
   loadEffectRuntimeTestStatusMap,
   saveEffectRuntimeTestStatusRecord,
   saveEffectRuntimeTestStatusRecords,
+  getUserDeckProofPhotoPath,
   listSavedMatches,
   listSetupOptions,
+  listTournamentDeckSubmissions,
   listUserDecks,
   loadCardCatalog,
   loadCardLimitMap,
@@ -85,8 +88,11 @@ import {
   loadUserDeckList,
   loadMatchFromDisk,
   saveDeckListToDisk,
+  saveUserDeckProofPhoto,
   saveUserDeckListToDisk,
   updateCardEffectsInPack,
+  updateCardLimitRule,
+  reviewTournamentDeckSubmission,
   saveMatchToDisk,
   validateDataFileId
 } from "./dataStore.js";
@@ -108,7 +114,7 @@ import type { EffectRuntimeTestStatusRecord } from "./dataStore.js";
 import type { LlmDirectEffectSmokeTestResult, LlmEffectResultReview, LlmEffectTestPlan } from "./llm/types.js";
 import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
-import { changeUserPassword, createUser, getUserProfile, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
+import { changeUserPassword, createUser, getUserProfile, listUsersForTournamentDeckReview, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
 import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
 import { checkDbConnection } from "./db/pool.js";
 
@@ -150,13 +156,46 @@ function canSocketUseDevTools(socket: { request: unknown }): boolean {
   return ENABLE_DEV_TOOLS || !!getSocketUser(socket)?.devToolsEnabled;
 }
 
+function canUserReviewTournamentDecks(user: AuthUser | null | undefined): boolean {
+  return user?.role === "ADMIN" || user?.role === "HOST";
+}
+
+const ALLOWED_PROOF_PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const PROOF_PHOTO_EXTENSION_BY_MIME_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif"
+};
+const MAX_PROOF_PHOTO_BYTES = 8 * 1024 * 1024;
+
+function decodeProofPhotoDataUrl(dataUrl: string): { mimeType: string; bytes: Buffer } {
+  const match = /^data:(image\/(?:jpeg|png|webp|gif));base64,([a-z0-9+/=\s]+)$/i.exec(dataUrl.trim());
+
+  if (!match) {
+    throw new Error("Proof photo must be a JPEG, PNG, WebP, or GIF data URL.");
+  }
+
+  const mimeType = match[1].toLowerCase();
+  if (!ALLOWED_PROOF_PHOTO_MIME_TYPES.has(mimeType)) {
+    throw new Error("Unsupported proof photo type.");
+  }
+
+  const bytes = Buffer.from(match[2].replace(/\s/g, ""), "base64");
+  if (bytes.byteLength <= 0 || bytes.byteLength > MAX_PROOF_PHOTO_BYTES) {
+    throw new Error("Proof photo must be between 1 byte and 8 MB.");
+  }
+
+  return { mimeType, bytes };
+}
+
 app.use(cors({
   origin(origin, callback) {
     callback(null, isAllowedClientOrigin(origin));
   },
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: "20mb" }));
 app.use(sessionMiddleware);
 
 const authRateLimit = rateLimit({
@@ -418,6 +457,10 @@ function normalizeDeckCardArtKeys(cardArtKeys: string[] | undefined, cardCount: 
   return normalized.some(artKey => artKey !== "default") ? normalized : undefined;
 }
 
+function normalizeDeckFormat(value: unknown): "FREE_PLAY" | "TOURNAMENT" {
+  return value === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY";
+}
+
 function createId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -453,13 +496,25 @@ function getDeckDetailsForUser(user: AuthUser | null) {
   return listUserDecks(user.id).map(deckSummary => {
     const deck = loadUserDeckList(user.id, deckSummary.id);
 
-    return {
-      id: deck.id,
-      name: deck.name,
-      cardIds: deck.cardIds,
-      cardArtKeys: deck.cardArtKeys
-    };
+    return serializeDeckDetail(deck, user.id, user.displayName);
   });
+}
+
+function serializeDeckDetail(deck: DeckListDefinition, ownerUserId: string, ownerDisplayName: string) {
+  return {
+    id: deck.id,
+    name: deck.name,
+    cardIds: deck.cardIds,
+    cardArtKeys: deck.cardArtKeys,
+    format: normalizeDeckFormat(deck.format),
+    ownerUserId,
+    ownerDisplayName,
+    tournamentProofPhotos: (deck.tournamentProofPhotos ?? []).map(photo => ({
+      ...photo,
+      url: `/api/decks/${encodeURIComponent(ownerUserId)}/${encodeURIComponent(deck.id)}/proof-photos/${encodeURIComponent(photo.id)}`
+    })),
+    tournamentVerification: deck.tournamentVerification ?? { status: "UNSUBMITTED" as const }
+  };
 }
 
 function getLobbyIdleTimeoutMs(lobby: MatchLobbyRecord): number {
@@ -1252,6 +1307,94 @@ app.post("/api/profile/change-password", passwordRateLimit, async (req, res) => 
   } catch (error) {
     res.status(400).json({
       message: error instanceof Error ? error.message : "Unable to change password."
+    });
+  }
+});
+
+app.post("/api/decks/:deckId/proof-photos", (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const deckId = String(req.params.deckId ?? "");
+    validateDataFileId(deckId);
+    const rawPhotos = Array.isArray(req.body?.photos) ? req.body.photos : [];
+
+    if (rawPhotos.length === 0) {
+      throw new Error("Select at least one proof photo.");
+    }
+
+    if (rawPhotos.length > 6) {
+      throw new Error("Upload at most 6 proof photos at a time.");
+    }
+
+    let deck: DeckListDefinition | null = null;
+    for (const rawPhoto of rawPhotos) {
+      const decoded = decodeProofPhotoDataUrl(String(rawPhoto?.dataUrl ?? ""));
+      const extension = PROOF_PHOTO_EXTENSION_BY_MIME_TYPE[decoded.mimeType] ?? "jpg";
+      deck = saveUserDeckProofPhoto({
+        userId: user.id,
+        deckId,
+        photo: {
+          id: `${Date.now()}-${randomUUID()}`,
+          fileName: String(rawPhoto?.fileName ?? `proof.${extension}`).slice(0, 140),
+          mimeType: decoded.mimeType,
+          bytes: decoded.bytes
+        }
+      });
+    }
+
+    res.json({
+      deck: deck ? serializeDeckDetail(deck, user.id, user.displayName) : undefined
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to upload proof photos."
+    });
+  }
+});
+
+app.get("/api/decks/:ownerUserId/:deckId/proof-photos/:photoId", (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const ownerUserId = String(req.params.ownerUserId ?? "");
+    const deckId = String(req.params.deckId ?? "");
+    const photoId = String(req.params.photoId ?? "");
+    validateDataFileId(ownerUserId);
+    validateDataFileId(deckId);
+    validateDataFileId(photoId);
+
+    if (ownerUserId !== user.id && !canUserReviewTournamentDecks(user)) {
+      res.status(403).json({ message: "Only the deck owner, hosts, or admins can view proof photos." });
+      return;
+    }
+
+    const deck = loadUserDeckList(ownerUserId, deckId);
+    const photo = deck.tournamentProofPhotos?.find(item => item.id === photoId);
+    if (!photo) {
+      res.status(404).json({ message: "Proof photo not found." });
+      return;
+    }
+
+    const photoPath = getUserDeckProofPhotoPath(ownerUserId, deckId, photoId);
+    if (!fs.existsSync(photoPath)) {
+      res.status(404).json({ message: "Proof photo file not found." });
+      return;
+    }
+
+    res.type(photo.mimeType);
+    res.sendFile(photoPath);
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to load proof photo."
     });
   }
 });
@@ -2516,15 +2659,85 @@ io.on("connection", async socket => {
 
   socket.on("deck:listDetails", () => {
     try {
-      const deckDetails = getDeckDetailsForUser(getSocketUser(socket));
+      const user = getSocketUser(socket);
+      const deckDetails = getDeckDetailsForUser(user);
 
       socket.emit("deck:details", deckDetails);
+      if (canUserReviewTournamentDecks(user)) {
+        void listUsersForTournamentDeckReview().then(users => {
+          socket.emit(
+            "deck:tournamentSubmissions",
+            listTournamentDeckSubmissions(users).map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
+          );
+        });
+      }
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
+
+  socket.on("deck:listTournamentSubmissions", async () => {
+    try {
+      const user = requireSocketUser(socket);
+      if (!canUserReviewTournamentDecks(user)) {
+        throw new Error("Only hosts and admins can review tournament deck submissions.");
+      }
+
+      const users = await listUsersForTournamentDeckReview();
+      socket.emit(
+        "deck:tournamentSubmissions",
+        listTournamentDeckSubmissions(users).map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
+      );
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on(
+    "deck:reviewTournamentSubmission",
+    (data: {
+      ownerUserId: string;
+      deckId: string;
+      status: "VERIFIED" | "REJECTED";
+      notes?: string;
+    }) => {
+      try {
+        const user = requireSocketUser(socket);
+        if (!canUserReviewTournamentDecks(user)) {
+          throw new Error("Only hosts and admins can review tournament deck submissions.");
+        }
+
+        reviewTournamentDeckSubmission({
+          ownerUserId: data.ownerUserId,
+          deckId: data.deckId,
+          reviewerUserId: user.id,
+          reviewerDisplayName: user.displayName,
+          status: data.status === "VERIFIED" ? "VERIFIED" : "REJECTED",
+          notes: data.notes
+        });
+
+        socket.emit("deck:tournamentSubmissionReviewed", {
+          message: `Tournament deck ${data.status === "VERIFIED" ? "verified" : "rejected"}.`,
+          deckId: data.deckId
+        });
+
+        void listUsersForTournamentDeckReview().then(users => {
+          io.emit(
+            "deck:tournamentSubmissions",
+            listTournamentDeckSubmissions(users).map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
+          );
+        });
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
 
   socket.on("cards:listForPacks", (data: { packIds: string[] }) => {
     try {
@@ -2705,6 +2918,42 @@ io.on("connection", async socket => {
 
         io.emit("setup:options", listSetupOptions());
         io.emit("cards:library", listDefaultCardLibrary());
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "dev:saveCardLimit",
+    (data: {
+      packIds?: string[];
+      cardId: string;
+      limit: number;
+      reason?: string;
+    }) => {
+      try {
+        updateCardLimitRule({
+          cardId: data.cardId,
+          limit: data.limit,
+          reason: data.reason
+        });
+
+        const requestedPackIds = data.packIds?.length
+          ? data.packIds
+          : listSetupOptions().cardPacks.map(pack => pack.id);
+
+        socket.emit(
+          "cards:library",
+          listCardLibraryForPacks(requestedPackIds, loadCardLimitMap())
+        );
+        socket.emit("dev:cardLimitSaved", {
+          message: `Saved tournament limit for ${data.cardId}.`,
+          cardId: data.cardId,
+          limit: Math.min(3, Math.max(0, Math.floor(data.limit)))
+        });
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -3581,6 +3830,7 @@ io.on("connection", async socket => {
           name: deck.name,
           cardIds: deck.cardIds,
           cardArtKeys: deck.cardArtKeys,
+          format: normalizeDeckFormat(deck.format),
           mode: data.mode === "clone" ? "clone" : "edit"
         });
       } catch (error) {
@@ -3598,6 +3848,7 @@ io.on("connection", async socket => {
       packIds: string[];
       cardIds: string[];
       cardArtKeys?: string[];
+      format?: "FREE_PLAY" | "TOURNAMENT";
       overwrite?: boolean;
     }) => {
       try {
@@ -3611,7 +3862,8 @@ io.on("connection", async socket => {
               name: data.name,
               packIds: data.packIds,
               cardIds: data.cardIds,
-              cardArtKeys: data.cardArtKeys
+              cardArtKeys: data.cardArtKeys,
+              format: normalizeDeckFormat(data.format)
             });
 
             return;
@@ -3626,7 +3878,8 @@ io.on("connection", async socket => {
         }
 
         const cardCatalog = loadCardCatalog(data.packIds);
-        const cardLimits = loadCardLimitMap();
+        const deckFormat = normalizeDeckFormat(data.format);
+        const cardLimits = deckFormat === "TOURNAMENT" ? loadCardLimitMap() : {};
 
         const validation = validateDeckCardIds({
           cardIds: data.cardIds,
@@ -3642,11 +3895,39 @@ io.on("connection", async socket => {
           throw new Error(errors.join(" | "));
         }
 
+        const existingDeck = userDeckFileExists(user.id, data.deckId)
+          ? loadUserDeckList(user.id, data.deckId)
+          : null;
+        const normalizedCardArtKeys = normalizeDeckCardArtKeys(data.cardArtKeys, data.cardIds.length);
+        const existingComparable = existingDeck
+          ? JSON.stringify({
+              name: existingDeck.name,
+              cardIds: existingDeck.cardIds,
+              cardArtKeys: existingDeck.cardArtKeys,
+              format: normalizeDeckFormat(existingDeck.format)
+            })
+          : "";
+        const nextComparable = JSON.stringify({
+          name: data.name.trim(),
+          cardIds: data.cardIds,
+          cardArtKeys: normalizedCardArtKeys,
+          format: deckFormat
+        });
+        const deckChanged = existingComparable !== nextComparable;
+        const existingProofPhotos = existingDeck?.tournamentProofPhotos ?? [];
+
         const deck: DeckListDefinition = {
           id: data.deckId,
           name: data.name.trim(),
           cardIds: data.cardIds,
-          cardArtKeys: normalizeDeckCardArtKeys(data.cardArtKeys, data.cardIds.length)
+          cardArtKeys: normalizedCardArtKeys,
+          format: deckFormat,
+          tournamentProofPhotos: deckFormat === "TOURNAMENT" ? existingProofPhotos : undefined,
+          tournamentVerification: deckFormat === "TOURNAMENT" && existingProofPhotos.length > 0
+            ? deckChanged
+              ? { status: "PENDING", submittedAt: new Date().toISOString(), notes: "Deck changed after proof upload. Re-review required." }
+              : existingDeck?.tournamentVerification
+            : undefined
         };
 
         saveUserDeckListToDisk(user.id, deck);

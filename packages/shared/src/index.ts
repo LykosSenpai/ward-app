@@ -506,6 +506,27 @@ export type DeckListDefinition = {
   name: string;
   cardIds: string[];
   cardArtKeys?: string[];
+  format?: "FREE_PLAY" | "TOURNAMENT";
+  tournamentProofPhotos?: TournamentDeckProofPhoto[];
+  tournamentVerification?: TournamentDeckVerification;
+};
+
+export type TournamentDeckProofPhoto = {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  uploadedByUserId: string;
+};
+
+export type TournamentDeckVerification = {
+  status: "UNSUBMITTED" | "PENDING" | "VERIFIED" | "REJECTED";
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewedByUserId?: string;
+  reviewedByDisplayName?: string;
+  notes?: string;
 };
 
 export type RevealedCardInfo = {

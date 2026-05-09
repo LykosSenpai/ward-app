@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
-import type { CardLibraryCardSummary, DeckDetail, DeckSummary } from "../clientTypes";
+import type { AuthUser, CardLibraryCardSummary, DeckDetail, DeckSummary } from "../clientTypes";
 import { decodeWardDeckString, encodeWardDeckString } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { CardImageThumbnail } from "./CardImagePreview";
 import { ModalPanel } from "./ui/ModalPanel";
+import { API_BASE_URL } from "../config";
 
 type DeckLibraryPageProps = {
   decks: DeckSummary[];
   deckDetails: DeckDetail[];
+  tournamentDeckSubmissions: DeckDetail[];
+  currentUser: AuthUser | null;
   cardLibrary: CardLibraryCardSummary[];
   onEditDeck: (deckId: string) => void;
   onCloneDeck: (deckId: string) => void;
@@ -17,7 +20,10 @@ type DeckLibraryPageProps = {
     deckId?: string;
     cardIds: string[];
     cardArtKeys?: string[];
+    format?: "FREE_PLAY" | "TOURNAMENT";
   }) => void;
+  onRefreshDeckDetails: () => void;
+  onReviewTournamentDeck: (ownerUserId: string, deckId: string, status: "VERIFIED" | "REJECTED", notes?: string) => void;
 };
 
 type DeckCardCount = {
@@ -74,18 +80,50 @@ function formatCardLine(card: CardLibraryCardSummary | undefined, cardId: string
   return `${getDisplayMagicType(card.magicType)} | ${card.magicSubType ?? "NONE"}`;
 }
 
+function getDeckFormat(deck: DeckDetail | undefined): "FREE_PLAY" | "TOURNAMENT" {
+  return deck?.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY";
+}
+
+function getDeckFormatLabel(deck: DeckDetail | undefined): string {
+  return getDeckFormat(deck) === "TOURNAMENT" ? "Tournament Legal" : "Free Play";
+}
+
+function getVerificationStatus(deck: DeckDetail | undefined): string {
+  return deck?.tournamentVerification?.status ?? "UNSUBMITTED";
+}
+
+function getVerificationLabel(deck: DeckDetail | undefined): string {
+  const status = getVerificationStatus(deck);
+  if (status === "PENDING") return "Pending Verification";
+  if (status === "VERIFIED") return "Verified";
+  if (status === "REJECTED") return "Rejected";
+  return "No Proof Submitted";
+}
+
+function getProofPhotoUrl(url: string | undefined): string {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${API_BASE_URL}${url.startsWith("/") ? url : `/${url}`}`;
+}
+
 export function DeckLibraryPage({
   decks,
   deckDetails,
+  tournamentDeckSubmissions,
+  currentUser,
   cardLibrary,
   onEditDeck,
   onCloneDeck,
   onDeleteDeck,
-  onImportDeckCode
+  onImportDeckCode,
+  onRefreshDeckDetails,
+  onReviewTournamentDeck
 }: DeckLibraryPageProps) {
   const [selectedDeckId, setSelectedDeckId] = useState("");
   const [importCode, setImportCode] = useState("");
   const [deckMessage, setDeckMessage] = useState("");
+  const [proofUploadDeckId, setProofUploadDeckId] = useState("");
+  const [reviewNotesByDeckKey, setReviewNotesByDeckKey] = useState<Record<string, string>>({});
   const cardById = useMemo(() => new Map(cardLibrary.map(card => [card.id, card])), [cardLibrary]);
   const deckDetailById = useMemo(() => new Map(deckDetails.map(deck => [deck.id, deck])), [deckDetails]);
   const selectedDeck = selectedDeckId ? deckDetailById.get(selectedDeckId) : undefined;
@@ -94,6 +132,7 @@ export function DeckLibraryPage({
     ? getDeckCounts(selectedDeck).map(item => ({ ...item, card: cardById.get(item.cardId) }))
     : [];
   const selectedStats = getDeckStats(selectedDeck, cardLibrary);
+  const canReviewTournamentDecks = currentUser?.role === "ADMIN" || currentUser?.role === "HOST";
   const libraryStats = useMemo(() => {
     const loadedDecks = decks.filter(deck => deckDetailById.has(deck.id)).length;
     const totalCards = deckDetails.reduce((total, deck) => total + deck.cardIds.length, 0);
@@ -116,7 +155,8 @@ export function DeckLibraryPage({
       name: deck.name,
       deckId: deck.id,
       cardIds: detail.cardIds,
-      cardArtKeys: detail.cardArtKeys
+      cardArtKeys: detail.cardArtKeys,
+      format: getDeckFormat(detail)
     });
 
     try {
@@ -136,7 +176,8 @@ export function DeckLibraryPage({
         name: payload.name,
         deckId: payload.deckId,
         cardIds: payload.cardIds,
-        cardArtKeys: payload.cardArtKeys
+        cardArtKeys: payload.cardArtKeys,
+        format: payload.format
       });
       setImportCode("");
       setDeckMessage(
@@ -147,6 +188,49 @@ export function DeckLibraryPage({
     } catch (error) {
       setDeckMessage(error instanceof Error ? error.message : "Could not import deck code.");
     }
+  }
+
+  async function uploadProofPhotos(deckId: string, files: FileList | null) {
+    const selectedFiles = Array.from(files ?? []);
+    if (selectedFiles.length === 0) return;
+
+    try {
+      setProofUploadDeckId(deckId);
+      const photos = await Promise.all(selectedFiles.map(file => new Promise<{ fileName: string; dataUrl: string }>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ fileName: file.name, dataUrl: String(reader.result ?? "") });
+        reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+        reader.readAsDataURL(file);
+      })));
+
+      const response = await fetch(`${API_BASE_URL}/api/decks/${encodeURIComponent(deckId)}/proof-photos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ photos })
+      });
+      const data = await response.json() as { message?: string };
+
+      if (!response.ok) {
+        throw new Error(data.message ?? "Unable to upload proof photos.");
+      }
+
+      setDeckMessage(`Uploaded ${selectedFiles.length} proof photo${selectedFiles.length === 1 ? "" : "s"} for ${deckId}.`);
+      onRefreshDeckDetails();
+    } catch (error) {
+      setDeckMessage(error instanceof Error ? error.message : "Could not upload proof photos.");
+    } finally {
+      setProofUploadDeckId("");
+    }
+  }
+
+  function setReviewNotes(deck: DeckDetail, value: string) {
+    const key = `${deck.ownerUserId ?? ""}:${deck.id}`;
+    setReviewNotesByDeckKey(current => ({ ...current, [key]: value }));
+  }
+
+  function getReviewNotes(deck: DeckDetail): string {
+    return reviewNotesByDeckKey[`${deck.ownerUserId ?? ""}:${deck.id}`] ?? "";
   }
 
   return (
@@ -200,6 +284,9 @@ export function DeckLibraryPage({
                     <strong>{deck.name}</strong>
                     <span>{deck.id}</span>
                   </div>
+                  <span className={`deck-format-badge ${getDeckFormat(detail) === "TOURNAMENT" ? "tournament" : "free-play"}`}>
+                    {getDeckFormatLabel(detail)}
+                  </span>
                   <button onClick={() => setSelectedDeckId(deck.id)}>View</button>
                 </div>
 
@@ -213,6 +300,11 @@ export function DeckLibraryPage({
                 <div className="deck-library-mix-row">
                   <span>Avg AL <strong>{stats.averageArmorLevel.toFixed(1)}</strong></span>
                   <span>{stats.missingCount > 0 ? `${stats.missingCount} missing card records` : "All card records loaded"}</span>
+                  {getDeckFormat(detail) === "TOURNAMENT" ? (
+                    <span className={`deck-verification-badge ${getVerificationStatus(detail).toLowerCase()}`}>
+                      {getVerificationLabel(detail)}
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="deck-library-preview-row">
@@ -235,11 +327,77 @@ export function DeckLibraryPage({
                     Delete
                   </button>
                 </div>
+                {detail && getDeckFormat(detail) === "TOURNAMENT" ? (
+                  <label className="deck-proof-upload">
+                    <span>{proofUploadDeckId === deck.id ? "Uploading proof..." : "Attach ownership photos"}</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      multiple
+                      disabled={proofUploadDeckId === deck.id}
+                      onChange={event => {
+                        void uploadProofPhotos(deck.id, event.target.files);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                ) : null}
               </article>
             );
           })}
         </div>
       )}
+
+      {canReviewTournamentDecks ? (
+        <section className="tournament-review-panel">
+          <div className="deck-library-card-header">
+            <div>
+              <strong>Tournament Deck Review</strong>
+              <span>{tournamentDeckSubmissions.length} submitted deck{tournamentDeckSubmissions.length === 1 ? "" : "s"}</span>
+            </div>
+          </div>
+
+          {tournamentDeckSubmissions.length === 0 ? (
+            <p className="empty-zone">No tournament decks have ownership photos attached yet.</p>
+          ) : (
+            <div className="tournament-review-list">
+              {tournamentDeckSubmissions.map(deck => {
+                const notes = getReviewNotes(deck);
+                return (
+                  <article className="tournament-review-card" key={`${deck.ownerUserId}:${deck.id}`}>
+                    <div>
+                      <strong>{deck.name}</strong>
+                      <span>{deck.ownerDisplayName} | {deck.id} | {getVerificationLabel(deck)}</span>
+                    </div>
+                    <div className="deck-proof-photo-grid">
+                      {(deck.tournamentProofPhotos ?? []).map(photo => (
+                        <a href={getProofPhotoUrl(photo.url)} target="_blank" rel="noreferrer" key={photo.id}>
+                          <img src={getProofPhotoUrl(photo.url)} alt={photo.fileName} />
+                          <span>{photo.fileName}</span>
+                        </a>
+                      ))}
+                    </div>
+                    <textarea
+                      value={notes}
+                      onChange={event => setReviewNotes(deck, event.target.value)}
+                      rows={2}
+                      placeholder="Review notes"
+                    />
+                    <div className="deck-library-actions">
+                      <button onClick={() => onReviewTournamentDeck(deck.ownerUserId ?? "", deck.id, "VERIFIED", notes)}>
+                        Verify for Tournament
+                      </button>
+                      <button className="delete-save-button" onClick={() => onReviewTournamentDeck(deck.ownerUserId ?? "", deck.id, "REJECTED", notes)}>
+                        Reject
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       {selectedDeck && selectedSummary && (
         <ModalPanel title={selectedDeck.name} onClose={() => setSelectedDeckId("")} wide>
@@ -249,6 +407,16 @@ export function DeckLibraryPage({
                 <span className="label">Deck ID</span>
                 <strong>{selectedDeck.id}</strong>
               </div>
+              <div>
+                <span className="label">Format</span>
+                <strong>{getDeckFormatLabel(selectedDeck)}</strong>
+              </div>
+              {getDeckFormat(selectedDeck) === "TOURNAMENT" ? (
+                <div>
+                  <span className="label">Verification</span>
+                  <strong>{getVerificationLabel(selectedDeck)}</strong>
+                </div>
+              ) : null}
               <div>
                 <span className="label">Cards</span>
                 <strong>{selectedStats.total}</strong>
@@ -282,6 +450,24 @@ export function DeckLibraryPage({
                 Delete
               </button>
             </div>
+
+            {getDeckFormat(selectedDeck) === "TOURNAMENT" ? (
+              <section className="deck-proof-section">
+                <h3>Ownership Proof</h3>
+                {selectedDeck.tournamentProofPhotos?.length ? (
+                  <div className="deck-proof-photo-grid">
+                    {selectedDeck.tournamentProofPhotos.map(photo => (
+                      <a href={getProofPhotoUrl(photo.url)} target="_blank" rel="noreferrer" key={photo.id}>
+                        <img src={getProofPhotoUrl(photo.url)} alt={photo.fileName} />
+                        <span>{photo.fileName}</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-zone">No ownership photos attached yet.</p>
+                )}
+              </section>
+            ) : null}
 
             <div className="deck-detail-breakdown">
               <section>

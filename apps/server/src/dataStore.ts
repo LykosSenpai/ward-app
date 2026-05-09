@@ -9,7 +9,9 @@ import type {
   DeckCardLimitListDefinition,
   DeckCardLimitMap,
   DeckListDefinition,
-  MatchState
+  MatchState,
+  TournamentDeckProofPhoto,
+  TournamentDeckVerification
 } from "@ward/shared";
 
 import { normalizeMatch } from "@ward/engine";
@@ -25,6 +27,7 @@ const CARD_LIMITS_DIR = path.join(DATA_DIR, "rules", "card-limits");
 const CARD_COLLECTION_DIR = path.join(DATA_DIR, "collection");
 const CARD_OWNERSHIP_FILE = path.join(CARD_COLLECTION_DIR, "card-ownership.json");
 const DEV_DATA_DIR = path.join(DATA_DIR, "dev");
+const DECK_PROOF_PHOTO_DIR_NAME = "deck-proof-photos";
 const EFFECT_RUNTIME_TEST_STATUS_FILE = path.join(DEV_DATA_DIR, "effect-runtime-test-status.json");
 const DEFAULT_CARD_LIMIT_LIST_ID = "base-1v1";
 
@@ -466,6 +469,46 @@ export function loadCardLimitMap(
   return result;
 }
 
+export function updateCardLimitRule(args: {
+  cardId: string;
+  limit: number;
+  reason?: string;
+  limitListId?: string;
+}): DeckCardLimitMap {
+  validateDataFileId(args.cardId);
+  const limitListId = args.limitListId ?? DEFAULT_CARD_LIMIT_LIST_ID;
+  validateDataFileId(limitListId);
+
+  const limitPath = path.join(CARD_LIMITS_DIR, `${limitListId}.json`);
+  const limitList = fs.existsSync(limitPath)
+    ? readJsonFile<DeckCardLimitListDefinition>(limitPath)
+    : {
+        id: limitListId,
+        name: "Base 1v1 Card Limits",
+        version: "1.0.0",
+        rules: []
+      };
+  const normalizedLimit = Math.min(3, Math.max(0, Math.floor(args.limit)));
+  const nextRules = limitList.rules.filter(rule => rule.cardId !== args.cardId);
+
+  if (normalizedLimit < 3) {
+    nextRules.push({
+      cardId: args.cardId,
+      limit: normalizedLimit,
+      reason: args.reason?.trim() || (normalizedLimit === 0 ? "Tournament banned" : "Tournament limited")
+    });
+  }
+
+  nextRules.sort((a, b) => a.cardId.localeCompare(b.cardId, undefined, { numeric: true }));
+  fs.writeFileSync(
+    limitPath,
+    `${JSON.stringify({ ...limitList, rules: nextRules }, null, 2)}\n`,
+    "utf-8"
+  );
+
+  return loadCardLimitMap(limitListId);
+}
+
 export type CardPackSummary = {
   id: string;
   name: string;
@@ -477,6 +520,11 @@ export type DeckSummary = {
   id: string;
   name: string;
   cardCount: number;
+};
+
+export type TournamentDeckSubmission = DeckListDefinition & {
+  ownerUserId: string;
+  ownerDisplayName: string;
 };
 
 export type SetupOptions = {
@@ -668,6 +716,17 @@ export function getUserDeckFilePath(userId: string, deckId: string): string {
   return path.join(getUserDecksDir(userId), `${deckId}.json`);
 }
 
+export function getUserDeckProofPhotoDir(userId: string, deckId: string): string {
+  validateDataFileId(userId);
+  validateDataFileId(deckId);
+  return path.join(USER_DATA_DIR, userId, DECK_PROOF_PHOTO_DIR_NAME, deckId);
+}
+
+export function getUserDeckProofPhotoPath(userId: string, deckId: string, photoId: string): string {
+  validateDataFileId(photoId);
+  return path.join(getUserDeckProofPhotoDir(userId, deckId), photoId);
+}
+
 export function deckFileExists(deckId: string): boolean {
   return fs.existsSync(getDeckFilePath(deckId));
 }
@@ -841,6 +900,121 @@ export function saveUserDeckListToDisk(userId: string, deck: DeckListDefinition)
   ensureDirectoryExists(decksDir);
 
   fs.writeFileSync(getUserDeckFilePath(userId, deck.id), JSON.stringify(deck, null, 2), "utf-8");
+}
+
+function normalizeTournamentVerification(
+  value: DeckListDefinition["tournamentVerification"]
+): TournamentDeckVerification {
+  const status = value?.status === "PENDING" || value?.status === "VERIFIED" || value?.status === "REJECTED"
+    ? value.status
+    : "UNSUBMITTED";
+
+  return {
+    status,
+    submittedAt: value?.submittedAt,
+    reviewedAt: value?.reviewedAt,
+    reviewedByUserId: value?.reviewedByUserId,
+    reviewedByDisplayName: value?.reviewedByDisplayName,
+    notes: value?.notes
+  };
+}
+
+export function saveUserDeckProofPhoto(args: {
+  userId: string;
+  deckId: string;
+  photo: {
+    id: string;
+    fileName: string;
+    mimeType: string;
+    bytes: Buffer;
+  };
+}): DeckListDefinition {
+  validateDataFileId(args.userId);
+  validateDataFileId(args.deckId);
+  validateDataFileId(args.photo.id);
+
+  const deck = loadUserDeckList(args.userId, args.deckId);
+
+  if (deck.format !== "TOURNAMENT") {
+    throw new Error("Only tournament decks can receive ownership proof photos.");
+  }
+
+  const proofDir = getUserDeckProofPhotoDir(args.userId, args.deckId);
+  ensureDirectoryExists(proofDir);
+  fs.writeFileSync(path.join(proofDir, args.photo.id), args.photo.bytes);
+
+  const proofPhotos = deck.tournamentProofPhotos ?? [];
+  const nextPhoto: TournamentDeckProofPhoto = {
+    id: args.photo.id,
+    fileName: args.photo.fileName,
+    mimeType: args.photo.mimeType,
+    sizeBytes: args.photo.bytes.byteLength,
+    uploadedAt: new Date().toISOString(),
+    uploadedByUserId: args.userId
+  };
+
+  const nextDeck: DeckListDefinition = {
+    ...deck,
+    tournamentProofPhotos: [...proofPhotos, nextPhoto],
+    tournamentVerification: {
+      status: "PENDING",
+      submittedAt: new Date().toISOString()
+    }
+  };
+
+  saveUserDeckListToDisk(args.userId, nextDeck);
+  return nextDeck;
+}
+
+export function reviewTournamentDeckSubmission(args: {
+  ownerUserId: string;
+  deckId: string;
+  reviewerUserId: string;
+  reviewerDisplayName: string;
+  status: "VERIFIED" | "REJECTED";
+  notes?: string;
+}): DeckListDefinition {
+  const deck = loadUserDeckList(args.ownerUserId, args.deckId);
+
+  if (deck.format !== "TOURNAMENT") {
+    throw new Error("Only tournament decks can be reviewed.");
+  }
+
+  const nextDeck: DeckListDefinition = {
+    ...deck,
+    tournamentVerification: {
+      ...normalizeTournamentVerification(deck.tournamentVerification),
+      status: args.status,
+      reviewedAt: new Date().toISOString(),
+      reviewedByUserId: args.reviewerUserId,
+      reviewedByDisplayName: args.reviewerDisplayName,
+      notes: args.notes?.trim() || undefined
+    }
+  };
+
+  saveUserDeckListToDisk(args.ownerUserId, nextDeck);
+  return nextDeck;
+}
+
+export function listTournamentDeckSubmissions(users: Array<{ id: string; displayName: string }>): TournamentDeckSubmission[] {
+  const submissions: TournamentDeckSubmission[] = [];
+
+  for (const user of users) {
+    for (const deck of listUserDecks(user.id)) {
+      const detail = loadUserDeckList(user.id, deck.id);
+      if (detail.format !== "TOURNAMENT" || !detail.tournamentProofPhotos?.length) continue;
+      submissions.push({
+        ...detail,
+        ownerUserId: user.id,
+        ownerDisplayName: user.displayName
+      });
+    }
+  }
+
+  return submissions.sort((a, b) =>
+    (b.tournamentVerification?.submittedAt ?? "").localeCompare(a.tournamentVerification?.submittedAt ?? "") ||
+    a.name.localeCompare(b.name)
+  );
 }
 
 export function deleteDeckFromDisk(deckId: string): void {
