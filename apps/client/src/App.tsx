@@ -725,11 +725,12 @@ export default function App() {
     });
   }
 
-  function createLobby(data: { name: string }) {
+  function createLobby(data: { name: string; format: DeckFormat }) {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:create", {
       name: data.name,
+      format: data.format,
       selectedPackIds
     });
   }

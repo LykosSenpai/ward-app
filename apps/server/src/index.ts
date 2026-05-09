@@ -241,6 +241,7 @@ const embedSessions = new Map<string, EmbedSessionRecord>();
 
 type MatchLobbyStatus = "OPEN" | "IN_MATCH" | "CLOSED";
 type MatchLobbyCloseReason = "EMPTY" | "MATCH_COMPLETE" | "IDLE_TIMEOUT";
+type MatchLobbyFormat = "FREE_PLAY" | "TOURNAMENT";
 
 type MatchLobbyPlayerRecord = {
   userId: string;
@@ -254,6 +255,7 @@ type MatchLobbyRecord = {
   id: string;
   name: string;
   status: MatchLobbyStatus;
+  format: MatchLobbyFormat;
   hostUserId: string;
   selectedPackIds: string[];
   matchId?: string;
@@ -3633,7 +3635,7 @@ io.on("connection", async socket => {
 
   socket.on(
     "lobby:create",
-    (data: { name?: string; selectedPackIds?: string[]; selectedDeckId?: string }) => {
+    (data: { name?: string; format?: MatchLobbyFormat; selectedPackIds?: string[]; selectedDeckId?: string }) => {
       try {
         const user = requireSocketUser(socket);
         const selectedPackIds = (data.selectedPackIds?.length ? data.selectedPackIds : listSetupOptions().cardPacks.map(pack => pack.id))
@@ -3653,6 +3655,7 @@ io.on("connection", async socket => {
           id: createId("lobby"),
           name: String(data.name ?? `${user.displayName}'s Match`).trim() || `${user.displayName}'s Match`,
           status: "OPEN",
+          format: normalizeDeckFormat(data.format),
           hostUserId: user.id,
           selectedPackIds,
           players: [{
@@ -3783,10 +3786,11 @@ io.on("connection", async socket => {
         ? loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId)
         : getFirstDeckForUser(sortedPlayers[1].userId);
       const cardCatalog = loadCardCatalog(lobby.selectedPackIds);
-      const cardLimits = loadCardLimitMap();
+      const isTournamentLobby = lobby.format === "TOURNAMENT";
       const match = create1v1MatchFromDeckCardIds({
         cardCatalog,
-        cardLimits,
+        cardLimits: isTournamentLobby ? loadCardLimitMap() : undefined,
+        tournamentMode: isTournamentLobby,
         player1DeckCardIds: player1Deck.cardIds,
         player2DeckCardIds: player2Deck.cardIds,
         player1Name: sortedPlayers[0].displayName,

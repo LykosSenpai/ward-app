@@ -88,6 +88,7 @@ export type MatchLobby = {
   id: string;
   name: string;
   status: MatchLobbyStatus;
+  format?: "FREE_PLAY" | "TOURNAMENT";
   hostUserId: string;
   selectedPackIds: string[];
   matchId?: string;

@@ -344,6 +344,31 @@
   gap: 0.5rem;
 }
 
+.match-lobby-format-toggle {
+  background: rgba(2, 6, 23, 0.34);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.45rem;
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0.25rem;
+}
+
+.match-lobby-format-toggle button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.35rem;
+  color: #cbd5e1;
+  min-height: 2rem;
+  padding: 0.35rem 0.45rem;
+}
+
+.match-lobby-format-toggle button.selected {
+  background: rgba(250, 204, 21, 0.14);
+  border-color: rgba(250, 204, 21, 0.62);
+  color: #f8fafc;
+}
+
 .match-lobby-deck-pick {
   align-items: end;
   display: grid;
