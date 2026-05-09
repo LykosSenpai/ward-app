@@ -1,4 +1,4 @@
-﻿@import "./styles/app-01-base.css";
+@import "./styles/app-01-base.css";
 @import "./styles/app-02-layout.css";
 @import "./styles/app-03-components.css";
 @import "./styles/app-04-responsive.css";
@@ -2409,6 +2409,12 @@
   font-size: 1rem;
 }
 
+.library-option-a-variant-hint {
+  margin: 0 0 0.4rem;
+  color: #93c5fd;
+  font-size: 0.75rem;
+}
+
 .library-option-a-chip-row,
 .library-option-a-actions,
 .library-option-a-warning-strip,
@@ -4732,6 +4738,11 @@
 
 .library-option-a-title-block h3 {
   font-size: 0.92rem;
+  margin: 0;
+}
+
+.library-option-a-variant-hint {
+  font-size: 0.66rem;
   margin: 0;
 }
 
@@ -9607,5 +9618,3 @@ button:disabled:hover {
     grid-template-rows: auto minmax(0, auto) auto;
   }
 }
-
-@import "./styles/app-06-interactive-board.css";

@@ -23,6 +23,7 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
     const ownerZ = playerIndex === 0 ? 74 : 26;
     const friendlyShift = playerIndex === 0 ? 1 : -1;
 
+
     const primary = player.field.primaryCreature
       ? [{
           id: `${owner}-primary`,
@@ -30,6 +31,7 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
           owner,
           xPercent: 50,
           zPercent: ownerZ,
+
           yDepth: 12,
           lane: "primary" as const,
           slotId: `${owner}-primary` as BoardSlotId
@@ -37,24 +39,28 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
       : [];
 
     const limitedOffsets = [28, 10, -10, -28];
+
     const limited = player.field.limitedSummons.map((card, index) => ({
       id: `${owner}-limited-${card.instanceId}`,
       label: `${player.displayName} Limited ${index + 1}`,
       owner,
       xPercent: 50 + friendlyShift * (limitedOffsets[index] ?? 0),
       zPercent: ownerZ + friendlyShift * -8,
+
       yDepth: 8,
       lane: "limited" as const,
       slotId: `${owner}-limited-${index + 1}` as BoardSlotId
     }));
 
     const magicOffsets = [40, 20, 0, -20, -40];
+
     const magic = player.field.magicSlots.filter(Boolean).map((card, index) => ({
       id: `${owner}-magic-${card.instanceId}`,
       label: `${player.displayName} Magic ${index + 1}`,
       owner,
       xPercent: 50 + friendlyShift * (magicOffsets[index] ?? 0),
       zPercent: ownerZ + friendlyShift * 4,
+
       yDepth: 5,
       lane: "magic" as const,
       slotId: `${owner}-magic-${index + 1}` as BoardSlotId

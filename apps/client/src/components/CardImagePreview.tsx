@@ -7,6 +7,7 @@ export type CardArtKey =
   | "default"
   | "holo"
   | "zero-art"
+  | "zero-art-holo"
   | "alt-1"
   | "alt-2"
   | "alt-3"
@@ -77,6 +78,7 @@ export const CARD_ART_OPTIONS: CardArtOption[] = [
   { key: "default", label: "Default", suffixAliases: [""] },
   { key: "holo", label: "Holo", suffixAliases: ["holo", "foil", "holographic"] },
   { key: "zero-art", label: "Zero", suffixAliases: ["zero-art", "zero_art", "zeroart"] },
+  { key: "zero-art-holo", label: "Zero Holo", suffixAliases: ["zero-art-holo", "zero_art_holo", "zero-holo"] },
   { key: "alt-1", label: "Alt 1", suffixAliases: ["alt-1", "alt_1", "alternate-1", "alternate_art_1"] },
   { key: "alt-2", label: "Alt 2", suffixAliases: ["alt-2", "alt_2", "alternate-2", "alternate_art_2"] },
   { key: "alt-3", label: "Alt 3", suffixAliases: ["alt-3", "alt_3", "alternate-3", "alternate_art_3"] },
@@ -90,8 +92,23 @@ export const CARD_ART_OPTIONS: CardArtOption[] = [
 ];
 
 export const ACTIVE_CARD_ART_OPTIONS = CARD_ART_OPTIONS.filter(option =>
-  option.key === "default" || option.key === "holo" || option.key === "zero-art"
+  option.key === "default" || option.key === "holo" || option.key === "zero-art" || option.key === "zero-art-holo"
 );
+
+function getBaseArtKey(artKey: CardArtKey): "default" | "zero-art" {
+  return artKey === "zero-art" || artKey === "zero-art-holo" ? "zero-art" : "default";
+}
+
+function isHoloArtKey(artKey: CardArtKey): boolean {
+  return artKey === "holo" || artKey === "zero-art-holo";
+}
+
+function composeArtKey(baseArtKey: "default" | "zero-art", holoEnabled: boolean): CardArtKey {
+  if (baseArtKey === "zero-art") {
+    return holoEnabled ? "zero-art-holo" : "zero-art";
+  }
+  return holoEnabled ? "holo" : "default";
+}
 
 const IMAGE_EXTENSIONS = ["webp", "png", "jpg", "jpeg"];
 
@@ -212,16 +229,26 @@ function ExpandedCardImage({
       )}
 
       <label className="card-art-select-label expanded-card-art-select-label">
-        Artwork
+        Art / Card Type
         <select
-          value={activeArtKey}
-          onChange={event => onArtChange(event.target.value as CardArtKey)}
+          value={getBaseArtKey(activeArtKey)}
+          onChange={event => onArtChange(composeArtKey(event.target.value as "default" | "zero-art", isHoloArtKey(activeArtKey)))}
         >
-          {ACTIVE_CARD_ART_OPTIONS.map(option => (
+          {ACTIVE_CARD_ART_OPTIONS.filter(option => option.key === "default" || option.key === "zero-art").map(option => (
             <option value={option.key} key={option.key}>{option.label}</option>
           ))}
         </select>
       </label>
+
+      <label className="card-art-select-label expanded-card-art-select-label">
+        <input
+          type="checkbox"
+          checked={isHoloArtKey(activeArtKey)}
+          onChange={event => onArtChange(composeArtKey(getBaseArtKey(activeArtKey), event.target.checked))}
+        />
+        {" "}Holo Finish
+      </label>
+      <small className="card-art-select-label expanded-card-art-select-label">Variant: {getCardArtLabel(activeArtKey)}</small>
     </div>
   );
 }
@@ -261,8 +288,9 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const activeArtKey = selectedArtKey ?? internalSelectedArtKey;
-  const imageArtKey = activeArtKey === "holo" ? "default" : activeArtKey;
-  const holoEnabled = activeArtKey === "holo";
+  const imageArtKey = getBaseArtKey(activeArtKey);
+  const holoEnabled = isHoloArtKey(activeArtKey);
+  const baseArtKey = getBaseArtKey(activeArtKey);
   const holoSeed = `${card.packId}:${card.id}:${card.name}`;
 
   const imageCandidates = useMemo(
@@ -324,14 +352,24 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
       <label className="card-art-select-label">
         Art / Card Type
         <select
-          value={activeArtKey}
-          onChange={event => handleArtChange(event.target.value as CardArtKey)}
+          value={baseArtKey}
+          onChange={event => handleArtChange(composeArtKey(event.target.value as "default" | "zero-art", holoEnabled))}
         >
-          {ACTIVE_CARD_ART_OPTIONS.map(option => (
+          {ACTIVE_CARD_ART_OPTIONS.filter(option => option.key === "default" || option.key === "zero-art").map(option => (
             <option value={option.key} key={option.key}>{option.label}</option>
           ))}
         </select>
       </label>
+
+      <label className="card-art-select-label">
+        <input
+          type="checkbox"
+          checked={holoEnabled}
+          onChange={event => handleArtChange(composeArtKey(baseArtKey, event.target.checked))}
+        />
+        {" "}Holo Finish
+      </label>
+      <small className="card-art-select-label">Variant: {selectedArtLabel}</small>
 
       {previewOpen && imageCandidate && (
         <ModalPanel title={`${card.name}  -  ${selectedArtLabel}`} onClose={() => setPreviewOpen(false)}>
@@ -394,4 +432,3 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
     </div>
   );
 }
-

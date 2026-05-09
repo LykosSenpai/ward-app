@@ -5,6 +5,7 @@ type Props = {
   zoomScale: number;
   cameraPanX: number;
   cameraPanY: number;
+
   tiltDegrees: number;
   heightScale: number;
   showAnchors: boolean;
@@ -13,6 +14,9 @@ type Props = {
   resolveSlotPosition: (slotId: string, fallbackX: number, fallbackZ: number) => { xPercent: number; zPercent: number };
   onSelectSlot: (slotId: string) => void;
   onSelectPiece?: (pieceId: string) => void;
+  highlightedSlotIds?: string[];
+  highlightedPieceIds?: string[];
+  activeEventType?: BoardRenderEventType | null;
 };
 
 export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, selectedSlotId, filteredBoardObjects, resolveSlotPosition, onSelectSlot, onSelectPiece }: Props) {
@@ -63,6 +67,7 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
             <button type="button" onClick={() => onSelectPiece?.(object.id)}>{object.label} · {object.slotId}</button>
           </article>
         ))}
+
       </div>
     </div>
   );

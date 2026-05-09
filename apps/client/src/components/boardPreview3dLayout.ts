@@ -21,6 +21,7 @@ export type BoardZone = {
   widthPercent: number;
   heightPercent: number;
   rotationDeg?: number;
+
 };
 
 export type CameraPresetKey = "tactical" | "neutral" | "cinematic";
@@ -70,4 +71,5 @@ export const BOARD_SLOTS: BoardSlot[] = [
   { id: "player_1-magic-3", owner: "player_1", xPercent: 50, zPercent: 80, label: "P1 Magic 3" },
   { id: "player_1-magic-4", owner: "player_1", xPercent: 30, zPercent: 79, label: "P1 Magic 4" },
   { id: "player_1-magic-5", owner: "player_1", xPercent: 10, zPercent: 78, label: "P1 Magic 5" }
+
 ];

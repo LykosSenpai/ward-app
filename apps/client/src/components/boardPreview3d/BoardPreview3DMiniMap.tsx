@@ -1,4 +1,5 @@
 import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
+
 import type { BoardObject } from "../boardPreview3dAdapter";
 
 type Props = {
@@ -24,6 +25,7 @@ export function BoardPreview3DMiniMap({ showAnchors, selectedSlotId, filteredBoa
           }}><span>{zone.label}</span></div>
         ))}
         {showAnchors ? ZONE_ANCHORS.map((zone) => (
+
         <div key={`mini-zone-${zone.id}`} className="board-preview-3d__mini-zone" style={{ left: `${zone.xPercent}%`, top: `${zone.zPercent}%` }}>
           {zone.label}
         </div>

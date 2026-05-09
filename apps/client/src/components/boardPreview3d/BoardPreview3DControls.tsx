@@ -43,6 +43,7 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
     const settings = CAMERA_PRESETS[preset];
     props.setTiltDegrees(settings.tilt);
     applyZoomScale(settings.zoom);
+
     props.setHeightScale(settings.height);
   };
 
@@ -78,6 +79,7 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
         <label>
           Zoom
           <input type="range" min={80} max={125} step={5} value={Math.round(props.zoomScale * 100)} onChange={(event) => applyZoomScale(Number(event.target.value) / 100)} />
+
           <span>{Math.round(props.zoomScale * 100)}%</span>
         </label>
         <label>
@@ -109,17 +111,20 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
         <label>
           Pan X
           <input type="range" min={-25} max={25} value={Math.round(props.cameraPanX)} onChange={(event) => props.setCameraPanX(Number(event.target.value))} />
+
           <span>{Math.round(props.cameraPanX)}%</span>
         </label>
         <label>
           Pan Y
           <input type="range" min={-25} max={25} value={Math.round(props.cameraPanY)} onChange={(event) => props.setCameraPanY(Number(event.target.value))} />
+
           <span>{Math.round(props.cameraPanY)}%</span>
         </label>
 
       </div>
       <p className="board-preview-3d__status">
         Shortcuts: Arrow keys nudge selected slot · R resets editor {props.integrationMode ? "(disabled in Integration Mode)" : ""}
+
       </p>
     </>
   );
