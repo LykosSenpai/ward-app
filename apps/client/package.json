@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check": "tsc -b --pretty false"
+    "check": "tsc -b --pretty false",
+    "check:dispatch-guards": "tsx scripts/boardPreview3dDispatchChecks.ts",
+    "check:board-preview-integration": "pnpm check && pnpm check:dispatch-guards"
   },
   "dependencies": {
     "@ward/shared": "workspace:*",

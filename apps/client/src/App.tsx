@@ -59,7 +59,7 @@ import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview";
-type PlayViewMode = "board" | "split" | "text";
+type PlayViewMode = "board" | "board-3d" | "split" | "text";
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
 
@@ -1482,8 +1482,9 @@ export default function App() {
         ...match.players.filter(player => player.id !== controlledPlayerId)
       ]
     : match?.players ?? [];
-  const showBoardView = playViewMode !== "text";
-  const showTextEngineView = playViewMode !== "board";
+  const showBoardView = playViewMode === "board" || playViewMode === "split";
+  const show3dBoardView = playViewMode === "board-3d";
+  const showTextEngineView = playViewMode === "split" || playViewMode === "text";
   const shouldShowMagicChainPanel = !!match && (!match.pendingBattle || !!match.pendingChain) && (showTextEngineView || !!match.pendingChain);
   const boardSidePanelContent = match ? (
     <>
@@ -1756,8 +1757,12 @@ export default function App() {
             onImportDeckCode={importDeckCodeIntoBuilder}
           />
 
-        ) : canUseDevTools && activePage === "board-preview" ? (
-          <BoardPreviewPage cardLibrary={cardLibrary} />
+        ) : activePage === "board-preview" ? (
+          <BoardPreviewPage
+            cardLibrary={cardLibrary}
+            controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
+            liveMatch={match}
+          />
         ) : activePage === "saved-matches" ? (
           <SaveLoadPanel
             savedMatches={savedMatches}
@@ -1851,7 +1856,9 @@ export default function App() {
                 <strong>
                   {playViewMode === "board"
                     ? "Board Only"
-                    : playViewMode === "split"
+                    : playViewMode === "board-3d"
+                      ? "3D Board"
+                      : playViewMode === "split"
                       ? "Board + Text Engine"
                       : "Text Engine"}
                 </strong>
@@ -1864,6 +1871,13 @@ export default function App() {
                   onClick={() => setPlayViewMode("board")}
                 >
                   Board
+                </button>
+                <button
+                  type="button"
+                  className={playViewMode === "board-3d" ? "active" : undefined}
+                  onClick={() => setPlayViewMode("board-3d")}
+                >
+                  3D Board
                 </button>
                 <button
                   type="button"
@@ -1883,6 +1897,14 @@ export default function App() {
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
+              {show3dBoardView && (
+                <BoardPreviewPage
+                  cardLibrary={cardLibrary}
+                  controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
+                  liveMatch={match}
+                />
+              )}
+
               {showBoardView && (
                 <CardBoardView
                   match={match}
