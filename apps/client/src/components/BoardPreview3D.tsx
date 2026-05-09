@@ -9,17 +9,25 @@ import { buildBoardObjects, parseLayoutSnapshotJson, resolveSlotPosition, toLayo
 import type { BoardPieceFocusEvent, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
+<<<<<<< ours
 const BOARD_PREVIEW_STORAGE_VERSION = 3;
+=======
+const BOARD_PREVIEW_STORAGE_VERSION = 2;
+>>>>>>> theirs
 
 type BoardPreview3DProps = {
   match: AppMatchState;
   adminView?: boolean;
+<<<<<<< ours
   presentation?: "lab" | "game";
   defaultIntegrationMode?: boolean;
+=======
+>>>>>>> theirs
   onSlotFocus?: (event: BoardSlotFocusEvent) => void;
   onPieceFocus?: (event: BoardPieceFocusEvent) => void;
 };
 
+<<<<<<< ours
 export function BoardPreview3D({
   match,
   adminView = false,
@@ -30,6 +38,10 @@ export function BoardPreview3D({
 }: BoardPreview3DProps) {
   const boardObjects = useMemo(() => buildBoardObjects(match), [match]);
   const storageKey = presentation === "game" ? `${BOARD_PREVIEW_STORAGE_KEY}.game` : BOARD_PREVIEW_STORAGE_KEY;
+=======
+export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceFocus }: BoardPreview3DProps) {
+  const boardObjects = useMemo(() => buildBoardObjects(match), [match]);
+>>>>>>> theirs
   const [tiltDegrees, setTiltDegrees] = useState(60);
   const [zoomScale, setZoomScale] = useState(1);
   const [heightScale, setHeightScale] = useState(1);
@@ -39,9 +51,13 @@ export function BoardPreview3D({
   const [boardOffsetZ, setBoardOffsetZ] = useState(0);
   const [cameraPanX, setCameraPanX] = useState(0);
   const [cameraPanY, setCameraPanY] = useState(0);
+<<<<<<< ours
   const [showDebugPanel, setShowDebugPanel] = useState(() =>
     presentation === "game" ? false : (globalThis.innerHeight ? globalThis.innerHeight > 980 : true)
   );
+=======
+  const [showDebugPanel, setShowDebugPanel] = useState(() => (globalThis.innerHeight ? globalThis.innerHeight > 980 : true));
+>>>>>>> theirs
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>("player_1-primary");
   const [slotOffsets, setSlotOffsets] = useState<BoardSlotOffsetMap>({});
   const [nudgeStep, setNudgeStep] = useState(1);
@@ -52,11 +68,19 @@ export function BoardPreview3D({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [lastCopiedLabel, setLastCopiedLabel] = useState<string | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<"all" | "player_1" | "player_2">("all");
+<<<<<<< ours
   const [integrationMode, setIntegrationMode] = useState(defaultIntegrationMode);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const saved = globalThis.localStorage?.getItem(storageKey);
+=======
+  const [integrationMode, setIntegrationMode] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const saved = globalThis.localStorage?.getItem(BOARD_PREVIEW_STORAGE_KEY);
+>>>>>>> theirs
     if (!saved) {
       setHydrated(true);
       return;
@@ -95,18 +119,30 @@ export function BoardPreview3D({
       if (typeof parsed.boardOffsetZ === "number") setBoardOffsetZ(parsed.boardOffsetZ);
       if (typeof parsed.cameraPanX === "number") setCameraPanX(parsed.cameraPanX);
       if (typeof parsed.cameraPanY === "number") setCameraPanY(parsed.cameraPanY);
+<<<<<<< ours
       if (typeof parsed.showDebugPanel === "boolean") setShowDebugPanel(presentation === "game" ? false : parsed.showDebugPanel);
+=======
+      if (typeof parsed.showDebugPanel === "boolean") setShowDebugPanel(parsed.showDebugPanel);
+>>>>>>> theirs
       if (typeof parsed.selectedSlotId === "string" || parsed.selectedSlotId === null) setSelectedSlotId(parsed.selectedSlotId);
       if (parsed.slotOffsets) setSlotOffsets(parsed.slotOffsets);
       if (typeof parsed.nudgeStep === "number") setNudgeStep(parsed.nudgeStep);
       if (typeof parsed.showAnchors === "boolean") setShowAnchors(parsed.showAnchors);
       if (parsed.ownerFilter === "all" || parsed.ownerFilter === "player_1" || parsed.ownerFilter === "player_2") setOwnerFilter(parsed.ownerFilter);
       if (typeof parsed.showDiagnostics === "boolean") setShowDiagnostics(parsed.showDiagnostics);
+<<<<<<< ours
       if (typeof parsed.integrationMode === "boolean") setIntegrationMode(defaultIntegrationMode || parsed.integrationMode);
 
       if (parsed.version < BOARD_PREVIEW_STORAGE_VERSION) {
         globalThis.localStorage?.setItem(
           storageKey,
+=======
+      if (typeof parsed.integrationMode === "boolean") setIntegrationMode(parsed.integrationMode);
+
+      if (parsed.version < BOARD_PREVIEW_STORAGE_VERSION) {
+        globalThis.localStorage?.setItem(
+          BOARD_PREVIEW_STORAGE_KEY,
+>>>>>>> theirs
           JSON.stringify({ ...parsed, version: BOARD_PREVIEW_STORAGE_VERSION, showDiagnostics: false })
         );
       }
@@ -115,15 +151,26 @@ export function BoardPreview3D({
     } finally {
       setHydrated(true);
     }
+<<<<<<< ours
   }, [defaultIntegrationMode, presentation, storageKey]);
+=======
+  }, []);
+>>>>>>> theirs
 
   useEffect(() => {
     if (!hydrated) return;
     globalThis.localStorage?.setItem(
+<<<<<<< ours
       storageKey,
       JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, nudgeStep, showAnchors, ownerFilter, showDiagnostics, integrationMode })
     );
   }, [boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, storageKey, tiltDegrees, zoomScale]);
+=======
+      "ward.boardPreview3D.settings",
+      JSON.stringify({ tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, nudgeStep, showAnchors, ownerFilter, showDiagnostics, integrationMode })
+    );
+  }, [boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, tiltDegrees, zoomScale]);
+>>>>>>> theirs
 
 
   const slotById = useMemo(() => new Map(BOARD_SLOTS.map((slot) => [slot.id, slot])), []);
@@ -324,12 +371,21 @@ export function BoardPreview3D({
   };
 
   return (
+<<<<<<< ours
     <section className={`board-preview-3d board-preview-3d--${presentation}`} aria-label={presentation === "game" ? "Live 3D game board" : "Prototype 3D board space"} tabIndex={0} onKeyDown={handleKeyDown}>
       <header className="board-preview-3d__hud">
         <h3>{presentation === "game" ? "3D game board" : "3D board iteration lab"}</h3>
         {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
         <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
         {presentation === "lab" ? <p>Mouse pans and zooms the 3D board. Keyboard arrows nudge selected slots.</p> : null}
+=======
+    <section className="board-preview-3d" aria-label="Prototype 3D board space" tabIndex={0} onKeyDown={handleKeyDown}>
+      <header className="board-preview-3d__hud">
+        <h3>3D board iteration lab</h3>
+        <p>Left: condensed 2D placement map. Right: 3D board prototype.</p>
+        <p>Occupied slots: {occupiedSlotCount} · Empty slots: {emptySlotCount} · Unresolved pieces: {unresolvedBoardObjects.length}</p>
+        <p>Keyboard: Arrow keys nudge selected slot · Use Prev/Next buttons to cycle.</p>
+>>>>>>> theirs
       </header>
 
 
@@ -371,6 +427,7 @@ export function BoardPreview3D({
       {statusMessage ? <p className="board-preview-3d__status">{statusMessage}</p> : null}
       {lastCopiedLabel ? <p className="board-preview-3d__status">Last copied: {lastCopiedLabel}</p> : null}
 
+<<<<<<< ours
       <BoardPreview3DDebugPanel
         show={showDebugPanel}
         selectedSlot={selectedSlot}
@@ -397,6 +454,8 @@ export function BoardPreview3D({
         readOnly={integrationMode}
       />
 
+=======
+>>>>>>> theirs
       <div className="board-preview-3d__layout">
         <BoardPreview3DMiniMap
           showAnchors={showAnchors}
@@ -406,6 +465,7 @@ export function BoardPreview3D({
           onSelectSlot={(slotId) => selectSlot(slotId, "mini-map")}
           onSelectPiece={(pieceId) => onPieceFocus?.({ pieceId, source: "mini-map" })}
         />
+<<<<<<< ours
         <BoardPreview3DTable
           zoomScale={zoomScale}
           setZoomScale={setZoomScale}
@@ -422,6 +482,52 @@ export function BoardPreview3D({
           onSelectSlot={(slotId) => selectSlot(slotId, "table")}
           onSelectPiece={(pieceId) => onPieceFocus?.({ pieceId, source: "table" })}
         />
+=======
+        <section className="board-preview-3d__board-column">
+          <BoardPreview3DTable
+            zoomScale={zoomScale}
+            cameraPanX={cameraPanX}
+            cameraPanY={cameraPanY}
+            tiltDegrees={tiltDegrees}
+            heightScale={heightScale}
+            showAnchors={showAnchors}
+            selectedSlotId={selectedSlotId}
+            filteredBoardObjects={filteredBoardObjects}
+            resolveSlotPosition={resolvePosition}
+            onSelectSlot={(slotId) => selectSlot(slotId, "table")}
+            onSelectPiece={(pieceId) => onPieceFocus?.({ pieceId, source: "table" })}
+          />
+        </section>
+        {showDebugPanel ? (
+          <aside className="board-preview-3d__debug-drawer">
+            <BoardPreview3DDebugPanel
+              show={showDebugPanel}
+              selectedSlot={selectedSlot}
+              selectedSlotId={selectedSlotId}
+              selectedSlotIndex={selectedSlotIndex}
+              slotCount={BOARD_SLOTS.length}
+              selectedOffset={selectedOffset}
+              nudgeStep={nudgeStep}
+              setNudgeStep={setNudgeStep}
+              onNudge={nudgeSelectedSlot}
+              onSelectRelative={selectRelativeSlot}
+              onCopySelected={() => void copySelectedSlotSnapshot()}
+              onResetCamera={resetCamera}
+              onResetOffsets={safeResetSlotOffsets}
+              onResetSelectedOffset={resetSelectedSlotOffset}
+              onCopyLayout={() => void copyLayoutSnapshot()}
+              layoutDraft={layoutDraft}
+              setLayoutDraft={setLayoutDraft}
+              layoutDraftError={layoutDraftError}
+              layoutDraftIsValid={layoutDraftIsValid}
+              onApplyLayout={applyLayoutDraft}
+              slotOccupancy={slotOccupancy}
+              onSelectSlot={(slotId) => selectSlot(slotId, "debug")}
+              readOnly={integrationMode}
+            />
+          </aside>
+        ) : null}
+>>>>>>> theirs
       </div>
     </section>
   );
