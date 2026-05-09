@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { BattleResolverModal } from "./components/BattleResolverModal";
 import { BattleResultCard } from "./components/BattleResultCard";
 import { DevTestControlsPanel } from "./components/DevTestControlsPanel";
@@ -29,6 +29,13 @@ import { ModalPanel } from "./components/ui/ModalPanel";
 import type { CardArtKey } from "./components/CardImagePreview";
 import { socket } from "./socket";
 import { API_BASE_URL } from "./config";
+import {
+  parseEmbedMode,
+  parseEmbedParentOrigin,
+  parseReferrerOrigin
+} from "./embed/embedProtocol";
+import type { EmbedPage, EmbedView } from "./embed/embedTypes";
+import { useEmbedBridge } from "./embed/useEmbedBridge";
 import type { DevRollKind, WardEngineEffect } from "@ward/shared";
 import type {
   AppMatchState,
@@ -79,6 +86,29 @@ function sortLobbiesByCreatedAt(lobbies: MatchLobby[]): MatchLobby[] {
   );
 }
 
+function parseRequestedPage(search: string): AppPage | null {
+  const requestedPage = new URLSearchParams(search).get("page");
+  return requestedPage === "board-preview" ? "board-preview" : null;
+}
+
+function parseRequestedView(search: string): PlayViewMode | null {
+  const requestedView = new URLSearchParams(search).get("view");
+  return requestedView === "board" ? "board" : null;
+}
+
+function parseEmbedToken(search: string): string | null {
+  const token = new URLSearchParams(search).get("embedToken");
+  return token && token.trim().length > 0 ? token.trim() : null;
+}
+
+function canApplyEmbedPage(page: string): page is EmbedPage {
+  return page === "play" || page === "board-preview";
+}
+
+function canApplyEmbedView(view: string): view is EmbedView {
+  return view === "board" || view === "split" || view === "text";
+}
+
 type DashboardModal =
   | "save-load"
   | "manual-effects"
@@ -92,6 +122,14 @@ type DashboardModal =
 type OwnershipSaveStatus = "idle" | "saving" | "saved" | "error";
 
 export default function App() {
+  const [locationSearch, setLocationSearch] = useState(() => window.location.search);
+  const embedModeEnabled = useMemo(() => parseEmbedMode(locationSearch), [locationSearch]);
+  const requestedPage = useMemo(() => parseRequestedPage(locationSearch), [locationSearch]);
+  const requestedView = useMemo(() => parseRequestedView(locationSearch), [locationSearch]);
+  const embedToken = useMemo(() => parseEmbedToken(locationSearch), [locationSearch]);
+  const embedParentOrigin = useMemo(() => parseEmbedParentOrigin(locationSearch), [locationSearch]);
+  const referrerOrigin = useMemo(() => parseReferrerOrigin(document.referrer), []);
+  const messagingOrigin = embedParentOrigin ?? referrerOrigin;
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [serverMessage, setServerMessage] = useState("Connecting...");
@@ -135,6 +173,37 @@ export default function App() {
   const canUseDevTools = !!authUser?.devToolsEnabled;
 
   useEffect(() => {
+    const handlePopState = () => {
+      setLocationSearch(window.location.search);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (requestedView) {
+      setPlayViewMode(requestedView);
+    }
+
+    if (requestedPage) {
+      setActivePage(requestedPage);
+    }
+  }, [requestedPage, requestedView]);
+
+  useEmbedBridge({
+    embedModeEnabled,
+    messagingOrigin,
+    activePage,
+    playViewMode,
+    canApplyEmbedPage,
+    canApplyEmbedView,
+    onSetPage: (page: EmbedPage) => setActivePage(page),
+    onSetView: (view: EmbedView) => setPlayViewMode(view)
+  });
+
+  useEffect(() => {
     if (!canUseDevTools && isDevToolPage(activePage)) {
       setActivePage("play");
     }
@@ -151,20 +220,43 @@ export default function App() {
   }, [canUseDevTools]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/auth/me`, {
-      credentials: "include"
-    })
-      .then(response => response.json())
-      .then((data: { user?: AuthUser | null }) => {
+    const resolveAuth = async () => {
+      if (embedModeEnabled && embedToken && embedParentOrigin) {
+        try {
+          const consumeResponse = await fetch(`${API_BASE_URL}/api/embed/consume`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              token: embedToken,
+              parentOrigin: embedParentOrigin
+            })
+          });
+          if (consumeResponse.ok) {
+            const consumeData = await consumeResponse.json() as { user?: AuthUser | null };
+            setAuthUser(consumeData.user ?? null);
+            return;
+          }
+        } catch {
+          // Fallback to normal auth route below.
+        }
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+          credentials: "include"
+        });
+        const data = await response.json() as { user?: AuthUser | null };
         setAuthUser(data.user ?? null);
-      })
-      .catch(() => {
+      } catch {
         setAuthUser(null);
-      })
-      .finally(() => {
-        setAuthChecked(true);
-      });
-  }, []);
+      }
+    };
+
+    resolveAuth().finally(() => {
+      setAuthChecked(true);
+    });
+  }, [embedModeEnabled, embedParentOrigin, embedToken]);
 
   useEffect(() => {
     socket.on("server:welcome", (data: ServerWelcome) => {
@@ -642,7 +734,7 @@ export default function App() {
   }
 
   function normalizeDeckArtKey(value: string | undefined): CardArtKey {
-    return value === "holo" || value === "zero-art" ? value : "default";
+    return value === "holo" || value === "zero-art" || value === "zero-art-holo" ? value : "default";
   }
 
   function normalizeDeckArtKeys(values: string[] | undefined, cardCount: number): CardArtKey[] {
@@ -1591,13 +1683,14 @@ export default function App() {
   const appShellClassName = [
     "app-shell",
     activePage === "card-library" || activePage === "deck-library" ? "app-shell-library-decks" : "",
-    isBoardFocusMode ? "app-shell-board-focus" : ""
+    isBoardFocusMode ? "app-shell-board-focus" : "",
+    embedModeEnabled ? "app-shell-embed-mode" : ""
   ].filter(Boolean).join(" ");
 
   return (
     <main className={appShellClassName}>
       <section className="panel">
-        <header className="app-header">
+        {!embedModeEnabled && <header className="app-header">
           <div>
             <h1>WARD Virtual Tabletop</h1>
             <p className="subtitle">Local rules-assisted 1v1 prototype</p>
@@ -1614,9 +1707,9 @@ export default function App() {
               {serverMessage}
             </div>
           </div>
-        </header>
+        </header>}
 
-        <nav className="app-page-nav" aria-label="App pages">
+        {!embedModeEnabled && <nav className="app-page-nav" aria-label="App pages">
           <button
             className={activePage === "play" ? "app-page-nav-button active" : "app-page-nav-button"}
             onClick={() => setActivePage("play")}
@@ -1679,9 +1772,9 @@ export default function App() {
               </button>
             </>
           )}
-        </nav>
+        </nav>}
 
-        {socketId && activePage !== "card-library" && activePage !== "deck-library" && (
+        {!embedModeEnabled && socketId && activePage !== "card-library" && activePage !== "deck-library" && (
           <p className="socket-id">
             Socket ID: <span>{socketId}</span>
           </p>
@@ -2125,5 +2218,3 @@ export default function App() {
     </main>
   );
 }
-
-

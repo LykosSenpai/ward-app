@@ -1113,3 +1113,26 @@
   min-height: 680px;
 }
 
+/* Defensive preview fallbacks: keep rail labels readable and card art constrained
+   even if upstream utility styles are overridden by browser cache or extension CSS. */
+.board-preview-workspace .duel-player-rail > span,
+.board-preview-workspace .duel-player-rail > strong,
+.board-preview-workspace .duel-player-rail > small {
+  display: block;
+  line-height: 1.2;
+}
+
+.board-preview-workspace .duel-player-rail > strong {
+  margin-top: 2px;
+}
+
+.board-preview-workspace .duel-player-rail > small {
+  margin-top: 2px;
+}
+
+.board-preview-workspace .playmat-card-art-shell img,
+.board-preview-workspace .match-card-art img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}

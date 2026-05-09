@@ -14,6 +14,12 @@ export type AuthUser = {
 declare module "express-session" {
   interface SessionData {
     user?: AuthUser;
+    embedContext?: {
+      parentOrigin: string;
+      matchId?: string;
+      view?: string;
+      expiresAt: number;
+    };
   }
 }
 

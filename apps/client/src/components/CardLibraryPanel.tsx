@@ -516,7 +516,7 @@ export function CardLibraryPanel({
       onClearDeckBuilder();
 
       const counts = payload.cardIds.reduce<Record<string, { cardId: string; artKey: CardArtKey; count: number }>>((result, cardId, index) => {
-        const artKey = (artKeys[index] === "holo" || artKeys[index] === "zero-art" ? artKeys[index] : "default") as CardArtKey;
+        const artKey = (artKeys[index] === "holo" || artKeys[index] === "zero-art" || artKeys[index] === "zero-art-holo" ? artKeys[index] : "default") as CardArtKey;
         const key = `${cardId}__${artKey}`;
         result[key] = result[key] ?? { cardId, artKey, count: 0 };
         result[key].count += 1;
@@ -572,6 +572,7 @@ export function CardLibraryPanel({
       <div className="library-option-a-toolbar">
         <div className="library-option-a-title-block">
           <h3>Card Library + Deck Editor</h3>
+          <p className="library-option-a-variant-hint">Art update: choose <strong>Default</strong> or <strong>Zero</strong> in each card, then toggle <strong>Holo Finish</strong>.</p>
           <div className="library-option-a-chip-row" aria-label="Library and deck summary">
             <span><strong>{librarySummary.total}</strong> cards</span>
             <span><strong>{librarySummary.creatures}</strong> creatures</span>
