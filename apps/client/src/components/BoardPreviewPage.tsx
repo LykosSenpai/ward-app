@@ -625,6 +625,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
         </div>
         <span>{liveMatch ? "Live Integration" : "Preview Only"}</span>
       </div>
+<<<<<<< ours
 
       <div className="board-preview-view-toggle" role="tablist" aria-label="Board preview mode">
         <button
@@ -647,6 +648,10 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
         <>
           <p className="board-preview-3d__status">Last interaction: {lastInteraction}</p>
           {liveMatch ? (
+=======
+      <p className="board-preview-3d__status">Last interaction: {lastInteraction}</p>
+          {liveMatch && showLegacyBridge ? (
+>>>>>>> theirs
 
           <div className="board-preview-3d__controls" aria-label="Summon targeting bridge">
             <p className="board-preview-3d__status">

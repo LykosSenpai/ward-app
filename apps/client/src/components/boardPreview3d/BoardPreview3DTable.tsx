@@ -2,6 +2,12 @@ import { useState } from "react";
 import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
 import type { BoardObject } from "../boardPreview3dAdapter";
 import type { BoardRenderEventType } from "../boardRenderContracts";
+<<<<<<< ours
+=======
+import type { CardInstance } from "@ward/shared";
+import type { AppMatchState } from "../../clientTypes";
+import { MatchCardImage } from "../MatchCardImage";
+>>>>>>> theirs
 
 type Props = {
   zoomScale: number;

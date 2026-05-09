@@ -67,8 +67,7 @@ import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview";
-type PlayViewMode = "board" | "board3d" | "split" | "text";
-type DeckFormat = "FREE_PLAY" | "TOURNAMENT";
+type PlayViewMode = "board3d";
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
 
@@ -1616,10 +1615,14 @@ export default function App() {
         ...match.players.filter(player => player.id !== controlledPlayerId)
       ]
     : match?.players ?? [];
+<<<<<<< ours
   const showBoardView = playViewMode === "board" || playViewMode === "split";
   const show3dBoardView = playViewMode === "board3d";
   const showTextEngineView = playViewMode === "split" || playViewMode === "text";
   const shouldShowMagicChainPanel = !!match && (!match.pendingBattle || !!match.pendingChain) && (showTextEngineView || !!match.pendingChain);
+=======
+  const show3dBoardView = playViewMode === "board3d";
+>>>>>>> theirs
   const boardSidePanelContent = match ? (
     <>
       {match.pendingBattle && !match.pendingChain && (
@@ -1976,6 +1979,7 @@ export default function App() {
             <section className="play-view-toolbar" aria-label="Play table view mode">
               <div>
                 <span className="label">Table View</span>
+<<<<<<< ours
                 <strong>
                   {playViewMode === "board"
                     ? "Board Only"
@@ -2016,11 +2020,15 @@ export default function App() {
                 >
                   Text
                 </button>
+=======
+                <strong>3D Board (Only)</strong>
+>>>>>>> theirs
               </div>
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
               {show3dBoardView && (
+<<<<<<< ours
                 <BoardPreviewPage
                   cardLibrary={cardLibrary}
                   controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
@@ -2051,6 +2059,8 @@ export default function App() {
               )}
 
               {show3dBoardView && (
+=======
+>>>>>>> theirs
                 <section className="live-3d-board-view" aria-label="Live 3D game board">
                   <div className="live-3d-board-stage">
                     <BoardPreview3D
