@@ -2,7 +2,7 @@
 
 ## Why this method fits your current codebase
 
-Your engine already emits structured `eventLog` entries (`type`, `sequenceNumber`, `payload`) via `addEvent`, which is the correct primitive to drive deterministic animation. The key is to formalize a **render event contract** derived from those events instead of trying to animate directly from raw text/effect labels. 
+Your engine already emits structured `eventLog` entries (`type`, `sequenceNumber`, `payload`) via `addEvent`, which is the correct primitive to drive deterministic animation. The key is to formalize a **render event contract** derived from those events instead of trying to animate directly from raw text/effect labels.
 
 Relevant runtime seams:
 - Event emission: `packages/engine/src/engineRuntime.ts` (`addEvent`).
