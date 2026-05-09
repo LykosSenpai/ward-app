@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEventHandler, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEventHandler, type PointerEventHandler, type ReactNode, type WheelEventHandler } from "react";
 import type { AppMatchState } from "../clientTypes";
 import { BOARD_SLOTS } from "./boardPreview3dLayout";
 import { BoardPreview3DControls } from "./boardPreview3d/BoardPreview3DControls";
@@ -19,7 +19,17 @@ import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
-const BOARD_PREVIEW_STORAGE_VERSION = 3;
+const BOARD_PREVIEW_STORAGE_VERSION = 5;
+
+type FloatingDockPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+type ActionDockPosition = "bottom" | "left" | "right";
+
+const FLOATING_DOCK_POSITIONS: FloatingDockPosition[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
+const ACTION_DOCK_POSITIONS: ActionDockPosition[] = ["bottom", "left", "right"];
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
 
 type BoardPreview3DProps = {
   match: AppMatchState;
@@ -62,7 +72,7 @@ export function BoardPreview3D({
   const boardObjects = renderModel.boardObjects;
   const storageKey = presentation === "game" ? `${BOARD_PREVIEW_STORAGE_KEY}.game` : BOARD_PREVIEW_STORAGE_KEY;
   const [tiltDegrees, setTiltDegrees] = useState(60);
-  const [zoomScale, setZoomScale] = useState(1);
+  const [zoomScale, setZoomScale] = useState(() => presentation === "game" ? 1.18 : 1);
   const [heightScale, setHeightScale] = useState(1);
   const [boardScaleX, setBoardScaleX] = useState(1);
   const [boardScaleZ, setBoardScaleZ] = useState(1);
@@ -90,7 +100,11 @@ export function BoardPreview3D({
   const [hydrated, setHydrated] = useState(false);
   const [hudMode, setHudMode] = useState<"player" | "debug">("player");
   const [controlsCollapsed, setControlsCollapsed] = useState(true);
+  const [controlsDockPosition, setControlsDockPosition] = useState<FloatingDockPosition>("top-right");
+  const [actionDockPosition, setActionDockPosition] = useState<ActionDockPosition>("right");
+  const [isCameraDragging, setIsCameraDragging] = useState(false);
   const previousRenderModelRef = useRef<typeof renderModel | null>(null);
+  const cameraDragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
 
   useEffect(() => {
     setAnimationQueue(current => {
@@ -166,6 +180,8 @@ export function BoardPreview3D({
         ownerFilter?: "all" | "player_1" | "player_2";
         showDiagnostics?: boolean;
         integrationMode?: boolean;
+        controlsDockPosition?: FloatingDockPosition;
+        actionDockPosition?: ActionDockPosition;
       };
       if (typeof parsed.tiltDegrees === "number") setTiltDegrees(parsed.tiltDegrees);
       if (typeof parsed.zoomScale === "number") setZoomScale(parsed.zoomScale);
@@ -184,6 +200,12 @@ export function BoardPreview3D({
       if (parsed.ownerFilter === "all" || parsed.ownerFilter === "player_1" || parsed.ownerFilter === "player_2") setOwnerFilter(parsed.ownerFilter);
       if (typeof parsed.showDiagnostics === "boolean") setShowDiagnostics(parsed.showDiagnostics);
       if (typeof parsed.integrationMode === "boolean") setIntegrationMode(defaultIntegrationMode || parsed.integrationMode);
+      if (FLOATING_DOCK_POSITIONS.includes(parsed.controlsDockPosition as FloatingDockPosition)) {
+        setControlsDockPosition(parsed.controlsDockPosition as FloatingDockPosition);
+      }
+      if (parsed.version >= BOARD_PREVIEW_STORAGE_VERSION && ACTION_DOCK_POSITIONS.includes(parsed.actionDockPosition as ActionDockPosition)) {
+        setActionDockPosition(parsed.actionDockPosition as ActionDockPosition);
+      }
 
       if (parsed.version < BOARD_PREVIEW_STORAGE_VERSION) {
         globalThis.localStorage?.setItem(
@@ -202,9 +224,9 @@ export function BoardPreview3D({
     if (!hydrated) return;
     globalThis.localStorage?.setItem(
       storageKey,
-      JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, nudgeStep, showAnchors, ownerFilter, showDiagnostics, integrationMode })
+      JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, nudgeStep, showAnchors, ownerFilter, showDiagnostics, integrationMode, controlsDockPosition, actionDockPosition })
     );
-  }, [boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, storageKey, tiltDegrees, zoomScale]);
+  }, [actionDockPosition, boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, controlsDockPosition, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, storageKey, tiltDegrees, zoomScale]);
 
   const slotById = useMemo(() => new Map(BOARD_SLOTS.map((slot) => [slot.id, slot])), []);
   const focusedPlayerId = controlledPlayerId ?? match.turn.activePlayerId;
@@ -270,7 +292,7 @@ export function BoardPreview3D({
 
   const resetCamera = () => {
     setTiltDegrees(60);
-    setZoomScale(1);
+    setZoomScale(presentation === "game" ? 1.18 : 1);
     setHeightScale(1);
     setBoardScaleX(1);
     setBoardScaleZ(1);
@@ -464,8 +486,21 @@ export function BoardPreview3D({
   };
 
   const handleKeyDown: KeyboardEventHandler<HTMLElement> = (event) => {
-    if (integrationMode || !selectedSlotId || isTextInputTarget(event.target)) return;
+    if (isTextInputTarget(event.target)) return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const key = event.key.toLowerCase();
+    if (key === "w") setClampedCameraPan("y", cameraPanY - 4);
+    if (key === "s") setClampedCameraPan("y", cameraPanY + 4);
+    if (key === "a") setClampedCameraPan("x", cameraPanX - 4);
+    if (key === "d") setClampedCameraPan("x", cameraPanX + 4);
+    if (event.key === "+" || event.key === "=") setClampedZoomScale(zoomScale + 0.08);
+    if (event.key === "-" || event.key === "_") setClampedZoomScale(zoomScale - 0.08);
+    if (event.key === "0") resetCamera();
+    if (["w", "a", "s", "d", "+", "=", "-", "_", "0"].includes(key) || event.key === "+" || event.key === "=") {
+      event.preventDefault();
+      return;
+    }
+    if (integrationMode || !selectedSlotId) return;
     if (event.key === "ArrowLeft") nudgeSelectedSlot("x", -1);
     if (event.key === "ArrowRight") nudgeSelectedSlot("x", 1);
     if (event.key === "ArrowUp") nudgeSelectedSlot("z", -1);
@@ -481,6 +516,64 @@ export function BoardPreview3D({
     }
   };
 
+  const setClampedZoomScale = (value: number) => {
+    setZoomScale(clampNumber(Math.round(value * 100) / 100, 0.6, 2.2));
+  };
+
+  const setClampedCameraPan = (axis: "x" | "y", value: number) => {
+    const clamped = clampNumber(Math.round(value * 10) / 10, -90, 90);
+    if (axis === "x") {
+      setCameraPanX(clamped);
+      return;
+    }
+    setCameraPanY(clamped);
+  };
+
+  const cycleControlsDockPosition = () => {
+    const currentIndex = FLOATING_DOCK_POSITIONS.indexOf(controlsDockPosition);
+    setControlsDockPosition(FLOATING_DOCK_POSITIONS[(currentIndex + 1) % FLOATING_DOCK_POSITIONS.length]);
+  };
+
+  const cycleActionDockPosition = () => {
+    const currentIndex = ACTION_DOCK_POSITIONS.indexOf(actionDockPosition);
+    setActionDockPosition(ACTION_DOCK_POSITIONS[(currentIndex + 1) % ACTION_DOCK_POSITIONS.length]);
+  };
+
+  const isCameraControlTarget = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) return false;
+    return Boolean(target.closest("button, input, select, textarea, a, .board-preview-3d__hand-rail, .board-preview-3d__action-dock, .board-preview-3d__floating-controls, .board-preview-3d__debug-drawer"));
+  };
+
+  const handleBoardPointerDown: PointerEventHandler<HTMLElement> = (event) => {
+    if (event.button !== 0 || isCameraControlTarget(event.target)) return;
+    cameraDragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+    setIsCameraDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleBoardPointerMove: PointerEventHandler<HTMLElement> = (event) => {
+    const drag = cameraDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const deltaX = event.clientX - drag.x;
+    const deltaY = event.clientY - drag.y;
+    cameraDragRef.current = { ...drag, x: event.clientX, y: event.clientY };
+    setClampedCameraPan("x", cameraPanX + deltaX / 8);
+    setClampedCameraPan("y", cameraPanY + deltaY / 8);
+  };
+
+  const stopBoardPointerDrag: PointerEventHandler<HTMLElement> = (event) => {
+    if (cameraDragRef.current?.pointerId === event.pointerId) {
+      cameraDragRef.current = null;
+      setIsCameraDragging(false);
+    }
+  };
+
+  const handleBoardWheel: WheelEventHandler<HTMLElement> = (event) => {
+    if (isCameraControlTarget(event.target)) return;
+    event.preventDefault();
+    setClampedZoomScale(zoomScale + (event.deltaY < 0 ? 0.06 : -0.06));
+  };
+
   return (
     <section className={`board-preview-3d board-preview-3d--${presentation}`} aria-label={presentation === "game" ? "Live 3D game board" : "Prototype 3D board space"} tabIndex={0} onKeyDown={handleKeyDown}>
       <header className="board-preview-3d__hud">
@@ -488,46 +581,56 @@ export function BoardPreview3D({
         {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
         <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
         <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
-        {presentation === "lab" ? <p>Mouse pans and zooms the 3D board. Keyboard arrows nudge selected slots.</p> : null}
+        <p>Drag to pan | Wheel to zoom | WASD to move | +/- zoom | 0 reset</p>
         {intentLabel ? <p>Intent: {intentLabel}</p> : null}
         {commandLabel ? <p>Command: {commandLabel}</p> : null}
         <div>
           <button type="button" className="ghost" onClick={() => setControlsCollapsed(value => !value)}>{controlsCollapsed ? "Show HUD Controls" : "Hide HUD Controls"}</button>
+          <button type="button" className="ghost" onClick={cycleControlsDockPosition}>Move HUD Controls</button>
+          {actionDock ? <button type="button" className="ghost" onClick={cycleActionDockPosition}>Move Action Dock</button> : null}
           <button type="button" className="ghost" onClick={() => setHudMode(mode => mode === "player" ? "debug" : "player")}>{hudMode === "player" ? "Debug HUD" : "Player HUD"}</button>
         </div>
       </header>
-      {!controlsCollapsed ? <BoardPreview3DControls
-        tiltDegrees={tiltDegrees}
-        setTiltDegrees={setTiltDegrees}
-        zoomScale={zoomScale}
-        setZoomScale={setZoomScale}
-        heightScale={heightScale}
-        setHeightScale={setHeightScale}
-        boardScaleX={boardScaleX}
-        setBoardScaleX={setBoardScaleX}
-        boardScaleZ={boardScaleZ}
-        setBoardScaleZ={setBoardScaleZ}
-        boardOffsetX={boardOffsetX}
-        setBoardOffsetX={setBoardOffsetX}
-        boardOffsetZ={boardOffsetZ}
-        setBoardOffsetZ={setBoardOffsetZ}
-        cameraPanX={cameraPanX}
-        setCameraPanX={setCameraPanX}
-        cameraPanY={cameraPanY}
-        setCameraPanY={setCameraPanY}
-        ownerFilter={ownerFilter}
-        setOwnerFilter={setOwnerFilter}
-        showDebugPanel={showDebugPanel}
-        setShowDebugPanel={setShowDebugPanel}
-        showAnchors={showAnchors}
-        setShowAnchors={setShowAnchors}
-        adminView={adminView}
-        showDiagnostics={showDiagnostics}
-        setShowDiagnostics={setShowDiagnostics}
-        integrationMode={integrationMode}
-        setIntegrationMode={handleIntegrationModeChange}
-        onResetAll={resetAllEditorState}
-      /> : null}
+      {!controlsCollapsed ? (
+        <aside className={`board-preview-3d__floating-controls board-preview-3d__floating-controls--${controlsDockPosition}`}>
+          <div className="board-preview-3d__floating-title">
+            <strong>HUD Controls</strong>
+            <button type="button" className="ghost" onClick={cycleControlsDockPosition}>Move</button>
+          </div>
+          <BoardPreview3DControls
+            tiltDegrees={tiltDegrees}
+            setTiltDegrees={setTiltDegrees}
+            zoomScale={zoomScale}
+            setZoomScale={setClampedZoomScale}
+            heightScale={heightScale}
+            setHeightScale={setHeightScale}
+            boardScaleX={boardScaleX}
+            setBoardScaleX={setBoardScaleX}
+            boardScaleZ={boardScaleZ}
+            setBoardScaleZ={setBoardScaleZ}
+            boardOffsetX={boardOffsetX}
+            setBoardOffsetX={setBoardOffsetX}
+            boardOffsetZ={boardOffsetZ}
+            setBoardOffsetZ={setBoardOffsetZ}
+            cameraPanX={cameraPanX}
+            setCameraPanX={(value) => setClampedCameraPan("x", value)}
+            cameraPanY={cameraPanY}
+            setCameraPanY={(value) => setClampedCameraPan("y", value)}
+            ownerFilter={ownerFilter}
+            setOwnerFilter={setOwnerFilter}
+            showDebugPanel={showDebugPanel}
+            setShowDebugPanel={setShowDebugPanel}
+            showAnchors={showAnchors}
+            setShowAnchors={setShowAnchors}
+            adminView={adminView}
+            showDiagnostics={showDiagnostics}
+            setShowDiagnostics={setShowDiagnostics}
+            integrationMode={integrationMode}
+            setIntegrationMode={handleIntegrationModeChange}
+            onResetAll={resetAllEditorState}
+          />
+        </aside>
+      ) : null}
       {integrationMode ? <p className="board-preview-3d__status">Integration mode enabled: layout editing actions are read-only.</p> : null}
 
       {statusMessage ? <p className="board-preview-3d__status">{statusMessage}</p> : null}
@@ -542,7 +645,14 @@ export function BoardPreview3D({
           onSelectSlot={(slotId) => selectSlot(slotId, "mini-map")}
           onSelectPiece={(pieceId) => selectPiece(pieceId, "mini-map")}
         />
-        <section className="board-preview-3d__board-column">
+        <section
+          className={`board-preview-3d__board-column${isCameraDragging ? " is-panning" : ""}`}
+          onPointerDown={handleBoardPointerDown}
+          onPointerMove={handleBoardPointerMove}
+          onPointerUp={stopBoardPointerDrag}
+          onPointerCancel={stopBoardPointerDrag}
+          onWheel={handleBoardWheel}
+        >
           <BoardPreview3DTable
             zoomScale={zoomScale}
             cameraPanX={cameraPanX}
@@ -572,7 +682,15 @@ export function BoardPreview3D({
             cardByInstanceId={cardByInstanceId}
             blockedReasonsBySlotId={blockedReasonsBySlotId}
           />
-          {actionDock ? <div className="board-preview-3d__action-dock board-preview-3d__action-dock--inboard">{actionDock}</div> : null}
+          {actionDock ? (
+            <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
+              <div className="board-preview-3d__floating-title">
+                <strong>Action Dock</strong>
+                <button type="button" className="ghost" onClick={cycleActionDockPosition}>Move</button>
+              </div>
+              {actionDock}
+            </div>
+          ) : null}
           {handCards.length > 0 ? (
             <section className="board-preview-3d__hand-rail" aria-label="3D board hand rail">
               {handCards.map(card => (

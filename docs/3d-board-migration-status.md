@@ -52,8 +52,6 @@ Last updated: 2026-05-09
 
 ### Remaining
 - None for documentation/release-planning scope. Execute operational monitoring checklist during rollout window.
-<<<<<<< ours
-=======
 
 ## PR A — Board-native turn controls (in progress)
 ### Completed in this pass
@@ -76,4 +74,3 @@ Last updated: 2026-05-09
 ### Pending
 - None for repository validation scope; run live two-client seat/spectator verification during operational test match signoff.
 
->>>>>>> theirs

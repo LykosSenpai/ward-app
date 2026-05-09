@@ -43,12 +43,14 @@ export type DeckSummary = {
   cardCount: number;
 };
 
+export type DeckFormat = "FREE_PLAY" | "TOURNAMENT";
+
 export type DeckDetail = {
   id: string;
   name: string;
   cardIds: string[];
   cardArtKeys?: string[];
-  format?: "FREE_PLAY" | "TOURNAMENT";
+  format?: DeckFormat;
   ownerUserId?: string;
   ownerDisplayName?: string;
   tournamentProofPhotos?: TournamentDeckProofPhoto[];

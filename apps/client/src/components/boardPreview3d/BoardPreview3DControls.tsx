@@ -35,7 +35,7 @@ type BoardPreview3DControlsProps = {
 
 export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
   const applyZoomScale = (raw: number) => {
-    const normalized = Math.max(0.8, Math.min(1.25, Math.round(raw * 20) / 20));
+    const normalized = Math.max(0.6, Math.min(2.2, Math.round(raw * 20) / 20));
     props.setZoomScale(normalized);
   };
 
@@ -78,7 +78,7 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
         </label>
         <label>
           Zoom
-          <input type="range" min={80} max={125} step={5} value={Math.round(props.zoomScale * 100)} onChange={(event) => applyZoomScale(Number(event.target.value) / 100)} />
+          <input type="range" min={60} max={220} step={5} value={Math.round(props.zoomScale * 100)} onChange={(event) => applyZoomScale(Number(event.target.value) / 100)} />
 
           <span>{Math.round(props.zoomScale * 100)}%</span>
         </label>
@@ -110,20 +110,20 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
 
         <label>
           Pan X
-          <input type="range" min={-25} max={25} value={Math.round(props.cameraPanX)} onChange={(event) => props.setCameraPanX(Number(event.target.value))} />
+          <input type="range" min={-90} max={90} value={Math.round(props.cameraPanX)} onChange={(event) => props.setCameraPanX(Number(event.target.value))} />
 
           <span>{Math.round(props.cameraPanX)}%</span>
         </label>
         <label>
           Pan Y
-          <input type="range" min={-25} max={25} value={Math.round(props.cameraPanY)} onChange={(event) => props.setCameraPanY(Number(event.target.value))} />
+          <input type="range" min={-90} max={90} value={Math.round(props.cameraPanY)} onChange={(event) => props.setCameraPanY(Number(event.target.value))} />
 
           <span>{Math.round(props.cameraPanY)}%</span>
         </label>
 
       </div>
       <p className="board-preview-3d__status">
-        Shortcuts: Arrow keys nudge selected slot · R resets editor {props.integrationMode ? "(disabled in Integration Mode)" : ""}
+        Shortcuts: drag pans camera | wheel zooms | WASD moves camera | +/- zoom | 0 resets camera | Arrow keys nudge selected slot {props.integrationMode ? "(slot nudging disabled in Integration Mode)" : ""}
 
       </p>
     </>
