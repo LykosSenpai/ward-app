@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent, type WheelEvent } from "react";
-import { BOARD_SLOTS, ZONE_ANCHORS } from "../boardPreview3dLayout";
+import { BOARD_SLOTS, STACK_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
 import type { BoardObject } from "../boardPreview3dAdapter";
 
 const MIN_ZOOM_SCALE = 0.5;
@@ -108,6 +108,16 @@ export function BoardPreview3DTable({
               <span>{zone.label}</span>
             </div>
           )) : null}
+          {STACK_ZONES.map((zone) => (
+            <div
+              key={zone.id}
+              className={`board-preview-3d__stack-zone board-preview-3d__stack-zone--${zone.owner} ${zone.kind}`}
+              style={{ left: `${zone.xPercent}%`, top: `${zone.zPercent}%` }}
+            >
+              <span>{zone.kind === "deck" ? "Deck" : "GY"}</span>
+              <strong>{zone.owner === "player_1" ? "P1" : "P2"}</strong>
+            </div>
+          ))}
           {BOARD_SLOTS.map((slot) => (
             <div
               key={slot.id}

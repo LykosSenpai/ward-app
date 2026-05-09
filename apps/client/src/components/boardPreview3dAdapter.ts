@@ -20,8 +20,10 @@ export type BoardObject = {
 export function buildBoardObjects(match: AppMatchState): BoardObject[] {
   return match.players.flatMap((player, playerIndex) => {
     const owner: "player_1" | "player_2" = player.id === "player_1" ? "player_1" : "player_2";
-    const ownerZ = playerIndex === 0 ? 74 : 26;
-    const friendlyShift = playerIndex === 0 ? 1 : -1;
+    const monsterZ = playerIndex === 0 ? 64 : 36;
+    const magicZ = playerIndex === 0 ? 76 : 24;
+    const limitedColumns = playerIndex === 0 ? [82, 66, 34, 18] : [18, 34, 66, 82];
+    const magicColumns = playerIndex === 0 ? [82, 66, 50, 34, 18] : [18, 34, 50, 66, 82];
 
     const primary = player.field.primaryCreature
       ? [{
@@ -29,32 +31,30 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
           label: `${player.displayName} Primary`,
           owner,
           xPercent: 50,
-          zPercent: ownerZ,
+          zPercent: monsterZ,
           yDepth: 12,
           lane: "primary" as const,
           slotId: `${owner}-primary` as BoardSlotId
         }]
       : [];
 
-    const limitedOffsets = [28, 10, -10, -28];
     const limited = player.field.limitedSummons.map((card, index) => ({
       id: `${owner}-limited-${card.instanceId}`,
       label: `${player.displayName} Limited ${index + 1}`,
       owner,
-      xPercent: 50 + friendlyShift * (limitedOffsets[index] ?? 0),
-      zPercent: ownerZ + friendlyShift * -8,
+      xPercent: limitedColumns[index] ?? 50,
+      zPercent: monsterZ,
       yDepth: 8,
       lane: "limited" as const,
       slotId: `${owner}-limited-${index + 1}` as BoardSlotId
     }));
 
-    const magicOffsets = [40, 20, 0, -20, -40];
     const magic = player.field.magicSlots.filter(Boolean).map((card, index) => ({
       id: `${owner}-magic-${card.instanceId}`,
       label: `${player.displayName} Magic ${index + 1}`,
       owner,
-      xPercent: 50 + friendlyShift * (magicOffsets[index] ?? 0),
-      zPercent: ownerZ + friendlyShift * 4,
+      xPercent: magicColumns[index] ?? 50,
+      zPercent: magicZ,
       yDepth: 5,
       lane: "magic" as const,
       slotId: `${owner}-magic-${index + 1}` as BoardSlotId

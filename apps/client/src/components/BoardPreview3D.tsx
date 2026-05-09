@@ -9,17 +9,27 @@ import { buildBoardObjects, parseLayoutSnapshotJson, resolveSlotPosition, toLayo
 import type { BoardPieceFocusEvent, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
-const BOARD_PREVIEW_STORAGE_VERSION = 2;
+const BOARD_PREVIEW_STORAGE_VERSION = 3;
 
 type BoardPreview3DProps = {
   match: AppMatchState;
   adminView?: boolean;
+  presentation?: "lab" | "game";
+  defaultIntegrationMode?: boolean;
   onSlotFocus?: (event: BoardSlotFocusEvent) => void;
   onPieceFocus?: (event: BoardPieceFocusEvent) => void;
 };
 
-export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceFocus }: BoardPreview3DProps) {
+export function BoardPreview3D({
+  match,
+  adminView = false,
+  presentation = "lab",
+  defaultIntegrationMode = false,
+  onSlotFocus,
+  onPieceFocus
+}: BoardPreview3DProps) {
   const boardObjects = useMemo(() => buildBoardObjects(match), [match]);
+  const storageKey = presentation === "game" ? `${BOARD_PREVIEW_STORAGE_KEY}.game` : BOARD_PREVIEW_STORAGE_KEY;
   const [tiltDegrees, setTiltDegrees] = useState(60);
   const [zoomScale, setZoomScale] = useState(1);
   const [heightScale, setHeightScale] = useState(1);
@@ -29,7 +39,9 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
   const [boardOffsetZ, setBoardOffsetZ] = useState(0);
   const [cameraPanX, setCameraPanX] = useState(0);
   const [cameraPanY, setCameraPanY] = useState(0);
-  const [showDebugPanel, setShowDebugPanel] = useState(() => (globalThis.innerHeight ? globalThis.innerHeight > 980 : true));
+  const [showDebugPanel, setShowDebugPanel] = useState(() =>
+    presentation === "game" ? false : (globalThis.innerHeight ? globalThis.innerHeight > 980 : true)
+  );
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>("player_1-primary");
   const [slotOffsets, setSlotOffsets] = useState<BoardSlotOffsetMap>({});
   const [nudgeStep, setNudgeStep] = useState(1);
@@ -40,11 +52,11 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [lastCopiedLabel, setLastCopiedLabel] = useState<string | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<"all" | "player_1" | "player_2">("all");
-  const [integrationMode, setIntegrationMode] = useState(false);
+  const [integrationMode, setIntegrationMode] = useState(defaultIntegrationMode);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const saved = globalThis.localStorage?.getItem(BOARD_PREVIEW_STORAGE_KEY);
+    const saved = globalThis.localStorage?.getItem(storageKey);
     if (!saved) {
       setHydrated(true);
       return;
@@ -83,18 +95,18 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
       if (typeof parsed.boardOffsetZ === "number") setBoardOffsetZ(parsed.boardOffsetZ);
       if (typeof parsed.cameraPanX === "number") setCameraPanX(parsed.cameraPanX);
       if (typeof parsed.cameraPanY === "number") setCameraPanY(parsed.cameraPanY);
-      if (typeof parsed.showDebugPanel === "boolean") setShowDebugPanel(parsed.showDebugPanel);
+      if (typeof parsed.showDebugPanel === "boolean") setShowDebugPanel(presentation === "game" ? false : parsed.showDebugPanel);
       if (typeof parsed.selectedSlotId === "string" || parsed.selectedSlotId === null) setSelectedSlotId(parsed.selectedSlotId);
       if (parsed.slotOffsets) setSlotOffsets(parsed.slotOffsets);
       if (typeof parsed.nudgeStep === "number") setNudgeStep(parsed.nudgeStep);
       if (typeof parsed.showAnchors === "boolean") setShowAnchors(parsed.showAnchors);
       if (parsed.ownerFilter === "all" || parsed.ownerFilter === "player_1" || parsed.ownerFilter === "player_2") setOwnerFilter(parsed.ownerFilter);
       if (typeof parsed.showDiagnostics === "boolean") setShowDiagnostics(parsed.showDiagnostics);
-      if (typeof parsed.integrationMode === "boolean") setIntegrationMode(parsed.integrationMode);
+      if (typeof parsed.integrationMode === "boolean") setIntegrationMode(defaultIntegrationMode || parsed.integrationMode);
 
       if (parsed.version < BOARD_PREVIEW_STORAGE_VERSION) {
         globalThis.localStorage?.setItem(
-          BOARD_PREVIEW_STORAGE_KEY,
+          storageKey,
           JSON.stringify({ ...parsed, version: BOARD_PREVIEW_STORAGE_VERSION, showDiagnostics: false })
         );
       }
@@ -103,15 +115,15 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
     } finally {
       setHydrated(true);
     }
-  }, []);
+  }, [defaultIntegrationMode, presentation, storageKey]);
 
   useEffect(() => {
     if (!hydrated) return;
     globalThis.localStorage?.setItem(
-      "ward.boardPreview3D.settings",
-      JSON.stringify({ tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, nudgeStep, showAnchors, ownerFilter, showDiagnostics, integrationMode })
+      storageKey,
+      JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, nudgeStep, showAnchors, ownerFilter, showDiagnostics, integrationMode })
     );
-  }, [boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, tiltDegrees, zoomScale]);
+  }, [boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, storageKey, tiltDegrees, zoomScale]);
 
 
   const slotById = useMemo(() => new Map(BOARD_SLOTS.map((slot) => [slot.id, slot])), []);
@@ -312,12 +324,12 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
   };
 
   return (
-    <section className="board-preview-3d" aria-label="Prototype 3D board space" tabIndex={0} onKeyDown={handleKeyDown}>
+    <section className={`board-preview-3d board-preview-3d--${presentation}`} aria-label={presentation === "game" ? "Live 3D game board" : "Prototype 3D board space"} tabIndex={0} onKeyDown={handleKeyDown}>
       <header className="board-preview-3d__hud">
-        <h3>3D board iteration lab</h3>
-        <p>Left: condensed 2D placement map. Right: 3D board prototype.</p>
-        <p>Occupied slots: {occupiedSlotCount} · Empty slots: {emptySlotCount} · Unresolved pieces: {unresolvedBoardObjects.length}</p>
-        <p>Keyboard: Arrow keys nudge selected slot · Use Prev/Next buttons to cycle.</p>
+        <h3>{presentation === "game" ? "3D game board" : "3D board iteration lab"}</h3>
+        {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
+        <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
+        {presentation === "lab" ? <p>Mouse pans and zooms the 3D board. Keyboard arrows nudge selected slots.</p> : null}
       </header>
 
 
