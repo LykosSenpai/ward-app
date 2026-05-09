@@ -1,7 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { BattleResolverModal } from "./components/BattleResolverModal";
 import { BattleResultCard } from "./components/BattleResultCard";
-import { DevTestControlsPanel } from "./components/DevTestControlsPanel";
 import { DiceRollerPanel } from "./components/DiceRollerPanel";
 import { EffectCoveragePage } from "./components/EffectCoveragePage";
 import { EffectDebugPanel } from "./components/EffectDebugPanel";
@@ -19,7 +18,6 @@ import { MatchCompleteCard } from "./components/MatchCompleteCard";
 import { MatchLobbyPanel } from "./components/MatchLobbyPanel";
 import { CompactMatchControlPanel } from "./components/CompactMatchControlPanel";
 import { MatchStatePanel } from "./components/MatchStatePanel";
-import { CardBoardView } from "./components/CardBoardView";
 import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { BoardPreview3D } from "./components/BoardPreview3D";
 import type { PointerGestureIntent } from "./components/boardInteractionIntents";
@@ -97,8 +95,8 @@ function parseRequestedPage(search: string): AppPage | null {
 
 function parseRequestedView(search: string): PlayViewMode | null {
   const requestedView = new URLSearchParams(search).get("view");
-  if (requestedView === "board" || requestedView === "board3d" || requestedView === "3d") {
-    return requestedView === "3d" ? "board3d" : requestedView;
+  if (requestedView === "board" || requestedView === "split" || requestedView === "text" || requestedView === "board3d" || requestedView === "board-3d" || requestedView === "3d") {
+    return "board3d";
   }
   return null;
 }
@@ -174,7 +172,7 @@ export default function App() {
   >({});
   const [dashboardModal, setDashboardModal] = useState<DashboardModal>(null);
   const [activePage, setActivePage] = useState<AppPage>(() => parseRequestedPage(window.location.search) ?? "play");
-  const [playViewMode, setPlayViewMode] = useState<PlayViewMode>("board");
+  const [playViewMode, setPlayViewMode] = useState<PlayViewMode>("board3d");
   const [lastBoardIntentLabel, setLastBoardIntentLabel] = useState("");
   const [lastBoardCommandLabel, setLastBoardCommandLabel] = useState("");
   const [effectDevFocusedCardKey, setEffectDevFocusedCardKey] = useState("");
@@ -216,7 +214,7 @@ export default function App() {
     canApplyEmbedPage,
     canApplyEmbedView,
     onSetPage: (page: EmbedPage) => setActivePage(page),
-    onSetView: (view: EmbedView) => setPlayViewMode(view)
+    onSetView: (_view: EmbedView) => setPlayViewMode("board3d")
   });
 
   useEffect(() => {
@@ -1341,14 +1339,6 @@ export default function App() {
     });
   }
 
-  function clearForcedDevRolls(kind?: DevRollKind) {
-    if (!match) return;
-    socket.emit("match:devClearForcedRolls", {
-      matchId: match.matchId,
-      kind
-    });
-  }
-
   function saveEffectRuntimeTestStatus(
     row: EffectCoverageRow,
     status: EffectRuntimeTestStatus,
@@ -1728,7 +1718,7 @@ export default function App() {
     }} />;
   }
 
-  const isBoardFocusMode = activePage === "play" && !!match && playViewMode === "board";
+  const isBoardFocusMode = activePage === "play" && !!match && playViewMode === "board3d";
 
   const appShellClassName = [
     "app-shell",
@@ -1982,27 +1972,6 @@ export default function App() {
           </section>
         ) : (
           <>
-            {showTextEngineView && (
-              <CompactMatchControlPanel
-                match={match}
-                advanceBlockReason={advanceBlockReason}
-                controlledPlayerId={controlledPlayerId}
-                onShuffleAllDecks={shuffleAllDecks}
-                onUndoLastAction={undoLastAction}
-                onDrawActivePlayer={drawActivePlayer}
-                onStartManualBattle={startManualBattle}
-                onUpdateCannotInflictAttackDamageBattlePolicy={updateCannotInflictAttackDamageBattlePolicy}
-                onAdvancePhase={advancePhase}
-                onOpenSaveLoad={() => setDashboardModal("save-load")}
-                onOpenManualEffects={() => setDashboardModal("manual-effects")}
-                onOpenBattleResult={() => setDashboardModal("battle-result")}
-                onOpenDiceRoller={() => setDashboardModal("dice-roller")}
-                onOpenEventLog={() => setDashboardModal("event-log")}
-                onOpenMatchDetails={() => setDashboardModal("match-details")}
-                onOpenEffectDebug={canUseDevTools ? () => setDashboardModal("effect-debug") : undefined}
-              />
-            )}
-
             <section className="play-view-toolbar" aria-label="Play table view mode">
               <div>
                 <span className="label">Table View</span>
@@ -2156,54 +2125,10 @@ export default function App() {
                 </section>
               )}
 
-              {showTextEngineView && (
-                <section className="text-engine-view" aria-label="Text engine">
-                  <MatchStatePanel
-                    match={match}
-                    advanceBlockReason={advanceBlockReason}
-                    controlledPlayerId={controlledPlayerId}
-                    onShuffleAllDecks={shuffleAllDecks}
-                    onUndoLastAction={undoLastAction}
-                    onDrawActivePlayer={drawActivePlayer}
-                    onBattlePrimaryCreatures={battlePrimaryCreatures}
-                    onAdvancePhase={advancePhase}
-                  />
-
-                  {shouldShowMagicChainPanel && (
-                    <MagicChainCard
-                      match={match}
-                      onResolve={resolveMagicChain}
-                      onUndo={undoLastAction}
-                      onPassPriority={passMagicChainPriority}
-                    />
-                  )}
-
-                  {canUseDevTools && (
-                    <DevTestControlsPanel
-                      match={match}
-                      onForceRolls={forceDevRolls}
-                      onClearForcedRolls={clearForcedDevRolls}
-                    />
-                  )}
-
-                  <div className="text-engine-player-grid">
-                    {displayedPlayers.map(player => (
-                      <PlayerPanel
-                        key={player.id}
-                        match={match}
-                        player={player}
-                        controlledPlayerId={controlledPlayerId}
-                      />
-                    ))}
-                  </div>
-
-                  <EventLogCard match={match} />
-                </section>
-              )}
 
             </section>
 
-            {match.pendingBattle && !match.pendingChain && !showBoardView && (
+            {match.pendingBattle && !match.pendingChain && true && (
               <ModalPanel title="Manual Battle Resolver" blocking wide>
                 <BattleResolverModal
                   match={match}
@@ -2224,7 +2149,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingEffectRoll && !showBoardView && (
+            {match.pendingEffectRoll && true && (
               <ModalPanel title="Effect Roll" blocking wide>
                 <EffectRollModal
                   match={match}
@@ -2236,7 +2161,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingPrompt && !showBoardView && (
+            {match.pendingPrompt && true && (
               <ModalPanel title="Action Required" blocking>
                 <HandRevealPromptCard
                   match={match}
@@ -2246,7 +2171,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingEffectTargetPrompt && !showBoardView && (
+            {match.pendingEffectTargetPrompt && true && (
               <ModalPanel title="Choose Effect Target" blocking wide>
                 <TargetPromptCard
                   prompt={match.pendingEffectTargetPrompt}

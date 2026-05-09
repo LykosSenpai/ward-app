@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CardDefinition, CardInstance, PlayerState } from "@ward/shared";
 import type { AppMatchState, CardLibraryCardSummary } from "../clientTypes";
-import { CardBoardView } from "./CardBoardView";
 import { BoardPreview3D } from "./BoardPreview3D";
 import {
   buildBoardObjects,
@@ -270,7 +269,6 @@ function buildPreviewMatch(cardLibrary: CardLibraryCardSummary[]): AppMatchState
 export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = null }: BoardPreviewPageProps) {
   const previewMatch = useMemo(() => liveMatch ?? buildPreviewMatch(cardLibrary), [cardLibrary, liveMatch]);
   const previewBoardObjects = useMemo(() => (previewMatch ? buildBoardObjects(previewMatch) : []), [previewMatch]);
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
 
   const [lastInteraction, setLastInteraction] = useState<string>("None");
   const [dispatchHistory, setDispatchHistory] = useState<string[]>([]);
@@ -770,7 +768,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
           ) : (
             <p className="board-preview-3d__status">Dispatch bridge controls are only enabled when a live match is active.</p>
           )}
-          <BoardPreview3D
+      <BoardPreview3D
             match={previewMatch}
             adminView
             onSlotFocus={(event) => {
@@ -785,18 +783,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
               const intent = buildInteractionIntentFromPieceFocus(event, previewBoardObjects);
               setLastInteraction(JSON.stringify(intent));
             }}
-          />
-        </>
-      ) : (
-        <section className="match-workspace match-workspace-board board-preview-workspace">
-          <CardBoardView
-            match={previewMatch}
-            players={previewMatch.players}
-            controlledPlayerId="player_1"
-          />
-        </section>
-      )}
-
+      />
     </section>
   );
 }
