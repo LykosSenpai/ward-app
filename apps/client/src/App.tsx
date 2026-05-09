@@ -2058,6 +2058,30 @@ export default function App() {
                       adminView={canUseDevTools}
                       presentation="game"
                       defaultIntegrationMode
+                      controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
+                      onDeckSlotClick={(slotId) => {
+                        const activeDeckSlot = match.turn.activePlayerId === "player_1" ? "player_1-deck" : "player_2-deck";
+                        if (slotId === activeDeckSlot) {
+                          drawActivePlayer();
+                        }
+                      }}
+                      onPlayHandCardToSlot={(cardInstanceId, slotId) => {
+                        const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
+                        const card = activePlayer?.hand.find(item => item.instanceId === cardInstanceId);
+                        if (!activePlayer || !card) return;
+                        if (slotId.includes("-primary")) {
+                          socket.emit("match:playPrimaryCreature", { matchId: match.matchId, playerId: activePlayer.id, cardInstanceId });
+                          return;
+                        }
+                        if (slotId.includes("-magic")) {
+                          socket.emit("match:playMagic", { matchId: match.matchId, playerId: activePlayer.id, cardInstanceId });
+                        }
+                      }}
+                      onStartBattleFromPiece={(cardInstanceId) => {
+                        startManualBattle(cardInstanceId);
+                      }}
+                      intentLabel={lastBoardIntentLabel}
+                      commandLabel={lastBoardCommandLabel}
                       onIntent={(intent: PointerGestureIntent) => {
                         const label = intent.kind === "NO_OP"
                           ? `Blocked: ${intent.reason}`
@@ -2098,13 +2122,6 @@ export default function App() {
                   </div>
 
                   <aside className="live-3d-board-actions" aria-label="3D board engine controls">
-                    {lastBoardIntentLabel ? (
-                      <section className="live-3d-board-panel">
-                        <h3>Board Intent</h3>
-                        <p>{lastBoardIntentLabel}</p>
-                        {lastBoardCommandLabel ? <small>{lastBoardCommandLabel}</small> : null}
-                      </section>
-                    ) : null}
                     {boardSidePanelContent ? (
                       <section className="live-3d-board-panel live-3d-board-pending">
                         {boardSidePanelContent}

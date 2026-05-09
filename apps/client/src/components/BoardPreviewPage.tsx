@@ -267,6 +267,7 @@ function buildPreviewMatch(cardLibrary: CardLibraryCardSummary[]): AppMatchState
 }
 
 export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = null }: BoardPreviewPageProps) {
+  const showLegacyBridge = new URLSearchParams(globalThis.location?.search ?? "").get("legacyBridge") === "1";
   const previewMatch = useMemo(() => liveMatch ?? buildPreviewMatch(cardLibrary), [cardLibrary, liveMatch]);
   const previewBoardObjects = useMemo(() => (previewMatch ? buildBoardObjects(previewMatch) : []), [previewMatch]);
 
@@ -766,7 +767,11 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
             ) : null}
           </div>
           ) : (
-            <p className="board-preview-3d__status">Dispatch bridge controls are only enabled when a live match is active.</p>
+            <p className="board-preview-3d__status">
+              {liveMatch
+                ? "Legacy bridge controls are hidden. Add ?legacyBridge=1 to enable the debug bridge."
+                : "Dispatch bridge controls are only enabled when a live match is active."}
+            </p>
           )}
       <BoardPreview3D
             match={previewMatch}

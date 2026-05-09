@@ -1301,7 +1301,7 @@
   text-align: center;
   text-transform: uppercase;
   transform-style: preserve-3d;
-  width: min(25vw, 180px);
+  width: min(25vw, 190px);
 }
 
 .board-preview-3d__piece--player_1 {
@@ -1336,6 +1336,89 @@
 
 .board-preview-3d__action-dock {
   margin: 8px 0 12px;
+}
+
+.board-preview-3d__action-dock--inboard {
+  margin: 10px 0 0;
+}
+
+.board-preview-3d__hand-rail {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.board-preview-3d__hand-rail button {
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  white-space: nowrap;
+  display: grid;
+  gap: 6px;
+  min-width: 92px;
+}
+
+.board-preview-3d__hand-rail button.is-selected {
+  border-color: #facc15;
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.4) inset;
+}
+
+.board-preview-3d__hand-card-art {
+  width: 56px;
+  height: 78px;
+}
+
+.board-preview-3d__hand-rail button span {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.72rem;
+}
+
+.board-preview-3d__slot.is-highlighted button {
+  border-color: #facc15;
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.35) inset;
+}
+
+.board-preview-3d__slot.is-hovered:not(.is-blocked) {
+  border-color: rgba(74, 222, 128, 0.9);
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.26);
+}
+
+.board-preview-3d__slot.is-blocked {
+  border-color: rgba(248, 113, 113, 0.9);
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.22);
+}
+
+.board-preview-3d__slot-badge {
+  background: rgba(127, 29, 29, 0.9);
+  border: 1px solid rgba(248, 113, 113, 0.8);
+  border-radius: 999px;
+  color: #fee2e2;
+  display: inline-block;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  margin-left: 4px;
+  margin-top: 4px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+}
+
+.board-preview-3d__quick-actions {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.board-preview-3d__quick-actions small {
+  color: #cbd5e1;
+  font-size: 0.72rem;
 }
 
 .board-preview-3d__layout {
@@ -1656,6 +1739,27 @@
   cursor: pointer;
   font: inherit;
   padding: 0;
+}
+
+.board-preview-3d__piece button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  width: 100%;
+}
+
+.board-preview-3d__piece-card-art {
+  height: 86px;
+  width: 62px;
+}
+
+.board-preview-3d__piece button span {
+  font-size: 0.58rem;
+  line-height: 1.2;
 }
 
 .board-preview-3d__slot.is-animated-target {
