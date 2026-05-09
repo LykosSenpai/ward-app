@@ -1073,7 +1073,10 @@
 .board-preview-page {
   display: grid;
   gap: 8px;
+  max-height: calc(100svh - 190px);
   min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .board-preview-header {
@@ -1113,67 +1116,6 @@
   min-height: 680px;
 }
 
-.board-preview-reference-label {
-  align-items: center;
-  color: #94a3b8;
-  display: flex;
-  font-size: 0.72rem;
-  font-weight: 950;
-  justify-content: center;
-  letter-spacing: 0.08em;
-  min-height: 22px;
-  text-transform: uppercase;
-}
-
-.board-preview-reference-label::before,
-.board-preview-reference-label::after {
-  background: rgba(148, 163, 184, 0.24);
-  content: "";
-  flex: 1;
-  height: 1px;
-  max-width: 220px;
-}
-
-.board-preview-reference-label span {
-  padding: 0 10px;
-}
-
-.board3d-shell {
-  background:
-    radial-gradient(circle at 50% 12%, rgba(56, 189, 248, 0.18), transparent 26%),
-    linear-gradient(180deg, #0b1220 0%, #080c14 100%);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 12px;
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
-  color: #f8fafc;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-height: min(78svh, 820px);
-  overflow: hidden;
-  position: relative;
-}
-
-.board-preview-view-toggle {
-  display: flex;
-  gap: 8px;
-}
-
-.board-preview-view-toggle button {
-  background: rgba(15, 23, 42, 0.72);
-  border: 1px solid rgba(148, 163, 184, 0.38);
-  border-radius: 8px;
-  color: #cbd5e1;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 6px 10px;
-}
-
-.board-preview-view-toggle button.active {
-  background: rgba(56, 189, 248, 0.18);
-  border-color: rgba(56, 189, 248, 0.72);
-  color: #e0f2fe;
-}
 
 .board-preview-3d {
   height: calc(100svh - 230px);
@@ -1182,447 +1124,25 @@
   position: relative;
 }
 
-.board3d-toolbar {
-  align-items: center;
-  background: rgba(3, 7, 18, 0.76);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  min-width: 0;
-  padding: 10px 12px;
-  position: relative;
-  z-index: 4;
-}
-
-.board3d-toolbar > div:first-child {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.board3d-toolbar span {
-  color: #facc15;
-  font-size: 0.64rem;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.board3d-toolbar strong,
-.board3d-toolbar small {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.board3d-toolbar strong {
-  font-size: 0.95rem;
-}
-
-.board3d-toolbar small {
-  color: #cbd5e1;
-  font-size: 0.72rem;
-}
-
-.board3d-camera-toggle {
-  background: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 999px;
-  display: flex;
-  gap: 3px;
-  padding: 3px;
-}
-
-.board3d-camera-toggle button {
-  background: transparent;
-  border: 0;
-  border-radius: 999px;
-  color: #cbd5e1;
-  font-size: 0.72rem;
-  font-weight: 900;
-  min-height: 30px;
-  padding: 5px 10px;
-}
-
-.board3d-camera-toggle button.active {
-  background: rgba(250, 204, 21, 0.18);
-  color: #fef3c7;
-  box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.28);
-}
-
-.board3d-viewport {
-  min-height: 0;
-  overflow: hidden;
-  perspective: 1280px;
-  perspective-origin: 50% 44%;
-  position: relative;
-}
-
-.board3d-viewport::before {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 82px 82px;
-  content: "";
-  inset: 0;
-  opacity: 0.24;
-  pointer-events: none;
-  position: absolute;
-}
-
-.board3d-scene {
-  display: grid;
-  height: 100%;
-  min-height: 650px;
-  place-items: center;
-  transform-style: preserve-3d;
-}
-
-.board3d-table {
-  background:
-    linear-gradient(135deg, rgba(34, 197, 94, 0.16), transparent 36%),
-    linear-gradient(315deg, rgba(249, 115, 22, 0.12), transparent 36%),
-    linear-gradient(90deg, #10251f, #18382f 48%, #10251f);
-  border: 1px solid rgba(250, 204, 21, 0.34);
-  border-radius: 26px;
-  box-shadow:
-    0 46px 90px rgba(0, 0, 0, 0.58),
-    inset 0 0 0 2px rgba(255, 255, 255, 0.08),
-    inset 0 0 80px rgba(0, 0, 0, 0.28);
-  display: grid;
-  gap: 18px;
-  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
-  height: min(92%, 760px);
-  max-width: 1180px;
-  min-height: 590px;
-  padding: 28px;
-  position: relative;
-  transform: rotateX(58deg) rotateZ(0deg) translateY(16px);
-  transform-style: preserve-3d;
-  transition: transform 220ms ease;
-  width: min(94%, 1180px);
-}
-
-.camera-near .board3d-table {
-  transform: rotateX(62deg) rotateZ(0deg) translateY(-68px) scale(1.08);
-}
-
-.camera-far .board3d-table {
-  transform: rotateX(62deg) rotateZ(180deg) translateY(-68px) scale(1.08);
-}
-
-.board3d-table::after {
-  background: rgba(2, 6, 23, 0.36);
-  border-radius: 28px;
-  box-shadow: 0 0 52px rgba(0, 0, 0, 0.4);
-  content: "";
-  inset: 16px;
-  pointer-events: none;
-  position: absolute;
-  transform: translateZ(-18px);
-}
-
-.board3d-table-glow {
-  background: radial-gradient(circle, rgba(250, 204, 21, 0.22), transparent 48%);
-  inset: 18% 20%;
-  pointer-events: none;
-  position: absolute;
-  transform: translateZ(2px);
-}
-
-.board3d-player {
-  display: grid;
-  gap: 10px;
-  grid-template-rows: auto auto auto;
-  min-height: 0;
-  position: relative;
-  transform-style: preserve-3d;
-  z-index: 2;
-}
-
-.board3d-player-far {
-  transform: rotateZ(180deg);
-}
-
-.board3d-player-nameplate {
-  align-items: center;
-  background: rgba(2, 6, 23, 0.76);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.28);
-  display: grid;
-  gap: 1px;
-  justify-self: start;
-  max-width: min(360px, 40vw);
-  padding: 8px 10px;
-  transform: translateZ(34px) rotateX(-58deg);
-}
-
-.board3d-player-nameplate span {
-  color: #93c5fd;
-  font-size: 0.58rem;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.board3d-player-nameplate strong,
-.board3d-player-nameplate small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.board3d-player-nameplate strong {
-  font-size: 0.9rem;
-}
-
-.board3d-player-nameplate small {
-  color: #cbd5e1;
-  font-size: 0.64rem;
-}
-
-.board3d-row {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  min-height: 0;
-}
-
-.board3d-stack-row {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(76px, 0.62fr) minmax(160px, 1.35fr) minmax(76px, 0.62fr);
-}
-
-.board3d-card,
-.board3d-stack,
-.board3d-hand {
-  align-content: center;
-  background: rgba(226, 232, 240, 0.12);
-  border: 2px solid rgba(226, 232, 240, 0.26);
-  border-radius: 12px;
-  box-shadow:
-    0 16px 24px rgba(0, 0, 0, 0.24),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  display: grid;
-  min-height: 86px;
-  min-width: 0;
-  overflow: hidden;
-  padding: 7px;
-  position: relative;
-  text-align: center;
-  transform: translateZ(18px);
-  transform-style: preserve-3d;
-}
-
-.board3d-card.raised {
-  border-color: rgba(250, 204, 21, 0.6);
-  box-shadow:
-    0 26px 34px rgba(0, 0, 0, 0.34),
-    0 0 0 1px rgba(250, 204, 21, 0.24),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-  transform: translateZ(42px);
-}
-
-.board3d-card.creature {
-  background: linear-gradient(180deg, rgba(14, 165, 233, 0.16), rgba(15, 23, 42, 0.82));
-}
-
-.board3d-card.magic {
-  background: linear-gradient(180deg, rgba(168, 85, 247, 0.16), rgba(15, 23, 42, 0.82));
-}
-
-.board3d-card.empty {
-  border-style: dashed;
-  color: #94a3b8;
-}
-
-.board3d-zone-label {
-  background: rgba(2, 6, 23, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  color: #e0f2fe;
-  font-size: 0.52rem;
-  font-weight: 950;
-  justify-self: center;
-  max-width: 100%;
-  overflow: hidden;
-  padding: 2px 6px;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-  z-index: 2;
-}
-
-.board3d-card .match-card-art {
-  align-self: center;
-  aspect-ratio: 5 / 7;
-  border-radius: 6px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
-  height: clamp(54px, 7.8vh, 92px);
-  justify-self: center;
-  margin: 3px 0;
-  overflow: hidden;
-  width: auto;
-}
-
-.board3d-card.raised .match-card-art {
-  height: clamp(72px, 10vh, 120px);
-}
-
-.board3d-card .match-card-art img {
-  display: block;
-  height: 100%;
-  object-fit: cover;
-  width: 100%;
-}
-
-.board3d-card strong,
-.board3d-card small,
-.board3d-card em {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.board3d-card strong {
-  color: #f8fafc;
-  font-size: 0.64rem;
-  line-height: 1.05;
-}
-
-.board3d-card small,
-.board3d-card em {
-  color: #cbd5e1;
-  font-size: 0.56rem;
-  line-height: 1.05;
-}
-
-.board3d-stack.deck {
-  background: linear-gradient(180deg, rgba(250, 204, 21, 0.34), rgba(113, 63, 18, 0.78));
-}
-
-.board3d-stack.cemetery {
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.28), rgba(69, 10, 10, 0.82));
-}
-
-.board3d-stack span,
-.board3d-hand span {
-  color: #f8fafc;
-  font-size: 0.58rem;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.board3d-stack strong,
-.board3d-hand strong {
-  font-size: 1.5rem;
-  line-height: 1;
-}
-
-.board3d-stack small,
-.board3d-hand small {
-  color: #fef3c7;
-  font-size: 0.58rem;
-  font-weight: 900;
-}
-
-.board3d-hand {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.9));
-  min-height: 104px;
-}
-
-.board3d-hand-fan {
-  inset: auto 8px 8px 8px;
-  min-height: 72px;
-  pointer-events: none;
-  position: absolute;
-}
-
-.board3d-hand-card {
-  bottom: 0;
-  height: 78px;
-  left: calc(50% - 34px + (var(--fan-index) * 26px) - 39px);
-  position: absolute;
-  transform: translateZ(34px) rotate(calc((var(--fan-index) - 1.5) * 7deg));
-  transform-origin: 50% 100%;
-  width: 56px;
-}
-
-.board3d-hand-card .match-card-art,
-.board3d-hand-card .match-card-art img {
-  border-radius: 5px;
-  height: 100%;
-  object-fit: cover;
-  width: 100%;
-}
-
-.board3d-center-line {
-  align-items: center;
-  background:
-    linear-gradient(90deg, transparent, rgba(250, 204, 21, 0.2), transparent),
-    rgba(2, 6, 23, 0.48);
-  border-block: 1px solid rgba(250, 204, 21, 0.22);
-  display: grid;
-  gap: 2px;
-  justify-items: center;
-  margin: -4px 3%;
-  min-height: 48px;
-  position: relative;
-  text-align: center;
-  transform: translateZ(10px);
-  z-index: 3;
-}
-
-.board3d-center-line span {
-  color: #facc15;
-  font-size: 0.58rem;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.board3d-center-line strong {
-  font-size: 0.86rem;
-  text-transform: uppercase;
-}
-
-@media (max-width: 1100px) {
-  .board3d-shell {
-    min-height: 720px;
-  }
-
-  .board3d-table {
-    min-width: 920px;
-    width: 920px;
-  }
-
-  .board3d-viewport {
-    overflow-x: auto;
-  }
-}
-
-@media (max-width: 760px) {
-  .board3d-toolbar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .board3d-camera-toggle {
-    justify-content: stretch;
-  }
-
-  .board3d-camera-toggle button {
-    flex: 1;
-  }
-}
-
 .board-preview-3d__camera {
+  cursor: grab;
   height: 100%;
+  overflow: hidden;
   perspective: 1100px;
   perspective-origin: 50% 35%;
+  touch-action: none;
   width: 100%;
+}
+
+.board-preview-3d__camera.is-panning {
+  cursor: grabbing;
+}
+
+.board-preview-3d__camera-stage {
+  height: 100%;
+  transform-origin: 50% 50%;
+  width: 100%;
+  will-change: transform;
 }
 
 .board-preview-3d__table {
@@ -1899,8 +1419,11 @@
   background: rgba(2, 6, 23, 0.62);
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 10px;
+  max-height: min(52vh, 560px);
   margin-bottom: 8px;
+  overflow: auto;
   padding: 8px 10px;
+  scrollbar-gutter: stable;
 }
 
 .board-preview-3d__debug h4 {

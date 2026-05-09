@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CardDefinition, CardInstance, PlayerState } from "@ward/shared";
 import type { AppMatchState, CardLibraryCardSummary } from "../clientTypes";
-import { CardBoardView } from "./CardBoardView";
 import { BoardPreview3D } from "./BoardPreview3D";
 import {
   buildBoardObjects,
@@ -270,7 +269,6 @@ function buildPreviewMatch(cardLibrary: CardLibraryCardSummary[]): AppMatchState
 export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = null }: BoardPreviewPageProps) {
   const previewMatch = useMemo(() => liveMatch ?? buildPreviewMatch(cardLibrary), [cardLibrary, liveMatch]);
   const previewBoardObjects = useMemo(() => (previewMatch ? buildBoardObjects(previewMatch) : []), [previewMatch]);
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
   const [lastInteraction, setLastInteraction] = useState<string>("None");
   const [dispatchHistory, setDispatchHistory] = useState<string[]>([]);
   const [pendingDispatches, setPendingDispatches] = useState<Array<{ requestId: string; label: string }>>([]);
@@ -612,27 +610,8 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
         <span>{liveMatch ? "Live Integration" : "Preview Only"}</span>
       </div>
 
-      <div className="board-preview-view-toggle" role="tablist" aria-label="Board preview mode">
-        <button
-          type="button"
-          className={viewMode === "3d" ? "active" : undefined}
-          onClick={() => setViewMode("3d")}
-        >
-          3D Prototype
-        </button>
-        <button
-          type="button"
-          className={viewMode === "2d" ? "active" : undefined}
-          onClick={() => setViewMode("2d")}
-        >
-          2D Existing Board
-        </button>
-      </div>
-
-      {viewMode === "3d" ? (
-        <>
-          <p className="board-preview-3d__status">Last interaction: {lastInteraction}</p>
-          {liveMatch ? (
+      <p className="board-preview-3d__status">Last interaction: {lastInteraction}</p>
+      {liveMatch ? (
           <div className="board-preview-3d__controls" aria-label="Summon targeting bridge">
             <p className="board-preview-3d__status">
               Focused slot: {focusedSlot ? `${focusedSlot.label} (${focusedSlot.id})` : "none"}
@@ -753,32 +732,22 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
           ) : (
             <p className="board-preview-3d__status">Dispatch bridge controls are only enabled when a live match is active.</p>
           )}
-          <BoardPreview3D
-            match={previewMatch}
-            adminView
-            onSlotFocus={(event) => {
-              const intent = buildInteractionIntentFromSlotFocus(event);
-              setLastInteraction(JSON.stringify(intent));
-              setFocusedSlotId(intent.slotId ?? null);
-              if (intent.owner) {
-                setSummonPlayerId(intent.owner);
-              }
-            }}
-            onPieceFocus={(event) => {
-              const intent = buildInteractionIntentFromPieceFocus(event, previewBoardObjects);
-              setLastInteraction(JSON.stringify(intent));
-            }}
-          />
-        </>
-      ) : (
-        <section className="match-workspace match-workspace-board board-preview-workspace">
-          <CardBoardView
-            match={previewMatch}
-            players={previewMatch.players}
-            controlledPlayerId="player_1"
-          />
-        </section>
-      )}
+      <BoardPreview3D
+        match={previewMatch}
+        adminView
+        onSlotFocus={(event) => {
+          const intent = buildInteractionIntentFromSlotFocus(event);
+          setLastInteraction(JSON.stringify(intent));
+          setFocusedSlotId(intent.slotId ?? null);
+          if (intent.owner) {
+            setSummonPlayerId(intent.owner);
+          }
+        }}
+        onPieceFocus={(event) => {
+          const intent = buildInteractionIntentFromPieceFocus(event, previewBoardObjects);
+          setLastInteraction(JSON.stringify(intent));
+        }}
+      />
     </section>
   );
 }

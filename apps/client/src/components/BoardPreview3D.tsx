@@ -23,7 +23,13 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
   const [tiltDegrees, setTiltDegrees] = useState(60);
   const [zoomScale, setZoomScale] = useState(1);
   const [heightScale, setHeightScale] = useState(1);
-  const [showDebugPanel, setShowDebugPanel] = useState(true);
+  const [boardScaleX, setBoardScaleX] = useState(1);
+  const [boardScaleZ, setBoardScaleZ] = useState(1);
+  const [boardOffsetX, setBoardOffsetX] = useState(0);
+  const [boardOffsetZ, setBoardOffsetZ] = useState(0);
+  const [cameraPanX, setCameraPanX] = useState(0);
+  const [cameraPanY, setCameraPanY] = useState(0);
+  const [showDebugPanel, setShowDebugPanel] = useState(() => (globalThis.innerHeight ? globalThis.innerHeight > 980 : true));
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>("player_1-primary");
   const [slotOffsets, setSlotOffsets] = useState<BoardSlotOffsetMap>({});
   const [nudgeStep, setNudgeStep] = useState(1);
@@ -53,6 +59,12 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
         tiltDegrees?: number;
         zoomScale?: number;
         heightScale?: number;
+        boardScaleX?: number;
+        boardScaleZ?: number;
+        boardOffsetX?: number;
+        boardOffsetZ?: number;
+        cameraPanX?: number;
+        cameraPanY?: number;
         showDebugPanel?: boolean;
         selectedSlotId?: string | null;
         slotOffsets?: BoardSlotOffsetMap;
@@ -65,6 +77,12 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
       if (typeof parsed.tiltDegrees === "number") setTiltDegrees(parsed.tiltDegrees);
       if (typeof parsed.zoomScale === "number") setZoomScale(parsed.zoomScale);
       if (typeof parsed.heightScale === "number") setHeightScale(parsed.heightScale);
+      if (typeof parsed.boardScaleX === "number") setBoardScaleX(parsed.boardScaleX);
+      if (typeof parsed.boardScaleZ === "number") setBoardScaleZ(parsed.boardScaleZ);
+      if (typeof parsed.boardOffsetX === "number") setBoardOffsetX(parsed.boardOffsetX);
+      if (typeof parsed.boardOffsetZ === "number") setBoardOffsetZ(parsed.boardOffsetZ);
+      if (typeof parsed.cameraPanX === "number") setCameraPanX(parsed.cameraPanX);
+      if (typeof parsed.cameraPanY === "number") setCameraPanY(parsed.cameraPanY);
       if (typeof parsed.showDebugPanel === "boolean") setShowDebugPanel(parsed.showDebugPanel);
       if (typeof parsed.selectedSlotId === "string" || parsed.selectedSlotId === null) setSelectedSlotId(parsed.selectedSlotId);
       if (parsed.slotOffsets) setSlotOffsets(parsed.slotOffsets);
@@ -91,9 +109,9 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
     if (!hydrated) return;
     globalThis.localStorage?.setItem(
       "ward.boardPreview3D.settings",
-      JSON.stringify({ tiltDegrees, zoomScale, heightScale, showDebugPanel, selectedSlotId, slotOffsets, nudgeStep, showAnchors, ownerFilter, showDiagnostics, integrationMode })
+      JSON.stringify({ tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, nudgeStep, showAnchors, ownerFilter, showDiagnostics, integrationMode })
     );
-  }, [heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, tiltDegrees, zoomScale]);
+  }, [boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, tiltDegrees, zoomScale]);
 
 
   const slotById = useMemo(() => new Map(BOARD_SLOTS.map((slot) => [slot.id, slot])), []);
@@ -134,6 +152,12 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
     setTiltDegrees(60);
     setZoomScale(1);
     setHeightScale(1);
+    setBoardScaleX(1);
+    setBoardScaleZ(1);
+    setBoardOffsetX(0);
+    setBoardOffsetZ(0);
+    setCameraPanX(0);
+    setCameraPanY(0);
   };
 
   const resetAllEditorState = () => {
@@ -194,8 +218,13 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
     }
   };
 
-  const resolvePosition = (slotId: string, fallbackX: number, fallbackZ: number) =>
-    resolveSlotPosition(slotId, slotOffsets, fallbackX, fallbackZ);
+  const resolvePosition = (slotId: string, fallbackX: number, fallbackZ: number) => {
+    const raw = resolveSlotPosition(slotId, slotOffsets, fallbackX, fallbackZ);
+    return {
+      xPercent: Math.max(0, Math.min(100, 50 + (raw.xPercent - 50) * boardScaleX + boardOffsetX)),
+      zPercent: Math.max(0, Math.min(100, 50 + (raw.zPercent - 50) * boardScaleZ + boardOffsetZ))
+    };
+  };
 
   const slotOccupancy = BOARD_SLOTS.map((slot) => ({
     slot,
@@ -299,6 +328,18 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
         setZoomScale={setZoomScale}
         heightScale={heightScale}
         setHeightScale={setHeightScale}
+        boardScaleX={boardScaleX}
+        setBoardScaleX={setBoardScaleX}
+        boardScaleZ={boardScaleZ}
+        setBoardScaleZ={setBoardScaleZ}
+        boardOffsetX={boardOffsetX}
+        setBoardOffsetX={setBoardOffsetX}
+        boardOffsetZ={boardOffsetZ}
+        setBoardOffsetZ={setBoardOffsetZ}
+        cameraPanX={cameraPanX}
+        setCameraPanX={setCameraPanX}
+        cameraPanY={cameraPanY}
+        setCameraPanY={setCameraPanY}
         ownerFilter={ownerFilter}
         setOwnerFilter={setOwnerFilter}
         showDebugPanel={showDebugPanel}
@@ -355,6 +396,11 @@ export function BoardPreview3D({ match, adminView = false, onSlotFocus, onPieceF
         />
         <BoardPreview3DTable
           zoomScale={zoomScale}
+          setZoomScale={setZoomScale}
+          cameraPanX={cameraPanX}
+          setCameraPanX={setCameraPanX}
+          cameraPanY={cameraPanY}
+          setCameraPanY={setCameraPanY}
           tiltDegrees={tiltDegrees}
           heightScale={heightScale}
           showAnchors={showAnchors}
