@@ -22,6 +22,8 @@ import { MatchStatePanel } from "./components/MatchStatePanel";
 import { CardBoardView } from "./components/CardBoardView";
 import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { BoardPreview3D } from "./components/BoardPreview3D";
+import type { PointerGestureIntent } from "./components/boardInteractionIntents";
+import type { BoardIntentCommand } from "./components/boardIntentCommands";
 import { PlayerPanel } from "./components/PlayerPanel";
 import { ProfilePage } from "./components/ProfilePage";
 import { SaveLoadPanel } from "./components/SaveLoadPanel";
@@ -170,6 +172,8 @@ export default function App() {
   const [dashboardModal, setDashboardModal] = useState<DashboardModal>(null);
   const [activePage, setActivePage] = useState<AppPage>(() => parseRequestedPage(window.location.search) ?? "play");
   const [playViewMode, setPlayViewMode] = useState<PlayViewMode>("board");
+  const [lastBoardIntentLabel, setLastBoardIntentLabel] = useState("");
+  const [lastBoardCommandLabel, setLastBoardCommandLabel] = useState("");
   const [effectDevFocusedCardKey, setEffectDevFocusedCardKey] = useState("");
   const [effectCoverageFocusedCardKey, setEffectCoverageFocusedCardKey] = useState("");
   const [llmStatus, setLlmStatus] = useState<LlmServiceStatus | undefined>();
@@ -2029,32 +2033,53 @@ export default function App() {
                       adminView={canUseDevTools}
                       presentation="game"
                       defaultIntegrationMode
+                      onIntent={(intent: PointerGestureIntent) => {
+                        const label = intent.kind === "NO_OP"
+                          ? `Blocked: ${intent.reason}`
+                          : intent.kind === "SELECT_SLOT"
+                            ? `Slot: ${intent.slotId}`
+                            : `Piece: ${intent.pieceId}`;
+                        setLastBoardIntentLabel(label);
+                      }}
+                      onIntentCommand={(command: BoardIntentCommand) => {
+                        const label = command.kind === "NONE"
+                          ? `Command: none (${command.reason})`
+                          : command.kind === "FOCUS_SLOT"
+                            ? `Command: focus slot ${command.slotId}`
+                            : `Command: focus piece ${command.cardInstanceId ?? command.pieceId}`;
+                        setLastBoardCommandLabel(label);
+                      }}
+                      actionDock={(
+                        <CompactMatchControlPanel
+                          match={match}
+                          advanceBlockReason={advanceBlockReason}
+                          controlledPlayerId={controlledPlayerId}
+                          onShuffleAllDecks={shuffleAllDecks}
+                          onUndoLastAction={undoLastAction}
+                          onDrawActivePlayer={drawActivePlayer}
+                          onStartManualBattle={startManualBattle}
+                          onUpdateCannotInflictAttackDamageBattlePolicy={updateCannotInflictAttackDamageBattlePolicy}
+                          onAdvancePhase={advancePhase}
+                          onOpenSaveLoad={() => setDashboardModal("save-load")}
+                          onOpenManualEffects={() => setDashboardModal("manual-effects")}
+                          onOpenBattleResult={() => setDashboardModal("battle-result")}
+                          onOpenDiceRoller={() => setDashboardModal("dice-roller")}
+                          onOpenEventLog={() => setDashboardModal("event-log")}
+                          onOpenMatchDetails={() => setDashboardModal("match-details")}
+                          onOpenEffectDebug={canUseDevTools ? () => setDashboardModal("effect-debug") : undefined}
+                        />
+                      )}
                     />
                   </div>
 
                   <aside className="live-3d-board-actions" aria-label="3D board engine controls">
-                    <section className="live-3d-board-panel">
-                      <h3>Engine Controls</h3>
-                      <CompactMatchControlPanel
-                        match={match}
-                        advanceBlockReason={advanceBlockReason}
-                        controlledPlayerId={controlledPlayerId}
-                        onShuffleAllDecks={shuffleAllDecks}
-                        onUndoLastAction={undoLastAction}
-                        onDrawActivePlayer={drawActivePlayer}
-                        onStartManualBattle={startManualBattle}
-                        onUpdateCannotInflictAttackDamageBattlePolicy={updateCannotInflictAttackDamageBattlePolicy}
-                        onAdvancePhase={advancePhase}
-                        onOpenSaveLoad={() => setDashboardModal("save-load")}
-                        onOpenManualEffects={() => setDashboardModal("manual-effects")}
-                        onOpenBattleResult={() => setDashboardModal("battle-result")}
-                        onOpenDiceRoller={() => setDashboardModal("dice-roller")}
-                        onOpenEventLog={() => setDashboardModal("event-log")}
-                        onOpenMatchDetails={() => setDashboardModal("match-details")}
-                        onOpenEffectDebug={canUseDevTools ? () => setDashboardModal("effect-debug") : undefined}
-                      />
-                    </section>
-
+                    {lastBoardIntentLabel ? (
+                      <section className="live-3d-board-panel">
+                        <h3>Board Intent</h3>
+                        <p>{lastBoardIntentLabel}</p>
+                        {lastBoardCommandLabel ? <small>{lastBoardCommandLabel}</small> : null}
+                      </section>
+                    ) : null}
                     {boardSidePanelContent ? (
                       <section className="live-3d-board-panel live-3d-board-pending">
                         {boardSidePanelContent}

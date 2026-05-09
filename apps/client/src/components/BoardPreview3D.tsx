@@ -1,11 +1,20 @@
-import { useEffect, useMemo, useState, type KeyboardEventHandler } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEventHandler, type ReactNode } from "react";
 import type { AppMatchState } from "../clientTypes";
 import { BOARD_SLOTS } from "./boardPreview3dLayout";
 import { BoardPreview3DControls } from "./boardPreview3d/BoardPreview3DControls";
 import { BoardPreview3DDebugPanel } from "./boardPreview3d/BoardPreview3DDebugPanel";
 import { BoardPreview3DMiniMap } from "./boardPreview3d/BoardPreview3DMiniMap";
 import { BoardPreview3DTable } from "./boardPreview3d/BoardPreview3DTable";
-import { buildBoardObjects, parseLayoutSnapshotJson, resolveSlotPosition, toLayoutSnapshot } from "./boardPreview3dAdapter";
+import { parseLayoutSnapshotJson, resolveSlotPosition, toLayoutSnapshot } from "./boardPreview3dAdapter";
+import { buildBoardInteractionContext, buildBoardRenderModel, translateGameEventsToBoardRenderEvents } from "./boardRenderAdapter";
+import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAnimationQueueToSequence, settleActiveBoardAnimation, startNextBoardAnimation } from "./boardAnimationQueue";
+import { getBoardAnimationProfile } from "./boardAnimationProfiles";
+import { decideBoardReconciliation } from "./boardRenderReconciliation";
+import { resolveBoardRuntimeMode } from "./boardRuntimeHealth";
+import { mapPointerGestureToIntent } from "./boardInteractionIntents";
+import type { PointerGestureIntent } from "./boardInteractionIntents";
+import type { BoardIntentCommand } from "./boardIntentCommands";
+import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
@@ -16,8 +25,11 @@ type BoardPreview3DProps = {
   adminView?: boolean;
   presentation?: "lab" | "game";
   defaultIntegrationMode?: boolean;
+  actionDock?: ReactNode;
   onSlotFocus?: (event: BoardSlotFocusEvent) => void;
   onPieceFocus?: (event: BoardPieceFocusEvent) => void;
+  onIntent?: (intent: PointerGestureIntent) => void;
+  onIntentCommand?: (command: BoardIntentCommand) => void;
 };
 
 export function BoardPreview3D({
@@ -25,10 +37,16 @@ export function BoardPreview3D({
   adminView = false,
   presentation = "lab",
   defaultIntegrationMode = false,
+  actionDock,
   onSlotFocus,
-  onPieceFocus
+  onPieceFocus,
+  onIntent,
+  onIntentCommand
 }: BoardPreview3DProps) {
-  const boardObjects = useMemo(() => buildBoardObjects(match), [match]);
+  const renderModel = useMemo(() => buildBoardRenderModel(match), [match]);
+  const interactionContext = useMemo(() => buildBoardInteractionContext(match), [match]);
+  const renderEvents = useMemo(() => translateGameEventsToBoardRenderEvents(match), [match]);
+  const boardObjects = renderModel.boardObjects;
   const storageKey = presentation === "game" ? `${BOARD_PREVIEW_STORAGE_KEY}.game` : BOARD_PREVIEW_STORAGE_KEY;
   const [tiltDegrees, setTiltDegrees] = useState(60);
   const [zoomScale, setZoomScale] = useState(1);
@@ -53,7 +71,54 @@ export function BoardPreview3D({
   const [lastCopiedLabel, setLastCopiedLabel] = useState<string | null>(null);
   const [ownerFilter, setOwnerFilter] = useState<"all" | "player_1" | "player_2">("all");
   const [integrationMode, setIntegrationMode] = useState(defaultIntegrationMode);
+  const [animationQueue, setAnimationQueue] = useState(createBoardAnimationQueueState);
+  const [runtimeMode, setRuntimeMode] = useState<"ANIMATED" | "FAST_FORWARD">("ANIMATED");
   const [hydrated, setHydrated] = useState(false);
+  const previousRenderModelRef = useRef<typeof renderModel | null>(null);
+
+  useEffect(() => {
+    setAnimationQueue(current => {
+      const decision = decideBoardReconciliation({
+        previousModel: previousRenderModelRef.current,
+        nextModel: renderModel,
+        queueCursor: current.cursor
+      });
+      previousRenderModelRef.current = renderModel;
+      if (decision.shouldResetQueue) {
+        return resetBoardAnimationQueueToSequence(current, renderModel.sequenceNumber);
+      }
+      return enqueueBoardRenderEvents(current, renderEvents);
+    });
+  }, [renderEvents, renderModel.sequenceNumber]);
+
+  useEffect(() => {
+    setAnimationQueue(current => startNextBoardAnimation(current));
+  }, [renderEvents]);
+
+  useEffect(() => {
+    const updateRuntimeMode = () => {
+      setRuntimeMode(resolveBoardRuntimeMode({
+        queue: animationQueue,
+        isDocumentHidden: Boolean(globalThis.document?.hidden)
+      }));
+    };
+    updateRuntimeMode();
+    globalThis.document?.addEventListener("visibilitychange", updateRuntimeMode);
+    return () => globalThis.document?.removeEventListener("visibilitychange", updateRuntimeMode);
+  }, [animationQueue]);
+
+  useEffect(() => {
+    if (!animationQueue.activeEvent) return;
+    const profile = getBoardAnimationProfile(animationQueue.activeEvent.type);
+    if (runtimeMode === "FAST_FORWARD") {
+      setAnimationQueue(current => settleActiveBoardAnimation(current));
+      return;
+    }
+    const timeout = globalThis.setTimeout(() => {
+      setAnimationQueue(current => settleActiveBoardAnimation(current));
+    }, profile.durationMs);
+    return () => globalThis.clearTimeout(timeout);
+  }, [animationQueue.activeEvent, runtimeMode]);
 
   useEffect(() => {
     const saved = globalThis.localStorage?.getItem(storageKey);
@@ -257,9 +322,42 @@ export function BoardPreview3D({
   };
 
   const selectSlot = (slotId: string, source: "mini-map" | "table" | "debug") => {
+    const intent = mapPointerGestureToIntent({ interaction: interactionContext, slotId });
+    const command = resolveBoardIntentCommand(intent, boardObjects);
+    onIntent?.(intent);
+    onIntentCommand?.(command);
+    if (intent.kind === "NO_OP") {
+      setStatusMessage(intent.reason);
+      return;
+    }
     setSelectedSlotId(slotId);
     onSlotFocus?.({ slotId, source });
   };
+
+  const selectPiece = (pieceId: string, source: "mini-map" | "table") => {
+    const intent = mapPointerGestureToIntent({ interaction: interactionContext, pieceId });
+    const command = resolveBoardIntentCommand(intent, boardObjects);
+    onIntent?.(intent);
+    onIntentCommand?.(command);
+    if (intent.kind === "NO_OP") {
+      setStatusMessage(intent.reason);
+      return;
+    }
+    onPieceFocus?.({ pieceId, source });
+  };
+
+  const activeEvent = animationQueue.activeEvent;
+  const animationHighlights = useMemo(() => {
+    if (!activeEvent) return { slotIds: [] as string[], pieceIds: [] as string[] };
+    const candidateSlotIds = activeEvent.visualTargets.slotIds.filter(value =>
+      BOARD_SLOTS.some(slot => slot.id === value)
+    );
+    const instanceIds = activeEvent.visualTargets.cardInstanceIds;
+    const pieceIds = boardObjects
+      .filter(object => instanceIds.some(instanceId => object.id.includes(instanceId)))
+      .map(object => object.id);
+    return { slotIds: [...new Set(candidateSlotIds)], pieceIds: [...new Set(pieceIds)] };
+  }, [activeEvent, boardObjects]);
 
   const copySelectedSlotSnapshot = async () => {
     if (!selectedSlotId) return;
@@ -329,8 +427,10 @@ export function BoardPreview3D({
         <h3>{presentation === "game" ? "3D game board" : "3D board iteration lab"}</h3>
         {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
         <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
+        <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
         {presentation === "lab" ? <p>Mouse pans and zooms the 3D board. Keyboard arrows nudge selected slots.</p> : null}
       </header>
+      {actionDock ? <div className="board-preview-3d__action-dock">{actionDock}</div> : null}
 
 
       <BoardPreview3DControls
@@ -404,7 +504,7 @@ export function BoardPreview3D({
           filteredBoardObjects={filteredBoardObjects}
           resolveSlotPosition={resolvePosition}
           onSelectSlot={(slotId) => selectSlot(slotId, "mini-map")}
-          onSelectPiece={(pieceId) => onPieceFocus?.({ pieceId, source: "mini-map" })}
+          onSelectPiece={(pieceId) => selectPiece(pieceId, "mini-map")}
         />
         <BoardPreview3DTable
           zoomScale={zoomScale}
@@ -420,7 +520,10 @@ export function BoardPreview3D({
           filteredBoardObjects={filteredBoardObjects}
           resolveSlotPosition={resolvePosition}
           onSelectSlot={(slotId) => selectSlot(slotId, "table")}
-          onSelectPiece={(pieceId) => onPieceFocus?.({ pieceId, source: "table" })}
+          onSelectPiece={(pieceId) => selectPiece(pieceId, "table")}
+          highlightedSlotIds={animationHighlights.slotIds}
+          highlightedPieceIds={animationHighlights.pieceIds}
+          activeEventType={activeEvent?.type ?? null}
         />
       </div>
     </section>
