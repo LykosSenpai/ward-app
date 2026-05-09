@@ -9,8 +9,8 @@ import type { CardArtKey } from "./CardImagePreview";
 type CardTypeFilter = "ALL" | "CREATURE" | "MAGIC";
 type DeckMembershipFilter = "ALL" | "IN_DECK" | "NOT_IN_DECK";
 type OwnershipFilter = "ALL" | "OWNED" | "MISSING";
-type TournamentLimitFilter = "ALL" | "LEGAL" | "LIMITED" | "BANNED";
 type TournamentLimitStatus = "LEGAL" | "LIMITED" | "BANNED";
+type DeckFormat = "FREE_PLAY" | "TOURNAMENT";
 type SortMode = "number" | "name" | "generation" | "deckCount" | "ownedCount" | "armorLevel" | "hp" | "speed";
 
 const FIXED_HOLO_INTENSITY = 10;
@@ -24,12 +24,14 @@ type CardLibraryPanelProps = {
   deckBuilderId: string;
   deckBuilderCardIds: string[];
   deckBuilderCardArtKeys: CardArtKey[];
+  deckBuilderFormat: DeckFormat;
   ownershipCounts: Record<string, number>;
   normalizeId: (value: string) => string;
   getDeckBuilderCounts: () => Record<string, number>;
   getDeckBuilderCardCount: (cardId: string) => number;
   onDeckNameChange: (value: string) => void;
   onDeckIdChange: (value: string) => void;
+  onDeckFormatChange: (value: DeckFormat) => void;
   onRefreshCardLibrary: () => void;
   onClearDeckBuilder: () => void;
   onNewDeck: () => void;
@@ -82,6 +84,10 @@ function getTournamentLimitStatus(card: CardLibraryCardSummary): TournamentLimit
   return "LEGAL";
 }
 
+function getEffectiveDeckLimit(card: CardLibraryCardSummary | undefined, format: DeckFormat): number {
+  return format === "TOURNAMENT" ? card?.deckLimit ?? 3 : 3;
+}
+
 function sanitizeCopies(value: string): number {
   const parsed = Number.parseInt(value, 10);
 
@@ -96,11 +102,13 @@ export function CardLibraryPanel({
   deckBuilderId,
   deckBuilderCardIds,
   deckBuilderCardArtKeys,
+  deckBuilderFormat,
   ownershipCounts,
   normalizeId,
   getDeckBuilderCounts,
   onDeckNameChange,
   onDeckIdChange,
+  onDeckFormatChange,
   onRefreshCardLibrary,
   onClearDeckBuilder,
   onNewDeck,
@@ -121,7 +129,6 @@ export function CardLibraryPanel({
   const [effectTypeFilter, setEffectTypeFilter] = useState("ALL");
   const [deckMembershipFilter, setDeckMembershipFilter] = useState<DeckMembershipFilter>("ALL");
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>("ALL");
-  const [tournamentLimitFilter, setTournamentLimitFilter] = useState<TournamentLimitFilter>("ALL");
   const [sortMode, setSortMode] = useState<SortMode>("number");
   const [selectedArtKeysByCardId, setSelectedArtKeysByCardId] = useState<Record<string, CardArtKey>>({});
   const [draggedCard, setDraggedCard] = useState<{ cardId: string; artKey: CardArtKey } | null>(null);
@@ -240,16 +247,16 @@ export function CardLibraryPanel({
 
     for (const [cardId, count] of Object.entries(deckCounts)) {
       const card = cardLibrary.find(item => item.id === cardId);
-      const deckLimit = card?.deckLimit ?? 3;
+      const deckLimit = getEffectiveDeckLimit(card, deckBuilderFormat);
       const ownedCount = getTotalOwnedCopiesForCard(cardId);
 
-      if (deckLimit <= 0 && count > 0) warnings.push(`${card?.name ?? cardId} is banned.`);
-      if (count > deckLimit) warnings.push(`${card?.name ?? cardId} has ${count}/${deckLimit} copies.`);
+      if (deckBuilderFormat === "TOURNAMENT" && deckLimit <= 0 && count > 0) warnings.push(`${card?.name ?? cardId} is banned.`);
+      if (deckBuilderFormat === "TOURNAMENT" && count > deckLimit) warnings.push(`${card?.name ?? cardId} has ${count}/${deckLimit} copies.`);
       if (ownedCount > 0 && count > ownedCount) warnings.push(`${card?.name ?? cardId} has ${count} deck copies but only ${ownedCount} total owned across art variants.`);
     }
 
     return warnings;
-  }, [cardLibrary, deckCounts, deckStats.creatureCount, deckStats.total, ownershipCounts, selectedArtKeysByCardId]);
+  }, [cardLibrary, deckBuilderFormat, deckCounts, deckStats.creatureCount, deckStats.total, ownershipCounts, selectedArtKeysByCardId]);
 
   const filteredCards = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
@@ -269,7 +276,7 @@ export function CardLibraryPanel({
         if (deckMembershipFilter === "NOT_IN_DECK" && deckCount > 0) return false;
         if (ownershipFilter === "OWNED" && ownedCount === 0) return false;
         if (ownershipFilter === "MISSING" && ownedCount > 0) return false;
-        if (tournamentLimitFilter !== "ALL" && getTournamentLimitStatus(card) !== tournamentLimitFilter) return false;
+        if (deckBuilderFormat === "TOURNAMENT" && getTournamentLimitStatus(card) === "BANNED") return false;
         if (normalizedSearch && !getCardSearchText(card).includes(normalizedSearch)) return false;
         return true;
       })
@@ -288,7 +295,7 @@ export function CardLibraryPanel({
 
         return getCardSortNumber(a).localeCompare(getCardSortNumber(b), undefined, { numeric: true }) || a.name.localeCompare(b.name);
       });
-  }, [cardLibrary, creatureTypeFilter, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, tournamentLimitFilter, typeFilter, selectedArtKeysByCardId]);
+  }, [cardLibrary, creatureTypeFilter, deckBuilderFormat, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
 
   const visibleCards = useMemo(
     () => filteredCards.slice(unloadedCardCount, visibleCardCount),
@@ -311,7 +318,6 @@ export function CardLibraryPanel({
     rarityFilter,
     searchText,
     sortMode,
-    tournamentLimitFilter,
     typeFilter
   ]);
 
@@ -415,7 +421,6 @@ export function CardLibraryPanel({
     setEffectTypeFilter("ALL");
     setDeckMembershipFilter("ALL");
     setOwnershipFilter("ALL");
-    setTournamentLimitFilter("ALL");
     setSortMode("number");
   }
 
@@ -459,7 +464,7 @@ export function CardLibraryPanel({
 
   function getCanAddCardToDeck(cardId: string) {
     const card = cardLibrary.find(item => item.id === cardId);
-    const deckLimit = card?.deckLimit ?? 3;
+    const deckLimit = getEffectiveDeckLimit(card, deckBuilderFormat);
     const deckCount = deckCounts[cardId] ?? 0;
 
     return !!card && deckLimit > 0 && deckCount < deckLimit && deckBuilderCardIds.length < 30;
@@ -508,7 +513,8 @@ export function CardLibraryPanel({
       name: deckBuilderName,
       deckId: normalizeId(deckBuilderId),
       cardIds: deckBuilderCardIds,
-      cardArtKeys: deckBuilderCardArtKeys
+      cardArtKeys: deckBuilderCardArtKeys,
+      format: deckBuilderFormat
     });
 
     setDeckShareString(value);
@@ -529,6 +535,7 @@ export function CardLibraryPanel({
 
       if (payload.name) onDeckNameChange(payload.name);
       if (payload.deckId) onDeckIdChange(normalizeId(payload.deckId));
+      onDeckFormatChange(payload.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY");
       onClearDeckBuilder();
 
       const counts = payload.cardIds.reduce<Record<string, { cardId: string; artKey: CardArtKey; count: number }>>((result, cardId, index) => {
@@ -563,7 +570,8 @@ export function CardLibraryPanel({
       name: deckBuilderName,
       deckId: normalizeId(deckBuilderId),
       cardIds: deckBuilderCardIds,
-      cardArtKeys: deckBuilderCardArtKeys
+      cardArtKeys: deckBuilderCardArtKeys,
+      format: deckBuilderFormat
     });
     const markdown = buildDeckNotesMarkdown({
       name: deckBuilderName || "WARD Deck",
@@ -589,6 +597,22 @@ export function CardLibraryPanel({
         <div className="library-option-a-title-block">
           <h3>Card Library + Deck Editor</h3>
           <p className="library-option-a-variant-hint">Art update: choose <strong>Default</strong> or <strong>Zero</strong> in each card, then toggle <strong>Holo Finish</strong>.</p>
+          <div className="library-option-a-format-toggle" role="group" aria-label="Deck format">
+            <button
+              type="button"
+              className={deckBuilderFormat === "FREE_PLAY" ? "active" : undefined}
+              onClick={() => onDeckFormatChange("FREE_PLAY")}
+            >
+              Free Play
+            </button>
+            <button
+              type="button"
+              className={deckBuilderFormat === "TOURNAMENT" ? "active" : undefined}
+              onClick={() => onDeckFormatChange("TOURNAMENT")}
+            >
+              Tournament Legal
+            </button>
+          </div>
           <div className="library-option-a-chip-row" aria-label="Library and deck summary">
             <span><strong>{librarySummary.total}</strong> cards</span>
             <span><strong>{librarySummary.creatures}</strong> creatures</span>
@@ -718,15 +742,6 @@ export function CardLibraryPanel({
                   </select>
                 </label>
 
-                <label>
-                  Tournament List
-                  <select value={tournamentLimitFilter} onChange={event => setTournamentLimitFilter(event.target.value as TournamentLimitFilter)}>
-                    <option value="ALL">All Cards</option>
-                    <option value="LEGAL">Legal Only</option>
-                    <option value="LIMITED">Limited Only</option>
-                    <option value="BANNED">Banned Only</option>
-                  </select>
-                </label>
               </div>
             </details>
           </div>
@@ -765,9 +780,11 @@ export function CardLibraryPanel({
                 const selectedArtKey = getSelectedArtKey(card.id);
                 const selectedArtLabel = getCardArtLabel(selectedArtKey);
                 const ownedCount = getOwnedCopiesForSelectedArt(card.id);
-                const deckLimit = card.deckLimit ?? 3;
+                const deckLimit = getEffectiveDeckLimit(card, deckBuilderFormat);
                 const canAdd = getCanAddCardToDeck(card.id);
-                const deckLimitLabel = deckLimit === 0 ? "BANNED" : deckLimit < 3 ? `LIMIT ${deckLimit}` : "LIMIT 3";
+                const deckLimitLabel = deckBuilderFormat === "TOURNAMENT"
+                  ? deckLimit === 0 ? "BANNED" : deckLimit < 3 ? `LIMIT ${deckLimit}` : "LEGAL"
+                  : "FREE PLAY";
                 const tournamentLimitStatus = getTournamentLimitStatus(card);
 
                 return (
@@ -922,7 +939,7 @@ export function CardLibraryPanel({
           ) : (
             <div className="builder-card-list current-deck-list unified-current-deck-list library-option-a-current-deck-list">
               {deckCards.map(({ cardId, artKey, count, card }) => {
-                const deckLimit = card?.deckLimit ?? 3;
+                const deckLimit = getEffectiveDeckLimit(card, deckBuilderFormat);
                 const ownedCount = getTotalOwnedCopiesForCard(cardId);
                 const artLabel = getCardArtLabel(artKey);
 

@@ -9,12 +9,14 @@ type LibraryDecksPageProps = {
   deckBuilderId: string;
   deckBuilderCardIds: string[];
   deckBuilderCardArtKeys: CardArtKey[];
+  deckBuilderFormat: "FREE_PLAY" | "TOURNAMENT";
   ownershipCounts: Record<string, number>;
   normalizeId: (value: string) => string;
   getDeckBuilderCounts: () => Record<string, number>;
   getDeckBuilderCardCount: (cardId: string) => number;
   onDeckNameChange: (value: string) => void;
   onDeckIdChange: (value: string) => void;
+  onDeckFormatChange: (value: "FREE_PLAY" | "TOURNAMENT") => void;
   onRefreshCardLibrary: () => void;
   onClearDeckBuilder: () => void;
   onNewDeck: () => void;
@@ -34,12 +36,14 @@ export function LibraryDecksPage({
   deckBuilderId,
   deckBuilderCardIds,
   deckBuilderCardArtKeys,
+  deckBuilderFormat,
   ownershipCounts,
   normalizeId,
   getDeckBuilderCounts,
   getDeckBuilderCardCount,
   onDeckNameChange,
   onDeckIdChange,
+  onDeckFormatChange,
   onRefreshCardLibrary,
   onClearDeckBuilder,
   onNewDeck,
@@ -60,12 +64,14 @@ export function LibraryDecksPage({
         deckBuilderId={deckBuilderId}
         deckBuilderCardIds={deckBuilderCardIds}
         deckBuilderCardArtKeys={deckBuilderCardArtKeys}
+        deckBuilderFormat={deckBuilderFormat}
         ownershipCounts={ownershipCounts}
         normalizeId={normalizeId}
         getDeckBuilderCounts={getDeckBuilderCounts}
         getDeckBuilderCardCount={getDeckBuilderCardCount}
         onDeckNameChange={onDeckNameChange}
         onDeckIdChange={onDeckIdChange}
+        onDeckFormatChange={onDeckFormatChange}
         onRefreshCardLibrary={onRefreshCardLibrary}
         onClearDeckBuilder={onClearDeckBuilder}
         onNewDeck={onNewDeck}

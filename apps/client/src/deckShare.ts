@@ -8,6 +8,7 @@ export type WardDeckSharePayload = {
   deckId?: string;
   cardIds: string[];
   cardArtKeys?: string[];
+  format?: "FREE_PLAY" | "TOURNAMENT";
   startingHandSize?: number;
   notes?: string;
 };
@@ -88,6 +89,7 @@ export function encodeWardDeckString(payload: Omit<WardDeckSharePayload, "v" | "
     deckId: payload.deckId?.trim() || undefined,
     cardIds,
     cardArtKeys: normalizeImportedCardArtKeys(payload.cardArtKeys, cardIds.length),
+    format: payload.format === "TOURNAMENT" ? "TOURNAMENT" : payload.format === "FREE_PLAY" ? "FREE_PLAY" : undefined,
     startingHandSize: Number.isFinite(payload.startingHandSize)
       ? Math.max(0, Math.floor(payload.startingHandSize ?? 0))
       : undefined,
@@ -120,6 +122,7 @@ export function decodeWardDeckString(value: string): WardDeckSharePayload {
     deckId: parsed.deckId ? String(parsed.deckId) : undefined,
     cardIds,
     cardArtKeys: normalizeImportedCardArtKeys(parsed.cardArtKeys, cardIds.length),
+    format: parsed.format === "TOURNAMENT" ? "TOURNAMENT" : parsed.format === "FREE_PLAY" ? "FREE_PLAY" : undefined,
     startingHandSize: Number.isFinite(parsed.startingHandSize)
       ? Math.max(0, Math.floor(parsed.startingHandSize ?? 0))
       : undefined,

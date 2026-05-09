@@ -419,6 +419,10 @@ function normalizeDeckCardArtKeys(cardArtKeys: string[] | undefined, cardCount: 
   return normalized.some(artKey => artKey !== "default") ? normalized : undefined;
 }
 
+function normalizeDeckFormat(value: unknown): "FREE_PLAY" | "TOURNAMENT" {
+  return value === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY";
+}
+
 function createId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -458,7 +462,8 @@ function getDeckDetailsForUser(user: AuthUser | null) {
       id: deck.id,
       name: deck.name,
       cardIds: deck.cardIds,
-      cardArtKeys: deck.cardArtKeys
+      cardArtKeys: deck.cardArtKeys,
+      format: normalizeDeckFormat(deck.format)
     };
   });
 }
@@ -3618,6 +3623,7 @@ io.on("connection", async socket => {
           name: deck.name,
           cardIds: deck.cardIds,
           cardArtKeys: deck.cardArtKeys,
+          format: normalizeDeckFormat(deck.format),
           mode: data.mode === "clone" ? "clone" : "edit"
         });
       } catch (error) {
@@ -3635,6 +3641,7 @@ io.on("connection", async socket => {
       packIds: string[];
       cardIds: string[];
       cardArtKeys?: string[];
+      format?: "FREE_PLAY" | "TOURNAMENT";
       overwrite?: boolean;
     }) => {
       try {
@@ -3648,7 +3655,8 @@ io.on("connection", async socket => {
               name: data.name,
               packIds: data.packIds,
               cardIds: data.cardIds,
-              cardArtKeys: data.cardArtKeys
+              cardArtKeys: data.cardArtKeys,
+              format: normalizeDeckFormat(data.format)
             });
 
             return;
@@ -3663,7 +3671,8 @@ io.on("connection", async socket => {
         }
 
         const cardCatalog = loadCardCatalog(data.packIds);
-        const cardLimits = loadCardLimitMap();
+        const deckFormat = normalizeDeckFormat(data.format);
+        const cardLimits = deckFormat === "TOURNAMENT" ? loadCardLimitMap() : {};
 
         const validation = validateDeckCardIds({
           cardIds: data.cardIds,
@@ -3683,7 +3692,8 @@ io.on("connection", async socket => {
           id: data.deckId,
           name: data.name.trim(),
           cardIds: data.cardIds,
-          cardArtKeys: normalizeDeckCardArtKeys(data.cardArtKeys, data.cardIds.length)
+          cardArtKeys: normalizeDeckCardArtKeys(data.cardArtKeys, data.cardIds.length),
+          format: deckFormat
         };
 
         saveUserDeckListToDisk(user.id, deck);

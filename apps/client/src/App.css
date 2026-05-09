@@ -2425,6 +2425,27 @@
   gap: 0.35rem;
 }
 
+.library-option-a-format-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0.25rem 0 0.45rem;
+  max-width: 360px;
+}
+
+.library-option-a-format-toggle button {
+  border-radius: 0.45rem;
+  font-size: 0.72rem;
+  min-height: 1.8rem;
+  padding: 0.22rem 0.55rem;
+}
+
+.library-option-a-format-toggle button.active {
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.76);
+  color: #dcfce7;
+}
+
 .library-option-a-chip-row span,
 .library-option-a-deck-stat-strip span {
   border: 1px solid rgba(96, 165, 250, 0.28);
@@ -5355,7 +5376,7 @@
 .deck-library-card-header {
   align-items: start;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 0.6rem;
 }
 
@@ -5376,6 +5397,30 @@
   color: #cbd5e1;
   font-size: 0.76rem;
   overflow-wrap: anywhere;
+}
+
+.deck-format-badge {
+  align-self: start;
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 999px;
+  color: #e2e8f0;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.28rem 0.48rem;
+  white-space: nowrap;
+}
+
+.deck-format-badge.tournament {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.62);
+  color: #bbf7d0;
+}
+
+.deck-format-badge.free-play {
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(96, 165, 250, 0.55);
+  color: #bfdbfe;
 }
 
 .deck-library-stat-row,

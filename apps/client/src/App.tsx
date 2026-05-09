@@ -70,6 +70,7 @@ import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview";
 type PlayViewMode = "board" | "board3d" | "split" | "text";
+type DeckFormat = "FREE_PLAY" | "TOURNAMENT";
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
 
@@ -163,6 +164,7 @@ export default function App() {
   const [deckBuilderId, setDeckBuilderId] = useState("new-test-deck");
   const [deckBuilderCardIds, setDeckBuilderCardIds] = useState<string[]>([]);
   const [deckBuilderCardArtKeys, setDeckBuilderCardArtKeys] = useState<CardArtKey[]>([]);
+  const [deckBuilderFormat, setDeckBuilderFormat] = useState<DeckFormat>("FREE_PLAY");
   const [manualEffectAmounts, setManualEffectAmounts] = useState<Record<string, string>>({});
   const [manualEffectStats, setManualEffectStats] = useState<Record<string, ManualEffectStatKey>>({});
   const [manualEffectDurations, setManualEffectDurations] = useState<Record<string, string>>({});
@@ -430,6 +432,7 @@ export default function App() {
 
         setDeckBuilderCardIds(data.cardIds);
         setDeckBuilderCardArtKeys(normalizeDeckArtKeys(data.cardArtKeys, data.cardIds.length));
+        setDeckBuilderFormat(data.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY");
         setSaveMessage(
           data.mode === "clone"
             ? `Loaded clone source: ${data.name}`
@@ -447,6 +450,7 @@ export default function App() {
         packIds: string[];
         cardIds: string[];
         cardArtKeys?: CardArtKey[];
+        format?: DeckFormat;
       }) => {
         const confirmed = window.confirm(
           `${data.message}\n\nOverwrite "${data.deckId}"?`
@@ -463,6 +467,7 @@ export default function App() {
           packIds: data.packIds,
           cardIds: data.cardIds,
           cardArtKeys: data.cardArtKeys,
+          format: data.format,
           overwrite: true
         });
       }
@@ -800,9 +805,15 @@ export default function App() {
     return getDeckBuilderCounts()[cardId] ?? 0;
   }
 
+  function getEffectiveDeckLimit(cardId: string): number {
+    if (deckBuilderFormat !== "TOURNAMENT") return 3;
+    const card = cardLibrary.find(item => item.id === cardId);
+    return card?.deckLimit ?? 3;
+  }
+
   function addCardToDeckBuilder(cardId: string, artKey: CardArtKey = "default") {
     const card = cardLibrary.find(item => item.id === cardId);
-    const deckLimit = card?.deckLimit ?? 3;
+    const deckLimit = getEffectiveDeckLimit(cardId);
     const count = getDeckBuilderCardCount(cardId);
 
     if (deckLimit <= 0) {
@@ -862,13 +873,14 @@ export default function App() {
     setDeckBuilderId("new-test-deck");
     setDeckBuilderCardIds([]);
     setDeckBuilderCardArtKeys([]);
+    setDeckBuilderFormat("FREE_PLAY");
     setError("");
     setSaveMessage("Started a new deck.");
   }
 
   function setDeckBuilderCardCopies(cardId: string, requestedCopyCount: number, artKey: CardArtKey = "default") {
     const card = cardLibrary.find(item => item.id === cardId);
-    const deckLimit = card?.deckLimit ?? 3;
+    const deckLimit = getEffectiveDeckLimit(cardId);
     const safeRequestedCount = Math.max(0, Math.floor(requestedCopyCount));
     const nextCopyCount = Math.min(safeRequestedCount, deckLimit, 30);
 
@@ -931,6 +943,7 @@ export default function App() {
     deckId?: string;
     cardIds: string[];
     cardArtKeys?: string[];
+    format?: DeckFormat;
   }) {
     const importedName = payload.name?.trim() || "Imported Deck";
     const importedDeckId = normalizeId(payload.deckId || importedName) || "imported-deck";
@@ -940,6 +953,7 @@ export default function App() {
     setDeckBuilderId(importedDeckId);
     setDeckBuilderCardIds(payload.cardIds);
     setDeckBuilderCardArtKeys(normalizeDeckArtKeys(payload.cardArtKeys, payload.cardIds.length));
+    setDeckBuilderFormat(payload.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY");
     setSaveMessage(`Imported ${payload.cardIds.length} cards into the deck editor.`);
     setActivePage("card-library");
   }
@@ -972,13 +986,12 @@ export default function App() {
 
     const counts = getDeckBuilderCounts();
     const overLimit = Object.entries(counts).filter(([cardId, count]) => {
-      const card = cardLibrary.find(item => item.id === cardId);
-      const deckLimit = card?.deckLimit ?? 3;
+      const deckLimit = getEffectiveDeckLimit(cardId);
 
       return count > deckLimit;
     });
 
-    if (overLimit.length > 0) {
+    if (deckBuilderFormat === "TOURNAMENT" && overLimit.length > 0) {
       setError("Deck contains cards over their banned/limited restriction.");
       return;
     }
@@ -989,6 +1002,7 @@ export default function App() {
       packIds: selectedPackIds,
       cardIds: deckBuilderCardIds,
       cardArtKeys: normalizeDeckArtKeys(deckBuilderCardArtKeys, deckBuilderCardIds.length),
+      format: deckBuilderFormat,
       overwrite: false
     });
   }
@@ -1906,6 +1920,7 @@ export default function App() {
             deckBuilderId={deckBuilderId}
             deckBuilderCardIds={deckBuilderCardIds}
             deckBuilderCardArtKeys={deckBuilderCardArtKeys}
+            deckBuilderFormat={deckBuilderFormat}
             ownershipCounts={cardOwnershipCounts}
             normalizeId={normalizeId}
             getDeckBuilderCounts={getDeckBuilderCounts}
@@ -1915,6 +1930,7 @@ export default function App() {
               setDeckBuilderId(normalizeId(value));
             }}
             onDeckIdChange={value => setDeckBuilderId(normalizeId(value))}
+            onDeckFormatChange={setDeckBuilderFormat}
             onRefreshCardLibrary={refreshCardLibrary}
             onClearDeckBuilder={clearDeckBuilder}
             onNewDeck={startNewDeckBuilder}

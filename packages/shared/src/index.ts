@@ -506,6 +506,7 @@ export type DeckListDefinition = {
   name: string;
   cardIds: string[];
   cardArtKeys?: string[];
+  format?: "FREE_PLAY" | "TOURNAMENT";
 };
 
 export type RevealedCardInfo = {

@@ -48,6 +48,7 @@ export type DeckDetail = {
   name: string;
   cardIds: string[];
   cardArtKeys?: string[];
+  format?: "FREE_PLAY" | "TOURNAMENT";
 };
 
 export type MatchLobbyStatus = "OPEN" | "IN_MATCH" | "CLOSED";

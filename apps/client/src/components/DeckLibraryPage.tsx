@@ -17,6 +17,7 @@ type DeckLibraryPageProps = {
     deckId?: string;
     cardIds: string[];
     cardArtKeys?: string[];
+    format?: "FREE_PLAY" | "TOURNAMENT";
   }) => void;
 };
 
@@ -74,6 +75,14 @@ function formatCardLine(card: CardLibraryCardSummary | undefined, cardId: string
   return `${getDisplayMagicType(card.magicType)} | ${card.magicSubType ?? "NONE"}`;
 }
 
+function getDeckFormat(deck: DeckDetail | undefined): "FREE_PLAY" | "TOURNAMENT" {
+  return deck?.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY";
+}
+
+function getDeckFormatLabel(deck: DeckDetail | undefined): string {
+  return getDeckFormat(deck) === "TOURNAMENT" ? "Tournament Legal" : "Free Play";
+}
+
 export function DeckLibraryPage({
   decks,
   deckDetails,
@@ -116,7 +125,8 @@ export function DeckLibraryPage({
       name: deck.name,
       deckId: deck.id,
       cardIds: detail.cardIds,
-      cardArtKeys: detail.cardArtKeys
+      cardArtKeys: detail.cardArtKeys,
+      format: getDeckFormat(detail)
     });
 
     try {
@@ -136,7 +146,8 @@ export function DeckLibraryPage({
         name: payload.name,
         deckId: payload.deckId,
         cardIds: payload.cardIds,
-        cardArtKeys: payload.cardArtKeys
+        cardArtKeys: payload.cardArtKeys,
+        format: payload.format
       });
       setImportCode("");
       setDeckMessage(
@@ -200,6 +211,9 @@ export function DeckLibraryPage({
                     <strong>{deck.name}</strong>
                     <span>{deck.id}</span>
                   </div>
+                  <span className={`deck-format-badge ${getDeckFormat(detail) === "TOURNAMENT" ? "tournament" : "free-play"}`}>
+                    {getDeckFormatLabel(detail)}
+                  </span>
                   <button onClick={() => setSelectedDeckId(deck.id)}>View</button>
                 </div>
 
@@ -248,6 +262,10 @@ export function DeckLibraryPage({
               <div>
                 <span className="label">Deck ID</span>
                 <strong>{selectedDeck.id}</strong>
+              </div>
+              <div>
+                <span className="label">Format</span>
+                <strong>{getDeckFormatLabel(selectedDeck)}</strong>
               </div>
               <div>
                 <span className="label">Cards</span>
