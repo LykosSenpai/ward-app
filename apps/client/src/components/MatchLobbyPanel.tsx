@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { AuthUser, CardPackSummary, DeckSummary, MatchLobby } from "../clientTypes";
 
+type LobbyFormat = "FREE_PLAY" | "TOURNAMENT";
+
 type MatchLobbyPanelProps = {
   user: AuthUser;
   lobbies: MatchLobby[];
@@ -10,7 +12,7 @@ type MatchLobbyPanelProps = {
   selectedPackIds: string[];
   onToggleSelectedPack: (packId: string) => void;
   onRefresh: () => void;
-  onCreateLobby: (data: { name: string }) => void;
+  onCreateLobby: (data: { name: string; format: LobbyFormat }) => void;
   onJoinLobby: (lobbyId: string) => void;
   onViewLobby: (lobbyId: string) => void;
   onLeaveLobby: (lobbyId: string) => void;
@@ -29,6 +31,14 @@ function getDeckName(decks: DeckSummary[], deckId?: string): string {
 
 function getLobbyPackName(pack: CardPackSummary): string {
   return pack.name.replace(/^WARD\s+/i, "");
+}
+
+function getLobbyFormat(lobby: MatchLobby | undefined): LobbyFormat {
+  return lobby?.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY";
+}
+
+function getLobbyFormatLabel(format: LobbyFormat): string {
+  return format === "TOURNAMENT" ? "Tournament" : "Free Play";
 }
 
 function getIsoTimeMs(value?: string): number {
@@ -87,8 +97,10 @@ export function MatchLobbyPanel({
   onCleanupStaleLobbies
 }: MatchLobbyPanelProps) {
   const [newLobbyName, setNewLobbyName] = useState(`${user.displayName}'s Match`);
+  const [newLobbyFormat, setNewLobbyFormat] = useState<LobbyFormat>("FREE_PLAY");
   const [nowMs, setNowMs] = useState(Date.now());
   const selectedLobby = activeLobby;
+  const selectedLobbyFormat = getLobbyFormat(selectedLobby);
   const selectedLobbyPlayer = selectedLobby?.players.find(player => player.userId === user.id);
   const isSelectedLobbyHost = selectedLobby?.hostUserId === user.id;
   const canJoinSelectedLobby = Boolean(
@@ -139,7 +151,7 @@ export function MatchLobbyPanel({
               <>
                 <div className="match-lobby-active-title">
                   <strong>{selectedLobby.name}</strong>
-                  <span>{selectedLobby.players.length}/2 seats filled</span>
+                  <span>{getLobbyFormatLabel(selectedLobbyFormat)} - {selectedLobby.players.length}/2 seats filled</span>
                 </div>
 
                 <div className="match-lobby-timer-grid">
@@ -190,6 +202,26 @@ export function MatchLobbyPanel({
             </label>
 
             <section className="match-lobby-fieldset">
+              <h4>Play Format</h4>
+              <div className="match-lobby-format-toggle" role="group" aria-label="Lobby play format">
+                <button
+                  type="button"
+                  className={newLobbyFormat === "FREE_PLAY" ? "selected" : ""}
+                  onClick={() => setNewLobbyFormat("FREE_PLAY")}
+                >
+                  Free Play
+                </button>
+                <button
+                  type="button"
+                  className={newLobbyFormat === "TOURNAMENT" ? "selected" : ""}
+                  onClick={() => setNewLobbyFormat("TOURNAMENT")}
+                >
+                  Tournament
+                </button>
+              </div>
+            </section>
+
+            <section className="match-lobby-fieldset">
               <h4>Card Packs</h4>
               {cardPacks.length === 0 ? (
                 <p className="empty-zone">No card packs found.</p>
@@ -217,7 +249,7 @@ export function MatchLobbyPanel({
             <button
               type="button"
               className="attention-button"
-              onClick={() => onCreateLobby({ name: newLobbyName })}
+              onClick={() => onCreateLobby({ name: newLobbyName, format: newLobbyFormat })}
               disabled={selectedPackIds.length === 0}
             >
               Create Lobby
@@ -245,6 +277,7 @@ export function MatchLobbyPanel({
                       <button type="button" className="match-lobby-card-body" onClick={() => onViewLobby(lobby.id)}>
                         <span className="match-lobby-status">{lobby.status}</span>
                         <strong>{lobby.name}</strong>
+                        <span>{getLobbyFormatLabel(getLobbyFormat(lobby))}</span>
                         <span>{lobby.players.length}/2 seats</span>
                         <span>Created {getLobbyAge(lobby, nowMs)} ago</span>
                         <span>Idle {getLobbyIdleTime(lobby, nowMs)}</span>

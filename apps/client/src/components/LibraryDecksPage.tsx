@@ -9,12 +9,14 @@ type LibraryDecksPageProps = {
   deckBuilderId: string;
   deckBuilderCardIds: string[];
   deckBuilderCardArtKeys: CardArtKey[];
+  deckBuilderFormat: "FREE_PLAY" | "TOURNAMENT";
   ownershipCounts: Record<string, number>;
   normalizeId: (value: string) => string;
   getDeckBuilderCounts: () => Record<string, number>;
   getDeckBuilderCardCount: (cardId: string) => number;
   onDeckNameChange: (value: string) => void;
   onDeckIdChange: (value: string) => void;
+  onDeckFormatChange: (value: "FREE_PLAY" | "TOURNAMENT") => void;
   onRefreshCardLibrary: () => void;
   onClearDeckBuilder: () => void;
   onNewDeck: () => void;
@@ -23,6 +25,8 @@ type LibraryDecksPageProps = {
   onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
+  canUseDevTools?: boolean;
+  onSaveCardLimit?: (cardId: string, status: "LEGAL" | "LIMITED" | "BANNED") => void;
 };
 
 export function LibraryDecksPage({
@@ -32,12 +36,14 @@ export function LibraryDecksPage({
   deckBuilderId,
   deckBuilderCardIds,
   deckBuilderCardArtKeys,
+  deckBuilderFormat,
   ownershipCounts,
   normalizeId,
   getDeckBuilderCounts,
   getDeckBuilderCardCount,
   onDeckNameChange,
   onDeckIdChange,
+  onDeckFormatChange,
   onRefreshCardLibrary,
   onClearDeckBuilder,
   onNewDeck,
@@ -45,7 +51,9 @@ export function LibraryDecksPage({
   onRemoveCard,
   onSetCardCopies,
   onSetOwnedCopies,
-  onSaveDeck
+  onSaveDeck,
+  canUseDevTools = false,
+  onSaveCardLimit
 }: LibraryDecksPageProps) {
   return (
     <section className="library-decks-page library-decks-page-compact">
@@ -56,12 +64,14 @@ export function LibraryDecksPage({
         deckBuilderId={deckBuilderId}
         deckBuilderCardIds={deckBuilderCardIds}
         deckBuilderCardArtKeys={deckBuilderCardArtKeys}
+        deckBuilderFormat={deckBuilderFormat}
         ownershipCounts={ownershipCounts}
         normalizeId={normalizeId}
         getDeckBuilderCounts={getDeckBuilderCounts}
         getDeckBuilderCardCount={getDeckBuilderCardCount}
         onDeckNameChange={onDeckNameChange}
         onDeckIdChange={onDeckIdChange}
+        onDeckFormatChange={onDeckFormatChange}
         onRefreshCardLibrary={onRefreshCardLibrary}
         onClearDeckBuilder={onClearDeckBuilder}
         onNewDeck={onNewDeck}
@@ -70,6 +80,8 @@ export function LibraryDecksPage({
         onSetCardCopies={onSetCardCopies}
         onSetOwnedCopies={onSetOwnedCopies}
         onSaveDeck={onSaveDeck}
+        canUseDevTools={canUseDevTools}
+        onSaveCardLimit={onSaveCardLimit}
       />
     </section>
   );

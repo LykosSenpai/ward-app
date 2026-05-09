@@ -52,25 +52,3 @@ Last updated: 2026-05-09
 
 ### Remaining
 - None for documentation/release-planning scope. Execute operational monitoring checklist during rollout window.
-
-## PR A — Board-native turn controls (in progress)
-### Completed in this pass
-- Moved live `actionDock` placement into the board column so shuffle/draw/advance controls sit with the 3D board view.
-- Added deck-slot click hook in `BoardPreview3DTable` and wired live app behavior to draw when clicking the active player deck slot.
-
-### Pending
-- Legacy preview bridge forms are now dev-flagged (`?legacyBridge=1`) and hidden by default in live use.
-- No additional PR A blockers for live board-native controls.
-
-
-## PR B — 3D interaction parity polish (in progress)
-### Completed in this pass
-- Added legal target slot highlighting when a hand card is selected in the live 3D board.
-- Added battle-target slot highlighting and in-board quick battle action from selected piece.
-- Kept both click-to-place and drag/drop hand interactions active for parity testing.
-- Added battle/prompt smoke checks in automation (`check:board-3d-battle-smoke`) and included it in integration pipeline.
-- Added multiplayer matrix smoke checks (`check:board-3d-multiplayer-smoke`) and included them in integration pipeline.
-
-### Pending
-- None for repository validation scope; run live two-client seat/spectator verification during operational test match signoff.
-

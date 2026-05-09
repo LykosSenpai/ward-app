@@ -55,6 +55,7 @@ export function create1v1MatchFromDeckCardIds(options: {
   exactDeckSize?: number | null;
   defaultCopyLimit?: number;
   allowNoCreatures?: boolean;
+  tournamentMode?: boolean;
 }): MatchState {
   const player1Id = "player_1";
   const player2Id = "player_2";
@@ -155,7 +156,7 @@ export function create1v1MatchFromDeckCardIds(options: {
     settings: {
       cemeteryHpLimit: 300,
       eliminationMode: "called_out",
-      tournamentMode: false,
+      tournamentMode: Boolean(options.tournamentMode),
       cannotInflictAttackDamageBattlePolicy: "SKIP_BATTLE"
     },
 

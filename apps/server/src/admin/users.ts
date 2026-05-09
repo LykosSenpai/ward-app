@@ -9,7 +9,7 @@ type UserRow = {
   username: string;
   email: string;
   display_name: string;
-  role: "PLAYER" | "DEVELOPER" | "ADMIN";
+  role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   dev_tools_enabled: boolean;
   created_at: Date;
   owned_unique_cards: string | number;
@@ -33,7 +33,7 @@ WARD local user admin
 Commands:
   pnpm user:list
   pnpm user:set-email <username> <email>
-  pnpm user:set-role <username> <PLAYER|DEVELOPER|ADMIN>
+  pnpm user:set-role <username> <PLAYER|HOST|DEVELOPER|ADMIN>
   pnpm user:set-dev-tools <username> <on|off>
   pnpm user:reset-password <username> <new-password>
   pnpm user:delete <username>
@@ -127,8 +127,8 @@ async function setEmail(usernameArg: string | undefined, emailArg: string | unde
 function normalizeRole(value: string): UserRow["role"] {
   const role = value.trim().toUpperCase();
 
-  if (role !== "PLAYER" && role !== "DEVELOPER" && role !== "ADMIN") {
-    throw new Error("Role must be PLAYER, DEVELOPER, or ADMIN.");
+  if (role !== "PLAYER" && role !== "HOST" && role !== "DEVELOPER" && role !== "ADMIN") {
+    throw new Error("Role must be PLAYER, HOST, DEVELOPER, or ADMIN.");
   }
 
   return role;
@@ -146,7 +146,7 @@ function parseToggle(value: string): boolean {
 async function setRole(usernameArg: string | undefined, roleArg: string | undefined): Promise<void> {
   const username = normalizeUsername(requireArg(usernameArg, "username"));
   const role = normalizeRole(requireArg(roleArg, "role"));
-  const devToolsEnabled = role === "PLAYER" ? false : undefined;
+  const devToolsEnabled = role === "PLAYER" || role === "HOST" ? false : undefined;
 
   const result = await getDbPool().query<UserRow>(
     `
@@ -190,8 +190,8 @@ async function setDevTools(usernameArg: string | undefined, enabledArg: string |
     throw new Error(`User not found: ${username}`);
   }
 
-  if (enabled && user.role === "PLAYER") {
-    throw new Error(`${user.username} is a PLAYER. Set role to DEVELOPER or ADMIN before enabling dev tools.`);
+  if (enabled && (user.role === "PLAYER" || user.role === "HOST")) {
+    throw new Error(`${user.username} is a ${user.role}. Set role to DEVELOPER or ADMIN before enabling dev tools.`);
   }
 
   console.log(`Updated ${user.username} developer tools to ${user.dev_tools_enabled ? "on" : "off"}.`);

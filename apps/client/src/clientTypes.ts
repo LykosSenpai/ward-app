@@ -9,7 +9,7 @@ export type AuthUser = {
   id: string;
   username: string;
   displayName: string;
-  role: "PLAYER" | "DEVELOPER" | "ADMIN";
+  role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   canAccessDevTools: boolean;
   devToolsEnabled: boolean;
 };
@@ -48,6 +48,30 @@ export type DeckDetail = {
   name: string;
   cardIds: string[];
   cardArtKeys?: string[];
+  format?: "FREE_PLAY" | "TOURNAMENT";
+  ownerUserId?: string;
+  ownerDisplayName?: string;
+  tournamentProofPhotos?: TournamentDeckProofPhoto[];
+  tournamentVerification?: TournamentDeckVerification;
+};
+
+export type TournamentDeckProofPhoto = {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  uploadedByUserId: string;
+  url?: string;
+};
+
+export type TournamentDeckVerification = {
+  status: "UNSUBMITTED" | "PENDING" | "VERIFIED" | "REJECTED";
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewedByUserId?: string;
+  reviewedByDisplayName?: string;
+  notes?: string;
 };
 
 export type MatchLobbyStatus = "OPEN" | "IN_MATCH" | "CLOSED";
@@ -64,6 +88,7 @@ export type MatchLobby = {
   id: string;
   name: string;
   status: MatchLobbyStatus;
+  format?: "FREE_PLAY" | "TOURNAMENT";
   hostUserId: string;
   selectedPackIds: string[];
   matchId?: string;

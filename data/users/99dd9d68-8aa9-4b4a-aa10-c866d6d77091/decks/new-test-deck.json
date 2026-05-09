@@ -24,13 +24,15 @@
     "gen3_009_hoggan",
     "gen3_009_hoggan",
     "gen1_063_holy_light",
-    "gen1_063_holy_light",
-    "gen1_063_holy_light",
     "gen1_117_holy_water",
     "gen1_117_holy_water",
     "gen1_117_holy_water",
     "gen1_064_hourglass_of_time",
     "gen1_064_hourglass_of_time",
-    "gen1_064_hourglass_of_time"
-  ]
+    "gen1_064_hourglass_of_time",
+    "gen1_005_goblin",
+    "gen1_005_goblin"
+  ],
+  "format": "TOURNAMENT",
+  "tournamentProofPhotos": []
 }
