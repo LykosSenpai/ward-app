@@ -5,6 +5,7 @@ import { BoardPreview3DControls } from "./boardPreview3d/BoardPreview3DControls"
 import { BoardPreview3DDebugPanel } from "./boardPreview3d/BoardPreview3DDebugPanel";
 import { BoardPreview3DMiniMap } from "./boardPreview3d/BoardPreview3DMiniMap";
 import { BoardPreview3DTable } from "./boardPreview3d/BoardPreview3DTable";
+import { MatchCardImage } from "./MatchCardImage";
 import { parseLayoutSnapshotJson, resolveSlotPosition, toLayoutSnapshot } from "./boardPreview3dAdapter";
 import { buildBoardInteractionContext, buildBoardRenderModel, translateGameEventsToBoardRenderEvents } from "./boardRenderAdapter";
 import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAnimationQueueToSequence, settleActiveBoardAnimation, startNextBoardAnimation } from "./boardAnimationQueue";
@@ -26,6 +27,12 @@ type BoardPreview3DProps = {
   presentation?: "lab" | "game";
   defaultIntegrationMode?: boolean;
   actionDock?: ReactNode;
+  onDeckSlotClick?: (slotId: string) => void;
+  controlledPlayerId?: "player_1" | "player_2" | null;
+  onPlayHandCardToSlot?: (cardInstanceId: string, slotId: string) => void;
+  onStartBattleFromPiece?: (cardInstanceId: string) => void;
+  intentLabel?: string;
+  commandLabel?: string;
   onSlotFocus?: (event: BoardSlotFocusEvent) => void;
   onPieceFocus?: (event: BoardPieceFocusEvent) => void;
   onIntent?: (intent: PointerGestureIntent) => void;
@@ -38,6 +45,12 @@ export function BoardPreview3D({
   presentation = "lab",
   defaultIntegrationMode = false,
   actionDock,
+  onDeckSlotClick,
+  controlledPlayerId = null,
+  onPlayHandCardToSlot,
+  onStartBattleFromPiece,
+  intentLabel = "",
+  commandLabel = "",
   onSlotFocus,
   onPieceFocus,
   onIntent,
@@ -73,7 +86,10 @@ export function BoardPreview3D({
   const [integrationMode, setIntegrationMode] = useState(defaultIntegrationMode);
   const [animationQueue, setAnimationQueue] = useState(createBoardAnimationQueueState);
   const [runtimeMode, setRuntimeMode] = useState<"ANIMATED" | "FAST_FORWARD">("ANIMATED");
+  const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [hudMode, setHudMode] = useState<"player" | "debug">("player");
+  const [controlsCollapsed, setControlsCollapsed] = useState(true);
   const previousRenderModelRef = useRef<typeof renderModel | null>(null);
 
   useEffect(() => {
@@ -191,6 +207,36 @@ export function BoardPreview3D({
   }, [boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, storageKey, tiltDegrees, zoomScale]);
 
   const slotById = useMemo(() => new Map(BOARD_SLOTS.map((slot) => [slot.id, slot])), []);
+  const focusedPlayerId = controlledPlayerId ?? match.turn.activePlayerId;
+  const handCards = useMemo(() => {
+    const player = match.players.find((item) => item.id === focusedPlayerId);
+    return player?.hand ?? [];
+  }, [focusedPlayerId, match.players]);
+  const legalTargetSlotIds = useMemo(() => {
+    if (!selectedHandCardId) return [] as string[];
+    const selectedCard = handCards.find(card => card.instanceId === selectedHandCardId);
+    if (!selectedCard) return [] as string[];
+    const definition = match.cardCatalog[selectedCard.cardId];
+    if (!definition) return [] as string[];
+    if (definition.cardType === "CREATURE") {
+      return [`${focusedPlayerId}-primary`];
+    }
+    if (definition.cardType === "MAGIC") {
+      return Array.from({ length: 5 }, (_, index) => `${focusedPlayerId}-magic-${index + 1}`);
+    }
+    return [] as string[];
+  }, [focusedPlayerId, handCards, match.cardCatalog, selectedHandCardId]);
+  const selectedBattlePiece = useMemo(() => {
+    if (!selectedSlotId) return null;
+    const piece = boardObjects.find(item => item.slotId === selectedSlotId && item.owner === focusedPlayerId);
+    if (!piece?.cardInstanceId) return null;
+    return piece;
+  }, [boardObjects, focusedPlayerId, selectedSlotId]);
+  const battleTargetSlotIds = useMemo(() => {
+    if (!selectedBattlePiece) return [] as string[];
+    const defender = focusedPlayerId === "player_1" ? "player_2-primary" : "player_1-primary";
+    return [defender];
+  }, [focusedPlayerId, selectedBattlePiece]);
 
   useEffect(() => {
     if (!statusMessage) return;
@@ -384,6 +430,24 @@ export function BoardPreview3D({
   const selectedOffset = selectedSlotId ? slotOffsets[selectedSlotId as BoardSlotId] ?? { x: 0, z: 0 } : { x: 0, z: 0 };
   const unresolvedBoardObjects = boardObjects.filter((object) => !slotById.has(object.slotId));
   const filteredBoardObjects = ownerFilter === "all" ? boardObjects : boardObjects.filter((object) => object.owner === ownerFilter);
+  const cardByInstanceId = useMemo(() => {
+    const cards = match.players.flatMap(player => [
+      ...player.hand,
+      ...player.deck,
+      ...player.field.limitedSummons,
+      ...player.field.magicSlots.filter(Boolean),
+      ...(player.field.primaryCreature ? [player.field.primaryCreature] : [])
+    ]);
+    return new Map(cards.map(card => [card.instanceId, card]));
+  }, [match.players]);
+  const blockedReasonsBySlotId = useMemo<Record<string, string>>(() => {
+    if (!selectedHandCardId) return {};
+    const selectedCard = handCards.find(card => card.instanceId === selectedHandCardId);
+    if (!selectedCard) return {};
+    return Object.fromEntries(
+      BOARD_SLOTS.filter(slot => !legalTargetSlotIds.includes(slot.id)).map(slot => [slot.id, `Cannot play ${match.cardCatalog[selectedCard.cardId]?.name ?? "this card"} to ${slot.label}`])
+    );
+  }, [handCards, legalTargetSlotIds, match.cardCatalog, selectedHandCardId]);
 
   const layoutDraftIsValid = (() => {
     if (!layoutDraft.trim()) return false;
@@ -425,10 +489,14 @@ export function BoardPreview3D({
         <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
         <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
         {presentation === "lab" ? <p>Mouse pans and zooms the 3D board. Keyboard arrows nudge selected slots.</p> : null}
+        {intentLabel ? <p>Intent: {intentLabel}</p> : null}
+        {commandLabel ? <p>Command: {commandLabel}</p> : null}
+        <div>
+          <button type="button" className="ghost" onClick={() => setControlsCollapsed(value => !value)}>{controlsCollapsed ? "Show HUD Controls" : "Hide HUD Controls"}</button>
+          <button type="button" className="ghost" onClick={() => setHudMode(mode => mode === "player" ? "debug" : "player")}>{hudMode === "player" ? "Debug HUD" : "Player HUD"}</button>
+        </div>
       </header>
-      {actionDock ? <div className="board-preview-3d__action-dock">{actionDock}</div> : null}
-
-      <BoardPreview3DControls
+      {!controlsCollapsed ? <BoardPreview3DControls
         tiltDegrees={tiltDegrees}
         setTiltDegrees={setTiltDegrees}
         zoomScale={zoomScale}
@@ -459,7 +527,7 @@ export function BoardPreview3D({
         integrationMode={integrationMode}
         setIntegrationMode={handleIntegrationModeChange}
         onResetAll={resetAllEditorState}
-      />
+      /> : null}
       {integrationMode ? <p className="board-preview-3d__status">Integration mode enabled: layout editing actions are read-only.</p> : null}
 
       {statusMessage ? <p className="board-preview-3d__status">{statusMessage}</p> : null}
@@ -489,13 +557,55 @@ export function BoardPreview3D({
             filteredBoardObjects={filteredBoardObjects}
             resolveSlotPosition={resolvePosition}
             onSelectSlot={(slotId) => selectSlot(slotId, "table")}
+            onDeckSlotClick={onDeckSlotClick}
+            onPlayHandCardToSlot={(slotId) => {
+              if (!selectedHandCardId) return;
+              onPlayHandCardToSlot?.(selectedHandCardId, slotId);
+              setSelectedHandCardId(null);
+            }}
+            onDropHandCardToSlot={(slotId, cardInstanceId) => {
+              onPlayHandCardToSlot?.(cardInstanceId, slotId);
+              setSelectedHandCardId(null);
+            }}
             onSelectPiece={(pieceId) => selectPiece(pieceId, "table")}
-            highlightedSlotIds={animationHighlights.slotIds}
+            highlightedSlotIds={[...animationHighlights.slotIds, ...legalTargetSlotIds, ...battleTargetSlotIds]}
             highlightedPieceIds={animationHighlights.pieceIds}
             activeEventType={activeEvent?.type ?? null}
+            match={match}
+            cardByInstanceId={cardByInstanceId}
+            blockedReasonsBySlotId={blockedReasonsBySlotId}
           />
+          {actionDock ? <div className="board-preview-3d__action-dock board-preview-3d__action-dock--inboard">{actionDock}</div> : null}
+          {handCards.length > 0 ? (
+            <section className="board-preview-3d__hand-rail" aria-label="3D board hand rail">
+              {handCards.map(card => (
+                <button
+                  key={card.instanceId}
+                  type="button"
+                  draggable
+                  className={selectedHandCardId === card.instanceId ? "is-selected" : undefined}
+                  onClick={() => setSelectedHandCardId(current => current === card.instanceId ? null : card.instanceId)}
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData("application/x-ward-board-hand-card", card.instanceId);
+                    event.dataTransfer.effectAllowed = "move";
+                  }}
+                >
+                  <MatchCardImage match={match} card={card} className="board-preview-3d__hand-card-art" />
+                  <span>{match.cardCatalog[card.cardId]?.name ?? card.cardId}</span>
+                </button>
+              ))}
+            </section>
+          ) : null}
+          {selectedBattlePiece ? (
+            <section className="board-preview-3d__quick-actions">
+              <button type="button" onClick={() => onStartBattleFromPiece?.(selectedBattlePiece.cardInstanceId!)}>
+                Start Battle ({selectedBattlePiece.label})
+              </button>
+              <small>Target: {focusedPlayerId === "player_1" ? "player_2-primary" : "player_1-primary"}</small>
+            </section>
+          ) : null}
         </section>
-        {showDebugPanel ? (
+        {showDebugPanel && hudMode === "debug" ? (
           <aside className="board-preview-3d__debug-drawer">
             <BoardPreview3DDebugPanel
               show={showDebugPanel}

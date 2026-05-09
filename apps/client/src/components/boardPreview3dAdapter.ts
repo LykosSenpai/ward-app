@@ -8,6 +8,7 @@ function clampPercent(value: number) {
 
 export type BoardObject = {
   id: string;
+  cardInstanceId?: string;
   label: string;
   owner: "player_1" | "player_2";
   xPercent: number;
@@ -27,6 +28,7 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
     const primary = player.field.primaryCreature
       ? [{
           id: `${owner}-primary`,
+          cardInstanceId: player.field.primaryCreature.instanceId,
           label: `${player.displayName} Primary`,
           owner,
           xPercent: 50,
@@ -42,6 +44,7 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
 
     const limited = player.field.limitedSummons.map((card, index) => ({
       id: `${owner}-limited-${card.instanceId}`,
+      cardInstanceId: card.instanceId,
       label: `${player.displayName} Limited ${index + 1}`,
       owner,
       xPercent: 50 + friendlyShift * (limitedOffsets[index] ?? 0),
@@ -56,6 +59,7 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
 
     const magic = player.field.magicSlots.filter(Boolean).map((card, index) => ({
       id: `${owner}-magic-${card.instanceId}`,
+      cardInstanceId: card.instanceId,
       label: `${player.displayName} Magic ${index + 1}`,
       owner,
       xPercent: 50 + friendlyShift * (magicOffsets[index] ?? 0),

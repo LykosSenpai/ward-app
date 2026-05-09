@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CardDefinition, CardInstance, PlayerState } from "@ward/shared";
 import type { AppMatchState, CardLibraryCardSummary } from "../clientTypes";
-import { CardBoardView } from "./CardBoardView";
 import { BoardPreview3D } from "./BoardPreview3D";
 import {
   buildBoardObjects,
@@ -268,9 +267,9 @@ function buildPreviewMatch(cardLibrary: CardLibraryCardSummary[]): AppMatchState
 }
 
 export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = null }: BoardPreviewPageProps) {
+  const showLegacyBridge = new URLSearchParams(globalThis.location?.search ?? "").get("legacyBridge") === "1";
   const previewMatch = useMemo(() => liveMatch ?? buildPreviewMatch(cardLibrary), [cardLibrary, liveMatch]);
   const previewBoardObjects = useMemo(() => (previewMatch ? buildBoardObjects(previewMatch) : []), [previewMatch]);
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
 
   const [lastInteraction, setLastInteraction] = useState<string>("None");
   const [dispatchHistory, setDispatchHistory] = useState<string[]>([]);
@@ -619,34 +618,8 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
         </div>
         <span>{liveMatch ? "Live Integration" : "Preview Only"}</span>
       </div>
-
-=======
-        </div>
-        <span>{liveMatch ? "Live Integration" : "Preview Only"}</span>
-      </div>
-
->>>>>>> theirs
-      <div className="board-preview-view-toggle" role="tablist" aria-label="Board preview mode">
-        <button
-          type="button"
-          className={viewMode === "3d" ? "active" : undefined}
-          onClick={() => setViewMode("3d")}
-        >
-          3D Prototype
-        </button>
-        <button
-          type="button"
-          className={viewMode === "2d" ? "active" : undefined}
-          onClick={() => setViewMode("2d")}
-        >
-          2D Existing Board
-        </button>
-      </div>
-
-      {viewMode === "3d" ? (
-        <>
-          <p className="board-preview-3d__status">Last interaction: {lastInteraction}</p>
-          {liveMatch ? (
+      <p className="board-preview-3d__status">Last interaction: {lastInteraction}</p>
+          {liveMatch && showLegacyBridge ? (
 
           <div className="board-preview-3d__controls" aria-label="Summon targeting bridge">
             <p className="board-preview-3d__status">
@@ -767,9 +740,13 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
             ) : null}
           </div>
           ) : (
-            <p className="board-preview-3d__status">Dispatch bridge controls are only enabled when a live match is active.</p>
+            <p className="board-preview-3d__status">
+              {liveMatch
+                ? "Legacy bridge controls are hidden. Add ?legacyBridge=1 to enable the debug bridge."
+                : "Dispatch bridge controls are only enabled when a live match is active."}
+            </p>
           )}
-          <BoardPreview3D
+      <BoardPreview3D
             match={previewMatch}
             adminView
             onSlotFocus={(event) => {
@@ -784,18 +761,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
               const intent = buildInteractionIntentFromPieceFocus(event, previewBoardObjects);
               setLastInteraction(JSON.stringify(intent));
             }}
-          />
-        </>
-      ) : (
-        <section className="match-workspace match-workspace-board board-preview-workspace">
-          <CardBoardView
-            match={previewMatch}
-            players={previewMatch.players}
-            controlledPlayerId="player_1"
-          />
-        </section>
-      )}
-
+      />
     </section>
   );
 }
