@@ -1222,13 +1222,43 @@
 }
 
 
+<<<<<<< ours
 .board-preview-3d {
   min-height: 0;
   overflow: visible;
+=======
+.board-preview-view-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.board-preview-view-toggle button {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  border-radius: 8px;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.board-preview-view-toggle button.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.72);
+  color: #e0f2fe;
+}
+
+.board-preview-3d {
+  height: calc(100svh - 230px);
+  min-height: 560px;
+  overflow: hidden;
+>>>>>>> theirs
   position: relative;
 }
 
 .board-preview-3d__camera {
+<<<<<<< ours
   cursor: grab;
   height: 100%;
   overflow: hidden;
@@ -1259,6 +1289,20 @@
   box-shadow:
     0 22px 60px rgba(2, 6, 23, 0.62),
     inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+=======
+  height: 100%;
+  perspective: 1100px;
+  perspective-origin: 50% 35%;
+  will-change: transform;
+  width: 100%;
+}
+
+.board-preview-3d__table {
+  background: radial-gradient(circle at 50% 44%, rgba(16, 185, 129, 0.22), rgba(2, 6, 23, 0.95));
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 22px 60px rgba(2, 6, 23, 0.62);
+>>>>>>> theirs
   height: 100%;
   overflow: hidden;
   position: relative;
@@ -1266,6 +1310,7 @@
   transform-style: preserve-3d;
 }
 
+<<<<<<< ours
 .board-preview-3d__table::before {
   background:
     linear-gradient(90deg, transparent 9%, rgba(148, 163, 184, 0.16) 9.1%, transparent 9.2%, transparent 90.8%, rgba(148, 163, 184, 0.16) 90.9%, transparent 91%),
@@ -1275,6 +1320,15 @@
   inset: 0;
   pointer-events: none;
   position: absolute;
+=======
+.board-preview-3d__table,
+.board-preview-3d__piece,
+.board-preview-3d__slot button,
+.board-preview-3d__piece button {
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+>>>>>>> theirs
 }
 
 .board-preview-3d__grid {
@@ -1293,13 +1347,21 @@
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.01em;
+<<<<<<< ours
   padding: 8px 10px;
+=======
+  padding: 10px 12px;
+>>>>>>> theirs
   position: absolute;
   text-align: center;
   text-transform: uppercase;
   transform-style: preserve-3d;
+<<<<<<< ours
   width: clamp(118px, 12vw, 168px);
   z-index: 6;
+=======
+  width: min(25vw, 180px);
+>>>>>>> theirs
 }
 
 .board-preview-3d__piece--player_1 {
@@ -1310,6 +1372,7 @@
   background: linear-gradient(130deg, rgba(126, 34, 206, 0.95), rgba(59, 7, 100, 0.95));
 }
 
+<<<<<<< ours
 .board-preview-3d__stack-zone {
   align-content: center;
   border: 1px solid rgba(226, 232, 240, 0.42);
@@ -1345,6 +1408,8 @@
   font-size: 0.74rem;
 }
 
+=======
+>>>>>>> theirs
 
 .board-preview-3d__hud {
   align-items: baseline;
@@ -1374,9 +1439,22 @@
 .board-preview-3d__layout {
   display: grid;
   gap: 10px;
+<<<<<<< ours
   grid-template-columns: minmax(160px, 220px) 1fr;
   height: min(72svh, 760px);
   min-height: 520px;
+=======
+  grid-template-columns: minmax(160px, 220px) 1fr minmax(280px, 360px);
+  height: calc(100% - 38px);
+}
+
+.board-preview-3d__board-column {
+  min-height: 360px;
+}
+
+.board-preview-3d__debug-drawer {
+  overflow: auto;
+>>>>>>> theirs
 }
 
 .board-preview-3d__board-column {
@@ -1438,6 +1516,28 @@
   }
 }
 
+<<<<<<< ours
+=======
+.board-preview-3d__zone {
+  border: 1px dashed rgba(148, 163, 184, 0.55);
+  border-radius: 10px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.board-preview-3d__zone span {
+  background: rgba(2, 6, 23, 0.74);
+  border-radius: 6px;
+  color: #dbeafe;
+  font-size: 0.58rem;
+  left: 50%;
+  padding: 1px 5px;
+  position: absolute;
+  top: -10px;
+  transform: translateX(-50%);
+}
+
+>>>>>>> theirs
 .board-preview-3d__controls {
   align-items: center;
   background: rgba(2, 6, 23, 0.62);
@@ -1568,18 +1668,28 @@
 }
 
 .board-preview-3d__slot {
+<<<<<<< ours
   border: 1px solid rgba(226, 232, 240, 0.26);
   border-radius: 8px;
   color: rgba(241, 245, 249, 0.75);
   font-size: 0.58rem;
   height: clamp(44px, 6.7vh, 76px);
+=======
+  border: 1px dashed rgba(226, 232, 240, 0.44);
+  border-radius: 10px;
+  color: rgba(241, 245, 249, 0.75);
+  font-size: 0.58rem;
+>>>>>>> theirs
   left: 50%;
   padding: 5px 8px;
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%) translateZ(1px);
+<<<<<<< ours
   width: clamp(72px, 7vw, 104px);
   z-index: 3;
+=======
+>>>>>>> theirs
 }
 
 .board-preview-3d__slot--player_1 {
@@ -1660,16 +1770,24 @@
 }
 
 .board-preview-3d__slot button {
+<<<<<<< ours
   align-items: center;
+=======
+>>>>>>> theirs
   background: transparent;
   border: 0;
   color: inherit;
   cursor: pointer;
+<<<<<<< ours
   display: grid;
   font: inherit;
   height: 100%;
   padding: 0;
   width: 100%;
+=======
+  font: inherit;
+  padding: 0;
+>>>>>>> theirs
 }
 
 .board-preview-3d__slot.is-animated-target {
@@ -1840,6 +1958,7 @@
   font-weight: 700;
   padding: 4px 6px;
 }
+<<<<<<< ours
 
 .app-shell-board-window {
   max-width: none;
@@ -1892,3 +2011,5 @@
   height: calc(100svh - 72px);
   min-height: 0;
 }
+=======
+>>>>>>> theirs
