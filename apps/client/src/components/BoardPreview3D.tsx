@@ -190,19 +190,16 @@ export function BoardPreview3D({
     );
   }, [boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, storageKey, tiltDegrees, zoomScale]);
 
-
   const slotById = useMemo(() => new Map(BOARD_SLOTS.map((slot) => [slot.id, slot])), []);
 
   useEffect(() => {
     if (!statusMessage) return;
     const timeout = globalThis.setTimeout(() => setStatusMessage(null), 2200);
-
-  return () => globalThis.clearTimeout(timeout);
+    return () => globalThis.clearTimeout(timeout);
   }, [statusMessage]);
 
   const nudgeSelectedSlot = (axis: "x" | "z", delta: number) => {
     if (integrationMode || !selectedSlotId) return;
-
     setSlotOffsets((current) => {
       const previous = current[selectedSlotId] ?? { x: 0, z: 0 };
       return {
@@ -215,7 +212,6 @@ export function BoardPreview3D({
     });
   };
 
-
   const resetSlotOffsets = () => setSlotOffsets({});
   const resetSelectedSlotOffset = () => {
     if (integrationMode || !selectedSlotId) return;
@@ -225,6 +221,7 @@ export function BoardPreview3D({
       return next;
     });
   };
+
   const resetCamera = () => {
     setTiltDegrees(60);
     setZoomScale(1);
@@ -250,7 +247,6 @@ export function BoardPreview3D({
 
   const copyLayoutSnapshot = async () => {
     const snapshot = toLayoutSnapshot(slotOffsets);
-
     const payload = JSON.stringify(snapshot, null, 2);
     setLayoutDraft(payload);
     if (globalThis.navigator?.clipboard?.writeText) {
@@ -268,7 +264,6 @@ export function BoardPreview3D({
     URL.revokeObjectURL(link.href);
     setStatusMessage("Clipboard unavailable. Downloaded layout snapshot JSON.");
   };
-
 
   const applyLayoutDraft = () => {
     if (integrationMode) return;
@@ -389,6 +384,7 @@ export function BoardPreview3D({
   const selectedOffset = selectedSlotId ? slotOffsets[selectedSlotId as BoardSlotId] ?? { x: 0, z: 0 } : { x: 0, z: 0 };
   const unresolvedBoardObjects = boardObjects.filter((object) => !slotById.has(object.slotId));
   const filteredBoardObjects = ownerFilter === "all" ? boardObjects : boardObjects.filter((object) => object.owner === ownerFilter);
+
   const layoutDraftIsValid = (() => {
     if (!layoutDraft.trim()) return false;
     try {
@@ -432,7 +428,6 @@ export function BoardPreview3D({
       </header>
       {actionDock ? <div className="board-preview-3d__action-dock">{actionDock}</div> : null}
 
-
       <BoardPreview3DControls
         tiltDegrees={tiltDegrees}
         setTiltDegrees={setTiltDegrees}
@@ -467,35 +462,8 @@ export function BoardPreview3D({
       />
       {integrationMode ? <p className="board-preview-3d__status">Integration mode enabled: layout editing actions are read-only.</p> : null}
 
-
       {statusMessage ? <p className="board-preview-3d__status">{statusMessage}</p> : null}
       {lastCopiedLabel ? <p className="board-preview-3d__status">Last copied: {lastCopiedLabel}</p> : null}
-
-      <BoardPreview3DDebugPanel
-        show={showDebugPanel}
-        selectedSlot={selectedSlot}
-        selectedSlotId={selectedSlotId}
-        selectedSlotIndex={selectedSlotIndex}
-        slotCount={BOARD_SLOTS.length}
-        selectedOffset={selectedOffset}
-        nudgeStep={nudgeStep}
-        setNudgeStep={setNudgeStep}
-        onNudge={nudgeSelectedSlot}
-        onSelectRelative={selectRelativeSlot}
-        onCopySelected={() => void copySelectedSlotSnapshot()}
-        onResetCamera={resetCamera}
-        onResetOffsets={safeResetSlotOffsets}
-        onResetSelectedOffset={resetSelectedSlotOffset}
-        onCopyLayout={() => void copyLayoutSnapshot()}
-        layoutDraft={layoutDraft}
-        setLayoutDraft={setLayoutDraft}
-        layoutDraftError={layoutDraftError}
-        layoutDraftIsValid={layoutDraftIsValid}
-        onApplyLayout={applyLayoutDraft}
-        slotOccupancy={slotOccupancy}
-        onSelectSlot={(slotId) => selectSlot(slotId, "debug")}
-        readOnly={integrationMode}
-      />
 
       <div className="board-preview-3d__layout">
         <BoardPreview3DMiniMap
@@ -506,25 +474,56 @@ export function BoardPreview3D({
           onSelectSlot={(slotId) => selectSlot(slotId, "mini-map")}
           onSelectPiece={(pieceId) => selectPiece(pieceId, "mini-map")}
         />
-        <BoardPreview3DTable
-          zoomScale={zoomScale}
-          setZoomScale={setZoomScale}
-          cameraPanX={cameraPanX}
-          setCameraPanX={setCameraPanX}
-          cameraPanY={cameraPanY}
-          setCameraPanY={setCameraPanY}
-          tiltDegrees={tiltDegrees}
-          heightScale={heightScale}
-          showAnchors={showAnchors}
-          selectedSlotId={selectedSlotId}
-          filteredBoardObjects={filteredBoardObjects}
-          resolveSlotPosition={resolvePosition}
-          onSelectSlot={(slotId) => selectSlot(slotId, "table")}
-          onSelectPiece={(pieceId) => selectPiece(pieceId, "table")}
-          highlightedSlotIds={animationHighlights.slotIds}
-          highlightedPieceIds={animationHighlights.pieceIds}
-          activeEventType={activeEvent?.type ?? null}
-        />
+        <section className="board-preview-3d__board-column">
+          <BoardPreview3DTable
+            zoomScale={zoomScale}
+            setZoomScale={setZoomScale}
+            cameraPanX={cameraPanX}
+            setCameraPanX={setCameraPanX}
+            cameraPanY={cameraPanY}
+            setCameraPanY={setCameraPanY}
+            tiltDegrees={tiltDegrees}
+            heightScale={heightScale}
+            showAnchors={showAnchors}
+            selectedSlotId={selectedSlotId}
+            filteredBoardObjects={filteredBoardObjects}
+            resolveSlotPosition={resolvePosition}
+            onSelectSlot={(slotId) => selectSlot(slotId, "table")}
+            onSelectPiece={(pieceId) => selectPiece(pieceId, "table")}
+            highlightedSlotIds={animationHighlights.slotIds}
+            highlightedPieceIds={animationHighlights.pieceIds}
+            activeEventType={activeEvent?.type ?? null}
+          />
+        </section>
+        {showDebugPanel ? (
+          <aside className="board-preview-3d__debug-drawer">
+            <BoardPreview3DDebugPanel
+              show={showDebugPanel}
+              selectedSlot={selectedSlot}
+              selectedSlotId={selectedSlotId}
+              selectedSlotIndex={selectedSlotIndex}
+              slotCount={BOARD_SLOTS.length}
+              selectedOffset={selectedOffset}
+              nudgeStep={nudgeStep}
+              setNudgeStep={setNudgeStep}
+              onNudge={nudgeSelectedSlot}
+              onSelectRelative={selectRelativeSlot}
+              onCopySelected={() => void copySelectedSlotSnapshot()}
+              onResetCamera={resetCamera}
+              onResetOffsets={safeResetSlotOffsets}
+              onResetSelectedOffset={resetSelectedSlotOffset}
+              onCopyLayout={() => void copyLayoutSnapshot()}
+              layoutDraft={layoutDraft}
+              setLayoutDraft={setLayoutDraft}
+              layoutDraftError={layoutDraftError}
+              layoutDraftIsValid={layoutDraftIsValid}
+              onApplyLayout={applyLayoutDraft}
+              slotOccupancy={slotOccupancy}
+              onSelectSlot={(slotId) => selectSlot(slotId, "debug")}
+              readOnly={integrationMode}
+            />
+          </aside>
+        ) : null}
       </div>
     </section>
   );

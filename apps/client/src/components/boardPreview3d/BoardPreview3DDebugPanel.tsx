@@ -57,7 +57,11 @@ export function BoardPreview3DDebugPanel({
   return (
     <section className="board-preview-3d__debug" aria-label="Board slot occupancy">
       <h4>Slot occupancy</h4>
+<<<<<<< ours
       {selectedSlot ? <p>Selected: {selectedSlot.slot.label} ({selectedSlot.slot.xPercent}%, {selectedSlot.slot.zPercent}%) | slot {selectedSlotIndex + 1}/{slotCount} | offset ({selectedOffset.x}%, {selectedOffset.z}%)</p> : null}
+=======
+      {selectedSlot ? <p>Selected: {selectedSlot.slot.label} ({selectedSlot.slot.xPercent}%, {selectedSlot.slot.zPercent}%) · slot {selectedSlotIndex + 1}/{slotCount} · offset ({selectedOffset.x}%, {selectedOffset.z}%)</p> : null}
+>>>>>>> theirs
       {selectedSlot ? (
         <>
           <label className="board-preview-3d__nudge-step">
