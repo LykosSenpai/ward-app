@@ -9,7 +9,7 @@ type UserRow = {
   email: string;
   display_name: string;
   password_hash: string;
-  role: "PLAYER" | "DEVELOPER" | "ADMIN";
+  role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   dev_tools_enabled: boolean;
 };
 
@@ -211,6 +211,21 @@ export async function changeUserPassword(userId: string, args: {
     `,
     [userId, passwordHash]
   );
+}
+
+export async function listUsersForTournamentDeckReview(): Promise<Array<{ id: string; displayName: string }>> {
+  const result = await getDbPool().query<{ id: string; display_name: string }>(
+    `
+      select id, display_name
+      from users
+      order by display_name asc
+    `
+  );
+
+  return result.rows.map(row => ({
+    id: row.id,
+    displayName: row.display_name
+  }));
 }
 
 function normalizeUsername(value: string): string {

@@ -153,6 +153,7 @@ export default function App() {
   const [cardPacks, setCardPacks] = useState<CardPackSummary[]>([]);
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [deckDetails, setDeckDetails] = useState<DeckDetail[]>([]);
+  const [tournamentDeckSubmissions, setTournamentDeckSubmissions] = useState<DeckDetail[]>([]);
   const [matchLobbies, setMatchLobbies] = useState<MatchLobby[]>([]);
   const [activeLobby, setActiveLobby] = useState<MatchLobby | undefined>();
   const [selectedPackIds, setSelectedPackIds] = useState<string[]>([]);
@@ -372,6 +373,9 @@ export default function App() {
     socket.on("deck:details", (data: DeckDetail[]) => {
       setDeckDetails(data);
     });
+    socket.on("deck:tournamentSubmissions", (data: DeckDetail[]) => {
+      setTournamentDeckSubmissions(data);
+    });
 
     socket.on("lobby:list", (data: MatchLobby[]) => {
       const sortedLobbies = sortLobbiesByCreatedAt(data);
@@ -416,6 +420,10 @@ export default function App() {
     socket.on("deck:saved", (data: { message: string; deckId: string }) => {
       setSaveMessage(data.message);
       socket.emit("setup:listOptions");
+      socket.emit("deck:listDetails");
+    });
+    socket.on("deck:tournamentSubmissionReviewed", (data: { message: string }) => {
+      setSaveMessage(data.message);
       socket.emit("deck:listDetails");
     });
 
@@ -597,6 +605,7 @@ export default function App() {
       socket.off("setup:options");
       socket.off("cards:library");
       socket.off("deck:details");
+      socket.off("deck:tournamentSubmissions");
       socket.off("lobby:list");
       socket.off("lobby:updated");
       socket.off("lobby:cleanupComplete");
@@ -604,6 +613,7 @@ export default function App() {
       socket.off("dev:effectCoverage");
       socket.off("dev:effectRuntimeTestStatusSaved");
       socket.off("deck:saved");
+      socket.off("deck:tournamentSubmissionReviewed");
       socket.off("deck:loaded");
       socket.off("deck:overwriteRequired");
       socket.off("deck:deleted");
@@ -1883,11 +1893,17 @@ export default function App() {
           <DeckLibraryPage
             decks={decks}
             deckDetails={deckDetails}
+            tournamentDeckSubmissions={tournamentDeckSubmissions}
+            currentUser={authUser}
             cardLibrary={cardLibrary}
             onEditDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "edit")}
             onCloneDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "clone")}
             onDeleteDeck={deleteDeck}
             onImportDeckCode={importDeckCodeIntoBuilder}
+            onRefreshDeckDetails={() => socket.emit("deck:listDetails")}
+            onReviewTournamentDeck={(ownerUserId, deckId, status, notes) => {
+              socket.emit("deck:reviewTournamentSubmission", { ownerUserId, deckId, status, notes });
+            }}
           />
 
         ) : activePage === "board-preview" ? (
