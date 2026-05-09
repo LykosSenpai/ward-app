@@ -1,13 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CardDefinition, CardInstance, PlayerState } from "@ward/shared";
 import type { AppMatchState, CardLibraryCardSummary } from "../clientTypes";
-<<<<<<< ours
-=======
 import { CardBoardView } from "./CardBoardView";
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
 import { BoardPreview3D } from "./BoardPreview3D";
 import {
   buildBoardObjects,
@@ -276,18 +270,8 @@ function buildPreviewMatch(cardLibrary: CardLibraryCardSummary[]): AppMatchState
 export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = null }: BoardPreviewPageProps) {
   const previewMatch = useMemo(() => liveMatch ?? buildPreviewMatch(cardLibrary), [cardLibrary, liveMatch]);
   const previewBoardObjects = useMemo(() => (previewMatch ? buildBoardObjects(previewMatch) : []), [previewMatch]);
-<<<<<<< ours
-<<<<<<< ours
-  const dedicatedBoardUrl = `${window.location.origin}${window.location.pathname}?page=board-preview&boardWindow=1`;
-  const openDedicatedBoardWindow = () => {
-    window.open(dedicatedBoardUrl, "ward-3d-board", "popup,width=1440,height=900");
-  };
-=======
   const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
->>>>>>> theirs
-=======
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
->>>>>>> theirs
+
   const [lastInteraction, setLastInteraction] = useState<string>("None");
   const [dispatchHistory, setDispatchHistory] = useState<string[]>([]);
   const [pendingDispatches, setPendingDispatches] = useState<Array<{ requestId: string; label: string }>>([]);
@@ -377,37 +361,19 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
   const [sacrificeIdsDraft, setSacrificeIdsDraft] = useState("");
 
   const summonCandidateCardInstanceIds = useMemo(() => {
-<<<<<<< ours
-<<<<<<< ours
-    if (!previewMatch) return [];
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
+
     const player = previewMatch.players.find((item) => item.id === summonPlayerId);
     if (!player) return [];
     return player.hand.filter((card) => card.ownerPlayerId === summonPlayerId).map((card) => card.instanceId);
   }, [previewMatch, summonPlayerId]);
   const magicCandidateCardInstanceIds = useMemo(() => {
-<<<<<<< ours
-<<<<<<< ours
-    if (!previewMatch) return [];
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
+
     const player = previewMatch.players.find((item) => item.id === summonPlayerId);
     if (!player) return [];
     return player.hand.filter((card) => card.ownerPlayerId === summonPlayerId && isMagic(previewMatch, card)).map((card) => card.instanceId);
   }, [previewMatch, summonPlayerId]);
   const battleAttackerCandidateIds = useMemo(() => {
-<<<<<<< ours
-<<<<<<< ours
-    if (!previewMatch) return [];
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
+
     const player = previewMatch.players.find((item) => item.id === summonPlayerId);
     if (!player) return [];
     const limited = player.field.limitedSummons.map((card) => card.instanceId);
@@ -452,20 +418,6 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
   }, [battleAttackerCandidateIds, battleAttackerInstanceId]);
 
   const focusedSlot = focusedSlotId ? BOARD_SLOTS.find((slot) => slot.id === focusedSlotId) ?? null : null;
-<<<<<<< ours
-<<<<<<< ours
-  const summonPlayer = previewMatch?.players.find((item) => item.id === summonPlayerId);
-  const selectedSummonCard = summonPlayer?.hand.find((card) => card.instanceId === summonCardInstanceId) ?? null;
-  const selectedMagicCard = summonPlayer?.hand.find((card) => card.instanceId === magicCardInstanceId) ?? null;
-  const isMatchComplete = previewMatch ? getMatchStatus(previewMatch) === "COMPLETE" : false;
-  const canControlSelectedPlayer = !controlledPlayerId || controlledPlayerId === summonPlayerId;
-  const isActiveSelectedPlayer = previewMatch?.turn.activePlayerId === summonPlayerId;
-  const anyDiscardRequired = !!previewMatch?.setup.handDiscardRequiredForPlayerId;
-  const canPlayMagicNowForSelected =
-    !!previewMatch &&
-=======
-=======
->>>>>>> theirs
   const summonPlayer = previewMatch.players.find((item) => item.id === summonPlayerId);
   const selectedSummonCard = summonPlayer?.hand.find((card) => card.instanceId === summonCardInstanceId) ?? null;
   const selectedMagicCard = summonPlayer?.hand.find((card) => card.instanceId === magicCardInstanceId) ?? null;
@@ -474,10 +426,6 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
   const isActiveSelectedPlayer = previewMatch.turn.activePlayerId === summonPlayerId;
   const anyDiscardRequired = !!previewMatch.setup.handDiscardRequiredForPlayerId;
   const canPlayMagicNowForSelected =
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
     !isMatchComplete &&
     canControlSelectedPlayer &&
     isActiveSelectedPlayer &&
@@ -507,46 +455,21 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
   const battleDispatchAllowed = Boolean(battleAttackerInstanceId.trim());
   const requiredSacrifices = selectedSummonCard ? getRequiredSacrificesForCard(previewMatch, selectedSummonCard) : 0;
   const availableSacrificeIds = useMemo(() => {
-<<<<<<< ours
-<<<<<<< ours
-    if (!previewMatch || !summonPlayer) return [];
-    const limited = summonPlayer.field.limitedSummons.map((card) => card.instanceId);
-    const primary = summonPlayer.field.primaryCreature ? [summonPlayer.field.primaryCreature.instanceId] : [];
-    return [...primary, ...limited];
-  }, [previewMatch, summonPlayer]);
-=======
-=======
->>>>>>> theirs
     if (!summonPlayer) return [];
     const limited = summonPlayer.field.limitedSummons.map((card) => card.instanceId);
     const primary = summonPlayer.field.primaryCreature ? [summonPlayer.field.primaryCreature.instanceId] : [];
     return [...primary, ...limited];
   }, [summonPlayer]);
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
+
   const battleAttackerCard = summonPlayer
     ? [summonPlayer.field.primaryCreature, ...summonPlayer.field.limitedSummons].find(
         (card): card is NonNullable<typeof summonPlayer.field.primaryCreature> => Boolean(card && card.instanceId === battleAttackerInstanceId)
       ) ?? null
     : null;
-<<<<<<< ours
-<<<<<<< ours
-  const battleDefenderPlayer = previewMatch?.players.find((player) => player.id !== summonPlayerId);
-  const battleDefenderCreatureId = battleDefenderPlayer?.field.primaryCreature?.instanceId;
-  const canStartBattleNowForSelected =
-    !!previewMatch &&
-=======
   const battleDefenderPlayer = previewMatch.players.find((player) => player.id !== summonPlayerId);
   const battleDefenderCreatureId = battleDefenderPlayer?.field.primaryCreature?.instanceId;
   const canStartBattleNowForSelected =
->>>>>>> theirs
-=======
-  const battleDefenderPlayer = previewMatch.players.find((player) => player.id !== summonPlayerId);
-  const battleDefenderCreatureId = battleDefenderPlayer?.field.primaryCreature?.instanceId;
-  const canStartBattleNowForSelected =
->>>>>>> theirs
+
     !isMatchComplete &&
     canControlSelectedPlayer &&
     isActiveSelectedPlayer &&
@@ -576,14 +499,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
 
 
   const dispatchSummonToFocusedSlot = () => {
-<<<<<<< ours
-<<<<<<< ours
-    if (!previewMatch) return;
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
-    const preflight = ensureDispatchReady({
+   const preflight = ensureDispatchReady({
       hasFocusedSlot: Boolean(focusedSlot),
       allowedByGuard: summonDispatchAllowed,
       isSocketConnected: socket.connected,
@@ -625,13 +541,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
   };
 
   const dispatchMagicToFocusedSlot = () => {
-<<<<<<< ours
-<<<<<<< ours
-    if (!previewMatch) return;
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
+
     const preflight = ensureDispatchReady({
       hasFocusedSlot: Boolean(focusedSlot),
       allowedByGuard: magicDispatchAllowed,
@@ -659,13 +569,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
   };
 
   const dispatchBattleStart = () => {
-<<<<<<< ours
-<<<<<<< ours
-    if (!previewMatch) return;
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
+
     const preflight = ensureDispatchReady({
       hasFocusedSlot: true,
       allowedByGuard: battleDispatchAllowedStrict,
@@ -712,18 +616,6 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
         <div>
           <h2>Interactive Board Preview</h2>
           <p>{liveMatch ? "Live match integration mode." : "Static layout fixture. No lobby, match, or server action is required."}</p>
-<<<<<<< ours
-<<<<<<< ours
-        </div>
-        <div className="board-preview-header-actions">
-          <button type="button" onClick={openDedicatedBoardWindow}>Dedicated Window</button>
-          <span>{liveMatch ? "Live Integration" : "Preview Only"}</span>
-        </div>
-      </div>
-
-      <p className="board-preview-3d__status">Last interaction: {lastInteraction}</p>
-      {liveMatch ? (
-=======
         </div>
         <span>{liveMatch ? "Live Integration" : "Preview Only"}</span>
       </div>
@@ -755,25 +647,15 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
         <>
           <p className="board-preview-3d__status">Last interaction: {lastInteraction}</p>
           {liveMatch ? (
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
+
           <div className="board-preview-3d__controls" aria-label="Summon targeting bridge">
             <p className="board-preview-3d__status">
               Focused slot: {focusedSlot ? `${focusedSlot.label} (${focusedSlot.id})` : "none"}
             </p>
             <label>
               Summon player
-<<<<<<< ours
-<<<<<<< ours
-              <select value={summonPlayerId} onChange={(event) => setSummonPlayerId(event.target.value as "player_1" | "player_2")} disabled={Boolean(controlledPlayerId)}>
-=======
               <select value={summonPlayerId} onChange={(event) => setSummonPlayerId(event.target.value as "player_1" | "player_2")} disabled={Boolean(controlledPlayerId)}> 
->>>>>>> theirs
-=======
-              <select value={summonPlayerId} onChange={(event) => setSummonPlayerId(event.target.value as "player_1" | "player_2")} disabled={Boolean(controlledPlayerId)}> 
->>>>>>> theirs
+
                 <option value="player_1">Player 1</option>
                 <option value="player_2">Player 2</option>
               </select>
@@ -887,27 +769,6 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
           ) : (
             <p className="board-preview-3d__status">Dispatch bridge controls are only enabled when a live match is active.</p>
           )}
-<<<<<<< ours
-<<<<<<< ours
-      <BoardPreview3D
-        match={previewMatch}
-        adminView
-        onSlotFocus={(event) => {
-          const intent = buildInteractionIntentFromSlotFocus(event);
-          setLastInteraction(JSON.stringify(intent));
-          setFocusedSlotId(intent.slotId ?? null);
-          if (intent.owner) {
-            setSummonPlayerId(intent.owner);
-          }
-        }}
-        onPieceFocus={(event) => {
-          const intent = buildInteractionIntentFromPieceFocus(event, previewBoardObjects);
-          setLastInteraction(JSON.stringify(intent));
-        }}
-      />
-=======
-=======
->>>>>>> theirs
           <BoardPreview3D
             match={previewMatch}
             adminView
@@ -934,10 +795,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
           />
         </section>
       )}
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
+
     </section>
   );
 }

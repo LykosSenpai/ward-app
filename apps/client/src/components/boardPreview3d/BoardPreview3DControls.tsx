@@ -34,15 +34,6 @@ type BoardPreview3DControlsProps = {
 };
 
 export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
-<<<<<<< ours
-<<<<<<< ours
-  const applyPreset = (preset: keyof typeof CAMERA_PRESETS) => {
-    const settings = CAMERA_PRESETS[preset];
-    props.setTiltDegrees(settings.tilt);
-    props.setZoomScale(settings.zoom);
-=======
-=======
->>>>>>> theirs
   const applyZoomScale = (raw: number) => {
     const normalized = Math.max(0.8, Math.min(1.25, Math.round(raw * 20) / 20));
     props.setZoomScale(normalized);
@@ -52,10 +43,7 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
     const settings = CAMERA_PRESETS[preset];
     props.setTiltDegrees(settings.tilt);
     applyZoomScale(settings.zoom);
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
+
     props.setHeightScale(settings.height);
   };
 
@@ -90,15 +78,8 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
         </label>
         <label>
           Zoom
-<<<<<<< ours
-<<<<<<< ours
-          <input type="range" min={50} max={220} value={Math.round(props.zoomScale * 100)} onChange={(event) => props.setZoomScale(Number(event.target.value) / 100)} />
-=======
           <input type="range" min={80} max={125} step={5} value={Math.round(props.zoomScale * 100)} onChange={(event) => applyZoomScale(Number(event.target.value) / 100)} />
->>>>>>> theirs
-=======
-          <input type="range" min={80} max={125} step={5} value={Math.round(props.zoomScale * 100)} onChange={(event) => applyZoomScale(Number(event.target.value) / 100)} />
->>>>>>> theirs
+
           <span>{Math.round(props.zoomScale * 100)}%</span>
         </label>
         <label>
@@ -129,42 +110,21 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
 
         <label>
           Pan X
-<<<<<<< ours
-<<<<<<< ours
-          <input type="range" min={-60} max={60} value={Math.round(props.cameraPanX)} onChange={(event) => props.setCameraPanX(Number(event.target.value))} />
-=======
           <input type="range" min={-25} max={25} value={Math.round(props.cameraPanX)} onChange={(event) => props.setCameraPanX(Number(event.target.value))} />
->>>>>>> theirs
-=======
-          <input type="range" min={-25} max={25} value={Math.round(props.cameraPanX)} onChange={(event) => props.setCameraPanX(Number(event.target.value))} />
->>>>>>> theirs
+
           <span>{Math.round(props.cameraPanX)}%</span>
         </label>
         <label>
           Pan Y
-<<<<<<< ours
-<<<<<<< ours
-          <input type="range" min={-60} max={60} value={Math.round(props.cameraPanY)} onChange={(event) => props.setCameraPanY(Number(event.target.value))} />
-=======
           <input type="range" min={-25} max={25} value={Math.round(props.cameraPanY)} onChange={(event) => props.setCameraPanY(Number(event.target.value))} />
->>>>>>> theirs
-=======
-          <input type="range" min={-25} max={25} value={Math.round(props.cameraPanY)} onChange={(event) => props.setCameraPanY(Number(event.target.value))} />
->>>>>>> theirs
+
           <span>{Math.round(props.cameraPanY)}%</span>
         </label>
 
       </div>
       <p className="board-preview-3d__status">
-<<<<<<< ours
-<<<<<<< ours
-        Mouse: drag empty table space to pan, wheel to zoom. Shortcuts: Arrow keys nudge selected slot | R resets editor {props.integrationMode ? "(disabled in Integration Mode)" : ""}
-=======
         Shortcuts: Arrow keys nudge selected slot · R resets editor {props.integrationMode ? "(disabled in Integration Mode)" : ""}
->>>>>>> theirs
-=======
-        Shortcuts: Arrow keys nudge selected slot · R resets editor {props.integrationMode ? "(disabled in Integration Mode)" : ""}
->>>>>>> theirs
+
       </p>
     </>
   );

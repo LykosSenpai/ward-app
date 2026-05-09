@@ -412,7 +412,7 @@ function normalizeDeckCardArtKeys(cardArtKeys: string[] | undefined, cardCount: 
 
   const normalized = Array.from({ length: cardCount }, (_, index) => {
     const artKey = String(cardArtKeys[index] ?? "default").trim();
-    return artKey === "holo" || artKey === "zero-art" ? artKey : "default";
+    return artKey === "holo" || artKey === "zero-art" || artKey === "zero-art-holo" ? artKey : "default";
   });
 
   return normalized.some(artKey => artKey !== "default") ? normalized : undefined;
