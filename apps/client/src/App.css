@@ -3,6 +3,7 @@
 @import "./styles/app-03-components.css";
 @import "./styles/app-04-responsive.css";
 @import "./styles/app-05-compact-workspace.css";
+@import "./styles/app-06-interactive-board.css";
 
 .app-page-nav {
   display: flex;
@@ -9606,6 +9607,4 @@ button:disabled:hover {
     grid-template-rows: auto minmax(0, auto) auto;
   }
 }
-
-@import "./styles/app-06-interactive-board.css";
 

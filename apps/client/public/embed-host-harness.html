@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WARD Embed Host Harness</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 12px; }
+      .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+      iframe { width: 100%; height: 70vh; border: 1px solid #ccc; }
+      #log { white-space: pre-wrap; font-size: 12px; background: #111; color: #9fe5a6; padding: 8px; height: 20vh; overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <h1>WARD Embed Host Harness</h1>
+    <p>Use this page to test the <code>ward-embed</code> postMessage API during local development.</p>
+
+    <div class="toolbar">
+      <button data-cmd="request-state">request-state</button>
+      <button data-cmd="request-snapshot">request-snapshot</button>
+      <button data-cmd="request-capabilities">request-capabilities</button>
+      <button data-cmd="set-page" data-page="play">set-page: play</button>
+      <button data-cmd="set-page" data-page="board-preview">set-page: board-preview</button>
+      <button data-cmd="set-view" data-view="board">set-view: board</button>
+      <button data-cmd="set-view" data-view="split">set-view: split</button>
+      <button data-cmd="set-view" data-view="text">set-view: text</button>
+      <button data-cmd="set-animation-speed" data-speed="0.5">speed: 0.5x</button>
+      <button data-cmd="set-animation-speed" data-speed="1">speed: 1x</button>
+      <button data-cmd="set-animation-speed" data-speed="2">speed: 2x</button>
+      <button data-cmd="focus-card" data-card-id="preview-card-001">focus-card: preview-card-001</button>
+    </div>
+
+    <iframe id="ward-frame" title="WARD embed" src="/"></iframe>
+    <h2>Message log</h2>
+    <div id="log"></div>
+
+    <script>
+      const EMBED_CHANNEL = 'ward-embed';
+      const EMBED_VERSION = 1;
+      const frame = document.getElementById('ward-frame');
+      const log = document.getElementById('log');
+
+      function append(message) {
+        log.textContent += `${new Date().toISOString()} ${message}\n`;
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function send(payload) {
+        frame.contentWindow?.postMessage(
+          { channel: EMBED_CHANNEL, version: EMBED_VERSION, ...payload },
+          window.location.origin
+        );
+        append(`host->child ${JSON.stringify(payload)}`);
+      }
+
+      window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin) return;
+        if (!event.data || event.data.channel !== EMBED_CHANNEL) return;
+        append(`child->host ${JSON.stringify(event.data)}`);
+      });
+
+      document.querySelectorAll('button[data-cmd]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const type = button.dataset.cmd;
+          const page = button.dataset.page;
+          const view = button.dataset.view;
+          const speed = button.dataset.speed;
+          const cardId = button.dataset.cardId;
+          send({
+            type,
+            ...(page ? { page } : {}),
+            ...(view ? { view } : {}),
+            ...(speed ? { speed: Number(speed) } : {}),
+            ...(cardId ? { cardId } : {})
+          });
+        });
+      });
+
+      frame.src = `/?embed=1&page=board-preview&view=board&parentOrigin=${encodeURIComponent(window.location.origin)}`;
+    </script>
+  </body>
+</html>

@@ -5,6 +5,7 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Server } from "socket.io";
 import rateLimit from "express-rate-limit";
@@ -183,6 +184,21 @@ const MAX_UNDO_STEPS = 25;
 const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const IN_MATCH_LOBBY_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 const LOBBY_CLEANUP_INTERVAL_MS = 60 * 1000;
+const EMBED_ALLOWED_ORIGINS = (process.env.EMBED_ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map(value => value.trim())
+  .filter(Boolean);
+
+type EmbedSessionRecord = {
+  token: string;
+  user: AuthUser;
+  matchId?: string;
+  view?: string;
+  parentOrigin: string;
+  expiresAt: number;
+};
+
+const embedSessions = new Map<string, EmbedSessionRecord>();
 
 type MatchLobbyStatus = "OPEN" | "IN_MATCH" | "CLOSED";
 type MatchLobbyCloseReason = "EMPTY" | "MATCH_COMPLETE" | "IDLE_TIMEOUT";
@@ -213,6 +229,16 @@ type MatchLobbyRecord = {
 function getSocketUser(socket: { request: unknown }): AuthUser | null {
   const request = socket.request as { session?: { user?: AuthUser } };
   return request.session?.user ?? null;
+}
+
+function getSocketEmbedContext(socket: { request: unknown }): {
+  parentOrigin: string;
+  matchId?: string;
+  view?: string;
+  expiresAt: number;
+} | null {
+  const request = socket.request as { session?: { embedContext?: { parentOrigin: string; matchId?: string; view?: string; expiresAt: number } } };
+  return request.session?.embedContext ?? null;
 }
 
 function requireSocketUser(socket: { request: unknown }): AuthUser {
@@ -1230,6 +1256,89 @@ app.post("/api/profile/change-password", passwordRateLimit, async (req, res) => 
   }
 });
 
+app.post("/api/embed/session", (req, res) => {
+  if (!req.session.user) {
+    res.status(401).json({ message: "Login required." });
+    return;
+  }
+
+  const parentOrigin = String(req.body?.parentOrigin ?? "");
+  if (!parentOrigin) {
+    res.status(400).json({ message: "parentOrigin is required." });
+    return;
+  }
+
+  const isAllowedOrigin = EMBED_ALLOWED_ORIGINS.length === 0
+    ? isAllowedClientOrigin(parentOrigin)
+    : EMBED_ALLOWED_ORIGINS.includes(parentOrigin);
+  if (!isAllowedOrigin) {
+    res.status(403).json({ message: "Origin not allowed for embed session." });
+    return;
+  }
+
+  const ttlSecondsInput = Number(req.body?.expiresInSeconds ?? 300);
+  const ttlSeconds = Number.isFinite(ttlSecondsInput)
+    ? Math.max(60, Math.min(ttlSecondsInput, 600))
+    : 300;
+  const token = randomUUID();
+  const expiresAt = Date.now() + ttlSeconds * 1000;
+  const session: EmbedSessionRecord = {
+    token,
+    user: req.session.user,
+    matchId: typeof req.body?.matchId === "string" ? req.body.matchId : undefined,
+    view: typeof req.body?.view === "string" ? req.body.view : undefined,
+    parentOrigin,
+    expiresAt
+  };
+  embedSessions.set(token, session);
+
+  res.status(201).json({
+    token,
+    expiresAt: new Date(expiresAt).toISOString(),
+    parentOrigin: session.parentOrigin,
+    matchId: session.matchId,
+    view: session.view
+  });
+});
+
+app.post("/api/embed/consume", (req, res) => {
+  const token = String(req.body?.token ?? "");
+  const parentOrigin = String(req.body?.parentOrigin ?? "");
+  if (!token || !parentOrigin) {
+    res.status(400).json({ message: "token and parentOrigin are required." });
+    return;
+  }
+
+  const session = embedSessions.get(token);
+  if (!session) {
+    res.status(401).json({ message: "Invalid embed token." });
+    return;
+  }
+  if (session.expiresAt <= Date.now()) {
+    embedSessions.delete(token);
+    res.status(401).json({ message: "Embed token expired." });
+    return;
+  }
+  if (session.parentOrigin !== parentOrigin) {
+    res.status(403).json({ message: "Embed token origin mismatch." });
+    return;
+  }
+
+  embedSessions.delete(token);
+  req.session.user = session.user;
+  req.session.embedContext = {
+    parentOrigin: session.parentOrigin,
+    matchId: session.matchId,
+    view: session.view,
+    expiresAt: session.expiresAt
+  };
+  res.json({
+    user: session.user,
+    matchId: session.matchId,
+    view: session.view
+  });
+});
+
 if (isProduction) {
   app.use(express.static(CLIENT_DIST_DIR));
 
@@ -1266,8 +1375,24 @@ setInterval(() => {
 io.on("connection", async socket => {
   console.log(`Client connected: ${socket.id}`);
   const connectedUser = getSocketUser(socket);
+  const embedContext = getSocketEmbedContext(socket);
+  if (embedContext && embedContext.expiresAt <= Date.now()) {
+    const request = socket.request as { session?: { user?: AuthUser; embedContext?: unknown } };
+    if (request.session) {
+      delete request.session.user;
+      delete request.session.embedContext;
+    }
+    socket.emit("match:error", { message: "Embed session expired. Reload host to refresh token." });
+    socket.disconnect(true);
+    return;
+  }
 
   socket.use((packet, next) => {
+    const runtimeEmbedContext = getSocketEmbedContext(socket);
+    if (runtimeEmbedContext && runtimeEmbedContext.expiresAt <= Date.now()) {
+      next(new Error("Embed session expired."));
+      return;
+    }
     const [eventName] = packet;
 
     if (!canSocketUseDevTools(socket) && typeof eventName === "string" && isDevToolSocketEvent(eventName)) {
@@ -3606,4 +3731,3 @@ socket.on(
 httpServer.listen(PORT, () => {
   console.log(`WARD server running at http://localhost:${PORT}`);
 });
-
