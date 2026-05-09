@@ -1222,11 +1222,6 @@
 }
 
 
-<<<<<<< ours
-.board-preview-3d {
-  min-height: 0;
-  overflow: visible;
-=======
 .board-preview-view-toggle {
   display: flex;
   gap: 8px;
@@ -1253,43 +1248,10 @@
   height: calc(100svh - 230px);
   min-height: 560px;
   overflow: hidden;
->>>>>>> theirs
   position: relative;
 }
 
 .board-preview-3d__camera {
-<<<<<<< ours
-  cursor: grab;
-  height: 100%;
-  overflow: hidden;
-  perspective: 1100px;
-  perspective-origin: 50% 35%;
-  touch-action: none;
-  width: 100%;
-}
-
-.board-preview-3d__camera.is-panning {
-  cursor: grabbing;
-}
-
-.board-preview-3d__camera-stage {
-  height: 100%;
-  transform-origin: 50% 50%;
-  width: 100%;
-  will-change: transform;
-}
-
-.board-preview-3d__table {
-  background:
-    linear-gradient(90deg, rgba(14, 165, 233, 0.16), transparent 9%, transparent 91%, rgba(168, 85, 247, 0.16)),
-    linear-gradient(180deg, rgba(30, 41, 59, 0.82), rgba(7, 89, 133, 0.16) 44%, rgba(250, 204, 21, 0.11) 50%, rgba(7, 89, 133, 0.16) 56%, rgba(30, 41, 59, 0.82)),
-    radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.16), rgba(2, 6, 23, 0.95));
-  border: 1px solid rgba(148, 163, 184, 0.42);
-  border-radius: 16px;
-  box-shadow:
-    0 22px 60px rgba(2, 6, 23, 0.62),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-=======
   height: 100%;
   perspective: 1100px;
   perspective-origin: 50% 35%;
@@ -1302,7 +1264,6 @@
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 14px;
   box-shadow: 0 22px 60px rgba(2, 6, 23, 0.62);
->>>>>>> theirs
   height: 100%;
   overflow: hidden;
   position: relative;
@@ -1310,17 +1271,6 @@
   transform-style: preserve-3d;
 }
 
-<<<<<<< ours
-.board-preview-3d__table::before {
-  background:
-    linear-gradient(90deg, transparent 9%, rgba(148, 163, 184, 0.16) 9.1%, transparent 9.2%, transparent 90.8%, rgba(148, 163, 184, 0.16) 90.9%, transparent 91%),
-    linear-gradient(180deg, transparent 29.5%, rgba(125, 211, 252, 0.24) 29.7%, transparent 30%, transparent 49.6%, rgba(250, 204, 21, 0.38) 50%, transparent 50.4%, transparent 70%, rgba(125, 211, 252, 0.24) 70.3%, transparent 70.5%),
-    linear-gradient(90deg, transparent 26%, rgba(148, 163, 184, 0.16) 26.2%, transparent 26.5%, transparent 42%, rgba(148, 163, 184, 0.16) 42.2%, transparent 42.5%, transparent 57.5%, rgba(148, 163, 184, 0.16) 57.7%, transparent 58%, transparent 73.5%, rgba(148, 163, 184, 0.16) 73.7%, transparent 74%);
-  content: "";
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-=======
 .board-preview-3d__table,
 .board-preview-3d__piece,
 .board-preview-3d__slot button,
@@ -1328,7 +1278,6 @@
   backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
->>>>>>> theirs
 }
 
 .board-preview-3d__grid {
@@ -1347,21 +1296,12 @@
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-<<<<<<< ours
-  padding: 8px 10px;
-=======
   padding: 10px 12px;
->>>>>>> theirs
   position: absolute;
   text-align: center;
   text-transform: uppercase;
   transform-style: preserve-3d;
-<<<<<<< ours
-  width: clamp(118px, 12vw, 168px);
-  z-index: 6;
-=======
   width: min(25vw, 180px);
->>>>>>> theirs
 }
 
 .board-preview-3d__piece--player_1 {
@@ -1372,44 +1312,6 @@
   background: linear-gradient(130deg, rgba(126, 34, 206, 0.95), rgba(59, 7, 100, 0.95));
 }
 
-<<<<<<< ours
-.board-preview-3d__stack-zone {
-  align-content: center;
-  border: 1px solid rgba(226, 232, 240, 0.42);
-  border-radius: 10px;
-  color: #e2e8f0;
-  display: grid;
-  height: clamp(48px, 7vh, 78px);
-  justify-items: center;
-  left: 50%;
-  padding: 5px;
-  position: absolute;
-  text-transform: uppercase;
-  top: 50%;
-  transform: translate(-50%, -50%) translateZ(3px);
-  width: clamp(56px, 5.5vw, 82px);
-  z-index: 4;
-}
-
-.board-preview-3d__stack-zone.deck {
-  background: linear-gradient(145deg, rgba(250, 204, 21, 0.28), rgba(113, 63, 18, 0.64));
-}
-
-.board-preview-3d__stack-zone.cemetery {
-  background: linear-gradient(145deg, rgba(248, 113, 113, 0.24), rgba(69, 10, 10, 0.62));
-}
-
-.board-preview-3d__stack-zone span {
-  font-size: 0.52rem;
-  font-weight: 950;
-}
-
-.board-preview-3d__stack-zone strong {
-  font-size: 0.74rem;
-}
-
-=======
->>>>>>> theirs
 
 .board-preview-3d__hud {
   align-items: baseline;
@@ -1439,11 +1341,6 @@
 .board-preview-3d__layout {
   display: grid;
   gap: 10px;
-<<<<<<< ours
-  grid-template-columns: minmax(160px, 220px) 1fr;
-  height: min(72svh, 760px);
-  min-height: 520px;
-=======
   grid-template-columns: minmax(160px, 220px) 1fr minmax(280px, 360px);
   height: calc(100% - 38px);
 }
@@ -1454,7 +1351,6 @@
 
 .board-preview-3d__debug-drawer {
   overflow: auto;
->>>>>>> theirs
 }
 
 .board-preview-3d__board-column {
@@ -1516,8 +1412,6 @@
   }
 }
 
-<<<<<<< ours
-=======
 .board-preview-3d__zone {
   border: 1px dashed rgba(148, 163, 184, 0.55);
   border-radius: 10px;
@@ -1537,7 +1431,6 @@
   transform: translateX(-50%);
 }
 
->>>>>>> theirs
 .board-preview-3d__controls {
   align-items: center;
   background: rgba(2, 6, 23, 0.62);
@@ -1668,28 +1561,15 @@
 }
 
 .board-preview-3d__slot {
-<<<<<<< ours
-  border: 1px solid rgba(226, 232, 240, 0.26);
-  border-radius: 8px;
-  color: rgba(241, 245, 249, 0.75);
-  font-size: 0.58rem;
-  height: clamp(44px, 6.7vh, 76px);
-=======
   border: 1px dashed rgba(226, 232, 240, 0.44);
   border-radius: 10px;
   color: rgba(241, 245, 249, 0.75);
   font-size: 0.58rem;
->>>>>>> theirs
   left: 50%;
   padding: 5px 8px;
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%) translateZ(1px);
-<<<<<<< ours
-  width: clamp(72px, 7vw, 104px);
-  z-index: 3;
-=======
->>>>>>> theirs
 }
 
 .board-preview-3d__slot--player_1 {
@@ -1770,24 +1650,12 @@
 }
 
 .board-preview-3d__slot button {
-<<<<<<< ours
-  align-items: center;
-=======
->>>>>>> theirs
   background: transparent;
   border: 0;
   color: inherit;
   cursor: pointer;
-<<<<<<< ours
-  display: grid;
-  font: inherit;
-  height: 100%;
-  padding: 0;
-  width: 100%;
-=======
   font: inherit;
   padding: 0;
->>>>>>> theirs
 }
 
 .board-preview-3d__slot.is-animated-target {
@@ -1981,58 +1849,3 @@
   font-weight: 700;
   padding: 4px 6px;
 }
-<<<<<<< ours
-
-.app-shell-board-window {
-  max-width: none;
-  min-height: 100svh;
-  padding: 0;
-}
-
-.app-shell-board-window .app-header,
-.app-shell-board-window .app-page-nav,
-.app-shell-board-window .socket-id {
-  display: none;
-}
-
-.app-shell-board-window .panel {
-  background: #050914;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  min-height: 100svh;
-  padding: 8px;
-}
-
-.app-shell-board-window .board-preview-page {
-  gap: 6px;
-  max-height: none;
-  min-height: calc(100svh - 16px);
-  overflow: hidden;
-  padding: 0;
-}
-
-.app-shell-board-window .board-preview-header,
-.app-shell-board-window .board-preview-3d__status,
-.app-shell-board-window .board-preview-3d__hud,
-.app-shell-board-window .board-preview-3d__debug {
-  display: none;
-}
-
-.app-shell-board-window .board-preview-3d__presets {
-  background: rgba(2, 6, 23, 0.72);
-  margin-bottom: 6px;
-}
-
-.app-shell-board-window .board-preview-3d__controls,
-.app-shell-board-window .board-preview-3d__mini {
-  display: none;
-}
-
-.app-shell-board-window .board-preview-3d__layout {
-  grid-template-columns: minmax(0, 1fr);
-  height: calc(100svh - 72px);
-  min-height: 0;
-}
-=======
->>>>>>> theirs

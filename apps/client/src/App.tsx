@@ -69,11 +69,7 @@ import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview";
-<<<<<<< ours
 type PlayViewMode = "board" | "board3d" | "split" | "text";
-=======
-type PlayViewMode = "board" | "board-3d" | "split" | "text";
->>>>>>> theirs
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
 
@@ -751,7 +747,7 @@ export default function App() {
   }
 
   function normalizeDeckArtKey(value: string | undefined): CardArtKey {
-    return value === "holo" || value === "zero-art" ? value : "default";
+    return value === "holo" || value === "zero-art" || value === "zero-art-holo" ? value : "default";
   }
 
   function normalizeDeckArtKeys(values: string[] | undefined, cardCount: number): CardArtKey[] {
@@ -1591,14 +1587,8 @@ export default function App() {
         ...match.players.filter(player => player.id !== controlledPlayerId)
       ]
     : match?.players ?? [];
-<<<<<<< ours
-  const show2DBoardView = playViewMode === "board" || playViewMode === "split";
-  const show3DBoardView = playViewMode === "board3d";
-  const showBoardView = show2DBoardView || show3DBoardView;
-=======
   const showBoardView = playViewMode === "board" || playViewMode === "split";
   const show3dBoardView = playViewMode === "board-3d";
->>>>>>> theirs
   const showTextEngineView = playViewMode === "split" || playViewMode === "text";
   const shouldShowMagicChainPanel = !!match && (!match.pendingBattle || !!match.pendingChain) && (showTextEngineView || !!match.pendingChain);
   const boardSidePanelContent = match ? (
@@ -1971,15 +1961,9 @@ export default function App() {
                 <strong>
                   {playViewMode === "board"
                     ? "Board Only"
-<<<<<<< ours
-                    : playViewMode === "board3d"
-                      ? "3D Board"
-                    : playViewMode === "split"
-=======
                     : playViewMode === "board-3d"
                       ? "3D Board"
                       : playViewMode === "split"
->>>>>>> theirs
                       ? "Board + Text Engine"
                       : "Text Engine"}
                 </strong>
@@ -1995,17 +1979,10 @@ export default function App() {
                 </button>
                 <button
                   type="button"
-<<<<<<< ours
-                  className={playViewMode === "board3d" ? "active" : undefined}
-                  onClick={() => setPlayViewMode("board3d")}
-                >
-                  3D
-=======
                   className={playViewMode === "board-3d" ? "active" : undefined}
                   onClick={() => setPlayViewMode("board-3d")}
                 >
                   3D Board
->>>>>>> theirs
                 </button>
                 <button
                   type="button"
@@ -2025,9 +2002,6 @@ export default function App() {
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
-<<<<<<< ours
-              {show2DBoardView && (
-=======
               {show3dBoardView && (
                 <BoardPreviewPage
                   cardLibrary={cardLibrary}
@@ -2037,7 +2011,6 @@ export default function App() {
               )}
 
               {showBoardView && (
->>>>>>> theirs
                 <CardBoardView
                   match={match}
                   players={displayedPlayers}
