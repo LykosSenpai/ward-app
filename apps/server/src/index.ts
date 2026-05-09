@@ -87,6 +87,7 @@ import {
   saveDeckListToDisk,
   saveUserDeckListToDisk,
   updateCardEffectsInPack,
+  updateCardLimitRule,
   saveMatchToDisk,
   validateDataFileId
 } from "./dataStore.js";
@@ -2705,6 +2706,42 @@ io.on("connection", async socket => {
 
         io.emit("setup:options", listSetupOptions());
         io.emit("cards:library", listDefaultCardLibrary());
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "dev:saveCardLimit",
+    (data: {
+      packIds?: string[];
+      cardId: string;
+      limit: number;
+      reason?: string;
+    }) => {
+      try {
+        updateCardLimitRule({
+          cardId: data.cardId,
+          limit: data.limit,
+          reason: data.reason
+        });
+
+        const requestedPackIds = data.packIds?.length
+          ? data.packIds
+          : listSetupOptions().cardPacks.map(pack => pack.id);
+
+        socket.emit(
+          "cards:library",
+          listCardLibraryForPacks(requestedPackIds, loadCardLimitMap())
+        );
+        socket.emit("dev:cardLimitSaved", {
+          message: `Saved tournament limit for ${data.cardId}.`,
+          cardId: data.cardId,
+          limit: Math.min(3, Math.max(0, Math.floor(data.limit)))
+        });
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"

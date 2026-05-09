@@ -23,6 +23,8 @@ type LibraryDecksPageProps = {
   onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
+  canUseDevTools?: boolean;
+  onSaveCardLimit?: (cardId: string, status: "LEGAL" | "LIMITED" | "BANNED") => void;
 };
 
 export function LibraryDecksPage({
@@ -45,7 +47,9 @@ export function LibraryDecksPage({
   onRemoveCard,
   onSetCardCopies,
   onSetOwnedCopies,
-  onSaveDeck
+  onSaveDeck,
+  canUseDevTools = false,
+  onSaveCardLimit
 }: LibraryDecksPageProps) {
   return (
     <section className="library-decks-page library-decks-page-compact">
@@ -70,6 +74,8 @@ export function LibraryDecksPage({
         onSetCardCopies={onSetCardCopies}
         onSetOwnedCopies={onSetOwnedCopies}
         onSaveDeck={onSaveDeck}
+        canUseDevTools={canUseDevTools}
+        onSaveCardLimit={onSaveCardLimit}
       />
     </section>
   );

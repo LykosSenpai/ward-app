@@ -361,7 +361,7 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
         </select>
       </label>
 
-      <label className="card-art-select-label">
+      <label className="card-art-select-label card-art-holo-label">
         <input
           type="checkbox"
           checked={holoEnabled}

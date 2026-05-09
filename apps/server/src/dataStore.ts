@@ -466,6 +466,46 @@ export function loadCardLimitMap(
   return result;
 }
 
+export function updateCardLimitRule(args: {
+  cardId: string;
+  limit: number;
+  reason?: string;
+  limitListId?: string;
+}): DeckCardLimitMap {
+  validateDataFileId(args.cardId);
+  const limitListId = args.limitListId ?? DEFAULT_CARD_LIMIT_LIST_ID;
+  validateDataFileId(limitListId);
+
+  const limitPath = path.join(CARD_LIMITS_DIR, `${limitListId}.json`);
+  const limitList = fs.existsSync(limitPath)
+    ? readJsonFile<DeckCardLimitListDefinition>(limitPath)
+    : {
+        id: limitListId,
+        name: "Base 1v1 Card Limits",
+        version: "1.0.0",
+        rules: []
+      };
+  const normalizedLimit = Math.min(3, Math.max(0, Math.floor(args.limit)));
+  const nextRules = limitList.rules.filter(rule => rule.cardId !== args.cardId);
+
+  if (normalizedLimit < 3) {
+    nextRules.push({
+      cardId: args.cardId,
+      limit: normalizedLimit,
+      reason: args.reason?.trim() || (normalizedLimit === 0 ? "Tournament banned" : "Tournament limited")
+    });
+  }
+
+  nextRules.sort((a, b) => a.cardId.localeCompare(b.cardId, undefined, { numeric: true }));
+  fs.writeFileSync(
+    limitPath,
+    `${JSON.stringify({ ...limitList, rules: nextRules }, null, 2)}\n`,
+    "utf-8"
+  );
+
+  return loadCardLimitMap(limitListId);
+}
+
 export type CardPackSummary = {
   id: string;
   name: string;

@@ -680,6 +680,20 @@ export default function App() {
     });
   }
 
+  function saveCardTournamentLimit(cardId: string, status: "LEGAL" | "LIMITED" | "BANNED") {
+    const packIds =
+      selectedPackIds.length > 0
+        ? selectedPackIds
+        : cardPacks.map(pack => pack.id);
+    const limit = status === "BANNED" ? 0 : status === "LIMITED" ? 1 : 3;
+
+    socket.emit("dev:saveCardLimit", {
+      packIds,
+      cardId,
+      limit
+    });
+  }
+
   function refreshSetupOptions() {
     socket.emit("setup:listOptions");
     socket.emit("deck:listDetails");
@@ -1909,6 +1923,8 @@ export default function App() {
             onSetCardCopies={setDeckBuilderCardCopies}
             onSetOwnedCopies={setOwnedCardCopies}
             onSaveDeck={saveBuiltDeck}
+            canUseDevTools={canUseDevTools}
+            onSaveCardLimit={saveCardTournamentLimit}
           />
         ) : !match ? (
           <section className="play-lobby-workspace">

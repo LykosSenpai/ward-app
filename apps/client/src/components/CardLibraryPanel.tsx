@@ -9,6 +9,8 @@ import type { CardArtKey } from "./CardImagePreview";
 type CardTypeFilter = "ALL" | "CREATURE" | "MAGIC";
 type DeckMembershipFilter = "ALL" | "IN_DECK" | "NOT_IN_DECK";
 type OwnershipFilter = "ALL" | "OWNED" | "MISSING";
+type TournamentLimitFilter = "ALL" | "LEGAL" | "LIMITED" | "BANNED";
+type TournamentLimitStatus = "LEGAL" | "LIMITED" | "BANNED";
 type SortMode = "number" | "name" | "generation" | "deckCount" | "ownedCount" | "armorLevel" | "hp" | "speed";
 
 const FIXED_HOLO_INTENSITY = 10;
@@ -36,6 +38,8 @@ type CardLibraryPanelProps = {
   onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
+  canUseDevTools?: boolean;
+  onSaveCardLimit?: (cardId: string, status: TournamentLimitStatus) => void;
 };
 
 function getUniqueValues(values: Array<string | number | undefined>): string[] {
@@ -72,6 +76,12 @@ function getCardSortNumber(card: CardLibraryCardSummary): string {
   return `${card.generation ?? ""}`.padStart(3, "0") + `-${card.cardNumber ?? card.id}`;
 }
 
+function getTournamentLimitStatus(card: CardLibraryCardSummary): TournamentLimitStatus {
+  if ((card.deckLimit ?? 3) <= 0) return "BANNED";
+  if ((card.deckLimit ?? 3) < 3) return "LIMITED";
+  return "LEGAL";
+}
+
 function sanitizeCopies(value: string): number {
   const parsed = Number.parseInt(value, 10);
 
@@ -98,7 +108,9 @@ export function CardLibraryPanel({
   onRemoveCard,
   onSetCardCopies,
   onSetOwnedCopies,
-  onSaveDeck
+  onSaveDeck,
+  canUseDevTools = false,
+  onSaveCardLimit
 }: CardLibraryPanelProps) {
   const [searchText, setSearchText] = useState("");
   const [typeFilter, setTypeFilter] = useState<CardTypeFilter>("ALL");
@@ -109,6 +121,7 @@ export function CardLibraryPanel({
   const [effectTypeFilter, setEffectTypeFilter] = useState("ALL");
   const [deckMembershipFilter, setDeckMembershipFilter] = useState<DeckMembershipFilter>("ALL");
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>("ALL");
+  const [tournamentLimitFilter, setTournamentLimitFilter] = useState<TournamentLimitFilter>("ALL");
   const [sortMode, setSortMode] = useState<SortMode>("number");
   const [selectedArtKeysByCardId, setSelectedArtKeysByCardId] = useState<Record<string, CardArtKey>>({});
   const [draggedCard, setDraggedCard] = useState<{ cardId: string; artKey: CardArtKey } | null>(null);
@@ -256,6 +269,7 @@ export function CardLibraryPanel({
         if (deckMembershipFilter === "NOT_IN_DECK" && deckCount > 0) return false;
         if (ownershipFilter === "OWNED" && ownedCount === 0) return false;
         if (ownershipFilter === "MISSING" && ownedCount > 0) return false;
+        if (tournamentLimitFilter !== "ALL" && getTournamentLimitStatus(card) !== tournamentLimitFilter) return false;
         if (normalizedSearch && !getCardSearchText(card).includes(normalizedSearch)) return false;
         return true;
       })
@@ -274,7 +288,7 @@ export function CardLibraryPanel({
 
         return getCardSortNumber(a).localeCompare(getCardSortNumber(b), undefined, { numeric: true }) || a.name.localeCompare(b.name);
       });
-  }, [cardLibrary, creatureTypeFilter, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
+  }, [cardLibrary, creatureTypeFilter, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, tournamentLimitFilter, typeFilter, selectedArtKeysByCardId]);
 
   const visibleCards = useMemo(
     () => filteredCards.slice(unloadedCardCount, visibleCardCount),
@@ -297,6 +311,7 @@ export function CardLibraryPanel({
     rarityFilter,
     searchText,
     sortMode,
+    tournamentLimitFilter,
     typeFilter
   ]);
 
@@ -400,6 +415,7 @@ export function CardLibraryPanel({
     setEffectTypeFilter("ALL");
     setDeckMembershipFilter("ALL");
     setOwnershipFilter("ALL");
+    setTournamentLimitFilter("ALL");
     setSortMode("number");
   }
 
@@ -701,6 +717,16 @@ export function CardLibraryPanel({
                     <option value="MISSING">Missing Only</option>
                   </select>
                 </label>
+
+                <label>
+                  Tournament List
+                  <select value={tournamentLimitFilter} onChange={event => setTournamentLimitFilter(event.target.value as TournamentLimitFilter)}>
+                    <option value="ALL">All Cards</option>
+                    <option value="LEGAL">Legal Only</option>
+                    <option value="LIMITED">Limited Only</option>
+                    <option value="BANNED">Banned Only</option>
+                  </select>
+                </label>
               </div>
             </details>
           </div>
@@ -742,6 +768,7 @@ export function CardLibraryPanel({
                 const deckLimit = card.deckLimit ?? 3;
                 const canAdd = getCanAddCardToDeck(card.id);
                 const deckLimitLabel = deckLimit === 0 ? "BANNED" : deckLimit < 3 ? `LIMIT ${deckLimit}` : "LIMIT 3";
+                const tournamentLimitStatus = getTournamentLimitStatus(card);
 
                 return (
                   <article
@@ -770,6 +797,19 @@ export function CardLibraryPanel({
                     <div className="unified-card-actions-row library-option-a-card-actions-row compact-art-ownership-row">
                       <div className="library-option-a-limit-add-row">
                         <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
+                        {canUseDevTools && onSaveCardLimit ? (
+                          <label className="library-option-a-limit-editor" title={card.deckLimitReason ?? "Tournament limit status"}>
+                            <span>Tournament</span>
+                            <select
+                              value={tournamentLimitStatus}
+                              onChange={event => onSaveCardLimit(card.id, event.target.value as TournamentLimitStatus)}
+                            >
+                              <option value="LEGAL">Legal</option>
+                              <option value="LIMITED">Limited</option>
+                              <option value="BANNED">Banned</option>
+                            </select>
+                          </label>
+                        ) : null}
                         <button
                           className="library-option-a-mini-deck-add"
                           onClick={() => onAddCard(card.id, selectedArtKey)}
