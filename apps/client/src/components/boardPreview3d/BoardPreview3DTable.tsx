@@ -4,8 +4,11 @@ import type { BoardRenderEventType } from "../boardRenderContracts";
 
 type Props = {
   zoomScale: number;
+  setZoomScale?: (value: number) => void;
   cameraPanX: number;
+  setCameraPanX?: (value: number) => void;
   cameraPanY: number;
+  setCameraPanY?: (value: number) => void;
 
   tiltDegrees: number;
   heightScale: number;
