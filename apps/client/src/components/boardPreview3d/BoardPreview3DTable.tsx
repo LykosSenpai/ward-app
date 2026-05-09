@@ -1,5 +1,6 @@
 import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
 import type { BoardObject } from "../boardPreview3dAdapter";
+import type { BoardRenderEventType } from "../boardRenderContracts";
 
 type Props = {
   zoomScale: number;

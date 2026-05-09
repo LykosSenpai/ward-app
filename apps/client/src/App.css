@@ -7346,6 +7346,7 @@ button:disabled:hover {
 .playmat-card-title-row strong {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   display: -webkit-box;
   overflow: hidden;
 }
@@ -7557,6 +7558,7 @@ button:disabled:hover {
 .hand-card-body strong {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   display: -webkit-box;
   font-size: 0.74rem;
   line-height: 1.08;
@@ -7572,6 +7574,7 @@ button:disabled:hover {
 .hand-card .magic-text {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   display: -webkit-box;
   font-size: 0.64rem;
   overflow: hidden;

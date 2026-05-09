@@ -1588,7 +1588,7 @@ export default function App() {
       ]
     : match?.players ?? [];
   const showBoardView = playViewMode === "board" || playViewMode === "split";
-  const show3dBoardView = playViewMode === "board-3d";
+  const show3dBoardView = playViewMode === "board3d";
   const showTextEngineView = playViewMode === "split" || playViewMode === "text";
   const shouldShowMagicChainPanel = !!match && (!match.pendingBattle || !!match.pendingChain) && (showTextEngineView || !!match.pendingChain);
   const boardSidePanelContent = match ? (
@@ -1961,7 +1961,7 @@ export default function App() {
                 <strong>
                   {playViewMode === "board"
                     ? "Board Only"
-                    : playViewMode === "board-3d"
+                    : playViewMode === "board3d"
                       ? "3D Board"
                       : playViewMode === "split"
                       ? "Board + Text Engine"
@@ -1979,8 +1979,8 @@ export default function App() {
                 </button>
                 <button
                   type="button"
-                  className={playViewMode === "board-3d" ? "active" : undefined}
-                  onClick={() => setPlayViewMode("board-3d")}
+                  className={playViewMode === "board3d" ? "active" : undefined}
+                  onClick={() => setPlayViewMode("board3d")}
                 >
                   3D Board
                 </button>
@@ -2032,7 +2032,7 @@ export default function App() {
                 />
               )}
 
-              {show3DBoardView && (
+              {show3dBoardView && (
                 <section className="live-3d-board-view" aria-label="Live 3D game board">
                   <div className="live-3d-board-stage">
                     <BoardPreview3D
