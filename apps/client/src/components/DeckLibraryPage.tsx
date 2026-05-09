@@ -371,8 +371,8 @@ export function DeckLibraryPage({
                     </div>
                     <div className="deck-proof-photo-grid">
                       {(deck.tournamentProofPhotos ?? []).map(photo => (
-                        <a href={photo.url} target="_blank" rel="noreferrer" key={photo.id}>
-                          <img src={photo.url} alt={photo.fileName} />
+                        <a href={getProofPhotoUrl(photo.url)} target="_blank" rel="noreferrer" key={photo.id}>
+                          <img src={getProofPhotoUrl(photo.url)} alt={photo.fileName} />
                           <span>{photo.fileName}</span>
                         </a>
                       ))}
@@ -457,8 +457,8 @@ export function DeckLibraryPage({
                 {selectedDeck.tournamentProofPhotos?.length ? (
                   <div className="deck-proof-photo-grid">
                     {selectedDeck.tournamentProofPhotos.map(photo => (
-                      <a href={photo.url} target="_blank" rel="noreferrer" key={photo.id}>
-                        <img src={photo.url} alt={photo.fileName} />
+                      <a href={getProofPhotoUrl(photo.url)} target="_blank" rel="noreferrer" key={photo.id}>
+                        <img src={getProofPhotoUrl(photo.url)} alt={photo.fileName} />
                         <span>{photo.fileName}</span>
                       </a>
                     ))}
