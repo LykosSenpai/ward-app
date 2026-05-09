@@ -1223,10 +1223,13 @@
 
 
 <<<<<<< ours
+<<<<<<< ours
 .board-preview-3d {
   min-height: 0;
   overflow: visible;
 =======
+=======
+>>>>>>> theirs
 .board-preview-view-toggle {
   display: flex;
   gap: 8px;
@@ -1253,11 +1256,15 @@
   height: calc(100svh - 230px);
   min-height: 560px;
   overflow: hidden;
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
   position: relative;
 }
 
 .board-preview-3d__camera {
+<<<<<<< ours
 <<<<<<< ours
   cursor: grab;
   height: 100%;
@@ -1290,6 +1297,8 @@
     0 22px 60px rgba(2, 6, 23, 0.62),
     inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 =======
+=======
+>>>>>>> theirs
   height: 100%;
   perspective: 1100px;
   perspective-origin: 50% 35%;
@@ -1302,6 +1311,9 @@
   border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 14px;
   box-shadow: 0 22px 60px rgba(2, 6, 23, 0.62);
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
   height: 100%;
   overflow: hidden;
@@ -1310,6 +1322,7 @@
   transform-style: preserve-3d;
 }
 
+<<<<<<< ours
 <<<<<<< ours
 .board-preview-3d__table::before {
   background:
@@ -1321,6 +1334,8 @@
   pointer-events: none;
   position: absolute;
 =======
+=======
+>>>>>>> theirs
 .board-preview-3d__table,
 .board-preview-3d__piece,
 .board-preview-3d__slot button,
@@ -1328,6 +1343,9 @@
   backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
 }
 
@@ -1348,7 +1366,11 @@
   font-weight: 800;
   letter-spacing: 0.01em;
 <<<<<<< ours
+<<<<<<< ours
   padding: 8px 10px;
+=======
+  padding: 10px 12px;
+>>>>>>> theirs
 =======
   padding: 10px 12px;
 >>>>>>> theirs
@@ -1357,8 +1379,12 @@
   text-transform: uppercase;
   transform-style: preserve-3d;
 <<<<<<< ours
+<<<<<<< ours
   width: clamp(118px, 12vw, 168px);
   z-index: 6;
+=======
+  width: min(25vw, 180px);
+>>>>>>> theirs
 =======
   width: min(25vw, 180px);
 >>>>>>> theirs
@@ -1372,6 +1398,7 @@
   background: linear-gradient(130deg, rgba(126, 34, 206, 0.95), rgba(59, 7, 100, 0.95));
 }
 
+<<<<<<< ours
 <<<<<<< ours
 .board-preview-3d__stack-zone {
   align-content: center;
@@ -1410,6 +1437,8 @@
 
 =======
 >>>>>>> theirs
+=======
+>>>>>>> theirs
 
 .board-preview-3d__hud {
   align-items: baseline;
@@ -1436,10 +1465,13 @@
   display: grid;
   gap: 10px;
 <<<<<<< ours
+<<<<<<< ours
   grid-template-columns: minmax(160px, 220px) 1fr;
   height: min(72svh, 760px);
   min-height: 520px;
 =======
+=======
+>>>>>>> theirs
   grid-template-columns: minmax(160px, 220px) 1fr minmax(280px, 360px);
   height: calc(100% - 38px);
 }
@@ -1450,6 +1482,9 @@
 
 .board-preview-3d__debug-drawer {
   overflow: auto;
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
 }
 
@@ -1502,7 +1537,10 @@
 }
 
 <<<<<<< ours
+<<<<<<< ours
 =======
+=======
+>>>>>>> theirs
 .board-preview-3d__zone {
   border: 1px dashed rgba(148, 163, 184, 0.55);
   border-radius: 10px;
@@ -1522,6 +1560,9 @@
   transform: translateX(-50%);
 }
 
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
 .board-preview-3d__controls {
   align-items: center;
@@ -1654,16 +1695,22 @@
 
 .board-preview-3d__slot {
 <<<<<<< ours
+<<<<<<< ours
   border: 1px solid rgba(226, 232, 240, 0.26);
   border-radius: 8px;
   color: rgba(241, 245, 249, 0.75);
   font-size: 0.58rem;
   height: clamp(44px, 6.7vh, 76px);
 =======
+=======
+>>>>>>> theirs
   border: 1px dashed rgba(226, 232, 240, 0.44);
   border-radius: 10px;
   color: rgba(241, 245, 249, 0.75);
   font-size: 0.58rem;
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
   left: 50%;
   padding: 5px 8px;
@@ -1671,8 +1718,11 @@
   top: 50%;
   transform: translate(-50%, -50%) translateZ(1px);
 <<<<<<< ours
+<<<<<<< ours
   width: clamp(72px, 7vw, 104px);
   z-index: 3;
+=======
+>>>>>>> theirs
 =======
 >>>>>>> theirs
 }
@@ -1756,7 +1806,10 @@
 
 .board-preview-3d__slot button {
 <<<<<<< ours
+<<<<<<< ours
   align-items: center;
+=======
+>>>>>>> theirs
 =======
 >>>>>>> theirs
   background: transparent;
@@ -1764,11 +1817,16 @@
   color: inherit;
   cursor: pointer;
 <<<<<<< ours
+<<<<<<< ours
   display: grid;
   font: inherit;
   height: 100%;
   padding: 0;
   width: 100%;
+=======
+  font: inherit;
+  padding: 0;
+>>>>>>> theirs
 =======
   font: inherit;
   padding: 0;
@@ -1921,6 +1979,7 @@
   padding: 4px 6px;
 }
 <<<<<<< ours
+<<<<<<< ours
 
 .app-shell-board-window {
   max-width: none;
@@ -1973,5 +2032,7 @@
   height: calc(100svh - 72px);
   min-height: 0;
 }
+=======
+>>>>>>> theirs
 =======
 >>>>>>> theirs

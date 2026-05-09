@@ -1,5 +1,9 @@
 <<<<<<< ours
+<<<<<<< ours
 import { BOARD_SLOTS, ZONE_ANCHORS } from "../boardPreview3dLayout";
+=======
+import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
+>>>>>>> theirs
 =======
 import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
 >>>>>>> theirs
@@ -19,8 +23,11 @@ export function BoardPreview3DMiniMap({ showAnchors, selectedSlotId, filteredBoa
     <aside className="board-preview-3d__mini" aria-label="Condensed 2D board map">
       <div className="board-preview-3d__mini-grid" aria-hidden="true" />
 <<<<<<< ours
+<<<<<<< ours
       {showAnchors ? ZONE_ANCHORS.map((zone) => (
 =======
+=======
+>>>>>>> theirs
       {BOARD_ZONES.map((zone) => (
           <div key={zone.id} className="board-preview-3d__zone" style={{
             left: `${zone.xPercent}%`,
@@ -31,6 +38,9 @@ export function BoardPreview3DMiniMap({ showAnchors, selectedSlotId, filteredBoa
           }}><span>{zone.label}</span></div>
         ))}
         {showAnchors ? ZONE_ANCHORS.map((zone) => (
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
         <div key={`mini-zone-${zone.id}`} className="board-preview-3d__mini-zone" style={{ left: `${zone.xPercent}%`, top: `${zone.zPercent}%` }}>
           {zone.label}

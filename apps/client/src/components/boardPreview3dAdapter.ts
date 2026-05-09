@@ -21,10 +21,15 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
   return match.players.flatMap((player, playerIndex) => {
     const owner: "player_1" | "player_2" = player.id === "player_1" ? "player_1" : "player_2";
 <<<<<<< ours
+<<<<<<< ours
     const monsterZ = playerIndex === 0 ? 64 : 36;
     const magicZ = playerIndex === 0 ? 76 : 24;
     const limitedColumns = playerIndex === 0 ? [82, 66, 34, 18] : [18, 34, 66, 82];
     const magicColumns = playerIndex === 0 ? [82, 66, 50, 34, 18] : [18, 34, 50, 66, 82];
+=======
+    const ownerZ = playerIndex === 0 ? 74 : 26;
+    const friendlyShift = playerIndex === 0 ? 1 : -1;
+>>>>>>> theirs
 =======
     const ownerZ = playerIndex === 0 ? 74 : 26;
     const friendlyShift = playerIndex === 0 ? 1 : -1;
@@ -37,7 +42,11 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
           owner,
           xPercent: 50,
 <<<<<<< ours
+<<<<<<< ours
           zPercent: monsterZ,
+=======
+          zPercent: ownerZ,
+>>>>>>> theirs
 =======
           zPercent: ownerZ,
 >>>>>>> theirs
@@ -48,6 +57,10 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
       : [];
 
 <<<<<<< ours
+<<<<<<< ours
+=======
+    const limitedOffsets = [28, 10, -10, -28];
+>>>>>>> theirs
 =======
     const limitedOffsets = [28, 10, -10, -28];
 >>>>>>> theirs
@@ -56,8 +69,13 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
       label: `${player.displayName} Limited ${index + 1}`,
       owner,
 <<<<<<< ours
+<<<<<<< ours
       xPercent: limitedColumns[index] ?? 50,
       zPercent: monsterZ,
+=======
+      xPercent: 50 + friendlyShift * (limitedOffsets[index] ?? 0),
+      zPercent: ownerZ + friendlyShift * -8,
+>>>>>>> theirs
 =======
       xPercent: 50 + friendlyShift * (limitedOffsets[index] ?? 0),
       zPercent: ownerZ + friendlyShift * -8,
@@ -68,6 +86,10 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
     }));
 
 <<<<<<< ours
+<<<<<<< ours
+=======
+    const magicOffsets = [40, 20, 0, -20, -40];
+>>>>>>> theirs
 =======
     const magicOffsets = [40, 20, 0, -20, -40];
 >>>>>>> theirs
@@ -76,8 +98,13 @@ export function buildBoardObjects(match: AppMatchState): BoardObject[] {
       label: `${player.displayName} Magic ${index + 1}`,
       owner,
 <<<<<<< ours
+<<<<<<< ours
       xPercent: magicColumns[index] ?? 50,
       zPercent: magicZ,
+=======
+      xPercent: 50 + friendlyShift * (magicOffsets[index] ?? 0),
+      zPercent: ownerZ + friendlyShift * 4,
+>>>>>>> theirs
 =======
       xPercent: 50 + friendlyShift * (magicOffsets[index] ?? 0),
       zPercent: ownerZ + friendlyShift * 4,

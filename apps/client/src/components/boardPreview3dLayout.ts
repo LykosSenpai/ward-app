@@ -14,10 +14,13 @@ export type ZoneAnchor = {
 };
 
 <<<<<<< ours
+<<<<<<< ours
 export type StackZone = ZoneAnchor & {
   owner: "player_1" | "player_2";
   kind: "deck" | "cemetery";
 =======
+=======
+>>>>>>> theirs
 export type BoardZone = {
   id: string;
   label: string;
@@ -26,12 +29,16 @@ export type BoardZone = {
   widthPercent: number;
   heightPercent: number;
   rotationDeg?: number;
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
 };
 
 export type CameraPresetKey = "tactical" | "neutral" | "cinematic";
 
 export const CAMERA_PRESETS: Record<CameraPresetKey, { tilt: number; zoom: number; height: number }> = {
+<<<<<<< ours
 <<<<<<< ours
   tactical: { tilt: 58, zoom: 1.04, height: 1.15 },
   neutral: { tilt: 54, zoom: 1.08, height: 1 },
@@ -75,6 +82,8 @@ export const BOARD_SLOTS: BoardSlot[] = [
   { id: "player_1-magic-4", owner: "player_1", xPercent: 34, zPercent: 76, label: "P1 Magic 4" },
   { id: "player_1-magic-5", owner: "player_1", xPercent: 18, zPercent: 76, label: "P1 Magic 5" }
 =======
+=======
+>>>>>>> theirs
   tactical: { tilt: 64, zoom: 0.92, height: 1.25 },
   neutral: { tilt: 60, zoom: 1, height: 1 },
   cinematic: { tilt: 52, zoom: 1.08, height: 1.45 }
@@ -119,5 +128,8 @@ export const BOARD_SLOTS: BoardSlot[] = [
   { id: "player_1-magic-3", owner: "player_1", xPercent: 50, zPercent: 80, label: "P1 Magic 3" },
   { id: "player_1-magic-4", owner: "player_1", xPercent: 30, zPercent: 79, label: "P1 Magic 4" },
   { id: "player_1-magic-5", owner: "player_1", xPercent: 10, zPercent: 78, label: "P1 Magic 5" }
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
 ];

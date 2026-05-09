@@ -68,7 +68,11 @@ import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview";
 <<<<<<< ours
+<<<<<<< ours
 type PlayViewMode = "board" | "board3d" | "split" | "text";
+=======
+type PlayViewMode = "board" | "board-3d" | "split" | "text";
+>>>>>>> theirs
 =======
 type PlayViewMode = "board" | "board-3d" | "split" | "text";
 >>>>>>> theirs
@@ -1588,9 +1592,14 @@ export default function App() {
       ]
     : match?.players ?? [];
 <<<<<<< ours
+<<<<<<< ours
   const show2DBoardView = playViewMode === "board" || playViewMode === "split";
   const show3DBoardView = playViewMode === "board3d";
   const showBoardView = show2DBoardView || show3DBoardView;
+=======
+  const showBoardView = playViewMode === "board" || playViewMode === "split";
+  const show3dBoardView = playViewMode === "board-3d";
+>>>>>>> theirs
 =======
   const showBoardView = playViewMode === "board" || playViewMode === "split";
   const show3dBoardView = playViewMode === "board-3d";
@@ -1968,9 +1977,15 @@ export default function App() {
                   {playViewMode === "board"
                     ? "Board Only"
 <<<<<<< ours
+<<<<<<< ours
                     : playViewMode === "board3d"
                       ? "3D Board"
                     : playViewMode === "split"
+=======
+                    : playViewMode === "board-3d"
+                      ? "3D Board"
+                      : playViewMode === "split"
+>>>>>>> theirs
 =======
                     : playViewMode === "board-3d"
                       ? "3D Board"
@@ -1992,15 +2007,21 @@ export default function App() {
                 <button
                   type="button"
 <<<<<<< ours
+<<<<<<< ours
                   className={playViewMode === "board3d" ? "active" : undefined}
                   onClick={() => setPlayViewMode("board3d")}
                 >
                   3D
 =======
+=======
+>>>>>>> theirs
                   className={playViewMode === "board-3d" ? "active" : undefined}
                   onClick={() => setPlayViewMode("board-3d")}
                 >
                   3D Board
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
                 </button>
                 <button
@@ -2022,8 +2043,11 @@ export default function App() {
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
 <<<<<<< ours
+<<<<<<< ours
               {show2DBoardView && (
 =======
+=======
+>>>>>>> theirs
               {show3dBoardView && (
                 <BoardPreviewPage
                   cardLibrary={cardLibrary}

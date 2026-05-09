@@ -1,4 +1,5 @@
 <<<<<<< ours
+<<<<<<< ours
 import { useRef, useState, type PointerEvent, type WheelEvent } from "react";
 import { BOARD_SLOTS, STACK_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
 import type { BoardObject } from "../boardPreview3dAdapter";
@@ -14,6 +15,8 @@ type Props = {
   cameraPanY: number;
   setCameraPanY: (value: number) => void;
 =======
+=======
+>>>>>>> theirs
 import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
 import type { BoardObject } from "../boardPreview3dAdapter";
 
@@ -21,6 +24,9 @@ type Props = {
   zoomScale: number;
   cameraPanX: number;
   cameraPanY: number;
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
   tiltDegrees: number;
   heightScale: number;
@@ -32,6 +38,7 @@ type Props = {
   onSelectPiece?: (pieceId: string) => void;
 };
 
+<<<<<<< ours
 <<<<<<< ours
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -160,6 +167,8 @@ export function BoardPreview3DTable({
           ))}
         </div>
 =======
+=======
+>>>>>>> theirs
 export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, selectedSlotId, filteredBoardObjects, resolveSlotPosition, onSelectSlot, onSelectPiece }: Props) {
   return (
     <div className="board-preview-3d__camera" style={{ transform: `translate(${cameraPanX}%, ${cameraPanY}%) scale(${zoomScale.toFixed(2)}) translateZ(0)` }}>
@@ -208,6 +217,9 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
             <button type="button" onClick={() => onSelectPiece?.(object.id)}>{object.label} · {object.slotId}</button>
           </article>
         ))}
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
       </div>
     </div>
