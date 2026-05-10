@@ -110,7 +110,7 @@ export function decodeWardDeckString(value: string): WardDeckSharePayload {
   const parsed = JSON.parse(jsonText) as Partial<WardDeckSharePayload>;
 
   if (parsed.v !== 1 || parsed.kind !== "WARD_DECK") {
-    throw new Error("Deck string is not a WARD deck string v1 payload.");
+    throw new Error("Deck string is not a Ward Nexus deck string v1 payload.");
   }
 
   const cardIds = normalizeImportedCardIds(parsed.cardIds);
@@ -186,7 +186,7 @@ export function buildDeckNotesMarkdown(args: {
   const generatedAt = new Date().toISOString();
 
   const lines: string[] = [
-    `# ${args.name || "WARD Deck"} - Test Notes`,
+    `# ${args.name || "Ward Nexus Deck"} - Test Notes`,
     "",
     `Generated: ${generatedAt}`,
     `Source: ${args.sourceLabel}`,

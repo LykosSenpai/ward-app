@@ -1302,6 +1302,13 @@
   z-index: 12;
 }
 
+.board-preview-3d__dice-layer {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 33;
+}
+
 .board-preview-3d__table {
   background: radial-gradient(circle at 50% 44%, rgba(16, 185, 129, 0.22), rgba(2, 6, 23, 0.95));
   border: 1px solid rgba(148, 163, 184, 0.35);
@@ -1894,8 +1901,10 @@
   font-size: 0.58rem;
   font-weight: 950;
   justify-items: center;
+  line-height: 0.95;
   min-height: 50px;
   padding: 4px;
+  text-align: center;
 }
 
 .board-preview-3d__hand-rail:hover .board-preview-3d__hidden-hand-card,

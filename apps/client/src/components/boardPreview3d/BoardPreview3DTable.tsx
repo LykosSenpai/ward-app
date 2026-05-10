@@ -7,6 +7,7 @@ import type { AppMatchState } from "../../clientTypes";
 import { MatchCardImage } from "../MatchCardImage";
 import { getCardName, getCardText, getCreatureStatsLine, getEffectiveCreatureStat, getMagicLine, isCreature, isMagic } from "../../gameViewHelpers";
 import { BoardPreview3DWebGLCards } from "./BoardPreview3DWebGLCards";
+import { BoardPreview3DDiceLayer } from "./BoardPreview3DDiceLayer";
 
 type Props = {
   zoomScale: number;
@@ -50,6 +51,7 @@ type Props = {
   highlightedSlotIds?: string[];
   highlightedPieceIds?: string[];
   battleSpeedBadges?: Record<string, { label: string; tone: "winner" | "neutral" }>;
+  diceRollVisual?: { id: string; label: string; values: number[] } | null;
   activeEventType?: BoardRenderEventType | null;
   match: AppMatchState;
   cardByInstanceId: Map<string, CardInstance>;
@@ -79,7 +81,7 @@ function getCreatureOverlayStats(match: AppMatchState, card: CardInstance) {
   };
 }
 
-export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onDropBattleAttackerToPiece, draggableHandCardIds, draggableBattleAttackerCardIds, validBattleTargetPieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, battleSpeedBadges, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
+export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onDropBattleAttackerToPiece, draggableHandCardIds, draggableBattleAttackerCardIds, validBattleTargetPieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, battleSpeedBadges, diceRollVisual, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
   const highlightedSet = new Set(highlightedSlotIds ?? []);
   const highlightedPieceSet = new Set(highlightedPieceIds ?? []);
   const draggableHandCardSet = new Set(draggableHandCardIds ?? []);
@@ -126,6 +128,12 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
           filteredBoardObjects={filteredBoardObjects}
           heightScale={heightScale}
           match={match}
+          resolveSlotPosition={resolveSlotPosition}
+        />
+        <BoardPreview3DDiceLayer
+          diceRoll={diceRollVisual}
+          filteredBoardObjects={filteredBoardObjects}
+          heightScale={heightScale}
           resolveSlotPosition={resolveSlotPosition}
         />
         {showZoneRects ? BOARD_ZONES.map((zone) => {

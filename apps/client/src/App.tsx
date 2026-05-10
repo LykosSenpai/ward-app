@@ -647,7 +647,7 @@ export default function App() {
     });
 
     socket.on("connect_error", () => {
-      setServerMessage("Could not connect to WARD server.");
+      setServerMessage("Could not connect to Ward Nexus server.");
     });
 
     requestInitialData();
@@ -1752,7 +1752,7 @@ export default function App() {
       <main className="login-page">
         <section className="login-panel">
           <div className="login-title">
-            <span>WARD</span>
+            <span>Ward Nexus</span>
             <h1>Loading</h1>
           </div>
         </section>
@@ -1784,7 +1784,7 @@ export default function App() {
       <section className="panel">
         {!embedModeEnabled && <header className="app-header">
           <div>
-            <h1>WARD Virtual Tabletop</h1>
+            <h1>Ward Nexus</h1>
             <p className="subtitle">Local rules-assisted 1v1 prototype</p>
           </div>
 

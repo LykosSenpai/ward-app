@@ -45,10 +45,11 @@ function createCardBackTexture(): THREE.CanvasTexture {
     context.lineWidth = 8;
     context.strokeRect(58, 58, canvas.width - 116, canvas.height - 116);
     context.fillStyle = "rgba(226, 232, 240, 0.92)";
-    context.font = "900 58px system-ui, sans-serif";
+    context.font = "900 54px system-ui, sans-serif";
     context.textAlign = "center";
     context.textBaseline = "middle";
-    context.fillText("WARD", canvas.width / 2, canvas.height / 2);
+    context.fillText("Ward", canvas.width / 2, canvas.height / 2 - 34);
+    context.fillText("Nexus", canvas.width / 2, canvas.height / 2 + 34);
   }
 
   const texture = new THREE.CanvasTexture(canvas);

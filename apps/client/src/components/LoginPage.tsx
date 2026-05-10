@@ -62,10 +62,10 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
   return (
     <main className="login-page">
       <section className="login-entry">
-        <section className="login-showcase" aria-label="WARD card artwork">
+        <section className="login-showcase" aria-label="Ward Nexus card artwork">
           <div className="login-showcase-copy">
-            <span>WARD</span>
-            <h1>Virtual Tabletop</h1>
+            <span>Ward Nexus</span>
+            <h1>Online Battler</h1>
             <p>Build decks, manage your collection, and play rules-assisted matches online.</p>
           </div>
 
@@ -83,7 +83,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
 
         <section className="login-panel">
           <div className="login-title">
-            <span>WARD</span>
+            <span>Ward Nexus</span>
             <h1>{mode === "login" ? "Login" : "Create Account"}</h1>
           </div>
 
@@ -155,6 +155,10 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
           >
             {mode === "login" ? "Need an account?" : "Already have an account?"}
           </button>
+
+          <p className="login-disclaimer">
+            Ward Nexus is an unofficial fan-made tool and online battler for WARD TCG. It is not affiliated with, endorsed by, or sponsored by the WARD creators or rights holders. All card names, artwork, rules text, and related game materials remain the property of their respective owners.
+          </p>
         </section>
       </section>
     </main>

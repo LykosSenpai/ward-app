@@ -95,6 +95,67 @@ function getCurrentStrike(battle: PendingBattleSession) {
   return battle.strikes[battle.currentStrikeIndex];
 }
 
+function getLatestDiceRollVisual(match: AppMatchState): { id: string; label: string; values: number[] } | null {
+  const battle = match.pendingBattle;
+  const effectRoll = match.pendingEffectRoll;
+
+  if (effectRoll?.rolledDice?.length) {
+    return {
+      id: `effect-${effectRoll.id}-${effectRoll.rolledDice.join("-")}`,
+      label: "Effect Roll",
+      values: effectRoll.rolledDice
+    };
+  }
+
+  if (battle) {
+    const currentStrike = getCurrentStrike(battle);
+    if (currentStrike?.damageRollDice?.length) {
+      return {
+        id: `battle-damage-${battle.id}-${currentStrike.id}-${currentStrike.damageRollDice.join("-")}`,
+        label: "Damage Roll",
+        values: currentStrike.damageRollDice
+      };
+    }
+    if (currentStrike?.selfDamageDice?.length) {
+      return {
+        id: `battle-self-${battle.id}-${currentStrike.id}-${currentStrike.selfDamageDice.join("-")}`,
+        label: "Self Damage Roll",
+        values: currentStrike.selfDamageDice
+      };
+    }
+    if (currentStrike?.hitRollDice?.length) {
+      return {
+        id: `battle-hit-${battle.id}-${currentStrike.id}-${currentStrike.hitRollDice.join("-")}`,
+        label: "Hit Roll",
+        values: currentStrike.hitRollDice
+      };
+    }
+    const latestSpeedTie = battle.speedTieRolls.at(-1);
+    if (latestSpeedTie) {
+      const values = [latestSpeedTie.attackingCreatureRoll, latestSpeedTie.defendingCreatureRoll];
+      return {
+        id: `battle-speed-${battle.id}-${battle.speedTieRolls.length}-${values.join("-")}`,
+        label: "Speed Tie Roll",
+        values
+      };
+    }
+  }
+
+  const openingRoll = match.setup.openingRoll;
+  if (openingRoll) {
+    const values = Object.values(openingRoll.rolls).filter((value): value is number => typeof value === "number");
+    if (values.length > 0) {
+      return {
+        id: `opening-${openingRoll.round}-${openingRoll.status}-${values.join("-")}`,
+        label: "Opening Roll",
+        values
+      };
+    }
+  }
+
+  return null;
+}
+
 function BoardBattleResolverHud({
   battle,
   effectRoll,
@@ -966,6 +1027,7 @@ export function BoardPreview3D({
   const battleStepControllerLabel = battleStepControllerPlayerId
     ? match.players.find(player => player.id === battleStepControllerPlayerId)?.displayName ?? battleStepControllerPlayerId
     : "the current player";
+  const diceRollVisual = useMemo(() => getLatestDiceRollVisual(match), [match]);
 
   useEffect(() => {
     if (!selectedBattleAttackerId) return;
@@ -1597,6 +1659,7 @@ export function BoardPreview3D({
             highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...sacrificeTargetSlotIds, ...battleTargetSlotIds, ...effectTargetSlotIds]}
             highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...effectTargetPieceIds, ...equipAttachSourcePieceIds, ...equipAttachTargetPieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
             battleSpeedBadges={battleSpeedBadges}
+            diceRollVisual={diceRollVisual}
             activeEventType={activeEvent?.type ?? null}
             match={match}
             cardByInstanceId={cardByInstanceId}
@@ -1813,7 +1876,7 @@ export function BoardPreview3D({
                   ))
                   : opponentPlayer.hand.slice(0, 10).map((card, index) => (
                     <div className="board-preview-3d__hidden-hand-card" key={`${card.instanceId}-${index}`}>
-                      WARD
+                      <span>Ward<br />Nexus</span>
                     </div>
                   ))}
               </div>

@@ -99,6 +99,15 @@
   color: #dbeafe;
 }
 
+.login-disclaimer {
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  color: #a9b8ca;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  margin: 0;
+  padding-top: 0.85rem;
+}
+
 .app-header-actions {
   align-items: end;
   display: grid;

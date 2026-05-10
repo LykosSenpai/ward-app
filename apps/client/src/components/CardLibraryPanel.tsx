@@ -574,7 +574,7 @@ export function CardLibraryPanel({
       format: deckBuilderFormat
     });
     const markdown = buildDeckNotesMarkdown({
-      name: deckBuilderName || "WARD Deck",
+      name: deckBuilderName || "Ward Nexus Deck",
       deckId: normalizeId(deckBuilderId),
       cardIds: deckBuilderCardIds,
       cardArtKeys: deckBuilderCardArtKeys,

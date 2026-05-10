@@ -129,7 +129,7 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
       <header className="profile-header">
         <div>
           <h2>Profile</h2>
-          <p>Manage your WARD account details.</p>
+          <p>Manage your Ward Nexus account details.</p>
         </div>
         <button onClick={() => void loadProfile()}>Refresh</button>
       </header>

@@ -260,7 +260,7 @@ function PlayerPlaymat({
   return (
     <section className={`player-playmat ${isActivePlayer ? "active" : ""}`} aria-label={`${player.displayName} play mat`}>
       <div className="playmat-brand">
-        <span>WARD</span>
+        <span>Ward Nexus</span>
         <strong>{player.displayName}</strong>
       </div>
 
