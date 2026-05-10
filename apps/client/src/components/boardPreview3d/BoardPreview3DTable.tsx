@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS, type BoardZone } from "../boardPreview3dLayout";
 import type { BoardObject } from "../boardPreview3dAdapter";
 import type { BoardRenderEventType } from "../boardRenderContracts";
@@ -41,11 +41,15 @@ type Props = {
   onSelectHandCard?: (cardInstanceId: string) => void;
   onHandCardDragStart?: (cardInstanceId: string) => void;
   onToggleSacrificeCard?: (cardInstanceId: string) => void;
+  onDropBattleAttackerToPiece?: (targetPieceId: string, attackerCreatureInstanceId: string) => void;
   draggableHandCardIds?: string[];
+  draggableBattleAttackerCardIds?: string[];
+  validBattleTargetPieceIds?: string[];
   sacrificeCandidateCardIds?: string[];
   selectedSacrificeCardIds?: string[];
   highlightedSlotIds?: string[];
   highlightedPieceIds?: string[];
+  battleSpeedBadges?: Record<string, { label: string; tone: "winner" | "neutral" }>;
   activeEventType?: BoardRenderEventType | null;
   match: AppMatchState;
   cardByInstanceId: Map<string, CardInstance>;
@@ -75,20 +79,26 @@ function getCreatureOverlayStats(match: AppMatchState, card: CardInstance) {
   };
 }
 
-export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, draggableHandCardIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
+export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onDropBattleAttackerToPiece, draggableHandCardIds, draggableBattleAttackerCardIds, validBattleTargetPieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, battleSpeedBadges, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
   const highlightedSet = new Set(highlightedSlotIds ?? []);
   const highlightedPieceSet = new Set(highlightedPieceIds ?? []);
   const draggableHandCardSet = new Set(draggableHandCardIds ?? []);
+  const draggableBattleAttackerSet = new Set(draggableBattleAttackerCardIds ?? []);
+  const validBattleTargetPieceSet = new Set(validBattleTargetPieceIds ?? []);
   const sacrificeCandidateSet = new Set(sacrificeCandidateCardIds ?? []);
   const selectedSacrificeSet = new Set(selectedSacrificeCardIds ?? []);
   const [hoveredSlotId, setHoveredSlotId] = useState<string | null>(null);
   const [hoveredFieldCardId, setHoveredFieldCardId] = useState<string | null>(null);
   const [pinnedFieldCardId, setPinnedFieldCardId] = useState<string | null>(null);
+  const [inspectorDetailsExpanded, setInspectorDetailsExpanded] = useState(false);
   const hasHandCardDragPayload = (types: Iterable<string>) =>
     Array.from(types).includes("application/x-ward-board-hand-card");
+  const hasBattleAttackerDragPayload = (types: Iterable<string>) =>
+    Array.from(types).includes("application/x-ward-board-battle-attacker");
   const inspectedFieldCardId = pinnedFieldCardId ?? hoveredFieldCardId;
   const inspectedFieldCard = inspectedFieldCardId ? cardByInstanceId.get(inspectedFieldCardId) ?? null : null;
   const inspectedCreatureStats = inspectedFieldCard ? getCreatureOverlayStats(match, inspectedFieldCard) : null;
+  const inspectedFieldCardText = inspectedFieldCard ? getCardText(match, inspectedFieldCard) : "";
   const visibleSlots = BOARD_SLOTS.filter(slot => {
     if (highlightedSet.has(slot.id)) return true;
     if (slot.id.includes("-primary")) return visibleSlotLayers.primary;
@@ -102,6 +112,10 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
     "--board-camera-scale": zoomScale.toFixed(2),
     transform: `translate3d(${cameraPanX}%, ${cameraPanY}%, 0)`
   } as CSSProperties;
+
+  useEffect(() => {
+    setInspectorDetailsExpanded(false);
+  }, [inspectedFieldCardId]);
 
   return (
     <div className="board-preview-3d__camera has-webgl-cards" style={cameraStyle}>
@@ -193,14 +207,16 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
           const isStack = object.lane === "deck" || object.lane === "cemetery";
           const isSacrificeCandidate = Boolean(object.cardInstanceId && sacrificeCandidateSet.has(object.cardInstanceId));
           const isSelectedSacrifice = Boolean(object.cardInstanceId && selectedSacrificeSet.has(object.cardInstanceId));
+          const isBattleAttacker = Boolean(object.cardInstanceId && draggableBattleAttackerSet.has(object.cardInstanceId));
           const canInspectCard = Boolean(renderedCard && isFieldCard);
           const creatureStats = renderedCard && isFieldCard ? getCreatureOverlayStats(match, renderedCard) : null;
           const showPieceLabel = !renderedCard && !isCardBack && !isStack;
+          const speedBadge = battleSpeedBadges?.[object.id];
           return (
             <article
               key={object.id}
-              draggable={Boolean(draggableHandCardId || isSacrificeCandidate)}
-              className={`board-preview-3d__piece board-preview-3d__piece--${object.owner} board-preview-3d__piece--${object.lane}${draggableHandCardId ? " is-draggable-hand-card" : ""}${isSacrificeCandidate ? " is-sacrifice-candidate" : ""}${isSelectedSacrifice ? " is-selected-sacrifice" : ""}${highlightedPieceSet.has(object.id) ? " is-highlighted" : ""}${isCardBack ? " is-card-back" : ""}`}
+              draggable={Boolean(draggableHandCardId || isSacrificeCandidate || isBattleAttacker)}
+              className={`board-preview-3d__piece board-preview-3d__piece--${object.owner} board-preview-3d__piece--${object.lane}${draggableHandCardId ? " is-draggable-hand-card" : ""}${isBattleAttacker ? " is-draggable-battle-attacker" : ""}${isSacrificeCandidate ? " is-sacrifice-candidate" : ""}${isSelectedSacrifice ? " is-selected-sacrifice" : ""}${highlightedPieceSet.has(object.id) ? " is-highlighted" : ""}${isCardBack ? " is-card-back" : ""}`}
             style={{
               left: `${resolveSlotPosition(object.slotId, object.xPercent, object.zPercent).xPercent}%`,
               top: `${resolveSlotPosition(object.slotId, object.xPercent, object.zPercent).zPercent}%`,
@@ -208,12 +224,22 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
             }}
             onDragStart={(event) => {
               const dragCardId = draggableHandCardId ?? (isSacrificeCandidate ? object.cardInstanceId : null);
+              if (isBattleAttacker && object.cardInstanceId) {
+                event.dataTransfer.setData("application/x-ward-board-battle-attacker", object.cardInstanceId);
+                event.dataTransfer.effectAllowed = "move";
+                return;
+              }
               if (!dragCardId) return;
               if (draggableHandCardId) onHandCardDragStart?.(draggableHandCardId);
               event.dataTransfer.setData("application/x-ward-board-hand-card", dragCardId);
               event.dataTransfer.effectAllowed = "move";
             }}
             onDragOver={(event) => {
+              if (hasBattleAttackerDragPayload(event.dataTransfer.types) && validBattleTargetPieceSet.has(object.id)) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+                return;
+              }
               if (object.lane !== "cemetery" || !hasHandCardDragPayload(event.dataTransfer.types)) return;
               const slotBlocked = blockedReasonsBySlotId?.[object.slotId];
               if (slotBlocked) return;
@@ -221,6 +247,12 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
               event.dataTransfer.dropEffect = "move";
             }}
             onDrop={(event) => {
+              const attackerCreatureInstanceId = event.dataTransfer.getData("application/x-ward-board-battle-attacker");
+              if (attackerCreatureInstanceId && validBattleTargetPieceSet.has(object.id)) {
+                event.preventDefault();
+                onDropBattleAttackerToPiece?.(object.id, attackerCreatureInstanceId);
+                return;
+              }
               if (object.lane !== "cemetery") return;
               const cardInstanceId = event.dataTransfer.getData("application/x-ward-board-hand-card");
               if (!cardInstanceId || !sacrificeCandidateSet.has(cardInstanceId)) return;
@@ -268,6 +300,7 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
               {showPieceLabel ? <span>{object.label}</span> : null}
             </button>
             {isStack ? <span className="board-preview-3d__stack-label">{object.label}</span> : null}
+            {speedBadge ? <span className={`board-preview-3d__speed-badge board-preview-3d__speed-badge--${speedBadge.tone}`}>{speedBadge.label}</span> : null}
             {creatureStats ? (
               <div className={`board-preview-3d__field-stat-plate board-preview-3d__field-stat-plate--${creatureStats.hpTone}`}>
                 <span>HP</span>
@@ -304,11 +337,23 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
               <span>MOD <strong>{inspectedCreatureStats.modifier}</strong></span>
             </div>
           ) : null}
-          <div className="board-preview-3d__card-inspector-copy">
-            {isCreature(match, inspectedFieldCard) ? <span>{getCreatureStatsLine(match, inspectedFieldCard)}</span> : null}
-            {isMagic(match, inspectedFieldCard) ? <span>{getMagicLine(match, inspectedFieldCard)}</span> : null}
-            {getCardText(match, inspectedFieldCard) ? <p>{getCardText(match, inspectedFieldCard)}</p> : null}
-          </div>
+          {(inspectedCreatureStats || isMagic(match, inspectedFieldCard) || inspectedFieldCardText) ? (
+            <button
+              type="button"
+              className="board-preview-3d__card-inspector-detail-toggle"
+              aria-expanded={inspectorDetailsExpanded}
+              onClick={() => setInspectorDetailsExpanded(current => !current)}
+            >
+              {inspectorDetailsExpanded ? "Hide details" : "Details"}
+            </button>
+          ) : null}
+          {inspectorDetailsExpanded ? (
+            <div className="board-preview-3d__card-inspector-copy">
+              {isCreature(match, inspectedFieldCard) ? <span>{getCreatureStatsLine(match, inspectedFieldCard)}</span> : null}
+              {isMagic(match, inspectedFieldCard) ? <span>{getMagicLine(match, inspectedFieldCard)}</span> : null}
+              {inspectedFieldCardText ? <p>{inspectedFieldCardText}</p> : null}
+            </div>
+          ) : null}
         </aside>
       ) : null}
     </div>

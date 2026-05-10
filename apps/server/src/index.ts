@@ -674,6 +674,33 @@ function requireSocketCanControlActivePlayer(socket: { request: unknown }, match
   requireSocketCanControlPlayer(socket, match.matchId, match.turn.activePlayerId);
 }
 
+function getManualBattleStepControllerPlayerId(match: MatchState): string {
+  const battle = match.pendingBattle;
+  if (!battle || battle.status === "AWAITING_SPEED_CHECK") {
+    return match.turn.activePlayerId;
+  }
+
+  const currentStrike = battle.strikes[battle.currentStrikeIndex];
+  return currentStrike?.attacker.playerId ?? match.turn.activePlayerId;
+}
+
+function requireSocketCanControlManualBattleStep(socket: { request: unknown }, match: MatchState): void {
+  requireSocketCanControlPlayer(socket, match.matchId, getManualBattleStepControllerPlayerId(match));
+}
+
+function requireSocketCanControlEffectRollStep(socket: { request: unknown }, match: MatchState): void {
+  const effectRoll = match.pendingEffectRoll;
+  if (
+    effectRoll?.linkedBattleSessionId &&
+    match.pendingBattle?.id === effectRoll.linkedBattleSessionId
+  ) {
+    requireSocketCanControlManualBattleStep(socket, match);
+    return;
+  }
+
+  requireSocketCanControlActivePlayer(socket, match);
+}
+
 function requireSocketCanUndoMatch(socket: { request: unknown }, match: MatchState): void {
   const owners = matchPlayerOwners.get(match.matchId);
 
@@ -2043,7 +2070,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
-        requireSocketCanControlActivePlayer(socket, match);
+        requireSocketCanControlManualBattleStep(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = runManualBattleSpeedCheck(match, data.battleSessionId);
 
@@ -2062,7 +2089,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
-        requireSocketCanControlActivePlayer(socket, match);
+        requireSocketCanControlManualBattleStep(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = rollManualBattleHit(match, data.battleSessionId);
 
@@ -2081,7 +2108,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
-        requireSocketCanControlActivePlayer(socket, match);
+        requireSocketCanControlManualBattleStep(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = rollManualBattleDamage(match, data.battleSessionId);
 
@@ -2124,7 +2151,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
-        requireSocketCanControlActivePlayer(socket, match);
+        requireSocketCanControlManualBattleStep(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = applyManualBattleDamage(match, data.battleSessionId);
 
@@ -2143,7 +2170,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; effectRollSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
-        requireSocketCanControlActivePlayer(socket, match);
+        requireSocketCanControlEffectRollStep(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = rollPendingEffectRoll(match, data.effectRollSessionId);
 
@@ -2162,7 +2189,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; effectRollSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
-        requireSocketCanControlActivePlayer(socket, match);
+        requireSocketCanControlEffectRollStep(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = applyPendingEffectRoll(match, data.effectRollSessionId);
 
@@ -2181,7 +2208,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; effectRollSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
-        requireSocketCanControlActivePlayer(socket, match);
+        requireSocketCanControlEffectRollStep(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = skipPendingEffectRoll(match, data.effectRollSessionId);
 

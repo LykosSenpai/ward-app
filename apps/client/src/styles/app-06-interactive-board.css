@@ -1960,6 +1960,139 @@
   font-size: 0.72rem;
 }
 
+.board-battle-hud {
+  background: rgba(2, 6, 23, 0.86);
+  border: 1px solid rgba(125, 211, 252, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 18px 42px rgba(2, 6, 23, 0.52);
+  color: #e2e8f0;
+  display: grid;
+  gap: 8px;
+  max-width: min(340px, calc(100% - 24px));
+  padding: 10px;
+  position: absolute;
+  right: 12px;
+  top: 86px;
+  width: 320px;
+  z-index: 31;
+}
+
+.board-battle-hud__header,
+.board-battle-hud__combatants,
+.board-battle-hud__actions {
+  display: grid;
+  gap: 6px;
+}
+
+.board-battle-hud__header {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.board-battle-hud__header span,
+.board-battle-hud__combatants span,
+.board-battle-hud__speed span,
+.board-battle-hud__rolls span,
+.board-battle-hud__effect span {
+  color: #93c5fd;
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.board-battle-hud__header strong {
+  color: #f8fafc;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.board-battle-hud__combatants {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.board-battle-hud__combatants > div,
+.board-battle-hud__effect,
+.board-battle-hud__speed,
+.board-battle-hud__rolls {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 7px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px;
+}
+
+.board-battle-hud__combatants strong,
+.board-battle-hud__effect strong {
+  color: #f8fafc;
+  font-size: 0.82rem;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-battle-hud__combatants small,
+.board-battle-hud__rolls small {
+  color: #cbd5e1;
+  font-size: 0.66rem;
+  line-height: 1.2;
+}
+
+.board-battle-hud__steps {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.board-battle-hud__steps i {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 5px;
+  color: #94a3b8;
+  font-size: 0.56rem;
+  font-style: normal;
+  font-weight: 950;
+  padding: 4px 2px;
+  text-align: center;
+}
+
+.board-battle-hud__steps i.is-active {
+  background: rgba(14, 116, 144, 0.86);
+  border-color: rgba(125, 211, 252, 0.64);
+  color: #ecfeff;
+}
+
+.board-battle-hud__actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.board-battle-hud__actions button {
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
+.board-battle-hud__actions button:first-child:last-child,
+.board-battle-hud__actions .board-battle-hud__dice-button {
+  grid-column: 1 / -1;
+}
+
+.board-battle-hud__dice-button {
+  border-color: rgba(74, 222, 128, 0.68);
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.22);
+}
+
+.board-battle-hud__locked {
+  background: rgba(120, 53, 15, 0.42);
+  border: 1px solid rgba(251, 191, 36, 0.42);
+  border-radius: 7px;
+  color: #fde68a;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 7px;
+  text-align: center;
+}
+
 .board-preview-3d__layout {
   display: grid;
   gap: 10px;
@@ -2751,6 +2884,32 @@
   top: calc(100% + 5px);
 }
 
+.board-preview-3d__speed-badge {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 999px;
+  color: #e2e8f0;
+  font-size: 0.62rem;
+  font-weight: 950;
+  line-height: 1;
+  padding: 7px 3px;
+  pointer-events: none;
+  position: absolute;
+  right: -18px;
+  text-shadow: 0 2px 5px rgba(2, 6, 23, 0.9);
+  top: 8px;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  z-index: 21;
+}
+
+.board-preview-3d__speed-badge--winner {
+  background: rgba(20, 83, 45, 0.92);
+  border-color: rgba(74, 222, 128, 0.82);
+  color: #dcfce7;
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.28);
+}
+
 .board-preview-3d__field-stat-plate {
   align-items: center;
   background:
@@ -2907,30 +3066,72 @@
 
 .board-preview-3d__card-inspector-stat-wall {
   display: grid;
-  gap: 7px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .board-preview-3d__card-inspector-stat-wall > span,
 .board-preview-3d__card-inspector-hp {
   background: rgba(15, 23, 42, 0.84);
   border: 1px solid rgba(148, 163, 184, 0.34);
-  border-radius: 7px;
+  border-radius: 6px;
   color: #cbd5e1;
   display: grid;
-  font-size: 0.66rem;
+  font-size: 0.58rem;
   font-weight: 950;
   gap: 1px;
   min-width: 0;
-  padding: 6px;
+  padding: 4px 5px;
   text-align: center;
   text-transform: uppercase;
 }
 
 .board-preview-3d__card-inspector-stat-wall strong {
   color: #f8fafc;
-  font-size: 1.12rem;
+  font-size: 0.92rem;
   line-height: 1;
+}
+
+.board-preview-3d__card-inspector-stat-wall small {
+  color: #cbd5e1;
+  font-size: 0.56rem;
+  line-height: 1;
+}
+
+.board-preview-3d__card-inspector-hp--healthy {
+  border-color: rgba(74, 222, 128, 0.6);
+}
+
+.board-preview-3d__card-inspector-hp--warn {
+  border-color: rgba(250, 204, 21, 0.76);
+}
+
+.board-preview-3d__card-inspector-hp--danger {
+  border-color: rgba(248, 113, 113, 0.86);
+}
+
+.board-preview-3d__card-inspector-detail-toggle {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(125, 211, 252, 0.38);
+  border-radius: 6px;
+  color: #dbeafe;
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 950;
+  justify-content: center;
+  justify-self: end;
+  letter-spacing: 0.04em;
+  min-height: 0;
+  padding: 5px 9px;
+  text-transform: uppercase;
+  width: auto;
+}
+
+.board-preview-3d__card-inspector-detail-toggle:hover,
+.board-preview-3d__card-inspector-detail-toggle:focus-visible {
+  background: rgba(14, 116, 144, 0.3);
+  border-color: rgba(125, 211, 252, 0.72);
 }
 
 .board-preview-3d__sacrifice-tracker {

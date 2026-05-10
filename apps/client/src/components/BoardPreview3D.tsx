@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEventHandler, type PointerEventHandler, type ReactNode, type WheelEventHandler } from "react";
-import type { CardInstance } from "@ward/shared";
+import type { CardInstance, PendingBattleSession, PendingEffectRollSession } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import { BOARD_SLOTS, BOARD_ZONES, type BoardZone } from "./boardPreview3dLayout";
 import { BoardPreview3DControls } from "./boardPreview3d/BoardPreview3DControls";
@@ -13,7 +13,7 @@ import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAni
 import { getBoardAnimationProfile } from "./boardAnimationProfiles";
 import { decideBoardReconciliation } from "./boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "./boardRuntimeHealth";
-import { canSummonCreatureFromHand, getCardName, getCardText, getCreatureStatsLine, getEffectiveCreatureStat, getMagicLine, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, isMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
+import { canSummonCreatureFromHand, getBattleBlockReason, getCardName, getCardText, getCreatureStatsLine, getEffectiveCreatureStat, getMagicLine, getPlayerBattleCreatureOptions, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, isMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
 import { mapPointerGestureToIntent } from "./boardInteractionIntents";
 import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
@@ -77,6 +77,147 @@ function getCreatureOverlayStats(match: AppMatchState, card: CardInstance) {
   };
 }
 
+function sumDice(values: number[] | undefined): number {
+  return (values ?? []).reduce((total, value) => total + value, 0);
+}
+
+function getBattleStepLabel(battle: PendingBattleSession, effectRoll?: PendingEffectRollSession): string {
+  if (effectRoll) return effectRoll.status === "AWAITING_ROLL" ? "Effect Roll" : "Apply Effect";
+  if (battle.status === "AWAITING_SPEED_CHECK") return "Speed Check";
+  if (battle.status === "AWAITING_HIT_ROLL") return "Hit Roll";
+  if (battle.status === "AWAITING_DAMAGE_ROLL") return "Damage Roll";
+  if (battle.status === "AWAITING_DAMAGE_APPLICATION") return "Apply Damage";
+  if (battle.status === "COMPLETE") return "Finish Battle";
+  return "Battle";
+}
+
+function getCurrentStrike(battle: PendingBattleSession) {
+  return battle.strikes[battle.currentStrikeIndex];
+}
+
+function BoardBattleResolverHud({
+  battle,
+  effectRoll,
+  canAdvanceStep,
+  controllerLabel,
+  onRunSpeedCheck,
+  onRollHit,
+  onRollDamage,
+  onApplyDamage,
+  onFinish,
+  onRollEffect,
+  onApplyEffect,
+  onSkipEffect
+}: {
+  battle: PendingBattleSession;
+  effectRoll?: PendingEffectRollSession;
+  canAdvanceStep: boolean;
+  controllerLabel: string;
+  onRunSpeedCheck?: (battleSessionId: string) => void;
+  onRollHit?: (battleSessionId: string) => void;
+  onRollDamage?: (battleSessionId: string) => void;
+  onApplyDamage?: (battleSessionId: string) => void;
+  onFinish?: (battleSessionId: string) => void;
+  onRollEffect?: (effectRollSessionId: string) => void;
+  onApplyEffect?: (effectRollSessionId: string) => void;
+  onSkipEffect?: (effectRollSessionId: string) => void;
+}) {
+  const currentStrike = getCurrentStrike(battle);
+  const actionLabel = getBattleStepLabel(battle, effectRoll);
+  const hitTotal = currentStrike?.hitRollTotal ?? sumDice(currentStrike?.hitRollDice);
+  const damageTotal = currentStrike?.damageDealt ?? sumDice(currentStrike?.damageRollDice);
+
+  return (
+    <aside className="board-battle-hud" aria-label="3D battle resolver">
+      <div className="board-battle-hud__header">
+        <span>Battle Resolver</span>
+        <strong>{actionLabel}</strong>
+      </div>
+
+      <div className="board-battle-hud__combatants">
+        <div>
+          <span>Attacker</span>
+          <strong>{currentStrike?.attacker.creatureName ?? battle.declaredAttacker.creatureName}</strong>
+          <small>SPD {currentStrike?.attacker.speed ?? battle.declaredAttacker.speed} / MOD {currentStrike?.attacker.modifier ?? battle.declaredAttacker.modifier}</small>
+        </div>
+        <div>
+          <span>Target</span>
+          <strong>{currentStrike?.defender.creatureName ?? battle.declaredDefender.creatureName}</strong>
+          <small>SPD {currentStrike?.defender.speed ?? battle.declaredDefender.speed} / AL {currentStrike?.defenderArmorLevel ?? currentStrike?.defender.armorLevel ?? battle.declaredDefender.armorLevel}</small>
+        </div>
+      </div>
+
+      <div className="board-battle-hud__steps" aria-hidden="true">
+        {["SPD", "HIT", "FX", "DMG", "APPLY", "RET"].map(step => {
+          const active =
+            (step === "SPD" && battle.status === "AWAITING_SPEED_CHECK") ||
+            (step === "HIT" && battle.status === "AWAITING_HIT_ROLL") ||
+            (step === "FX" && Boolean(effectRoll)) ||
+            (step === "DMG" && battle.status === "AWAITING_DAMAGE_ROLL") ||
+            (step === "APPLY" && battle.status === "AWAITING_DAMAGE_APPLICATION") ||
+            (step === "RET" && currentStrike?.role === "RETALIATION");
+          return <i className={active ? "is-active" : undefined} key={step}>{step}</i>;
+        })}
+      </div>
+
+      {battle.status !== "AWAITING_SPEED_CHECK" ? (
+        <div className="board-battle-hud__speed">
+          <span>{battle.declaredAttacker.creatureName}: {battle.effectiveAttackingSpeed ?? battle.declaredAttacker.speed}</span>
+          <span>{battle.declaredDefender.creatureName}: {battle.effectiveDefendingSpeed ?? battle.declaredDefender.speed}</span>
+        </div>
+      ) : null}
+
+      {currentStrike ? (
+        <div className="board-battle-hud__rolls">
+          {currentStrike.hitRollDice?.length ? <span>Hit {currentStrike.hitRollDice.join(", ")} = {hitTotal}</span> : null}
+          {currentStrike.damageRollDice?.length ? <span>Damage {currentStrike.damageRollDice.join(", ")} = {damageTotal}</span> : null}
+          {currentStrike.message ? <small>{currentStrike.message}</small> : null}
+        </div>
+      ) : null}
+
+      {effectRoll ? (
+        <div className="board-battle-hud__effect">
+          <span>{effectRoll.sourceCardName}</span>
+          <strong>{effectRoll.status === "ROLLED" ? `${effectRoll.rollTotal ?? sumDice(effectRoll.rolledDice)} ${effectRoll.success ? "success" : "fail"}` : `${effectRoll.diceCount}D6 effect`}</strong>
+        </div>
+      ) : null}
+
+      {!canAdvanceStep ? (
+        <div className="board-battle-hud__locked">
+          Waiting for {controllerLabel}
+        </div>
+      ) : null}
+
+      <div className="board-battle-hud__actions">
+        {battle.status === "AWAITING_SPEED_CHECK" ? (
+          <button type="button" disabled={!canAdvanceStep} onClick={() => onRunSpeedCheck?.(battle.id)}>Run Speed</button>
+        ) : null}
+        {battle.status === "AWAITING_HIT_ROLL" && !effectRoll ? (
+          <button type="button" className="board-battle-hud__dice-button" disabled={!canAdvanceStep} onClick={() => onRollHit?.(battle.id)}>Roll Hit</button>
+        ) : null}
+        {effectRoll?.status === "AWAITING_ROLL" ? (
+          <button type="button" className="board-battle-hud__dice-button" disabled={!canAdvanceStep} onClick={() => onRollEffect?.(effectRoll.id)}>Roll Effect</button>
+        ) : null}
+        {effectRoll?.status === "ROLLED" ? (
+          <button type="button" disabled={!canAdvanceStep} onClick={() => onApplyEffect?.(effectRoll.id)}>{effectRoll.success ? "Apply Effect" : "Close Roll"}</button>
+        ) : null}
+        {effectRoll ? (
+          <button type="button" className="ghost" disabled={!canAdvanceStep} onClick={() => onSkipEffect?.(effectRoll.id)}>Skip</button>
+        ) : null}
+        {battle.status === "AWAITING_DAMAGE_ROLL" && !effectRoll ? (
+          <button type="button" className="board-battle-hud__dice-button" disabled={!canAdvanceStep} onClick={() => onRollDamage?.(battle.id)}>Roll Damage</button>
+        ) : null}
+        {battle.status === "AWAITING_DAMAGE_APPLICATION" && !effectRoll ? (
+          <button type="button" disabled={!canAdvanceStep} onClick={() => onApplyDamage?.(battle.id)}>Apply Damage</button>
+        ) : null}
+        {battle.status === "COMPLETE" ? (
+          <button type="button" disabled={!canAdvanceStep} onClick={() => onFinish?.(battle.id)}>Finish</button>
+        ) : null}
+      </div>
+    </aside>
+  );
+}
+
 function clampNumber(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -103,7 +244,15 @@ type BoardPreview3DProps = {
     targetCreatureInstanceId: string,
     targetKind: AttachTargetKind
   ) => void;
-  onStartBattleFromPiece?: (cardInstanceId: string) => void;
+  onStartBattleFromPiece?: (cardInstanceId: string, defenderCreatureInstanceId?: string) => void;
+  onRunBattleSpeedCheck?: (battleSessionId: string) => void;
+  onRollBattleHit?: (battleSessionId: string) => void;
+  onRollBattleDamage?: (battleSessionId: string) => void;
+  onApplyBattleDamage?: (battleSessionId: string) => void;
+  onFinishBattle?: (battleSessionId: string) => void;
+  onRollEffectRoll?: (effectRollSessionId: string) => void;
+  onApplyEffectRoll?: (effectRollSessionId: string) => void;
+  onSkipEffectRoll?: (effectRollSessionId: string) => void;
   intentLabel?: string;
   commandLabel?: string;
   onSlotFocus?: (event: BoardSlotFocusEvent) => void;
@@ -228,6 +377,14 @@ export function BoardPreview3D({
   onPlayHandCardToSlot,
   onAttachEquipMagicToCreature,
   onStartBattleFromPiece,
+  onRunBattleSpeedCheck,
+  onRollBattleHit,
+  onRollBattleDamage,
+  onApplyBattleDamage,
+  onFinishBattle,
+  onRollEffectRoll,
+  onApplyEffectRoll,
+  onSkipEffectRoll,
   intentLabel = "",
   commandLabel = "",
   onSlotFocus,
@@ -286,8 +443,10 @@ export function BoardPreview3D({
   const [runtimeMode, setRuntimeMode] = useState<"ANIMATED" | "FAST_FORWARD">("ANIMATED");
   const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(null);
   const [selectedEquipMagicCardId, setSelectedEquipMagicCardId] = useState<string | null>(null);
+  const [selectedBattleAttackerId, setSelectedBattleAttackerId] = useState<string | null>(null);
   const [selectedSacrificeIdsByCard, setSelectedSacrificeIdsByCard] = useState<Record<string, string[]>>({});
   const [hoveredHandCardId, setHoveredHandCardId] = useState<string | null>(null);
+  const [handInspectorDetailsExpanded, setHandInspectorDetailsExpanded] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [controlsCollapsed, setControlsCollapsed] = useState(true);
   const [controlsDockPosition, setControlsDockPosition] = useState<FloatingDockPosition>("top-right");
@@ -459,6 +618,7 @@ export function BoardPreview3D({
     ? handCards.find(card => card.instanceId === inspectedHandCardId) ?? null
     : null;
   const inspectedHandCreatureStats = inspectedHandCard ? getCreatureOverlayStats(match, inspectedHandCard) : null;
+  const inspectedHandCardText = inspectedHandCard ? getCardText(match, inspectedHandCard) : "";
   const selectedHandCard = selectedHandCardId
     ? handCards.find(card => card.instanceId === selectedHandCardId) ?? null
     : null;
@@ -486,6 +646,10 @@ export function BoardPreview3D({
       zone: "HAND" as const
     }))
     : [];
+
+  useEffect(() => {
+    setHandInspectorDetailsExpanded(false);
+  }, [inspectedHandCardId]);
   const visibleOpponentHandCards = opponentPromptRevealCards.length > 0
     ? opponentPromptRevealCards
     : opponentHandIsRevealed
@@ -719,17 +883,96 @@ export function BoardPreview3D({
     }
   }, [boardObjects, cardByInstanceId, match, selectedEquipMagicCardId]);
 
-  const selectedBattlePiece = useMemo(() => {
-    if (!selectedSlotId) return null;
-    const piece = boardObjects.find(item => item.slotId === selectedSlotId && item.owner === focusedPlayerId);
-    if (!piece?.cardInstanceId) return null;
-    return piece;
-  }, [boardObjects, focusedPlayerId, selectedSlotId]);
-  const battleTargetSlotIds = useMemo(() => {
-    if (!selectedBattlePiece) return [] as string[];
-    const defender = focusedPlayerId === "player_1" ? "player_2-primary" : "player_1-primary";
-    return [defender];
-  }, [focusedPlayerId, selectedBattlePiece]);
+  const activeBattlePlayer = useMemo(
+    () => match.players.find(player => player.id === match.turn.activePlayerId) ?? null,
+    [match.players, match.turn.activePlayerId]
+  );
+  const battleBlockReason = getBattleBlockReason(match);
+  const battleControlEnabled = Boolean(
+    activeBattlePlayer &&
+    !battleBlockReason &&
+    canControlPlayer(activeBattlePlayer.id)
+  );
+  const legalBattleAttackerIds = useMemo(() => {
+    if (!activeBattlePlayer || !battleControlEnabled) return new Set<string>();
+    return new Set(
+      getPlayerBattleCreatureOptions(match, activeBattlePlayer)
+        .filter(option => !option.usedThisCombat && !option.statusBattleSkipReason)
+        .map(option => option.card.instanceId)
+    );
+  }, [activeBattlePlayer, battleControlEnabled, match]);
+  const battleDefender = useMemo(() => {
+    if (!activeBattlePlayer || !battleControlEnabled) return null;
+    const defenderPlayer = match.players.find(player => player.id !== activeBattlePlayer.id);
+    const defenderCard = defenderPlayer?.field.primaryCreature;
+    if (!defenderPlayer || !defenderCard) return null;
+    const defenderObject = boardObjects.find(object => object.cardInstanceId === defenderCard.instanceId);
+    return defenderObject
+      ? { card: defenderCard, object: defenderObject, playerId: defenderPlayer.id as BoardPlayerId }
+      : null;
+  }, [activeBattlePlayer, battleControlEnabled, boardObjects, match.players]);
+  const selectedBattleAttacker = useMemo(() => {
+    if (!selectedBattleAttackerId || !legalBattleAttackerIds.has(selectedBattleAttackerId)) return null;
+    const object = boardObjects.find(item => item.cardInstanceId === selectedBattleAttackerId);
+    return object?.cardInstanceId ? object : null;
+  }, [boardObjects, legalBattleAttackerIds, selectedBattleAttackerId]);
+  const battleAttackerPieceIds = useMemo(() => {
+    if (!legalBattleAttackerIds.size) return [] as string[];
+    return boardObjects
+      .filter(object => object.cardInstanceId && legalBattleAttackerIds.has(object.cardInstanceId))
+      .map(object => object.id);
+  }, [boardObjects, legalBattleAttackerIds]);
+  const battleTargetSlotIds = selectedBattleAttacker && battleDefender ? [battleDefender.object.slotId] : [];
+  const battleTargetPieceIds = selectedBattleAttacker && battleDefender ? [battleDefender.object.id] : [];
+  const pendingBattle = match.pendingBattle;
+  const pendingBattleStrike = pendingBattle ? getCurrentStrike(pendingBattle) : undefined;
+  const pendingBattlePieceIds = useMemo(() => {
+    if (!pendingBattle) return [] as string[];
+    const participantIds = new Set([
+      pendingBattle.declaredAttacker.creatureInstanceId,
+      pendingBattle.declaredDefender.creatureInstanceId,
+      pendingBattleStrike?.attacker.creatureInstanceId,
+      pendingBattleStrike?.defender.creatureInstanceId
+    ].filter((value): value is string => !!value));
+    return boardObjects
+      .filter(object => object.cardInstanceId && participantIds.has(object.cardInstanceId))
+      .map(object => object.id);
+  }, [boardObjects, pendingBattle, pendingBattleStrike]);
+  const battleSpeedBadges = useMemo(() => {
+    if (!pendingBattle || pendingBattle.status === "AWAITING_SPEED_CHECK") return {};
+    const attackerSpeed = pendingBattle.effectiveAttackingSpeed ?? pendingBattle.declaredAttacker.speed;
+    const defenderSpeed = pendingBattle.effectiveDefendingSpeed ?? pendingBattle.declaredDefender.speed;
+    const highSpeed = Math.max(attackerSpeed, defenderSpeed);
+    const badges: Record<string, { label: string; tone: "winner" | "neutral" }> = {};
+    for (const object of boardObjects) {
+      if (object.cardInstanceId === pendingBattle.declaredAttacker.creatureInstanceId) {
+        badges[object.id] = { label: `SPD ${attackerSpeed}`, tone: attackerSpeed === highSpeed ? "winner" : "neutral" };
+      }
+      if (object.cardInstanceId === pendingBattle.declaredDefender.creatureInstanceId) {
+        badges[object.id] = { label: `SPD ${defenderSpeed}`, tone: defenderSpeed === highSpeed ? "winner" : "neutral" };
+      }
+    }
+    return badges;
+  }, [boardObjects, pendingBattle]);
+  const battleStepControllerPlayerId = pendingBattle
+    ? pendingBattle.status === "AWAITING_SPEED_CHECK"
+      ? pendingBattle.attackingPlayerId
+      : pendingBattleStrike?.attacker.playerId ?? pendingBattle.attackingPlayerId
+    : null;
+  const canAdvanceBattleResolver = Boolean(
+    battleStepControllerPlayerId &&
+    (!controlledPlayerId || controlledPlayerId === battleStepControllerPlayerId)
+  );
+  const battleStepControllerLabel = battleStepControllerPlayerId
+    ? match.players.find(player => player.id === battleStepControllerPlayerId)?.displayName ?? battleStepControllerPlayerId
+    : "the current player";
+
+  useEffect(() => {
+    if (!selectedBattleAttackerId) return;
+    if (!legalBattleAttackerIds.has(selectedBattleAttackerId) || !battleDefender) {
+      setSelectedBattleAttackerId(null);
+    }
+  }, [battleDefender, legalBattleAttackerIds, selectedBattleAttackerId]);
 
   useEffect(() => {
     if (!statusMessage) return;
@@ -947,6 +1190,19 @@ export function BoardPreview3D({
       }
       setSelectedEquipMagicCardId(pieceCard.instanceId);
       setStatusMessage("Select a creature on the 3D board to attach this Equip Magic.");
+      onPieceFocus?.({ pieceId, source });
+      return;
+    }
+
+    if (selectedBattleAttacker && battleDefender?.object.id === pieceId) {
+      onStartBattleFromPiece?.(selectedBattleAttacker.cardInstanceId!, battleDefender.card.instanceId);
+      setSelectedBattleAttackerId(null);
+      return;
+    }
+
+    if (piece?.cardInstanceId && legalBattleAttackerIds.has(piece.cardInstanceId)) {
+      setSelectedBattleAttackerId(current => current === piece.cardInstanceId ? null : piece.cardInstanceId!);
+      setStatusMessage("Select the defending primary creature to start battle.");
       onPieceFocus?.({ pieceId, source });
       return;
     }
@@ -1317,6 +1573,14 @@ export function BoardPreview3D({
             onSelectHandCard={(cardInstanceId) => setSelectedHandCardId(current => current === cardInstanceId ? null : cardInstanceId)}
             onHandCardDragStart={(cardInstanceId) => setSelectedHandCardId(cardInstanceId)}
             onToggleSacrificeCard={toggleSacrificeSelection}
+            onDropBattleAttackerToPiece={(targetPieceId, attackerCreatureInstanceId) => {
+              if (!battleDefender || battleDefender.object.id !== targetPieceId || !legalBattleAttackerIds.has(attackerCreatureInstanceId)) {
+                setStatusMessage("That creature cannot attack that target right now.");
+                return;
+              }
+              onStartBattleFromPiece?.(attackerCreatureInstanceId, battleDefender.card.instanceId);
+              setSelectedBattleAttackerId(null);
+            }}
             sacrificeCandidateCardIds={[...sacrificeCandidateIds]}
             selectedSacrificeCardIds={selectedSacrificeIds}
             onDeckStackContextMenu={(owner) => {
@@ -1325,8 +1589,11 @@ export function BoardPreview3D({
               setDeckHandControlsOwner(owner);
             }}
             draggableHandCardIds={handCards.map(card => card.instanceId)}
+            draggableBattleAttackerCardIds={[...legalBattleAttackerIds]}
+            validBattleTargetPieceIds={battleDefender ? [battleDefender.object.id] : battleTargetPieceIds}
             highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...sacrificeTargetSlotIds, ...battleTargetSlotIds, ...effectTargetSlotIds]}
-            highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...effectTargetPieceIds, ...equipAttachSourcePieceIds, ...equipAttachTargetPieceIds]}
+            highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...effectTargetPieceIds, ...equipAttachSourcePieceIds, ...equipAttachTargetPieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
+            battleSpeedBadges={battleSpeedBadges}
             activeEventType={activeEvent?.type ?? null}
             match={match}
             cardByInstanceId={cardByInstanceId}
@@ -1509,11 +1776,23 @@ export function BoardPreview3D({
                   <p>Drag valid sacrifices to your cemetery or tap them here, then play this creature to Primary.</p>
                 </div>
               ) : null}
-              <div className="board-preview-3d__card-inspector-copy">
-                {isCreature(match, inspectedHandCard) ? <span>{getCreatureStatsLine(match, inspectedHandCard)}</span> : null}
-                {isMagic(match, inspectedHandCard) ? <span>{getMagicLine(match, inspectedHandCard)}</span> : null}
-                {getCardText(match, inspectedHandCard) ? <p>{getCardText(match, inspectedHandCard)}</p> : null}
-              </div>
+              {(inspectedHandCreatureStats || isMagic(match, inspectedHandCard) || inspectedHandCardText) ? (
+                <button
+                  type="button"
+                  className="board-preview-3d__card-inspector-detail-toggle"
+                  aria-expanded={handInspectorDetailsExpanded}
+                  onClick={() => setHandInspectorDetailsExpanded(current => !current)}
+                >
+                  {handInspectorDetailsExpanded ? "Hide details" : "Details"}
+                </button>
+              ) : null}
+              {handInspectorDetailsExpanded ? (
+                <div className="board-preview-3d__card-inspector-copy">
+                  {isCreature(match, inspectedHandCard) ? <span>{getCreatureStatsLine(match, inspectedHandCard)}</span> : null}
+                  {isMagic(match, inspectedHandCard) ? <span>{getMagicLine(match, inspectedHandCard)}</span> : null}
+                  {inspectedHandCardText ? <p>{inspectedHandCardText}</p> : null}
+                </div>
+              ) : null}
             </aside>
           ) : null}
           {opponentPlayer && opponentPlayer.hand.length > 0 ? (
@@ -1537,13 +1816,33 @@ export function BoardPreview3D({
               </div>
             </section>
           ) : null}
-          {selectedBattlePiece ? (
+          {selectedBattleAttacker ? (
             <section className="board-preview-3d__quick-actions">
-              <button type="button" onClick={() => onStartBattleFromPiece?.(selectedBattlePiece.cardInstanceId!)}>
-                Start Battle ({selectedBattlePiece.label})
+              <button type="button" disabled={!battleDefender} onClick={() => {
+                if (!selectedBattleAttacker.cardInstanceId || !battleDefender) return;
+                onStartBattleFromPiece?.(selectedBattleAttacker.cardInstanceId, battleDefender.card.instanceId);
+                setSelectedBattleAttackerId(null);
+              }}>
+                Start Battle ({selectedBattleAttacker.label})
               </button>
-              <small>Target: {focusedPlayerId === "player_1" ? "player_2-primary" : "player_1-primary"}</small>
+              <small>Target: {battleDefender?.object.label ?? "No valid defender"}</small>
             </section>
+          ) : null}
+          {match.pendingBattle ? (
+            <BoardBattleResolverHud
+              battle={match.pendingBattle}
+              effectRoll={match.pendingEffectRoll}
+              canAdvanceStep={canAdvanceBattleResolver}
+              controllerLabel={battleStepControllerLabel}
+              onRunSpeedCheck={onRunBattleSpeedCheck}
+              onRollHit={onRollBattleHit}
+              onRollDamage={onRollBattleDamage}
+              onApplyDamage={onApplyBattleDamage}
+              onFinish={onFinishBattle}
+              onRollEffect={onRollEffectRoll}
+              onApplyEffect={onApplyEffectRoll}
+              onSkipEffect={onSkipEffectRoll}
+            />
           ) : null}
         </section>
         {showDebugPanel ? (

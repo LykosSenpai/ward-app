@@ -1233,11 +1233,11 @@ export default function App() {
     }
   }
 
-  function startManualBattle(attackerCreatureInstanceId: string) {
+  function startManualBattle(attackerCreatureInstanceId: string, selectedDefenderCreatureInstanceId?: string) {
     if (!match) return;
 
     const defendingPlayer = match.players.find(player => player.id !== match.turn.activePlayerId);
-    const defenderCreatureInstanceId = defendingPlayer?.field.primaryCreature?.instanceId;
+    const defenderCreatureInstanceId = selectedDefenderCreatureInstanceId ?? defendingPlayer?.field.primaryCreature?.instanceId;
 
     socket.emit("match:startManualBattle", {
       matchId: match.matchId,
@@ -2073,9 +2073,17 @@ export default function App() {
                           targetKind
                         });
                       }}
-                      onStartBattleFromPiece={(cardInstanceId) => {
-                        startManualBattle(cardInstanceId);
+                      onStartBattleFromPiece={(cardInstanceId, defenderCreatureInstanceId) => {
+                        startManualBattle(cardInstanceId, defenderCreatureInstanceId);
                       }}
+                      onRunBattleSpeedCheck={runBattleSpeedCheck}
+                      onRollBattleHit={rollBattleHit}
+                      onRollBattleDamage={rollBattleDamage}
+                      onApplyBattleDamage={applyBattleDamage}
+                      onFinishBattle={finishManualBattle}
+                      onRollEffectRoll={rollEffectRoll}
+                      onApplyEffectRoll={applyEffectRoll}
+                      onSkipEffectRoll={skipEffectRoll}
                       intentLabel={lastBoardIntentLabel}
                       commandLabel={lastBoardCommandLabel}
                       onIntent={(intent: PointerGestureIntent) => {
@@ -2124,7 +2132,7 @@ export default function App() {
 
             </section>
 
-            {match.pendingBattle && !match.pendingChain && true && (
+            {match.pendingBattle && !match.pendingChain && !show3dBoardView && (
               <ModalPanel title="Manual Battle Resolver" blocking wide>
                 <BattleResolverModal
                   match={match}
@@ -2145,7 +2153,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingEffectRoll && true && (
+            {match.pendingEffectRoll && !show3dBoardView && (
               <ModalPanel title="Effect Roll" blocking wide>
                 <EffectRollModal
                   match={match}
