@@ -8,6 +8,11 @@ import {
 import { shuffleCards } from "./actionCards.js";
 import { hasCompletedOpeningRoll } from "./openingRollActions.js";
 
+function getHandAnimationSlotId(playerId: string, handIndex: number): string {
+  const normalizedPlayerId = playerId === "player_2" ? "player_2" : "player_1";
+  return `${normalizedPlayerId}-hand-${Math.min(Math.max(1, handIndex + 1), 10)}`;
+}
+
 export function shuffleDeckForPlayer(
   state: MatchState,
   playerId: string
@@ -73,6 +78,7 @@ export function drawCards(
 ): MatchState {
   const nextState = cloneState(state);
   const player = getPlayer(nextState, playerId);
+  const startingHandSize = player.hand.length;
 
   const drawnCards: CardInstance[] = [];
 
@@ -90,7 +96,11 @@ export function drawCards(
 
   addEvent(nextState, "CARDS_DRAWN", playerId, {
     countRequested: count,
-    countDrawn: drawnCards.length
+    countDrawn: drawnCards.length,
+    sourceSlotId: `${playerId === "player_2" ? "player_2" : "player_1"}-deck`,
+    targetSlotIds: drawnCards.map((_, index) => getHandAnimationSlotId(playerId, startingHandSize + index)),
+    drawnCardInstanceIds: drawnCards.map(card => card.instanceId),
+    drawnCardIds: drawnCards.map(card => card.cardId)
   });
 
   return nextState;

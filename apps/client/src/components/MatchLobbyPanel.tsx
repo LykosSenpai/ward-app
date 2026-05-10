@@ -14,6 +14,7 @@ type MatchLobbyPanelProps = {
   onRefresh: () => void;
   onCreateLobby: (data: { name: string; format: LobbyFormat }) => void;
   onJoinLobby: (lobbyId: string) => void;
+  onSelectDeck: (lobbyId: string, deckId: string) => void;
   onViewLobby: (lobbyId: string) => void;
   onLeaveLobby: (lobbyId: string) => void;
   onStartMatch: (lobbyId: string) => void;
@@ -90,6 +91,7 @@ export function MatchLobbyPanel({
   onRefresh,
   onCreateLobby,
   onJoinLobby,
+  onSelectDeck,
   onViewLobby,
   onLeaveLobby,
   onStartMatch,
@@ -113,8 +115,10 @@ export function MatchLobbyPanel({
     selectedLobby &&
       isSelectedLobbyHost &&
       selectedLobby.status === "OPEN" &&
-      selectedLobby.players.length === 2
+      selectedLobby.players.length === 2 &&
+      selectedLobby.players.every(player => player.ready && player.selectedDeckId)
   );
+  const shouldAskForDeck = Boolean(selectedLobby && selectedLobby.status === "OPEN" && selectedLobbyPlayer && !selectedLobbyPlayer.selectedDeckId);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNowMs(Date.now()), 1000);
@@ -171,6 +175,37 @@ export function MatchLobbyPanel({
                     </div>
                   ))}
                 </div>
+
+                {selectedLobbyPlayer && selectedLobby.status === "OPEN" ? (
+                  <section className="match-lobby-deck-prompt" aria-label="Choose your lobby deck">
+                    <div className="match-lobby-section-header">
+                      <h4>{shouldAskForDeck ? "Choose your deck" : "Your deck"}</h4>
+                      <span>{decks.length} saved</span>
+                    </div>
+                    {decks.length === 0 ? (
+                      <p className="empty-zone">No saved decks found. Build one from Library / Decks before starting a lobby match.</p>
+                    ) : (
+                      <div className="match-lobby-deck-list">
+                        {decks.map(deck => {
+                          const selected = selectedLobbyPlayer.selectedDeckId === deck.id;
+
+                          return (
+                            <button
+                              type="button"
+                              className={selected ? "match-lobby-deck-card selected" : "match-lobby-deck-card"}
+                              key={deck.id}
+                              onClick={() => onSelectDeck(selectedLobby.id, deck.id)}
+                            >
+                              <strong>{deck.name}</strong>
+                              <span>{deck.cardCount} cards</span>
+                              {selected ? <em>Selected</em> : <em>Choose</em>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+                ) : null}
 
                 <div className="match-lobby-card-actions">
                   {canJoinSelectedLobby && (

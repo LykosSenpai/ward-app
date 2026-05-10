@@ -191,6 +191,21 @@ export function advancePhase(state: MatchState): MatchState {
   return advanceTurn(state);
 }
 
+export function endTurn(state: MatchState): MatchState {
+  const activePlayerId = state.turn.activePlayerId;
+  let nextState = state;
+
+  for (let index = 0; index < PHASE_ORDER.length + 1; index += 1) {
+    if (nextState.turn.activePlayerId !== activePlayerId) {
+      return nextState;
+    }
+
+    nextState = advancePhase(nextState);
+  }
+
+  return nextState;
+}
+
 export function advanceTurn(state: MatchState): MatchState {
   const nextState = cloneState(state);
 

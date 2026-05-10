@@ -10,6 +10,11 @@ import {
 } from "./actionGuards.js";
 import { shuffleCards } from "./actionCards.js";
 
+function getHandAnimationSlotId(playerId: string, handIndex: number): string {
+  const normalizedPlayerId = playerId === "player_2" ? "player_2" : "player_1";
+  return `${normalizedPlayerId}-hand-${Math.min(Math.max(1, handIndex + 1), 10)}`;
+}
+
 function hasAnyCreatureCardInHandOrDeck(state: MatchState, player: PlayerState): boolean {
   return [...player.hand, ...player.deck].some(card => state.cardCatalog[card.cardId]?.cardType === "CREATURE");
 }
@@ -210,6 +215,8 @@ export function discardCardFromHand(
     cardInstanceId,
     cardName: definition.name,
     cardType: definition.cardType,
+    sourceSlotId: getHandAnimationSlotId(playerId, handIndex),
+    targetSlotId: `${playerId === "player_2" ? "player_2" : "player_1"}-cemetery`,
     handSizeAfterDiscard: player.hand.length,
     cemeteryCreatureHpTotal: player.cemeteryCreatureHpTotal
   });

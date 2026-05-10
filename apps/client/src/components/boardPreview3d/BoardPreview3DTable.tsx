@@ -1,11 +1,12 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS, type BoardZone } from "../boardPreview3dLayout";
 import type { BoardObject } from "../boardPreview3dAdapter";
 import type { BoardRenderEventType } from "../boardRenderContracts";
 import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../../clientTypes";
 import { MatchCardImage } from "../MatchCardImage";
-import { getCardName, getCardText, getCreatureStatsLine, getEffectiveCreatureStat, getMagicLine, isCreature, isMagic } from "../../gameViewHelpers";
+import { getEffectiveCreatureStat } from "../../gameViewHelpers";
+import { BoardCardInspector } from "./BoardCardInspector";
 import { BoardPreview3DWebGLCards } from "./BoardPreview3DWebGLCards";
 import { BoardPreview3DDiceLayer } from "./BoardPreview3DDiceLayer";
 
@@ -16,6 +17,7 @@ export type BoardAttackAnimation = {
   creatureType: string;
   theme: "beast" | "bug" | "cosmic" | "demon" | "dragon" | "elemental" | "humanoid" | "mechanical" | "undead" | "generic";
   damageAmount: number;
+  damageRollDice: number[];
   killed?: boolean;
 };
 
@@ -102,6 +104,174 @@ function getCreatureOverlayStats(match: AppMatchState, card: CardInstance) {
   };
 }
 
+function hashAttackStreamSeed(value: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function seededUnit(seed: string): number {
+  return (hashAttackStreamSeed(seed) % 1000) / 1000;
+}
+
+function clampPercent(value: number): number {
+  return Math.max(2, Math.min(98, value));
+}
+
+type AttackStream = {
+  id: string;
+  startX: number;
+  startY: number;
+  controlX: number;
+  controlY: number;
+  endX: number;
+  endY: number;
+  delayMs: number;
+};
+
+const ATTACK_THEME_COLORS: Record<BoardAttackAnimation["theme"], { core: string; glow: string }> = {
+  beast: { core: "#facc15", glow: "rgba(250, 204, 21, 0.36)" },
+  bug: { core: "#84cc16", glow: "rgba(132, 204, 22, 0.34)" },
+  cosmic: { core: "#67e8f9", glow: "rgba(167, 139, 250, 0.38)" },
+  demon: { core: "#fb7185", glow: "rgba(220, 38, 38, 0.38)" },
+  dragon: { core: "#fb923c", glow: "rgba(248, 113, 113, 0.38)" },
+  elemental: { core: "#38bdf8", glow: "rgba(96, 165, 250, 0.36)" },
+  humanoid: { core: "#facc15", glow: "rgba(250, 204, 21, 0.36)" },
+  mechanical: { core: "#93c5fd", glow: "rgba(59, 130, 246, 0.36)" },
+  undead: { core: "#86efac", glow: "rgba(34, 197, 94, 0.34)" },
+  generic: { core: "#f8fafc", glow: "rgba(148, 163, 184, 0.34)" }
+};
+
+function drawQuadraticSegment(
+  ctx: CanvasRenderingContext2D,
+  stream: AttackStream,
+  startT: number,
+  endT: number,
+  width: number,
+  height: number
+) {
+  const steps = 12;
+  ctx.beginPath();
+  for (let index = 0; index <= steps; index += 1) {
+    const t = startT + (endT - startT) * (index / steps);
+    const inv = 1 - t;
+    const x = (inv * inv * stream.startX + 2 * inv * t * stream.controlX + t * t * stream.endX) * width / 100;
+    const y = (inv * inv * stream.startY + 2 * inv * t * stream.controlY + t * t * stream.endY) * height / 100;
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+}
+
+function AttackStreamCanvas({
+  animationId,
+  streams,
+  theme
+}: {
+  animationId: string;
+  streams: AttackStream[];
+  theme: BoardAttackAnimation["theme"];
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const parent = canvas?.parentElement;
+    if (!canvas || !parent || streams.length === 0) return;
+
+    const colors = ATTACK_THEME_COLORS[theme] ?? ATTACK_THEME_COLORS.generic;
+    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
+
+    let animationFrame = 0;
+    let disposed = false;
+    const startTime = performance.now();
+    const streamDurationMs = 1150;
+    const resize = () => {
+      const rect = parent.getBoundingClientRect();
+      const dpr = Math.max(1, Math.min(2, globalThis.devicePixelRatio || 1));
+      const width = Math.max(1, Math.floor(rect.width));
+      const height = Math.max(1, Math.floor(rect.height));
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { width, height };
+    };
+
+    let metrics = resize();
+    const resizeObserver = new ResizeObserver(() => {
+      metrics = resize();
+    });
+    resizeObserver.observe(parent);
+
+    const render = (now: number) => {
+      if (disposed) return;
+      const elapsed = now - startTime;
+      ctx.clearRect(0, 0, metrics.width, metrics.height);
+
+      let active = false;
+      for (const stream of streams) {
+        const localTime = elapsed - stream.delayMs;
+        if (localTime < 0 || localTime > streamDurationMs) continue;
+        active = true;
+        const progress = Math.min(1, localTime / streamDurationMs);
+        const tail = Math.max(0, progress - 0.23);
+        const head = Math.min(1, progress);
+        const opacity = progress < 0.12
+          ? progress / 0.12
+          : progress > 0.82
+            ? Math.max(0, (1 - progress) / 0.18)
+            : 1;
+
+        ctx.save();
+        ctx.globalAlpha = opacity * 0.44;
+        ctx.strokeStyle = colors.glow;
+        ctx.lineWidth = 9;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        drawQuadraticSegment(ctx, stream, tail, head, metrics.width, metrics.height);
+        ctx.stroke();
+
+        ctx.globalAlpha = opacity;
+        ctx.strokeStyle = colors.core;
+        ctx.lineWidth = 4.5;
+        drawQuadraticSegment(ctx, stream, tail, head, metrics.width, metrics.height);
+        ctx.stroke();
+
+        ctx.globalAlpha = Math.min(1, opacity + 0.12);
+        ctx.strokeStyle = "#f8fafc";
+        ctx.lineWidth = 1.6;
+        drawQuadraticSegment(ctx, stream, Math.max(tail, head - 0.045), head, metrics.width, metrics.height);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      if (active || elapsed < streams[streams.length - 1].delayMs + streamDurationMs) {
+        animationFrame = requestAnimationFrame(render);
+      } else {
+        ctx.clearRect(0, 0, metrics.width, metrics.height);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(render);
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
+      ctx.clearRect(0, 0, metrics.width, metrics.height);
+    };
+  }, [animationId, streams, theme]);
+
+  return <canvas ref={canvasRef} className="board-preview-3d__attack-fx-canvas" aria-hidden="true" />;
+}
+
 export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onDropBattleAttackerToPiece, onDropEquipMagicToPiece, onDropEffectSourceToPiece, onDropEffectSourceToSlot, onCemeteryStackClick, draggableHandCardIds, draggableBattleAttackerCardIds, draggableEquipMagicCardIds, validBattleTargetPieceIds, validEquipTargetPieceIds, validEffectTargetPieceIds, validEffectTargetSlotIds, effectSourcePieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, equipAttachSourcePieceIds, battleSpeedBadges, diceRollVisual, attackAnimation, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
   const highlightedSet = new Set(highlightedSlotIds ?? []);
   const highlightedPieceSet = new Set(highlightedPieceIds ?? []);
@@ -130,8 +300,6 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
     Array.from(types).includes("application/x-ward-board-effect-source");
   const inspectedFieldCardId = pinnedFieldCardId ?? hoveredFieldCardId;
   const inspectedFieldCard = inspectedFieldCardId ? cardByInstanceId.get(inspectedFieldCardId) ?? null : null;
-  const inspectedCreatureStats = inspectedFieldCard ? getCreatureOverlayStats(match, inspectedFieldCard) : null;
-  const inspectedFieldCardText = inspectedFieldCard ? getCardText(match, inspectedFieldCard) : "";
   const visibleSlots = BOARD_SLOTS.filter(slot => {
     if (highlightedSet.has(slot.id)) return true;
     if (slot.id.includes("-primary")) return visibleSlotLayers.primary;
@@ -159,16 +327,46 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
     : null;
   const attackDx = attackSourcePoint && attackTargetPoint ? attackTargetPoint.xPercent - attackSourcePoint.xPercent : 0;
   const attackDy = attackSourcePoint && attackTargetPoint ? attackTargetPoint.zPercent - attackSourcePoint.zPercent : 0;
-  const attackLength = Math.max(8, Math.hypot(attackDx, attackDy));
-  const attackAngle = Math.atan2(attackDy, attackDx) * 180 / Math.PI;
+  const attackDistance = Math.max(8, Math.hypot(attackDx, attackDy));
+  const attackStreamDice = attackAnimation && attackAnimation.damageAmount > 0
+    ? attackAnimation.damageRollDice.length > 0
+      ? attackAnimation.damageRollDice
+      : [attackAnimation.damageAmount]
+    : [];
+  const attackStreams = attackAnimation && attackSourcePoint && attackTargetPoint
+    ? attackStreamDice.map((_, index) => {
+      const perpendicularX = attackDistance > 0 ? -attackDy / attackDistance : 0;
+      const perpendicularY = attackDistance > 0 ? attackDx / attackDistance : 0;
+      const side = seededUnit(`${attackAnimation.id}:side:${index}`) > 0.5 ? 1 : -1;
+      const curve = (3.5 + seededUnit(`${attackAnimation.id}:curve:${index}`) * 6) * side;
+      const jitterX = (seededUnit(`${attackAnimation.id}:jx:${index}`) - 0.5) * 2.5;
+      const jitterY = (seededUnit(`${attackAnimation.id}:jy:${index}`) - 0.5) * 2.5;
+      const controlX = clampPercent((attackSourcePoint.xPercent + attackTargetPoint.xPercent) / 2 + perpendicularX * curve + jitterX);
+      const controlY = clampPercent((attackSourcePoint.zPercent + attackTargetPoint.zPercent) / 2 + perpendicularY * curve + jitterY);
+      return {
+        id: `${attackAnimation.id}-stream-${index}`,
+        startX: attackSourcePoint.xPercent,
+        startY: attackSourcePoint.zPercent,
+        controlX,
+        controlY,
+        endX: attackTargetPoint.xPercent,
+        endY: attackTargetPoint.zPercent,
+        delayMs: index * 260
+      };
+    })
+    : [];
+  const attackImpactDelayMs = attackStreams.length > 0
+    ? (attackStreams.length - 1) * 260 + 380
+    : 0;
 
   useEffect(() => {
     setInspectorDetailsExpanded(false);
   }, [inspectedFieldCardId]);
 
   return (
-    <div className="board-preview-3d__camera has-webgl-cards" style={cameraStyle}>
-      <div className="board-preview-3d__table" style={{ transform: `translate(-50%, -50%) rotateX(${tiltDegrees}deg) translateZ(-20px)` }}>
+    <>
+      <div className="board-preview-3d__camera has-webgl-cards" style={cameraStyle}>
+        <div className="board-preview-3d__table" style={{ transform: `translate(-50%, -50%) rotateX(${tiltDegrees}deg) translateZ(-20px)` }}>
         <div className="board-preview-3d__grid" aria-hidden="true" />
         <BoardPreview3DWebGLCards
           cardByInstanceId={cardByInstanceId}
@@ -189,23 +387,15 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
             className={`board-preview-3d__attack-fx board-preview-3d__attack-fx--${attackAnimation.theme}${attackAnimation.killed ? " is-lethal" : ""}`}
             aria-hidden="true"
           >
-            <span
-              className="board-preview-3d__attack-fx-beam"
-              style={{
-                left: `${attackSourcePoint.xPercent}%`,
-                top: `${attackSourcePoint.zPercent}%`,
-                width: `${attackLength}%`,
-                transform: `rotate(${attackAngle}deg)`
-              }}
-            >
-              <i />
-              <i />
-            </span>
+            {attackStreams.length > 0 ? (
+              <AttackStreamCanvas animationId={attackAnimation.id} streams={attackStreams} theme={attackAnimation.theme} />
+            ) : null}
             <span
               className="board-preview-3d__attack-fx-impact"
               style={{
                 left: `${attackTargetPoint.xPercent}%`,
-                top: `${attackTargetPoint.zPercent}%`
+                top: `${attackTargetPoint.zPercent}%`,
+                animationDelay: `${attackImpactDelayMs}ms`
               }}
             >
               <strong>{attackAnimation.damageAmount > 0 ? `-${attackAnimation.damageAmount}` : "0"}</strong>
@@ -448,51 +638,19 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
           </article>
           );
         })}
+        </div>
       </div>
       {inspectedFieldCard ? (
-        <aside className={`board-preview-3d__card-inspector${pinnedFieldCardId ? " is-pinned" : ""}`} aria-label="Card preview">
-          {pinnedFieldCardId ? (
-            <button type="button" className="board-preview-3d__card-inspector-close" onClick={() => setPinnedFieldCardId(null)} aria-label="Close card preview">
-              x
-            </button>
-          ) : null}
-          <div className="board-preview-3d__card-inspector-header">
-            <strong>{getCardName(match, inspectedFieldCard)}</strong>
-            <span>{isCreature(match, inspectedFieldCard) ? "Creature" : isMagic(match, inspectedFieldCard) ? getMagicLine(match, inspectedFieldCard) : "Card"}</span>
-          </div>
-          <MatchCardImage match={match} card={inspectedFieldCard} className="board-preview-3d__card-inspector-art" />
-          {inspectedCreatureStats ? (
-            <div className="board-preview-3d__card-inspector-stat-wall">
-              <div className={`board-preview-3d__card-inspector-hp board-preview-3d__card-inspector-hp--${inspectedCreatureStats.hpTone}`}>
-                <span>HP</span>
-                <strong>{inspectedCreatureStats.currentHp}</strong>
-                <small>/ {inspectedCreatureStats.baseHp}</small>
-              </div>
-              <span>AL <strong>{inspectedCreatureStats.armorLevel}</strong></span>
-              <span>SPD <strong>{inspectedCreatureStats.speed}</strong></span>
-              <span>ATK <strong>{inspectedCreatureStats.attackDice}D6</strong></span>
-              <span>MOD <strong>{inspectedCreatureStats.modifier}</strong></span>
-            </div>
-          ) : null}
-          {(inspectedCreatureStats || isMagic(match, inspectedFieldCard) || inspectedFieldCardText) ? (
-            <button
-              type="button"
-              className="board-preview-3d__card-inspector-detail-toggle"
-              aria-expanded={inspectorDetailsExpanded}
-              onClick={() => setInspectorDetailsExpanded(current => !current)}
-            >
-              {inspectorDetailsExpanded ? "Hide details" : "Details"}
-            </button>
-          ) : null}
-          {inspectorDetailsExpanded ? (
-            <div className="board-preview-3d__card-inspector-copy">
-              {isCreature(match, inspectedFieldCard) ? <span>{getCreatureStatsLine(match, inspectedFieldCard)}</span> : null}
-              {isMagic(match, inspectedFieldCard) ? <span>{getMagicLine(match, inspectedFieldCard)}</span> : null}
-              {inspectedFieldCardText ? <p>{inspectedFieldCardText}</p> : null}
-            </div>
-          ) : null}
-        </aside>
+        <BoardCardInspector
+          ariaLabel="Card preview"
+          card={inspectedFieldCard}
+          detailsExpanded={inspectorDetailsExpanded}
+          match={match}
+          onClose={pinnedFieldCardId ? () => setPinnedFieldCardId(null) : undefined}
+          onToggleDetails={() => setInspectorDetailsExpanded(current => !current)}
+          pinned={Boolean(pinnedFieldCardId)}
+        />
       ) : null}
-    </div>
+    </>
   );
 }

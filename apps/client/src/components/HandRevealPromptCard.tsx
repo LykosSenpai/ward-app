@@ -1,14 +1,7 @@
 import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import {
-  getCardName,
-  getCardText,
-  getCreatureStatsLine,
-  getMagicLine,
   getPlayerName,
-  getRequiredSacrificesForCard,
-  isCreature,
-  isMagic
 } from "../gameViewHelpers";
 import { MatchCardImage } from "./MatchCardImage";
 
@@ -52,27 +45,6 @@ export function HandRevealPromptCard({ match, controlledPlayerId, onApprove }: H
           return (
             <div className="mini-card revealed-hand-card" key={card.cardInstanceId}>
               <MatchCardImage match={match} card={cardInstance} />
-              <div className="card-hover-preview revealed-hand-hover-preview" aria-hidden="true">
-                <div className="card-hover-preview-art">
-                  <MatchCardImage match={match} card={cardInstance} />
-                </div>
-                <div className="card-hover-preview-copy">
-                  <strong>{getCardName(match, cardInstance)}</strong>
-                  <span>{match.cardCatalog[card.cardId]?.cardType}</span>
-                  {isCreature(match, cardInstance) && (
-                    <>
-                      <span>{getCreatureStatsLine(match, cardInstance)}</span>
-                      <span>Required Sacrifices: {getRequiredSacrificesForCard(match, cardInstance)}</span>
-                    </>
-                  )}
-                  {isMagic(match, cardInstance) && (
-                    <>
-                      <span>{getMagicLine(match, cardInstance)}</span>
-                      <span>{getCardText(match, cardInstance)}</span>
-                    </>
-                  )}
-                </div>
-              </div>
             </div>
           );
         })}

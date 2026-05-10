@@ -18,7 +18,8 @@ type BoardPreview3DDiceLayerProps = {
 const CARD_WORLD_WIDTH = 128;
 const CARD_WORLD_HEIGHT = 179;
 const DIE_SIZE = 34;
-const DICE_ROLL_DURATION_MS = 3000;
+const DICE_ROLL_DURATION_MS = 1450;
+const ROLL_ACTIVE_PROGRESS = 0.72;
 
 type ViewMetrics = {
   height: number;
@@ -31,9 +32,9 @@ type SimDie = {
   hasSettled: boolean;
   mesh: THREE.Mesh;
   position: THREE.Vector3;
-  velocity: THREE.Vector3;
   rotationVelocity: THREE.Vector3;
   value: number;
+  velocity: THREE.Vector3;
 };
 
 type Collider = {
@@ -43,23 +44,19 @@ type Collider = {
   y: number;
 };
 
+const faceTextureCache = new Map<number, THREE.CanvasTexture>();
+
 function createFaceTexture(value: number): THREE.CanvasTexture {
+  const cached = faceTextureCache.get(value);
+  if (cached) return cached;
+
   const canvas = document.createElement("canvas");
   canvas.width = 160;
   canvas.height = 160;
   const context = canvas.getContext("2d");
 
   if (context) {
-    const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, "#f8fafc");
-    gradient.addColorStop(1, "#cbd5e1");
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = "rgba(15, 23, 42, 0.28)";
-    context.lineWidth = 10;
-    context.strokeRect(7, 7, canvas.width - 14, canvas.height - 14);
-    context.fillStyle = "#020617";
-
+    const radius = 22;
     const pipPositions: Record<number, Array<[number, number]>> = {
       1: [[80, 80]],
       2: [[48, 48], [112, 112]],
@@ -69,6 +66,20 @@ function createFaceTexture(value: number): THREE.CanvasTexture {
       6: [[48, 44], [112, 44], [48, 80], [112, 80], [48, 116], [112, 116]]
     };
 
+    const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "#ffffff");
+    gradient.addColorStop(0.58, "#eef2f7");
+    gradient.addColorStop(1, "#cbd5e1");
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.roundRect(8, 8, canvas.width - 16, canvas.height - 16, radius);
+    context.fill();
+
+    context.strokeStyle = "rgba(15, 23, 42, 0.3)";
+    context.lineWidth = 8;
+    context.stroke();
+
+    context.fillStyle = "#020617";
     for (const [x, y] of pipPositions[value] ?? pipPositions[1]) {
       context.beginPath();
       context.arc(x, y, 12, 0, Math.PI * 2);
@@ -79,34 +90,30 @@ function createFaceTexture(value: number): THREE.CanvasTexture {
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
+  faceTextureCache.set(value, texture);
   return texture;
 }
 
 function createDieMaterials(value: number): THREE.Material[] {
-  const values = [2, 5, 3, 4, value, 6];
-  return values.map(face => new THREE.MeshStandardMaterial({
+  const faceValues = [2, 5, 3, 4, value, 6];
+  return faceValues.map(face => new THREE.MeshBasicMaterial({
     color: 0xffffff,
     map: createFaceTexture(face),
-    roughness: 0.42,
-    metalness: 0.05
+    toneMapped: false
   }));
 }
 
 function createSettledDieMaterials(value: number): THREE.Material[] {
-  const values = Array.from({ length: 6 }, () => value);
-  return values.map(face => new THREE.MeshStandardMaterial({
+  return Array.from({ length: 6 }, () => new THREE.MeshBasicMaterial({
     color: 0xffffff,
-    map: createFaceTexture(face),
-    roughness: 0.42,
-    metalness: 0.05
+    map: createFaceTexture(value),
+    toneMapped: false
   }));
 }
 
 function disposeMaterials(material: THREE.Material | THREE.Material[]): void {
   const materials = Array.isArray(material) ? material : [material];
   for (const item of materials) {
-    const mapped = item as THREE.MeshStandardMaterial;
-    mapped.map?.dispose();
     item.dispose();
   }
 }
@@ -115,24 +122,24 @@ function settleDieOnValue(die: SimDie): void {
   if (die.hasSettled) return;
   disposeMaterials(die.mesh.material);
   die.mesh.material = createSettledDieMaterials(die.value);
-  die.mesh.rotation.set(0.18, -0.24, 0.06);
+  die.mesh.rotation.set(0.22, -0.28, 0.06);
   die.mesh.position.z = 70;
+  die.rotationVelocity.set(0, 0, 0);
+  die.velocity.set(0, 0, 0);
   die.hasSettled = true;
 }
 
 function resize(parent: HTMLElement, renderer: THREE.WebGLRenderer, camera: THREE.OrthographicCamera): ViewMetrics {
   const width = Math.max(1, Math.floor(parent.clientWidth));
   const height = Math.max(1, Math.floor(parent.clientHeight));
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setSize(width, height, false);
-  const visibleWidth = width;
-  const visibleHeight = height;
-  camera.left = visibleWidth / -2;
-  camera.right = visibleWidth / 2;
-  camera.top = visibleHeight / 2;
-  camera.bottom = visibleHeight / -2;
+  camera.left = width / -2;
+  camera.right = width / 2;
+  camera.top = height / 2;
+  camera.bottom = height / -2;
   camera.updateProjectionMatrix();
-  return { height, width, worldHeight: visibleHeight, worldWidth: visibleWidth };
+  return { height, width, worldHeight: height, worldWidth: width };
 }
 
 function buildColliders(
@@ -195,7 +202,7 @@ export function BoardPreview3DDiceLayer({
     let animationFrame = 0;
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: true,
+      antialias: false,
       canvas,
       powerPreference: "high-performance"
     });
@@ -207,40 +214,35 @@ export function BoardPreview3DDiceLayer({
     camera.position.set(0, 0, 500);
     camera.lookAt(0, 0, 0);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.74);
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
-    keyLight.position.set(-120, 180, 420);
-    scene.add(ambient, keyLight);
-
     let metrics = resize(parent, renderer, camera);
     let colliders = buildColliders(filteredBoardObjects, metrics, heightScale, resolveSlotPosition);
     const dieSize = DIE_SIZE;
     const geometry = new THREE.BoxGeometry(dieSize, dieSize, dieSize);
+    let dieRadius = dieSize * 0.72;
     const dice: SimDie[] = diceRoll.values.map((value, index) => {
       const mesh = new THREE.Mesh(geometry, createDieMaterials(value));
       const spread = diceRoll.values.length > 1 ? (index / (diceRoll.values.length - 1) - 0.5) : 0;
       const position = new THREE.Vector3(
-        -metrics.worldWidth * 0.34 + spread * 120,
-        metrics.worldHeight * 0.22 - index * 8,
+        -metrics.worldWidth * 0.34 + spread * 118,
+        metrics.worldHeight * 0.24 - index * 7,
         70 + index * 6
       );
       const velocity = new THREE.Vector3(
-        6.8 + index * 0.7,
-        -4.4 + ((index % 3) - 1) * 1.1,
+        9.8 + index * 0.8,
+        -6.2 + ((index % 3) - 1) * 1.2,
         0
       );
       const rotationVelocity = new THREE.Vector3(
-        0.2 + index * 0.018,
-        0.17 + index * 0.021,
-        0.12 + index * 0.015
+        0.34 + index * 0.024,
+        0.29 + index * 0.026,
+        0.2 + index * 0.018
       );
       mesh.position.copy(position);
       scene.add(mesh);
-      return { hasSettled: false, mesh, position, velocity, rotationVelocity, value };
+      return { hasSettled: false, mesh, position, rotationVelocity, value, velocity };
     });
 
     const startTime = performance.now();
-    let dieRadius = dieSize * 0.72;
 
     function renderFrame() {
       renderer.render(scene, camera);
@@ -251,11 +253,9 @@ export function BoardPreview3DDiceLayer({
       const previousMetrics = metrics;
       metrics = resize(parent, renderer, camera);
       colliders = buildColliders(filteredBoardObjects, metrics, heightScale, resolveSlotPosition);
-      dieRadius = DIE_SIZE * 0.72;
-
+      dieRadius = dieSize * 0.72;
       const scaleX = previousMetrics.worldWidth > 0 ? metrics.worldWidth / previousMetrics.worldWidth : 1;
       const scaleY = previousMetrics.worldHeight > 0 ? metrics.worldHeight / previousMetrics.worldHeight : 1;
-
       for (const die of dice) {
         die.position.x *= scaleX;
         die.position.y *= scaleY;
@@ -263,30 +263,32 @@ export function BoardPreview3DDiceLayer({
         die.velocity.y *= scaleY;
         die.mesh.position.copy(die.position);
       }
-
       renderFrame();
     };
+
+    const resizeObserver = new ResizeObserver(() => resizeActiveRollRef.current?.());
+    resizeObserver.observe(parent);
 
     function animate(now: number) {
       if (isDisposed) return;
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / DICE_ROLL_DURATION_MS);
-      const damping = progress > 0.72 ? 0.86 : 0.985;
+      const damping = progress > 0.55 ? 0.76 : 0.955;
       const boundsX = metrics.worldWidth / 2 - dieRadius;
       const boundsY = metrics.worldHeight / 2 - dieRadius;
 
       for (const die of dice) {
-        if (progress < 0.94) {
+        if (progress < ROLL_ACTIVE_PROGRESS) {
           die.position.add(die.velocity);
           die.velocity.multiplyScalar(damping);
 
           if (die.position.x <= -boundsX || die.position.x >= boundsX) {
             die.position.x = Math.max(-boundsX, Math.min(boundsX, die.position.x));
-            die.velocity.x *= -0.84;
+            die.velocity.x *= -0.74;
           }
           if (die.position.y <= -boundsY || die.position.y >= boundsY) {
             die.position.y = Math.max(-boundsY, Math.min(boundsY, die.position.y));
-            die.velocity.y *= -0.84;
+            die.velocity.y *= -0.74;
           }
 
           for (const collider of colliders) {
@@ -295,10 +297,10 @@ export function BoardPreview3DDiceLayer({
             if (overlapX > 0 && overlapY > 0) {
               if (overlapX < overlapY) {
                 die.position.x += die.position.x < collider.x ? -overlapX : overlapX;
-                die.velocity.x *= -0.78;
+                die.velocity.x *= -0.68;
               } else {
                 die.position.y += die.position.y < collider.y ? -overlapY : overlapY;
-                die.velocity.y *= -0.78;
+                die.velocity.y *= -0.68;
               }
             }
           }
@@ -306,9 +308,20 @@ export function BoardPreview3DDiceLayer({
           die.mesh.rotation.x += die.rotationVelocity.x;
           die.mesh.rotation.y += die.rotationVelocity.y;
           die.mesh.rotation.z += die.rotationVelocity.z;
+          die.rotationVelocity.multiplyScalar(progress > 0.5 ? 0.9 : 0.985);
           die.mesh.position.copy(die.position);
-        } else {
-          settleDieOnValue(die);
+        } else if (!die.hasSettled) {
+          die.position.add(die.velocity);
+          die.velocity.multiplyScalar(0.64);
+          die.mesh.rotation.x += die.rotationVelocity.x;
+          die.mesh.rotation.y += die.rotationVelocity.y;
+          die.mesh.rotation.z += die.rotationVelocity.z;
+          die.rotationVelocity.multiplyScalar(0.62);
+          die.mesh.position.copy(die.position);
+
+          if (die.velocity.length() < 0.34 || progress >= 0.88) {
+            settleDieOnValue(die);
+          }
         }
       }
 
@@ -323,6 +336,7 @@ export function BoardPreview3DDiceLayer({
     disposeActiveRollRef.current = () => {
       isDisposed = true;
       cancelAnimationFrame(animationFrame);
+      resizeObserver.disconnect();
       for (const die of dice) {
         scene.remove(die.mesh);
         disposeMaterials(die.mesh.material);

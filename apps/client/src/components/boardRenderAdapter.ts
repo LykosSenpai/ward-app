@@ -24,13 +24,17 @@ function extractVisualTargets(payload: unknown): BoardRenderEvent["visualTargets
   }
   const data = payload as Record<string, unknown>;
   const slotKeys = ["slotId", "sourceSlotId", "targetSlotId", "fromSlotId", "toSlotId"];
+  const slotArrayKeys = ["slotIds", "sourceSlotIds", "targetSlotIds", "fromSlotIds", "toSlotIds"];
   const instanceKeys = ["cardInstanceId", "sourceCardInstanceId", "targetCardInstanceId", "attackerCreatureInstanceId", "defenderCreatureInstanceId", "targetCreatureInstanceId"];
+  const instanceArrayKeys = ["cardInstanceIds", "sourceCardInstanceIds", "targetCardInstanceIds", "drawnCardInstanceIds"];
   const slotIds = slotKeys
     .map(key => data[key])
-    .filter((value): value is string => typeof value === "string");
+    .filter((value): value is string => typeof value === "string")
+    .concat(slotArrayKeys.flatMap(key => Array.isArray(data[key]) ? data[key].filter((value): value is string => typeof value === "string") : []));
   const cardInstanceIds = instanceKeys
     .map(key => data[key])
-    .filter((value): value is string => typeof value === "string");
+    .filter((value): value is string => typeof value === "string")
+    .concat(instanceArrayKeys.flatMap(key => Array.isArray(data[key]) ? data[key].filter((value): value is string => typeof value === "string") : []));
   return {
     slotIds: [...new Set(slotIds)],
     cardInstanceIds: [...new Set(cardInstanceIds)]

@@ -24,6 +24,24 @@ export function enqueueBoardRenderEvents(
   const deduped = unseen.filter(
     event => !state.queue.some(queued => queued.eventId === event.eventId) && state.activeEvent?.eventId !== event.eventId
   );
+
+  const priorityDamageEvent = deduped.find(event => event.type === "BATTLE_DAMAGE_APPLIED");
+  if (priorityDamageEvent && state.activeEvent?.type !== "BATTLE_DAMAGE_APPLIED") {
+    const queue = [
+      priorityDamageEvent,
+      ...deduped.filter(event =>
+        event.eventId !== priorityDamageEvent.eventId &&
+        event.sequenceNumber > priorityDamageEvent.sequenceNumber
+      )
+    ].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+    return {
+      ...state,
+      activeEvent: null,
+      cursor: Math.max(state.cursor, priorityDamageEvent.sequenceNumber - 1),
+      queue: queue.slice(-MAX_BOARD_ANIMATION_QUEUE_LENGTH)
+    };
+  }
+
   const queue = [...state.queue, ...deduped].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
   return {
     ...state,

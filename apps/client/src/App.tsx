@@ -800,6 +800,11 @@ export default function App() {
     socket.emit("lobby:join", lobbyId);
   }
 
+  function selectLobbyDeck(lobbyId: string, deckId: string) {
+    setError("");
+    socket.emit("lobby:selectDeck", { lobbyId, deckId });
+  }
+
   function viewLobby(lobbyId: string) {
     setError("");
     const lobby = matchLobbies.find(item => item.id === lobbyId);
@@ -1112,6 +1117,11 @@ export default function App() {
     socket.emit("match:advancePhase", match.matchId);
   }
 
+  function endTurn() {
+    if (!match) return;
+    socket.emit("match:endTurn", match.matchId);
+  }
+
   function shuffleAllDecks() {
     if (!match) return;
     socket.emit("match:shuffleAllDecks", match.matchId);
@@ -1232,6 +1242,15 @@ export default function App() {
     if (slotId === activeDeckSlot && canDrawForCurrentTurn(match, controlledPlayerId)) {
       drawActivePlayerAndAdvance();
     }
+  }
+
+  function discardHandCardToCemetery(playerId: "player_1" | "player_2", cardInstanceId: string) {
+    if (!match) return;
+    socket.emit("match:discardFromHand", {
+      matchId: match.matchId,
+      playerId,
+      cardInstanceId
+    });
   }
 
   function startManualBattle(attackerCreatureInstanceId: string, selectedDefenderCreatureInstanceId?: string) {
@@ -1764,6 +1783,10 @@ export default function App() {
     (!controlledPlayerId ||
       controlledPlayerId === (match.pendingChain.priorityPlayerId ?? match.turn.activePlayerId))
   );
+  const canViewPendingPrompt = Boolean(
+    match?.pendingPrompt &&
+    (!controlledPlayerId || controlledPlayerId === match.pendingPrompt.approvingPlayerId)
+  );
   const show3dBoardView = playViewMode === "board3d";
 
   if (!authChecked) {
@@ -2032,6 +2055,7 @@ export default function App() {
                 onRefresh={refreshSetupOptions}
                 onCreateLobby={createLobby}
                 onJoinLobby={joinLobby}
+                onSelectDeck={selectLobbyDeck}
                 onViewLobby={viewLobby}
                 onLeaveLobby={leaveLobby}
                 onStartMatch={startLobbyMatch}
@@ -2060,6 +2084,7 @@ export default function App() {
                       defaultIntegrationMode
                       controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
                       onAdvancePhase={advancePhase}
+                      onEndTurn={endTurn}
                       onUndoLastAction={undoLastAction}
                       onRequestNoCreatureRedraw={requestNoCreatureRedraw}
                       onSetHandRevealed={setHandRevealed}
@@ -2067,6 +2092,7 @@ export default function App() {
                       onOpeningRoll={rollOpeningTurnOrder}
                       onDeckSlotClick={handleDeckClick}
                       onResolveEffectTarget={resolveEffectTarget}
+                      onDiscardHandCardToCemetery={discardHandCardToCemetery}
                       onPlayHandCardToSlot={(cardInstanceId, slotId, sacrificeCardInstanceIds = []) => {
                         const slotOwnerId = slotId.startsWith("player_2-") ? "player_2" : "player_1";
                         const handOwner = match.players.find(player =>
@@ -2184,8 +2210,8 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingPrompt && true && (
-              <ModalPanel title="Action Required" blocking wide>
+            {canViewPendingPrompt && !show3dBoardView && (
+              <ModalPanel title="Action Required" blocking>
                 <HandRevealPromptCard
                   match={match}
                   controlledPlayerId={controlledPlayerId}

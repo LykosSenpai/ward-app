@@ -15,6 +15,7 @@ import type { CardDefinition, CardInstance, CannotInflictAttackDamageBattlePolic
 
 import {
   advancePhase,
+  endTurn,
   applyManualDamageToPrimaryCreature,
   applyManualHealToPrimaryCreature,
   applyManualMagicDamageToPrimaryCreature,
@@ -1711,6 +1712,21 @@ io.on("connection", async socket => {
       const match = getPlayableMatchOrThrow(matchId);
       requireSocketCanControlActivePlayer(socket, match);
       const updatedMatch = advancePhase(match);
+
+      activeMatches.set(matchId, updatedMatch);
+      emitMatchState(updatedMatch);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("match:endTurn", (matchId: string) => {
+    try {
+      const match = getPlayableMatchOrThrow(matchId);
+      requireSocketCanControlActivePlayer(socket, match);
+      const updatedMatch = endTurn(match);
 
       activeMatches.set(matchId, updatedMatch);
       emitMatchState(updatedMatch);
@@ -3943,12 +3959,12 @@ io.on("connection", async socket => {
       }
 
       const sortedPlayers = [...lobby.players].sort((a, b) => a.seat - b.seat);
-      const player1Deck = sortedPlayers[0].selectedDeckId
-        ? loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId)
-        : getFirstDeckForUser(sortedPlayers[0].userId);
-      const player2Deck = sortedPlayers[1].selectedDeckId
-        ? loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId)
-        : getFirstDeckForUser(sortedPlayers[1].userId);
+      if (!sortedPlayers[0].selectedDeckId || !sortedPlayers[1].selectedDeckId) {
+        throw new Error("Both players must choose a deck before the match can start.");
+      }
+
+      const player1Deck = loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId);
+      const player2Deck = loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId);
       const cardCatalog = loadCardCatalog(lobby.selectedPackIds);
       const isTournamentLobby = lobby.format === "TOURNAMENT";
       const match = create1v1MatchFromDeckCardIds({
