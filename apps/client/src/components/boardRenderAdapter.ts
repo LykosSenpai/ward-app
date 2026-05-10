@@ -9,6 +9,7 @@ function resolveOwner(playerId: string): BoardPlayerId {
 }
 
 function mapRawEventType(rawType: string): BoardRenderEvent["type"] {
+  if (rawType === "BATTLE_DAMAGE_APPLIED") return "BATTLE_DAMAGE_APPLIED";
   if (rawType.includes("BATTLE") && rawType.includes("START")) return "BATTLE_STARTED";
   if (rawType.includes("BATTLE") && (rawType.includes("RESOLVE") || rawType.includes("RESULT"))) return "BATTLE_RESOLVED";
   if (rawType.includes("PROMPT")) return "EFFECT_PROMPT_OPENED";
@@ -23,7 +24,7 @@ function extractVisualTargets(payload: unknown): BoardRenderEvent["visualTargets
   }
   const data = payload as Record<string, unknown>;
   const slotKeys = ["slotId", "sourceSlotId", "targetSlotId", "fromSlotId", "toSlotId"];
-  const instanceKeys = ["cardInstanceId", "sourceCardInstanceId", "targetCardInstanceId", "attackerCreatureInstanceId", "defenderCreatureInstanceId"];
+  const instanceKeys = ["cardInstanceId", "sourceCardInstanceId", "targetCardInstanceId", "attackerCreatureInstanceId", "defenderCreatureInstanceId", "targetCreatureInstanceId"];
   const slotIds = slotKeys
     .map(key => data[key])
     .filter((value): value is string => typeof value === "string");

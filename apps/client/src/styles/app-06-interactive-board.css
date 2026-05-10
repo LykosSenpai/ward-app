@@ -1296,17 +1296,169 @@
 }
 
 .board-preview-3d__webgl-cards {
+  display: block;
+  height: 100%;
   inset: 0;
   pointer-events: none;
   position: absolute;
+  width: 100%;
   z-index: 12;
 }
 
 .board-preview-3d__dice-layer {
+  display: block;
+  height: 100%;
   inset: 0;
   pointer-events: none;
   position: absolute;
+  width: 100%;
   z-index: 33;
+}
+
+.board-preview-3d__attack-fx {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 34;
+}
+
+.board-preview-3d__attack-fx-beam {
+  height: 0;
+  position: absolute;
+  transform-origin: 0 50%;
+}
+
+.board-preview-3d__attack-fx-beam::before {
+  background: linear-gradient(90deg, transparent, var(--attack-fx-core), transparent);
+  border-radius: 999px;
+  box-shadow: 0 0 18px var(--attack-fx-glow);
+  content: "";
+  height: 5px;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  top: -2px;
+  width: 100%;
+  animation: board-attack-beam 820ms ease-out both;
+}
+
+.board-preview-3d__attack-fx-beam i {
+  background: var(--attack-fx-core);
+  border-radius: 999px;
+  box-shadow: 0 0 16px var(--attack-fx-glow);
+  height: 11px;
+  left: 0;
+  position: absolute;
+  top: -5px;
+  width: 22px;
+  animation: board-attack-projectile 840ms cubic-bezier(0.2, 0.78, 0.24, 1) both;
+}
+
+.board-preview-3d__attack-fx-beam i + i {
+  animation-delay: 90ms;
+  opacity: 0.72;
+  transform: translateY(7px);
+}
+
+.board-preview-3d__attack-fx-impact {
+  align-items: center;
+  background: radial-gradient(circle, var(--attack-fx-core), transparent 68%);
+  border: 1px solid color-mix(in srgb, var(--attack-fx-core) 70%, white 30%);
+  border-radius: 999px;
+  box-shadow: 0 0 26px var(--attack-fx-glow);
+  color: #f8fafc;
+  display: grid;
+  height: 74px;
+  justify-items: center;
+  line-height: 1;
+  padding: 12px;
+  position: absolute;
+  text-shadow: 0 1px 8px rgba(2, 6, 23, 0.86);
+  transform: translate(-50%, -50%) scale(0.35);
+  width: 74px;
+  animation: board-attack-impact 980ms ease-out both;
+}
+
+.board-preview-3d__attack-fx-impact strong {
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
+.board-preview-3d__attack-fx-impact small {
+  font-size: 0.48rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.board-preview-3d__attack-fx.is-lethal .board-preview-3d__attack-fx-impact {
+  animation-name: board-attack-impact-lethal;
+}
+
+.board-preview-3d__attack-fx--beast,
+.board-preview-3d__attack-fx--humanoid {
+  --attack-fx-core: #facc15;
+  --attack-fx-glow: rgba(250, 204, 21, 0.72);
+}
+
+.board-preview-3d__attack-fx--beast .board-preview-3d__attack-fx-beam::before,
+.board-preview-3d__attack-fx--humanoid .board-preview-3d__attack-fx-beam::before {
+  height: 3px;
+  top: -1px;
+}
+
+.board-preview-3d__attack-fx--bug {
+  --attack-fx-core: #84cc16;
+  --attack-fx-glow: rgba(132, 204, 22, 0.7);
+}
+
+.board-preview-3d__attack-fx--bug .board-preview-3d__attack-fx-beam i {
+  height: 8px;
+  width: 8px;
+}
+
+.board-preview-3d__attack-fx--cosmic {
+  --attack-fx-core: #67e8f9;
+  --attack-fx-glow: rgba(167, 139, 250, 0.76);
+}
+
+.board-preview-3d__attack-fx--cosmic .board-preview-3d__attack-fx-beam::before {
+  background: linear-gradient(90deg, transparent, #a78bfa, #67e8f9, transparent);
+  height: 7px;
+  top: -3px;
+}
+
+.board-preview-3d__attack-fx--demon {
+  --attack-fx-core: #fb7185;
+  --attack-fx-glow: rgba(220, 38, 38, 0.78);
+}
+
+.board-preview-3d__attack-fx--dragon {
+  --attack-fx-core: #fb923c;
+  --attack-fx-glow: rgba(248, 113, 113, 0.78);
+}
+
+.board-preview-3d__attack-fx--elemental {
+  --attack-fx-core: #38bdf8;
+  --attack-fx-glow: rgba(96, 165, 250, 0.72);
+}
+
+.board-preview-3d__attack-fx--mechanical {
+  --attack-fx-core: #93c5fd;
+  --attack-fx-glow: rgba(59, 130, 246, 0.72);
+}
+
+.board-preview-3d__attack-fx--mechanical .board-preview-3d__attack-fx-beam::before {
+  background: repeating-linear-gradient(90deg, transparent 0 5%, #93c5fd 5% 10%, transparent 10% 16%);
+}
+
+.board-preview-3d__attack-fx--undead {
+  --attack-fx-core: #86efac;
+  --attack-fx-glow: rgba(34, 197, 94, 0.68);
+}
+
+.board-preview-3d__attack-fx--generic {
+  --attack-fx-core: #f8fafc;
+  --attack-fx-glow: rgba(148, 163, 184, 0.72);
 }
 
 .board-preview-3d__table {
@@ -1913,6 +2065,142 @@
   min-height: 50px;
 }
 
+.board-preview-3d__cemetery-viewer {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(2, 6, 23, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.42);
+  border-radius: 10px;
+  bottom: 114px;
+  box-shadow: 0 18px 46px rgba(2, 6, 23, 0.68);
+  color: #e2e8f0;
+  display: grid;
+  gap: 8px;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: min(54vh, 520px);
+  left: 50%;
+  max-width: min(920px, calc(100% - 42px));
+  padding: 10px;
+  position: absolute;
+  transform: translateX(-50%);
+  width: min(920px, calc(100% - 42px));
+  z-index: 38;
+  contain: layout paint;
+}
+
+.board-preview-3d__cemetery-viewer-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.board-preview-3d__cemetery-viewer-header div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.board-preview-3d__cemetery-viewer-header strong {
+  color: #f8fafc;
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.board-preview-3d__cemetery-viewer-header span,
+.board-preview-3d__cemetery-empty {
+  color: #cbd5e1;
+  font-size: 0.66rem;
+  font-weight: 850;
+  margin: 0;
+}
+
+.board-preview-3d__cemetery-viewer-header button {
+  background: rgba(15, 23, 42, 0.84);
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  border-radius: 6px;
+  color: #e2e8f0;
+  cursor: pointer;
+  font-size: 0.62rem;
+  font-weight: 950;
+  min-height: 30px;
+  padding: 5px 8px;
+  text-transform: uppercase;
+}
+
+.board-preview-3d__cemetery-viewer-body {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 250px);
+  height: 100%;
+  min-height: 0;
+}
+
+.board-preview-3d__cemetery-card-list {
+  align-content: start;
+  display: grid;
+  gap: 7px;
+  grid-auto-rows: 118px;
+  grid-template-columns: repeat(auto-fill, 72px);
+  justify-content: start;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px;
+}
+
+.board-preview-3d__cemetery-card-list button {
+  background: rgba(15, 23, 42, 0.84);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 7px;
+  color: #e2e8f0;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  height: 118px;
+  min-height: 118px;
+  padding: 5px;
+  width: 72px;
+}
+
+.board-preview-3d__cemetery-card-list button.is-selected {
+  border-color: rgba(125, 211, 252, 0.88);
+  box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.38) inset;
+}
+
+.board-preview-3d__cemetery-card-list button.is-effect-target {
+  border-color: rgba(250, 204, 21, 0.94);
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.42) inset, 0 0 22px rgba(250, 204, 21, 0.24);
+}
+
+.board-preview-3d__cemetery-card-art {
+  height: 82px;
+  min-height: 82px;
+  min-width: 58px;
+  width: 58px;
+}
+
+.board-preview-3d__cemetery-card-list span {
+  font-size: 0.58rem;
+  font-weight: 850;
+  line-height: 1.05;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-preview-3d__cemetery-inspector {
+  align-self: start;
+  background: rgba(2, 6, 23, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  height: 100%;
+  min-width: 0;
+  overflow: auto;
+  padding: 8px;
+}
+
 .board-preview-3d__slot.is-highlighted {
   background:
     radial-gradient(circle at 50% 50%, rgba(250, 204, 21, 0.26), rgba(15, 23, 42, 0.68)),
@@ -2102,6 +2390,108 @@
   text-align: center;
 }
 
+.board-battle-hud__dice-note {
+  background: rgba(14, 116, 144, 0.36);
+  border: 1px solid rgba(125, 211, 252, 0.34);
+  border-radius: 7px;
+  color: #bae6fd;
+  font-size: 0.66rem;
+  font-weight: 900;
+  padding: 7px;
+  text-align: center;
+}
+
+.board-dice-control {
+  align-items: center;
+  bottom: 104px;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  max-width: min(180px, calc(100% - 24px));
+  position: absolute;
+  right: 18px;
+  z-index: 34;
+}
+
+.board-dice-control--player_1 {
+  bottom: 104px;
+  right: 18px;
+}
+
+.board-dice-control--player_2 {
+  bottom: 104px;
+  right: 18px;
+}
+
+.board-dice-control__event,
+.board-dice-control__die {
+  background: rgba(2, 6, 23, 0.84);
+  border: 1px solid rgba(125, 211, 252, 0.5);
+  box-shadow: 0 14px 28px rgba(2, 6, 23, 0.42), 0 0 24px rgba(56, 189, 248, 0.18);
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.board-dice-control__event {
+  border-radius: 7px;
+  display: grid;
+  gap: 2px;
+  line-height: 1.05;
+  min-width: 126px;
+  padding: 7px 9px;
+  text-align: center;
+}
+
+.board-dice-control__event strong {
+  color: #f8fafc;
+  font-size: 0.68rem;
+  font-weight: 950;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.board-dice-control__event span {
+  color: #bae6fd;
+  font-size: 0.56rem;
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-dice-control__die {
+  align-items: center;
+  border-radius: 12px;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 8px;
+}
+
+.board-dice-control__die .board-opening-roll__die {
+  --opening-die-color: #f8fafc;
+  --opening-die-shadow: rgba(74, 222, 128, 0.52);
+  height: 30px;
+  transform: rotate(-8deg);
+  width: 30px;
+}
+
+.board-dice-control.is-ready .board-dice-control__die {
+  animation: board-dice-ready-pulse 1.8s ease-in-out infinite;
+}
+
+.board-dice-control.is-disabled {
+  opacity: 0.58;
+}
+
+.board-dice-control.is-disabled .board-dice-control__event,
+.board-dice-control.is-disabled .board-dice-control__die {
+  cursor: not-allowed;
+}
+
 .board-preview-3d__layout {
   display: grid;
   gap: 10px;
@@ -2264,6 +2654,58 @@
   opacity: 0.88;
 }
 
+.board-opening-roll--mini {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+  left: auto;
+  max-width: min(220px, calc(100% - 32px));
+  min-height: 34px;
+  padding: 5px 7px;
+  pointer-events: none;
+  right: 14px;
+  top: 14px;
+  transform: none;
+  width: auto;
+  z-index: 24;
+}
+
+.board-opening-roll--mini .board-opening-roll__die {
+  height: 22px;
+  width: 22px;
+}
+
+.board-opening-roll__mini-label {
+  color: #cbd5e1;
+  display: grid;
+  gap: 1px;
+  line-height: 1;
+  min-width: 0;
+}
+
+.board-opening-roll__mini-label strong,
+.board-opening-roll__mini-label small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-opening-roll__mini-label strong {
+  color: #f8fafc;
+  font-size: 0.66rem;
+  font-weight: 950;
+  max-width: 132px;
+}
+
+.board-opening-roll__mini-label small {
+  color: #94a3b8;
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
 .board-opening-roll__trigger {
   align-items: center;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.9));
@@ -2406,6 +2848,86 @@
   }
   100% {
     transform: translateX(0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes board-dice-ready-pulse {
+  0%,
+  100% {
+    box-shadow: 0 14px 28px rgba(2, 6, 23, 0.42), 0 0 18px rgba(74, 222, 128, 0.2);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 18px 34px rgba(2, 6, 23, 0.48), 0 0 34px rgba(74, 222, 128, 0.34);
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes board-attack-beam {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.05);
+  }
+  22% {
+    opacity: 0.95;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes board-attack-projectile {
+  0% {
+    left: 0;
+    opacity: 0;
+    transform: scale(0.45);
+  }
+  16% {
+    opacity: 1;
+  }
+  78% {
+    left: calc(100% - 20px);
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    left: calc(100% - 12px);
+    opacity: 0;
+    transform: scale(0.35);
+  }
+}
+
+@keyframes board-attack-impact {
+  0%,
+  58% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.35);
+  }
+  68% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.42);
+  }
+}
+
+@keyframes board-attack-impact-lethal {
+  0%,
+  52% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.35) rotate(0deg);
+  }
+  66% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15) rotate(-5deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.65) rotate(6deg);
   }
 }
 
@@ -2620,7 +3142,7 @@
   padding: 3px 6px;
   position: absolute;
   top: 50%;
-  transform: translate(-50%, -50%) translateZ(2px);
+  transform: translate(-50%, -50%);
 }
 
 .board-preview-3d__depth-guide {
@@ -2694,7 +3216,7 @@
   padding: 5px 8px;
   position: absolute;
   top: 50%;
-  transform: translate(-50%, -50%) translateZ(1px);
+  transform: translate(-50%, -50%);
   width: calc(132px * var(--board-camera-scale));
   z-index: 10;
 }
@@ -2854,18 +3376,75 @@
   box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.4), 0 0 26px rgba(250, 204, 21, 0.28);
 }
 
+.board-preview-3d__piece.is-draggable-equip-magic,
+.board-preview-3d__piece.is-draggable-equip-magic button {
+  cursor: grab;
+}
+
+.board-preview-3d__piece.is-effect-source,
+.board-preview-3d__piece.is-effect-source button {
+  cursor: alias;
+}
+
+.board-preview-3d__piece.is-effect-source button {
+  outline: 2px solid rgba(250, 204, 21, 0.86);
+  outline-offset: 4px;
+}
+
+.board-preview-3d__piece.is-effect-target {
+  z-index: 30;
+}
+
+.board-preview-3d__piece.is-effect-target button {
+  box-shadow:
+    0 0 0 3px rgba(250, 204, 21, 0.72),
+    0 0 38px rgba(250, 204, 21, 0.44),
+    0 0 78px rgba(34, 211, 238, 0.24);
+  outline: 2px solid rgba(254, 240, 138, 0.95);
+  outline-offset: 5px;
+}
+
+.board-preview-3d__piece.is-equip-attach-source {
+  filter: saturate(1.12);
+  z-index: 28;
+}
+
+.board-preview-3d__piece.is-equip-attach-source button {
+  outline: 2px solid rgba(56, 189, 248, 0.88);
+  outline-offset: 4px;
+}
+
+.board-preview-3d__piece.is-equip-attach-target {
+  z-index: 29;
+}
+
+.board-preview-3d__piece.is-equip-attach-target button {
+  box-shadow:
+    0 0 0 3px rgba(56, 189, 248, 0.68),
+    0 0 34px rgba(14, 165, 233, 0.58),
+    0 0 70px rgba(59, 130, 246, 0.34);
+  outline: 2px solid rgba(186, 230, 253, 0.95);
+  outline-offset: 5px;
+}
+
 .board-preview-3d__piece.is-sacrifice-candidate {
   cursor: grab;
 }
 
 .board-preview-3d__piece.is-sacrifice-candidate button {
-  outline: 2px solid rgba(248, 113, 113, 0.62);
-  outline-offset: 3px;
+  box-shadow:
+    0 0 0 3px rgba(251, 113, 133, 0.58),
+    0 0 34px rgba(251, 113, 133, 0.34);
+  cursor: grab;
+  outline: 2px solid rgba(254, 202, 202, 0.88);
+  outline-offset: 5px;
 }
 
 .board-preview-3d__piece.is-selected-sacrifice button {
-  outline-color: #fb7185;
-  box-shadow: 0 0 30px rgba(251, 113, 133, 0.38);
+  box-shadow:
+    0 0 0 3px rgba(248, 113, 113, 0.82),
+    0 0 42px rgba(248, 113, 113, 0.5);
+  outline-color: #fecaca;
 }
 
 .board-preview-3d__stack-label {
@@ -2938,7 +3517,7 @@
   pointer-events: none;
   position: absolute;
   text-align: center;
-  transform: translateX(-50%) translateZ(36px);
+  transform: translateX(-50%);
   z-index: 20;
 }
 

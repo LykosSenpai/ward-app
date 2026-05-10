@@ -3,6 +3,7 @@ import type {
   ActiveCreatureStatus,
   ActiveEffectInstance,
   ActiveRecurringCreatureEffect,
+  BattleParticipantSnapshot,
   CardDefinition,
   CardInstance,
   EffectTargetOption,
@@ -41,7 +42,15 @@ import { applyDestroyedMagicCountModifier, isAutomaticMagicEffectSupported, tryR
 import { resolveEffectProgramTargetPrompt } from "./effectProgramRunner.js";
 import { getRuntimeBlockDurationData, getRuntimeBlockDurationText, getRuntimeBlockText, getRuntimeBlockValueText } from "./effectBlockRuntime.js";
 import { returnLinkedSummonsForInvalidatedSource } from "./triggers.js";
+import { getEffectiveCreatureStats } from "./effectiveStats.js";
+import {
+  collectBattleEffectSuggestions,
+  getSuggestedSpeedModifiers
+} from "./battleEffectAdapter.js";
 export { effectNeedsSingleMagicSlotTargetPrompt } from "./effectRegistry.js";
+
+const HOGGAN_CARD_ID = "gen3_009_hoggan";
+const HOGGAN_BATTLE_INTERCEPT_ACTION = "HOGGAN_BATTLE_INTERCEPT";
 
 export type ChainLinkEffectSource = {
   cardInstanceId: string;
@@ -748,6 +757,107 @@ function isLimitedSummonPromptAction(actionType: string): boolean {
   ].includes(actionType);
 }
 
+function snapshotBattleParticipant(
+  state: MatchState,
+  playerId: string,
+  card: CardInstance,
+  creatureKind: BattleParticipantSnapshot["creatureKind"]
+): BattleParticipantSnapshot {
+  const definition = getCardDefinition(state, card);
+  if (definition.cardType !== "CREATURE") {
+    throw new Error("Battle participant must be a Creature card.");
+  }
+
+  const stats = getEffectiveCreatureStats(state, card);
+
+  return {
+    playerId,
+    creatureInstanceId: card.instanceId,
+    creatureKind,
+    creatureName: definition.name,
+    armorLevel: stats.armorLevel,
+    speed: stats.speed,
+    attackDice: stats.attackDice,
+    modifier: stats.modifier,
+    currentHp: card.currentHp ?? card.baseHp ?? definition.hp,
+    baseHp: card.baseHp ?? definition.hp
+  };
+}
+
+function resolveHogganBattleInterceptPrompt(
+  state: MatchState,
+  prompt: PendingEffectTargetPrompt,
+  selectedOption: EffectTargetOption,
+  promptId: string
+): MatchState {
+  if (prompt.actionType !== HOGGAN_BATTLE_INTERCEPT_ACTION) return state;
+
+  if (!state.pendingBattle) {
+    throw new Error("Hoggan can only intercept an active pending battle.");
+  }
+
+  if (state.pendingBattle.status !== "AWAITING_SPEED_CHECK") {
+    throw new Error("Hoggan must be played before the battle speed check.");
+  }
+
+  if (state.pendingBattle.defendingPlayerId !== prompt.controllerPlayerId) {
+    throw new Error("Only the defending player can play Hoggan for this battle.");
+  }
+
+  if (selectedOption.id === "hoggan-battle-intercept-skip") {
+    state.pendingEffectTargetPrompt = undefined;
+    state.pendingBattle.updatedAt = new Date().toISOString();
+
+    addEvent(state, "HOGGAN_BATTLE_INTERCEPT_DECLINED", prompt.controllerPlayerId, {
+      promptId,
+      battleSessionId: state.pendingBattle.id,
+      sourceCardName: prompt.sourceCardName
+    });
+
+    return state;
+  }
+
+  if (selectedOption.zone !== "HAND" || selectedOption.cardId !== HOGGAN_CARD_ID || !selectedOption.cardInstanceId) {
+    throw new Error("Select a Hoggan from your hand.");
+  }
+
+  const result = limitedSummonSelectedCreature(
+    state,
+    selectedOption,
+    prompt.controllerPlayerId
+  );
+
+  const session = state.pendingBattle;
+  const originalDefenderCreatureInstanceId = session.declaredDefender.creatureInstanceId;
+  session.declaredDefender = snapshotBattleParticipant(
+    state,
+    prompt.controllerPlayerId,
+    result.card,
+    "LIMITED_SUMMON"
+  );
+  session.updatedAt = new Date().toISOString();
+  session.message = "Hoggan intercepted the battle. Run the speed check with Hoggan as the defender.";
+  session.suggestedEffects = collectBattleEffectSuggestions(state, session);
+  session.speedModifiers = {
+    ...session.speedModifiers,
+    ...getSuggestedSpeedModifiers(session.suggestedEffects)
+  };
+
+  state.pendingEffectTargetPrompt = undefined;
+
+  addEvent(state, "HOGGAN_BATTLE_INTERCEPT_RESOLVED", prompt.controllerPlayerId, {
+    promptId,
+    battleSessionId: session.id,
+    sourceCardName: prompt.sourceCardName,
+    summonedCardName: result.cardName,
+    summonedCardInstanceId: result.card.instanceId,
+    originalDefenderCreatureInstanceId,
+    note: "Hoggan entered as a Limited Summon and replaced the defending primary creature for this battle."
+  });
+
+  return state;
+}
+
 function isLimitedSummonAndEquipPromptAction(actionType: string): boolean {
   return [
     "SUMMON_LIMITED_CREATURE_AND_EQUIP"
@@ -1168,6 +1278,10 @@ export function resolvePendingEffectTargetPrompt(
 
   if (!selectedOption) {
     throw new Error("Selected target option was not found.");
+  }
+
+  if (prompt.actionType === HOGGAN_BATTLE_INTERCEPT_ACTION) {
+    return resolveHogganBattleInterceptPrompt(nextState, prompt, selectedOption, promptId);
   }
 
   const sourceDefinition = nextState.cardCatalog[prompt.sourceCardId];

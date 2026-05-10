@@ -163,7 +163,8 @@ function targetPromptCanResolveOnBoard(match: AppMatchState): boolean {
     (
       option.targetKind === "PRIMARY_CREATURE" ||
       option.targetKind === "LIMITED_SUMMON" ||
-      option.targetKind === "MAGIC_SLOT_CARD"
+      option.targetKind === "MAGIC_SLOT_CARD" ||
+      option.targetKind === "CARD_IN_CEMETERY"
     )
   );
 }
@@ -1326,6 +1327,15 @@ export default function App() {
     });
   }
 
+  function rollAndApplyBattleDamage(battleSessionId: string) {
+    if (!match) return;
+
+    socket.emit("match:rollAndApplyBattleDamage", {
+      matchId: match.matchId,
+      battleSessionId
+    });
+  }
+
   function playBattleResponseFromHand(
     battleSessionId: string,
     strikeId: string,
@@ -1745,6 +1755,15 @@ export default function App() {
 
     return controlledPlayersByMatchId[match.matchId];
   })();
+  const canResolvePendingEffectTargetPrompt = Boolean(
+    match?.pendingEffectTargetPrompt &&
+    (!controlledPlayerId || controlledPlayerId === match.pendingEffectTargetPrompt.controllerPlayerId)
+  );
+  const canRespondToPendingChain = Boolean(
+    match?.pendingChain &&
+    (!controlledPlayerId ||
+      controlledPlayerId === (match.pendingChain.priorityPlayerId ?? match.turn.activePlayerId))
+  );
   const show3dBoardView = playViewMode === "board3d";
 
   if (!authChecked) {
@@ -2078,7 +2097,7 @@ export default function App() {
                       }}
                       onRunBattleSpeedCheck={runBattleSpeedCheck}
                       onRollBattleHit={rollBattleHit}
-                      onRollBattleDamage={rollBattleDamage}
+                      onRollBattleDamage={rollAndApplyBattleDamage}
                       onApplyBattleDamage={applyBattleDamage}
                       onFinishBattle={finishManualBattle}
                       onRollEffectRoll={rollEffectRoll}
@@ -2175,7 +2194,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingEffectTargetPrompt && !targetPromptCanResolveOnBoard(match) && (
+            {match.pendingEffectTargetPrompt && canResolvePendingEffectTargetPrompt && !targetPromptCanResolveOnBoard(match) && (
               <ModalPanel title="Choose Effect Target" blocking wide>
                 <TargetPromptCard
                   prompt={match.pendingEffectTargetPrompt}
@@ -2185,7 +2204,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingChain && true && (
+            {match.pendingChain && canRespondToPendingChain && (
               <ModalPanel title="Resolve Chain" blocking wide>
                 <MagicChainCard
                   match={match}

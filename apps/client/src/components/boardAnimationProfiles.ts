@@ -13,6 +13,7 @@ const DEFAULT_PROFILE: BoardAnimationProfile = {
 const PROFILES: Record<BoardRenderEventType, BoardAnimationProfile> = {
   CARD_MOVED_ZONE: { durationMs: 300, label: "move" },
   BATTLE_STARTED: { durationMs: 420, label: "battle-start" },
+  BATTLE_DAMAGE_APPLIED: { durationMs: 980, label: "damage" },
   BATTLE_RESOLVED: { durationMs: 460, label: "battle-resolve" },
   EFFECT_PROMPT_OPENED: { durationMs: 200, label: "prompt" },
   CHAIN_RESOLVED: { durationMs: 260, label: "chain" },

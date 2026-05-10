@@ -34,6 +34,7 @@ export type BoardRenderModel = {
 export type BoardRenderEventType =
   | "CARD_MOVED_ZONE"
   | "BATTLE_STARTED"
+  | "BATTLE_DAMAGE_APPLIED"
   | "BATTLE_RESOLVED"
   | "EFFECT_PROMPT_OPENED"
   | "CHAIN_RESOLVED"

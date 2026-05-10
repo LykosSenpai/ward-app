@@ -10,6 +10,7 @@ import type {
   BattleStrikeResult,
   CardDefinition,
   CardInstance,
+  EffectTargetOption,
   MagicChainState,
   ManualBattleSpeedModifiers,
   ManualBattleStrike,
@@ -39,6 +40,8 @@ import {
 } from "./effectRollActions.js";
 
 type CreatureDefinition = Extract<CardDefinition, { cardType: "CREATURE" }>;
+const HOGGAN_CARD_ID = "gen3_009_hoggan";
+const HOGGAN_BATTLE_INTERCEPT_ACTION = "HOGGAN_BATTLE_INTERCEPT";
 
 type BattleCreatureRef = {
   playerId: string;
@@ -602,6 +605,89 @@ function getBattleAttackNegationResponseEffect(definition: CardDefinition) {
       String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK"
     )
   );
+}
+
+function createHogganBattleInterceptPrompt(
+  state: MatchState,
+  defendingPlayer: PlayerState,
+  battleSessionId: string
+): void {
+  if (state.pendingEffectTargetPrompt || defendingPlayer.field.limitedSummons.length >= 4) return;
+
+  const options: EffectTargetOption[] = defendingPlayer.hand
+    .filter(card => card.cardId === HOGGAN_CARD_ID)
+    .map(card => ({
+      id: `hoggan-${card.instanceId}`,
+      label: "Play Hoggan as the battle target",
+      targetKind: "CARD_IN_HAND",
+      playerId: defendingPlayer.id,
+      cardInstanceId: card.instanceId,
+      cardId: card.cardId,
+      cardName: "Hoggan",
+      zone: "HAND"
+    }));
+
+  if (options.length === 0) return;
+
+  const sourceCardInstanceId = options[0].cardInstanceId;
+  if (!sourceCardInstanceId) return;
+
+  state.pendingEffectTargetPrompt = {
+    id: uuidv4(),
+    sourceCardInstanceId,
+    sourceCardId: HOGGAN_CARD_ID,
+    sourceCardName: "Hoggan",
+    controllerPlayerId: defendingPlayer.id,
+    effectId: "009-E01",
+    actionType: HOGGAN_BATTLE_INTERCEPT_ACTION,
+    effectGroup: "Battle Intercept",
+    actionText: "Play Hoggan from hand as a Limited Summon in place of your primary creature.",
+    effectValue: "Opponent must battle Hoggan instead of your primary creature.",
+    promptText: "Your opponent declared battle. You may play Hoggan from your hand as a Limited Summon and make the attacker battle Hoggan instead.",
+    targetKind: "CARD_IN_HAND",
+    options: [
+      ...options,
+      {
+        id: "hoggan-battle-intercept-skip",
+        label: "Do not play Hoggan",
+        targetKind: "PLAYER",
+        playerId: defendingPlayer.id,
+        zone: "PLAYER"
+      }
+    ]
+  };
+
+  addEvent(state, "HOGGAN_BATTLE_INTERCEPT_PROMPT_CREATED", defendingPlayer.id, {
+    battleSessionId,
+    optionCount: options.length,
+    note: "Hoggan can be played from hand at the beginning of the opponent's battle."
+  });
+}
+
+function sendBattleInterceptHogganToCemetery(state: MatchState, session: PendingBattleSession): void {
+  const defender = session.declaredDefender;
+  if (defender.creatureKind !== "LIMITED_SUMMON") return;
+
+  const defendingPlayer = getPlayer(state, defender.playerId);
+  const hoggan = defendingPlayer.field.limitedSummons.find(
+    card => card.instanceId === defender.creatureInstanceId && card.cardId === HOGGAN_CARD_ID
+  );
+
+  if (!hoggan) return;
+
+  moveFieldCreatureToCemetery(state, {
+    fieldOwnerPlayerId: defendingPlayer.id,
+    creatureInstanceId: hoggan.instanceId,
+    causedByPlayerId: session.attackingPlayerId,
+    reason: "HOGGAN_SENT_TO_CEMETERY_AFTER_BATTLE",
+    addEvent
+  });
+
+  addEvent(state, "HOGGAN_SENT_TO_CEMETERY_AFTER_BATTLE", defender.playerId, {
+    battleSessionId: session.id,
+    cardInstanceId: hoggan.instanceId,
+    cardName: "Hoggan"
+  });
 }
 
 function setSessionUpdated(session: PendingBattleSession, message?: string): void {
@@ -1260,6 +1346,8 @@ export function startManualBattleSession(
     addEvent
   });
 
+  createHogganBattleInterceptPrompt(nextState, defendingPlayer, nextState.pendingBattle.id);
+
   addEvent(nextState, "MANUAL_BATTLE_DECLARED", playerId, {
     battleSessionId: nextState.pendingBattle.id,
     attackerCreatureInstanceId: attackingCreature.card.instanceId,
@@ -1282,6 +1370,10 @@ export function runManualBattleSpeedCheck(
 
   if (session.status !== "AWAITING_SPEED_CHECK") {
     throw new Error("This battle is not waiting for a speed check.");
+  }
+
+  if (nextState.pendingEffectTargetPrompt) {
+    throw new Error("Resolve the pending battle response prompt before running the speed check.");
   }
 
   const attackingCreature = findBattleCreatureRef(
@@ -2026,6 +2118,23 @@ export function applyManualBattleDamage(
     strike.defenderKilled = damageResult.killed;
   }
 
+  addEvent(nextState, "BATTLE_DAMAGE_APPLIED", target.playerId, {
+    battleSessionId: session.id,
+    strikeId: strike.id,
+    attackerCreatureInstanceId: strike.attacker.creatureInstanceId,
+    attackerCreatureName: strike.attacker.creatureName,
+    defenderCreatureInstanceId: strike.defender.creatureInstanceId,
+    defenderCreatureName: strike.defender.creatureName,
+    targetCreatureInstanceId: target.card.instanceId,
+    targetCreatureName: targetSnapshot.creatureName,
+    targetPlayerId: target.playerId,
+    damageTarget: strike.damageTarget,
+    damageAmount,
+    remainingHp: damageResult.remainingHp,
+    killed: damageResult.killed,
+    damageRollDice: strike.damageRollDice ?? strike.selfDamageDice ?? []
+  });
+
   runBattleTimingTriggers(nextState, {
     timing: "AFTER_DAMAGE_APPLIED",
     battleSession: session,
@@ -2062,6 +2171,14 @@ export function applyManualBattleDamage(
   advanceManualBattleAfterResolvedStrike(nextState, session, strike);
 
   return nextState;
+}
+
+export function rollAndApplyManualBattleDamage(
+  state: MatchState,
+  battleSessionId: string
+): MatchState {
+  const rolledState = rollManualBattleDamage(state, battleSessionId);
+  return applyManualBattleDamage(rolledState, battleSessionId);
 }
 
 export function rollPendingEffectRoll(
@@ -2154,6 +2271,8 @@ export function finishManualBattleSession(
   if (nextState.pendingBattle.status !== "COMPLETE") {
     throw new Error("Battle is not complete yet.");
   }
+
+  sendBattleInterceptHogganToCemetery(nextState, nextState.pendingBattle);
 
   nextState.pendingBattle = undefined;
 

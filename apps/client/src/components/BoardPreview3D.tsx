@@ -5,7 +5,7 @@ import { BOARD_SLOTS, BOARD_ZONES, type BoardZone } from "./boardPreview3dLayout
 import { BoardPreview3DControls } from "./boardPreview3d/BoardPreview3DControls";
 import { BoardPreview3DDebugPanel, type BoardZoneAdjustment } from "./boardPreview3d/BoardPreview3DDebugPanel";
 import { BoardPreview3DMiniMap } from "./boardPreview3d/BoardPreview3DMiniMap";
-import { BoardPreview3DTable } from "./boardPreview3d/BoardPreview3DTable";
+import { BoardPreview3DTable, type BoardAttackAnimation } from "./boardPreview3d/BoardPreview3DTable";
 import { MatchCardImage } from "./MatchCardImage";
 import { parseLayoutSnapshotJson, resolveSlotPosition, toLayoutSnapshot } from "./boardPreview3dAdapter";
 import { buildBoardInteractionContext, buildBoardRenderModel, translateGameEventsToBoardRenderEvents } from "./boardRenderAdapter";
@@ -141,6 +141,23 @@ function getLatestDiceRollVisual(match: AppMatchState): { id: string; label: str
     }
   }
 
+  const latestDamageEvent = [...match.eventLog].reverse().find(event => {
+    if (event.type !== "BATTLE_DAMAGE_APPLIED" || !event.payload || typeof event.payload !== "object") return false;
+    const payload = event.payload as Record<string, unknown>;
+    return Array.isArray(payload.damageRollDice) && payload.damageRollDice.some(value => typeof value === "number");
+  });
+  if (latestDamageEvent?.payload && typeof latestDamageEvent.payload === "object") {
+    const payload = latestDamageEvent.payload as Record<string, unknown>;
+    const values = (payload.damageRollDice as unknown[]).filter((value): value is number => typeof value === "number");
+    if (values.length > 0) {
+      return {
+        id: `battle-damage-applied-${latestDamageEvent.sequenceNumber}-${values.join("-")}`,
+        label: "Damage Roll",
+        values
+      };
+    }
+  }
+
   const openingRoll = match.setup.openingRoll;
   if (openingRoll) {
     const values = Object.values(openingRoll.rolls).filter((value): value is number => typeof value === "number");
@@ -156,17 +173,40 @@ function getLatestDiceRollVisual(match: AppMatchState): { id: string; label: str
   return null;
 }
 
+function getAttackAnimationTheme(creatureType: string | undefined): BoardAttackAnimation["theme"] {
+  switch ((creatureType ?? "").toLowerCase()) {
+    case "beast":
+    case "dinosaur":
+      return "beast";
+    case "bug":
+      return "bug";
+    case "cosmic":
+      return "cosmic";
+    case "demon":
+      return "demon";
+    case "dragon":
+      return "dragon";
+    case "elemental":
+      return "elemental";
+    case "humanoid":
+    case "human":
+      return "humanoid";
+    case "mechanical":
+      return "mechanical";
+    case "undead":
+      return "undead";
+    default:
+      return "generic";
+  }
+}
+
 function BoardBattleResolverHud({
   battle,
   effectRoll,
   canAdvanceStep,
   controllerLabel,
-  onRunSpeedCheck,
-  onRollHit,
-  onRollDamage,
   onApplyDamage,
   onFinish,
-  onRollEffect,
   onApplyEffect,
   onSkipEffect
 }: {
@@ -174,12 +214,8 @@ function BoardBattleResolverHud({
   effectRoll?: PendingEffectRollSession;
   canAdvanceStep: boolean;
   controllerLabel: string;
-  onRunSpeedCheck?: (battleSessionId: string) => void;
-  onRollHit?: (battleSessionId: string) => void;
-  onRollDamage?: (battleSessionId: string) => void;
   onApplyDamage?: (battleSessionId: string) => void;
   onFinish?: (battleSessionId: string) => void;
-  onRollEffect?: (effectRollSessionId: string) => void;
   onApplyEffect?: (effectRollSessionId: string) => void;
   onSkipEffect?: (effectRollSessionId: string) => void;
 }) {
@@ -249,24 +285,18 @@ function BoardBattleResolverHud({
         </div>
       ) : null}
 
+      {battle.status === "AWAITING_SPEED_CHECK" || (battle.status === "AWAITING_HIT_ROLL" && !effectRoll) || (battle.status === "AWAITING_DAMAGE_ROLL" && !effectRoll) || effectRoll?.status === "AWAITING_ROLL" ? (
+        <div className="board-battle-hud__dice-note">
+          Use the board dice beside the deck.
+        </div>
+      ) : null}
+
       <div className="board-battle-hud__actions">
-        {battle.status === "AWAITING_SPEED_CHECK" ? (
-          <button type="button" disabled={!canAdvanceStep} onClick={() => onRunSpeedCheck?.(battle.id)}>Run Speed</button>
-        ) : null}
-        {battle.status === "AWAITING_HIT_ROLL" && !effectRoll ? (
-          <button type="button" className="board-battle-hud__dice-button" disabled={!canAdvanceStep} onClick={() => onRollHit?.(battle.id)}>Roll Hit</button>
-        ) : null}
-        {effectRoll?.status === "AWAITING_ROLL" ? (
-          <button type="button" className="board-battle-hud__dice-button" disabled={!canAdvanceStep} onClick={() => onRollEffect?.(effectRoll.id)}>Roll Effect</button>
-        ) : null}
         {effectRoll?.status === "ROLLED" ? (
           <button type="button" disabled={!canAdvanceStep} onClick={() => onApplyEffect?.(effectRoll.id)}>{effectRoll.success ? "Apply Effect" : "Close Roll"}</button>
         ) : null}
         {effectRoll ? (
           <button type="button" className="ghost" disabled={!canAdvanceStep} onClick={() => onSkipEffect?.(effectRoll.id)}>Skip</button>
-        ) : null}
-        {battle.status === "AWAITING_DAMAGE_ROLL" && !effectRoll ? (
-          <button type="button" className="board-battle-hud__dice-button" disabled={!canAdvanceStep} onClick={() => onRollDamage?.(battle.id)}>Roll Damage</button>
         ) : null}
         {battle.status === "AWAITING_DAMAGE_APPLICATION" && !effectRoll ? (
           <button type="button" disabled={!canAdvanceStep} onClick={() => onApplyDamage?.(battle.id)}>Apply Damage</button>
@@ -335,6 +365,42 @@ function DiceFace({ value }: { value?: number }) {
   );
 }
 
+type BoardDiceRollAction = {
+  id: string;
+  label: string;
+  detail: string;
+  owner: BoardPlayerId;
+  disabled?: boolean;
+  disabledLabel?: string;
+  onClick: () => void;
+};
+
+function BoardDiceRollControl({ action }: { action: BoardDiceRollAction }) {
+  return (
+    <aside className={`board-dice-control board-dice-control--${action.owner}${action.disabled ? " is-disabled" : " is-ready"}`} aria-label="3D board dice roller">
+      <button
+        type="button"
+        className="board-dice-control__event"
+        disabled={action.disabled}
+        onClick={action.onClick}
+        title={action.disabled ? action.disabledLabel : action.detail}
+      >
+        <strong>{action.label}</strong>
+        <span>{action.disabled ? action.disabledLabel ?? "Waiting" : action.detail}</span>
+      </button>
+      <button
+        type="button"
+        className="board-dice-control__die"
+        disabled={action.disabled}
+        onClick={action.onClick}
+        title={action.disabled ? action.disabledLabel : `Roll dice: ${action.label}`}
+      >
+        <DiceFace value={6} />
+      </button>
+    </aside>
+  );
+}
+
 function getOpeningRollViewState(match: AppMatchState) {
   if (match.setup.openingRoll) return match.setup.openingRoll;
 
@@ -369,6 +435,7 @@ function OpeningRollBoardControl({
   if (!openingRoll) return null;
 
   const isComplete = openingRoll.status === "COMPLETE";
+  const isResolverDiceActive = Boolean(match.pendingBattle || match.pendingEffectRoll);
   const rollPlayer = controlledPlayerId
     ? match.players.find(player => player.id === controlledPlayerId)
     : match.players.find(player => openingRoll.rolls[player.id] === undefined) ?? match.players[0];
@@ -381,8 +448,24 @@ function OpeningRollBoardControl({
     ? match.players.find(player => player.id === openingRoll.winnerPlayerId)?.displayName ?? openingRoll.winnerPlayerId
     : null;
 
+  if (isComplete) {
+    if (isResolverDiceActive) return null;
+
+    const winnerRoll = openingRoll.winnerPlayerId ? displayedRolls[openingRoll.winnerPlayerId] : undefined;
+
+    return (
+      <aside className="board-opening-roll board-opening-roll--mini is-complete" aria-label="Opening roll result">
+        <DiceFace value={winnerRoll ?? 1} />
+        <span className="board-opening-roll__mini-label">
+          <strong>{winnerName ?? "First player"}</strong>
+          <small>first set</small>
+        </span>
+      </aside>
+    );
+  }
+
   return (
-    <aside className={`board-opening-roll${isComplete ? " is-complete" : " is-pending"}`} aria-label="Opening low-roll control">
+    <aside className="board-opening-roll is-pending" aria-label="Opening low-roll control">
       <button
         type="button"
         className="board-opening-roll__trigger"
@@ -390,10 +473,10 @@ function OpeningRollBoardControl({
           if (rollPlayer) onOpeningRoll?.(rollPlayer.id as BoardPlayerId);
         }}
         disabled={!canRoll}
-        title={isComplete ? "Opening roll complete" : canRoll ? `Roll 1D6 for ${rollPlayer?.displayName ?? "player"}` : "Waiting for the other opening roll"}
+        title={canRoll ? `Roll 1D6 for ${rollPlayer?.displayName ?? "player"}` : "Waiting for the other opening roll"}
       >
         <DiceFace value={displayedRolls[rollPlayer?.id ?? ""] ?? 1} />
-        <span>{isComplete ? "First Set" : "Roll First"}</span>
+        <span>Roll First</span>
       </button>
 
       <div className="board-opening-roll__lanes">
@@ -411,11 +494,9 @@ function OpeningRollBoardControl({
       </div>
 
       <p>
-        {isComplete && winnerName
-          ? `${winnerName} goes first`
-          : openingRoll.lastRolls
-            ? `Tie on round ${openingRoll.round - 1}. Roll again.`
-            : `Low roll wins. Round ${openingRoll.round}.`}
+        {openingRoll.lastRolls
+          ? `Tie on round ${openingRoll.round - 1}. Roll again.`
+          : `Low roll wins. Round ${openingRoll.round}.`}
       </p>
     </aside>
   );
@@ -515,6 +596,10 @@ export function BoardPreview3D({
   const [actionDockCollapsed, setActionDockCollapsed] = useState(false);
   const [deckHandControlsOwner, setDeckHandControlsOwner] = useState<BoardPlayerId | null>(null);
   const [deckActionsExpanded, setDeckActionsExpanded] = useState(false);
+  const [cemeteryViewerOwner, setCemeteryViewerOwner] = useState<BoardPlayerId | null>(null);
+  const [hoveredCemeteryCardId, setHoveredCemeteryCardId] = useState<string | null>(null);
+  const [selectedCemeteryCardId, setSelectedCemeteryCardId] = useState<string | null>(null);
+  const [cemeteryInspectorDetailsExpanded, setCemeteryInspectorDetailsExpanded] = useState(false);
   const [isCameraDragging, setIsCameraDragging] = useState(false);
   const previousRenderModelRef = useRef<typeof renderModel | null>(null);
   const cameraDragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
@@ -711,6 +796,33 @@ export function BoardPreview3D({
   useEffect(() => {
     setHandInspectorDetailsExpanded(false);
   }, [inspectedHandCardId]);
+  const cemeteryViewerPlayer = cemeteryViewerOwner
+    ? match.players.find(player => player.id === cemeteryViewerOwner) ?? null
+    : null;
+  const cemeteryCards = cemeteryViewerPlayer?.cemetery ?? [];
+  const inspectedCemeteryCardId = hoveredCemeteryCardId ?? selectedCemeteryCardId ?? cemeteryCards.at(-1)?.instanceId ?? null;
+  const inspectedCemeteryCard = inspectedCemeteryCardId
+    ? cemeteryCards.find(card => card.instanceId === inspectedCemeteryCardId) ?? null
+    : null;
+  const inspectedCemeteryCreatureStats = inspectedCemeteryCard ? getCreatureOverlayStats(match, inspectedCemeteryCard) : null;
+  const inspectedCemeteryCardText = inspectedCemeteryCard ? getCardText(match, inspectedCemeteryCard) : "";
+
+  useEffect(() => {
+    if (!cemeteryViewerOwner) return;
+    const player = match.players.find(item => item.id === cemeteryViewerOwner);
+    if (!player) {
+      setCemeteryViewerOwner(null);
+      setSelectedCemeteryCardId(null);
+      setHoveredCemeteryCardId(null);
+      return;
+    }
+    setSelectedCemeteryCardId(current => current && player.cemetery.some(card => card.instanceId === current) ? current : player.cemetery.at(-1)?.instanceId ?? null);
+  }, [cemeteryViewerOwner, match.players]);
+
+  useEffect(() => {
+    setCemeteryInspectorDetailsExpanded(false);
+  }, [inspectedCemeteryCardId]);
+
   const visibleOpponentHandCards = opponentPromptRevealCards.length > 0
     ? opponentPromptRevealCards
     : opponentHandIsRevealed
@@ -880,9 +992,28 @@ export function BoardPreview3D({
     [equipAttachTargetOptions]
   );
   const equipAttachSourcePieceIds = selectedEquipMagic ? [selectedEquipMagic.object.id] : [];
+  const draggableEquipMagicCardIds = useMemo(() => {
+    if (
+      match.pendingPrompt ||
+      match.pendingChain ||
+      match.pendingEffectTargetPrompt ||
+      match.setup.handDiscardRequiredForPlayerId ||
+      match.setup.primaryReplacementRequiredForPlayerId
+    ) {
+      return [] as string[];
+    }
+
+    return boardObjects.flatMap(object => {
+      if (object.lane !== "magic" || !object.cardInstanceId || !canControlPlayer(object.owner)) return [];
+      const card = cardByInstanceId.get(object.cardInstanceId);
+      if (!card || !isEquipMagic(match, card) || card.attachedToInstanceId) return [];
+      return [card.instanceId];
+    });
+  }, [boardObjects, cardByInstanceId, canControlPlayer, match]);
   const effectTargetBoardOptions = useMemo(() => {
     const prompt = match.pendingEffectTargetPrompt;
     if (!prompt) return [] as Array<{ optionId: string; pieceId?: string; slotId?: string }>;
+    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [] as Array<{ optionId: string; pieceId?: string; slotId?: string }>;
 
     return prompt.options.flatMap(option => {
       if (!option.cardInstanceId) return [];
@@ -894,7 +1025,7 @@ export function BoardPreview3D({
         slotId: object.slotId
       }];
     });
-  }, [boardObjects, match.pendingEffectTargetPrompt]);
+  }, [boardObjects, controlledPlayerId, match.pendingEffectTargetPrompt]);
   const effectTargetSlotIds = useMemo(
     () => [...new Set(effectTargetBoardOptions.map(option => option.slotId).filter((slotId): slotId is string => !!slotId))],
     [effectTargetBoardOptions]
@@ -903,11 +1034,52 @@ export function BoardPreview3D({
     () => [...new Set(effectTargetBoardOptions.map(option => option.pieceId).filter((pieceId): pieceId is string => !!pieceId))],
     [effectTargetBoardOptions]
   );
+  const effectSourcePieceIds = useMemo(() => {
+    const prompt = match.pendingEffectTargetPrompt;
+    if (!prompt) return [] as string[];
+    const sourceObject = boardObjects.find(object => object.cardInstanceId === prompt.sourceCardInstanceId);
+    return sourceObject ? [sourceObject.id] : [];
+  }, [boardObjects, match.pendingEffectTargetPrompt]);
+  const effectTargetOptionByCardId = useMemo(() => {
+    const prompt = match.pendingEffectTargetPrompt;
+    const options = new Map<string, string>();
+    if (!prompt) return options;
+    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return options;
+    for (const option of prompt.options) {
+      if (option.cardInstanceId) options.set(option.cardInstanceId, option.id);
+    }
+    return options;
+  }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
   const resolveBoardEffectTarget = (optionId: string) => {
     const prompt = match.pendingEffectTargetPrompt;
     if (!prompt) return;
     onResolveEffectTarget?.(prompt.id, optionId);
   };
+  const resolveBoardEffectTargetFromPiece = (pieceId: string) => {
+    const effectTarget = effectTargetBoardOptions.find(option => option.pieceId === pieceId);
+    if (!effectTarget) return false;
+    resolveBoardEffectTarget(effectTarget.optionId);
+    return true;
+  };
+  const resolveBoardEffectTargetFromSlot = (slotId: string) => {
+    const effectTarget = effectTargetBoardOptions.find(option => option.slotId === slotId);
+    if (!effectTarget) return false;
+    resolveBoardEffectTarget(effectTarget.optionId);
+    return true;
+  };
+
+  useEffect(() => {
+    const prompt = match.pendingEffectTargetPrompt;
+    if (!prompt || prompt.targetKind !== "CARD_IN_CEMETERY") return;
+    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return;
+    const firstCemeteryOption = prompt.options.find(option => option.zone === "CEMETERY" && option.playerId);
+    const owner = firstCemeteryOption?.playerId === "player_1" || firstCemeteryOption?.playerId === "player_2"
+      ? firstCemeteryOption.playerId
+      : null;
+    if (!owner) return;
+    setCemeteryViewerOwner(owner);
+    setSelectedCemeteryCardId(firstCemeteryOption?.cardInstanceId ?? null);
+  }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
 
   useEffect(() => {
     setSelectedSacrificeIdsByCard(current => {
@@ -1016,18 +1188,108 @@ export function BoardPreview3D({
     return badges;
   }, [boardObjects, pendingBattle]);
   const battleStepControllerPlayerId = pendingBattle
-    ? pendingBattle.status === "AWAITING_SPEED_CHECK"
+    ? match.pendingEffectTargetPrompt?.controllerPlayerId ??
+      (pendingBattle.status === "AWAITING_SPEED_CHECK"
       ? pendingBattle.attackingPlayerId
-      : pendingBattleStrike?.attacker.playerId ?? pendingBattle.attackingPlayerId
+      : pendingBattleStrike?.attacker.playerId ?? pendingBattle.attackingPlayerId)
     : null;
   const canAdvanceBattleResolver = Boolean(
     battleStepControllerPlayerId &&
+    !match.pendingEffectTargetPrompt &&
     (!controlledPlayerId || controlledPlayerId === battleStepControllerPlayerId)
   );
   const battleStepControllerLabel = battleStepControllerPlayerId
     ? match.players.find(player => player.id === battleStepControllerPlayerId)?.displayName ?? battleStepControllerPlayerId
     : "the current player";
   const diceRollVisual = useMemo(() => getLatestDiceRollVisual(match), [match]);
+  const boardDiceRollAction = useMemo<BoardDiceRollAction | null>(() => {
+    const openingRoll = getOpeningRollViewState(match);
+    if (openingRoll && openingRoll.status !== "COMPLETE") {
+      const rollPlayer = controlledPlayerId
+        ? match.players.find(player => player.id === controlledPlayerId)
+        : match.players.find(player => openingRoll.rolls[player.id] === undefined) ?? match.players[0];
+      if (!rollPlayer) return null;
+      const owner = rollPlayer.id as BoardPlayerId;
+      const alreadyRolled = openingRoll.rolls[owner] !== undefined;
+      return {
+        id: `opening-roll-${openingRoll.round}-${owner}`,
+        label: "Roll First",
+        detail: `${rollPlayer.displayName} rolls 1D6`,
+        owner,
+        disabled: alreadyRolled || !onOpeningRoll,
+        disabledLabel: alreadyRolled ? "Waiting for opponent" : "Opening roll unavailable",
+        onClick: () => onOpeningRoll?.(owner)
+      };
+    }
+
+    if (!pendingBattle) return null;
+
+    const controller = (battleStepControllerPlayerId ?? pendingBattle.attackingPlayerId) as BoardPlayerId;
+    const disabledLabel = `Waiting for ${battleStepControllerLabel}`;
+    const baseAction = {
+      owner: controller,
+      disabled: !canAdvanceBattleResolver,
+      disabledLabel
+    };
+
+    if (match.pendingEffectRoll?.status === "AWAITING_ROLL") {
+      return {
+        ...baseAction,
+        id: `effect-roll-${match.pendingEffectRoll.id}`,
+        label: "Roll Effect",
+        detail: `${match.pendingEffectRoll.sourceCardName} ${match.pendingEffectRoll.diceCount}D6`,
+        disabled: baseAction.disabled || !onRollEffectRoll,
+        onClick: () => onRollEffectRoll?.(match.pendingEffectRoll!.id)
+      };
+    }
+
+    if (pendingBattle.status === "AWAITING_SPEED_CHECK") {
+      return {
+        ...baseAction,
+        id: `battle-speed-${pendingBattle.id}`,
+        label: "Run Speed",
+        detail: "Compare creature speed",
+        disabled: baseAction.disabled || !onRunBattleSpeedCheck,
+        onClick: () => onRunBattleSpeedCheck?.(pendingBattle.id)
+      };
+    }
+
+    if (pendingBattle.status === "AWAITING_HIT_ROLL" && !match.pendingEffectRoll) {
+      return {
+        ...baseAction,
+        id: `battle-hit-${pendingBattle.id}`,
+        label: "Roll Hit",
+        detail: "Roll to hit target",
+        disabled: baseAction.disabled || !onRollBattleHit,
+        onClick: () => onRollBattleHit?.(pendingBattle.id)
+      };
+    }
+
+    if (pendingBattle.status === "AWAITING_DAMAGE_ROLL" && !match.pendingEffectRoll) {
+      return {
+        ...baseAction,
+        id: `battle-damage-${pendingBattle.id}`,
+        label: "Roll Damage",
+        detail: "Roll attack damage",
+        disabled: baseAction.disabled || !onRollBattleDamage,
+        onClick: () => onRollBattleDamage?.(pendingBattle.id)
+      };
+    }
+
+    return null;
+  }, [
+    battleStepControllerLabel,
+    battleStepControllerPlayerId,
+    canAdvanceBattleResolver,
+    controlledPlayerId,
+    match,
+    onOpeningRoll,
+    onRollBattleDamage,
+    onRollBattleHit,
+    onRollEffectRoll,
+    onRunBattleSpeedCheck,
+    pendingBattle
+  ]);
 
   useEffect(() => {
     if (!selectedBattleAttackerId) return;
@@ -1182,11 +1444,7 @@ export function BoardPreview3D({
   };
 
   const selectSlot = (slotId: string, source: "mini-map" | "table" | "debug") => {
-    const effectTarget = effectTargetBoardOptions.find(option => option.slotId === slotId);
-    if (effectTarget) {
-      resolveBoardEffectTarget(effectTarget.optionId);
-      return;
-    }
+    if (resolveBoardEffectTargetFromSlot(slotId)) return;
 
     const intent = mapPointerGestureToIntent({ interaction: interactionContext, slotId });
     const command = resolveBoardIntentCommand(intent, boardObjects);
@@ -1201,11 +1459,7 @@ export function BoardPreview3D({
   };
 
   const selectPiece = (pieceId: string, source: "mini-map" | "table") => {
-    const effectTarget = effectTargetBoardOptions.find(option => option.pieceId === pieceId);
-    if (effectTarget) {
-      resolveBoardEffectTarget(effectTarget.optionId);
-      return;
-    }
+    if (resolveBoardEffectTargetFromPiece(pieceId)) return;
 
     const attachTarget = equipAttachTargetOptions.find(option => option.pieceId === pieceId);
     if (selectedEquipMagic) {
@@ -1281,6 +1535,38 @@ export function BoardPreview3D({
   };
 
   const activeEvent = animationQueue.activeEvent;
+  const activeAttackAnimation = useMemo<BoardAttackAnimation | null>(() => {
+    if (activeEvent?.type !== "BATTLE_DAMAGE_APPLIED" || !activeEvent.payload || typeof activeEvent.payload !== "object") {
+      return null;
+    }
+
+    const payload = activeEvent.payload as Record<string, unknown>;
+    const attackerCreatureInstanceId = typeof payload.attackerCreatureInstanceId === "string" ? payload.attackerCreatureInstanceId : null;
+    const targetCreatureInstanceId = typeof payload.targetCreatureInstanceId === "string" ? payload.targetCreatureInstanceId : null;
+    if (!attackerCreatureInstanceId || !targetCreatureInstanceId) return null;
+
+    const sourceObject = boardObjects.find(object => object.cardInstanceId === attackerCreatureInstanceId);
+    const targetObject = boardObjects.find(object => object.cardInstanceId === targetCreatureInstanceId);
+    if (!sourceObject || !targetObject) return null;
+
+    const attackerCard = cardByInstanceId.get(attackerCreatureInstanceId);
+    const attackerDefinition = attackerCard ? match.cardCatalog[attackerCard.cardId] : undefined;
+    const creatureType = attackerDefinition?.cardType === "CREATURE"
+      ? attackerDefinition.creatureType
+      : "Creature";
+    const rawDamageAmount = payload.damageAmount;
+    const damageAmount = typeof rawDamageAmount === "number" ? rawDamageAmount : 0;
+
+    return {
+      id: activeEvent.eventId,
+      sourcePieceId: sourceObject.id,
+      targetPieceId: targetObject.id,
+      creatureType,
+      theme: getAttackAnimationTheme(creatureType),
+      damageAmount,
+      killed: payload.killed === true
+    };
+  }, [activeEvent, boardObjects, cardByInstanceId, match.cardCatalog]);
   const animationHighlights = useMemo(() => {
     if (!activeEvent) return { slotIds: [] as string[], pieceIds: [] as string[] };
     const candidateSlotIds = activeEvent.visualTargets.slotIds.filter(value =>
@@ -1466,7 +1752,7 @@ export function BoardPreview3D({
 
   const isCameraControlTarget = (target: EventTarget | null) => {
     if (!(target instanceof HTMLElement)) return false;
-    return Boolean(target.closest("button, input, select, textarea, a, .board-preview-3d__hand-rail, .board-preview-3d__action-dock, .board-preview-3d__floating-controls, .board-preview-3d__debug-drawer"));
+    return Boolean(target.closest("button, input, select, textarea, a, .board-dice-control, .board-preview-3d__cemetery-viewer, .board-preview-3d__hand-rail, .board-preview-3d__action-dock, .board-preview-3d__floating-controls, .board-preview-3d__debug-drawer"));
   };
 
   const handleBoardPointerDown: PointerEventHandler<HTMLElement> = (event) => {
@@ -1612,19 +1898,28 @@ export function BoardPreview3D({
                 setStatusMessage("That card cannot be played to that 3D board slot right now.");
                 return;
               }
+              const card = cardByInstanceId.get(selectedHandCardId);
+              const shouldChooseEquipTarget = Boolean(card && slotId.includes("-magic-") && isEquipMagic(match, card));
               onPlayHandCardToSlot?.(selectedHandCardId, slotId, selectedSacrificeIds);
               setSelectedSacrificeIdsByCard(current => {
                 const next = { ...current };
                 delete next[selectedHandCardId];
                 return next;
               });
+              const playedCardInstanceId = selectedHandCardId;
               setSelectedHandCardId(null);
+              if (shouldChooseEquipTarget) {
+                setSelectedEquipMagicCardId(playedCardInstanceId);
+                setStatusMessage("Choose a blue creature target to attach this Equip Magic.");
+              }
             }}
             onDropHandCardToSlot={(slotId, cardInstanceId) => {
               if (!getLegalTargetSlotIdsForCard(cardInstanceId).includes(slotId)) {
                 setStatusMessage("That card cannot be dropped there right now.");
                 return;
               }
+              const card = cardByInstanceId.get(cardInstanceId);
+              const shouldChooseEquipTarget = Boolean(card && slotId.includes("-magic-") && isEquipMagic(match, card));
               const sacrificeIds = (selectedSacrificeIdsByCard[cardInstanceId] ?? []).filter(id => sacrificeCandidateIds.has(id));
               onPlayHandCardToSlot?.(cardInstanceId, slotId, sacrificeIds);
               setSelectedSacrificeIdsByCard(current => {
@@ -1633,6 +1928,10 @@ export function BoardPreview3D({
                 return next;
               });
               setSelectedHandCardId(null);
+              if (shouldChooseEquipTarget) {
+                setSelectedEquipMagicCardId(cardInstanceId);
+                setStatusMessage("Choose a blue creature target to attach this Equip Magic.");
+              }
             }}
             onSelectPiece={(pieceId) => selectPiece(pieceId, "table")}
             onSelectHandCard={(cardInstanceId) => setSelectedHandCardId(current => current === cardInstanceId ? null : cardInstanceId)}
@@ -1646,6 +1945,45 @@ export function BoardPreview3D({
               onStartBattleFromPiece?.(attackerCreatureInstanceId, battleDefender.card.instanceId);
               setSelectedBattleAttackerId(null);
             }}
+            onDropEquipMagicToPiece={(targetPieceId, magicCardInstanceId) => {
+              const magicObject = boardObjects.find(object => object.cardInstanceId === magicCardInstanceId);
+              const magicCard = cardByInstanceId.get(magicCardInstanceId);
+              const attachTarget = equipAttachTargetOptions.find(option => option.pieceId === targetPieceId);
+
+              if (!magicObject || !magicCard || !attachTarget || !isEquipMagic(match, magicCard)) {
+                setStatusMessage("That Equip Magic cannot attach to that target.");
+                return;
+              }
+              if (!onAttachEquipMagicToCreature) {
+                setStatusMessage("Equip attachment is unavailable in this preview.");
+                return;
+              }
+
+              onAttachEquipMagicToCreature(
+                magicObject.owner,
+                magicCard.instanceId,
+                attachTarget.playerId,
+                attachTarget.creatureInstanceId,
+                attachTarget.targetKind
+              );
+              setSelectedEquipMagicCardId(null);
+              setStatusMessage("Attaching Equip Magic.");
+            }}
+            onDropEffectSourceToPiece={(targetPieceId) => {
+              if (!resolveBoardEffectTargetFromPiece(targetPieceId)) {
+                setStatusMessage("That is not a valid effect target.");
+              }
+            }}
+            onDropEffectSourceToSlot={(targetSlotId) => {
+              if (!resolveBoardEffectTargetFromSlot(targetSlotId)) {
+                setStatusMessage("That is not a valid effect target.");
+              }
+            }}
+            onCemeteryStackClick={(owner) => {
+              setCemeteryViewerOwner(current => current === owner ? null : owner);
+              setSelectedCemeteryCardId(match.players.find(player => player.id === owner)?.cemetery.at(-1)?.instanceId ?? null);
+              setHoveredCemeteryCardId(null);
+            }}
             sacrificeCandidateCardIds={[...sacrificeCandidateIds]}
             selectedSacrificeCardIds={selectedSacrificeIds}
             onDeckStackContextMenu={(owner) => {
@@ -1655,11 +1993,18 @@ export function BoardPreview3D({
             }}
             draggableHandCardIds={handCards.map(card => card.instanceId)}
             draggableBattleAttackerCardIds={[...legalBattleAttackerIds]}
+            draggableEquipMagicCardIds={draggableEquipMagicCardIds}
             validBattleTargetPieceIds={battleDefender ? [battleDefender.object.id] : battleTargetPieceIds}
+            validEquipTargetPieceIds={equipAttachTargetPieceIds}
+            validEffectTargetPieceIds={effectTargetPieceIds}
+            validEffectTargetSlotIds={effectTargetSlotIds}
+            effectSourcePieceIds={effectSourcePieceIds}
             highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...sacrificeTargetSlotIds, ...battleTargetSlotIds, ...effectTargetSlotIds]}
-            highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...effectTargetPieceIds, ...equipAttachSourcePieceIds, ...equipAttachTargetPieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
+            highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...effectTargetPieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
+            equipAttachSourcePieceIds={equipAttachSourcePieceIds}
             battleSpeedBadges={battleSpeedBadges}
             diceRollVisual={diceRollVisual}
+            attackAnimation={activeAttackAnimation}
             activeEventType={activeEvent?.type ?? null}
             match={match}
             cardByInstanceId={cardByInstanceId}
@@ -1670,6 +2015,7 @@ export function BoardPreview3D({
             controlledPlayerId={controlledPlayerId}
             onOpeningRoll={onOpeningRoll}
           />
+          {boardDiceRollAction ? <BoardDiceRollControl action={boardDiceRollAction} /> : null}
           {boardDeckActions.map(action => (
             <div
               key={`${action.owner}-deck-actions`}
@@ -1787,6 +2133,93 @@ export function BoardPreview3D({
               </div>
             </section>
           ) : null}
+          {cemeteryViewerPlayer ? (
+            <section className="board-preview-3d__cemetery-viewer" aria-label={`${cemeteryViewerPlayer.displayName} cemetery`}>
+              <div className="board-preview-3d__cemetery-viewer-header">
+                <div>
+                  <strong>{cemeteryViewerPlayer.displayName} Cemetery</strong>
+                  <span>{cemeteryCards.length} cards / {cemeteryViewerPlayer.cemeteryCreatureHpTotal} HP</span>
+                </div>
+                <button type="button" onClick={() => {
+                  setCemeteryViewerOwner(null);
+                  setHoveredCemeteryCardId(null);
+                  setSelectedCemeteryCardId(null);
+                }}>Close</button>
+              </div>
+              {cemeteryCards.length > 0 ? (
+                <div className="board-preview-3d__cemetery-viewer-body">
+                  <div className="board-preview-3d__cemetery-card-list">
+                    {cemeteryCards.map(card => {
+                      const isSelected = inspectedCemeteryCardId === card.instanceId;
+                      const effectOptionId = effectTargetOptionByCardId.get(card.instanceId);
+                      return (
+                        <button
+                          type="button"
+                          key={card.instanceId}
+                          className={`${isSelected ? "is-selected" : ""}${effectOptionId ? " is-effect-target" : ""}`}
+                          onClick={() => {
+                            if (effectOptionId) {
+                              resolveBoardEffectTarget(effectOptionId);
+                              return;
+                            }
+                            setSelectedCemeteryCardId(card.instanceId);
+                          }}
+                          onFocus={() => setHoveredCemeteryCardId(card.instanceId)}
+                          onMouseEnter={() => setHoveredCemeteryCardId(card.instanceId)}
+                          onBlur={() => setHoveredCemeteryCardId(current => current === card.instanceId ? null : current)}
+                          onMouseLeave={() => setHoveredCemeteryCardId(current => current === card.instanceId ? null : current)}
+                        >
+                          <MatchCardImage match={match} card={card} className="board-preview-3d__cemetery-card-art" />
+                          <span>{getCardName(match, card)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {inspectedCemeteryCard ? (
+                    <aside className="board-preview-3d__cemetery-inspector" aria-label="Cemetery card preview">
+                      <div className="board-preview-3d__card-inspector-header">
+                        <strong>{getCardName(match, inspectedCemeteryCard)}</strong>
+                        <span>{isCreature(match, inspectedCemeteryCard) ? "Creature" : isMagic(match, inspectedCemeteryCard) ? getMagicLine(match, inspectedCemeteryCard) : "Card"}</span>
+                      </div>
+                      <MatchCardImage match={match} card={inspectedCemeteryCard} className="board-preview-3d__card-inspector-art" />
+                      {inspectedCemeteryCreatureStats ? (
+                        <div className="board-preview-3d__card-inspector-stat-wall">
+                          <div className={`board-preview-3d__card-inspector-hp board-preview-3d__card-inspector-hp--${inspectedCemeteryCreatureStats.hpTone}`}>
+                            <span>HP</span>
+                            <strong>{inspectedCemeteryCreatureStats.currentHp}</strong>
+                            <small>/ {inspectedCemeteryCreatureStats.baseHp}</small>
+                          </div>
+                          <span>AL <strong>{inspectedCemeteryCreatureStats.armorLevel}</strong></span>
+                          <span>SPD <strong>{inspectedCemeteryCreatureStats.speed}</strong></span>
+                          <span>ATK <strong>{inspectedCemeteryCreatureStats.attackDice}D6</strong></span>
+                          <span>MOD <strong>{inspectedCemeteryCreatureStats.modifier}</strong></span>
+                        </div>
+                      ) : null}
+                      {(inspectedCemeteryCreatureStats || isMagic(match, inspectedCemeteryCard) || inspectedCemeteryCardText) ? (
+                        <button
+                          type="button"
+                          className="board-preview-3d__card-inspector-detail-toggle"
+                          aria-expanded={cemeteryInspectorDetailsExpanded}
+                          onClick={() => setCemeteryInspectorDetailsExpanded(current => !current)}
+                        >
+                          {cemeteryInspectorDetailsExpanded ? "Hide details" : "Details"}
+                        </button>
+                      ) : null}
+                      {cemeteryInspectorDetailsExpanded ? (
+                        <div className="board-preview-3d__card-inspector-copy">
+                          {isCreature(match, inspectedCemeteryCard) ? <span>{getCreatureStatsLine(match, inspectedCemeteryCard)}</span> : null}
+                          {isMagic(match, inspectedCemeteryCard) ? <span>{getMagicLine(match, inspectedCemeteryCard)}</span> : null}
+                          {inspectedCemeteryCardText ? <p>{inspectedCemeteryCardText}</p> : null}
+                        </div>
+                      ) : null}
+                    </aside>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="board-preview-3d__cemetery-empty">No cards in cemetery.</p>
+              )}
+            </section>
+          ) : null}
           {inspectedHandCard ? (
             <aside className="board-preview-3d__card-inspector board-preview-3d__card-inspector--hand" aria-label="Hand card preview">
               <div className="board-preview-3d__card-inspector-header">
@@ -1900,12 +2333,8 @@ export function BoardPreview3D({
               effectRoll={match.pendingEffectRoll}
               canAdvanceStep={canAdvanceBattleResolver}
               controllerLabel={battleStepControllerLabel}
-              onRunSpeedCheck={onRunBattleSpeedCheck}
-              onRollHit={onRollBattleHit}
-              onRollDamage={onRollBattleDamage}
               onApplyDamage={onApplyBattleDamage}
               onFinish={onFinishBattle}
-              onRollEffect={onRollEffectRoll}
               onApplyEffect={onApplyEffectRoll}
               onSkipEffect={onSkipEffectRoll}
             />

@@ -59,6 +59,7 @@ import {
   skipPendingEffectRoll,
   resolveMagicChain,
   resolvePendingEffectTargetPrompt,
+  rollAndApplyManualBattleDamage,
   sendPrimaryCreatureToCemetery,
   shuffleAllDecks,
   startManualBattleSession,
@@ -699,6 +700,16 @@ function requireSocketCanControlEffectRollStep(socket: { request: unknown }, mat
   }
 
   requireSocketCanControlActivePlayer(socket, match);
+}
+
+function requireSocketCanControlEffectTargetPrompt(socket: { request: unknown }, match: MatchState): void {
+  const prompt = match.pendingEffectTargetPrompt;
+  if (!prompt) {
+    requireSocketCanControlActivePlayer(socket, match);
+    return;
+  }
+
+  requireSocketCanControlPlayer(socket, match.matchId, prompt.controllerPlayerId);
 }
 
 function requireSocketCanUndoMatch(socket: { request: unknown }, match: MatchState): void {
@@ -3034,6 +3045,25 @@ io.on("connection", async socket => {
   );
 
   socket.on(
+    "match:rollAndApplyBattleDamage",
+    (data: { matchId: string; battleSessionId: string }) => {
+      try {
+        const match = getMatchOrThrow(data.matchId);
+        requireSocketCanControlManualBattleStep(socket, match);
+        pushUndoSnapshot(match);
+        const updatedMatch = rollAndApplyManualBattleDamage(match, data.battleSessionId);
+
+        activeMatches.set(data.matchId, updatedMatch);
+        emitMatchState(updatedMatch);
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
     "match:manualMagicDrawCards",
     (data: { matchId: string; effectId: string; targetPlayerId: string }) => {
       try {
@@ -4122,7 +4152,7 @@ socket.on(
       const match = getPlayableMatchOrThrow(data.matchId, {
         allowPendingEffectTarget: true
       });
-      requireSocketCanControlActivePlayer(socket, match);
+      requireSocketCanControlEffectTargetPrompt(socket, match);
       pushUndoSnapshot(match);
 
       const updatedMatch = resolvePendingEffectTargetPrompt(

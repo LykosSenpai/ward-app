@@ -13,8 +13,6 @@ type BoardPreview3DWebGLCardsProps = {
   resolveSlotPosition: (slotId: string, fallbackX: number, fallbackZ: number) => { xPercent: number; zPercent: number };
 };
 
-const BOARD_WORLD_WIDTH = 1000;
-const BOARD_WORLD_DEPTH = 700;
 const CARD_WORLD_WIDTH = 128;
 const CARD_WORLD_HEIGHT = 179;
 
@@ -124,10 +122,10 @@ export function BoardPreview3DWebGLCards({
 
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(
-      BOARD_WORLD_WIDTH / -2,
-      BOARD_WORLD_WIDTH / 2,
-      BOARD_WORLD_DEPTH / 2,
-      BOARD_WORLD_DEPTH / -2,
+      -1,
+      1,
+      1,
+      -1,
       0.1,
       1000
     );
@@ -156,10 +154,8 @@ export function BoardPreview3DWebGLCards({
       const height = Math.max(1, Math.floor(parent.clientHeight));
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.5));
       renderer.setSize(width, height, false);
-      const boardAspect = BOARD_WORLD_WIDTH / BOARD_WORLD_DEPTH;
-      const viewAspect = width / height;
-      const visibleWidth = viewAspect > boardAspect ? BOARD_WORLD_DEPTH * viewAspect : BOARD_WORLD_WIDTH;
-      const visibleHeight = viewAspect > boardAspect ? BOARD_WORLD_DEPTH : BOARD_WORLD_WIDTH / viewAspect;
+      const visibleWidth = width;
+      const visibleHeight = height;
       camera.left = visibleWidth / -2;
       camera.right = visibleWidth / 2;
       camera.top = visibleHeight / 2;
@@ -200,8 +196,8 @@ export function BoardPreview3DWebGLCards({
         if (texture !== backTexture) disposables.push(texture);
 
         const isSideways = isDeckBack || isCemetery;
-        const worldCardWidth = CARD_WORLD_WIDTH * (metrics.worldWidth / metrics.width);
-        const worldCardHeight = CARD_WORLD_HEIGHT * (metrics.worldHeight / metrics.height);
+        const worldCardWidth = CARD_WORLD_WIDTH;
+        const worldCardHeight = CARD_WORLD_HEIGHT;
         const mesh = createPlane(texture, worldCardWidth, worldCardHeight);
         const position = resolveSlotPosition(object.slotId, object.xPercent, object.zPercent);
         mesh.position.set(
