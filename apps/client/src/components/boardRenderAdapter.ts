@@ -94,8 +94,17 @@ export function buildBoardRenderModel(match: AppMatchState, options: BuildBoardR
   };
 }
 
-export function translateGameEventsToBoardRenderEvents(match: AppMatchState): BoardRenderEvent[] {
-  return match.eventLog.map((event, index) => ({
+export function translateGameEventsToBoardRenderEvents(
+  match: AppMatchState,
+  options: { afterSequenceNumber?: number; limit?: number } = {}
+): BoardRenderEvent[] {
+  const afterSequenceNumber = options.afterSequenceNumber ?? -1;
+  const limit = options.limit ?? 24;
+  const sourceEvents = match.eventLog
+    .filter(event => event.sequenceNumber > afterSequenceNumber)
+    .slice(-limit);
+
+  return sourceEvents.map((event, index) => ({
     eventId: `${match.matchId}:${event.sequenceNumber}:${event.type}:${index}`,
     sequenceNumber: event.sequenceNumber,
     matchId: match.matchId,

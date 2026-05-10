@@ -1187,6 +1187,7 @@ function getPlayableMatchOrThrow(
     snapshotBeforeAction?: boolean;
     allowPendingEffectTarget?: boolean;
     allowPendingEffectRoll?: boolean;
+    allowPendingBattle?: boolean;
   }
 ): MatchState {
   const match = getMatchOrThrow(matchId);
@@ -1214,7 +1215,7 @@ function getPlayableMatchOrThrow(
     throw new Error("Resolve the pending effect roll before continuing.");
   }
 
-  if (match.pendingBattle && match.pendingBattle.status !== "COMPLETE") {
+  if (match.pendingBattle && match.pendingBattle.status !== "COMPLETE" && !options?.allowPendingBattle) {
     throw new Error("Finish the pending battle before continuing.");
   }
 
@@ -4150,7 +4151,9 @@ socket.on(
   }) => {
     try {
       const match = getPlayableMatchOrThrow(data.matchId, {
-        allowPendingEffectTarget: true
+        allowPendingEffectTarget: true,
+        allowPendingBattle: true,
+        snapshotBeforeAction: false
       });
       requireSocketCanControlEffectTargetPrompt(socket, match);
       pushUndoSnapshot(match);

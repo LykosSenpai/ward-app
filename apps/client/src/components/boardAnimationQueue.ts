@@ -1,5 +1,7 @@
 import type { BoardRenderEvent } from "./boardRenderContracts";
 
+const MAX_BOARD_ANIMATION_QUEUE_LENGTH = 12;
+
 export type BoardAnimationQueueState = {
   cursor: number;
   queue: BoardRenderEvent[];
@@ -22,9 +24,10 @@ export function enqueueBoardRenderEvents(
   const deduped = unseen.filter(
     event => !state.queue.some(queued => queued.eventId === event.eventId) && state.activeEvent?.eventId !== event.eventId
   );
+  const queue = [...state.queue, ...deduped].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
   return {
     ...state,
-    queue: [...state.queue, ...deduped].sort((a, b) => a.sequenceNumber - b.sequenceNumber)
+    queue: queue.slice(-MAX_BOARD_ANIMATION_QUEUE_LENGTH)
   };
 }
 

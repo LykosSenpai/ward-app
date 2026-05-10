@@ -551,7 +551,6 @@ export function BoardPreview3D({
     [handRevealMode, match]
   );
   const interactionContext = useMemo(() => buildBoardInteractionContext(match), [match]);
-  const renderEvents = useMemo(() => translateGameEventsToBoardRenderEvents(match), [match]);
   const boardObjects = renderModel.boardObjects;
   const storageKey = presentation === "game" ? `${BOARD_PREVIEW_STORAGE_KEY}.game` : BOARD_PREVIEW_STORAGE_KEY;
   const [tiltDegrees, setTiltDegrees] = useState(DEFAULT_CAMERA_SETTINGS.tiltDegrees);
@@ -583,6 +582,10 @@ export function BoardPreview3D({
   const [integrationMode, setIntegrationMode] = useState(defaultIntegrationMode);
   const [animationQueue, setAnimationQueue] = useState(createBoardAnimationQueueState);
   const [runtimeMode, setRuntimeMode] = useState<"ANIMATED" | "FAST_FORWARD">("ANIMATED");
+  const renderEvents = useMemo(
+    () => translateGameEventsToBoardRenderEvents(match, { afterSequenceNumber: animationQueue.cursor }),
+    [animationQueue.cursor, match]
+  );
   const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(null);
   const [selectedEquipMagicCardId, setSelectedEquipMagicCardId] = useState<string | null>(null);
   const [selectedBattleAttackerId, setSelectedBattleAttackerId] = useState<string | null>(null);
@@ -611,13 +614,17 @@ export function BoardPreview3D({
         nextModel: renderModel,
         queueCursor: current.cursor
       });
+      if (!previousRenderModelRef.current) {
+        previousRenderModelRef.current = renderModel;
+        return resetBoardAnimationQueueToSequence(current, renderModel.sequenceNumber);
+      }
       previousRenderModelRef.current = renderModel;
       if (decision.shouldResetQueue) {
         return resetBoardAnimationQueueToSequence(current, renderModel.sequenceNumber);
       }
       return enqueueBoardRenderEvents(current, renderEvents);
     });
-  }, [renderEvents, renderModel.sequenceNumber]);
+  }, [renderEvents, renderModel]);
 
   useEffect(() => {
     setAnimationQueue(current => startNextBoardAnimation(current));
@@ -1397,21 +1404,21 @@ export function BoardPreview3D({
 
   const shouldMirrorBoardForViewer = presentation === "game" && focusedPlayerId === "player_2";
 
-  const resolveBoardPoint = (xPercent: number, zPercent: number) => {
+  const resolveBoardPoint = useCallback((xPercent: number, zPercent: number) => {
     const orientedX = shouldMirrorBoardForViewer ? 100 - xPercent : xPercent;
     const orientedZ = shouldMirrorBoardForViewer ? 100 - zPercent : zPercent;
     return {
       xPercent: Math.max(0, Math.min(100, 50 + (orientedX - 50) * boardScaleX + boardOffsetX)),
       zPercent: Math.max(0, Math.min(100, 50 + (orientedZ - 50) * boardScaleZ + boardOffsetZ))
     };
-  };
+  }, [boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, shouldMirrorBoardForViewer]);
 
-  const resolvePosition = (slotId: string, fallbackX: number, fallbackZ: number) => {
+  const resolvePosition = useCallback((slotId: string, fallbackX: number, fallbackZ: number) => {
     const raw = resolveSlotPosition(slotId, slotOffsets, fallbackX, fallbackZ);
     return resolveBoardPoint(raw.xPercent, raw.zPercent);
-  };
+  }, [resolveBoardPoint, slotOffsets]);
 
-  const resolveZoneRect = (zone: BoardZone): BoardZone => {
+  const resolveZoneRect = useCallback((zone: BoardZone): BoardZone => {
     const adjustment = zoneAdjustments[zone.id] ?? EMPTY_ZONE_ADJUSTMENT;
     const point = resolveBoardPoint(zone.xPercent + adjustment.x, zone.zPercent + adjustment.z);
     return {
@@ -1421,7 +1428,7 @@ export function BoardPreview3D({
       widthPercent: Math.max(2, Math.min(100, zone.widthPercent + adjustment.width)),
       heightPercent: Math.max(2, Math.min(100, zone.heightPercent + adjustment.height))
     };
-  };
+  }, [resolveBoardPoint, zoneAdjustments]);
 
   const slotOccupancy = BOARD_SLOTS.map((slot) => ({
     slot,
@@ -1635,8 +1642,11 @@ export function BoardPreview3D({
   const selectedOffset = selectedSlotId ? slotOffsets[selectedSlotId as BoardSlotId] ?? { x: 0, z: 0 } : { x: 0, z: 0 };
   const unresolvedBoardObjects = boardObjects.filter((object) => !slotById.has(object.slotId));
   const effectiveOwnerFilter = presentation === "game" ? "all" : ownerFilter;
-  const filteredBoardObjects = (effectiveOwnerFilter === "all" ? boardObjects : boardObjects.filter((object) => object.owner === effectiveOwnerFilter))
-    .filter(object => object.lane !== "hand");
+  const filteredBoardObjects = useMemo(
+    () => (effectiveOwnerFilter === "all" ? boardObjects : boardObjects.filter((object) => object.owner === effectiveOwnerFilter))
+      .filter(object => object.lane !== "hand"),
+    [boardObjects, effectiveOwnerFilter]
+  );
   const pendingRevealPrompt = match.pendingPrompt;
   const boardDeckActions = match.players.filter(player => player.id === focusedPlayerId).map(player => {
     const owner: BoardPlayerId = player.id === "player_1" ? "player_1" : "player_2";

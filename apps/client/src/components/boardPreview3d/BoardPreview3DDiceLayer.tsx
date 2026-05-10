@@ -167,6 +167,7 @@ export function BoardPreview3DDiceLayer({
   const lastRollIdRef = useRef<string>("");
   const disposeActiveRollRef = useRef<(() => void) | null>(null);
   const resizeActiveRollRef = useRef<(() => void) | null>(null);
+  const diceValuesSignature = diceRoll?.values.join(",") ?? "";
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -331,7 +332,7 @@ export function BoardPreview3DDiceLayer({
       renderer.dispose();
       resizeActiveRollRef.current = null;
     };
-  });
+  }, [diceRoll?.id, diceValuesSignature, filteredBoardObjects, heightScale, resolveSlotPosition]);
 
   useEffect(() => {
     return () => {
