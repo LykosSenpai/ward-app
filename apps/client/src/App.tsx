@@ -137,7 +137,7 @@ function isOpeningRollCompleteForDraw(match: AppMatchState): boolean {
   return !appearsToBeFreshOpening;
 }
 
-function canDrawForCurrentTurn(match: AppMatchState, controlledPlayerId: string): boolean {
+function canDrawForCurrentTurn(match: AppMatchState, controlledPlayerId?: string): boolean {
   const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
   return (
     getMatchStatus(match) !== "COMPLETE" &&
