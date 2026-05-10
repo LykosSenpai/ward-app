@@ -1294,13 +1294,16 @@ export function BoardPreview3D({
     const owner: BoardPlayerId = player.id === "player_1" ? "player_1" : "player_2";
     const canControlThisPlayer = canControlPlayer(player.id);
     const isActivePlayer = match.turn.activePlayerId === player.id;
+    const isForcedPrimaryReplacement = match.setup.primaryReplacementRequiredForPlayerId === player.id;
     const hasSummonableCreature = playerHasSummonableCreatureInHand(match, player);
     const canRequestNoCreatureRedraw =
       canControlThisPlayer &&
-      isActivePlayer &&
       !pendingRevealPrompt &&
       !hasSummonableCreature &&
-      match.turn.phase === "SUMMON_MAGIC";
+      (
+        (isActivePlayer && match.turn.phase === "SUMMON_MAGIC") ||
+        (isForcedPrimaryReplacement && player.field.limitedSummons.length === 0)
+      );
     const isApprovingReveal = pendingRevealPrompt?.approvingPlayerId === player.id && canControlThisPlayer;
     const isRequestingReveal = pendingRevealPrompt?.requestingPlayerId === player.id;
     const handIsLocallyRevealed = Boolean(locallyRevealedHands[owner]) || revealedHandPlayerIds.includes(owner);
