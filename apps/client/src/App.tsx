@@ -22,7 +22,6 @@ import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { BoardPreview3D } from "./components/BoardPreview3D";
 import type { PointerGestureIntent } from "./components/boardInteractionIntents";
 import type { BoardIntentCommand } from "./components/boardIntentCommands";
-import { PlayerPanel } from "./components/PlayerPanel";
 import { ProfilePage } from "./components/ProfilePage";
 import { SaveLoadPanel } from "./components/SaveLoadPanel";
 import { TargetPromptCard } from "./components/TargetPromptCard";
@@ -118,6 +117,67 @@ function canApplyEmbedView(view: string): view is EmbedView {
   return view === "board" || view === "split" || view === "text";
 }
 
+function isManualDrawEffect(effect: AppMatchState["manualEffectQueue"][number]): boolean {
+  const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+  return actionType === "DRAW_CARDS" || actionType === "DRAW_CARDS_VARIABLE";
+}
+
+function isOpeningRollCompleteForDraw(match: AppMatchState): boolean {
+  if (match.setup.openingRoll) return match.setup.openingRoll.status === "COMPLETE";
+
+  const noOpeningCardsDrawn =
+    match.players.every(player => player.hand.length === 0) &&
+    match.players.every(player => !match.setup.firstTurnDrawsByPlayer[player.id]);
+  const appearsToBeFreshOpening =
+    getMatchStatus(match) !== "COMPLETE" &&
+    noOpeningCardsDrawn &&
+    match.turn.turnNumber === 1 &&
+    match.turn.phase === "DRAW";
+
+  return !appearsToBeFreshOpening;
+}
+
+function canDrawForCurrentTurn(match: AppMatchState, controlledPlayerId: string): boolean {
+  const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
+  return (
+    getMatchStatus(match) !== "COMPLETE" &&
+    (!controlledPlayerId || controlledPlayerId === match.turn.activePlayerId) &&
+    isOpeningRollCompleteForDraw(match) &&
+    match.setup.decksShuffled &&
+    !match.pendingPrompt &&
+    !match.pendingBattle &&
+    !match.pendingChain &&
+    !match.pendingEffectTargetPrompt &&
+    !match.manualEffectQueue.some(effect => !effect.completed) &&
+    !match.setup.handDiscardRequiredForPlayerId &&
+    !activePlayer?.turnFlags.drawnThisTurn
+  );
+}
+
+function targetPromptCanResolveOnBoard(match: AppMatchState): boolean {
+  const prompt = match.pendingEffectTargetPrompt;
+  if (!prompt) return false;
+
+  return prompt.options.some(option =>
+    !!option.cardInstanceId &&
+    (
+      option.targetKind === "PRIMARY_CREATURE" ||
+      option.targetKind === "LIMITED_SUMMON" ||
+      option.targetKind === "MAGIC_SLOT_CARD"
+    )
+  );
+}
+
+function getPendingManualDrawEffectForPlayer(match: AppMatchState, playerId: string) {
+  const targetPlayerExists = match.players.some(player => player.id === playerId);
+  if (!targetPlayerExists) return undefined;
+
+  return match.manualEffectQueue.find(effect =>
+    !effect.completed &&
+    isManualDrawEffect(effect)
+  );
+}
+
 type DashboardModal =
   | "save-load"
   | "manual-effects"
@@ -145,6 +205,7 @@ export default function App() {
   const [serverMessage, setServerMessage] = useState("Connecting...");
   const [socketId, setSocketId] = useState("");
   const [match, setMatch] = useState<AppMatchState | null>(null);
+  const [controlledPlayersByMatchId, setControlledPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
   const [error, setError] = useState("");
   const [savedMatches, setSavedMatches] = useState<SavedMatchSummary[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
@@ -1055,6 +1116,14 @@ export default function App() {
     socket.emit("match:shuffleAllDecks", match.matchId);
   }
 
+  function rollOpeningTurnOrder(playerId: string) {
+    if (!match) return;
+    socket.emit("match:rollOpeningTurnOrder", {
+      matchId: match.matchId,
+      playerId
+    });
+  }
+
   function refreshSavedMatches() {
     socket.emit("match:listSaved");
   }
@@ -1131,6 +1200,37 @@ export default function App() {
   function drawActivePlayer() {
     if (!match) return;
     socket.emit("match:drawActivePlayer", match.matchId);
+  }
+
+  function drawActivePlayerAndAdvance() {
+    if (!match) return;
+    socket.emit("match:drawActivePlayerAndAdvance", match.matchId);
+  }
+
+  function resolveManualDrawEffect(effectId: string, targetPlayerId: string) {
+    if (!match) return;
+    socket.emit("match:manualMagicDrawCards", {
+      matchId: match.matchId,
+      effectId,
+      targetPlayerId
+    });
+  }
+
+  function handleDeckClick(slotId: string) {
+    if (!match || !slotId.endsWith("-deck")) return;
+    const deckOwnerId = slotId.startsWith("player_2-") ? "player_2" : "player_1";
+    if (controlledPlayerId && controlledPlayerId !== deckOwnerId) return;
+
+    const pendingDrawEffect = getPendingManualDrawEffectForPlayer(match, deckOwnerId);
+    if (pendingDrawEffect) {
+      resolveManualDrawEffect(pendingDrawEffect.id, deckOwnerId);
+      return;
+    }
+
+    const activeDeckSlot = match.turn.activePlayerId === "player_1" ? "player_1-deck" : "player_2-deck";
+    if (slotId === activeDeckSlot && canDrawForCurrentTurn(match, controlledPlayerId)) {
+      drawActivePlayerAndAdvance();
+    }
   }
 
   function startManualBattle(attackerCreatureInstanceId: string) {
@@ -1575,6 +1675,23 @@ export default function App() {
     });
   }
 
+  function requestNoCreatureRedraw(playerId: "player_1" | "player_2") {
+    if (!match) return;
+    socket.emit("match:requestNoCreatureRedrawReveal", {
+      matchId: match.matchId,
+      playerId
+    });
+  }
+
+  function setHandRevealed(playerId: "player_1" | "player_2", revealed: boolean) {
+    if (!match) return;
+    socket.emit("match:setHandRevealed", {
+      matchId: match.matchId,
+      playerId,
+      revealed
+    });
+  }
+
   function closeCompletedMatch() {
     setDashboardModal(null);
     socket.emit("match:listSaved");
@@ -1602,97 +1719,33 @@ export default function App() {
   const advanceBlockReason = match ? getAdvanceBlockReason(match) : "";
   const hasPendingManualEffects =
     match?.manualEffectQueue.some(effect => !effect.completed) ?? false;
+
+  useEffect(() => {
+    if (!activeLobby?.matchId || !authUser) return;
+    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+    if (lobbyPlayer?.seat !== 1 && lobbyPlayer?.seat !== 2) return;
+
+    setControlledPlayersByMatchId(current => ({
+      ...current,
+      [activeLobby.matchId!]: lobbyPlayer.seat === 1 ? "player_1" : "player_2"
+    }));
+  }, [activeLobby, authUser]);
+
   const controlledPlayerId = (() => {
-    if (!match || !activeLobby || activeLobby.matchId !== match.matchId || !authUser) {
+    if (!match || !authUser) {
       return undefined;
     }
 
-    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
-    return lobbyPlayer ? `player_${lobbyPlayer.seat}` : undefined;
+    if (activeLobby?.matchId === match.matchId) {
+      const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+      if (lobbyPlayer?.seat === 1 || lobbyPlayer?.seat === 2) {
+        return lobbyPlayer.seat === 1 ? "player_1" : "player_2";
+      }
+    }
+
+    return controlledPlayersByMatchId[match.matchId];
   })();
-  const displayedPlayers = match && controlledPlayerId
-    ? [
-        ...match.players.filter(player => player.id === controlledPlayerId),
-        ...match.players.filter(player => player.id !== controlledPlayerId)
-      ]
-    : match?.players ?? [];
   const show3dBoardView = playViewMode === "board3d";
-  const boardSidePanelContent = match ? (
-    <>
-      {match.pendingBattle && !match.pendingChain && (
-        <BattleResolverModal
-          match={match}
-          battle={match.pendingBattle}
-          onRunSpeedCheck={runBattleSpeedCheck}
-          onUpdateSpeedModifiers={updateBattleSpeedModifiers}
-          onUpdateStrikeModifiers={updateBattleStrikeModifiers}
-          onRollHit={rollBattleHit}
-          onForceRolls={forceDevRolls}
-          enableDevTools={canUseDevTools}
-          onRollDamage={rollBattleDamage}
-          onPlayBattleResponse={playBattleResponseFromHand}
-          onUndo={undoLastAction}
-          onApplyDamage={applyBattleDamage}
-          onFinish={finishManualBattle}
-          onCancel={cancelManualBattle}
-        />
-      )}
-
-      {match.pendingEffectRoll && (
-        <EffectRollModal
-          match={match}
-          effectRoll={match.pendingEffectRoll}
-          onRoll={rollEffectRoll}
-          onApply={applyEffectRoll}
-          onSkip={skipEffectRoll}
-        />
-      )}
-
-      {match.pendingPrompt && (
-        <HandRevealPromptCard
-          match={match}
-          controlledPlayerId={controlledPlayerId}
-          onApprove={approveRevealRedraw}
-        />
-      )}
-
-      {match.pendingEffectTargetPrompt && (
-        <TargetPromptCard
-          prompt={match.pendingEffectTargetPrompt}
-          onUndo={undoLastAction}
-          onResolve={resolveEffectTarget}
-        />
-      )}
-
-      {match.pendingChain && (
-        <MagicChainCard
-          match={match}
-          onResolve={resolveMagicChain}
-          onUndo={undoLastAction}
-          onPassPriority={passMagicChainPriority}
-        />
-      )}
-
-      {hasPendingManualEffects && (
-        <ManualEffectQueueCard
-          match={match}
-          manualEffectAmounts={manualEffectAmounts}
-          manualEffectStats={manualEffectStats}
-          manualEffectDurations={manualEffectDurations}
-          manualEffectDurationTypes={manualEffectDurationTypes}
-          setManualEffectAmounts={setManualEffectAmounts}
-          setManualEffectStats={setManualEffectStats}
-          setManualEffectDurations={setManualEffectDurations}
-          setManualEffectDurationTypes={setManualEffectDurationTypes}
-          onCompleteEffect={completeManualMagicEffect}
-          onDamagePrimary={applyManualMagicDamage}
-          onHealPrimary={applyManualMagicHeal}
-          onApplyStatModifier={applyManualMagicStatModifier}
-          onDestroyMagicWithEffect={destroyMagicWithManualEffect}
-        />
-      )}
-    </>
-  ) : null;
 
   if (!authChecked) {
     return (
@@ -1987,23 +2040,38 @@ export default function App() {
                       presentation="game"
                       defaultIntegrationMode
                       controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
-                      onDeckSlotClick={(slotId) => {
-                        const activeDeckSlot = match.turn.activePlayerId === "player_1" ? "player_1-deck" : "player_2-deck";
-                        if (slotId === activeDeckSlot) {
-                          drawActivePlayer();
-                        }
-                      }}
-                      onPlayHandCardToSlot={(cardInstanceId, slotId) => {
-                        const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
-                        const card = activePlayer?.hand.find(item => item.instanceId === cardInstanceId);
-                        if (!activePlayer || !card) return;
+                      onAdvancePhase={advancePhase}
+                      onUndoLastAction={undoLastAction}
+                      onRequestNoCreatureRedraw={requestNoCreatureRedraw}
+                      onSetHandRevealed={setHandRevealed}
+                      onApproveRevealRedraw={approveRevealRedraw}
+                      onOpeningRoll={rollOpeningTurnOrder}
+                      onDeckSlotClick={handleDeckClick}
+                      onResolveEffectTarget={resolveEffectTarget}
+                      onPlayHandCardToSlot={(cardInstanceId, slotId, sacrificeCardInstanceIds = []) => {
+                        const slotOwnerId = slotId.startsWith("player_2-") ? "player_2" : "player_1";
+                        const handOwner = match.players.find(player =>
+                          player.id === slotOwnerId &&
+                          player.hand.some(item => item.instanceId === cardInstanceId)
+                        );
+                        if (!handOwner) return;
                         if (slotId.includes("-primary")) {
-                          socket.emit("match:playPrimaryCreature", { matchId: match.matchId, playerId: activePlayer.id, cardInstanceId });
+                          socket.emit("match:playPrimaryCreature", { matchId: match.matchId, playerId: handOwner.id, cardInstanceId, sacrificeCardInstanceIds });
                           return;
                         }
                         if (slotId.includes("-magic")) {
-                          socket.emit("match:playMagic", { matchId: match.matchId, playerId: activePlayer.id, cardInstanceId });
+                          socket.emit("match:playMagic", { matchId: match.matchId, playerId: handOwner.id, cardInstanceId });
                         }
+                      }}
+                      onAttachEquipMagicToCreature={(fieldOwnerPlayerId, magicCardInstanceId, targetPlayerId, targetCreatureInstanceId, targetKind) => {
+                        socket.emit("match:attachEquipMagicToCreature", {
+                          matchId: match.matchId,
+                          fieldOwnerPlayerId,
+                          magicCardInstanceId,
+                          targetPlayerId,
+                          targetCreatureInstanceId,
+                          targetKind
+                        });
                       }}
                       onStartBattleFromPiece={(cardInstanceId) => {
                         startManualBattle(cardInstanceId);
@@ -2031,6 +2099,7 @@ export default function App() {
                           match={match}
                           advanceBlockReason={advanceBlockReason}
                           controlledPlayerId={controlledPlayerId}
+                          onOpeningRoll={rollOpeningTurnOrder}
                           onShuffleAllDecks={shuffleAllDecks}
                           onUndoLastAction={undoLastAction}
                           onDrawActivePlayer={drawActivePlayer}
@@ -2049,25 +2118,6 @@ export default function App() {
                     />
                   </div>
 
-                  <aside className="live-3d-board-actions" aria-label="3D board engine controls">
-                    {boardSidePanelContent ? (
-                      <section className="live-3d-board-panel live-3d-board-pending">
-                        {boardSidePanelContent}
-                      </section>
-                    ) : null}
-
-                    <section className="live-3d-board-players" aria-label="Player controls">
-                      {displayedPlayers.map(player => (
-                        <PlayerPanel
-                          key={player.id}
-                          match={match}
-                          player={player}
-                          controlledPlayerId={controlledPlayerId}
-                          onStartManualBattle={startManualBattle}
-                        />
-                      ))}
-                    </section>
-                  </aside>
                 </section>
               )}
 
@@ -2108,7 +2158,7 @@ export default function App() {
             )}
 
             {match.pendingPrompt && true && (
-              <ModalPanel title="Action Required" blocking>
+              <ModalPanel title="Action Required" blocking wide>
                 <HandRevealPromptCard
                   match={match}
                   controlledPlayerId={controlledPlayerId}
@@ -2117,12 +2167,23 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingEffectTargetPrompt && true && (
+            {match.pendingEffectTargetPrompt && !targetPromptCanResolveOnBoard(match) && (
               <ModalPanel title="Choose Effect Target" blocking wide>
                 <TargetPromptCard
                   prompt={match.pendingEffectTargetPrompt}
                   onUndo={undoLastAction}
                   onResolve={resolveEffectTarget}
+                />
+              </ModalPanel>
+            )}
+
+            {match.pendingChain && true && (
+              <ModalPanel title="Resolve Chain" blocking wide>
+                <MagicChainCard
+                  match={match}
+                  onResolve={resolveMagicChain}
+                  onUndo={undoLastAction}
+                  onPassPriority={passMagicChainPriority}
                 />
               </ModalPanel>
             )}
@@ -2233,6 +2294,7 @@ export default function App() {
                   match={match}
                   advanceBlockReason={advanceBlockReason}
                   controlledPlayerId={controlledPlayerId}
+                  onOpeningRoll={rollOpeningTurnOrder}
                   onShuffleAllDecks={shuffleAllDecks}
                   onUndoLastAction={undoLastAction}
                   onDrawActivePlayer={drawActivePlayer}

@@ -1,17 +1,18 @@
 import type { AppMatchState } from "../clientTypes";
 import type { BoardObject } from "./boardPreview3dAdapter";
+import type { BoardPlayerId } from "./boardPreview3dTypes";
 
 export type BoardRenderAnchor = {
-  zone: "PRIMARY" | "LIMITED" | "MAGIC";
+  zone: "PRIMARY" | "LIMITED" | "MAGIC" | "HAND" | "DECK" | "CEMETERY";
   slotId: string;
-  owner: "player_1" | "player_2";
+  owner: BoardPlayerId;
 };
 
 export type BoardRenderCard = {
   cardInstanceId: string;
   cardId: string;
-  owner: "player_1" | "player_2";
-  controller: "player_1" | "player_2";
+  owner: BoardPlayerId;
+  controller: BoardPlayerId;
   anchor: BoardRenderAnchor;
 };
 

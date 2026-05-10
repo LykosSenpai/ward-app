@@ -1,6 +1,6 @@
 import type { AppMatchState } from "../clientTypes";
 import { BOARD_SLOTS } from "./boardPreview3dLayout";
-import type { BoardLayoutSnapshot, BoardPieceFocusEvent, BoardPreviewInteractionIntent, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
+import type { BoardLayoutSnapshot, BoardPieceFocusEvent, BoardPlayerId, BoardPreviewInteractionIntent, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 
 function clampPercent(value: number) {
   return Math.max(0, Math.min(100, value));
@@ -10,67 +10,147 @@ export type BoardObject = {
   id: string;
   cardInstanceId?: string;
   label: string;
-  owner: "player_1" | "player_2";
+  owner: BoardPlayerId;
   xPercent: number;
   zPercent: number;
   yDepth: number;
-  lane: "primary" | "limited" | "magic";
+  lane: "primary" | "limited" | "magic" | "hand" | "deck" | "cemetery";
   slotId: BoardSlotId;
 };
 
-export function buildBoardObjects(match: AppMatchState): BoardObject[] {
+type BuildBoardObjectsOptions = {
+  revealHandsForPlayerId?: BoardPlayerId | "all" | null;
+};
+
+const HAND_SLOT_COUNT = 10;
+
+function isHandRevealed(owner: BoardPlayerId, options?: BuildBoardObjectsOptions): boolean {
+  return options?.revealHandsForPlayerId === "all" || options?.revealHandsForPlayerId === owner;
+}
+
+function getSlotPoint(slotId: BoardSlotId, fallbackX: number, fallbackZ: number) {
+  const slot = BOARD_SLOTS.find(item => item.id === slotId);
+  return {
+    xPercent: slot?.xPercent ?? fallbackX,
+    zPercent: slot?.zPercent ?? fallbackZ
+  };
+}
+
+export function buildBoardObjects(match: AppMatchState, options: BuildBoardObjectsOptions = {}): BoardObject[] {
   return match.players.flatMap((player, playerIndex) => {
-    const owner: "player_1" | "player_2" = player.id === "player_1" ? "player_1" : "player_2";
+    const owner: BoardPlayerId = player.id === "player_1" ? "player_1" : "player_2";
     const ownerZ = playerIndex === 0 ? 74 : 26;
     const friendlyShift = playerIndex === 0 ? 1 : -1;
+    const handCards = player.hand ?? [];
+    const deckCards = player.deck ?? [];
+    const cemeteryCards = player.cemetery ?? [];
 
 
     const primary = player.field.primaryCreature
-      ? [{
+      ? (() => {
+        const slotId = `${owner}-primary` as BoardSlotId;
+        const point = getSlotPoint(slotId, 50, ownerZ);
+        return [{
           id: `${owner}-primary`,
           cardInstanceId: player.field.primaryCreature.instanceId,
           label: `${player.displayName} Primary`,
           owner,
-          xPercent: 50,
-          zPercent: ownerZ,
+          xPercent: point.xPercent,
+          zPercent: point.zPercent,
 
           yDepth: 12,
           lane: "primary" as const,
-          slotId: `${owner}-primary` as BoardSlotId
-        }]
+          slotId
+        }];
+      })()
       : [];
 
     const limitedOffsets = [28, 10, -10, -28];
 
-    const limited = player.field.limitedSummons.map((card, index) => ({
-      id: `${owner}-limited-${card.instanceId}`,
-      cardInstanceId: card.instanceId,
-      label: `${player.displayName} Limited ${index + 1}`,
-      owner,
-      xPercent: 50 + friendlyShift * (limitedOffsets[index] ?? 0),
-      zPercent: ownerZ + friendlyShift * -8,
+    const limited = player.field.limitedSummons.map((card, index) => {
+      const slotId = `${owner}-limited-${index + 1}` as BoardSlotId;
+      const point = getSlotPoint(slotId, 50 + friendlyShift * (limitedOffsets[index] ?? 0), ownerZ + friendlyShift * -8);
+      return {
+        id: `${owner}-limited-${card.instanceId}`,
+        cardInstanceId: card.instanceId,
+        label: `${player.displayName} Limited ${index + 1}`,
+        owner,
+        xPercent: point.xPercent,
+        zPercent: point.zPercent,
 
-      yDepth: 8,
-      lane: "limited" as const,
-      slotId: `${owner}-limited-${index + 1}` as BoardSlotId
-    }));
+        yDepth: 8,
+        lane: "limited" as const,
+        slotId
+      };
+    });
 
     const magicOffsets = [40, 20, 0, -20, -40];
 
-    const magic = player.field.magicSlots.filter(Boolean).map((card, index) => ({
-      id: `${owner}-magic-${card.instanceId}`,
-      cardInstanceId: card.instanceId,
-      label: `${player.displayName} Magic ${index + 1}`,
+    const magic = player.field.magicSlots.filter(Boolean).map((card, index) => {
+      const slotId = `${owner}-magic-${index + 1}` as BoardSlotId;
+      const point = getSlotPoint(slotId, 50 + friendlyShift * (magicOffsets[index] ?? 0), ownerZ + friendlyShift * 4);
+      return {
+        id: `${owner}-magic-${card.instanceId}`,
+        cardInstanceId: card.instanceId,
+        label: `${player.displayName} Magic ${index + 1}`,
+        owner,
+        xPercent: point.xPercent,
+        zPercent: point.zPercent,
+
+        yDepth: 5,
+        lane: "magic" as const,
+        slotId
+      };
+    });
+
+    const deckSlotId = `${owner}-deck` as BoardSlotId;
+    const deckPoint = getSlotPoint(deckSlotId, owner === "player_1" ? 94 : 6, owner === "player_1" ? 88 : 12);
+
+    const deck: BoardObject[] = [{
+      id: `${owner}-deck-stack`,
+      label: `Deck (${deckCards.length})`,
       owner,
-      xPercent: 50 + friendlyShift * (magicOffsets[index] ?? 0),
-      zPercent: ownerZ + friendlyShift * 4,
+      xPercent: deckPoint.xPercent,
+      zPercent: deckPoint.zPercent,
+      yDepth: 10,
+      lane: "deck",
+      slotId: deckSlotId
+    }];
 
-      yDepth: 5,
-      lane: "magic" as const,
-      slotId: `${owner}-magic-${index + 1}` as BoardSlotId
-    }));
+    const cemeteryTopCard = cemeteryCards.at(-1);
+    const cemeterySlotId = `${owner}-cemetery` as BoardSlotId;
+    const cemeteryPoint = getSlotPoint(cemeterySlotId, owner === "player_1" ? 6 : 94, owner === "player_1" ? 88 : 12);
+    const cemetery: BoardObject[] = [{
+      id: `${owner}-cemetery-stack`,
+      cardInstanceId: cemeteryTopCard?.instanceId,
+      label: `Cemetery (${cemeteryCards.length})`,
+      owner,
+      xPercent: cemeteryPoint.xPercent,
+      zPercent: cemeteryPoint.zPercent,
+      yDepth: 10,
+      lane: "cemetery",
+      slotId: cemeterySlotId
+    }];
 
-    return [...primary, ...limited, ...magic];
+    const hand: BoardObject[] = isHandRevealed(owner, options)
+      ? handCards.slice(0, HAND_SLOT_COUNT).map((card, index) => {
+        const slotId = `${owner}-hand-${Math.min(index + 1, HAND_SLOT_COUNT)}` as BoardSlotId;
+        const point = getSlotPoint(slotId, 15 + index * 8, owner === "player_1" ? 93 : 7);
+        return {
+            id: `${owner}-hand-${card.instanceId}`,
+            cardInstanceId: card.instanceId,
+            label: `${player.displayName} Hand ${index + 1}`,
+            owner,
+            xPercent: point.xPercent,
+            zPercent: point.zPercent,
+            yDepth: 14,
+            lane: "hand" as const,
+            slotId
+          };
+        })
+      : [];
+
+    return [...primary, ...limited, ...magic, ...deck, ...cemetery, ...hand];
   });
 }
 

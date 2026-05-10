@@ -6,11 +6,16 @@ import {
   ensureNoPendingManualEffects
 } from "./actionGuards.js";
 import { shuffleCards } from "./actionCards.js";
+import { hasCompletedOpeningRoll } from "./openingRollActions.js";
 
 export function shuffleDeckForPlayer(
   state: MatchState,
   playerId: string
 ): MatchState {
+  if (!hasCompletedOpeningRoll(state)) {
+    throw new Error("Complete the opening low-roll before shuffling.");
+  }
+
   if (state.pendingPrompt) {
     throw new Error("Resolve the pending prompt before shuffling.");
   }
@@ -30,6 +35,10 @@ export function shuffleDeckForPlayer(
 }
 
 export function shuffleAllDecks(state: MatchState): MatchState {
+  if (!hasCompletedOpeningRoll(state)) {
+    throw new Error("Complete the opening low-roll before shuffling.");
+  }
+
   if (state.pendingPrompt) {
     throw new Error("Resolve the pending prompt before shuffling.");
   }
@@ -95,6 +104,10 @@ export function drawForActivePlayer(state: MatchState): MatchState {
 
   if (!state.setup.decksShuffled) {
     throw new Error("Shuffle both decks before drawing.");
+  }
+
+  if (!hasCompletedOpeningRoll(state)) {
+    throw new Error("Complete the opening low-roll before drawing.");
   }
 
   const activePlayer = getPlayer(state, state.turn.activePlayerId);

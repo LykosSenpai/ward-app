@@ -25,7 +25,7 @@ function normalizeFileNamePart(value: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
-function getMatchCardImageUrls(match: AppMatchState, card: CardInstance): string[] {
+export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance): string[] {
   const definition = match.cardCatalog[card.cardId];
   const stems = [card.cardId];
 

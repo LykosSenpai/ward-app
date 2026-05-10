@@ -6,6 +6,7 @@ import type {
   MatchState,
   PlayerState
 } from "@ward/shared";
+import { shuffleCards } from "./actionCards.js";
 import { createDeckFromCardIds } from "./cardInstances.js";
 import { DEMO_CARD_CATALOG, DEMO_DECK_CARD_IDS } from "./demoCards.js";
 import { validateDeckCardIds } from "./deckValidator.js";
@@ -94,21 +95,21 @@ export function create1v1MatchFromDeckCardIds(options: {
   const player1 = createPlayer(
     player1Id,
     options.player1Name ?? "Player 1",
-    createDeckFromCardIds(
+    shuffleCards(createDeckFromCardIds(
       player1Id,
       options.player1DeckCardIds,
       options.cardCatalog
-    )
+    ))
   );
 
   const player2 = createPlayer(
     player2Id,
     options.player2Name ?? "Player 2",
-    createDeckFromCardIds(
+    shuffleCards(createDeckFromCardIds(
       player2Id,
       options.player2DeckCardIds,
       options.cardCatalog
-    )
+    ))
   );
 
   return {
@@ -121,13 +122,22 @@ export function create1v1MatchFromDeckCardIds(options: {
     cardCatalog: options.cardCatalog,
 
     setup: {
-  decksShuffled: false,
+  decksShuffled: true,
   firstTurnDrawsByPlayer: {
     [player1Id]: false,
     [player2Id]: false
   },
+  openingRoll: {
+    status: "AWAITING_ROLL",
+    round: 1,
+    rolls: {
+      [player1Id]: undefined,
+      [player2Id]: undefined
+    }
+  },
   primaryReplacementRequiredForPlayerId: undefined,
   handDiscardRequiredForPlayerId: undefined,
+  revealedHandPlayerIds: [],
   deckValidation: {
     [player1Id]: player1Validation,
     [player2Id]: player2Validation

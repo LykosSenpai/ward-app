@@ -8,10 +8,32 @@ import {
   getWinnerName
 } from "../gameViewHelpers";
 
+function getOpeningRollViewState(match: AppMatchState) {
+  if (match.setup.openingRoll) return match.setup.openingRoll;
+
+  const noOpeningCardsDrawn =
+    match.players.every(player => player.hand.length === 0) &&
+    match.players.every(player => !match.setup.firstTurnDrawsByPlayer[player.id]);
+  const appearsToBeFreshOpening =
+    match.status !== "COMPLETE" &&
+    noOpeningCardsDrawn &&
+    match.turn.turnNumber === 1 &&
+    match.turn.phase === "DRAW";
+
+  if (!appearsToBeFreshOpening) return null;
+
+  return {
+    status: "AWAITING_ROLL" as const,
+    round: 1,
+    rolls: Object.fromEntries(match.players.map(player => [player.id, undefined])) as Record<string, number | undefined>
+  };
+}
+
 type CompactMatchControlPanelProps = {
   match: AppMatchState;
   advanceBlockReason: string;
   controlledPlayerId?: string;
+  onOpeningRoll: (playerId: string) => void;
   onShuffleAllDecks: () => void;
   onUndoLastAction: () => void;
   onDrawActivePlayer: () => void;
@@ -31,6 +53,7 @@ export function CompactMatchControlPanel({
   match,
   advanceBlockReason,
   controlledPlayerId,
+  onOpeningRoll,
   onShuffleAllDecks,
   onUndoLastAction,
   onDrawActivePlayer,
@@ -49,6 +72,17 @@ export function CompactMatchControlPanel({
   const pendingManualEffects = match.manualEffectQueue.filter(effect => !effect.completed).length;
   const canUseMatchActions = matchStatus !== "COMPLETE";
   const canControlActiveTurn = !controlledPlayerId || controlledPlayerId === match.turn.activePlayerId;
+  const openingRoll = getOpeningRollViewState(match);
+  const openingRollComplete = !openingRoll || openingRoll.status === "COMPLETE";
+  const controlledPlayer = controlledPlayerId ? match.players.find(player => player.id === controlledPlayerId) : null;
+  const rollPlayer = controlledPlayer ?? match.players.find(player => openingRoll?.rolls[player.id] === undefined) ?? match.players[0];
+  const canRollOpening =
+    canUseMatchActions &&
+    Boolean(openingRoll) &&
+    !openingRollComplete &&
+    Boolean(rollPlayer) &&
+    (!controlledPlayerId || controlledPlayerId === rollPlayer.id) &&
+    openingRoll?.rolls[rollPlayer.id] === undefined;
   const battleBlockReason = getBattleBlockReason(match);
   const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
   const battleOptions = activePlayer
@@ -58,6 +92,7 @@ export function CompactMatchControlPanel({
   const drawDisabled =
     !canUseMatchActions ||
     !canControlActiveTurn ||
+    !openingRollComplete ||
     !match.setup.decksShuffled ||
     !!match.pendingPrompt ||
     !!match.pendingBattle ||
@@ -87,6 +122,11 @@ export function CompactMatchControlPanel({
             <span className="match-chip">
               First Cycle: {match.turn.firstTurnCycleComplete ? "Done" : "Locked"}
             </span>
+            {openingRoll && (
+              <span className={openingRollComplete ? "match-chip match-chip-success" : "match-chip"}>
+                First Roll: {openingRollComplete ? "Done" : `Round ${openingRoll.round}`}
+              </span>
+            )}
             <span className="match-chip">
               No-Atk Battle: {match.settings.cannotInflictAttackDamageBattlePolicy === "DAMAGE_ONLY" ? "Damage = 0" : "Skip battle"}
             </span>
@@ -101,9 +141,13 @@ export function CompactMatchControlPanel({
         <div className="compact-primary-actions">
           <button
             onClick={onShuffleAllDecks}
-            disabled={!canControlActiveTurn || match.players.some(player => player.hand.length > 0) || !!match.pendingPrompt}
+            disabled={match.setup.decksShuffled || !openingRollComplete || !canControlActiveTurn || match.players.some(player => player.hand.length > 0) || !!match.pendingPrompt}
           >
-            Shuffle Both
+            {match.setup.decksShuffled ? "Decks Shuffled" : "Shuffle Both"}
+          </button>
+
+          <button onClick={() => rollPlayer && onOpeningRoll(rollPlayer.id)} disabled={!canRollOpening}>
+            Roll First
           </button>
 
           <button onClick={onUndoLastAction} disabled={!canUseMatchActions || !canControlActiveTurn}>

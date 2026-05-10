@@ -34,6 +34,7 @@ export * from "./fieldRemoval.js";
 export * from "./engineRuntime.js";
 export * from "./matchFactory.js";
 export * from "./normalizeMatch.js";
+export * from "./openingRollActions.js";
 export * from "./summonRules.js";
 export * from "./targets.js";
 export * from "./turns.js";
@@ -45,4 +46,3 @@ export * from "./effectTestScenarios.js";
 
 export * from "./fringeEffectHandlers.js";
 export * from "./silenceFromTheGrave.js";
-

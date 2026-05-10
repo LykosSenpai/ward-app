@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEventHandler, type PointerEventHandler, type ReactNode, type WheelEventHandler } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEventHandler, type PointerEventHandler, type ReactNode, type WheelEventHandler } from "react";
+import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
-import { BOARD_SLOTS } from "./boardPreview3dLayout";
+import { BOARD_SLOTS, BOARD_ZONES, type BoardZone } from "./boardPreview3dLayout";
 import { BoardPreview3DControls } from "./boardPreview3d/BoardPreview3DControls";
-import { BoardPreview3DDebugPanel } from "./boardPreview3d/BoardPreview3DDebugPanel";
+import { BoardPreview3DDebugPanel, type BoardZoneAdjustment } from "./boardPreview3d/BoardPreview3DDebugPanel";
 import { BoardPreview3DMiniMap } from "./boardPreview3d/BoardPreview3DMiniMap";
 import { BoardPreview3DTable } from "./boardPreview3d/BoardPreview3DTable";
 import { MatchCardImage } from "./MatchCardImage";
@@ -12,20 +13,69 @@ import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAni
 import { getBoardAnimationProfile } from "./boardAnimationProfiles";
 import { decideBoardReconciliation } from "./boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "./boardRuntimeHealth";
+import { canSummonCreatureFromHand, getCardName, getCardText, getCreatureStatsLine, getEffectiveCreatureStat, getMagicLine, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, isMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
 import { mapPointerGestureToIntent } from "./boardInteractionIntents";
 import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
-import type { BoardPieceFocusEvent, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
+import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
-const BOARD_PREVIEW_STORAGE_VERSION = 5;
+const BOARD_PREVIEW_STORAGE_VERSION = 10;
+const BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION = 1;
 
 type FloatingDockPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 type ActionDockPosition = "bottom" | "left" | "right";
+type AttachTargetKind = "PRIMARY_CREATURE" | "LIMITED_SUMMON";
 
 const FLOATING_DOCK_POSITIONS: FloatingDockPosition[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
 const ACTION_DOCK_POSITIONS: ActionDockPosition[] = ["bottom", "left", "right"];
+const EMPTY_ZONE_ADJUSTMENT: BoardZoneAdjustment = { x: 0, z: 0, width: 0, height: 0 };
+const DEFAULT_CAMERA_SETTINGS = {
+  tiltDegrees: 0,
+  zoomScale: 0.95,
+  heightScale: 0.6,
+  boardScaleX: 0.7,
+  boardScaleZ: 0.7,
+  boardOffsetX: 0,
+  boardOffsetZ: -1,
+  cameraPanX: 0,
+  cameraPanY: -3
+};
+type VisibleSlotLayers = {
+  primary: boolean;
+  limited: boolean;
+  magic: boolean;
+  stacks: boolean;
+  hand: boolean;
+};
+const DEFAULT_VISIBLE_SLOT_LAYERS: VisibleSlotLayers = {
+  primary: true,
+  limited: true,
+  magic: true,
+  stacks: false,
+  hand: false
+};
+
+function getCreatureOverlayStats(match: AppMatchState, card: CardInstance) {
+  const definition = match.cardCatalog[card.cardId];
+  if (definition?.cardType !== "CREATURE") return null;
+
+  const baseHp = Number(card.baseHp ?? definition.hp);
+  const currentHp = Number(card.currentHp ?? baseHp);
+  const hpPercent = baseHp > 0 ? Math.max(0, Math.min(100, (currentHp / baseHp) * 100)) : 0;
+  const hpTone = hpPercent <= 30 ? "danger" : hpPercent <= 60 ? "warn" : "healthy";
+
+  return {
+    armorLevel: getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel),
+    attackDice: getEffectiveCreatureStat(card, "attackDice", definition.attackDice),
+    baseHp,
+    currentHp,
+    hpTone,
+    modifier: getEffectiveCreatureStat(card, "modifier", definition.modifier),
+    speed: getEffectiveCreatureStat(card, "speed", definition.speed)
+  };
+}
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -39,7 +89,20 @@ type BoardPreview3DProps = {
   actionDock?: ReactNode;
   onDeckSlotClick?: (slotId: string) => void;
   controlledPlayerId?: "player_1" | "player_2" | null;
-  onPlayHandCardToSlot?: (cardInstanceId: string, slotId: string) => void;
+  onAdvancePhase?: () => void;
+  onUndoLastAction?: () => void;
+  onRequestNoCreatureRedraw?: (playerId: "player_1" | "player_2") => void;
+  onSetHandRevealed?: (playerId: "player_1" | "player_2", revealed: boolean) => void;
+  onApproveRevealRedraw?: () => void;
+  onOpeningRoll?: (playerId: "player_1" | "player_2") => void;
+  onPlayHandCardToSlot?: (cardInstanceId: string, slotId: string, sacrificeCardInstanceIds?: string[]) => void;
+  onAttachEquipMagicToCreature?: (
+    fieldOwnerPlayerId: BoardPlayerId,
+    magicCardInstanceId: string,
+    targetPlayerId: BoardPlayerId,
+    targetCreatureInstanceId: string,
+    targetKind: AttachTargetKind
+  ) => void;
   onStartBattleFromPiece?: (cardInstanceId: string) => void;
   intentLabel?: string;
   commandLabel?: string;
@@ -47,7 +110,106 @@ type BoardPreview3DProps = {
   onPieceFocus?: (event: BoardPieceFocusEvent) => void;
   onIntent?: (intent: PointerGestureIntent) => void;
   onIntentCommand?: (command: BoardIntentCommand) => void;
+  onResolveEffectTarget?: (promptId: string, selectedOptionId: string) => void;
 };
+
+function DiceFace({ value }: { value?: number }) {
+  const normalizedValue = value && value >= 1 && value <= 6 ? value : 1;
+
+  return (
+    <span className={`board-opening-roll__die board-opening-roll__die--${normalizedValue}`} aria-hidden="true">
+      {Array.from({ length: 6 }, (_, index) => (
+        <i key={index} />
+      ))}
+    </span>
+  );
+}
+
+function getOpeningRollViewState(match: AppMatchState) {
+  if (match.setup.openingRoll) return match.setup.openingRoll;
+
+  const noOpeningCardsDrawn =
+    match.players.every(player => player.hand.length === 0) &&
+    match.players.every(player => !match.setup.firstTurnDrawsByPlayer[player.id]);
+  const appearsToBeFreshOpening =
+    match.status !== "COMPLETE" &&
+    noOpeningCardsDrawn &&
+    match.turn.turnNumber === 1 &&
+    match.turn.phase === "DRAW";
+
+  if (!appearsToBeFreshOpening) return null;
+
+  return {
+    status: "AWAITING_ROLL" as const,
+    round: 1,
+    rolls: Object.fromEntries(match.players.map(player => [player.id, undefined])) as Record<string, number | undefined>
+  };
+}
+
+function OpeningRollBoardControl({
+  match,
+  controlledPlayerId,
+  onOpeningRoll
+}: {
+  match: AppMatchState;
+  controlledPlayerId: BoardPlayerId | null;
+  onOpeningRoll?: (playerId: BoardPlayerId) => void;
+}) {
+  const openingRoll = getOpeningRollViewState(match);
+  if (!openingRoll) return null;
+
+  const isComplete = openingRoll.status === "COMPLETE";
+  const rollPlayer = controlledPlayerId
+    ? match.players.find(player => player.id === controlledPlayerId)
+    : match.players.find(player => openingRoll.rolls[player.id] === undefined) ?? match.players[0];
+  const canRoll = !isComplete && Boolean(rollPlayer) && openingRoll.rolls[rollPlayer!.id] === undefined;
+  const hasCurrentRoundRoll = Object.values(openingRoll.rolls).some(value => value !== undefined);
+  const displayedRolls = hasCurrentRoundRoll || !openingRoll.lastRolls
+    ? openingRoll.rolls
+    : openingRoll.lastRolls;
+  const winnerName = openingRoll.winnerPlayerId
+    ? match.players.find(player => player.id === openingRoll.winnerPlayerId)?.displayName ?? openingRoll.winnerPlayerId
+    : null;
+
+  return (
+    <aside className={`board-opening-roll${isComplete ? " is-complete" : " is-pending"}`} aria-label="Opening low-roll control">
+      <button
+        type="button"
+        className="board-opening-roll__trigger"
+        onClick={() => {
+          if (rollPlayer) onOpeningRoll?.(rollPlayer.id as BoardPlayerId);
+        }}
+        disabled={!canRoll}
+        title={isComplete ? "Opening roll complete" : canRoll ? `Roll 1D6 for ${rollPlayer?.displayName ?? "player"}` : "Waiting for the other opening roll"}
+      >
+        <DiceFace value={displayedRolls[rollPlayer?.id ?? ""] ?? 1} />
+        <span>{isComplete ? "First Set" : "Roll First"}</span>
+      </button>
+
+      <div className="board-opening-roll__lanes">
+        {match.players.map(player => {
+          const roll = displayedRolls[player.id];
+          const hasRolled = roll !== undefined;
+          return (
+            <div className={`board-opening-roll__lane board-opening-roll__lane--${player.id}${hasRolled ? " has-roll" : ""}`} key={player.id}>
+              <span>{player.displayName}</span>
+              <DiceFace value={roll ?? 1} />
+              <strong>{hasRolled ? roll : "-"}</strong>
+            </div>
+          );
+        })}
+      </div>
+
+      <p>
+        {isComplete && winnerName
+          ? `${winnerName} goes first`
+          : openingRoll.lastRolls
+            ? `Tie on round ${openingRoll.round - 1}. Roll again.`
+            : `Low roll wins. Round ${openingRoll.round}.`}
+      </p>
+    </aside>
+  );
+}
 
 export function BoardPreview3D({
   match,
@@ -57,36 +219,62 @@ export function BoardPreview3D({
   actionDock,
   onDeckSlotClick,
   controlledPlayerId = null,
+  onAdvancePhase,
+  onUndoLastAction,
+  onRequestNoCreatureRedraw,
+  onSetHandRevealed,
+  onApproveRevealRedraw,
+  onOpeningRoll,
   onPlayHandCardToSlot,
+  onAttachEquipMagicToCreature,
   onStartBattleFromPiece,
   intentLabel = "",
   commandLabel = "",
   onSlotFocus,
   onPieceFocus,
   onIntent,
-  onIntentCommand
+  onIntentCommand,
+  onResolveEffectTarget
 }: BoardPreview3DProps) {
-  const renderModel = useMemo(() => buildBoardRenderModel(match), [match]);
+  const focusedPlayerId: BoardPlayerId = controlledPlayerId ?? (match.turn.activePlayerId === "player_1" ? "player_1" : "player_2");
+  const [locallyRevealedHands, setLocallyRevealedHands] = useState<Partial<Record<BoardPlayerId, boolean>>>({});
+  const revealedHandPlayerIds = match.setup.revealedHandPlayerIds ?? [];
+  const handRevealMode = (() => {
+    if (adminView && presentation === "lab") return "all";
+    const revealedOwners = new Set<BoardPlayerId>();
+    if (locallyRevealedHands.player_1 || revealedHandPlayerIds.includes("player_1")) revealedOwners.add("player_1");
+    if (locallyRevealedHands.player_2 || revealedHandPlayerIds.includes("player_2")) revealedOwners.add("player_2");
+    if (revealedOwners.size === 0) return null;
+    return revealedOwners.size > 1 ? "all" : [...revealedOwners][0]!;
+  })();
+  const renderModel = useMemo(
+    () => buildBoardRenderModel(match, { revealHandsForPlayerId: handRevealMode }),
+    [handRevealMode, match]
+  );
   const interactionContext = useMemo(() => buildBoardInteractionContext(match), [match]);
   const renderEvents = useMemo(() => translateGameEventsToBoardRenderEvents(match), [match]);
   const boardObjects = renderModel.boardObjects;
   const storageKey = presentation === "game" ? `${BOARD_PREVIEW_STORAGE_KEY}.game` : BOARD_PREVIEW_STORAGE_KEY;
-  const [tiltDegrees, setTiltDegrees] = useState(60);
-  const [zoomScale, setZoomScale] = useState(() => presentation === "game" ? 1.18 : 1);
-  const [heightScale, setHeightScale] = useState(1);
-  const [boardScaleX, setBoardScaleX] = useState(1);
-  const [boardScaleZ, setBoardScaleZ] = useState(1);
-  const [boardOffsetX, setBoardOffsetX] = useState(0);
-  const [boardOffsetZ, setBoardOffsetZ] = useState(0);
-  const [cameraPanX, setCameraPanX] = useState(0);
-  const [cameraPanY, setCameraPanY] = useState(0);
+  const [tiltDegrees, setTiltDegrees] = useState(DEFAULT_CAMERA_SETTINGS.tiltDegrees);
+  const [zoomScale, setZoomScale] = useState(DEFAULT_CAMERA_SETTINGS.zoomScale);
+  const [heightScale, setHeightScale] = useState(DEFAULT_CAMERA_SETTINGS.heightScale);
+  const [boardScaleX, setBoardScaleX] = useState(DEFAULT_CAMERA_SETTINGS.boardScaleX);
+  const [boardScaleZ, setBoardScaleZ] = useState(DEFAULT_CAMERA_SETTINGS.boardScaleZ);
+  const [boardOffsetX, setBoardOffsetX] = useState(DEFAULT_CAMERA_SETTINGS.boardOffsetX);
+  const [boardOffsetZ, setBoardOffsetZ] = useState(DEFAULT_CAMERA_SETTINGS.boardOffsetZ);
+  const [cameraPanX, setCameraPanX] = useState(DEFAULT_CAMERA_SETTINGS.cameraPanX);
+  const [cameraPanY, setCameraPanY] = useState(DEFAULT_CAMERA_SETTINGS.cameraPanY);
   const [showDebugPanel, setShowDebugPanel] = useState(() =>
     presentation === "game" ? false : (globalThis.innerHeight ? globalThis.innerHeight > 980 : true)
   );
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>("player_1-primary");
   const [slotOffsets, setSlotOffsets] = useState<BoardSlotOffsetMap>({});
+  const [selectedZoneId, setSelectedZoneId] = useState(BOARD_ZONES[0]?.id ?? "");
+  const [zoneAdjustments, setZoneAdjustments] = useState<Record<string, BoardZoneAdjustment>>({});
   const [nudgeStep, setNudgeStep] = useState(1);
   const [showAnchors, setShowAnchors] = useState(true);
+  const [showZoneRects, setShowZoneRects] = useState(false);
+  const [visibleSlotLayers, setVisibleSlotLayers] = useState<VisibleSlotLayers>(DEFAULT_VISIBLE_SLOT_LAYERS);
   const [layoutDraft, setLayoutDraft] = useState("");
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [layoutDraftError, setLayoutDraftError] = useState<string | null>(null);
@@ -97,11 +285,16 @@ export function BoardPreview3D({
   const [animationQueue, setAnimationQueue] = useState(createBoardAnimationQueueState);
   const [runtimeMode, setRuntimeMode] = useState<"ANIMATED" | "FAST_FORWARD">("ANIMATED");
   const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(null);
+  const [selectedEquipMagicCardId, setSelectedEquipMagicCardId] = useState<string | null>(null);
+  const [selectedSacrificeIdsByCard, setSelectedSacrificeIdsByCard] = useState<Record<string, string[]>>({});
+  const [hoveredHandCardId, setHoveredHandCardId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const [hudMode, setHudMode] = useState<"player" | "debug">("player");
   const [controlsCollapsed, setControlsCollapsed] = useState(true);
   const [controlsDockPosition, setControlsDockPosition] = useState<FloatingDockPosition>("top-right");
   const [actionDockPosition, setActionDockPosition] = useState<ActionDockPosition>("right");
+  const [actionDockCollapsed, setActionDockCollapsed] = useState(false);
+  const [deckHandControlsOwner, setDeckHandControlsOwner] = useState<BoardPlayerId | null>(null);
+  const [deckActionsExpanded, setDeckActionsExpanded] = useState(false);
   const [isCameraDragging, setIsCameraDragging] = useState(false);
   const previousRenderModelRef = useRef<typeof renderModel | null>(null);
   const cameraDragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
@@ -163,6 +356,7 @@ export function BoardPreview3D({
         ? parsedRaw
         : { version: 1, ...parsedRaw }) as {
         version: number;
+        cameraDefaultsVersion?: number;
         tiltDegrees?: number;
         zoomScale?: number;
         heightScale?: number;
@@ -175,28 +369,43 @@ export function BoardPreview3D({
         showDebugPanel?: boolean;
         selectedSlotId?: string | null;
         slotOffsets?: BoardSlotOffsetMap;
+        selectedZoneId?: string;
+        zoneAdjustments?: Record<string, BoardZoneAdjustment>;
         nudgeStep?: number;
         showAnchors?: boolean;
+        showZoneRects?: boolean;
+        visibleSlotLayers?: Partial<VisibleSlotLayers>;
         ownerFilter?: "all" | "player_1" | "player_2";
         showDiagnostics?: boolean;
         integrationMode?: boolean;
         controlsDockPosition?: FloatingDockPosition;
         actionDockPosition?: ActionDockPosition;
+        actionDockCollapsed?: boolean;
       };
-      if (typeof parsed.tiltDegrees === "number") setTiltDegrees(parsed.tiltDegrees);
-      if (typeof parsed.zoomScale === "number") setZoomScale(parsed.zoomScale);
-      if (typeof parsed.heightScale === "number") setHeightScale(parsed.heightScale);
-      if (typeof parsed.boardScaleX === "number") setBoardScaleX(parsed.boardScaleX);
-      if (typeof parsed.boardScaleZ === "number") setBoardScaleZ(parsed.boardScaleZ);
-      if (typeof parsed.boardOffsetX === "number") setBoardOffsetX(parsed.boardOffsetX);
-      if (typeof parsed.boardOffsetZ === "number") setBoardOffsetZ(parsed.boardOffsetZ);
-      if (typeof parsed.cameraPanX === "number") setCameraPanX(parsed.cameraPanX);
-      if (typeof parsed.cameraPanY === "number") setCameraPanY(parsed.cameraPanY);
-      if (typeof parsed.showDebugPanel === "boolean") setShowDebugPanel(presentation === "game" ? false : parsed.showDebugPanel);
+      if (parsed.cameraDefaultsVersion === BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION) {
+        if (typeof parsed.tiltDegrees === "number") setTiltDegrees(parsed.tiltDegrees);
+        if (typeof parsed.zoomScale === "number") setZoomScale(parsed.zoomScale);
+        if (typeof parsed.heightScale === "number") setHeightScale(parsed.heightScale);
+        if (typeof parsed.boardScaleX === "number") setBoardScaleX(parsed.boardScaleX);
+        if (typeof parsed.boardScaleZ === "number") setBoardScaleZ(parsed.boardScaleZ);
+        if (typeof parsed.boardOffsetX === "number") setBoardOffsetX(parsed.boardOffsetX);
+        if (typeof parsed.boardOffsetZ === "number") setBoardOffsetZ(parsed.boardOffsetZ);
+        if (typeof parsed.cameraPanX === "number") setCameraPanX(parsed.cameraPanX);
+        if (typeof parsed.cameraPanY === "number") setCameraPanY(parsed.cameraPanY);
+      }
+      if (typeof parsed.showDebugPanel === "boolean") setShowDebugPanel(parsed.showDebugPanel);
       if (typeof parsed.selectedSlotId === "string" || parsed.selectedSlotId === null) setSelectedSlotId(parsed.selectedSlotId);
-      if (parsed.slotOffsets) setSlotOffsets(parsed.slotOffsets);
+      if (parsed.version >= BOARD_PREVIEW_STORAGE_VERSION && parsed.slotOffsets) setSlotOffsets(parsed.slotOffsets);
+      if (typeof parsed.selectedZoneId === "string" && BOARD_ZONES.some(zone => zone.id === parsed.selectedZoneId)) {
+        setSelectedZoneId(parsed.selectedZoneId);
+      }
+      if (parsed.zoneAdjustments) setZoneAdjustments(parsed.zoneAdjustments);
       if (typeof parsed.nudgeStep === "number") setNudgeStep(parsed.nudgeStep);
       if (typeof parsed.showAnchors === "boolean") setShowAnchors(parsed.showAnchors);
+      if (typeof parsed.showZoneRects === "boolean") setShowZoneRects(parsed.showZoneRects);
+      if (parsed.visibleSlotLayers && typeof parsed.visibleSlotLayers === "object") {
+        setVisibleSlotLayers({ ...DEFAULT_VISIBLE_SLOT_LAYERS, ...parsed.visibleSlotLayers });
+      }
       if (parsed.ownerFilter === "all" || parsed.ownerFilter === "player_1" || parsed.ownerFilter === "player_2") setOwnerFilter(parsed.ownerFilter);
       if (typeof parsed.showDiagnostics === "boolean") setShowDiagnostics(parsed.showDiagnostics);
       if (typeof parsed.integrationMode === "boolean") setIntegrationMode(defaultIntegrationMode || parsed.integrationMode);
@@ -206,11 +415,12 @@ export function BoardPreview3D({
       if (parsed.version >= BOARD_PREVIEW_STORAGE_VERSION && ACTION_DOCK_POSITIONS.includes(parsed.actionDockPosition as ActionDockPosition)) {
         setActionDockPosition(parsed.actionDockPosition as ActionDockPosition);
       }
+      if (typeof parsed.actionDockCollapsed === "boolean") setActionDockCollapsed(parsed.actionDockCollapsed);
 
       if (parsed.version < BOARD_PREVIEW_STORAGE_VERSION) {
         globalThis.localStorage?.setItem(
           storageKey,
-          JSON.stringify({ ...parsed, version: BOARD_PREVIEW_STORAGE_VERSION, showDiagnostics: false })
+          JSON.stringify({ ...parsed, version: BOARD_PREVIEW_STORAGE_VERSION, showDiagnostics: false, slotOffsets: {} })
         );
       }
     } catch {
@@ -224,30 +434,291 @@ export function BoardPreview3D({
     if (!hydrated) return;
     globalThis.localStorage?.setItem(
       storageKey,
-      JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, nudgeStep, showAnchors, ownerFilter, showDiagnostics, integrationMode, controlsDockPosition, actionDockPosition })
+      JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, cameraDefaultsVersion: BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, selectedZoneId, zoneAdjustments, nudgeStep, showAnchors, showZoneRects, visibleSlotLayers, ownerFilter, showDiagnostics, integrationMode, controlsDockPosition, actionDockPosition, actionDockCollapsed })
     );
-  }, [actionDockPosition, boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, controlsDockPosition, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, showAnchors, showDebugPanel, showDiagnostics, slotOffsets, storageKey, tiltDegrees, zoomScale]);
+  }, [actionDockCollapsed, actionDockPosition, boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, controlsDockPosition, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, selectedZoneId, showAnchors, showDebugPanel, showDiagnostics, showZoneRects, slotOffsets, storageKey, tiltDegrees, visibleSlotLayers, zoneAdjustments, zoomScale]);
 
   const slotById = useMemo(() => new Map(BOARD_SLOTS.map((slot) => [slot.id, slot])), []);
-  const focusedPlayerId = controlledPlayerId ?? match.turn.activePlayerId;
   const handCards = useMemo(() => {
     const player = match.players.find((item) => item.id === focusedPlayerId);
     return player?.hand ?? [];
   }, [focusedPlayerId, match.players]);
-  const legalTargetSlotIds = useMemo(() => {
-    if (!selectedHandCardId) return [] as string[];
-    const selectedCard = handCards.find(card => card.instanceId === selectedHandCardId);
-    if (!selectedCard) return [] as string[];
-    const definition = match.cardCatalog[selectedCard.cardId];
-    if (!definition) return [] as string[];
-    if (definition.cardType === "CREATURE") {
-      return [`${focusedPlayerId}-primary`];
+  const cardByInstanceId = useMemo(() => {
+    const cards = match.players.flatMap(player => [
+      ...player.hand,
+      ...player.deck,
+      ...player.cemetery,
+      ...player.field.limitedSummons,
+      ...player.field.magicSlots.filter(Boolean),
+      ...(player.field.primaryCreature ? [player.field.primaryCreature] : [])
+    ]);
+    return new Map(cards.map(card => [card.instanceId, card]));
+  }, [match.players]);
+  const inspectedHandCardId = hoveredHandCardId ?? selectedHandCardId;
+  const inspectedHandCard = inspectedHandCardId
+    ? handCards.find(card => card.instanceId === inspectedHandCardId) ?? null
+    : null;
+  const inspectedHandCreatureStats = inspectedHandCard ? getCreatureOverlayStats(match, inspectedHandCard) : null;
+  const selectedHandCard = selectedHandCardId
+    ? handCards.find(card => card.instanceId === selectedHandCardId) ?? null
+    : null;
+  const focusedPlayer = useMemo(
+    () => match.players.find((player) => player.id === focusedPlayerId) ?? null,
+    [focusedPlayerId, match.players]
+  );
+  const opponentPlayer = useMemo(
+    () => match.players.find((player) => player.id !== focusedPlayerId) ?? null,
+    [focusedPlayerId, match.players]
+  );
+  const opponentPlayerId: BoardPlayerId | null = opponentPlayer
+    ? opponentPlayer.id === "player_1" ? "player_1" : "player_2"
+    : null;
+  const canControlPlayer = (playerId: string) => !controlledPlayerId || controlledPlayerId === playerId;
+  const opponentHandIsRevealed = opponentPlayerId
+    ? Boolean(locallyRevealedHands[opponentPlayerId]) || revealedHandPlayerIds.includes(opponentPlayerId)
+    : false;
+  const opponentPromptRevealCards = opponentPlayer && match.pendingPrompt?.requestingPlayerId === opponentPlayer.id
+    ? match.pendingPrompt.revealedCards.map(card => ({
+      instanceId: card.cardInstanceId,
+      cardId: card.cardId,
+      ownerPlayerId: opponentPlayer.id,
+      controllerPlayerId: opponentPlayer.id,
+      zone: "HAND" as const
+    }))
+    : [];
+  const visibleOpponentHandCards = opponentPromptRevealCards.length > 0
+    ? opponentPromptRevealCards
+    : opponentHandIsRevealed
+      ? opponentPlayer?.hand ?? []
+      : [];
+  const occupiedSlotIds = useMemo(
+    () => new Set<string>(boardObjects.filter((object) => object.lane !== "hand").map((object) => object.slotId)),
+    [boardObjects]
+  );
+  const selectedSummonRequiredSacrifices =
+    selectedHandCard && isCreature(match, selectedHandCard)
+      ? getRequiredSacrificesForCard(match, selectedHandCard)
+      : 0;
+  const sacrificeCandidates = useMemo(() => {
+    if (!selectedHandCard || !focusedPlayer || !isCreature(match, selectedHandCard)) return [] as CardInstance[];
+    if (selectedSummonRequiredSacrifices <= 0) return [] as CardInstance[];
+    return getPrimarySummonSacrificeCandidates(match, focusedPlayer, selectedHandCard);
+  }, [focusedPlayer, match, selectedHandCard, selectedSummonRequiredSacrifices]);
+  const sacrificeCandidateIds = useMemo(
+    () => new Set(sacrificeCandidates.map(card => card.instanceId)),
+    [sacrificeCandidates]
+  );
+  const selectedSacrificeIds = selectedHandCardId
+    ? (selectedSacrificeIdsByCard[selectedHandCardId] ?? []).filter(id => sacrificeCandidateIds.has(id)).slice(0, selectedSummonRequiredSacrifices)
+    : [];
+  const selectedSacrificeIdSet = useMemo(() => new Set(selectedSacrificeIds), [selectedSacrificeIds]);
+  const sacrificeSelectionActive = Boolean(selectedHandCard && selectedSummonRequiredSacrifices > 0);
+  const sacrificeSelectionComplete = selectedSacrificeIds.length >= selectedSummonRequiredSacrifices;
+  const sacrificeDropSlotId = `${focusedPlayerId}-cemetery`;
+
+  const toggleSacrificeSelection = useCallback((cardInstanceId: string) => {
+    if (!selectedHandCardId || !sacrificeCandidateIds.has(cardInstanceId) || selectedSummonRequiredSacrifices <= 0) return;
+    setSelectedSacrificeIdsByCard(current => {
+      const currentIds = current[selectedHandCardId] ?? [];
+      const nextIds = currentIds.includes(cardInstanceId)
+        ? currentIds.filter(id => id !== cardInstanceId)
+        : [...currentIds, cardInstanceId].slice(0, selectedSummonRequiredSacrifices);
+      return {
+        ...current,
+        [selectedHandCardId]: nextIds
+      };
+    });
+  }, [sacrificeCandidateIds, selectedHandCardId, selectedSummonRequiredSacrifices]);
+
+  const getLegalTargetSlotIdsForCard = useCallback((cardInstanceId: string) => {
+    const selectedCard = handCards.find(card => card.instanceId === cardInstanceId);
+    if (!selectedCard || !focusedPlayer) return [] as string[];
+    const isMatchComplete = match.status === "COMPLETE";
+    const anyDiscardRequired = Boolean(match.setup.handDiscardRequiredForPlayerId);
+    const replacementRequiredForThisPlayer =
+      match.setup.primaryReplacementRequiredForPlayerId === focusedPlayer.id;
+    const limitedSummonPromotionRequiredForThisPlayer =
+      replacementRequiredForThisPlayer && focusedPlayer.field.limitedSummons.length > 0;
+    const canControlThisPlayer = !controlledPlayerId || controlledPlayerId === focusedPlayer.id;
+    const isActivePlayer = match.turn.activePlayerId === focusedPlayer.id;
+    const canPlayPrimaryNow =
+      !isMatchComplete &&
+      canControlThisPlayer &&
+      !match.pendingPrompt &&
+      !match.pendingChain &&
+      !anyDiscardRequired &&
+      !limitedSummonPromotionRequiredForThisPlayer &&
+      (replacementRequiredForThisPlayer ||
+        (isActivePlayer &&
+          match.turn.phase === "SUMMON_MAGIC" &&
+          !focusedPlayer.turnFlags.normalSummonUsed));
+    const canPlayMagicNow =
+      !isMatchComplete &&
+      canControlThisPlayer &&
+      isActivePlayer &&
+      !match.pendingPrompt &&
+      !match.pendingChain &&
+      !anyDiscardRequired &&
+      !match.setup.primaryReplacementRequiredForPlayerId &&
+      (match.turn.phase === "SUMMON_MAGIC" || match.turn.phase === "SECOND_MAGIC");
+
+    if (isCreature(match, selectedCard)) {
+      const requiredSacrifices = getRequiredSacrificesForCard(match, selectedCard);
+      const selectedSacrifices = selectedSacrificeIdsByCard[cardInstanceId] ?? [];
+      const hasEnoughSelectedSacrifices = selectedSacrifices.length >= requiredSacrifices;
+      return canPlayPrimaryNow && hasEnoughSelectedSacrifices && canSummonCreatureFromHand(match, focusedPlayer, selectedCard)
+        ? [`${focusedPlayerId}-primary`]
+        : [];
     }
-    if (definition.cardType === "MAGIC") {
-      return Array.from({ length: 5 }, (_, index) => `${focusedPlayerId}-magic-${index + 1}`);
+    if (isMagic(match, selectedCard)) {
+      return canPlayMagicNow
+        ? Array.from({ length: 5 }, (_, index) => `${focusedPlayerId}-magic-${index + 1}`)
+          .filter(slotId => !occupiedSlotIds.has(slotId))
+        : [];
     }
     return [] as string[];
-  }, [focusedPlayerId, handCards, match.cardCatalog, selectedHandCardId]);
+  }, [controlledPlayerId, focusedPlayer, focusedPlayerId, handCards, match, occupiedSlotIds, selectedSacrificeIdsByCard]);
+  const getVisualTargetSlotIdsForCard = useCallback((cardInstanceId: string) => {
+    const selectedCard = handCards.find(card => card.instanceId === cardInstanceId);
+    if (!selectedCard || !focusedPlayer) return [] as string[];
+    const isMatchComplete = match.status === "COMPLETE";
+    const anyDiscardRequired = Boolean(match.setup.handDiscardRequiredForPlayerId);
+    const replacementRequiredForThisPlayer =
+      match.setup.primaryReplacementRequiredForPlayerId === focusedPlayer.id;
+    const limitedSummonPromotionRequiredForThisPlayer =
+      replacementRequiredForThisPlayer && focusedPlayer.field.limitedSummons.length > 0;
+    const canControlThisPlayer = !controlledPlayerId || controlledPlayerId === focusedPlayer.id;
+    const isActivePlayer = match.turn.activePlayerId === focusedPlayer.id;
+    const canPlayPrimaryNow =
+      !isMatchComplete &&
+      canControlThisPlayer &&
+      !match.pendingPrompt &&
+      !match.pendingChain &&
+      !anyDiscardRequired &&
+      !limitedSummonPromotionRequiredForThisPlayer &&
+      (replacementRequiredForThisPlayer ||
+        (isActivePlayer &&
+          match.turn.phase === "SUMMON_MAGIC" &&
+          !focusedPlayer.turnFlags.normalSummonUsed));
+
+    if (isCreature(match, selectedCard) && canPlayPrimaryNow && canSummonCreatureFromHand(match, focusedPlayer, selectedCard)) {
+      return [`${focusedPlayerId}-primary`];
+    }
+
+    return getLegalTargetSlotIdsForCard(cardInstanceId);
+  }, [controlledPlayerId, focusedPlayer, focusedPlayerId, getLegalTargetSlotIdsForCard, handCards, match]);
+  const visualTargetSlotIds = useMemo(() => {
+    if (!selectedHandCardId) return [] as string[];
+    return getVisualTargetSlotIdsForCard(selectedHandCardId);
+  }, [getVisualTargetSlotIdsForCard, selectedHandCardId]);
+  const sacrificeTargetSlotIds = sacrificeSelectionActive ? [sacrificeDropSlotId] : [];
+  const sacrificeCandidatePieceIds = useMemo(() => {
+    if (!sacrificeCandidateIds.size) return [] as string[];
+    return boardObjects
+      .filter(object => object.cardInstanceId && sacrificeCandidateIds.has(object.cardInstanceId))
+      .map(object => object.id);
+  }, [boardObjects, sacrificeCandidateIds]);
+  const selectedEquipMagic = useMemo(() => {
+    if (!selectedEquipMagicCardId) return null;
+    const object = boardObjects.find(candidate => candidate.cardInstanceId === selectedEquipMagicCardId);
+    if (!object || object.lane !== "magic") return null;
+    const card = cardByInstanceId.get(selectedEquipMagicCardId);
+    if (!card || !isEquipMagic(match, card) || card.attachedToInstanceId) return null;
+    return { card, object };
+  }, [boardObjects, cardByInstanceId, match, selectedEquipMagicCardId]);
+  const canAttachSelectedEquipMagic = Boolean(
+    selectedEquipMagic &&
+    canControlPlayer(selectedEquipMagic.object.owner) &&
+    !match.pendingPrompt &&
+    !match.pendingChain &&
+    !match.pendingEffectTargetPrompt &&
+    !match.setup.handDiscardRequiredForPlayerId &&
+    !match.setup.primaryReplacementRequiredForPlayerId
+  );
+  const equipAttachTargetOptions = useMemo(() => {
+    if (!selectedEquipMagic || !canAttachSelectedEquipMagic) {
+      return [] as Array<{ pieceId: string; playerId: BoardPlayerId; creatureInstanceId: string; targetKind: AttachTargetKind }>;
+    }
+
+    return boardObjects.flatMap(object => {
+      if (!object.cardInstanceId || (object.lane !== "primary" && object.lane !== "limited")) return [];
+      return [{
+        pieceId: object.id,
+        playerId: object.owner,
+        creatureInstanceId: object.cardInstanceId,
+        targetKind: object.lane === "primary" ? "PRIMARY_CREATURE" as const : "LIMITED_SUMMON" as const
+      }];
+    });
+  }, [boardObjects, canAttachSelectedEquipMagic, selectedEquipMagic]);
+  const equipAttachTargetPieceIds = useMemo(
+    () => equipAttachTargetOptions.map(option => option.pieceId),
+    [equipAttachTargetOptions]
+  );
+  const equipAttachSourcePieceIds = selectedEquipMagic ? [selectedEquipMagic.object.id] : [];
+  const effectTargetBoardOptions = useMemo(() => {
+    const prompt = match.pendingEffectTargetPrompt;
+    if (!prompt) return [] as Array<{ optionId: string; pieceId?: string; slotId?: string }>;
+
+    return prompt.options.flatMap(option => {
+      if (!option.cardInstanceId) return [];
+      const object = boardObjects.find(candidate => candidate.cardInstanceId === option.cardInstanceId);
+      if (!object || !["primary", "limited", "magic"].includes(object.lane)) return [];
+      return [{
+        optionId: option.id,
+        pieceId: object.id,
+        slotId: object.slotId
+      }];
+    });
+  }, [boardObjects, match.pendingEffectTargetPrompt]);
+  const effectTargetSlotIds = useMemo(
+    () => [...new Set(effectTargetBoardOptions.map(option => option.slotId).filter((slotId): slotId is string => !!slotId))],
+    [effectTargetBoardOptions]
+  );
+  const effectTargetPieceIds = useMemo(
+    () => [...new Set(effectTargetBoardOptions.map(option => option.pieceId).filter((pieceId): pieceId is string => !!pieceId))],
+    [effectTargetBoardOptions]
+  );
+  const resolveBoardEffectTarget = (optionId: string) => {
+    const prompt = match.pendingEffectTargetPrompt;
+    if (!prompt) return;
+    onResolveEffectTarget?.(prompt.id, optionId);
+  };
+
+  useEffect(() => {
+    setSelectedSacrificeIdsByCard(current => {
+      const handIds = new Set(handCards.map(card => card.instanceId));
+      const candidateIds = new Set<string>();
+      for (const player of match.players) {
+        if (player.field.primaryCreature) candidateIds.add(player.field.primaryCreature.instanceId);
+        for (const card of player.hand) candidateIds.add(card.instanceId);
+      }
+
+      const next: Record<string, string[]> = {};
+      let changed = false;
+      for (const [cardId, sacrificeIds] of Object.entries(current)) {
+        if (!handIds.has(cardId)) {
+          changed = true;
+          continue;
+        }
+        const filtered = sacrificeIds.filter(id => candidateIds.has(id));
+        if (filtered.length !== sacrificeIds.length) changed = true;
+        if (filtered.length > 0) next[cardId] = filtered;
+      }
+
+      if (!changed && Object.keys(next).length === Object.keys(current).length) return current;
+      return next;
+    });
+  }, [handCards, match.players]);
+
+  useEffect(() => {
+    if (!selectedEquipMagicCardId) return;
+    const card = cardByInstanceId.get(selectedEquipMagicCardId);
+    const object = boardObjects.find(candidate => candidate.cardInstanceId === selectedEquipMagicCardId);
+    if (!card || !object || object.lane !== "magic" || !isEquipMagic(match, card) || card.attachedToInstanceId) {
+      setSelectedEquipMagicCardId(null);
+    }
+  }, [boardObjects, cardByInstanceId, match, selectedEquipMagicCardId]);
+
   const selectedBattlePiece = useMemo(() => {
     if (!selectedSlotId) return null;
     const piece = boardObjects.find(item => item.slotId === selectedSlotId && item.owner === focusedPlayerId);
@@ -267,7 +738,7 @@ export function BoardPreview3D({
   }, [statusMessage]);
 
   const nudgeSelectedSlot = (axis: "x" | "z", delta: number) => {
-    if (integrationMode || !selectedSlotId) return;
+    if (!selectedSlotId) return;
     setSlotOffsets((current) => {
       const previous = current[selectedSlotId] ?? { x: 0, z: 0 };
       return {
@@ -282,7 +753,7 @@ export function BoardPreview3D({
 
   const resetSlotOffsets = () => setSlotOffsets({});
   const resetSelectedSlotOffset = () => {
-    if (integrationMode || !selectedSlotId) return;
+    if (!selectedSlotId) return;
     setSlotOffsets((current) => {
       const next = { ...current };
       delete next[selectedSlotId];
@@ -291,21 +762,21 @@ export function BoardPreview3D({
   };
 
   const resetCamera = () => {
-    setTiltDegrees(60);
-    setZoomScale(presentation === "game" ? 1.18 : 1);
-    setHeightScale(1);
-    setBoardScaleX(1);
-    setBoardScaleZ(1);
-    setBoardOffsetX(0);
-    setBoardOffsetZ(0);
-    setCameraPanX(0);
-    setCameraPanY(0);
+    setTiltDegrees(DEFAULT_CAMERA_SETTINGS.tiltDegrees);
+    setZoomScale(DEFAULT_CAMERA_SETTINGS.zoomScale);
+    setHeightScale(DEFAULT_CAMERA_SETTINGS.heightScale);
+    setBoardScaleX(DEFAULT_CAMERA_SETTINGS.boardScaleX);
+    setBoardScaleZ(DEFAULT_CAMERA_SETTINGS.boardScaleZ);
+    setBoardOffsetX(DEFAULT_CAMERA_SETTINGS.boardOffsetX);
+    setBoardOffsetZ(DEFAULT_CAMERA_SETTINGS.boardOffsetZ);
+    setCameraPanX(DEFAULT_CAMERA_SETTINGS.cameraPanX);
+    setCameraPanY(DEFAULT_CAMERA_SETTINGS.cameraPanY);
   };
 
   const resetAllEditorState = () => {
-    if (integrationMode) return;
     resetCamera();
     setSlotOffsets({});
+    setZoneAdjustments({});
     setShowAnchors(true);
     setShowDebugPanel(true);
     setNudgeStep(1);
@@ -334,7 +805,6 @@ export function BoardPreview3D({
   };
 
   const applyLayoutDraft = () => {
-    if (integrationMode) return;
     try {
       const parsedResult = parseLayoutSnapshotJson(layoutDraft);
       if (parsedResult.ok === false) {
@@ -358,11 +828,31 @@ export function BoardPreview3D({
     }
   };
 
+  const shouldMirrorBoardForViewer = presentation === "game" && focusedPlayerId === "player_2";
+
+  const resolveBoardPoint = (xPercent: number, zPercent: number) => {
+    const orientedX = shouldMirrorBoardForViewer ? 100 - xPercent : xPercent;
+    const orientedZ = shouldMirrorBoardForViewer ? 100 - zPercent : zPercent;
+    return {
+      xPercent: Math.max(0, Math.min(100, 50 + (orientedX - 50) * boardScaleX + boardOffsetX)),
+      zPercent: Math.max(0, Math.min(100, 50 + (orientedZ - 50) * boardScaleZ + boardOffsetZ))
+    };
+  };
+
   const resolvePosition = (slotId: string, fallbackX: number, fallbackZ: number) => {
     const raw = resolveSlotPosition(slotId, slotOffsets, fallbackX, fallbackZ);
+    return resolveBoardPoint(raw.xPercent, raw.zPercent);
+  };
+
+  const resolveZoneRect = (zone: BoardZone): BoardZone => {
+    const adjustment = zoneAdjustments[zone.id] ?? EMPTY_ZONE_ADJUSTMENT;
+    const point = resolveBoardPoint(zone.xPercent + adjustment.x, zone.zPercent + adjustment.z);
     return {
-      xPercent: Math.max(0, Math.min(100, 50 + (raw.xPercent - 50) * boardScaleX + boardOffsetX)),
-      zPercent: Math.max(0, Math.min(100, 50 + (raw.zPercent - 50) * boardScaleZ + boardOffsetZ))
+      ...zone,
+      xPercent: point.xPercent,
+      zPercent: point.zPercent,
+      widthPercent: Math.max(2, Math.min(100, zone.widthPercent + adjustment.width)),
+      heightPercent: Math.max(2, Math.min(100, zone.heightPercent + adjustment.height))
     };
   };
 
@@ -372,6 +862,8 @@ export function BoardPreview3D({
   }));
 
   const selectedSlot = slotOccupancy.find(({ slot }) => slot.id === selectedSlotId) ?? null;
+  const selectedZone = BOARD_ZONES.find(zone => zone.id === selectedZoneId) ?? BOARD_ZONES[0]!;
+  const selectedZoneAdjustment = zoneAdjustments[selectedZone.id] ?? EMPTY_ZONE_ADJUSTMENT;
   const occupiedSlotCount = slotOccupancy.filter((entry) => Boolean(entry.occupant)).length;
   const selectedSlotIndex = selectedSlotId ? BOARD_SLOTS.findIndex((slot) => slot.id === selectedSlotId) : -1;
 
@@ -385,6 +877,12 @@ export function BoardPreview3D({
   };
 
   const selectSlot = (slotId: string, source: "mini-map" | "table" | "debug") => {
+    const effectTarget = effectTargetBoardOptions.find(option => option.slotId === slotId);
+    if (effectTarget) {
+      resolveBoardEffectTarget(effectTarget.optionId);
+      return;
+    }
+
     const intent = mapPointerGestureToIntent({ interaction: interactionContext, slotId });
     const command = resolveBoardIntentCommand(intent, boardObjects);
     onIntent?.(intent);
@@ -398,6 +896,61 @@ export function BoardPreview3D({
   };
 
   const selectPiece = (pieceId: string, source: "mini-map" | "table") => {
+    const effectTarget = effectTargetBoardOptions.find(option => option.pieceId === pieceId);
+    if (effectTarget) {
+      resolveBoardEffectTarget(effectTarget.optionId);
+      return;
+    }
+
+    const attachTarget = equipAttachTargetOptions.find(option => option.pieceId === pieceId);
+    if (selectedEquipMagic) {
+      if (attachTarget) {
+        if (!onAttachEquipMagicToCreature) {
+          setStatusMessage("Equip attachment is unavailable in this preview.");
+          return;
+        }
+        onAttachEquipMagicToCreature?.(
+          selectedEquipMagic.object.owner,
+          selectedEquipMagic.card.instanceId,
+          attachTarget.playerId,
+          attachTarget.creatureInstanceId,
+          attachTarget.targetKind
+        );
+        setStatusMessage("Attaching Equip Magic.");
+        setSelectedEquipMagicCardId(null);
+        return;
+      }
+
+      const clickedSource = selectedEquipMagic.object.id === pieceId;
+      if (clickedSource) {
+        setSelectedEquipMagicCardId(null);
+        setStatusMessage("Equip attachment canceled.");
+        return;
+      }
+    }
+
+    const piece = boardObjects.find(item => item.id === pieceId);
+    const pieceCard = piece?.cardInstanceId ? cardByInstanceId.get(piece.cardInstanceId) : null;
+    if (
+      piece?.lane === "magic" &&
+      pieceCard &&
+      isEquipMagic(match, pieceCard) &&
+      !pieceCard.attachedToInstanceId
+    ) {
+      if (!canControlPlayer(piece.owner)) {
+        setStatusMessage("You cannot attach that Equip Magic.");
+        return;
+      }
+      if (match.pendingPrompt || match.pendingChain || match.pendingEffectTargetPrompt || match.setup.handDiscardRequiredForPlayerId || match.setup.primaryReplacementRequiredForPlayerId) {
+        setStatusMessage("Resolve the current prompt before attaching Equip Magic.");
+        return;
+      }
+      setSelectedEquipMagicCardId(pieceCard.instanceId);
+      setStatusMessage("Select a creature on the 3D board to attach this Equip Magic.");
+      onPieceFocus?.({ pieceId, source });
+      return;
+    }
+
     const intent = mapPointerGestureToIntent({ interaction: interactionContext, pieceId });
     const command = resolveBoardIntentCommand(intent, boardObjects);
     onIntent?.(intent);
@@ -444,32 +997,86 @@ export function BoardPreview3D({
   };
 
   const safeResetSlotOffsets = () => {
-    if (integrationMode) return;
     resetSlotOffsets();
+  };
+
+  const adjustSelectedZone = (axis: keyof BoardZoneAdjustment, value: number) => {
+    if (!selectedZone) return;
+    setZoneAdjustments(current => ({
+      ...current,
+      [selectedZone.id]: {
+        ...(current[selectedZone.id] ?? EMPTY_ZONE_ADJUSTMENT),
+        [axis]: Number(value.toFixed(2))
+      }
+    }));
+  };
+
+  const resetSelectedZoneAdjustment = () => {
+    if (!selectedZone) return;
+    setZoneAdjustments(current => {
+      const next = { ...current };
+      delete next[selectedZone.id];
+      return next;
+    });
+  };
+
+  const resetZoneAdjustments = () => {
+    setZoneAdjustments({});
+  };
+  const setVisibleSlotLayer = (layer: keyof VisibleSlotLayers, value: boolean) => {
+    setVisibleSlotLayers(current => ({ ...current, [layer]: value }));
   };
 
   const emptySlotCount = slotOccupancy.length - occupiedSlotCount;
   const selectedOffset = selectedSlotId ? slotOffsets[selectedSlotId as BoardSlotId] ?? { x: 0, z: 0 } : { x: 0, z: 0 };
   const unresolvedBoardObjects = boardObjects.filter((object) => !slotById.has(object.slotId));
-  const filteredBoardObjects = ownerFilter === "all" ? boardObjects : boardObjects.filter((object) => object.owner === ownerFilter);
-  const cardByInstanceId = useMemo(() => {
-    const cards = match.players.flatMap(player => [
-      ...player.hand,
-      ...player.deck,
-      ...player.field.limitedSummons,
-      ...player.field.magicSlots.filter(Boolean),
-      ...(player.field.primaryCreature ? [player.field.primaryCreature] : [])
-    ]);
-    return new Map(cards.map(card => [card.instanceId, card]));
-  }, [match.players]);
+  const effectiveOwnerFilter = presentation === "game" ? "all" : ownerFilter;
+  const filteredBoardObjects = (effectiveOwnerFilter === "all" ? boardObjects : boardObjects.filter((object) => object.owner === effectiveOwnerFilter))
+    .filter(object => object.lane !== "hand");
+  const pendingRevealPrompt = match.pendingPrompt;
+  const boardDeckActions = match.players.filter(player => player.id === focusedPlayerId).map(player => {
+    const owner: BoardPlayerId = player.id === "player_1" ? "player_1" : "player_2";
+    const canControlThisPlayer = canControlPlayer(player.id);
+    const isActivePlayer = match.turn.activePlayerId === player.id;
+    const hasSummonableCreature = playerHasSummonableCreatureInHand(match, player);
+    const canRequestNoCreatureRedraw =
+      canControlThisPlayer &&
+      isActivePlayer &&
+      !pendingRevealPrompt &&
+      !hasSummonableCreature &&
+      match.turn.phase === "SUMMON_MAGIC";
+    const isApprovingReveal = pendingRevealPrompt?.approvingPlayerId === player.id && canControlThisPlayer;
+    const isRequestingReveal = pendingRevealPrompt?.requestingPlayerId === player.id;
+    const handIsLocallyRevealed = Boolean(locallyRevealedHands[owner]) || revealedHandPlayerIds.includes(owner);
+    const shouldShowHandControls =
+      deckHandControlsOwner === owner ||
+      handIsLocallyRevealed ||
+      canRequestNoCreatureRedraw ||
+      isApprovingReveal ||
+      isRequestingReveal;
+    return {
+      player,
+      owner,
+      canControlThisPlayer,
+      canAdvance: canControlThisPlayer && isActivePlayer && !pendingRevealPrompt,
+      canUndo: canControlThisPlayer && Boolean(onUndoLastAction),
+      canRequestNoCreatureRedraw,
+      isApprovingReveal,
+      isRequestingReveal,
+      handIsLocallyRevealed,
+      shouldShowHandControls
+    };
+  });
   const blockedReasonsBySlotId = useMemo<Record<string, string>>(() => {
     if (!selectedHandCardId) return {};
     const selectedCard = handCards.find(card => card.instanceId === selectedHandCardId);
     if (!selectedCard) return {};
     return Object.fromEntries(
-      BOARD_SLOTS.filter(slot => !legalTargetSlotIds.includes(slot.id)).map(slot => [slot.id, `Cannot play ${match.cardCatalog[selectedCard.cardId]?.name ?? "this card"} to ${slot.label}`])
+      BOARD_SLOTS
+        .filter(slot => !visualTargetSlotIds.includes(slot.id) && !sacrificeTargetSlotIds.includes(slot.id))
+        .map(slot => [slot.id, `Cannot play ${match.cardCatalog[selectedCard.cardId]?.name ?? "this card"} to ${slot.label}`])
     );
-  }, [handCards, legalTargetSlotIds, match.cardCatalog, selectedHandCardId]);
+  }, [handCards, match.cardCatalog, sacrificeTargetSlotIds, selectedHandCardId, visualTargetSlotIds]);
 
   const layoutDraftIsValid = (() => {
     if (!layoutDraft.trim()) return false;
@@ -500,7 +1107,7 @@ export function BoardPreview3D({
       event.preventDefault();
       return;
     }
-    if (integrationMode || !selectedSlotId) return;
+    if (!selectedSlotId) return;
     if (event.key === "ArrowLeft") nudgeSelectedSlot("x", -1);
     if (event.key === "ArrowRight") nudgeSelectedSlot("x", 1);
     if (event.key === "ArrowUp") nudgeSelectedSlot("z", -1);
@@ -511,9 +1118,6 @@ export function BoardPreview3D({
 
   const handleIntegrationModeChange = (value: boolean) => {
     setIntegrationMode(value);
-    if (value) {
-      setShowDebugPanel(false);
-    }
   };
 
   const setClampedZoomScale = (value: number) => {
@@ -577,19 +1181,27 @@ export function BoardPreview3D({
   return (
     <section className={`board-preview-3d board-preview-3d--${presentation}`} aria-label={presentation === "game" ? "Live 3D game board" : "Prototype 3D board space"} tabIndex={0} onKeyDown={handleKeyDown}>
       <header className="board-preview-3d__hud">
-        <h3>{presentation === "game" ? "3D game board" : "3D board iteration lab"}</h3>
-        {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
-        <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
-        <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
-        <p>Drag to pan | Wheel to zoom | WASD to move | +/- zoom | 0 reset</p>
-        {intentLabel ? <p>Intent: {intentLabel}</p> : null}
-        {commandLabel ? <p>Command: {commandLabel}</p> : null}
-        <div>
-          <button type="button" className="ghost" onClick={() => setControlsCollapsed(value => !value)}>{controlsCollapsed ? "Show HUD Controls" : "Hide HUD Controls"}</button>
-          <button type="button" className="ghost" onClick={cycleControlsDockPosition}>Move HUD Controls</button>
-          {actionDock ? <button type="button" className="ghost" onClick={cycleActionDockPosition}>Move Action Dock</button> : null}
-          <button type="button" className="ghost" onClick={() => setHudMode(mode => mode === "player" ? "debug" : "player")}>{hudMode === "player" ? "Debug HUD" : "Player HUD"}</button>
-        </div>
+        <details className="board-preview-3d__hud-tab">
+          <summary>{presentation === "game" ? "3D game board" : "3D board lab"}</summary>
+          <div className="board-preview-3d__hud-tab-panel">
+            {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
+            <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
+            <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
+            <p>Drag to pan | Wheel to zoom | WASD to move | +/- zoom | 0 reset</p>
+            {intentLabel ? <p>Intent: {intentLabel}</p> : null}
+            {commandLabel ? <p>Command: {commandLabel}</p> : null}
+            <div>
+              <button type="button" className="ghost" onClick={() => setControlsCollapsed(value => !value)}>{controlsCollapsed ? "Show HUD Controls" : "Hide HUD Controls"}</button>
+              <button type="button" className="ghost" onClick={cycleControlsDockPosition}>Move HUD Controls</button>
+              {actionDock ? <button type="button" className="ghost" onClick={() => setActionDockCollapsed(value => !value)}>{actionDockCollapsed ? "Show Action Dock" : "Hide Action Dock"}</button> : null}
+              {actionDock && !actionDockCollapsed ? <button type="button" className="ghost" onClick={cycleActionDockPosition}>Move Action Dock</button> : null}
+              <button type="button" className="ghost" onClick={() => {
+                setShowDebugPanel(true);
+              }}>Show Debug HUD</button>
+              <button type="button" className="ghost" onClick={() => setShowDebugPanel(false)}>Hide Debug HUD</button>
+            </div>
+          </div>
+        </details>
       </header>
       {!controlsCollapsed ? (
         <aside className={`board-preview-3d__floating-controls board-preview-3d__floating-controls--${controlsDockPosition}`}>
@@ -631,20 +1243,24 @@ export function BoardPreview3D({
           />
         </aside>
       ) : null}
-      {integrationMode ? <p className="board-preview-3d__status">Integration mode enabled: layout editing actions are read-only.</p> : null}
+      {integrationMode ? <p className="board-preview-3d__status">Integration mode enabled: gameplay dispatch wiring is active.</p> : null}
 
       {statusMessage ? <p className="board-preview-3d__status">{statusMessage}</p> : null}
       {lastCopiedLabel ? <p className="board-preview-3d__status">Last copied: {lastCopiedLabel}</p> : null}
 
       <div className="board-preview-3d__layout">
-        <BoardPreview3DMiniMap
-          showAnchors={showAnchors}
-          selectedSlotId={selectedSlotId}
-          filteredBoardObjects={filteredBoardObjects}
-          resolveSlotPosition={resolvePosition}
-          onSelectSlot={(slotId) => selectSlot(slotId, "mini-map")}
-          onSelectPiece={(pieceId) => selectPiece(pieceId, "mini-map")}
-        />
+        {presentation === "lab" ? (
+          <BoardPreview3DMiniMap
+            showAnchors={showAnchors}
+            selectedSlotId={selectedSlotId}
+            filteredBoardObjects={filteredBoardObjects}
+            resolveSlotPosition={resolvePosition}
+            resolveBoardPoint={resolveBoardPoint}
+            resolveZoneRect={resolveZoneRect}
+            onSelectSlot={(slotId) => selectSlot(slotId, "mini-map")}
+            onSelectPiece={(pieceId) => selectPiece(pieceId, "mini-map")}
+          />
+        ) : null}
         <section
           className={`board-preview-3d__board-column${isCameraDragging ? " is-panning" : ""}`}
           onPointerDown={handleBoardPointerDown}
@@ -660,55 +1276,265 @@ export function BoardPreview3D({
             tiltDegrees={tiltDegrees}
             heightScale={heightScale}
             showAnchors={showAnchors}
+            showZoneRects={showZoneRects}
+            visibleSlotLayers={visibleSlotLayers}
             selectedSlotId={selectedSlotId}
             filteredBoardObjects={filteredBoardObjects}
             resolveSlotPosition={resolvePosition}
+            resolveBoardPoint={resolveBoardPoint}
+            resolveZoneRect={resolveZoneRect}
             onSelectSlot={(slotId) => selectSlot(slotId, "table")}
             onDeckSlotClick={onDeckSlotClick}
             onPlayHandCardToSlot={(slotId) => {
               if (!selectedHandCardId) return;
-              onPlayHandCardToSlot?.(selectedHandCardId, slotId);
+              if (!getLegalTargetSlotIdsForCard(selectedHandCardId).includes(slotId)) {
+                setStatusMessage("That card cannot be played to that 3D board slot right now.");
+                return;
+              }
+              onPlayHandCardToSlot?.(selectedHandCardId, slotId, selectedSacrificeIds);
+              setSelectedSacrificeIdsByCard(current => {
+                const next = { ...current };
+                delete next[selectedHandCardId];
+                return next;
+              });
               setSelectedHandCardId(null);
             }}
             onDropHandCardToSlot={(slotId, cardInstanceId) => {
-              onPlayHandCardToSlot?.(cardInstanceId, slotId);
+              if (!getLegalTargetSlotIdsForCard(cardInstanceId).includes(slotId)) {
+                setStatusMessage("That card cannot be dropped there right now.");
+                return;
+              }
+              const sacrificeIds = (selectedSacrificeIdsByCard[cardInstanceId] ?? []).filter(id => sacrificeCandidateIds.has(id));
+              onPlayHandCardToSlot?.(cardInstanceId, slotId, sacrificeIds);
+              setSelectedSacrificeIdsByCard(current => {
+                const next = { ...current };
+                delete next[cardInstanceId];
+                return next;
+              });
               setSelectedHandCardId(null);
             }}
             onSelectPiece={(pieceId) => selectPiece(pieceId, "table")}
-            highlightedSlotIds={[...animationHighlights.slotIds, ...legalTargetSlotIds, ...battleTargetSlotIds]}
-            highlightedPieceIds={animationHighlights.pieceIds}
+            onSelectHandCard={(cardInstanceId) => setSelectedHandCardId(current => current === cardInstanceId ? null : cardInstanceId)}
+            onHandCardDragStart={(cardInstanceId) => setSelectedHandCardId(cardInstanceId)}
+            onToggleSacrificeCard={toggleSacrificeSelection}
+            sacrificeCandidateCardIds={[...sacrificeCandidateIds]}
+            selectedSacrificeCardIds={selectedSacrificeIds}
+            onDeckStackContextMenu={(owner) => {
+              if (owner !== focusedPlayerId) return;
+              setDeckActionsExpanded(true);
+              setDeckHandControlsOwner(owner);
+            }}
+            draggableHandCardIds={handCards.map(card => card.instanceId)}
+            highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...sacrificeTargetSlotIds, ...battleTargetSlotIds, ...effectTargetSlotIds]}
+            highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...effectTargetPieceIds, ...equipAttachSourcePieceIds, ...equipAttachTargetPieceIds]}
             activeEventType={activeEvent?.type ?? null}
             match={match}
             cardByInstanceId={cardByInstanceId}
             blockedReasonsBySlotId={blockedReasonsBySlotId}
           />
-          {actionDock ? (
+          <OpeningRollBoardControl
+            match={match}
+            controlledPlayerId={controlledPlayerId}
+            onOpeningRoll={onOpeningRoll}
+          />
+          {boardDeckActions.map(action => (
+            <div
+              key={`${action.owner}-deck-actions`}
+              className={`board-preview-3d__deck-actions board-preview-3d__deck-actions--${action.owner}${action.shouldShowHandControls ? " has-hand-controls" : ""}${deckActionsExpanded ? " is-expanded" : " is-collapsed"}`}
+            >
+              <button
+                type="button"
+                className="board-preview-3d__deck-actions-menu"
+                onClick={() => {
+                  setDeckActionsExpanded(current => !current);
+                  setDeckHandControlsOwner(action.owner);
+                }}
+                aria-expanded={deckActionsExpanded}
+              >
+                <span aria-hidden="true"><i /><i /><i /></span>
+                Menu
+              </button>
+              <div className="board-preview-3d__deck-actions-panel">
+                <button type="button" disabled={!action.canAdvance || !onAdvancePhase} onClick={onAdvancePhase}>
+                  Advance
+                </button>
+                <button type="button" disabled={!action.canUndo} onClick={onUndoLastAction}>
+                  Undo
+                </button>
+                {action.shouldShowHandControls ? (
+                  <>
+                    <button
+                      type="button"
+                      className="is-hand-control"
+                      onClick={() => {
+                        const nextRevealed = !action.handIsLocallyRevealed;
+                        setLocallyRevealedHands(current => ({
+                          ...current,
+                          [action.owner]: nextRevealed
+                        }));
+                        onSetHandRevealed?.(action.owner, nextRevealed);
+                      }}
+                      title="Toggle this hand face-up on the 3D board for manual reveal effects."
+                    >
+                      {action.handIsLocallyRevealed ? "Hide Hand" : "Reveal Hand"}
+                    </button>
+                    {action.isApprovingReveal ? (
+                      <button type="button" className="is-emphasis is-hand-control" onClick={onApproveRevealRedraw} disabled={!onApproveRevealRedraw}>
+                        Accept Hand
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`${action.canRequestNoCreatureRedraw ? "is-emphasis " : ""}is-hand-control`}
+                        disabled={!action.canRequestNoCreatureRedraw}
+                        onClick={() => {
+                          setLocallyRevealedHands(current => ({
+                            ...current,
+                            [action.owner]: true
+                          }));
+                          onRequestNoCreatureRedraw?.(action.owner);
+                        }}
+                        title="Reveal this hand and request a no-creature redraw."
+                      >
+                        {action.isRequestingReveal ? "Mulligan Pending" : "Mulligan Reveal"}
+                      </button>
+                    )}
+                  </>
+                ) : null}
+              </div>
+            </div>
+          ))}
+          {actionDock && !actionDockCollapsed ? (
             <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
               <div className="board-preview-3d__floating-title">
                 <strong>Action Dock</strong>
                 <button type="button" className="ghost" onClick={cycleActionDockPosition}>Move</button>
+                <button type="button" className="ghost" onClick={() => setActionDockCollapsed(true)}>Hide</button>
               </div>
               {actionDock}
             </div>
           ) : null}
           {handCards.length > 0 ? (
             <section className="board-preview-3d__hand-rail" aria-label="3D board hand rail">
-              {handCards.map(card => (
-                <button
-                  key={card.instanceId}
-                  type="button"
-                  draggable
-                  className={selectedHandCardId === card.instanceId ? "is-selected" : undefined}
-                  onClick={() => setSelectedHandCardId(current => current === card.instanceId ? null : card.instanceId)}
-                  onDragStart={(event) => {
-                    event.dataTransfer.setData("application/x-ward-board-hand-card", card.instanceId);
-                    event.dataTransfer.effectAllowed = "move";
-                  }}
-                >
-                  <MatchCardImage match={match} card={card} className="board-preview-3d__hand-card-art" />
-                  <span>{match.cardCatalog[card.cardId]?.name ?? card.cardId}</span>
-                </button>
-              ))}
+              <div className="board-preview-3d__hand-rail-tab">Hand {handCards.length}</div>
+              <div className="board-preview-3d__hand-rail-cards">
+                {handCards.map(card => (
+                  <button
+                    key={card.instanceId}
+                    type="button"
+                    draggable
+                    className={[
+                      selectedHandCardId === card.instanceId ? "is-selected" : "",
+                      sacrificeCandidateIds.has(card.instanceId) ? "is-sacrifice-candidate" : "",
+                      selectedSacrificeIdSet.has(card.instanceId) ? "is-selected-sacrifice" : ""
+                    ].filter(Boolean).join(" ") || undefined}
+                    onClick={() => {
+                      if (sacrificeCandidateIds.has(card.instanceId) && selectedHandCardId !== card.instanceId) {
+                        toggleSacrificeSelection(card.instanceId);
+                        return;
+                      }
+                      setSelectedHandCardId(current => current === card.instanceId ? null : card.instanceId);
+                    }}
+                    onFocus={() => setHoveredHandCardId(card.instanceId)}
+                    onMouseEnter={() => setHoveredHandCardId(card.instanceId)}
+                    onBlur={() => setHoveredHandCardId(current => current === card.instanceId ? null : current)}
+                    onMouseLeave={() => setHoveredHandCardId(current => current === card.instanceId ? null : current)}
+                    onDragStart={(event) => {
+                      if (!sacrificeCandidateIds.has(card.instanceId)) {
+                        setSelectedHandCardId(card.instanceId);
+                      }
+                      event.dataTransfer.setData("application/x-ward-board-hand-card", card.instanceId);
+                      event.dataTransfer.effectAllowed = "move";
+                    }}
+                  >
+                    <MatchCardImage match={match} card={card} className="board-preview-3d__hand-card-art" />
+                    <span>{match.cardCatalog[card.cardId]?.name ?? card.cardId}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {inspectedHandCard ? (
+            <aside className="board-preview-3d__card-inspector board-preview-3d__card-inspector--hand" aria-label="Hand card preview">
+              <div className="board-preview-3d__card-inspector-header">
+                <strong>{getCardName(match, inspectedHandCard)}</strong>
+                <span>{isCreature(match, inspectedHandCard) ? "Creature" : isMagic(match, inspectedHandCard) ? getMagicLine(match, inspectedHandCard) : "Card"}</span>
+                {selectedHandCardId === inspectedHandCard.instanceId && sacrificeSelectionActive ? (
+                  <small className={sacrificeSelectionComplete ? "is-complete" : undefined}>
+                    Sacrifice {selectedSacrificeIds.length}/{selectedSummonRequiredSacrifices}
+                  </small>
+                ) : null}
+              </div>
+              <MatchCardImage match={match} card={inspectedHandCard} className="board-preview-3d__card-inspector-art" />
+              {inspectedHandCreatureStats ? (
+                <div className="board-preview-3d__card-inspector-stat-wall">
+                  <div className={`board-preview-3d__card-inspector-hp board-preview-3d__card-inspector-hp--${inspectedHandCreatureStats.hpTone}`}>
+                    <span>HP</span>
+                    <strong>{inspectedHandCreatureStats.currentHp}</strong>
+                    <small>/ {inspectedHandCreatureStats.baseHp}</small>
+                  </div>
+                  <span>AL <strong>{inspectedHandCreatureStats.armorLevel}</strong></span>
+                  <span>SPD <strong>{inspectedHandCreatureStats.speed}</strong></span>
+                  <span>ATK <strong>{inspectedHandCreatureStats.attackDice}D6</strong></span>
+                  <span>MOD <strong>{inspectedHandCreatureStats.modifier}</strong></span>
+                </div>
+              ) : null}
+              {selectedHandCardId === inspectedHandCard.instanceId && sacrificeSelectionActive ? (
+                <div className="board-preview-3d__sacrifice-tracker">
+                  <div className="board-preview-3d__sacrifice-tracker-title">
+                    <span>Sacrifices</span>
+                    <strong>{selectedSacrificeIds.length}/{selectedSummonRequiredSacrifices}</strong>
+                  </div>
+                  <div className="board-preview-3d__sacrifice-meter" aria-hidden="true">
+                    {Array.from({ length: selectedSummonRequiredSacrifices }, (_, index) => (
+                      <i key={index} className={index < selectedSacrificeIds.length ? "is-filled" : undefined} />
+                    ))}
+                  </div>
+                  <div className="board-preview-3d__sacrifice-candidates">
+                    {sacrificeCandidates.map(candidate => {
+                      const selected = selectedSacrificeIdSet.has(candidate.instanceId);
+                      return (
+                        <button
+                          type="button"
+                          key={candidate.instanceId}
+                          className={selected ? "is-selected" : undefined}
+                          onClick={() => toggleSacrificeSelection(candidate.instanceId)}
+                        >
+                          <span>{getCardName(match, candidate)}</span>
+                          <small>{candidate.zone === "PRIMARY_CREATURE" ? "Primary" : "Hand"}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p>Drag valid sacrifices to your cemetery or tap them here, then play this creature to Primary.</p>
+                </div>
+              ) : null}
+              <div className="board-preview-3d__card-inspector-copy">
+                {isCreature(match, inspectedHandCard) ? <span>{getCreatureStatsLine(match, inspectedHandCard)}</span> : null}
+                {isMagic(match, inspectedHandCard) ? <span>{getMagicLine(match, inspectedHandCard)}</span> : null}
+                {getCardText(match, inspectedHandCard) ? <p>{getCardText(match, inspectedHandCard)}</p> : null}
+              </div>
+            </aside>
+          ) : null}
+          {opponentPlayer && opponentPlayer.hand.length > 0 ? (
+            <section className="board-preview-3d__hand-rail board-preview-3d__hand-rail--opponent" aria-label={`${opponentPlayer.displayName} ${visibleOpponentHandCards.length > 0 ? "revealed" : "hidden"} hand`}>
+              <div className="board-preview-3d__hand-rail-tab">
+                Opponent Hand {opponentPlayer.hand.length}{visibleOpponentHandCards.length > 0 ? " Revealed" : ""}
+              </div>
+              <div className="board-preview-3d__hand-rail-cards" aria-hidden={visibleOpponentHandCards.length === 0 ? "true" : undefined}>
+                {visibleOpponentHandCards.length > 0
+                  ? visibleOpponentHandCards.slice(0, 10).map(card => (
+                    <div className="board-preview-3d__revealed-hand-card" key={card.instanceId}>
+                      <MatchCardImage match={match} card={card} className="board-preview-3d__hand-card-art" />
+                      <span>{match.cardCatalog[card.cardId]?.name ?? card.cardId}</span>
+                    </div>
+                  ))
+                  : opponentPlayer.hand.slice(0, 10).map((card, index) => (
+                    <div className="board-preview-3d__hidden-hand-card" key={`${card.instanceId}-${index}`}>
+                      WARD
+                    </div>
+                  ))}
+              </div>
             </section>
           ) : null}
           {selectedBattlePiece ? (
@@ -720,18 +1546,31 @@ export function BoardPreview3D({
             </section>
           ) : null}
         </section>
-        {showDebugPanel && hudMode === "debug" ? (
+        {showDebugPanel ? (
           <aside className="board-preview-3d__debug-drawer">
             <BoardPreview3DDebugPanel
               show={showDebugPanel}
+              showZoneRects={showZoneRects}
+              setShowZoneRects={setShowZoneRects}
+              showAnchors={showAnchors}
+              setShowAnchors={setShowAnchors}
+              visibleSlotLayers={visibleSlotLayers}
+              setVisibleSlotLayer={setVisibleSlotLayer}
               selectedSlot={selectedSlot}
               selectedSlotId={selectedSlotId}
               selectedSlotIndex={selectedSlotIndex}
               slotCount={BOARD_SLOTS.length}
               selectedOffset={selectedOffset}
+              selectedZoneId={selectedZone.id}
+              selectedZone={selectedZone}
+              selectedZoneAdjustment={selectedZoneAdjustment}
               nudgeStep={nudgeStep}
               setNudgeStep={setNudgeStep}
               onNudge={nudgeSelectedSlot}
+              onSelectZone={setSelectedZoneId}
+              onZoneAdjust={adjustSelectedZone}
+              onResetSelectedZone={resetSelectedZoneAdjustment}
+              onResetZoneAdjustments={resetZoneAdjustments}
               onSelectRelative={selectRelativeSlot}
               onCopySelected={() => void copySelectedSlotSnapshot()}
               onResetCamera={resetCamera}
@@ -745,7 +1584,7 @@ export function BoardPreview3D({
               onApplyLayout={applyLayoutDraft}
               slotOccupancy={slotOccupancy}
               onSelectSlot={(slotId) => selectSlot(slotId, "debug")}
-              readOnly={integrationMode}
+              readOnly={false}
             />
           </aside>
         ) : null}

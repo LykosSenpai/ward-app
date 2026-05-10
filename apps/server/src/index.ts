@@ -18,6 +18,7 @@ import {
   applyManualDamageToPrimaryCreature,
   applyManualHealToPrimaryCreature,
   applyManualMagicDamageToPrimaryCreature,
+  applyManualMagicDrawCards,
   applyManualMagicHealToPrimaryCreature,
   applyManualMagicStatModifierToPrimaryCreature,
   approveNoCreatureRedrawReveal,
@@ -50,6 +51,7 @@ import {
   getEffectRuntimeSupport,
   promoteLimitedSummonToPrimary,
   requestNoCreatureRedrawReveal,
+  rollOpeningTurnOrder,
   rollPendingEffectRoll,
   rollManualBattleDamage,
   rollManualBattleHit,
@@ -773,6 +775,12 @@ function createLlmBulkDeckTestMatch(args: {
   match.turn.currentTurnIndex = 0;
   match.turn.phase = "SUMMON_MAGIC";
   match.turn.firstTurnCycleComplete = true;
+  match.setup.openingRoll = {
+    status: "COMPLETE",
+    round: 1,
+    rolls: {},
+    winnerPlayerId: "player_1"
+  };
   match.setup.decksShuffled = true;
   match.setup.primaryReplacementRequiredForPlayerId = undefined;
   match.setup.handDiscardRequiredForPlayerId = undefined;
@@ -1065,6 +1073,12 @@ function prepareEffectTestMatchAfterOpeningHands(match: MatchState): void {
   const hasPreparedOpeningHands = match.players.some(player => player.hand.length > 0);
   if (!hasPreparedOpeningHands) return;
 
+  match.setup.openingRoll = {
+    status: "COMPLETE",
+    round: 1,
+    rolls: {},
+    winnerPlayerId: match.turn.activePlayerId
+  };
   match.setup.decksShuffled = true;
   match.turn.phase = "SUMMON_MAGIC";
 
@@ -1684,6 +1698,24 @@ io.on("connection", async socket => {
   });
 
   socket.on(
+    "match:rollOpeningTurnOrder",
+    (data: { matchId: string; playerId: string }) => {
+      try {
+        const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
+        const updatedMatch = rollOpeningTurnOrder(match, data.playerId);
+
+        activeMatches.set(data.matchId, updatedMatch);
+        emitMatchState(updatedMatch);
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
     "match:shuffleDeck",
     (data: { matchId: string; playerId: string }) => {
       try {
@@ -1706,6 +1738,26 @@ io.on("connection", async socket => {
       const match = getPlayableMatchOrThrow(matchId);
       requireSocketCanControlActivePlayer(socket, match);
       const updatedMatch = drawForActivePlayer(match);
+
+      activeMatches.set(matchId, updatedMatch);
+      emitMatchState(updatedMatch);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("match:drawActivePlayerAndAdvance", (matchId: string) => {
+    try {
+      const match = getPlayableMatchOrThrow(matchId);
+      requireSocketCanControlActivePlayer(socket, match);
+      const drawnMatch = drawForActivePlayer(match);
+      const updatedMatch =
+        drawnMatch.turn.phase === "DRAW" &&
+        !drawnMatch.setup.handDiscardRequiredForPlayerId
+          ? advancePhase(drawnMatch)
+          : drawnMatch;
 
       activeMatches.set(matchId, updatedMatch);
       emitMatchState(updatedMatch);
@@ -1819,6 +1871,32 @@ io.on("connection", async socket => {
 
         activeMatches.set(data.matchId, updatedMatch);
         emitMatchState(updatedMatch);
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "match:setHandRevealed",
+    (data: { matchId: string; playerId: string; revealed: boolean }) => {
+      try {
+        const match = getPlayableMatchOrThrow(data.matchId, { snapshotBeforeAction: false });
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
+        const revealedIds = new Set(match.setup.revealedHandPlayerIds ?? []);
+
+        if (data.revealed) {
+          revealedIds.add(data.playerId);
+        } else {
+          revealedIds.delete(data.playerId);
+        }
+
+        match.setup.revealedHandPlayerIds = [...revealedIds];
+
+        activeMatches.set(data.matchId, match);
+        emitMatchState(match);
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -2929,6 +3007,28 @@ io.on("connection", async socket => {
   );
 
   socket.on(
+    "match:manualMagicDrawCards",
+    (data: { matchId: string; effectId: string; targetPlayerId: string }) => {
+      try {
+        const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.targetPlayerId);
+        const updatedMatch = applyManualMagicDrawCards(
+          match,
+          data.effectId,
+          data.targetPlayerId
+        );
+
+        activeMatches.set(data.matchId, updatedMatch);
+        emitMatchState(updatedMatch);
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
     "dev:saveCardLimit",
     (data: {
       packIds?: string[];
@@ -3205,6 +3305,12 @@ io.on("connection", async socket => {
           effectId: data.plan.effect?.effectId
         });
 
+        match.setup.openingRoll = {
+          status: "COMPLETE",
+          round: 1,
+          rolls: {},
+          winnerPlayerId: match.turn.activePlayerId
+        };
         match.setup.decksShuffled = true;
         match = applyLlmPlanToScenarioMatch(match, data.plan);
 

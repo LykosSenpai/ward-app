@@ -1,9 +1,10 @@
 import type { AppMatchState } from "../clientTypes";
 import { buildBoardObjects } from "./boardPreview3dAdapter";
 import type { BoardInteractionContext, BoardRenderCard, BoardRenderEvent, BoardRenderModel } from "./boardRenderContracts";
+import type { BoardPlayerId } from "./boardPreview3dTypes";
 import { getAdvanceBlockReason, getBattleBlockReason, getMatchStatus } from "../gameViewHelpers";
 
-function resolveOwner(playerId: string): "player_1" | "player_2" {
+function resolveOwner(playerId: string): BoardPlayerId {
   return playerId === "player_1" ? "player_1" : "player_2";
 }
 
@@ -70,7 +71,11 @@ function buildRenderCards(match: AppMatchState): BoardRenderCard[] {
   });
 }
 
-export function buildBoardRenderModel(match: AppMatchState): BoardRenderModel {
+type BuildBoardRenderModelOptions = {
+  revealHandsForPlayerId?: BoardPlayerId | "all" | null;
+};
+
+export function buildBoardRenderModel(match: AppMatchState, options: BuildBoardRenderModelOptions = {}): BoardRenderModel {
   const lastEvent = match.eventLog.at(-1);
   return {
     matchId: match.matchId,
@@ -78,7 +83,7 @@ export function buildBoardRenderModel(match: AppMatchState): BoardRenderModel {
     activePlayerId: match.turn.activePlayerId,
     phase: match.turn.phase,
     cards: buildRenderCards(match),
-    boardObjects: buildBoardObjects(match),
+    boardObjects: buildBoardObjects(match, { revealHandsForPlayerId: options.revealHandsForPlayerId }),
     pending: {
       battle: Boolean(match.pendingBattle),
       chain: Boolean(match.pendingChain),

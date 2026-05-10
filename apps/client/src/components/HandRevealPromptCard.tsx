@@ -1,5 +1,16 @@
+import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
-import { getPlayerName } from "../gameViewHelpers";
+import {
+  getCardName,
+  getCardText,
+  getCreatureStatsLine,
+  getMagicLine,
+  getPlayerName,
+  getRequiredSacrificesForCard,
+  isCreature,
+  isMagic
+} from "../gameViewHelpers";
+import { MatchCardImage } from "./MatchCardImage";
 
 type HandRevealPromptCardProps = {
   match: AppMatchState;
@@ -13,6 +24,7 @@ export function HandRevealPromptCard({ match, controlledPlayerId, onApprove }: H
   }
 
   const canApprove = !controlledPlayerId || controlledPlayerId === match.pendingPrompt.approvingPlayerId;
+  const revealedPlayerId = match.pendingPrompt.requestingPlayerId;
 
   return (
     <section className="card prompt-card">
@@ -29,12 +41,41 @@ export function HandRevealPromptCard({ match, controlledPlayerId, onApprove }: H
       </p>
 
       <div className="revealed-hand">
-        {match.pendingPrompt.revealedCards.map(card => (
-          <div className="mini-card" key={card.cardInstanceId}>
-            <strong>{card.name}</strong>
-            <span>{card.cardType}</span>
-          </div>
-        ))}
+        {match.pendingPrompt.revealedCards.map(card => {
+          const cardInstance: CardInstance = {
+            instanceId: card.cardInstanceId,
+            cardId: card.cardId,
+            ownerPlayerId: revealedPlayerId,
+            controllerPlayerId: revealedPlayerId,
+            zone: "HAND"
+          };
+          return (
+            <div className="mini-card revealed-hand-card" key={card.cardInstanceId}>
+              <MatchCardImage match={match} card={cardInstance} />
+              <div className="card-hover-preview revealed-hand-hover-preview" aria-hidden="true">
+                <div className="card-hover-preview-art">
+                  <MatchCardImage match={match} card={cardInstance} />
+                </div>
+                <div className="card-hover-preview-copy">
+                  <strong>{getCardName(match, cardInstance)}</strong>
+                  <span>{match.cardCatalog[card.cardId]?.cardType}</span>
+                  {isCreature(match, cardInstance) && (
+                    <>
+                      <span>{getCreatureStatsLine(match, cardInstance)}</span>
+                      <span>Required Sacrifices: {getRequiredSacrificesForCard(match, cardInstance)}</span>
+                    </>
+                  )}
+                  {isMagic(match, cardInstance) && (
+                    <>
+                      <span>{getMagicLine(match, cardInstance)}</span>
+                      <span>{getCardText(match, cardInstance)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="actions">

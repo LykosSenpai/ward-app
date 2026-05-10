@@ -343,6 +343,61 @@ function normalizeEventLog(match: MatchState): void {
   }));
 }
 
+function normalizeOpeningRoll(match: MatchState): MatchState["setup"]["openingRoll"] {
+  const playerIds = asArray<PlayerState>(match.players).map(player => player.id).filter(Boolean);
+  const rawOpeningRoll = match.setup?.openingRoll;
+
+  if (rawOpeningRoll) {
+    const rolls: Record<string, number | undefined> = {};
+    for (const playerId of playerIds) {
+      const value = rawOpeningRoll.rolls?.[playerId];
+      rolls[playerId] = typeof value === "number" && Number.isFinite(value) ? value : undefined;
+    }
+
+    const lastRolls =
+      rawOpeningRoll.lastRolls && Object.keys(rawOpeningRoll.lastRolls).length > 0
+        ? Object.fromEntries(
+            playerIds
+              .map(playerId => [playerId, rawOpeningRoll.lastRolls?.[playerId]])
+              .filter((entry): entry is [string, number] => typeof entry[1] === "number" && Number.isFinite(entry[1]))
+          )
+        : undefined;
+
+    return {
+      status: rawOpeningRoll.status === "COMPLETE" ? "COMPLETE" : "AWAITING_ROLL",
+      round: Math.max(1, Math.floor(Number(rawOpeningRoll.round ?? 1))),
+      rolls,
+      ...(lastRolls ? { lastRolls } : {}),
+      winnerPlayerId: rawOpeningRoll.winnerPlayerId
+    };
+  }
+
+  const firstDraws = match.setup?.firstTurnDrawsByPlayer ?? {};
+  const noOpeningCardsDrawn =
+    asArray<PlayerState>(match.players).every(player => player.hand.length === 0) &&
+    playerIds.every(playerId => !firstDraws[playerId]);
+  const appearsToBeFreshOpening =
+    match.status !== "COMPLETE" &&
+    noOpeningCardsDrawn &&
+    Number(match.turn?.turnNumber ?? 1) === 1 &&
+    (match.turn?.phase ?? "DRAW") === "DRAW";
+
+  if (appearsToBeFreshOpening) {
+    return {
+      status: "AWAITING_ROLL",
+      round: 1,
+      rolls: Object.fromEntries(playerIds.map(playerId => [playerId, undefined]))
+    };
+  }
+
+  return {
+    status: "COMPLETE",
+    round: 1,
+    rolls: {},
+    winnerPlayerId: match.turn?.activePlayerId ?? playerIds[0]
+  };
+}
+
 export function normalizeMatch(match: MatchState): MatchState {
   match.status = match.status ?? "ACTIVE";
   match.rulesetIds = asArray<string>(match.rulesetIds);
@@ -355,9 +410,11 @@ export function normalizeMatch(match: MatchState): MatchState {
   match.setup = {
     decksShuffled: Boolean(match.setup?.decksShuffled),
     firstTurnDrawsByPlayer: match.setup?.firstTurnDrawsByPlayer ?? {},
+    openingRoll: normalizeOpeningRoll(match),
     primaryReplacementRequiredForPlayerId:
       match.setup?.primaryReplacementRequiredForPlayerId,
     handDiscardRequiredForPlayerId: match.setup?.handDiscardRequiredForPlayerId,
+    revealedHandPlayerIds: asArray<string>(match.setup?.revealedHandPlayerIds),
     deckValidation: match.setup?.deckValidation ?? {}
   };
 

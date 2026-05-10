@@ -54,9 +54,9 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
         <button type="button" onClick={() => applyPreset("neutral")}>Neutral</button>
         <button type="button" onClick={() => applyPreset("cinematic")}>Cinematic</button>
         <button type="button" className="ghost" onClick={() => applyPreset("neutral")}>Reset</button>
-        <button type="button" className="ghost" disabled={props.integrationMode} onClick={() => props.setShowDebugPanel(!props.showDebugPanel)}>{props.showDebugPanel ? "Hide Debug" : "Show Debug"}</button>
+        <button type="button" className="ghost" onClick={() => props.setShowDebugPanel(!props.showDebugPanel)}>{props.showDebugPanel ? "Hide Debug" : "Show Debug"}</button>
         <button type="button" className="ghost" onClick={() => props.setShowAnchors(!props.showAnchors)}>{props.showAnchors ? "Hide Anchors" : "Show Anchors"}</button>
-        <button type="button" className="ghost" disabled={props.integrationMode} onClick={props.onResetAll}>Reset All</button>
+        <button type="button" className="ghost" onClick={props.onResetAll}>Reset All</button>
         <select value={props.ownerFilter} onChange={(event) => props.setOwnerFilter(event.target.value as "all" | "player_1" | "player_2")}>
           <option value="all">All Pieces</option>
           <option value="player_1">Player 1 Pieces</option>
@@ -73,7 +73,7 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
       <div className="board-preview-3d__controls" aria-label="3D camera controls">
         <label>
           Tilt
-          <input type="range" min={35} max={72} value={props.tiltDegrees} onChange={(event) => props.setTiltDegrees(Number(event.target.value))} />
+          <input type="range" min={0} max={72} value={props.tiltDegrees} onChange={(event) => props.setTiltDegrees(Number(event.target.value))} />
           <span>{props.tiltDegrees}°</span>
         </label>
         <label>
@@ -123,7 +123,7 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
 
       </div>
       <p className="board-preview-3d__status">
-        Shortcuts: drag pans camera | wheel zooms | WASD moves camera | +/- zoom | 0 resets camera | Arrow keys nudge selected slot {props.integrationMode ? "(slot nudging disabled in Integration Mode)" : ""}
+        Shortcuts: drag pans camera | wheel zooms | WASD moves camera | +/- zoom | 0 resets camera | Arrow keys nudge selected slot
 
       </p>
     </>

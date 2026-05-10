@@ -1,4 +1,4 @@
-import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS } from "../boardPreview3dLayout";
+import { BOARD_SLOTS, BOARD_ZONES, ZONE_ANCHORS, type BoardZone } from "../boardPreview3dLayout";
 
 import type { BoardObject } from "../boardPreview3dAdapter";
 
@@ -7,29 +7,36 @@ type Props = {
   selectedSlotId: string | null;
   filteredBoardObjects: BoardObject[];
   resolveSlotPosition: (slotId: string, fallbackX: number, fallbackZ: number) => { xPercent: number; zPercent: number };
+  resolveBoardPoint: (xPercent: number, zPercent: number) => { xPercent: number; zPercent: number };
+  resolveZoneRect: (zone: BoardZone) => BoardZone;
   onSelectSlot: (slotId: string) => void;
   onSelectPiece?: (pieceId: string) => void;
 };
 
-export function BoardPreview3DMiniMap({ showAnchors, selectedSlotId, filteredBoardObjects, resolveSlotPosition, onSelectSlot, onSelectPiece }: Props) {
+export function BoardPreview3DMiniMap({ showAnchors, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onSelectPiece }: Props) {
   return (
     <aside className="board-preview-3d__mini" aria-label="Condensed 2D board map">
       <div className="board-preview-3d__mini-grid" aria-hidden="true" />
-      {BOARD_ZONES.map((zone) => (
+      {BOARD_ZONES.map((zone) => {
+        const rect = resolveZoneRect(zone);
+        return (
           <div key={zone.id} className="board-preview-3d__zone" style={{
-            left: `${zone.xPercent}%`,
-            top: `${zone.zPercent}%`,
-            width: `${zone.widthPercent}%`,
-            height: `${zone.heightPercent}%`,
-            transform: `translate(-50%, -50%) rotate(${zone.rotationDeg ?? 0}deg)`
-          }}><span>{zone.label}</span></div>
-        ))}
-        {showAnchors ? ZONE_ANCHORS.map((zone) => (
-
-        <div key={`mini-zone-${zone.id}`} className="board-preview-3d__mini-zone" style={{ left: `${zone.xPercent}%`, top: `${zone.zPercent}%` }}>
-          {zone.label}
-        </div>
-      )) : null}
+            left: `${rect.xPercent}%`,
+            top: `${rect.zPercent}%`,
+            width: `${rect.widthPercent}%`,
+            height: `${rect.heightPercent}%`,
+            transform: `translate(-50%, -50%) rotate(${rect.rotationDeg ?? 0}deg)`
+          }}><span>{rect.label}</span></div>
+        );
+      })}
+      {showAnchors ? ZONE_ANCHORS.map((zone) => {
+        const point = resolveBoardPoint(zone.xPercent, zone.zPercent);
+        return (
+          <div key={`mini-zone-${zone.id}`} className="board-preview-3d__mini-zone" style={{ left: `${point.xPercent}%`, top: `${point.zPercent}%` }}>
+            {zone.label}
+          </div>
+        );
+      }) : null}
       {BOARD_SLOTS.map((slot) => (
         <div
           key={`mini-slot-${slot.id}`}

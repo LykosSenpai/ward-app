@@ -95,6 +95,12 @@ export function createEffectTestScenarioMatch(options: {
   // Effect scenarios are deterministic dev fixtures. Treat decks as already
   // shuffled so the Play Table can draw/advance without requiring a separate
   // setup step that interrupts LLM direct testing.
+  match.setup.openingRoll = {
+    status: "COMPLETE",
+    round: 1,
+    rolls: {},
+    winnerPlayerId: match.turn.activePlayerId
+  };
   match.setup.decksShuffled = true;
 
   const player1 = match.players[0];

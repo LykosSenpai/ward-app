@@ -19,14 +19,15 @@
     "check:board-3d-multiplayer-smoke": "tsx scripts/board3dMultiplayerMatrixSmoke.ts"
   },
   "dependencies": {
-    "@ward/shared": "workspace:*",
     "@vitejs/plugin-react": "latest",
-    "socket.io-client": "^4.7.0",
-    "zod": "^3.23.0",
-    "vite": "latest",
-    "typescript": "^5.0.0",
+    "@ward/shared": "workspace:*",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "socket.io-client": "^4.7.0",
+    "three": "^0.184.0",
+    "typescript": "^5.0.0",
+    "vite": "latest",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@types/react": "latest",

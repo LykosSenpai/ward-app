@@ -55,10 +55,32 @@ function getRuntimeEffectRows(match: AppMatchState): RuntimeEffectRow[] {
   return rows;
 }
 
+function getOpeningRollViewState(match: AppMatchState) {
+  if (match.setup.openingRoll) return match.setup.openingRoll;
+
+  const noOpeningCardsDrawn =
+    match.players.every(player => player.hand.length === 0) &&
+    match.players.every(player => !match.setup.firstTurnDrawsByPlayer[player.id]);
+  const appearsToBeFreshOpening =
+    match.status !== "COMPLETE" &&
+    noOpeningCardsDrawn &&
+    match.turn.turnNumber === 1 &&
+    match.turn.phase === "DRAW";
+
+  if (!appearsToBeFreshOpening) return null;
+
+  return {
+    status: "AWAITING_ROLL" as const,
+    round: 1,
+    rolls: Object.fromEntries(match.players.map(player => [player.id, undefined])) as Record<string, number | undefined>
+  };
+}
+
 type MatchStatePanelProps = {
   match: AppMatchState;
   advanceBlockReason: string;
   controlledPlayerId?: string;
+  onOpeningRoll: (playerId: string) => void;
   onShuffleAllDecks: () => void;
   onUndoLastAction: () => void;
   onDrawActivePlayer: () => void;
@@ -70,6 +92,7 @@ export function MatchStatePanel({
   match,
   advanceBlockReason,
   controlledPlayerId,
+  onOpeningRoll,
   onShuffleAllDecks,
   onUndoLastAction,
   onDrawActivePlayer,
@@ -78,6 +101,17 @@ export function MatchStatePanel({
 }: MatchStatePanelProps) {
   const runtimeEffectRows = getRuntimeEffectRows(match);
   const canControlActiveTurn = !controlledPlayerId || controlledPlayerId === match.turn.activePlayerId;
+  const openingRoll = getOpeningRollViewState(match);
+  const openingRollComplete = !openingRoll || openingRoll.status === "COMPLETE";
+  const controlledPlayer = controlledPlayerId ? match.players.find(player => player.id === controlledPlayerId) : null;
+  const rollPlayer = controlledPlayer ?? match.players.find(player => openingRoll?.rolls[player.id] === undefined) ?? match.players[0];
+  const canRollOpening =
+    getMatchStatus(match) !== "COMPLETE" &&
+    Boolean(openingRoll) &&
+    !openingRollComplete &&
+    Boolean(rollPlayer) &&
+    (!controlledPlayerId || controlledPlayerId === rollPlayer.id) &&
+    openingRoll?.rolls[rollPlayer.id] === undefined;
 
   return (
     <section className="card">
@@ -161,6 +195,17 @@ export function MatchStatePanel({
         </div>
 
         <div>
+          <span className="label">Opening Low Roll</span>
+          <strong>
+            {openingRoll
+              ? openingRollComplete
+                ? `Complete (${openingRoll.winnerPlayerId ?? match.turn.activePlayerId} first)`
+                : `Round ${openingRoll.round}`
+              : "Complete"}
+          </strong>
+        </div>
+
+        <div>
           <span className="label">Player 1 First Draw</span>
           <strong>{match.setup.firstTurnDrawsByPlayer.player_1 ? "Done" : "Not Done"}</strong>
         </div>
@@ -196,10 +241,17 @@ export function MatchStatePanel({
 
       <div className="actions">
         <button
-          onClick={onShuffleAllDecks}
-          disabled={!canControlActiveTurn || match.players.some(player => player.hand.length > 0) || !!match.pendingPrompt}
+          onClick={() => rollPlayer && onOpeningRoll(rollPlayer.id)}
+          disabled={!canRollOpening}
         >
-          Shuffle Both Decks
+          Roll For First Turn
+        </button>
+
+        <button
+          onClick={onShuffleAllDecks}
+          disabled={match.setup.decksShuffled || !openingRollComplete || !canControlActiveTurn || match.players.some(player => player.hand.length > 0) || !!match.pendingPrompt}
+        >
+          {match.setup.decksShuffled ? "Decks Shuffled" : "Shuffle Both Decks"}
         </button>
 
         <button
@@ -214,6 +266,7 @@ export function MatchStatePanel({
           disabled={
             getMatchStatus(match) === "COMPLETE" ||
             !canControlActiveTurn ||
+            !openingRollComplete ||
             !match.setup.decksShuffled ||
             !!match.pendingPrompt ||
             !!match.pendingChain ||

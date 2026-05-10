@@ -481,8 +481,16 @@ export type DeckValidationResult = {
 export type MatchSetupState = {
   decksShuffled: boolean;
   firstTurnDrawsByPlayer: Record<string, boolean>;
+  openingRoll?: {
+    status: "AWAITING_ROLL" | "COMPLETE";
+    round: number;
+    rolls: Record<string, number | undefined>;
+    lastRolls?: Record<string, number>;
+    winnerPlayerId?: string;
+  };
   primaryReplacementRequiredForPlayerId?: string;
   handDiscardRequiredForPlayerId?: string;
+  revealedHandPlayerIds?: string[];
   summonResponseWindow?: {
     playerId: string;
     creatureInstanceId: string;

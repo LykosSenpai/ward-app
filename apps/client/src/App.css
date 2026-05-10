@@ -7575,16 +7575,16 @@ button:disabled:hover {
 }
 
 .card-hover-preview {
-  background: rgba(2, 6, 23, 0.96);
-  border: 1px solid rgba(250, 204, 21, 0.5);
+  background: transparent;
+  border: 0;
   border-radius: 8px;
-  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.52);
+  box-shadow: none;
   color: #f8fafc;
   display: grid;
-  gap: 10px;
+  gap: 7px;
   left: 50%;
   opacity: 0;
-  padding: 10px;
+  padding: 0;
   pointer-events: none;
   position: absolute;
   top: 50%;
@@ -7593,7 +7593,7 @@ button:disabled:hover {
     opacity 120ms ease,
     transform 120ms ease;
   visibility: hidden;
-  width: clamp(210px, 18vw, 270px);
+  width: clamp(270px, 22vw, 360px);
   z-index: 80;
 }
 
@@ -7604,33 +7604,77 @@ button:disabled:hover {
   visibility: visible;
 }
 
-.card-hover-preview-art {
+.revealed-hand {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  overflow: visible;
+  padding: 4px 0;
+}
+
+.revealed-hand-card {
+  margin-bottom: 0;
+  padding: 5px;
+  position: relative;
+  width: clamp(88px, 8vw, 118px);
+}
+
+.revealed-hand-card .match-card-art {
   aspect-ratio: 5 / 7;
   border-radius: 6px;
   overflow: hidden;
 }
 
+.revealed-hand-card:hover .card-hover-preview {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  visibility: visible;
+}
+
+.revealed-hand-hover-preview {
+  width: clamp(270px, 22vw, 360px);
+}
+
+.card-hover-preview-art {
+  aspect-ratio: 5 / 7;
+  border-radius: 6px;
+  border: 1px solid rgba(250, 204, 21, 0.62);
+  box-shadow:
+    0 0 0 2px rgba(250, 204, 21, 0.12),
+    0 20px 52px rgba(0, 0, 0, 0.58),
+    0 0 26px rgba(250, 204, 21, 0.22);
+  overflow: hidden;
+}
+
 .card-hover-preview .match-card-art img {
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .card-hover-preview-copy {
+  background: rgba(2, 6, 23, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 7px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
   display: grid;
   gap: 5px;
   min-width: 0;
+  padding: 8px 9px;
 }
 
 .card-hover-preview-copy strong {
   color: #facc15;
-  font-size: 0.9rem;
+  font-size: 0.98rem;
   line-height: 1.1;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
 }
 
 .card-hover-preview-copy span {
-  color: #e2e8f0;
-  font-size: 0.68rem;
-  line-height: 1.2;
+  color: #f1f5f9;
+  font-size: 0.75rem;
+  line-height: 1.28;
   overflow-wrap: anywhere;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
 }
 
 .card-hover-preview-stats {
@@ -8112,7 +8156,7 @@ button:disabled:hover {
 }
 
 .match-workspace-board .card-hover-preview {
-  width: clamp(200px, 17vw, 260px);
+  width: clamp(260px, 19vw, 340px);
 }
 
 .match-workspace-board .board-hand-strip .card-hover-preview {

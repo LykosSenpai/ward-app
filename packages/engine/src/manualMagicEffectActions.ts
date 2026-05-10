@@ -10,6 +10,57 @@ import {
 } from "./actionGuards.js";
 import { sourceMagicIsCurrentlyOnField } from "./actionCards.js";
 
+function isManualDrawEffect(actionType?: string): boolean {
+  const normalized = String(actionType ?? "").trim().toUpperCase();
+  return normalized === "DRAW_CARDS" || normalized === "DRAW_CARDS_VARIABLE";
+}
+
+function parseManualDrawCount(effect: {
+  actionText?: string;
+  effectValue?: string;
+  text?: string;
+}): number {
+  const text = [effect.effectValue, effect.actionText, effect.text]
+    .filter(Boolean)
+    .join(" ");
+  const numericMatch = text.match(/draw\s+(\d+)/i) ?? text.match(/\b(\d+)\s+cards?\b/i);
+  const wordMatch = text.match(/draw\s+(one|two|three|four|five|six|seven|eight|nine|ten)\b/i);
+  const wordCounts: Record<string, number> = {
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10
+  };
+  const amount = numericMatch
+    ? Number(numericMatch[1])
+    : wordMatch
+      ? wordCounts[wordMatch[1].toLowerCase()]
+      : 1;
+
+  return Number.isInteger(amount) && amount > 0 ? amount : 1;
+}
+
+function drawCardsIntoHand(state: MatchState, playerId: string, count: number): number {
+  const player = getPlayer(state, playerId);
+  let drawn = 0;
+
+  for (let index = 0; index < count; index += 1) {
+    const card = player.deck.shift();
+    if (!card) break;
+    card.zone = "HAND";
+    player.hand.push(card);
+    drawn += 1;
+  }
+
+  return drawn;
+}
+
 export function getManualEffectOrThrow(state: MatchState, effectId: string) {
   const effect = state.manualEffectQueue.find(item => item.id === effectId);
 
@@ -45,6 +96,54 @@ export function completeManualMagicEffect(
     effectId,
     sourceCardName: effect.sourceCardName
   });
+
+  return nextState;
+}
+
+export function applyManualMagicDrawCards(
+  state: MatchState,
+  effectId: string,
+  targetPlayerId: string
+): MatchState {
+  if (state.pendingPrompt) {
+    throw new Error("Resolve the pending prompt before applying Magic draw effects.");
+  }
+
+  ensureNoHandDiscardRequired(state);
+  ensureNoOpenChain(state);
+
+  const nextState = cloneState(state);
+  const effect = getManualEffectOrThrow(nextState, effectId);
+
+  if (!isManualDrawEffect(effect.actionType)) {
+    throw new Error("This manual effect is not a draw effect.");
+  }
+
+  const drawCount = parseManualDrawCount(effect);
+  const drawn = drawCardsIntoHand(nextState, targetPlayerId, drawCount);
+  const targetPlayer = getPlayer(nextState, targetPlayerId);
+
+  effect.completed = true;
+
+  addEvent(nextState, "MANUAL_MAGIC_DRAW_CARDS_APPLIED", effect.controllerPlayerId, {
+    effectId,
+    sourceCardName: effect.sourceCardName,
+    targetPlayerId,
+    requestedDraw: drawCount,
+    actualDrawn: drawn,
+    deckRemaining: targetPlayer.deck.length,
+    handSize: targetPlayer.hand.length
+  });
+
+  if (targetPlayer.hand.length > 8) {
+    nextState.setup.handDiscardRequiredForPlayerId = targetPlayer.id;
+
+    addEvent(nextState, "HAND_SIZE_DISCARD_REQUIRED", targetPlayer.id, {
+      handSize: targetPlayer.hand.length,
+      requiredHandSize: 8,
+      cardsToDiscard: targetPlayer.hand.length - 8
+    });
+  }
 
   return nextState;
 }
