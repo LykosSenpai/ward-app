@@ -40,10 +40,88 @@ assert.equal(model.sequenceNumber, 7);
 
 const events = translateGameEventsToBoardRenderEvents(mockMatch);
 assert.equal(events.length, 1);
-assert.equal(events[0].type, "CARD_MOVED_ZONE");
+assert.equal(events[0].type, "CARD_DRAWN");
+assert.equal(events[0].cardInstanceId, "c-7");
+assert.deepEqual(events[0].fromZoneRef, { playerId: "player_1", zone: "DECK" });
+assert.deepEqual(events[0].toZoneRef, { playerId: "player_1", zone: "HAND" });
 assert.equal(events[0].visualTargets.slotIds[0], "player_1-magic-1");
 assert.equal(events[0].visualTargets.cardInstanceIds[0], "c-7");
 assert.deepEqual(translateGameEventsToBoardRenderEvents(mockMatch), events);
+
+const semanticEventMatch = {
+  ...mockMatch,
+  eventLog: [
+    {
+      sequenceNumber: 8,
+      type: "AUTO_EFFECT_DESTROY_MAGIC_CARD_RESOLVED",
+      playerId: "player_1",
+      payload: {
+        promptId: "prompt-destroy",
+        effectId: "effect-destroy",
+        actionType: "DESTROY_MAGIC",
+        destroyedCardInstanceId: "magic-destroyed",
+        fieldOwnerPlayerId: "player_2",
+        cardOwnerPlayerId: "player_2"
+      }
+    },
+    {
+      sequenceNumber: 9,
+      type: "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED",
+      playerId: "player_1",
+      payload: {
+        promptId: "prompt-summon",
+        effectId: "effect-summon",
+        actionType: "SUMMON_LIMITED_CREATURE_FROM_CEMETERY",
+        summonedCardInstanceId: "limited-1",
+        sourcePlayerId: "player_1",
+        sourceZone: "CEMETERY",
+        controllerPlayerId: "player_1"
+      }
+    },
+    {
+      sequenceNumber: 10,
+      type: "EQUIP_MAGIC_ATTACHED",
+      playerId: "player_1",
+      payload: {
+        magicCardInstanceId: "equip-1",
+        targetPlayerId: "player_1",
+        targetCreatureInstanceId: "creature-1"
+      }
+    },
+    {
+      sequenceNumber: 11,
+      type: "EFFECT_PROGRAM_TARGET_PROMPT_RESOLVED",
+      playerId: "player_1",
+      payload: {
+        promptId: "prompt-resolved",
+        effectId: "effect-resolved",
+        actionType: "DAMAGE",
+        targetCreatureInstanceId: "target-1"
+      }
+    },
+    {
+      sequenceNumber: 12,
+      type: "MAGIC_CHAIN_RESOLVED",
+      playerId: "player_1",
+      payload: { chainId: "chain-1" }
+    }
+  ]
+} as unknown as AppMatchState;
+
+const semanticEvents = translateGameEventsToBoardRenderEvents(semanticEventMatch);
+assert.equal(semanticEvents[0].type, "CARD_DESTROYED");
+assert.equal(semanticEvents[0].cardInstanceId, "magic-destroyed");
+assert.deepEqual(semanticEvents[0].fromZoneRef, { playerId: "player_2", zone: "MAGIC_SLOT" });
+assert.deepEqual(semanticEvents[0].toZoneRef, { playerId: "player_2", zone: "CEMETERY" });
+assert.equal(semanticEvents[1].type, "CREATURE_SUMMONED_LIMITED");
+assert.deepEqual(semanticEvents[1].fromZoneRef, { playerId: "player_1", zone: "CEMETERY" });
+assert.deepEqual(semanticEvents[1].toZoneRef, { playerId: "player_1", zone: "LIMITED_SUMMON" });
+assert.equal(semanticEvents[2].type, "MAGIC_ATTACHED");
+assert.equal(semanticEvents[2].cardInstanceId, "equip-1");
+assert.equal(semanticEvents[2].targetCardInstanceId, "creature-1");
+assert.equal(semanticEvents[3].type, "PROMPT_RESOLVED");
+assert.equal(semanticEvents[3].promptId, "prompt-resolved");
+assert.equal(semanticEvents[4].type, "CHAIN_RESOLVED");
 
 const interaction = buildBoardInteractionContext(mockMatch);
 assert.equal(interaction.activePlayerId, "player_1");

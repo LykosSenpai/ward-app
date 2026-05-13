@@ -11,6 +11,17 @@ const DEFAULT_PROFILE: BoardAnimationProfile = {
 };
 
 const PROFILES: Record<BoardRenderEventType, BoardAnimationProfile> = {
+  CARD_MOVED: { durationMs: 300, label: "move" },
+  CARD_DRAWN: { durationMs: 300, label: "draw" },
+  CARD_DISCARDED: { durationMs: 300, label: "discard" },
+  CARD_DESTROYED: { durationMs: 320, label: "destroy" },
+  CARD_RETURNED_TO_HAND: { durationMs: 300, label: "return-hand" },
+  CARD_RETURNED_TO_DECK: { durationMs: 300, label: "return-deck" },
+  CREATURE_SUMMONED_PRIMARY: { durationMs: 340, label: "summon-primary" },
+  CREATURE_SUMMONED_LIMITED: { durationMs: 340, label: "summon-limited" },
+  MAGIC_ATTACHED: { durationMs: 320, label: "attach" },
+  PROMPT_OPENED: { durationMs: 200, label: "prompt" },
+  PROMPT_RESOLVED: { durationMs: 180, label: "prompt-resolve" },
   CARD_MOVED_ZONE: { durationMs: 300, label: "move" },
   BATTLE_STARTED: { durationMs: 420, label: "battle-start" },
   BATTLE_DAMAGE_APPLIED: { durationMs: 2400, label: "damage" },

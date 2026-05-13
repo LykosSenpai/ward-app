@@ -1,4 +1,5 @@
 import type { AppMatchState } from "../clientTypes";
+import type { BoardZoneRef } from "@ward/shared";
 import type { BoardObject } from "./boardPreview3dAdapter";
 import type { BoardPlayerId } from "./boardPreview3dTypes";
 
@@ -32,6 +33,17 @@ export type BoardRenderModel = {
 };
 
 export type BoardRenderEventType =
+  | "CARD_MOVED"
+  | "CARD_DRAWN"
+  | "CARD_DISCARDED"
+  | "CARD_DESTROYED"
+  | "CARD_RETURNED_TO_HAND"
+  | "CARD_RETURNED_TO_DECK"
+  | "CREATURE_SUMMONED_PRIMARY"
+  | "CREATURE_SUMMONED_LIMITED"
+  | "MAGIC_ATTACHED"
+  | "PROMPT_OPENED"
+  | "PROMPT_RESOLVED"
   | "CARD_MOVED_ZONE"
   | "BATTLE_STARTED"
   | "BATTLE_DAMAGE_APPLIED"
@@ -46,6 +58,17 @@ export type BoardRenderEvent = {
   matchId: string;
   type: BoardRenderEventType;
   rawType: string;
+  playerId?: string;
+  cardInstanceId?: string;
+  sourceCardInstanceId?: string;
+  sourceCardId?: string;
+  sourceEffectId?: string;
+  actionType?: string;
+  reason?: string;
+  fromZoneRef?: BoardZoneRef;
+  toZoneRef?: BoardZoneRef;
+  promptId?: string;
+  targetCardInstanceId?: string;
   payload: AppMatchState["eventLog"][number]["payload"];
   visualTargets: {
     slotIds: string[];
