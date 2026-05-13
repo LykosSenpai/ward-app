@@ -21,7 +21,11 @@ type EffectCoveragePageProps = {
   onCreateScenarioMatch: (row: EffectCoverageRow) => void;
   onSaveTestStatus: (
     row: EffectCoverageRow,
-    status: EffectRuntimeTestStatus,
+    statuses: {
+      engineStatus: EffectRuntimeTestStatus;
+      boardAffordanceStatus: EffectRuntimeTestStatus;
+      boardAnimationStatus: EffectRuntimeTestStatus;
+    },
     issueType: EffectRuntimeIssueType,
     notes: string
   ) => void;
@@ -34,9 +38,8 @@ const TEST_STATUSES: Array<{ value: EffectRuntimeTestStatus; label: string }> = 
   { value: "WORKING", label: "Working" },
   { value: "PARTIAL", label: "Partially Working" },
   { value: "BROKEN", label: "Broken" },
-  { value: "BLOCKED_RUNTIME", label: "Blocked by Runtime" },
-  { value: "BLOCKED_DATA", label: "Blocked by Card Data" },
-  { value: "NEEDS_RULES_REVIEW", label: "Needs Rules Review" }
+  { value: "BLOCKED", label: "Blocked" },
+  { value: "MANUAL", label: "Manual" }
 ];
 
 const ISSUE_TYPES: Array<{ value: EffectRuntimeIssueType; label: string }> = [
@@ -88,10 +91,14 @@ function getRowKey(row: EffectCoverageRow): string {
 }
 
 type DraftStatus = {
-  status: EffectRuntimeTestStatus;
+  engineStatus: EffectRuntimeTestStatus;
+  boardAffordanceStatus: EffectRuntimeTestStatus;
+  boardAnimationStatus: EffectRuntimeTestStatus;
   issueType: EffectRuntimeIssueType;
   notes: string;
 };
+
+type BrokenBehaviorFilter = "ALL" | "ENGINE_BROKEN" | "AFFORDANCE_BROKEN" | "ANIMATION_BROKEN";
 
 export function EffectCoveragePage({
   cardPacks,
@@ -108,6 +115,7 @@ export function EffectCoveragePage({
 }: EffectCoveragePageProps) {
   const [supportFilter, setSupportFilter] = useState<RuntimeSupportLevel | "ALL">("ALL");
   const [testStatusFilter, setTestStatusFilter] = useState<EffectRuntimeTestStatus | "ALL">("ALL");
+  const [brokenBehaviorFilter, setBrokenBehaviorFilter] = useState<BrokenBehaviorFilter>("ALL");
   const [searchText, setSearchText] = useState("");
   const [triggerFilter, setTriggerFilter] = useState("ALL");
   const [actionFilter, setActionFilter] = useState("ALL");
@@ -148,28 +156,38 @@ export function EffectCoveragePage({
 
   const testSummary = useMemo(() => {
     return TEST_STATUSES.reduce<Record<EffectRuntimeTestStatus, number>>((result, item) => {
-      result[item.value] = rows.filter(row => (row.testStatus ?? "UNTESTED") === item.value).length;
+      result[item.value] = rows.filter(row => (row.engineStatus ?? row.testStatus ?? "UNTESTED") === item.value).length;
       return result;
     }, {
       UNTESTED: 0,
       WORKING: 0,
       PARTIAL: 0,
       BROKEN: 0,
-      BLOCKED_RUNTIME: 0,
-      BLOCKED_DATA: 0,
-      NEEDS_RULES_REVIEW: 0
+      BLOCKED: 0,
+      MANUAL: 0
     });
   }, [rows]);
+
+  const brokenBehaviorSummary = useMemo(() => ({
+    ENGINE_BROKEN: rows.filter(row => (row.engineStatus ?? row.testStatus ?? "UNTESTED") === "BROKEN").length,
+    AFFORDANCE_BROKEN: rows.filter(row => (row.boardAffordanceStatus ?? "UNTESTED") === "BROKEN").length,
+    ANIMATION_BROKEN: rows.filter(row => (row.boardAnimationStatus ?? "UNTESTED") === "BROKEN").length
+  }), [rows]);
 
   const filteredRows = useMemo(() => {
     const search = searchText.trim().toLowerCase();
 
     return rows.filter(row => {
-      const rowTestStatus = row.testStatus ?? "UNTESTED";
+      const rowEngineStatus = row.engineStatus ?? row.testStatus ?? "UNTESTED";
+      const rowBoardAffordanceStatus = row.boardAffordanceStatus ?? "UNTESTED";
+      const rowBoardAnimationStatus = row.boardAnimationStatus ?? "UNTESTED";
 
       if (focusedCardKey && `${row.packId}:${row.cardId}` !== focusedCardKey) return false;
       if (supportFilter !== "ALL" && row.supportLevel !== supportFilter) return false;
-      if (testStatusFilter !== "ALL" && rowTestStatus !== testStatusFilter) return false;
+      if (testStatusFilter !== "ALL" && rowEngineStatus !== testStatusFilter) return false;
+      if (brokenBehaviorFilter === "ENGINE_BROKEN" && rowEngineStatus !== "BROKEN") return false;
+      if (brokenBehaviorFilter === "AFFORDANCE_BROKEN" && rowBoardAffordanceStatus !== "BROKEN") return false;
+      if (brokenBehaviorFilter === "ANIMATION_BROKEN" && rowBoardAnimationStatus !== "BROKEN") return false;
       if (triggerFilter !== "ALL" && row.trigger !== triggerFilter) return false;
       if (actionFilter !== "ALL" && row.actionType !== actionFilter) return false;
 
@@ -189,6 +207,9 @@ export function EffectCoveragePage({
         row.runtimeRoute,
         row.supportNotes,
         row.effectNotes,
+        row.engineStatus,
+        row.boardAffordanceStatus,
+        row.boardAnimationStatus,
         row.testStatus,
         row.testIssueType,
         row.testNotes,
@@ -204,12 +225,14 @@ export function EffectCoveragePage({
         .toLowerCase()
         .includes(search);
     });
-  }, [actionFilter, cardsByKey, focusedCardKey, rows, searchText, supportFilter, testStatusFilter, triggerFilter]);
+  }, [actionFilter, brokenBehaviorFilter, cardsByKey, focusedCardKey, rows, searchText, supportFilter, testStatusFilter, triggerFilter]);
 
   function getDraft(row: EffectCoverageRow): DraftStatus {
     const key = getRowKey(row);
     return drafts[key] ?? {
-      status: row.testStatus ?? "UNTESTED",
+      engineStatus: row.engineStatus ?? row.testStatus ?? "UNTESTED",
+      boardAffordanceStatus: row.boardAffordanceStatus ?? "UNTESTED",
+      boardAnimationStatus: row.boardAnimationStatus ?? "UNTESTED",
       issueType: row.testIssueType ?? "NONE",
       notes: row.testNotes ?? ""
     };
@@ -229,7 +252,11 @@ export function EffectCoveragePage({
 
   function saveDraft(row: EffectCoverageRow) {
     const draft = getDraft(row);
-    onSaveTestStatus(row, draft.status, draft.issueType, draft.notes);
+    onSaveTestStatus(row, {
+      engineStatus: draft.engineStatus,
+      boardAffordanceStatus: draft.boardAffordanceStatus,
+      boardAnimationStatus: draft.boardAnimationStatus
+    }, draft.issueType, draft.notes);
     setDrafts(previous => {
       const next = { ...previous };
       delete next[getRowKey(row)];
@@ -241,6 +268,7 @@ export function EffectCoveragePage({
     !!focusedCardKey ||
     supportFilter !== "ALL" ||
     testStatusFilter !== "ALL" ||
+    brokenBehaviorFilter !== "ALL" ||
     triggerFilter !== "ALL" ||
     actionFilter !== "ALL" ||
     searchText.trim().length > 0;
@@ -248,6 +276,7 @@ export function EffectCoveragePage({
   function clearAllFilters() {
     setSupportFilter("ALL");
     setTestStatusFilter("ALL");
+    setBrokenBehaviorFilter("ALL");
     setTriggerFilter("ALL");
     setActionFilter("ALL");
     setSearchText("");
@@ -345,7 +374,7 @@ export function EffectCoveragePage({
         </div>
 
         <div className="effect-coverage-chip-filter-section">
-          <span className="effect-coverage-chip-section-label">Test Status</span>
+          <span className="effect-coverage-chip-section-label">Engine Status</span>
           <div className="effect-coverage-chip-filter-row compact">
             {TEST_STATUSES.map(item => (
               <button
@@ -355,6 +384,26 @@ export function EffectCoveragePage({
               >
                 <span className={testStatusBadgeClass(item.value)}>{item.label}</span>
                 <strong>{testSummary[item.value]}</strong>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="effect-coverage-chip-filter-section">
+          <span className="effect-coverage-chip-section-label">Broken Behavior</span>
+          <div className="effect-coverage-chip-filter-row compact">
+            {[
+              { value: "ENGINE_BROKEN" as const, label: "Engine", count: brokenBehaviorSummary.ENGINE_BROKEN },
+              { value: "AFFORDANCE_BROKEN" as const, label: "Board Affordance", count: brokenBehaviorSummary.AFFORDANCE_BROKEN },
+              { value: "ANIMATION_BROKEN" as const, label: "Board Animation", count: brokenBehaviorSummary.ANIMATION_BROKEN }
+            ].map(item => (
+              <button
+                key={item.value}
+                className={brokenBehaviorFilter === item.value ? "effect-coverage-count-chip active" : "effect-coverage-count-chip"}
+                onClick={() => setBrokenBehaviorFilter(current => current === item.value ? "ALL" : item.value)}
+              >
+                <span className="test-status-badge test-status-broken">{item.label}</span>
+                <strong>{item.count}</strong>
               </button>
             ))}
           </div>
@@ -377,7 +426,7 @@ export function EffectCoveragePage({
                   <th>Card / Effect</th>
                   <th>Trigger / Action</th>
                   <th>Runtime</th>
-                  <th>Test Status</th>
+                  <th>QA Status</th>
                   <th>Notes / Actions</th>
                 </tr>
               </thead>
@@ -385,6 +434,9 @@ export function EffectCoveragePage({
                 {filteredRows.map(row => {
                   const draft = getDraft(row);
                   const lastTested = row.lastTestedAt ? new Date(row.lastTestedAt).toLocaleString() : "Not tested";
+                  const engineStatus = row.engineStatus ?? row.testStatus ?? "UNTESTED";
+                  const boardAffordanceStatus = row.boardAffordanceStatus ?? "UNTESTED";
+                  const boardAnimationStatus = row.boardAnimationStatus ?? "UNTESTED";
                   const sourceCard = getCardForRow(row);
                   const sourceEffect = getEffectForRow(row);
                   const cardRulesText = sourceCard?.text?.trim() || "No rules text saved for this card.";
@@ -426,14 +478,39 @@ export function EffectCoveragePage({
                       </td>
                       <td className="effect-test-status-cell">
                         <div className="coverage-status-select-grid">
-                          <select
-                            value={draft.status}
-                            onChange={event => updateDraft(row, { status: event.target.value as EffectRuntimeTestStatus })}
-                          >
-                            {TEST_STATUSES.map(item => (
-                              <option key={item.value} value={item.value}>{item.label}</option>
-                            ))}
-                          </select>
+                          <label>
+                            Engine
+                            <select
+                              value={draft.engineStatus}
+                              onChange={event => updateDraft(row, { engineStatus: event.target.value as EffectRuntimeTestStatus })}
+                            >
+                              {TEST_STATUSES.map(item => (
+                                <option key={item.value} value={item.value}>{item.label}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
+                            Board Affordance
+                            <select
+                              value={draft.boardAffordanceStatus}
+                              onChange={event => updateDraft(row, { boardAffordanceStatus: event.target.value as EffectRuntimeTestStatus })}
+                            >
+                              {TEST_STATUSES.map(item => (
+                                <option key={item.value} value={item.value}>{item.label}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
+                            Board Animation
+                            <select
+                              value={draft.boardAnimationStatus}
+                              onChange={event => updateDraft(row, { boardAnimationStatus: event.target.value as EffectRuntimeTestStatus })}
+                            >
+                              {TEST_STATUSES.map(item => (
+                                <option key={item.value} value={item.value}>{item.label}</option>
+                              ))}
+                            </select>
+                          </label>
                           <select
                             value={draft.issueType}
                             onChange={event => updateDraft(row, { issueType: event.target.value as EffectRuntimeIssueType })}
@@ -443,7 +520,9 @@ export function EffectCoveragePage({
                             ))}
                           </select>
                         </div>
-                        <span className={testStatusBadgeClass(row.testStatus ?? "UNTESTED")}>{statusLabel(row.testStatus ?? "UNTESTED")}</span>
+                        <span className={testStatusBadgeClass(engineStatus)}>Engine: {statusLabel(engineStatus)}</span>
+                        <span className={testStatusBadgeClass(boardAffordanceStatus)}>Affordance: {statusLabel(boardAffordanceStatus)}</span>
+                        <span className={testStatusBadgeClass(boardAnimationStatus)}>Animation: {statusLabel(boardAnimationStatus)}</span>
                         <small>Issue: {issueTypeLabel(row.testIssueType ?? "NONE")}</small>
                         <small>Last: {lastTested}</small>
                       </td>

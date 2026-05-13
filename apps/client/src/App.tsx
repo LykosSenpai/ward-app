@@ -1471,7 +1471,11 @@ export default function App() {
 
   function saveEffectRuntimeTestStatus(
     row: EffectCoverageRow,
-    status: EffectRuntimeTestStatus,
+    statuses: {
+      engineStatus: EffectRuntimeTestStatus;
+      boardAffordanceStatus: EffectRuntimeTestStatus;
+      boardAnimationStatus: EffectRuntimeTestStatus;
+    },
     issueType: EffectRuntimeIssueType,
     notes: string
   ) {
@@ -1488,7 +1492,9 @@ export default function App() {
         effectId: row.effectId,
         trigger: row.trigger,
         actionType: row.actionType,
-        status,
+        engineStatus: statuses.engineStatus,
+        boardAffordanceStatus: statuses.boardAffordanceStatus,
+        boardAnimationStatus: statuses.boardAnimationStatus,
         issueType,
         notes,
         testedBy: "Dev"

@@ -74,6 +74,14 @@ export type MatchFormat = "1v1" | "2v2" | "3v3" | "raid";
 export type BattleCreatureKind = "PRIMARY_CREATURE" | "LIMITED_SUMMON";
 export type MatchStatus = "ACTIVE" | "COMPLETE";
 
+export type EffectQaStatus =
+  | "UNTESTED"
+  | "WORKING"
+  | "PARTIAL"
+  | "BROKEN"
+  | "BLOCKED"
+  | "MANUAL";
+
 export type CannotInflictAttackDamageBattlePolicy = "DAMAGE_ONLY" | "SKIP_BATTLE";
 
 export type CreatureCardDefinition = {

@@ -17,7 +17,10 @@ type StatusRecord = {
   effectId?: string;
   trigger?: string;
   actionType?: string;
-  status: string;
+  status?: string;
+  engineStatus: string;
+  boardAffordanceStatus: string;
+  boardAnimationStatus: string;
   issueType: string;
   notes: string;
   lastTestedAt: string;
@@ -65,7 +68,11 @@ function loadScenarioFiles(): string[] {
 }
 
 function toStatus(resultStatus: string): string {
-  return resultStatus === "BLOCKED_RUNTIME" ? "BROKEN" : resultStatus;
+  return resultStatus === "BLOCKED_RUNTIME" || resultStatus === "BLOCKED_DATA"
+    ? "BLOCKED"
+    : resultStatus === "NEEDS_RULES_REVIEW"
+      ? "MANUAL"
+      : resultStatus;
 }
 
 function inferIssueType(result: {
@@ -145,14 +152,19 @@ for (const item of results) {
       effectId: item.result.effectId,
       trigger: item.plan.effect?.trigger,
       actionType: item.plan.effect?.actionType,
-      status,
+      engineStatus: status,
+      boardAffordanceStatus: "UNTESTED",
+      boardAnimationStatus: "UNTESTED",
       issueType,
       notes,
       lastTestedAt: item.result.generatedAt,
       testedBy: "Headless Engine QA"
     };
 
-    record.status = status;
+    record.engineStatus = status;
+    record.boardAffordanceStatus ??= "UNTESTED";
+    record.boardAnimationStatus ??= "UNTESTED";
+    delete record.status;
     record.issueType = issueType;
     record.notes = notes;
     record.lastTestedAt = item.result.generatedAt;

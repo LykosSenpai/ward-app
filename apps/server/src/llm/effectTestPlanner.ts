@@ -1,5 +1,5 @@
 import type { CardDefinition, DevRollKind, MatchState, TurnPhase, WardEngineEffect } from "@ward/shared";
-import type { LlmEffectResultReview, LlmEffectTestPlan, LlmForcedRollPlan } from "./types.js";
+import type { LlmCoverageSuggestionStatus, LlmEffectResultReview, LlmEffectTestPlan, LlmForcedRollPlan } from "./types.js";
 import { requestLlmJson } from "./llmClient.js";
 import { getCardEffect, summarizeCard, summarizeMatchForReview, WARD_RULES_SUMMARY } from "./wardLlmContext.js";
 
@@ -175,6 +175,25 @@ function buildLocalPlan(args: {
   };
 }
 
+function normalizeCoverageStatus(value: unknown, fallback: LlmCoverageSuggestionStatus): LlmCoverageSuggestionStatus {
+  switch (value) {
+    case "UNTESTED":
+    case "WORKING":
+    case "PARTIAL":
+    case "BROKEN":
+    case "BLOCKED":
+    case "MANUAL":
+      return value;
+    case "BLOCKED_RUNTIME":
+    case "BLOCKED_DATA":
+      return "BLOCKED";
+    case "NEEDS_RULES_REVIEW":
+      return "MANUAL";
+    default:
+      return fallback;
+  }
+}
+
 function normalizePlan(args: {
   packId: string;
   card: CardDefinition;
@@ -189,7 +208,7 @@ function normalizePlan(args: {
     : fallback.setup.phase;
 
   const fixtureName = sanitizeIdPart(args.rawPlan.regression?.fixtureName ?? fallback.regression.fixtureName);
-  const status = args.rawPlan.coverageSuggestion?.status ?? fallback.coverageSuggestion.status;
+  const status = normalizeCoverageStatus(args.rawPlan.coverageSuggestion?.status, fallback.coverageSuggestion.status);
   const issueType = args.rawPlan.coverageSuggestion?.issueType ?? fallback.coverageSuggestion.issueType;
 
   return {
@@ -261,7 +280,7 @@ export async function generateEffectTestPlan(args: {
       expectedAssertions: [{ label: "string", path: "string", operator: "equals|notEquals|contains|greaterThan|lessThan|exists|notExists", value: "optional" }],
       manualVerification: ["string"],
       riskNotes: ["string"],
-      coverageSuggestion: { status: "UNTESTED|WORKING|PARTIAL|BROKEN|BLOCKED_RUNTIME|BLOCKED_DATA|NEEDS_RULES_REVIEW", issueType: "NONE|WRONG_TARGET|WRONG_TIMING|WRONG_DURATION|WRONG_COUNTER|WRONG_DAMAGE|WRONG_STAT_MODIFIER|MISSING_BUTTON|MISSING_PROMPT|MISSING_CHAIN_WINDOW|MISSING_CLEANUP|UNSUPPORTED_ACTION_TYPE", notes: "string" },
+      coverageSuggestion: { status: "UNTESTED|WORKING|PARTIAL|BROKEN|BLOCKED|MANUAL", issueType: "NONE|WRONG_TARGET|WRONG_TIMING|WRONG_DURATION|WRONG_COUNTER|WRONG_DAMAGE|WRONG_STAT_MODIFIER|MISSING_BUTTON|MISSING_PROMPT|MISSING_CHAIN_WINDOW|MISSING_CLEANUP|UNSUPPORTED_ACTION_TYPE", notes: "string" },
       regression: { fixtureName: "safe-kebab-name", tags: ["string"] }
     },
     card: summarizeCard(args.card, args.packId),
@@ -412,7 +431,7 @@ export async function generateEffectTestPlanBatch(args: {
           expectedAssertions: [{ label: "string", path: "string", operator: "equals|notEquals|contains|greaterThan|lessThan|exists|notExists", value: "optional" }],
           manualVerification: ["string"],
           riskNotes: ["string"],
-          coverageSuggestion: { status: "UNTESTED|PARTIAL|BLOCKED_RUNTIME|BLOCKED_DATA|NEEDS_RULES_REVIEW", issueType: "NONE|WRONG_TARGET|WRONG_TIMING|WRONG_DURATION|WRONG_COUNTER|WRONG_DAMAGE|WRONG_STAT_MODIFIER|MISSING_BUTTON|MISSING_PROMPT|MISSING_CHAIN_WINDOW|MISSING_CLEANUP|UNSUPPORTED_ACTION_TYPE", notes: "string" },
+          coverageSuggestion: { status: "UNTESTED|PARTIAL|BLOCKED|MANUAL", issueType: "NONE|WRONG_TARGET|WRONG_TIMING|WRONG_DURATION|WRONG_COUNTER|WRONG_DAMAGE|WRONG_STAT_MODIFIER|MISSING_BUTTON|MISSING_PROMPT|MISSING_CHAIN_WINDOW|MISSING_CLEANUP|UNSUPPORTED_ACTION_TYPE", notes: "string" },
           regression: { fixtureName: "safe-kebab-name", tags: ["string"] }
         }]
       },
@@ -492,7 +511,7 @@ function normalizeReview(args: {
   mode: "LLM" | "LOCAL_FALLBACK";
   providerWarning?: string;
 }): LlmEffectResultReview {
-  const status = args.rawReview.passFailSuggestion ?? args.rawReview.coverageSuggestion?.status ?? args.fallback.passFailSuggestion;
+  const status = normalizeCoverageStatus(args.rawReview.passFailSuggestion ?? args.rawReview.coverageSuggestion?.status, args.fallback.passFailSuggestion);
   const issueType = args.rawReview.issueType ?? args.rawReview.coverageSuggestion?.issueType ?? args.fallback.issueType;
 
   return {
@@ -509,7 +528,7 @@ function normalizeReview(args: {
     suspectedIssues: asStringArray(args.rawReview.suspectedIssues),
     suggestedNextSteps: asStringArray(args.rawReview.suggestedNextSteps).length > 0 ? asStringArray(args.rawReview.suggestedNextSteps) : args.fallback.suggestedNextSteps,
     coverageSuggestion: {
-      status: args.rawReview.coverageSuggestion?.status ?? status,
+      status: normalizeCoverageStatus(args.rawReview.coverageSuggestion?.status, status),
       issueType: args.rawReview.coverageSuggestion?.issueType ?? issueType,
       notes: String(args.rawReview.coverageSuggestion?.notes ?? args.fallback.coverageSuggestion.notes)
     }
@@ -552,7 +571,7 @@ export async function reviewEffectTestResult(args: {
     task: "Phase 3 review: determine whether the test result appears to match the plan. Return JSON only.",
     outputShape: {
       summary: "string",
-      passFailSuggestion: "WORKING|PARTIAL|BROKEN|BLOCKED_RUNTIME|BLOCKED_DATA|NEEDS_RULES_REVIEW",
+      passFailSuggestion: "WORKING|PARTIAL|BROKEN|BLOCKED|MANUAL",
       issueType: "NONE|WRONG_TARGET|WRONG_TIMING|WRONG_DURATION|WRONG_COUNTER|WRONG_DAMAGE|WRONG_STAT_MODIFIER|MISSING_BUTTON|MISSING_PROMPT|MISSING_CHAIN_WINDOW|MISSING_CLEANUP|UNSUPPORTED_ACTION_TYPE",
       evidence: ["string"],
       suspectedIssues: ["string"],

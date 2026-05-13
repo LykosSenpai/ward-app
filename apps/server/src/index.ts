@@ -315,7 +315,9 @@ type EffectCoverageRow = {
   supportNotes: string;
   needsReview?: boolean;
   effectNotes?: string;
-  testStatus?: string;
+  engineStatus?: string;
+  boardAffordanceStatus?: string;
+  boardAnimationStatus?: string;
   testIssueType?: string;
   testNotes?: string;
   lastTestedAt?: string;
@@ -332,7 +334,7 @@ function buildEffectCoverageRows(packIds: string[]): EffectCoverageRow[] {
       const support = getEffectRuntimeSupport(effect);
       const key = `${card.packId}:${card.id}:${effect.id}`;
       const testRecord = testStatusMap[key];
-      const isQaVerified = testRecord?.status === "WORKING" && (testRecord.issueType ?? "NONE") === "NONE";
+      const isQaVerified = testRecord?.engineStatus === "WORKING" && (testRecord.issueType ?? "NONE") === "NONE";
 
       rows.push({
         packId: card.packId,
@@ -353,7 +355,9 @@ function buildEffectCoverageRows(packIds: string[]): EffectCoverageRow[] {
           : support.notes,
         needsReview: isQaVerified ? false : effect.needsReview,
         effectNotes: effect.notes,
-        testStatus: testRecord?.status ?? "UNTESTED",
+        engineStatus: testRecord?.engineStatus ?? "UNTESTED",
+        boardAffordanceStatus: testRecord?.boardAffordanceStatus ?? "UNTESTED",
+        boardAnimationStatus: testRecord?.boardAnimationStatus ?? "UNTESTED",
         testIssueType: testRecord?.issueType ?? "NONE",
         testNotes: testRecord?.notes ?? "",
         lastTestedAt: testRecord?.lastTestedAt,
@@ -938,7 +942,7 @@ function classifyDirectSmokeTest(args: {
       cardId: args.plan.card.cardId,
       cardName: args.cardName,
       effectId: args.plan.effect?.effectId,
-      status: unsupported ? "BLOCKED_RUNTIME" : "BROKEN",
+      status: unsupported ? "BLOCKED" : "BROKEN",
       issueType: unsupported ? "UNSUPPORTED_ACTION_TYPE" : "NONE",
       summary: `Direct smoke test stopped: ${message}`,
       evidence: [...evidence, message],
@@ -978,7 +982,7 @@ function classifyDirectSmokeTest(args: {
       cardId: args.plan.card.cardId,
       cardName: args.cardName,
       effectId: args.plan.effect?.effectId,
-      status: "BLOCKED_RUNTIME",
+      status: "BLOCKED",
       issueType: "UNSUPPORTED_ACTION_TYPE",
       summary: "Direct smoke test routed to manual fallback. This effect needs a reusable runtime handler or manual verification.",
       evidence,
@@ -3051,7 +3055,10 @@ io.on("connection", async socket => {
         effectId: string;
         trigger?: string;
         actionType: string;
-        status: string;
+        status?: string;
+        engineStatus?: string;
+        boardAffordanceStatus?: string;
+        boardAnimationStatus?: string;
         issueType: string;
         notes: string;
         testedBy?: string;
@@ -3087,7 +3094,10 @@ io.on("connection", async socket => {
         effectId: string;
         trigger?: string;
         actionType: string;
-        status: string;
+        status?: string;
+        engineStatus?: string;
+        boardAffordanceStatus?: string;
+        boardAnimationStatus?: string;
         issueType: string;
         notes: string;
         testedBy?: string;

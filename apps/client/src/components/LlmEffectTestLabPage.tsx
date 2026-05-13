@@ -41,9 +41,8 @@ const STATUS_OPTIONS: EffectRuntimeTestStatus[] = [
   "WORKING",
   "PARTIAL",
   "BROKEN",
-  "BLOCKED_RUNTIME",
-  "BLOCKED_DATA",
-  "NEEDS_RULES_REVIEW"
+  "BLOCKED",
+  "MANUAL"
 ];
 
 const ISSUE_OPTIONS: EffectRuntimeIssueType[] = [
@@ -117,7 +116,9 @@ function buildCoverageRecordFromPlan(
     effectId: plan.effect.effectId,
     trigger: plan.effect.trigger,
     actionType: plan.effect.actionType,
-    status: draft.status,
+    engineStatus: draft.status,
+    boardAffordanceStatus: "UNTESTED",
+    boardAnimationStatus: "UNTESTED",
     issueType: draft.issueType,
     notes: draft.notes,
     testedBy
@@ -256,9 +257,9 @@ export function LlmEffectTestLabPage({
       };
     }
 
-    if (saved?.testStatus) {
+    if (saved?.engineStatus || saved?.testStatus) {
       return {
-        status: saved.testStatus,
+        status: saved.engineStatus ?? saved.testStatus ?? "UNTESTED",
         issueType: saved.testIssueType ?? "NONE",
         source: "Saved",
         notes: saved.testNotes
@@ -310,12 +311,12 @@ export function LlmEffectTestLabPage({
       primaryStatus = "WORKING";
     } else if (snapshots.some(snapshot => snapshot.status === "BROKEN")) {
       primaryStatus = "BROKEN";
-    } else if (snapshots.some(snapshot => snapshot.status === "BLOCKED_RUNTIME" || snapshot.status === "BLOCKED_DATA")) {
-      primaryStatus = "BLOCKED_RUNTIME";
+    } else if (snapshots.some(snapshot => snapshot.status === "BLOCKED")) {
+      primaryStatus = "BLOCKED";
     } else if (snapshots.some(snapshot => snapshot.status === "PARTIAL")) {
       primaryStatus = "PARTIAL";
-    } else if (snapshots.some(snapshot => snapshot.status === "NEEDS_RULES_REVIEW")) {
-      primaryStatus = "NEEDS_RULES_REVIEW";
+    } else if (snapshots.some(snapshot => snapshot.status === "MANUAL")) {
+      primaryStatus = "MANUAL";
     }
 
     return {
@@ -939,7 +940,7 @@ export function LlmEffectTestLabPage({
                   <button onClick={() => confirmDraftStatus(activeCheckpointPlan, "WORKING", "NONE")}>Confirm Working</button>
                   <button className="secondary-button" onClick={() => confirmDraftStatus(activeCheckpointPlan, "PARTIAL")}>Confirm Partial</button>
                   <button className="secondary-button" onClick={() => confirmDraftStatus(activeCheckpointPlan, "BROKEN")}>Confirm Broken</button>
-                  <button className="secondary-button" onClick={() => confirmDraftStatus(activeCheckpointPlan, "BLOCKED_RUNTIME", directTestResults[getPlanKey(activeCheckpointPlan)].issueType)}>Confirm Blocked</button>
+                  <button className="secondary-button" onClick={() => confirmDraftStatus(activeCheckpointPlan, "BLOCKED", directTestResults[getPlanKey(activeCheckpointPlan)].issueType)}>Confirm Blocked</button>
                   <button className="secondary-button" onClick={() => onCreateScenarioMatchFromPlan(activeCheckpointPlan)}>Open Play Test</button>
                 </div>
                 <small>Use this checkpoint when auto-run evidence does not match what you can verify through the normal battle/effect UI.</small>
@@ -1092,7 +1093,7 @@ export function LlmEffectTestLabPage({
                               <button onClick={() => confirmDraftStatus(plan, "WORKING", "NONE")}>Confirm Working</button>
                               <button className="secondary-button" onClick={() => confirmDraftStatus(plan, "PARTIAL")}>Confirm Partial</button>
                               <button className="secondary-button" onClick={() => confirmDraftStatus(plan, "BROKEN")}>Confirm Broken</button>
-                              <button className="secondary-button" onClick={() => confirmDraftStatus(plan, "BLOCKED_RUNTIME", directTestResults[key].issueType)}>Confirm Blocked</button>
+                              <button className="secondary-button" onClick={() => confirmDraftStatus(plan, "BLOCKED", directTestResults[key].issueType)}>Confirm Blocked</button>
                             </div>
                           </article>
                         )}
