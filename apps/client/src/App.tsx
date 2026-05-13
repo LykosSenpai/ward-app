@@ -2115,6 +2115,7 @@ export default function App() {
                           cardInstanceId
                         });
                       }}
+                      onPlayBattleResponse={playBattleResponseFromHand}
                       onPassMagicChainPriority={(playerId) => {
                         passMagicChainPriority(playerId);
                       }}

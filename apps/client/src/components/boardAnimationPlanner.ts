@@ -89,6 +89,14 @@ function readNumberArray(data: Record<string, unknown>, ...keys: string[]): numb
   return [];
 }
 
+function readBoolean(data: Record<string, unknown>, ...keys: string[]): boolean | undefined {
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === "boolean") return value;
+  }
+  return undefined;
+}
+
 function addMoveStep(steps: BoardAnimationStep[], event: BoardRenderEvent, durationMs: number): void {
   if (!event.cardInstanceId || !event.toZoneRef) return;
   steps.push({
@@ -170,6 +178,10 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
       if (event.type === "MAGIC_PLAYED_TO_CHAIN" || event.type === "CHAIN_LINK_ADDED") {
         addCardGlow(steps, event.cardInstanceId, "CHAIN", Math.min(durationMs, 260));
       }
+      if (event.type === "CARD_MOVED" && event.reason === "BATTLE_RESPONSE") {
+        addCardGlow(steps, event.cardInstanceId, "LOCKED", Math.min(durationMs, 260));
+        steps.push({ type: "SHOW_STATUS_CHIP", cardInstanceId: event.cardInstanceId, playerId: event.playerId, label: "Battle response", durationMs });
+      }
       break;
 
     case "CARD_DESTROYED":
@@ -223,6 +235,42 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
     case "BATTLE_STARTED":
       addCardGlow(steps, event.sourceCardInstanceId, "TARGET", Math.min(durationMs, 260));
       addCardGlow(steps, event.targetCardInstanceId, "TARGET", Math.min(durationMs, 260));
+      break;
+
+    case "BATTLE_STRIKE_STARTED":
+      addCardGlow(steps, event.sourceCardInstanceId, "TARGET", Math.min(durationMs, 300));
+      addCardGlow(steps, event.targetCardInstanceId, "TARGET", Math.min(durationMs, 300));
+      steps.push({ type: "SHOW_STATUS_CHIP", cardInstanceId: event.sourceCardInstanceId, playerId: event.playerId, label: "Strike", durationMs });
+      break;
+
+    case "BATTLE_HIT_ROLLED": {
+      const diceValues = readNumberArray(data, "values", "hitRollDice", "diceValues");
+      if (diceValues.length > 0) {
+        steps.push({ type: "ROLL_DICE", values: diceValues, rollKind: "BATTLE_HIT", durationMs: Math.min(durationMs, 700) });
+      }
+      const hit = readBoolean(data, "hit");
+      addCardGlow(steps, event.targetCardInstanceId, hit === false ? "LOCKED" : "DAMAGE", Math.min(durationMs, 260));
+      steps.push({ type: "SHOW_STATUS_CHIP", cardInstanceId: event.targetCardInstanceId, playerId: event.playerId, label: hit === false ? "Miss" : "Hit", durationMs });
+      break;
+    }
+
+    case "BATTLE_DAMAGE_ROLLED": {
+      const diceValues = readNumberArray(data, "values", "damageRollDice", "diceValues");
+      if (diceValues.length > 0) {
+        steps.push({ type: "ROLL_DICE", values: diceValues, rollKind: "BATTLE_DAMAGE", durationMs: Math.min(durationMs, 700) });
+      }
+      break;
+    }
+
+    case "BATTLE_DAMAGE_PREVENTED":
+      addCardGlow(steps, event.targetCardInstanceId ?? event.cardInstanceId, "LOCKED", Math.min(durationMs, 360));
+      steps.push({
+        type: "SHOW_STATUS_CHIP",
+        cardInstanceId: event.targetCardInstanceId ?? event.cardInstanceId,
+        playerId: event.playerId,
+        label: "Damage prevented",
+        durationMs
+      });
       break;
 
     case "BATTLE_DAMAGE_APPLIED": {

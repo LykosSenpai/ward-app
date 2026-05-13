@@ -149,6 +149,10 @@ function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"]
     case "STOLEN_MAGIC_SENT_TO_CEMETERY":
     case "CARD_MOVED_ZONE":
     case "BATTLE_STARTED":
+    case "BATTLE_STRIKE_STARTED":
+    case "BATTLE_HIT_ROLLED":
+    case "BATTLE_DAMAGE_ROLLED":
+    case "BATTLE_DAMAGE_PREVENTED":
     case "BATTLE_DAMAGE_APPLIED":
     case "BATTLE_RESOLVED":
     case "EFFECT_PROMPT_OPENED":
@@ -169,6 +173,12 @@ function inferEventType(rawType: string, data: Record<string, unknown>): BoardRe
   const combined = `${normalizedRawType} ${actionType ?? ""}`;
 
   if (normalizedRawType === "BATTLE_DAMAGE_APPLIED") return "BATTLE_DAMAGE_APPLIED";
+  if (normalizedRawType === "BATTLE_DAMAGE_PREVENTED") return "BATTLE_DAMAGE_PREVENTED";
+  if (normalizedRawType === "BATTLE_DAMAGE_ROLLED" || normalizedRawType === "BATTLE_DAMAGE_PIPELINE_RESOLVED") return "BATTLE_DAMAGE_ROLLED";
+  if (normalizedRawType === "BATTLE_HIT_ROLLED") return "BATTLE_HIT_ROLLED";
+  if (normalizedRawType === "BATTLE_STRIKE_STARTED") return "BATTLE_STRIKE_STARTED";
+  if (normalizedRawType === "MANUAL_BATTLE_DECLARED") return "BATTLE_STARTED";
+  if (normalizedRawType === "MANUAL_BATTLE_RESOLVED") return "BATTLE_RESOLVED";
   if (combined.includes("SOURCE_LINK_CLEANUP_TRIGGERED") || combined.includes("SOURCE_LINKED_SUMMONS_RETURNED")) return "SOURCE_LINK_CLEANUP_TRIGGERED";
   if (combined.includes("ANCHOR_LINK_CREATED")) return "ANCHOR_LINK_CREATED";
   if (combined.includes("PROMPT") && (combined.includes("RESOLVE") || combined.includes("COMPLETE") || combined.includes("DECLINED"))) {

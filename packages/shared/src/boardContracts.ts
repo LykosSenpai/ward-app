@@ -43,6 +43,8 @@ export type BoardZoneView = {
 
 export type BoardAffordanceKind =
   | "PLAYABLE_CARD"
+  | "VALID_BATTLE_ATTACKER"
+  | "VALID_BATTLE_DEFENDER"
   | "VALID_TARGET_CARD"
   | "VALID_TARGET_ZONE"
   | "VALID_COST_CARD"
@@ -104,6 +106,7 @@ export type BoardEventType =
   | "BATTLE_STRIKE_STARTED"
   | "BATTLE_HIT_ROLLED"
   | "BATTLE_DAMAGE_ROLLED"
+  | "BATTLE_DAMAGE_PREVENTED"
   | "BATTLE_DAMAGE_APPLIED"
   | "BATTLE_RESOLVED"
   | "PROMPT_OPENED"

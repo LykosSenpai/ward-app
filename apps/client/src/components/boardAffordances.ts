@@ -3,6 +3,8 @@ import type { AppMatchState } from "../clientTypes";
 import {
   canSummonCreatureFromHand,
   getCardName,
+  getBattleBlockReason,
+  getPlayerBattleCreatureOptions,
   getRequiredSacrificesForCard,
   isCreature,
   isMagic
@@ -184,6 +186,10 @@ function primaryZoneRef(playerId: string): BoardZoneRef {
   return { playerId, zone: "PRIMARY_CREATURE" };
 }
 
+function battleZoneRef(playerId: string): BoardZoneRef {
+  return { playerId, zone: "BATTLE" };
+}
+
 function effectText(effect: WardEngineEffect): string {
   return [
     effect.actionType,
@@ -239,6 +245,157 @@ function effectRequiresOpponentLightning(effect: WardEngineEffect): boolean {
     conditionType(effect.condition).includes("OPPONENT_PLAYS_LIGHTNING") ||
     conditionType(effect.params?.condition).includes("OPPONENT_PLAYS_LIGHTNING")
   );
+}
+
+function effectIsBattleAttackDamageResponse(effect: WardEngineEffect): boolean {
+  const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+
+  return (
+    (trigger === "DURING_BATTLE_FROM_HAND" || trigger.includes("ATTACK_HITS")) &&
+    (
+      actionType === "NEGATE_ATTACK_DAMAGE" ||
+      actionType === "PREVENT_ATTACK_DAMAGE" ||
+      actionType === "NEGATE_ATTACK_OR_MAGIC" ||
+      actionType === "NEGATE_ATTACK" ||
+      actionType === "PREVENT_ATTACK"
+    )
+  );
+}
+
+function cardIsBattleAttackDamageResponse(definition: CardDefinition | undefined): boolean {
+  return Boolean(
+    definition?.cardType === "MAGIC" &&
+    (definition.magicType === "BATTLE_LIGHTNING" || definition.magicType === "LIGHTNING") &&
+    definition.effects?.some(effectIsBattleAttackDamageResponse)
+  );
+}
+
+function getBattleResponseDisabledReason(
+  match: AppMatchState,
+  player: PlayerState,
+  card: CardInstance
+): string | null {
+  const battle = match.pendingBattle;
+  const definition = match.cardCatalog[card.cardId] as CardDefinition | undefined;
+
+  if (!battle) return "Battle responses can only be played during a pending battle.";
+  if (match.pendingPrompt) return "Resolve the pending prompt before playing a battle response.";
+  if (match.pendingEffectTargetPrompt) return "Choose the pending effect target before playing a battle response.";
+  if (match.pendingChain) return "Resolve the pending Magic Chain before playing a battle response.";
+
+  const strike = battle.strikes[battle.currentStrikeIndex];
+  if (!strike) return "No active battle strike is available.";
+  if (strike.defender.playerId !== player.id) {
+    return "Only the defender of the current strike can play this battle response.";
+  }
+  if (battle.status !== "AWAITING_DAMAGE_ROLL" && battle.status !== "AWAITING_DAMAGE_APPLICATION") {
+    return "Battle responses can only be played after a hit and before damage is applied.";
+  }
+  if (strike.status !== "AWAITING_DAMAGE_ROLL" && strike.status !== "AWAITING_DAMAGE_APPLICATION") {
+    return "This strike is not waiting for attack damage prevention.";
+  }
+  if (!cardIsBattleAttackDamageResponse(definition)) {
+    return "This card is not a battle-only attack damage response.";
+  }
+
+  return null;
+}
+
+export function buildBattleAffordances(match: AppMatchState, controlledPlayerId?: string | null): BoardAffordance[] {
+  const affordances: BoardAffordance[] = [];
+  const battle = match.pendingBattle;
+
+  if (battle) {
+    const strike = battle.strikes[battle.currentStrikeIndex];
+    for (const player of match.players) {
+      if (controlledPlayerId && controlledPlayerId !== player.id) continue;
+
+      for (const card of player.hand) {
+        const definition = match.cardCatalog[card.cardId] as CardDefinition | undefined;
+        if (definition?.cardType !== "MAGIC" || (definition.magicType !== "BATTLE_LIGHTNING" && definition.magicType !== "LIGHTNING")) continue;
+        if (!cardIsBattleAttackDamageResponse(definition)) continue;
+
+        const disabledReason = getBattleResponseDisabledReason(match, player, card);
+        const cardName = getCardName(match, card);
+
+        affordances.push({
+          id: `battle:${battle.id}:${strike?.id ?? "no-strike"}:${player.id}:${card.instanceId}:${disabledReason ? "disabled" : "response"}`,
+          kind: disabledReason ? "DISABLED_ACTION" : "VALID_BATTLE_RESPONSE",
+          playerId: player.id,
+          sourceCardInstanceId: card.instanceId,
+          targetCardInstanceId: strike?.defender.creatureInstanceId,
+          targetZoneRef: battleZoneRef(player.id),
+          actionId: disabledReason ? undefined : "PLAY_BATTLE_RESPONSE",
+          label: disabledReason ? `Cannot play ${cardName}` : `Battle response: ${cardName}`,
+          highlightStyle: disabledReason ? "LOCKED" : "BATTLE_RESPONSE",
+          disabledReason: disabledReason ?? undefined
+        });
+      }
+    }
+
+    return affordances;
+  }
+
+  const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
+  for (const player of match.players) {
+    if (controlledPlayerId && controlledPlayerId !== player.id) continue;
+
+    for (const card of player.hand) {
+      const definition = match.cardCatalog[card.cardId] as CardDefinition | undefined;
+      if (!cardIsBattleAttackDamageResponse(definition)) continue;
+
+      const cardName = getCardName(match, card);
+      affordances.push({
+        id: `battle:no-session:${player.id}:${card.instanceId}:disabled`,
+        kind: "DISABLED_ACTION",
+        playerId: player.id,
+        sourceCardInstanceId: card.instanceId,
+        actionId: undefined,
+        label: `Cannot play ${cardName}`,
+        highlightStyle: "LOCKED",
+        disabledReason: getBattleResponseDisabledReason(match, player, card) ?? "Battle response is not playable right now."
+      });
+    }
+  }
+
+  if (!activePlayer || (controlledPlayerId && controlledPlayerId !== activePlayer.id)) return affordances;
+
+  const battleBlockReason = getBattleBlockReason(match);
+  if (battleBlockReason) return affordances;
+
+  const defender = match.players.find(player => player.id !== activePlayer.id);
+  const defenderCard = defender?.field.primaryCreature;
+
+  for (const option of getPlayerBattleCreatureOptions(match, activePlayer)) {
+    if (option.usedThisCombat || option.statusBattleSkipReason) continue;
+
+    affordances.push({
+      id: `battle:${activePlayer.id}:${option.card.instanceId}:attacker`,
+      kind: "VALID_BATTLE_ATTACKER",
+      playerId: activePlayer.id,
+      sourceCardInstanceId: option.card.instanceId,
+      actionId: "DECLARE_BATTLE_ATTACKER",
+      label: `Battle with ${getCardName(match, option.card)}`,
+      highlightStyle: "VALID"
+    });
+
+    if (defender && defenderCard) {
+      affordances.push({
+        id: `battle:${activePlayer.id}:${option.card.instanceId}:${defenderCard.instanceId}:defender`,
+        kind: "VALID_BATTLE_DEFENDER",
+        playerId: activePlayer.id,
+        sourceCardInstanceId: option.card.instanceId,
+        targetCardInstanceId: defenderCard.instanceId,
+        targetZoneRef: primaryZoneRef(defender.id),
+        actionId: "DECLARE_BATTLE_DEFENDER",
+        label: `Target ${getCardName(match, defenderCard)}`,
+        highlightStyle: "TARGET"
+      });
+    }
+  }
+
+  return affordances;
 }
 
 function effectCanRespondToChainLink(effect: WardEngineEffect, previousLink: MagicChainLink): boolean {

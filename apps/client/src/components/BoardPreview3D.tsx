@@ -14,13 +14,13 @@ import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAni
 import { getBoardAnimationProfile } from "./boardAnimationProfiles";
 import { decideBoardReconciliation } from "./boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "./boardRuntimeHealth";
-import { getAdvanceBlockReason, getBattleBlockReason, getCardName, getPlayerBattleCreatureOptions, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
+import { getAdvanceBlockReason, getBattleBlockReason, getCardName, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
 import { mapPointerGestureToIntent } from "./boardInteractionIntents";
 import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
-import { buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances } from "./boardAffordances";
+import { buildBattleAffordances, buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances } from "./boardAffordances";
 import type { BoardAffordance, BoardZoneRef } from "@ward/shared";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
@@ -372,6 +372,7 @@ type BoardPreview3DProps = {
   onOpeningRoll?: (playerId: "player_1" | "player_2") => void;
   onPlayHandCardToSlot?: (cardInstanceId: string, slotId: string, sacrificeCardInstanceIds?: string[]) => void;
   onPlayLightningResponse?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
+  onPlayBattleResponse?: (battleSessionId: string, strikeId: string, playerId: BoardPlayerId, cardInstanceId: string) => void;
   onPassMagicChainPriority?: (playerId: BoardPlayerId) => void;
   onDiscardHandCardToCemetery?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
   onEndTurn?: () => void;
@@ -565,6 +566,7 @@ export function BoardPreview3D({
   onOpeningRoll,
   onPlayHandCardToSlot,
   onPlayLightningResponse,
+  onPlayBattleResponse,
   onPassMagicChainPriority,
   onDiscardHandCardToCemetery,
   onEndTurn,
@@ -984,11 +986,17 @@ export function BoardPreview3D({
     () => buildMagicChainAffordances(match, controlledPlayerId),
     [controlledPlayerId, match]
   );
+  const battleAffordances = useMemo(
+    () => buildBattleAffordances(match, controlledPlayerId),
+    [controlledPlayerId, match]
+  );
   const combinedHandAffordances = useMemo(
-    () => match.pendingChain
-      ? [...handPlacementAffordances, ...magicChainAffordances]
-      : handPlacementAffordances,
-    [handPlacementAffordances, magicChainAffordances, match.pendingChain]
+    () => [
+      ...handPlacementAffordances,
+      ...(match.pendingChain ? magicChainAffordances : []),
+      ...battleAffordances
+    ],
+    [battleAffordances, handPlacementAffordances, magicChainAffordances, match.pendingChain]
   );
   const getDropZoneSlotIdsForCard = useCallback((cardInstanceId: string) => {
     return combinedHandAffordances.flatMap(affordance => {
@@ -1015,7 +1023,7 @@ export function BoardPreview3D({
   }, [focusedPlayerId, getDropZoneSlotIdsForCard, match.setup.handDiscardRequiredForPlayerId, onDiscardHandCardToCemetery]);
   const playableHandCardIds = useMemo(
     () => new Set(combinedHandAffordances
-      .filter(affordance => (affordance.kind === "PLAYABLE_CARD" || affordance.kind === "VALID_CHAIN_RESPONSE") && affordance.sourceCardInstanceId)
+      .filter(affordance => (affordance.kind === "PLAYABLE_CARD" || affordance.kind === "VALID_CHAIN_RESPONSE" || affordance.kind === "VALID_BATTLE_RESPONSE") && affordance.sourceCardInstanceId)
       .map(affordance => affordance.sourceCardInstanceId!)),
     [combinedHandAffordances]
   );
@@ -1025,12 +1033,19 @@ export function BoardPreview3D({
       .map(affordance => affordance.sourceCardInstanceId!)),
     [magicChainAffordances]
   );
+  const playableBattleResponseCardIds = useMemo(
+    () => new Set(battleAffordances
+      .filter(affordance => affordance.kind === "VALID_BATTLE_RESPONSE" && affordance.actionId === "PLAY_BATTLE_RESPONSE" && affordance.sourceCardInstanceId)
+      .map(affordance => affordance.sourceCardInstanceId!)),
+    [battleAffordances]
+  );
   const disabledHandCardReasons = useMemo(() => {
     const reasons = new Map<string, string>();
     for (const affordance of combinedHandAffordances) {
       if (
         affordance.kind === "DISABLED_ACTION" &&
         affordance.sourceCardInstanceId &&
+        !playableHandCardIds.has(affordance.sourceCardInstanceId) &&
         !affordance.targetZoneRef &&
         affordance.disabledReason
       ) {
@@ -1038,7 +1053,7 @@ export function BoardPreview3D({
       }
     }
     return reasons;
-  }, [combinedHandAffordances]);
+  }, [combinedHandAffordances, playableHandCardIds]);
   const visualTargetSlotIds = useMemo(() => {
     if (!selectedHandCardId) return [] as string[];
     return getDropZoneSlotIdsForCard(selectedHandCardId);
@@ -1259,11 +1274,11 @@ export function BoardPreview3D({
   const legalBattleAttackerIds = useMemo(() => {
     if (!activeBattlePlayer || !battleControlEnabled) return new Set<string>();
     return new Set(
-      getPlayerBattleCreatureOptions(match, activeBattlePlayer)
-        .filter(option => !option.usedThisCombat && !option.statusBattleSkipReason)
-        .map(option => option.card.instanceId)
+      battleAffordances
+        .filter(affordance => affordance.kind === "VALID_BATTLE_ATTACKER" && affordance.sourceCardInstanceId)
+        .map(affordance => affordance.sourceCardInstanceId!)
     );
-  }, [activeBattlePlayer, battleControlEnabled, match]);
+  }, [activeBattlePlayer, battleAffordances, battleControlEnabled]);
   const battleDefender = useMemo(() => {
     if (!activeBattlePlayer || !battleControlEnabled) return null;
     const defenderPlayer = match.players.find(player => player.id !== activeBattlePlayer.id);
@@ -2353,6 +2368,10 @@ export function BoardPreview3D({
                     onClick={() => {
                       if (playableChainResponseCardIds.has(card.instanceId) && onPlayLightningResponse) {
                         onPlayLightningResponse(focusedPlayerId, card.instanceId);
+                        return;
+                      }
+                      if (playableBattleResponseCardIds.has(card.instanceId) && match.pendingBattle && pendingBattleStrike && onPlayBattleResponse) {
+                        onPlayBattleResponse(match.pendingBattle.id, pendingBattleStrike.id, focusedPlayerId, card.instanceId);
                         return;
                       }
                       if (sacrificeCandidateIds.has(card.instanceId) && selectedHandCardId !== card.instanceId) {
