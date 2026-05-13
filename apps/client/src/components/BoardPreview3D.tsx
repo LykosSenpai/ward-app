@@ -20,6 +20,8 @@ import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
+import { buildPendingEffectTargetAffordances } from "./boardAffordances";
+import type { BoardAffordance, BoardZoneRef } from "@ward/shared";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
 const BOARD_PREVIEW_STORAGE_VERSION = 11;
@@ -30,6 +32,7 @@ const BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION = 1;
 type FloatingDockPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 type ActionDockPosition = "bottom" | "left" | "right";
 type AttachTargetKind = "PRIMARY_CREATURE" | "LIMITED_SUMMON";
+type EffectTargetBoardOption = { optionId: string; pieceId?: string; slotId?: string };
 
 const FLOATING_DOCK_POSITIONS: FloatingDockPosition[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
 const ACTION_DOCK_POSITIONS: ActionDockPosition[] = ["bottom", "left", "right"];
@@ -206,6 +209,37 @@ function getAttackAnimationTheme(creatureType: string | undefined): BoardAttackA
       return "undead";
     default:
       return "generic";
+  }
+}
+
+function isBoardPlayerId(value: string | undefined): value is BoardPlayerId {
+  return value === "player_1" || value === "player_2";
+}
+
+function slotIdFromTargetZoneRef(zoneRef: BoardZoneRef | undefined): BoardSlotId | null {
+  if (!zoneRef || !isBoardPlayerId(zoneRef.playerId)) return null;
+
+  switch (zoneRef.zone) {
+    case "PRIMARY_CREATURE":
+      return `${zoneRef.playerId}-primary` as BoardSlotId;
+    case "DECK":
+      return `${zoneRef.playerId}-deck` as BoardSlotId;
+    case "CEMETERY":
+      return `${zoneRef.playerId}-cemetery` as BoardSlotId;
+    case "HAND":
+      return typeof zoneRef.slotIndex === "number"
+        ? `${zoneRef.playerId}-hand-${zoneRef.slotIndex + 1}` as BoardSlotId
+        : null;
+    case "LIMITED_SUMMON":
+      return typeof zoneRef.slotIndex === "number"
+        ? `${zoneRef.playerId}-limited-${zoneRef.slotIndex + 1}` as BoardSlotId
+        : null;
+    case "MAGIC_SLOT":
+      return typeof zoneRef.slotIndex === "number"
+        ? `${zoneRef.playerId}-magic-${zoneRef.slotIndex + 1}` as BoardSlotId
+        : null;
+    default:
+      return null;
   }
 }
 
@@ -1083,10 +1117,40 @@ export function BoardPreview3D({
       return [card.instanceId];
     });
   }, [boardObjects, cardByInstanceId, canControlPlayer, match]);
-  const effectTargetBoardOptions = useMemo(() => {
+  const pendingEffectTargetAffordances = useMemo(() => {
     const prompt = match.pendingEffectTargetPrompt;
-    if (!prompt) return [] as Array<{ optionId: string; pieceId?: string; slotId?: string }>;
-    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [] as Array<{ optionId: string; pieceId?: string; slotId?: string }>;
+    if (!prompt) return [] as BoardAffordance[];
+    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [] as BoardAffordance[];
+    return buildPendingEffectTargetAffordances(prompt);
+  }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
+
+  const effectTargetBoardOptions = useMemo(() => {
+    const affordanceOptions: EffectTargetBoardOption[] = pendingEffectTargetAffordances.flatMap(affordance => {
+      const optionId = affordance.actionId;
+      if (!optionId || affordance.highlightStyle !== "TARGET") return [];
+
+      if (affordance.kind === "VALID_TARGET_CARD" && affordance.targetCardInstanceId) {
+        const object = boardObjects.find(candidate => candidate.cardInstanceId === affordance.targetCardInstanceId);
+        if (!object || !["primary", "limited", "magic"].includes(object.lane)) return [];
+        return [{
+          optionId,
+          pieceId: object.id,
+          slotId: object.slotId
+        }];
+      }
+
+      if (affordance.kind === "VALID_TARGET_ZONE") {
+        const slotId = slotIdFromTargetZoneRef(affordance.targetZoneRef);
+        return slotId ? [{ optionId, slotId }] : [];
+      }
+
+      return [];
+    });
+    if (affordanceOptions.length > 0) return affordanceOptions;
+
+    const prompt = match.pendingEffectTargetPrompt;
+    if (!prompt) return [] as EffectTargetBoardOption[];
+    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [] as EffectTargetBoardOption[];
 
     return prompt.options.flatMap(option => {
       if (!option.cardInstanceId) return [];
@@ -1098,7 +1162,7 @@ export function BoardPreview3D({
         slotId: object.slotId
       }];
     });
-  }, [boardObjects, controlledPlayerId, match.pendingEffectTargetPrompt]);
+  }, [boardObjects, controlledPlayerId, match.pendingEffectTargetPrompt, pendingEffectTargetAffordances]);
   const effectTargetSlotIds = useMemo(
     () => [...new Set(effectTargetBoardOptions.map(option => option.slotId).filter((slotId): slotId is string => !!slotId))],
     [effectTargetBoardOptions]
@@ -1116,13 +1180,18 @@ export function BoardPreview3D({
   const effectTargetOptionByCardId = useMemo(() => {
     const prompt = match.pendingEffectTargetPrompt;
     const options = new Map<string, string>();
-    if (!prompt) return options;
+    for (const affordance of pendingEffectTargetAffordances) {
+      if (affordance.kind === "VALID_TARGET_CARD" && affordance.targetCardInstanceId && affordance.actionId) {
+        options.set(affordance.targetCardInstanceId, affordance.actionId);
+      }
+    }
+    if (!prompt || options.size > 0) return options;
     if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return options;
     for (const option of prompt.options) {
       if (option.cardInstanceId) options.set(option.cardInstanceId, option.id);
     }
     return options;
-  }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
+  }, [controlledPlayerId, match.pendingEffectTargetPrompt, pendingEffectTargetAffordances]);
   const resolveBoardEffectTarget = (optionId: string) => {
     const prompt = match.pendingEffectTargetPrompt;
     if (!prompt) return;

@@ -8,6 +8,7 @@ import { decideBoardReconciliation } from "../src/components/boardRenderReconcil
 import { resolveBoardRuntimeMode } from "../src/components/boardRuntimeHealth";
 import { mapPointerGestureToIntent } from "../src/components/boardInteractionIntents";
 import { resolveBoardIntentCommand } from "../src/components/boardIntentCommands";
+import { buildPendingEffectTargetAffordances } from "../src/components/boardAffordances";
 
 const mockMatch = {
   matchId: "m1",
@@ -85,5 +86,45 @@ const intent = mapPointerGestureToIntent({
 assert.equal(intent.kind, "SELECT_SLOT");
 const command = resolveBoardIntentCommand(intent, model.boardObjects);
 assert.equal(command.kind, "FOCUS_SLOT");
+
+const targetAffordances = buildPendingEffectTargetAffordances({
+  id: "prompt-1",
+  sourceCardInstanceId: "source-1",
+  sourceCardId: "magic-1",
+  sourceCardName: "Targeting Magic",
+  controllerPlayerId: "player_1",
+  effectId: "effect-1",
+  actionType: "DESTROY_CARD",
+  promptText: "Choose a target.",
+  targetKind: "MAGIC_SLOT_CARD",
+  options: [
+    {
+      id: "option-card",
+      label: "Opponent magic",
+      targetKind: "MAGIC_SLOT_CARD",
+      playerId: "player_2",
+      cardInstanceId: "target-1",
+      cardId: "magic-2",
+      cardName: "Opponent Magic",
+      zone: "MAGIC_SLOT"
+    },
+    {
+      id: "option-zone",
+      label: "Opponent cemetery",
+      targetKind: "CARD_IN_CEMETERY",
+      playerId: "player_2",
+      zone: "CEMETERY"
+    }
+  ]
+});
+assert.equal(targetAffordances.length, 2);
+assert.equal(targetAffordances[0].kind, "VALID_TARGET_CARD");
+assert.equal(targetAffordances[0].highlightStyle, "TARGET");
+assert.equal(targetAffordances[0].promptId, "prompt-1");
+assert.equal(targetAffordances[0].sourceCardInstanceId, "source-1");
+assert.equal(targetAffordances[0].targetCardInstanceId, "target-1");
+assert.deepEqual(targetAffordances[0].targetZoneRef, { playerId: "player_2", zone: "MAGIC_SLOT" });
+assert.equal(targetAffordances[1].kind, "VALID_TARGET_ZONE");
+assert.deepEqual(targetAffordances[1].targetZoneRef, { playerId: "player_2", zone: "CEMETERY" });
 
 console.log("board render adapter checks passed");
