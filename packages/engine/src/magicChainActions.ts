@@ -37,6 +37,42 @@ function cemeteryBoardZoneRef(playerId: string) {
   return { playerId, zone: "CEMETERY" as const };
 }
 
+function deckBoardZoneRef(playerId: string) {
+  return { playerId, zone: "DECK" as const };
+}
+
+function promptBoardEvents(prompt: PendingEffectTargetPrompt) {
+  const deckOptions = prompt.options.filter(option => option.zone === "DECK");
+  return [
+    {
+      type: "PROMPT_OPENED",
+      playerId: prompt.controllerPlayerId,
+      sourceCardInstanceId: prompt.sourceCardInstanceId,
+      sourceCardId: prompt.sourceCardId,
+      sourceEffectId: prompt.effectId,
+      actionType: prompt.actionType,
+      reason: "PROMPT_OPENED",
+      promptId: prompt.id,
+      toZoneRef: deckOptions.length > 0 ? deckBoardZoneRef(prompt.controllerPlayerId) : { playerId: prompt.controllerPlayerId, zone: "PROMPT" as const }
+    },
+    ...deckOptions.flatMap(option => option.cardInstanceId
+      ? [{
+          type: "CARD_REVEALED",
+          playerId: prompt.controllerPlayerId,
+          sourceCardInstanceId: prompt.sourceCardInstanceId,
+          sourceCardId: prompt.sourceCardId,
+          sourceEffectId: prompt.effectId,
+          actionType: prompt.actionType,
+          reason: "DECK_SEARCH_OPTION_REVEALED",
+          promptId: prompt.id,
+          cardInstanceId: option.cardInstanceId,
+          fromZoneRef: deckBoardZoneRef(option.playerId),
+          toZoneRef: { playerId: prompt.controllerPlayerId, zone: "PROMPT" as const }
+        }]
+      : [])
+  ];
+}
+
 function isSilenceFromTheGraveDefinition(definition: { id?: string; name?: string; cardNumber?: string }): boolean {
   const id = String(definition.id ?? "").trim().toLowerCase();
   const name = String(definition.name ?? "").trim().toLowerCase();
@@ -649,9 +685,20 @@ export function resolveOrQueueResolvedMagicEffects(
         addEvent(state, "AUTO_EFFECT_NO_VALID_TARGETS", link.playerId, {
           sourceCardName: link.cardName,
           effectId: effect.id,
+      actionType: effect.actionType,
+      reason: "No legal cards matched this deck/search effect. The effect resolves without opening manual fallback.",
+      boardEvents: [
+        {
+          type: "PROMPT_RESOLVED",
+          playerId: link.playerId,
+          sourceCardInstanceId: link.cardInstanceId,
+          sourceCardId: link.cardId,
+          sourceEffectId: effect.id,
           actionType: effect.actionType,
-          reason: "No legal cards matched this deck/search effect. The effect resolves without opening manual fallback."
-        });
+          reason: "NO_VALID_TARGETS"
+        }
+      ]
+    });
 
         return;
       }
@@ -677,7 +724,8 @@ export function resolveOrQueueResolvedMagicEffects(
       effectId: effect.id,
       actionType: effect.actionType,
       targetKind: prompt.targetKind,
-      optionCount: prompt.options.length
+      optionCount: prompt.options.length,
+      boardEvents: promptBoardEvents(prompt)
     });
 
     return;
@@ -749,6 +797,7 @@ export function resolveOrQueueResolvedMagicEffects(
           targetKind: prompt.targetKind,
           optionCount: prompt.options.length,
           remainingEffectIds,
+          boardEvents: promptBoardEvents(prompt),
           note: "One effect from a multi-effect card was routed to a prompt. Remaining effects will continue after this prompt resolves."
         });
 
@@ -844,6 +893,7 @@ export function playMagicFromHand(
       cardInstanceId,
       cardName: definition.name,
       optionCount: options.length,
+      boardEvents: promptBoardEvents(nextState.pendingEffectTargetPrompt),
       note: "Silence From The Grave stays in hand until its discard-Magic cost is paid. Opponent cannot respond until the card enters the Magic Chain."
     });
 

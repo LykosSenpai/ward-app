@@ -87,6 +87,7 @@ type BoardEventPayload = {
   rollKind?: string;
   diceLimitMode?: string;
   diceLimitValue?: number;
+  metadata?: Record<string, unknown>;
 };
 
 function boardZoneRef(playerId: string | undefined, zone: BoardZoneKind): BoardZoneRef {
@@ -108,6 +109,45 @@ function promptBoardEventBase(prompt: PendingEffectTargetPrompt, reason?: string
     actionType: prompt.actionType,
     promptId: prompt.id,
     ...(reason ? { reason } : {})
+  };
+}
+
+function promptOpenedBoardEvents(prompt: PendingEffectTargetPrompt): BoardEventPayload[] {
+  const deckOptionCount = prompt.options.filter(option => option.zone === "DECK").length;
+  const promptEvents: BoardEventPayload[] = [
+    {
+      type: "PROMPT_OPENED",
+      ...promptBoardEventBase(prompt, "PROMPT_OPENED"),
+      toZoneRef: deckOptionCount > 0
+        ? boardZoneRef(prompt.controllerPlayerId, "DECK")
+        : boardZoneRef(prompt.controllerPlayerId, "PROMPT"),
+      metadata: {
+        targetKind: prompt.targetKind,
+        optionCount: prompt.options.length
+      }
+    }
+  ];
+
+  if (deckOptionCount > 0) {
+    promptEvents.push(...prompt.options.flatMap(option => {
+      if (option.zone !== "DECK" || !option.cardInstanceId) return [];
+      return [{
+        type: "CARD_REVEALED",
+        ...promptBoardEventBase(prompt, "DECK_SEARCH_OPTION_REVEALED"),
+        cardInstanceId: option.cardInstanceId,
+        fromZoneRef: boardZoneRef(option.playerId, "DECK"),
+        toZoneRef: boardZoneRef(prompt.controllerPlayerId, "PROMPT")
+      } satisfies BoardEventPayload];
+    }));
+  }
+
+  return promptEvents;
+}
+
+function promptResolvedBoardEvent(prompt: PendingEffectTargetPrompt, reason = "PROMPT_RESOLVED"): BoardEventPayload {
+  return {
+    type: "PROMPT_RESOLVED",
+    ...promptBoardEventBase(prompt, reason)
   };
 }
 
@@ -1285,7 +1325,18 @@ function clearCurrentPromptAndQueueNext(
           sourceCardName: prompt.sourceCardName,
           effectId: effect.id,
           actionType: effect.actionType,
-          reason: "No legal cards matched this deck/search effect. The effect resolves without opening manual fallback."
+          reason: "No legal cards matched this deck/search effect. The effect resolves without opening manual fallback.",
+          boardEvents: [
+            {
+              type: "PROMPT_RESOLVED",
+              playerId: prompt.controllerPlayerId,
+              sourceCardInstanceId: prompt.sourceCardInstanceId,
+              sourceCardId: prompt.sourceCardId,
+              sourceEffectId: effect.id,
+              actionType: effect.actionType,
+              reason: "NO_VALID_TARGETS"
+            } satisfies BoardEventPayload
+          ]
         });
 
         continue;
@@ -1327,6 +1378,7 @@ function clearCurrentPromptAndQueueNext(
       actionType: effect.actionType,
       targetKind: nextPrompt.targetKind,
       optionCount: nextPrompt.options.length,
+      boardEvents: promptOpenedBoardEvents(nextPrompt),
       note: "Next effect from the same multi-effect card."
     });
 
@@ -1808,7 +1860,17 @@ export function resolvePendingEffectTargetPrompt(
         selectedCardName: getCardDefinition(nextState, card).name,
         selectedCardInstanceId: card.instanceId,
         playerId: selectedPlayer.id,
-        note: "Card returned to deck and deck shuffled."
+        note: "Card returned to deck and deck shuffled.",
+        boardEvents: [
+          promptResolvedBoardEvent(prompt),
+          {
+            type: "CARD_RETURNED_TO_DECK",
+            ...promptBoardEventBase(prompt, "PAY_CARD_COST_TO_DECK"),
+            cardInstanceId: card.instanceId,
+            fromZoneRef: boardZoneRef(selectedPlayer.id, "HAND"),
+            toZoneRef: boardZoneRef(selectedPlayer.id, "DECK")
+          } satisfies BoardEventPayload
+        ]
       });
       return nextState;
     }
@@ -1823,7 +1885,17 @@ export function resolvePendingEffectTargetPrompt(
       selectedCardName: result.cardName,
       selectedCardInstanceId: result.card.instanceId,
       sourcePlayerId: result.sourcePlayerId,
-      destinationPlayerId: result.destinationPlayerId
+      destinationPlayerId: result.destinationPlayerId,
+      boardEvents: [
+        promptResolvedBoardEvent(prompt),
+        {
+          type: "CARD_DISCARDED",
+          ...promptBoardEventBase(prompt, "PAY_CARD_COST_TO_CEMETERY"),
+          cardInstanceId: result.card.instanceId,
+          fromZoneRef: boardZoneRef(result.sourcePlayerId, "HAND"),
+          toZoneRef: boardZoneRef(result.destinationPlayerId, "CEMETERY")
+        } satisfies BoardEventPayload
+      ]
     });
     return nextState;
   }
@@ -1858,6 +1930,14 @@ export function resolvePendingEffectTargetPrompt(
       fromZoneRef: boardZoneRef(result.sourcePlayerId, "HAND"),
       toZoneRef: boardZoneRef(result.destinationPlayerId, "CEMETERY"),
       boardEvents: [
+        promptResolvedBoardEvent(prompt),
+        {
+          type: "CARD_DISCARDED",
+          ...promptBoardEventBase(prompt, "DISCARD_TO_CEMETERY"),
+          cardInstanceId: result.card.instanceId,
+          fromZoneRef: boardZoneRef(result.sourcePlayerId, "HAND"),
+          toZoneRef: boardZoneRef(result.destinationPlayerId, "CEMETERY")
+        } satisfies BoardEventPayload,
         {
           type: "CARD_MOVED",
           ...promptBoardEventBase(prompt, "DISCARD_TO_CEMETERY"),
@@ -1901,6 +1981,7 @@ export function resolvePendingEffectTargetPrompt(
         fromZoneRef: boardZoneRef(result.sourcePlayerId, result.sourceZone as BoardZoneKind),
         toZoneRef: boardZoneRef(result.destinationPlayerId, "HAND"),
         boardEvents: [
+          promptResolvedBoardEvent(prompt),
           {
             type: "CARD_MOVED",
             ...promptBoardEventBase(prompt, prompt.actionType === "SEARCH_DECK_TO_HAND" ? "SEARCH_DECK_TO_HAND" : "MOVE_CARD_TO_HAND"),

@@ -49,6 +49,13 @@ export type BoardAnimationStep =
       durationMs: number;
     }
   | {
+      type: "REVEAL_OVERLAY";
+      cardInstanceId?: string;
+      playerId?: string;
+      label: string;
+      durationMs: number;
+    }
+  | {
       type: "SHOW_STATUS_CHIP";
       cardInstanceId?: string;
       playerId?: string;
@@ -182,6 +189,12 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
         addCardGlow(steps, event.cardInstanceId, "LOCKED", Math.min(durationMs, 260));
         steps.push({ type: "SHOW_STATUS_CHIP", cardInstanceId: event.cardInstanceId, playerId: event.playerId, label: "Battle response", durationMs });
       }
+      if (
+        event.fromZoneRef?.zone === "DECK" &&
+        (event.toZoneRef?.zone === "HAND" || event.toZoneRef?.zone === "CEMETERY")
+      ) {
+        addZoneGlow(steps, event.fromZoneRef, "TARGET", Math.min(durationMs, 260));
+      }
       break;
 
     case "CARD_DESTROYED":
@@ -296,6 +309,28 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
       addDamageOrHealSteps(steps, { ...event, actionType: event.actionType ?? "HEAL" }, data, durationMs);
       break;
 
+    case "CARD_REVEALED":
+      addZoneGlow(steps, event.fromZoneRef, "TARGET", Math.min(durationMs, 260));
+      addCardGlow(steps, event.cardInstanceId, "TARGET", Math.min(durationMs, 260));
+      steps.push({
+        type: "REVEAL_OVERLAY",
+        cardInstanceId: event.cardInstanceId,
+        playerId: event.playerId,
+        label: readString(data, "cardName", "label") ?? "Revealed",
+        durationMs
+      });
+      break;
+
+    case "HAND_REVEALED":
+      addZoneGlow(steps, event.fromZoneRef, "TARGET", Math.min(durationMs, 300));
+      steps.push({
+        type: "REVEAL_OVERLAY",
+        playerId: readString(data, "revealedPlayerId", "targetPlayerId") ?? event.playerId,
+        label: "Hand revealed",
+        durationMs
+      });
+      break;
+
     case "STATUS_APPLIED":
     case "STATUS_REMOVED": {
       const label = readString(data, "statusLabel", "label", "status", "effectType") ?? (event.type === "STATUS_REMOVED" ? "Status removed" : "Status");
@@ -371,6 +406,10 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
     case "EFFECT_PROMPT_OPENED":
       addCardGlow(steps, event.sourceCardInstanceId ?? event.cardInstanceId, "TARGET", durationMs);
       addZoneGlow(steps, event.toZoneRef, "TARGET", durationMs);
+      if (event.actionType === "SEARCH_DECK_TO_HAND" || event.toZoneRef?.zone === "DECK") {
+        addZoneGlow(steps, event.toZoneRef ?? event.fromZoneRef, "TARGET", durationMs);
+        steps.push({ type: "SHOW_STATUS_CHIP", playerId: event.playerId, label: "Deck search", durationMs });
+      }
       if (event.promptId) {
         steps.push({
           type: "SHOW_STATUS_CHIP",

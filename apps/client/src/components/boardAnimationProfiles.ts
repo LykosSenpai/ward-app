@@ -28,6 +28,8 @@ const PROFILES: Record<BoardRenderEventType, BoardAnimationProfile> = {
   SOURCE_LINK_CLEANUP_TRIGGERED: { durationMs: 280, label: "source-cleanup" },
   CARD_DAMAGED: { durationMs: 520, label: "damage" },
   CARD_HEALED: { durationMs: 520, label: "heal" },
+  CARD_REVEALED: { durationMs: 320, label: "reveal-card" },
+  HAND_REVEALED: { durationMs: 420, label: "reveal-hand" },
   STATUS_APPLIED: { durationMs: 420, label: "status" },
   STATUS_REMOVED: { durationMs: 320, label: "status-remove" },
   RECURRING_EFFECT_TICKED: { durationMs: 520, label: "recurring-tick" },

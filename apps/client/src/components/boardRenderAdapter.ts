@@ -145,6 +145,8 @@ function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"]
     case "SOURCE_LINK_CLEANUP_TRIGGERED":
     case "CARD_DAMAGED":
     case "CARD_HEALED":
+    case "CARD_REVEALED":
+    case "HAND_REVEALED":
     case "STATUS_APPLIED":
     case "STATUS_REMOVED":
     case "RECURRING_EFFECT_TICKED":
@@ -221,6 +223,8 @@ function inferEventType(rawType: string, data: Record<string, unknown>): BoardRe
   if ((combined.includes("STAT_MODIFIER") || combined.includes("DICE_LIMIT") || combined.includes("DICE_MODIFIER")) && combined.includes("APPLIED")) return "STAT_MODIFIER_APPLIED";
   if (combined.includes("HEAL") && (combined.includes("RESOLVED") || combined.includes("TICK"))) return "CARD_HEALED";
   if (combined.includes("DAMAGE") && (combined.includes("RESOLVED") || combined.includes("TICK") || combined.includes("APPLIED"))) return "CARD_DAMAGED";
+  if (combined.includes("HAND_REVEALED") || combined.includes("REVEAL_HAND")) return "HAND_REVEALED";
+  if (combined.includes("CARD_REVEALED") || combined.includes("REVEALED_CARD")) return "CARD_REVEALED";
   if (combined.includes("RETURN") && combined.includes("HAND")) return "CARD_RETURNED_TO_HAND";
   if (combined.includes("RETURN") && combined.includes("DECK")) return "CARD_RETURNED_TO_DECK";
   if (combined.includes("DISCARD")) return "CARD_DISCARDED";
@@ -256,6 +260,7 @@ function inferCardInstanceId(type: BoardRenderEvent["type"], data: Record<string
   if (type === "CARD_DAMAGED" || type === "CARD_HEALED" || type === "STATUS_APPLIED" || type === "STATUS_REMOVED" || type === "STAT_MODIFIER_APPLIED" || type === "STAT_MODIFIER_REMOVED") {
     return readFirstString(data, "cardInstanceId", "targetCardInstanceId", "targetCreatureInstanceId");
   }
+  if (type === "CARD_REVEALED") return readFirstString(data, "cardInstanceId", "revealedCardInstanceId");
   if (type === "RECURRING_EFFECT_TICKED" || type === "SCHEDULED_EFFECT_RESOLVED") {
     return readFirstString(data, "cardInstanceId", "targetCardInstanceId", "targetCreatureInstanceId");
   }
@@ -271,6 +276,8 @@ function inferFromZoneRef(type: BoardRenderEvent["type"], playerId: string | und
 
   if (sourceZone) return buildZoneRef(sourcePlayerId, sourceZone);
   if (type === "CARD_DRAWN") return buildZoneRef(playerId, "DECK");
+  if (type === "CARD_REVEALED") return buildZoneRef(sourcePlayerId, normalizeZoneKind(readString(data, "zone")) ?? "DECK");
+  if (type === "HAND_REVEALED") return buildZoneRef(readString(data, "revealedPlayerId", "targetPlayerId") ?? playerId, "HAND");
   if (type === "CARD_DISCARDED") return buildZoneRef(sourcePlayerId, "HAND");
   if (type === "CARD_SENT_TO_CEMETERY") return buildZoneRef(sourcePlayerId, "CHAIN");
   if (type === "CARD_DESTROYED") return buildZoneRef(sourcePlayerId, "MAGIC_SLOT");
@@ -291,6 +298,8 @@ function inferToZoneRef(type: BoardRenderEvent["type"], playerId: string | undef
 
   if (destinationZone) return buildZoneRef(destinationPlayerId, destinationZone);
   if (type === "CARD_DRAWN") return buildZoneRef(playerId, "HAND");
+  if (type === "CARD_REVEALED") return buildZoneRef(readString(data, "revealedPlayerId", "targetPlayerId", "playerId") ?? playerId, normalizeZoneKind(readString(data, "zone")) ?? "PROMPT");
+  if (type === "HAND_REVEALED") return buildZoneRef(readString(data, "viewerPlayerId", "playerId") ?? playerId, "PROMPT");
   if (type === "CARD_DISCARDED" || type === "CARD_DESTROYED" || type === "CARD_SENT_TO_CEMETERY") return buildZoneRef(destinationPlayerId, "CEMETERY");
   if (type === "CARD_RETURNED_TO_HAND") return buildZoneRef(destinationPlayerId, "HAND");
   if (type === "CARD_RETURNED_TO_DECK") return buildZoneRef(destinationPlayerId, "DECK");

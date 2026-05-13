@@ -1161,9 +1161,105 @@ function getUndoCount(matchId: string): number {
   return matchUndoHistory.get(matchId)?.length ?? 0;
 }
 
+function sanitizeEventPayloadForViewer(payload: unknown, viewerPlayerId?: string): unknown {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return payload;
+  const data = payload as Record<string, unknown>;
+  const viewerFromPayload = typeof data.viewerPlayerId === "string" ? data.viewerPlayerId : undefined;
+  const playerFromPayload = typeof data.playerId === "string" ? data.playerId : undefined;
+  const allowedViewer = viewerFromPayload ?? playerFromPayload;
+  const shouldHideRevealedCards = Array.isArray(data.revealedCards) && viewerPlayerId && allowedViewer && viewerPlayerId !== allowedViewer;
+  const next: Record<string, unknown> = { ...data };
+
+  if (shouldHideRevealedCards) {
+    next.revealedCards = [];
+    next.revealedCardCount = 0;
+    next.hiddenFromViewer = true;
+  }
+
+  if (Array.isArray(next.boardEvents) && viewerPlayerId) {
+    next.boardEvents = next.boardEvents.filter(item => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+      const event = item as Record<string, unknown>;
+      const type = typeof event.type === "string" ? event.type : "";
+      const eventPlayerId = typeof event.playerId === "string" ? event.playerId : undefined;
+      if ((type === "CARD_REVEALED" || type === "HAND_REVEALED") && eventPlayerId && eventPlayerId !== viewerPlayerId) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  return next;
+}
+
+function sanitizeMatchForViewer(match: MatchState, viewerPlayerId?: string): MatchState {
+  if (!viewerPlayerId) return match;
+
+  const next = cloneMatchState(match);
+  for (const player of next.players) {
+    if (player.id === viewerPlayerId) continue;
+
+    player.hand = player.hand.map(card => ({
+      ...card,
+      cardId: "HIDDEN_CARD"
+    }));
+    player.deck = player.deck.map(card => ({
+      ...card,
+      cardId: "HIDDEN_CARD"
+    }));
+  }
+
+  if (
+    next.pendingPrompt &&
+    "revealedCards" in next.pendingPrompt &&
+    Array.isArray(next.pendingPrompt.revealedCards)
+  ) {
+    const approvingPlayerId = "approvingPlayerId" in next.pendingPrompt && typeof next.pendingPrompt.approvingPlayerId === "string"
+      ? next.pendingPrompt.approvingPlayerId
+      : undefined;
+    const requestingPlayerId = "requestingPlayerId" in next.pendingPrompt && typeof next.pendingPrompt.requestingPlayerId === "string"
+      ? next.pendingPrompt.requestingPlayerId
+      : undefined;
+    if (viewerPlayerId !== approvingPlayerId && viewerPlayerId !== requestingPlayerId) {
+      next.pendingPrompt = {
+        ...next.pendingPrompt,
+        revealedCards: []
+      };
+    }
+  }
+
+  const prompt = next.pendingEffectTargetPrompt;
+
+  if (prompt && prompt.controllerPlayerId !== viewerPlayerId) {
+    next.pendingEffectTargetPrompt = {
+      ...prompt,
+      promptText: "Opponent is choosing an effect target.",
+      options: []
+    };
+  }
+
+  next.eventLog = next.eventLog.map(event => ({
+    ...event,
+    payload: sanitizeEventPayloadForViewer(event.payload, viewerPlayerId)
+  }));
+
+  return next;
+}
+
 function emitMatchState(match: MatchState): void {
   saveMatchToDisk(match);
-  io.to(match.matchId).emit("match:state", match);
+  const roomSocketIds = io.sockets.adapter.rooms.get(match.matchId);
+
+  if (!roomSocketIds || roomSocketIds.size === 0) {
+    io.to(match.matchId).emit("match:state", match);
+  } else {
+    for (const socketId of roomSocketIds) {
+      const socket = io.sockets.sockets.get(socketId);
+      if (!socket) continue;
+      const viewerPlayerId = getSocketOwnedPlayerId(socket, match.matchId);
+      socket.emit("match:state", sanitizeMatchForViewer(match, viewerPlayerId));
+    }
+  }
 
   if ((match.status ?? "ACTIVE") === "COMPLETE") {
     closeLobbyForMatch(match.matchId);

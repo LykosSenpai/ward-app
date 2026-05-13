@@ -45,6 +45,11 @@ export type BoardAffordanceKind =
   | "PLAYABLE_CARD"
   | "VALID_BATTLE_ATTACKER"
   | "VALID_BATTLE_DEFENDER"
+  | "VALID_DECK_STACK"
+  | "VALID_SELECTED_DECK_CARD"
+  | "VALID_DISCARD_CARD"
+  | "REVEALED_HAND_CARD"
+  | "NO_VALID_TARGETS"
   | "VALID_TARGET_CARD"
   | "VALID_TARGET_ZONE"
   | "VALID_COST_CARD"
@@ -97,6 +102,8 @@ export type BoardEventType =
   | "SOURCE_LINK_CLEANUP_TRIGGERED"
   | "CARD_DAMAGED"
   | "CARD_HEALED"
+  | "CARD_REVEALED"
+  | "HAND_REVEALED"
   | "STATUS_APPLIED"
   | "STATUS_REMOVED"
   | "RECURRING_EFFECT_TICKED"
@@ -250,6 +257,13 @@ export type BoardAnimationStep =
       type: "ROLL_DICE";
       values: number[];
       rollKind: string;
+      durationMs: number;
+    }
+  | {
+      type: "REVEAL_OVERLAY";
+      cardInstanceId?: string;
+      playerId?: string;
+      label: string;
       durationMs: number;
     }
   | {

@@ -44,6 +44,40 @@ type FieldEffectSource = {
   zone: CardEffectSourceZone;
 };
 
+function promptBoardEvents(prompt: NonNullable<MatchState["pendingEffectTargetPrompt"]>) {
+  const deckOptions = prompt.options.filter(option => option.zone === "DECK");
+  return [
+    {
+      type: "PROMPT_OPENED",
+      playerId: prompt.controllerPlayerId,
+      sourceCardInstanceId: prompt.sourceCardInstanceId,
+      sourceCardId: prompt.sourceCardId,
+      sourceEffectId: prompt.effectId,
+      actionType: prompt.actionType,
+      reason: "PROMPT_OPENED",
+      promptId: prompt.id,
+      toZoneRef: deckOptions.length > 0
+        ? { playerId: prompt.controllerPlayerId, zone: "DECK" }
+        : { playerId: prompt.controllerPlayerId, zone: "PROMPT" }
+    },
+    ...deckOptions.flatMap(option => option.cardInstanceId
+      ? [{
+          type: "CARD_REVEALED",
+          playerId: prompt.controllerPlayerId,
+          sourceCardInstanceId: prompt.sourceCardInstanceId,
+          sourceCardId: prompt.sourceCardId,
+          sourceEffectId: prompt.effectId,
+          actionType: prompt.actionType,
+          reason: "DECK_SEARCH_OPTION_REVEALED",
+          promptId: prompt.id,
+          cardInstanceId: option.cardInstanceId,
+          fromZoneRef: { playerId: option.playerId, zone: "DECK" },
+          toZoneRef: { playerId: prompt.controllerPlayerId, zone: "PROMPT" }
+        }]
+      : [])
+  ];
+}
+
 type RollCondition = {
   dieSize: number;
   successValues: number[];
@@ -371,7 +405,36 @@ function activateRevealOpponentHandEffect(
     revealedPlayerId: revealedPlayer.id,
     revealedPlayerName: revealedPlayer.displayName,
     revealedCardCount: revealedCards.length,
-    revealedCards
+    revealedCards,
+    boardEvents: [
+      {
+        type: "HAND_REVEALED",
+        playerId: viewer.id,
+        sourceCardInstanceId: args.source.card.instanceId,
+        sourceCardId: args.source.card.cardId,
+        sourceEffectId: args.effect.id,
+        actionType: args.effect.actionType,
+        reason: "REVEAL_HAND",
+        fromZoneRef: { playerId: revealedPlayer.id, zone: "HAND" },
+        toZoneRef: { playerId: viewer.id, zone: "PROMPT" },
+        metadata: {
+          viewerPlayerId: viewer.id,
+          revealedPlayerId: revealedPlayer.id
+        }
+      },
+      ...revealedCards.map(card => ({
+        type: "CARD_REVEALED",
+        cardInstanceId: card.cardInstanceId,
+        playerId: viewer.id,
+        sourceCardInstanceId: args.source.card.instanceId,
+        sourceCardId: args.source.card.cardId,
+        sourceEffectId: args.effect.id,
+        actionType: args.effect.actionType,
+        reason: "REVEAL_HAND",
+        fromZoneRef: { playerId: revealedPlayer.id, zone: "HAND" },
+        toZoneRef: { playerId: viewer.id, zone: "PROMPT" }
+      }))
+    ]
   });
 
   return nextState;
@@ -409,7 +472,8 @@ function activateRollBasedEffect(
         effectId: args.effect.id,
         actionType: args.effect.actionType,
         promptId: nextState.pendingEffectTargetPrompt.id,
-        optionCount: nextState.pendingEffectTargetPrompt.options.length
+        optionCount: nextState.pendingEffectTargetPrompt.options.length,
+        boardEvents: promptBoardEvents(nextState.pendingEffectTargetPrompt)
       });
 
       return nextState;
@@ -537,7 +601,8 @@ function activateRollBasedEffect(
       effectId: args.effect.id,
       actionType: args.effect.actionType,
       promptId: nextState.pendingEffectTargetPrompt.id,
-      optionCount: nextState.pendingEffectTargetPrompt.options.length
+      optionCount: nextState.pendingEffectTargetPrompt.options.length,
+      boardEvents: promptBoardEvents(nextState.pendingEffectTargetPrompt)
     });
 
     return nextState;

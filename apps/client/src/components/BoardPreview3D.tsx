@@ -1124,7 +1124,7 @@ export function BoardPreview3D({
     const prompt = match.pendingEffectTargetPrompt;
     if (!prompt) return [] as BoardAffordance[];
     if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [] as BoardAffordance[];
-    return buildPendingEffectTargetAffordances(prompt);
+    return buildPendingEffectTargetAffordances(prompt, controlledPlayerId);
   }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
 
   const effectTargetBoardOptions = useMemo(() => {
@@ -1132,9 +1132,16 @@ export function BoardPreview3D({
       const optionId = affordance.actionId;
       if (!optionId || affordance.highlightStyle !== "TARGET") return [];
 
-      if (affordance.kind === "VALID_TARGET_CARD" && affordance.targetCardInstanceId) {
+      if (
+        (
+          affordance.kind === "VALID_TARGET_CARD" ||
+          affordance.kind === "VALID_DISCARD_CARD" ||
+          affordance.kind === "REVEALED_HAND_CARD"
+        ) &&
+        affordance.targetCardInstanceId
+      ) {
         const object = boardObjects.find(candidate => candidate.cardInstanceId === affordance.targetCardInstanceId);
-        if (!object || !["primary", "limited", "magic"].includes(object.lane)) return [];
+        if (!object || !["primary", "limited", "magic", "hand"].includes(object.lane)) return [];
         return [{
           optionId,
           pieceId: object.id,
@@ -1142,7 +1149,7 @@ export function BoardPreview3D({
         }];
       }
 
-      if (affordance.kind === "VALID_TARGET_ZONE") {
+      if (affordance.kind === "VALID_TARGET_ZONE" || affordance.kind === "VALID_DECK_STACK") {
         const slotId = slotIdFromTargetZoneRef(affordance.targetZoneRef);
         return slotId ? [{ optionId, slotId }] : [];
       }
@@ -1184,7 +1191,15 @@ export function BoardPreview3D({
     const prompt = match.pendingEffectTargetPrompt;
     const options = new Map<string, string>();
     for (const affordance of pendingEffectTargetAffordances) {
-      if (affordance.kind === "VALID_TARGET_CARD" && affordance.targetCardInstanceId && affordance.actionId) {
+      if (
+        (
+          affordance.kind === "VALID_TARGET_CARD" ||
+          affordance.kind === "VALID_DISCARD_CARD" ||
+          affordance.kind === "REVEALED_HAND_CARD"
+        ) &&
+        affordance.targetCardInstanceId &&
+        affordance.actionId
+      ) {
         options.set(affordance.targetCardInstanceId, affordance.actionId);
       }
     }

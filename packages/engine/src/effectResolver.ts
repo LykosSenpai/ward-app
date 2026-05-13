@@ -36,6 +36,8 @@ type BoardEventPayload = {
   sourceEffectId?: string;
   actionType?: string;
   reason?: string;
+  fromZoneRef?: BoardZoneRef;
+  toZoneRef?: BoardZoneRef;
   targetCardInstanceId?: string;
   amount?: number;
   damageType?: string;
@@ -344,8 +346,8 @@ function effectTargetsAllCreaturesOnField(effect: WardEngineEffect): boolean {
   );
 }
 
-function drawCardsForPlayer(player: PlayerState, count: number): number {
-  let drawn = 0;
+function drawCardsForPlayer(player: PlayerState, count: number): CardInstance[] {
+  const drawn: CardInstance[] = [];
 
   for (let index = 0; index < count; index++) {
     const card = player.deck.shift();
@@ -356,7 +358,7 @@ function drawCardsForPlayer(player: PlayerState, count: number): number {
 
     card.zone = "HAND";
     player.hand.push(card);
-    drawn++;
+    drawn.push(card);
   }
 
   return drawn;
@@ -781,9 +783,22 @@ export function tryResolveAutomaticMagicEffect(
       playerId: player.id,
       playerName: player.displayName,
       requestedDraw: drawAmount,
-      actualDrawn: drawn,
+      actualDrawn: drawn.length,
+      drawnCardInstanceIds: drawn.map(card => card.instanceId),
+      drawnCardIds: drawn.map(card => card.cardId),
       deckRemaining: player.deck.length,
-      handSize: player.hand.length
+      handSize: player.hand.length,
+      boardEvents: drawn.map(card => ({
+        type: "CARD_MOVED",
+        playerId: controllerPlayerId,
+        sourceCardInstanceId: args.sourceCardInstanceId,
+        sourceEffectId: effect.id,
+        actionType: effect.actionType,
+        reason: "DRAW_CARDS",
+        cardInstanceId: card.instanceId,
+        fromZoneRef: boardZoneRef(player.id, "DECK"),
+        toZoneRef: boardZoneRef(player.id, "HAND")
+      } satisfies BoardEventPayload))
     };
   });
 
@@ -791,7 +806,8 @@ export function tryResolveAutomaticMagicEffect(
     sourceCardName,
     effectId: effect.id,
     actionType: effect.actionType,
-    results
+    results,
+    boardEvents: results.flatMap(result => result.boardEvents)
   });
 
   return true;

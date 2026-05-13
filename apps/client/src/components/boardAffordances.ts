@@ -35,16 +35,78 @@ function toTargetZoneRef(option: EffectTargetOption): BoardZoneRef | undefined {
   };
 }
 
-export function buildPendingEffectTargetAffordances(prompt: PendingEffectTargetPrompt | null | undefined): BoardAffordance[] {
-  if (!prompt) return [];
+function isDeckPromptAction(actionType: string): boolean {
+  return [
+    "SEARCH_DECK_TO_HAND",
+    "LOOK_AT_TOP_DECK_CARDS",
+    "REORDER_DECK_TOP",
+    "LOOK_AND_REORDER_DECK_TOP"
+  ].includes(actionType);
+}
 
-  return prompt.options.flatMap(option => {
+function isDiscardPromptAction(actionType: string): boolean {
+  return [
+    "PAY_DISCARD_MAGIC_COST",
+    "PAY_DISCARD_COST",
+    "DISCARD_CARD",
+    "DISCARD_CARDS",
+    "FORCE_DISCARD"
+  ].includes(actionType);
+}
+
+export function buildPendingEffectTargetAffordances(
+  prompt: PendingEffectTargetPrompt | null | undefined,
+  controlledPlayerId?: string | null
+): BoardAffordance[] {
+  if (!prompt) return [];
+  if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [];
+
+  const affordances: BoardAffordance[] = [];
+  const deckOptions = prompt.options.filter(option => option.zone === "DECK");
+  const discardOptions = prompt.options.filter(option => option.zone === "HAND" && isDiscardPromptAction(prompt.actionType));
+
+  if (deckOptions.length > 0 || isDeckPromptAction(prompt.actionType)) {
+    affordances.push({
+      id: `${prompt.id}:deck-stack`,
+      kind: deckOptions.length > 0 ? "VALID_DECK_STACK" : "NO_VALID_TARGETS",
+      playerId: prompt.controllerPlayerId,
+      sourceCardInstanceId: prompt.sourceCardInstanceId || undefined,
+      targetZoneRef: { playerId: prompt.controllerPlayerId, zone: "DECK" },
+      promptId: prompt.id,
+      label: deckOptions.length > 0 ? "Search deck" : "No valid deck targets",
+      highlightStyle: deckOptions.length > 0 ? "TARGET" : "LOCKED",
+      disabledReason: deckOptions.length > 0 ? undefined : "No cards in deck match this effect."
+    });
+  }
+
+  if (prompt.options.length === 0) {
+    affordances.push({
+      id: `${prompt.id}:no-targets`,
+      kind: "NO_VALID_TARGETS",
+      playerId: prompt.controllerPlayerId,
+      sourceCardInstanceId: prompt.sourceCardInstanceId || undefined,
+      promptId: prompt.id,
+      label: "No valid targets",
+      highlightStyle: "LOCKED",
+      disabledReason: "No legal targets are available for this effect."
+    });
+  }
+
+  affordances.push(...prompt.options.flatMap(option => {
     const targetZoneRef = toTargetZoneRef(option);
     if (!option.cardInstanceId && !targetZoneRef) return [];
+    const isDeckOption = option.zone === "DECK";
+    const isDiscardOption = discardOptions.some(discardOption => discardOption.id === option.id);
 
     return [{
       id: `${prompt.id}:${option.id}`,
-      kind: option.cardInstanceId ? "VALID_TARGET_CARD" : "VALID_TARGET_ZONE",
+      kind: isDeckOption
+        ? "VALID_SELECTED_DECK_CARD"
+        : isDiscardOption
+          ? "VALID_DISCARD_CARD"
+          : option.cardInstanceId
+            ? "VALID_TARGET_CARD"
+            : "VALID_TARGET_ZONE",
       playerId: prompt.controllerPlayerId,
       sourceCardInstanceId: prompt.sourceCardInstanceId || undefined,
       targetCardInstanceId: option.cardInstanceId,
@@ -52,9 +114,11 @@ export function buildPendingEffectTargetAffordances(prompt: PendingEffectTargetP
       promptId: prompt.id,
       actionId: option.id,
       label: option.label,
-      highlightStyle: "TARGET"
+      highlightStyle: isDiscardOption ? "COST" : "TARGET"
     } satisfies BoardAffordance];
-  });
+  }));
+
+  return affordances;
 }
 
 type BuildHandPlacementAffordancesParams = {
