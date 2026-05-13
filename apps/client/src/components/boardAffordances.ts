@@ -1,4 +1,4 @@
-import type { CardInstance } from "@ward/shared";
+import type { BoardAffordance, BoardZoneKind, BoardZoneRef, CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import { canSummonCreatureFromHand, getRequiredSacrificesForCard, isCreature, isMagic } from "../gameViewHelpers";
 import type { BoardObject } from "./boardPreview3dAdapter";
@@ -9,6 +9,8 @@ export type BoardEffectTargetOption = {
   pieceId?: string;
   slotId?: string;
 };
+
+type PendingEffectTargetOption = NonNullable<AppMatchState["pendingEffectTargetPrompt"]>["options"][number];
 
 type HandCardSlotParams = {
   match: AppMatchState;
@@ -23,6 +25,35 @@ type HandCardSlotParams = {
 
 function canControlPlayer(controlledPlayerId: BoardPlayerId | null, playerId: string): boolean {
   return !controlledPlayerId || controlledPlayerId === playerId;
+}
+
+function mapEffectTargetZoneToBoardZoneKind(zone: PendingEffectTargetOption["zone"]): BoardZoneKind {
+  switch (zone) {
+    case "HAND":
+      return "HAND";
+    case "DECK":
+      return "DECK";
+    case "CEMETERY":
+      return "CEMETERY";
+    case "REMOVED_FROM_GAME":
+      return "REMOVED_FROM_GAME";
+    case "PRIMARY_CREATURE":
+      return "PRIMARY_CREATURE";
+    case "LIMITED_SUMMON":
+      return "LIMITED_SUMMON";
+    case "MAGIC_SLOT":
+      return "MAGIC_SLOT";
+    case "PLAYER":
+    default:
+      return "PROMPT";
+  }
+}
+
+function getEffectTargetZoneRef(option: PendingEffectTargetOption): BoardZoneRef {
+  return {
+    playerId: option.playerId,
+    zone: mapEffectTargetZoneToBoardZoneKind(option.zone)
+  };
 }
 
 function getHandCardPlayContext(params: HandCardSlotParams) {
@@ -125,6 +156,12 @@ export function getBoardEffectTargetOptions(params: {
   controlledPlayerId: BoardPlayerId | null;
 }): BoardEffectTargetOption[] {
   const { match, boardObjects, controlledPlayerId } = params;
+  const affordanceOptions = getBoardEffectTargetOptionsFromAffordances({
+    affordances: buildBoardAffordances({ match, controlledPlayerId }),
+    boardObjects
+  });
+  if (affordanceOptions.length > 0) return affordanceOptions;
+
   const prompt = match.pendingEffectTargetPrompt;
   if (!prompt) return [];
   if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [];
@@ -135,6 +172,58 @@ export function getBoardEffectTargetOptions(params: {
     if (!object || !["primary", "limited", "magic"].includes(object.lane)) return [];
     return [{
       optionId: option.id,
+      pieceId: object.id,
+      slotId: object.slotId
+    }];
+  });
+}
+
+export function buildBoardAffordances(params: {
+  match: AppMatchState;
+  controlledPlayerId: BoardPlayerId | null;
+}): BoardAffordance[] {
+  return buildPendingEffectTargetAffordances(params);
+}
+
+export function buildPendingEffectTargetAffordances(params: {
+  match: AppMatchState;
+  controlledPlayerId: BoardPlayerId | null;
+}): BoardAffordance[] {
+  const prompt = params.match.pendingEffectTargetPrompt;
+  if (!prompt) return [];
+  if (params.controlledPlayerId && params.controlledPlayerId !== prompt.controllerPlayerId) return [];
+
+  return prompt.options.map(option => ({
+    id: `${prompt.id}:${option.id}`,
+    kind: option.cardInstanceId ? "VALID_TARGET_CARD" : "VALID_TARGET_ZONE",
+    playerId: prompt.controllerPlayerId,
+    sourceCardInstanceId: prompt.sourceCardInstanceId,
+    targetCardInstanceId: option.cardInstanceId,
+    targetZoneRef: getEffectTargetZoneRef(option),
+    promptId: prompt.id,
+    actionId: option.id,
+    label: option.label,
+    highlightStyle: "TARGET"
+  }));
+}
+
+export function getBoardEffectTargetOptionsFromAffordances(params: {
+  affordances: BoardAffordance[];
+  boardObjects: BoardObject[];
+}): BoardEffectTargetOption[] {
+  return params.affordances.flatMap(affordance => {
+    if (
+      affordance.kind !== "VALID_TARGET_CARD" ||
+      !affordance.targetCardInstanceId ||
+      !affordance.actionId
+    ) {
+      return [];
+    }
+
+    const object = params.boardObjects.find(candidate => candidate.cardInstanceId === affordance.targetCardInstanceId);
+    if (!object || !["primary", "limited", "magic"].includes(object.lane)) return [];
+    return [{
+      optionId: affordance.actionId,
       pieceId: object.id,
       slotId: object.slotId
     }];
@@ -169,6 +258,20 @@ export function getEffectTargetOptionByCardId(params: {
   if (params.controlledPlayerId && params.controlledPlayerId !== prompt.controllerPlayerId) return options;
   for (const option of prompt.options) {
     if (option.cardInstanceId) options.set(option.cardInstanceId, option.id);
+  }
+  return options;
+}
+
+export function getEffectTargetOptionByCardIdFromAffordances(affordances: BoardAffordance[]): Map<string, string> {
+  const options = new Map<string, string>();
+  for (const affordance of affordances) {
+    if (
+      affordance.kind === "VALID_TARGET_CARD" &&
+      affordance.targetCardInstanceId &&
+      affordance.actionId
+    ) {
+      options.set(affordance.targetCardInstanceId, affordance.actionId);
+    }
   }
   return options;
 }

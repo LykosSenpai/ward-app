@@ -4,6 +4,7 @@ import { buildBoardInteractionContext, buildBoardRenderModel, translateGameEvent
 import { createBoardAnimationQueueState, enqueueBoardRenderEvents, settleActiveBoardAnimation, startNextBoardAnimation } from "../src/components/boardAnimationQueue";
 import { resetBoardAnimationQueueToSequence } from "../src/components/boardAnimationQueue";
 import { getBoardAnimationProfile } from "../src/components/boardAnimationProfiles";
+import { buildBoardAffordances } from "../src/components/boardAffordances";
 import { decideBoardReconciliation } from "../src/components/boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "../src/components/boardRuntimeHealth";
 import { mapPointerGestureToIntent } from "../src/components/boardInteractionIntents";
@@ -85,5 +86,37 @@ const intent = mapPointerGestureToIntent({
 assert.equal(intent.kind, "SELECT_SLOT");
 const command = resolveBoardIntentCommand(intent, model.boardObjects);
 assert.equal(command.kind, "FOCUS_SLOT");
+
+const promptMatch = {
+  ...mockMatch,
+  pendingEffectTargetPrompt: {
+    id: "prompt-1",
+    sourceCardInstanceId: "source-1",
+    sourceCardId: "magic-1",
+    sourceCardName: "Target Test",
+    controllerPlayerId: "player_1",
+    effectId: "effect-1",
+    actionType: "DAMAGE",
+    promptText: "Choose a target.",
+    targetKind: "PRIMARY_CREATURE",
+    options: [{
+      id: "option-1",
+      label: "Player 2 Primary",
+      targetKind: "PRIMARY_CREATURE",
+      playerId: "player_2",
+      cardInstanceId: "target-1",
+      cardId: "creature-1",
+      cardName: "Target Creature",
+      zone: "PRIMARY_CREATURE"
+    }]
+  }
+} as unknown as AppMatchState;
+const affordances = buildBoardAffordances({ match: promptMatch, controlledPlayerId: "player_1" });
+assert.equal(affordances.length, 1);
+assert.equal(affordances[0].kind, "VALID_TARGET_CARD");
+assert.equal(affordances[0].promptId, "prompt-1");
+assert.equal(affordances[0].actionId, "option-1");
+assert.equal(affordances[0].targetCardInstanceId, "target-1");
+assert.deepEqual(affordances[0].targetZoneRef, { playerId: "player_2", zone: "PRIMARY_CREATURE" });
 
 console.log("board render adapter checks passed");

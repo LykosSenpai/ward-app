@@ -22,7 +22,7 @@ import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 import { buildCardInstanceMap, getFocusedHandCards, getFocusedPlayer, getOpponentPlayer, resolveBoardHandRevealMode } from "./boardViewModel";
-import { getBoardEffectTargetOptions, getEffectSourcePieceIds, getEffectTargetOptionByCardId, getLegalTargetSlotIdsForHandCard, getUniqueEffectTargetPieceIds, getUniqueEffectTargetSlotIds, getVisualTargetSlotIdsForHandCard } from "./boardAffordances";
+import { buildBoardAffordances, getBoardEffectTargetOptions, getBoardEffectTargetOptionsFromAffordances, getEffectSourcePieceIds, getEffectTargetOptionByCardId, getEffectTargetOptionByCardIdFromAffordances, getLegalTargetSlotIdsForHandCard, getUniqueEffectTargetPieceIds, getUniqueEffectTargetSlotIds, getVisualTargetSlotIdsForHandCard } from "./boardAffordances";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
 const BOARD_PREVIEW_STORAGE_VERSION = 11;
@@ -973,9 +973,18 @@ export function BoardPreview3D({
       return [card.instanceId];
     });
   }, [boardObjects, cardByInstanceId, canControlPlayer, match]);
+  const boardAffordances = useMemo(() => {
+    return buildBoardAffordances({ match, controlledPlayerId });
+  }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
   const effectTargetBoardOptions = useMemo(() => {
-    return getBoardEffectTargetOptions({ match, boardObjects, controlledPlayerId });
-  }, [boardObjects, controlledPlayerId, match.pendingEffectTargetPrompt]);
+    const affordanceOptions = getBoardEffectTargetOptionsFromAffordances({
+      affordances: boardAffordances,
+      boardObjects
+    });
+    return affordanceOptions.length > 0
+      ? affordanceOptions
+      : getBoardEffectTargetOptions({ match, boardObjects, controlledPlayerId });
+  }, [boardAffordances, boardObjects, controlledPlayerId, match]);
   const effectTargetSlotIds = useMemo(
     () => getUniqueEffectTargetSlotIds(effectTargetBoardOptions),
     [effectTargetBoardOptions]
@@ -988,8 +997,11 @@ export function BoardPreview3D({
     return getEffectSourcePieceIds({ match, boardObjects });
   }, [boardObjects, match.pendingEffectTargetPrompt]);
   const effectTargetOptionByCardId = useMemo(() => {
-    return getEffectTargetOptionByCardId({ match, controlledPlayerId });
-  }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
+    const affordanceOptions = getEffectTargetOptionByCardIdFromAffordances(boardAffordances);
+    return affordanceOptions.size > 0
+      ? affordanceOptions
+      : getEffectTargetOptionByCardId({ match, controlledPlayerId });
+  }, [boardAffordances, controlledPlayerId, match.pendingEffectTargetPrompt]);
   const resolveBoardEffectTarget = (optionId: string) => {
     const prompt = match.pendingEffectTargetPrompt;
     if (!prompt) return;
