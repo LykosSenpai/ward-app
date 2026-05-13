@@ -1145,3 +1145,4 @@ export type PendingEffectTargetPrompt = {
   targetKind: EffectTargetKind;
   options: EffectTargetOption[];
 };
+export * from "./boardContracts.js";
