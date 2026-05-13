@@ -158,20 +158,35 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
     case "CARD_DISCARDED":
     case "CARD_RETURNED_TO_HAND":
     case "CARD_RETURNED_TO_DECK":
+    case "CARD_SENT_TO_CEMETERY":
     case "CREATURE_SUMMONED_PRIMARY":
     case "CREATURE_SUMMONED_LIMITED":
+    case "MAGIC_PLAYED_TO_CHAIN":
+    case "CHAIN_LINK_ADDED":
       addMoveStep(steps, event, durationMs);
       if (event.type === "CREATURE_SUMMONED_PRIMARY" || event.type === "CREATURE_SUMMONED_LIMITED") {
         addZoneGlow(steps, event.toZoneRef, "VALID_DROP", Math.min(durationMs, 260));
       }
+      if (event.type === "MAGIC_PLAYED_TO_CHAIN" || event.type === "CHAIN_LINK_ADDED") {
+        addCardGlow(steps, event.cardInstanceId, "CHAIN", Math.min(durationMs, 260));
+      }
       break;
 
     case "CARD_DESTROYED":
+    case "MAGIC_NEGATED":
+    case "CHAIN_LINK_NEGATED":
       addCardGlow(steps, event.cardInstanceId, "DAMAGE", Math.min(durationMs, 220));
       if (event.cardInstanceId) {
         steps.push({ type: "DESTROY_CARD", cardInstanceId: event.cardInstanceId, durationMs });
       }
       addMoveStep(steps, event, durationMs);
+      break;
+
+    case "CHAIN_LINK_RESOLVED":
+    case "MAGIC_RESOLVED":
+      addCardGlow(steps, event.cardInstanceId, "CHAIN", Math.min(durationMs, 240));
+      addMoveStep(steps, event, durationMs);
+      steps.push({ type: "SHOW_STATUS_CHIP", cardInstanceId: event.cardInstanceId, playerId: event.playerId, label: "Resolved", durationMs });
       break;
 
     case "MAGIC_ATTACHED":
@@ -293,6 +308,17 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
 
     case "CHAIN_RESOLVED":
       steps.push({ type: "SHOW_STATUS_CHIP", playerId: event.playerId, label: "Chain resolved", durationMs });
+      break;
+
+    case "CHAIN_PRIORITY_PASSED":
+      steps.push({ type: "SHOW_STATUS_CHIP", playerId: event.playerId, label: "Priority passed", durationMs });
+      break;
+
+    case "MAGIC_STOLEN":
+    case "STOLEN_MAGIC_PLAYED":
+    case "STOLEN_MAGIC_SENT_TO_CEMETERY":
+      addCardGlow(steps, event.cardInstanceId ?? event.targetCardInstanceId, "CHAIN", Math.min(durationMs, 260));
+      addMoveStep(steps, event, durationMs);
       break;
 
     case "BATTLE_RESOLVED":

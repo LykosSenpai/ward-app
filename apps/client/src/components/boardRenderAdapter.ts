@@ -123,8 +123,12 @@ function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"]
     case "CARD_DESTROYED":
     case "CARD_RETURNED_TO_HAND":
     case "CARD_RETURNED_TO_DECK":
+    case "CARD_SENT_TO_CEMETERY":
     case "CREATURE_SUMMONED_PRIMARY":
     case "CREATURE_SUMMONED_LIMITED":
+    case "MAGIC_PLAYED_TO_CHAIN":
+    case "MAGIC_RESOLVED":
+    case "MAGIC_NEGATED":
     case "MAGIC_ATTACHED":
     case "ANCHOR_LINK_CREATED":
     case "SOURCE_LINK_CLEANUP_TRIGGERED":
@@ -136,6 +140,13 @@ function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"]
     case "STAT_MODIFIER_REMOVED":
     case "PROMPT_OPENED":
     case "PROMPT_RESOLVED":
+    case "CHAIN_LINK_ADDED":
+    case "CHAIN_PRIORITY_PASSED":
+    case "CHAIN_LINK_NEGATED":
+    case "CHAIN_LINK_RESOLVED":
+    case "MAGIC_STOLEN":
+    case "STOLEN_MAGIC_PLAYED":
+    case "STOLEN_MAGIC_SENT_TO_CEMETERY":
     case "CARD_MOVED_ZONE":
     case "BATTLE_STARTED":
     case "BATTLE_DAMAGE_APPLIED":
@@ -166,6 +177,15 @@ function inferEventType(rawType: string, data: Record<string, unknown>): BoardRe
   if (combined.includes("PROMPT") && (combined.includes("CREATED") || combined.includes("REQUESTED") || combined.includes("OPENED"))) {
     return "PROMPT_OPENED";
   }
+  if (combined.includes("CHAIN_LINK_NEGATED") || combined.includes("MAGIC_NEGATED")) return "CHAIN_LINK_NEGATED";
+  if (combined.includes("CHAIN_LINK_ADDED") || normalizedRawType === "LIGHTNING_RESPONSE_ADDED" || normalizedRawType === "MAGIC_CHAIN_STARTED") return "CHAIN_LINK_ADDED";
+  if (combined.includes("CHAIN_PRIORITY_PASSED") || normalizedRawType === "MAGIC_CHAIN_PRIORITY_PASSED") return "CHAIN_PRIORITY_PASSED";
+  if (combined.includes("CHAIN_LINK_RESOLVED")) return "CHAIN_LINK_RESOLVED";
+  if (combined.includes("MAGIC_STOLEN")) return "MAGIC_STOLEN";
+  if (combined.includes("STOLEN_MAGIC_PLAYED")) return "STOLEN_MAGIC_PLAYED";
+  if (combined.includes("STOLEN_MAGIC_SENT_TO_CEMETERY")) return "STOLEN_MAGIC_SENT_TO_CEMETERY";
+  if (combined.includes("MAGIC_PLAYED_TO_CHAIN")) return "MAGIC_PLAYED_TO_CHAIN";
+  if (combined.includes("MAGIC_RESOLVED")) return "MAGIC_RESOLVED";
   if (combined.includes("STATUS") && (combined.includes("REMOVED") || combined.includes("EXPIRED"))) return "STATUS_REMOVED";
   if (combined.includes("STATUS") && combined.includes("APPLIED")) return "STATUS_APPLIED";
   if (combined.includes("STAT_MODIFIER") && (combined.includes("REMOVED") || combined.includes("EXPIRED"))) return "STAT_MODIFIER_REMOVED";
@@ -191,8 +211,17 @@ function inferCardInstanceId(type: BoardRenderEvent["type"], data: Record<string
   if (type === "CARD_DISCARDED" || type === "CARD_RETURNED_TO_DECK" || type === "CARD_RETURNED_TO_HAND") {
     return readFirstString(data, "selectedCardInstanceId", "cardInstanceId", "targetCardInstanceId");
   }
+  if (type === "CARD_SENT_TO_CEMETERY") {
+    return readFirstString(data, "cardInstanceId", "targetCardInstanceId");
+  }
   if (type === "CREATURE_SUMMONED_PRIMARY" || type === "CREATURE_SUMMONED_LIMITED") {
     return readFirstString(data, "summonedCardInstanceId", "cardInstanceId", "targetCardInstanceId");
+  }
+  if (type === "CHAIN_LINK_ADDED" || type === "CHAIN_LINK_RESOLVED" || type === "MAGIC_PLAYED_TO_CHAIN" || type === "MAGIC_RESOLVED") {
+    return readFirstString(data, "cardInstanceId", "sourceCardInstanceId");
+  }
+  if (type === "CHAIN_LINK_NEGATED" || type === "MAGIC_NEGATED") {
+    return readFirstString(data, "targetCardInstanceId", "cardInstanceId");
   }
   if (type === "MAGIC_ATTACHED") return readFirstString(data, "magicCardInstanceId", "equippedMagicCardInstanceId", "cardInstanceId");
   if (type === "CARD_DAMAGED" || type === "CARD_HEALED" || type === "STATUS_APPLIED" || type === "STATUS_REMOVED" || type === "STAT_MODIFIER_APPLIED" || type === "STAT_MODIFIER_REMOVED") {
@@ -211,9 +240,12 @@ function inferFromZoneRef(type: BoardRenderEvent["type"], playerId: string | und
   if (sourceZone) return buildZoneRef(sourcePlayerId, sourceZone);
   if (type === "CARD_DRAWN") return buildZoneRef(playerId, "DECK");
   if (type === "CARD_DISCARDED") return buildZoneRef(sourcePlayerId, "HAND");
+  if (type === "CARD_SENT_TO_CEMETERY") return buildZoneRef(sourcePlayerId, "CHAIN");
   if (type === "CARD_DESTROYED") return buildZoneRef(sourcePlayerId, "MAGIC_SLOT");
   if (type === "CARD_RETURNED_TO_DECK" || type === "CARD_RETURNED_TO_HAND") return undefined;
   if (type === "CREATURE_SUMMONED_PRIMARY" || type === "CREATURE_SUMMONED_LIMITED") return buildZoneRef(sourcePlayerId, "HAND");
+  if (type === "CHAIN_LINK_ADDED" || type === "MAGIC_PLAYED_TO_CHAIN") return buildZoneRef(sourcePlayerId, "HAND");
+  if (type === "CHAIN_LINK_RESOLVED" || type === "MAGIC_RESOLVED" || type === "CHAIN_LINK_NEGATED" || type === "MAGIC_NEGATED") return buildZoneRef(sourcePlayerId, "CHAIN");
   if (type === "MAGIC_ATTACHED") return buildZoneRef(sourcePlayerId, "MAGIC_SLOT");
   return undefined;
 }
@@ -227,11 +259,13 @@ function inferToZoneRef(type: BoardRenderEvent["type"], playerId: string | undef
 
   if (destinationZone) return buildZoneRef(destinationPlayerId, destinationZone);
   if (type === "CARD_DRAWN") return buildZoneRef(playerId, "HAND");
-  if (type === "CARD_DISCARDED" || type === "CARD_DESTROYED") return buildZoneRef(destinationPlayerId, "CEMETERY");
+  if (type === "CARD_DISCARDED" || type === "CARD_DESTROYED" || type === "CARD_SENT_TO_CEMETERY") return buildZoneRef(destinationPlayerId, "CEMETERY");
   if (type === "CARD_RETURNED_TO_HAND") return buildZoneRef(destinationPlayerId, "HAND");
   if (type === "CARD_RETURNED_TO_DECK") return buildZoneRef(destinationPlayerId, "DECK");
   if (type === "CREATURE_SUMMONED_PRIMARY") return buildZoneRef(destinationPlayerId, "PRIMARY_CREATURE");
   if (type === "CREATURE_SUMMONED_LIMITED") return buildZoneRef(destinationPlayerId, "LIMITED_SUMMON");
+  if (type === "CHAIN_LINK_ADDED" || type === "MAGIC_PLAYED_TO_CHAIN") return buildZoneRef(destinationPlayerId, "CHAIN");
+  if (type === "CHAIN_LINK_RESOLVED" || type === "MAGIC_RESOLVED" || type === "CHAIN_LINK_NEGATED" || type === "MAGIC_NEGATED") return buildZoneRef(destinationPlayerId, "CEMETERY");
   if (type === "MAGIC_ATTACHED") return buildZoneRef(destinationPlayerId, "ATTACHED_UNDER");
   return undefined;
 }

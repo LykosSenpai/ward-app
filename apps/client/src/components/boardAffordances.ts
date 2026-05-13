@@ -1,4 +1,4 @@
-import type { BoardAffordance, BoardZoneKind, BoardZoneRef, CardInstance, EffectTargetOption, PendingEffectTargetPrompt, PlayerState } from "@ward/shared";
+import type { BoardAffordance, BoardZoneKind, BoardZoneRef, CardInstance, CardDefinition, EffectTargetOption, MagicChainLink, PendingEffectTargetPrompt, PlayerState, WardEngineEffect } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import {
   canSummonCreatureFromHand,
@@ -182,6 +182,181 @@ function magicSlotZoneRef(playerId: string, index: number): BoardZoneRef {
 
 function primaryZoneRef(playerId: string): BoardZoneRef {
   return { playerId, zone: "PRIMARY_CREATURE" };
+}
+
+function effectText(effect: WardEngineEffect): string {
+  return [
+    effect.actionType,
+    effect.effectGroup,
+    effect.actionText,
+    effect.target,
+    effect.value,
+    effect.params?.target,
+    effect.params?.valueText,
+    effect.notes
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function effectNegatesMagicChainLink(effect: WardEngineEffect): boolean {
+  const actionType = effect.actionType.trim().toUpperCase();
+  const text = effectText(effect);
+
+  if (actionType.includes("NEGATE_ATTACK") && !actionType.includes("MAGIC")) {
+    return text.includes("magic");
+  }
+
+  return (
+    actionType.includes("NEGATE_MAGIC") ||
+    actionType.includes("NEGATE_CARD") ||
+    actionType.includes("NEGATE_EFFECT") ||
+    actionType.includes("NEGATE_LIGHTNING") ||
+    (text.includes("negate") && (text.includes("magic") || text.includes("lightning") || text.includes("card") || text.includes("effect")))
+  );
+}
+
+function conditionType(value: unknown): string {
+  return value && typeof value === "object" && "type" in value
+    ? String((value as { type?: unknown }).type ?? "").trim().toUpperCase()
+    : "";
+}
+
+function effectRespondsToOpponentMagic(effect: WardEngineEffect): boolean {
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+  const text = effectText(effect);
+  return (
+    trigger.includes("OPPONENT_PLAYS_MAGIC") ||
+    conditionType(effect.condition).includes("OPPONENT_PLAYS_MAGIC") ||
+    conditionType(effect.params?.condition).includes("OPPONENT_PLAYS_MAGIC") ||
+    text.includes("opponent plays a magic") ||
+    text.includes("opponent magic card")
+  );
+}
+
+function effectRequiresOpponentLightning(effect: WardEngineEffect): boolean {
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+  return (
+    trigger.includes("OPPONENT_PLAYS_LIGHTNING") ||
+    conditionType(effect.condition).includes("OPPONENT_PLAYS_LIGHTNING") ||
+    conditionType(effect.params?.condition).includes("OPPONENT_PLAYS_LIGHTNING")
+  );
+}
+
+function effectCanRespondToChainLink(effect: WardEngineEffect, previousLink: MagicChainLink): boolean {
+  if (!effectNegatesMagicChainLink(effect)) return false;
+  if (effectRequiresOpponentLightning(effect)) {
+    return previousLink.magicType === "LIGHTNING" || previousLink.isLightningResponse;
+  }
+  return effectRespondsToOpponentMagic(effect);
+}
+
+function getMagicPlayLockReason(match: AppMatchState, playerId: string): string | null {
+  const blocked = match.players
+    .flatMap(player => [
+      ...player.hand,
+      ...player.deck,
+      ...player.cemetery,
+      ...player.removedFromGame,
+      ...player.field.magicSlots,
+      ...(player.field.primaryCreature ? [player.field.primaryCreature] : []),
+      ...player.field.limitedSummons,
+      ...match.chainZone
+    ])
+    .flatMap(card => card.activeEffectInstances ?? [])
+    .find(instance =>
+      instance.targetPlayerId === playerId &&
+      (
+        instance.actionType === "APPLY_OPPONENT_MAGIC_PLAY_LOCK" ||
+        instance.actionType === "APPLY_PLAY_RESTRICTION"
+      )
+    );
+
+  return blocked?.label ?? null;
+}
+
+function getLightningChainResponseDisabledReason(
+  match: AppMatchState,
+  player: PlayerState,
+  card: CardInstance
+): string | null {
+  if (match.pendingPrompt) return "Resolve the pending prompt before playing a Lightning response.";
+  if (match.setup.handDiscardRequiredForPlayerId) return "A hand discard is required before any Magic Chain response.";
+  if (!match.pendingChain) return "Lightning responses can only be played during an active Magic Chain.";
+
+  const definition = match.cardCatalog[card.cardId] as CardDefinition | undefined;
+  if (definition?.cardType !== "MAGIC" || definition.magicType !== "LIGHTNING") {
+    return "Only Lightning Magic cards can be played as a chain response.";
+  }
+
+  const magicPlayLockReason = getMagicPlayLockReason(match, player.id);
+  if (magicPlayLockReason) {
+    return magicPlayLockReason;
+  }
+
+  const chain = match.pendingChain;
+  const previousLink = chain.links.at(-1);
+  if (!previousLink) return "Magic Chain has no link to respond to.";
+  if (chain.priorityPlayerId && chain.priorityPlayerId !== player.id) {
+    return "Only the current Magic Chain priority player can respond.";
+  }
+  if (previousLink.playerId === player.id) {
+    return "A player cannot respond to their own chain link.";
+  }
+
+  const effects = definition.effects ?? [];
+  if (effects.length === 0) {
+    return "This Lightning card has no parsed chain-response effect.";
+  }
+  if (!effects.some(effect => effectCanRespondToChainLink(effect, previousLink))) {
+    const lightningOnly = effects.some(effectRequiresOpponentLightning);
+    return lightningOnly && previousLink.magicType !== "LIGHTNING" && !previousLink.isLightningResponse
+      ? "This Lightning card can only respond when the opponent plays Lightning."
+      : "This Lightning card's trigger or condition does not match the current chain link.";
+  }
+
+  return null;
+}
+
+export function buildMagicChainAffordances(match: AppMatchState, controlledPlayerId?: string | null): BoardAffordance[] {
+  const chain = match.pendingChain;
+  if (!chain) return [];
+
+  const affordances: BoardAffordance[] = [];
+
+  if (chain.priorityPlayerId && (!controlledPlayerId || controlledPlayerId === chain.priorityPlayerId)) {
+    affordances.push({
+      id: `chain:${chain.id}:${chain.priorityPlayerId}:pass`,
+      kind: "VALID_CHAIN_RESPONSE",
+      playerId: chain.priorityPlayerId,
+      actionId: "PASS_MAGIC_CHAIN_PRIORITY",
+      label: "Pass Magic Chain priority",
+      highlightStyle: "CHAIN"
+    });
+  }
+
+  for (const player of match.players) {
+    if (controlledPlayerId && controlledPlayerId !== player.id) continue;
+
+    for (const card of player.hand) {
+      const definition = match.cardCatalog[card.cardId];
+      if (definition?.cardType !== "MAGIC" || definition.magicType !== "LIGHTNING") continue;
+
+      const disabledReason = getLightningChainResponseDisabledReason(match, player, card);
+      const cardName = getCardName(match, card);
+
+      affordances.push({
+        id: `chain:${chain.id}:${player.id}:${card.instanceId}:${disabledReason ? "disabled" : "response"}`,
+        kind: disabledReason ? "DISABLED_ACTION" : "VALID_CHAIN_RESPONSE",
+        playerId: player.id,
+        sourceCardInstanceId: card.instanceId,
+        actionId: disabledReason ? undefined : "PLAY_LIGHTNING_RESPONSE",
+        label: disabledReason ? `Cannot chain ${cardName}` : `Chain ${cardName}`,
+        highlightStyle: disabledReason ? "LOCKED" : "CHAIN",
+        disabledReason: disabledReason ?? undefined
+      });
+    }
+  }
+
+  return affordances;
 }
 
 export function buildHandPlacementAffordances({

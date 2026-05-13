@@ -2108,6 +2108,16 @@ export default function App() {
                           socket.emit("match:playMagic", { matchId: match.matchId, playerId: handOwner.id, cardInstanceId });
                         }
                       }}
+                      onPlayLightningResponse={(playerId, cardInstanceId) => {
+                        socket.emit("match:playLightningResponse", {
+                          matchId: match.matchId,
+                          playerId,
+                          cardInstanceId
+                        });
+                      }}
+                      onPassMagicChainPriority={(playerId) => {
+                        passMagicChainPriority(playerId);
+                      }}
                       onAttachEquipMagicToCreature={(fieldOwnerPlayerId, magicCardInstanceId, targetPlayerId, targetCreatureInstanceId, targetKind) => {
                         socket.emit("match:attachEquipMagicToCreature", {
                           matchId: match.matchId,

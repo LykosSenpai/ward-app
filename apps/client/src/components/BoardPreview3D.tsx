@@ -20,7 +20,7 @@ import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
-import { buildHandPlacementAffordances, buildPendingEffectTargetAffordances } from "./boardAffordances";
+import { buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances } from "./boardAffordances";
 import type { BoardAffordance, BoardZoneRef } from "@ward/shared";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
@@ -371,6 +371,8 @@ type BoardPreview3DProps = {
   onApproveRevealRedraw?: () => void;
   onOpeningRoll?: (playerId: "player_1" | "player_2") => void;
   onPlayHandCardToSlot?: (cardInstanceId: string, slotId: string, sacrificeCardInstanceIds?: string[]) => void;
+  onPlayLightningResponse?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
+  onPassMagicChainPriority?: (playerId: BoardPlayerId) => void;
   onDiscardHandCardToCemetery?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
   onEndTurn?: () => void;
   onAttachEquipMagicToCreature?: (
@@ -562,6 +564,8 @@ export function BoardPreview3D({
   onApproveRevealRedraw,
   onOpeningRoll,
   onPlayHandCardToSlot,
+  onPlayLightningResponse,
+  onPassMagicChainPriority,
   onDiscardHandCardToCemetery,
   onEndTurn,
   onAttachEquipMagicToCreature,
@@ -976,8 +980,18 @@ export function BoardPreview3D({
     selectedSacrificeIdsByCard,
     occupiedMagicSlotIndexes
   }), [controlledPlayerId, focusedPlayerId, match, occupiedMagicSlotIndexes, selectedHandCardId, selectedSacrificeIdsByCard]);
+  const magicChainAffordances = useMemo(
+    () => buildMagicChainAffordances(match, controlledPlayerId),
+    [controlledPlayerId, match]
+  );
+  const combinedHandAffordances = useMemo(
+    () => match.pendingChain
+      ? [...handPlacementAffordances, ...magicChainAffordances]
+      : handPlacementAffordances,
+    [handPlacementAffordances, magicChainAffordances, match.pendingChain]
+  );
   const getDropZoneSlotIdsForCard = useCallback((cardInstanceId: string) => {
-    return handPlacementAffordances.flatMap(affordance => {
+    return combinedHandAffordances.flatMap(affordance => {
       if (
         affordance.kind !== "VALID_DROP_ZONE" ||
         affordance.sourceCardInstanceId !== cardInstanceId ||
@@ -988,7 +1002,7 @@ export function BoardPreview3D({
       const slotId = slotIdFromTargetZoneRef(affordance.targetZoneRef);
       return slotId ? [slotId] : [];
     });
-  }, [handPlacementAffordances]);
+  }, [combinedHandAffordances]);
   const getLegalTargetSlotIdsForCard = useCallback((cardInstanceId: string) => {
     if (
       match.setup.handDiscardRequiredForPlayerId === focusedPlayerId &&
@@ -1000,14 +1014,20 @@ export function BoardPreview3D({
     return getDropZoneSlotIdsForCard(cardInstanceId);
   }, [focusedPlayerId, getDropZoneSlotIdsForCard, match.setup.handDiscardRequiredForPlayerId, onDiscardHandCardToCemetery]);
   const playableHandCardIds = useMemo(
-    () => new Set(handPlacementAffordances
-      .filter(affordance => affordance.kind === "PLAYABLE_CARD" && affordance.sourceCardInstanceId)
+    () => new Set(combinedHandAffordances
+      .filter(affordance => (affordance.kind === "PLAYABLE_CARD" || affordance.kind === "VALID_CHAIN_RESPONSE") && affordance.sourceCardInstanceId)
       .map(affordance => affordance.sourceCardInstanceId!)),
-    [handPlacementAffordances]
+    [combinedHandAffordances]
+  );
+  const playableChainResponseCardIds = useMemo(
+    () => new Set(magicChainAffordances
+      .filter(affordance => affordance.kind === "VALID_CHAIN_RESPONSE" && affordance.actionId === "PLAY_LIGHTNING_RESPONSE" && affordance.sourceCardInstanceId)
+      .map(affordance => affordance.sourceCardInstanceId!)),
+    [magicChainAffordances]
   );
   const disabledHandCardReasons = useMemo(() => {
     const reasons = new Map<string, string>();
-    for (const affordance of handPlacementAffordances) {
+    for (const affordance of combinedHandAffordances) {
       if (
         affordance.kind === "DISABLED_ACTION" &&
         affordance.sourceCardInstanceId &&
@@ -1018,7 +1038,7 @@ export function BoardPreview3D({
       }
     }
     return reasons;
-  }, [handPlacementAffordances]);
+  }, [combinedHandAffordances]);
   const visualTargetSlotIds = useMemo(() => {
     if (!selectedHandCardId) return [] as string[];
     return getDropZoneSlotIdsForCard(selectedHandCardId);
@@ -2299,6 +2319,18 @@ export function BoardPreview3D({
               {actionDock}
             </div>
           ) : null}
+          {match.pendingChain?.priorityPlayerId && onPassMagicChainPriority && (!controlledPlayerId || controlledPlayerId === match.pendingChain.priorityPlayerId) ? (
+            <aside className="board-dice-control board-dice-control--player_1 is-ready" aria-label="Magic Chain priority">
+              <button
+                type="button"
+                className="board-dice-control__event"
+                onClick={() => onPassMagicChainPriority(match.pendingChain!.priorityPlayerId as BoardPlayerId)}
+              >
+                <strong>Chain Priority</strong>
+                <span>Pass response priority</span>
+              </button>
+            </aside>
+          ) : null}
           {handCards.length > 0 ? (
             <section className="board-preview-3d__hand-rail" aria-label="3D board hand rail">
               <div className="board-preview-3d__hand-rail-tab">Hand {handCards.length}</div>
@@ -2319,6 +2351,10 @@ export function BoardPreview3D({
                     ].filter(Boolean).join(" ") || undefined}
                     title={disabledReason ?? undefined}
                     onClick={() => {
+                      if (playableChainResponseCardIds.has(card.instanceId) && onPlayLightningResponse) {
+                        onPlayLightningResponse(focusedPlayerId, card.instanceId);
+                        return;
+                      }
                       if (sacrificeCandidateIds.has(card.instanceId) && selectedHandCardId !== card.instanceId) {
                         toggleSacrificeSelection(card.instanceId);
                         return;

@@ -25,6 +25,18 @@ function getOpponentPlayerId(state: MatchState, playerId: string): string | unde
   return state.players.find(player => player.id !== playerId)?.id;
 }
 
+function chainBoardZoneRef(playerId: string) {
+  return { playerId, zone: "CHAIN" as const };
+}
+
+function handBoardZoneRef(playerId: string) {
+  return { playerId, zone: "HAND" as const };
+}
+
+function cemeteryBoardZoneRef(playerId: string) {
+  return { playerId, zone: "CEMETERY" as const };
+}
+
 function isSilenceFromTheGraveDefinition(definition: { id?: string; name?: string; cardNumber?: string }): boolean {
   const id = String(definition.id ?? "").trim().toLowerCase();
   const name = String(definition.name ?? "").trim().toLowerCase();
@@ -138,6 +150,104 @@ function effectNegatesMagicChainLink(effect: WardEngineEffect): boolean {
     text.includes("card") ||
     text.includes("effect")
   );
+}
+
+function effectTextIncludesOpponentMagicTrigger(effect: WardEngineEffect): boolean {
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+  const conditionType = typeof effect.condition === "object" && effect.condition && "type" in effect.condition
+    ? String((effect.condition as { type?: unknown }).type ?? "").trim().toUpperCase()
+    : "";
+  const paramsCondition = effect.params?.condition;
+  const paramsConditionType = typeof paramsCondition === "object" && paramsCondition && "type" in paramsCondition
+    ? String((paramsCondition as { type?: unknown }).type ?? "").trim().toUpperCase()
+    : "";
+  const text = linkEffectText(effect);
+
+  return (
+    trigger.includes("OPPONENT_PLAYS_MAGIC") ||
+    conditionType.includes("OPPONENT_PLAYS_MAGIC") ||
+    paramsConditionType.includes("OPPONENT_PLAYS_MAGIC") ||
+    text.includes("opponent plays a magic") ||
+    text.includes("opponent magic card")
+  );
+}
+
+function effectTextRequiresOpponentLightning(effect: WardEngineEffect): boolean {
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+  const conditionType = typeof effect.condition === "object" && effect.condition && "type" in effect.condition
+    ? String((effect.condition as { type?: unknown }).type ?? "").trim().toUpperCase()
+    : "";
+  const paramsCondition = effect.params?.condition;
+  const paramsConditionType = typeof paramsCondition === "object" && paramsCondition && "type" in paramsCondition
+    ? String((paramsCondition as { type?: unknown }).type ?? "").trim().toUpperCase()
+    : "";
+
+  return (
+    trigger.includes("OPPONENT_PLAYS_LIGHTNING") ||
+    conditionType.includes("OPPONENT_PLAYS_LIGHTNING") ||
+    paramsConditionType.includes("OPPONENT_PLAYS_LIGHTNING")
+  );
+}
+
+function effectCanRespondToPreviousChainLink(effect: WardEngineEffect, previousLink: MagicChainLink): boolean {
+  if (!effectNegatesMagicChainLink(effect)) {
+    return false;
+  }
+
+  if (effectTextRequiresOpponentLightning(effect)) {
+    return previousLink.magicType === "LIGHTNING" || previousLink.isLightningResponse;
+  }
+
+  return effectTextIncludesOpponentMagicTrigger(effect);
+}
+
+export function getLightningResponseDisabledReason(
+  state: MatchState,
+  playerId: string,
+  cardInstanceId: string
+): string | undefined {
+  if (state.pendingPrompt) return "Resolve the pending prompt before playing a Lightning response.";
+  if (state.setup.handDiscardRequiredForPlayerId) return "A hand discard is required before any Magic Chain response.";
+  if (!state.pendingChain) return "Lightning responses can only be played during an active Magic Chain.";
+
+  const player = getPlayer(state, playerId);
+  const card = player.hand.find(item => item.instanceId === cardInstanceId);
+  if (!card) return "Card is not in this player's hand.";
+
+  const definition = getCardDefinition(state, card);
+  if (definition.cardType !== "MAGIC" || definition.magicType !== "LIGHTNING") {
+    return "Only Lightning Magic cards can be played as a chain response.";
+  }
+
+  try {
+    assertPlayerCanPlayMagicUnderActivePlayRestrictions(state, playerId);
+  } catch (error) {
+    return error instanceof Error ? error.message : "A Magic play lock prevents this Lightning response.";
+  }
+
+  const chain = state.pendingChain;
+  const previousLink = chain.links[chain.links.length - 1];
+  if (!previousLink) return "Magic Chain has no link to respond to.";
+  if (chain.priorityPlayerId && chain.priorityPlayerId !== playerId) {
+    return "Only the current Magic Chain priority player can respond.";
+  }
+  if (previousLink.playerId === playerId) {
+    return "A player cannot respond to their own chain link.";
+  }
+
+  const effects = getLinkEffects(state, { cardId: card.cardId });
+  if (effects.length === 0) {
+    return "This Lightning card has no parsed chain-response effect.";
+  }
+
+  if (!effects.some(effect => effectCanRespondToPreviousChainLink(effect, previousLink))) {
+    const lightningOnly = effects.some(effectTextRequiresOpponentLightning);
+    return lightningOnly && previousLink.magicType !== "LIGHTNING" && !previousLink.isLightningResponse
+      ? "This Lightning card can only respond when the opponent plays Lightning."
+      : "This Lightning card's trigger or condition does not match the current chain link.";
+  }
+
+  return undefined;
 }
 
 function getLinkEffects(state: MatchState, link: { cardId: string; selectedEffectId?: string }): WardEngineEffect[] {
@@ -766,10 +876,42 @@ export function playMagicFromHand(
 
   addEvent(nextState, "MAGIC_CHAIN_STARTED", playerId, {
     chainId: pendingChain.id,
+    chainLinkId: chainLink.id,
     cardInstanceId,
     cardName: definition.name,
     magicType: definition.magicType,
-    magicSubType: definition.magicSubType
+    magicSubType: definition.magicSubType,
+    nextPriorityPlayerId: pendingChain.priorityPlayerId,
+    boardEvents: [
+      {
+        type: "CHAIN_LINK_ADDED",
+        playerId,
+        cardInstanceId,
+        sourceCardInstanceId: cardInstanceId,
+        sourceCardId: card.cardId,
+        actionType: "PLAY_MAGIC",
+        reason: "MAGIC_CHAIN_STARTED",
+        fromZoneRef: handBoardZoneRef(playerId),
+        toZoneRef: chainBoardZoneRef(playerId),
+        chainLinkId: chainLink.id,
+        metadata: {
+          chainId: pendingChain.id,
+          nextPriorityPlayerId: pendingChain.priorityPlayerId
+        }
+      },
+      {
+        type: "MAGIC_PLAYED_TO_CHAIN",
+        playerId,
+        cardInstanceId,
+        sourceCardInstanceId: cardInstanceId,
+        sourceCardId: card.cardId,
+        actionType: "PLAY_MAGIC",
+        reason: "MAGIC_CHAIN_STARTED",
+        fromZoneRef: handBoardZoneRef(playerId),
+        toZoneRef: chainBoardZoneRef(playerId),
+        chainLinkId: chainLink.id
+      }
+    ]
   });
 
   if (cardSuppressesMagicResponseWindow(nextState, card.cardId)) {
@@ -825,20 +967,15 @@ export function playLightningResponseFromHand(
     throw new Error("Only Lightning Magic cards can be played as a response.");
   }
 
-  assertPlayerCanPlayMagicUnderActivePlayRestrictions(nextState, playerId);
-
   const previousLink = chain.links[chain.links.length - 1];
 
   if (!previousLink) {
     throw new Error("Magic Chain has no link to respond to.");
   }
 
-  if (chain.priorityPlayerId && chain.priorityPlayerId !== playerId) {
-    throw new Error("This player does not currently have Magic Chain response priority.");
-  }
-
-  if (previousLink.playerId === playerId) {
-    throw new Error("A player cannot respond to their own chain link.");
+  const disabledReason = getLightningResponseDisabledReason(nextState, playerId, cardInstanceId);
+  if (disabledReason) {
+    throw new Error(disabledReason);
   }
 
   player.hand.splice(handIndex, 1);
@@ -862,13 +999,44 @@ export function playLightningResponseFromHand(
 
   addEvent(nextState, "LIGHTNING_RESPONSE_ADDED", playerId, {
     chainId: chain.id,
+    chainLinkId: chainLink.id,
     cardInstanceId,
     cardName: definition.name,
     respondsToLinkId: previousLink.id,
     respondsToCardName: previousLink.cardName,
     nextPriorityPlayerId: chain.priorityPlayerId,
     turnNumber: nextState.turn.turnNumber,
-    turnCycleNumber: nextState.turn.turnCycleNumber
+    turnCycleNumber: nextState.turn.turnCycleNumber,
+    boardEvents: [
+      {
+        type: "CHAIN_LINK_ADDED",
+        playerId,
+        cardInstanceId,
+        sourceCardInstanceId: cardInstanceId,
+        sourceCardId: card.cardId,
+        actionType: "PLAY_LIGHTNING_RESPONSE",
+        reason: "LIGHTNING_RESPONSE",
+        fromZoneRef: handBoardZoneRef(playerId),
+        toZoneRef: chainBoardZoneRef(playerId),
+        chainLinkId: chainLink.id,
+        metadata: {
+          chainId: chain.id,
+          respondsToLinkId: previousLink.id,
+          nextPriorityPlayerId: chain.priorityPlayerId
+        }
+      },
+      {
+        type: "CARD_MOVED",
+        playerId,
+        cardInstanceId,
+        sourceCardInstanceId: cardInstanceId,
+        sourceCardId: card.cardId,
+        actionType: "PLAY_LIGHTNING_RESPONSE",
+        reason: "LIGHTNING_RESPONSE_TO_CHAIN",
+        fromZoneRef: handBoardZoneRef(playerId),
+        toZoneRef: chainBoardZoneRef(playerId)
+      }
+    ]
   });
 
   return nextState;
@@ -911,7 +1079,20 @@ export function passMagicChainPriority(
     chainId: chain.id,
     playerId,
     passesSinceLastResponse: chain.passesSinceLastResponse,
-    lastLinkPlayerId: chain.lastLinkPlayerId
+    lastLinkPlayerId: chain.lastLinkPlayerId,
+    boardEvents: [
+      {
+        type: "CHAIN_PRIORITY_PASSED",
+        playerId,
+        actionType: "PASS_MAGIC_CHAIN_PRIORITY",
+        reason: "PASS_PRIORITY",
+        metadata: {
+          chainId: chain.id,
+          passesSinceLastResponse: chain.passesSinceLastResponse,
+          lastLinkPlayerId: chain.lastLinkPlayerId
+        }
+      }
+    ]
   });
 
   // WARD 1v1 priority only requires the opponent of the latest chain link to
@@ -959,9 +1140,42 @@ export function resolveMagicChain(state: MatchState): MatchState {
 
         addEvent(nextState, "CHAIN_LINK_NEGATED", link.playerId, {
           chainId: chain.id,
+          chainLinkId: link.id,
+          cardInstanceId: link.cardInstanceId,
+          sourceCardInstanceId: link.cardInstanceId,
+          targetCardInstanceId: targetLink.cardInstanceId,
           negatingCardName: link.cardName,
           negatedCardName: targetLink.cardName,
-          negatedLinkId: targetLink.id
+          negatedLinkId: targetLink.id,
+          boardEvents: [
+            {
+              type: "CHAIN_LINK_NEGATED",
+              playerId: link.playerId,
+              cardInstanceId: targetLink.cardInstanceId,
+              sourceCardInstanceId: link.cardInstanceId,
+              sourceCardId: link.cardId,
+              targetCardInstanceId: targetLink.cardInstanceId,
+              actionType: "NEGATE_MAGIC_CHAIN_LINK",
+              reason: "LIGHTNING_NEGATED_CHAIN_LINK",
+              chainLinkId: targetLink.id,
+              metadata: {
+                chainId: chain.id,
+                negatingLinkId: link.id,
+                negatedLinkId: targetLink.id
+              }
+            },
+            {
+              type: "MAGIC_NEGATED",
+              playerId: link.playerId,
+              cardInstanceId: targetLink.cardInstanceId,
+              sourceCardInstanceId: link.cardInstanceId,
+              sourceCardId: link.cardId,
+              targetCardInstanceId: targetLink.cardInstanceId,
+              actionType: "NEGATE_MAGIC_CHAIN_LINK",
+              reason: "LIGHTNING_NEGATED_MAGIC",
+              chainLinkId: targetLink.id
+            }
+          ]
         });
       }
     }
@@ -989,7 +1203,23 @@ export function resolveMagicChain(state: MatchState): MatchState {
 
       addEvent(nextState, "CHAIN_LINK_SENT_TO_CEMETERY_NEGATED", link.playerId, {
         chainId: chain.id,
-        cardName: link.cardName
+        chainLinkId: link.id,
+        cardInstanceId: link.cardInstanceId,
+        cardName: link.cardName,
+        boardEvents: [
+          {
+            type: "CARD_SENT_TO_CEMETERY",
+            playerId: link.playerId,
+            cardInstanceId: link.cardInstanceId,
+            sourceCardInstanceId: link.cardInstanceId,
+            sourceCardId: link.cardId,
+            actionType: "MOVE_NEGATED_CHAIN_LINK",
+            reason: "CHAIN_LINK_NEGATED",
+            fromZoneRef: chainBoardZoneRef(link.playerId),
+            toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
+            chainLinkId: link.id
+          }
+        ]
       });
 
       continue;
@@ -1018,7 +1248,35 @@ export function resolveMagicChain(state: MatchState): MatchState {
 
         addEvent(nextState, "INFINITE_MAGIC_FAILED_SLOT_FULL", link.playerId, {
           chainId: chain.id,
-          cardName: link.cardName
+          chainLinkId: link.id,
+          cardInstanceId: link.cardInstanceId,
+          cardName: link.cardName,
+          boardEvents: [
+            {
+              type: "CHAIN_LINK_RESOLVED",
+              playerId: link.playerId,
+              cardInstanceId: link.cardInstanceId,
+              sourceCardInstanceId: link.cardInstanceId,
+              sourceCardId: link.cardId,
+              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+              reason: "INFINITE_MAGIC_SLOT_FULL",
+              fromZoneRef: chainBoardZoneRef(link.playerId),
+              toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
+              chainLinkId: link.id
+            },
+            {
+              type: "CARD_SENT_TO_CEMETERY",
+              playerId: link.playerId,
+              cardInstanceId: link.cardInstanceId,
+              sourceCardInstanceId: link.cardInstanceId,
+              sourceCardId: link.cardId,
+              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+              reason: "INFINITE_MAGIC_SLOT_FULL",
+              fromZoneRef: chainBoardZoneRef(link.playerId),
+              toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
+              chainLinkId: link.id
+            }
+          ]
         });
       } else {
         chainCard.zone = "MAGIC_SLOT";
@@ -1026,7 +1284,35 @@ export function resolveMagicChain(state: MatchState): MatchState {
 
         addEvent(nextState, "INFINITE_MAGIC_RESOLVED_TO_FIELD", link.playerId, {
           chainId: chain.id,
-          cardName: link.cardName
+          chainLinkId: link.id,
+          cardInstanceId: link.cardInstanceId,
+          cardName: link.cardName,
+          boardEvents: [
+            {
+              type: "CHAIN_LINK_RESOLVED",
+              playerId: link.playerId,
+              cardInstanceId: link.cardInstanceId,
+              sourceCardInstanceId: link.cardInstanceId,
+              sourceCardId: link.cardId,
+              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+              reason: "INFINITE_MAGIC_TO_FIELD",
+              fromZoneRef: chainBoardZoneRef(link.playerId),
+              toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
+              chainLinkId: link.id
+            },
+            {
+              type: "MAGIC_RESOLVED",
+              playerId: link.playerId,
+              cardInstanceId: link.cardInstanceId,
+              sourceCardInstanceId: link.cardInstanceId,
+              sourceCardId: link.cardId,
+              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+              reason: "INFINITE_MAGIC_TO_FIELD",
+              fromZoneRef: chainBoardZoneRef(link.playerId),
+              toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
+              chainLinkId: link.id
+            }
+          ]
         });
       }
 
@@ -1038,9 +1324,37 @@ export function resolveMagicChain(state: MatchState): MatchState {
 
     addEvent(nextState, "MAGIC_RESOLVED_TO_CEMETERY", link.playerId, {
       chainId: chain.id,
+      chainLinkId: link.id,
+      cardInstanceId: link.cardInstanceId,
       cardName: link.cardName,
       magicType: link.magicType,
-      isLightningResponse: link.isLightningResponse
+      isLightningResponse: link.isLightningResponse,
+      boardEvents: [
+        {
+          type: "CHAIN_LINK_RESOLVED",
+          playerId: link.playerId,
+          cardInstanceId: link.cardInstanceId,
+          sourceCardInstanceId: link.cardInstanceId,
+          sourceCardId: link.cardId,
+          actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+          reason: "MAGIC_RESOLVED_TO_CEMETERY",
+          fromZoneRef: chainBoardZoneRef(link.playerId),
+          toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
+          chainLinkId: link.id
+        },
+        {
+          type: "MAGIC_RESOLVED",
+          playerId: link.playerId,
+          cardInstanceId: link.cardInstanceId,
+          sourceCardInstanceId: link.cardInstanceId,
+          sourceCardId: link.cardId,
+          actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+          reason: "MAGIC_RESOLVED_TO_CEMETERY",
+          fromZoneRef: chainBoardZoneRef(link.playerId),
+          toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
+          chainLinkId: link.id
+        }
+      ]
     });
   }
 
