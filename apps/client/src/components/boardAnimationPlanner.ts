@@ -300,6 +300,12 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
     case "STATUS_REMOVED": {
       const label = readString(data, "statusLabel", "label", "status", "effectType") ?? (event.type === "STATUS_REMOVED" ? "Status removed" : "Status");
       addCardGlow(steps, event.cardInstanceId ?? event.targetCardInstanceId, event.type === "STATUS_REMOVED" ? "LOCKED" : "VALID", Math.min(durationMs, 260));
+      if (event.type === "STATUS_REMOVED" && (event.reason === "DURATION_EXPIRED" || event.reason === "RECURRING_EFFECT_EXPIRED")) {
+        const expiredCardInstanceId = event.cardInstanceId ?? event.targetCardInstanceId;
+        if (expiredCardInstanceId) {
+          steps.push({ type: "DESTROY_CARD", cardInstanceId: expiredCardInstanceId, durationMs: Math.min(durationMs, 260) });
+        }
+      }
       steps.push({
         type: "SHOW_STATUS_CHIP",
         cardInstanceId: event.cardInstanceId ?? event.targetCardInstanceId,
@@ -309,6 +315,41 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
       });
       break;
     }
+
+    case "RECURRING_EFFECT_TICKED": {
+      const effectType = readString(data, "effectType", "status", "healType", "damageType");
+      const amount = readNumber(data, "amount", "damageAmount", "healAmount");
+      const targetCardInstanceId = event.cardInstanceId ?? event.targetCardInstanceId;
+      const isHeal = event.actionType?.toUpperCase().includes("HEAL") || effectType === "HEAL_OVER_TIME" || effectType === "REGENERATING_HEAL";
+      addCardGlow(steps, targetCardInstanceId, isHeal ? "HEAL" : "DAMAGE", durationMs);
+      if (targetCardInstanceId && amount !== undefined) {
+        steps.push(isHeal
+          ? { type: "HEAL_NUMBER", cardInstanceId: targetCardInstanceId, amount }
+          : { type: "DAMAGE_NUMBER", cardInstanceId: targetCardInstanceId, amount });
+      }
+      const ticksRemaining = readNumber(data, "ticksRemainingAfterThis", "remainingTicks");
+      const label = ticksRemaining !== undefined
+        ? `${isHeal ? "HOT" : "DOT"} ${ticksRemaining}`
+        : (isHeal ? "HOT" : "DOT");
+      steps.push({ type: "SHOW_STATUS_CHIP", cardInstanceId: targetCardInstanceId, playerId: event.playerId, label, durationMs });
+      break;
+    }
+
+    case "SCHEDULED_EFFECT_RESOLVED": {
+      const label = readString(data, "statusLabel", "label", "status", "effectType", "reason") ?? "Scheduled";
+      const targetCardInstanceId = event.cardInstanceId ?? event.targetCardInstanceId;
+      addCardGlow(steps, targetCardInstanceId, "LOCKED", Math.min(durationMs, 260));
+      steps.push({ type: "SHOW_STATUS_CHIP", cardInstanceId: targetCardInstanceId, playerId: event.playerId, label, durationMs });
+      break;
+    }
+
+    case "TURN_STARTED":
+      steps.push({ type: "SHOW_STATUS_CHIP", playerId: event.playerId, label: "Turn start", durationMs });
+      break;
+
+    case "TURN_PHASE_CHANGED":
+      steps.push({ type: "SHOW_STATUS_CHIP", playerId: event.playerId, label: readString(data, "phase") ?? "Phase", durationMs });
+      break;
 
     case "STAT_MODIFIER_APPLIED":
     case "STAT_MODIFIER_REMOVED": {

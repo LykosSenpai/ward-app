@@ -23,6 +23,9 @@ type BoardRenderEventSemanticFields = Pick<
   | "toZoneRef"
   | "promptId"
   | "targetCardInstanceId"
+  | "phase"
+  | "turnNumber"
+  | "turnCycleNumber"
 >;
 
 function mapRawEventTypeFallback(rawType: string): BoardRenderEvent["type"] {
@@ -45,6 +48,14 @@ function readString(data: Record<string, unknown>, ...keys: string[]): string | 
   for (const key of keys) {
     const value = data[key];
     if (typeof value === "string" && value.length > 0) return value;
+  }
+  return undefined;
+}
+
+function readNumber(data: Record<string, unknown>, ...keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
   }
   return undefined;
 }
@@ -136,6 +147,8 @@ function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"]
     case "CARD_HEALED":
     case "STATUS_APPLIED":
     case "STATUS_REMOVED":
+    case "RECURRING_EFFECT_TICKED":
+    case "SCHEDULED_EFFECT_RESOLVED":
     case "STAT_MODIFIER_APPLIED":
     case "STAT_MODIFIER_REMOVED":
     case "PROMPT_OPENED":
@@ -147,6 +160,8 @@ function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"]
     case "MAGIC_STOLEN":
     case "STOLEN_MAGIC_PLAYED":
     case "STOLEN_MAGIC_SENT_TO_CEMETERY":
+    case "TURN_STARTED":
+    case "TURN_PHASE_CHANGED":
     case "CARD_MOVED_ZONE":
     case "BATTLE_STARTED":
     case "BATTLE_STRIKE_STARTED":
@@ -180,6 +195,10 @@ function inferEventType(rawType: string, data: Record<string, unknown>): BoardRe
   if (normalizedRawType === "MANUAL_BATTLE_DECLARED") return "BATTLE_STARTED";
   if (normalizedRawType === "MANUAL_BATTLE_RESOLVED") return "BATTLE_RESOLVED";
   if (combined.includes("SOURCE_LINK_CLEANUP_TRIGGERED") || combined.includes("SOURCE_LINKED_SUMMONS_RETURNED")) return "SOURCE_LINK_CLEANUP_TRIGGERED";
+  if (normalizedRawType === "TURN_STARTED") return "TURN_STARTED";
+  if (normalizedRawType === "TURN_PHASE_CHANGED") return "TURN_PHASE_CHANGED";
+  if (combined.includes("RECURRING_EFFECT_TICKED")) return "RECURRING_EFFECT_TICKED";
+  if (combined.includes("SCHEDULED_EFFECT_RESOLVED")) return "SCHEDULED_EFFECT_RESOLVED";
   if (combined.includes("ANCHOR_LINK_CREATED")) return "ANCHOR_LINK_CREATED";
   if (combined.includes("PROMPT") && (combined.includes("RESOLVE") || combined.includes("COMPLETE") || combined.includes("DECLINED"))) {
     return "PROMPT_RESOLVED";
@@ -235,6 +254,9 @@ function inferCardInstanceId(type: BoardRenderEvent["type"], data: Record<string
   }
   if (type === "MAGIC_ATTACHED") return readFirstString(data, "magicCardInstanceId", "equippedMagicCardInstanceId", "cardInstanceId");
   if (type === "CARD_DAMAGED" || type === "CARD_HEALED" || type === "STATUS_APPLIED" || type === "STATUS_REMOVED" || type === "STAT_MODIFIER_APPLIED" || type === "STAT_MODIFIER_REMOVED") {
+    return readFirstString(data, "cardInstanceId", "targetCardInstanceId", "targetCreatureInstanceId");
+  }
+  if (type === "RECURRING_EFFECT_TICKED" || type === "SCHEDULED_EFFECT_RESOLVED") {
     return readFirstString(data, "cardInstanceId", "targetCardInstanceId", "targetCreatureInstanceId");
   }
   return readFirstString(data, "cardInstanceId", "sourceCardInstanceId", "targetCardInstanceId");
@@ -302,7 +324,10 @@ function mapEventToSemanticFields(
     fromZoneRef: inferFromZoneRef(type, playerId, data),
     toZoneRef: inferToZoneRef(type, playerId, data),
     promptId: readString(data, "promptId"),
-    targetCardInstanceId: readString(data, "targetCardInstanceId", "targetCreatureInstanceId", "destroyedCardInstanceId", "attachedToInstanceId")
+    targetCardInstanceId: readString(data, "targetCardInstanceId", "targetCreatureInstanceId", "destroyedCardInstanceId", "attachedToInstanceId"),
+    phase: readString(data, "phase") as BoardRenderEvent["phase"],
+    turnNumber: readNumber(data, "turnNumber"),
+    turnCycleNumber: readNumber(data, "turnCycleNumber")
   };
 }
 

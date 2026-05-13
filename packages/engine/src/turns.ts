@@ -40,6 +40,32 @@ function addEvent(
   });
 }
 
+function turnBoardEventPayload(
+  state: MatchState,
+  type: "TURN_STARTED" | "TURN_PHASE_CHANGED",
+  playerId: string,
+  phase: TurnPhase,
+  reason?: string
+): Record<string, unknown> {
+  return {
+    playerId,
+    phase,
+    turnNumber: state.turn.turnNumber,
+    turnCycleNumber: state.turn.turnCycleNumber,
+    ...(reason ? { reason } : {}),
+    boardEvents: [
+      {
+        type,
+        playerId,
+        phase,
+        turnNumber: state.turn.turnNumber,
+        turnCycleNumber: state.turn.turnCycleNumber,
+        ...(reason ? { reason } : {})
+      }
+    ]
+  };
+}
+
 function getPlayer(state: MatchState, playerId: string): PlayerState {
   const player = state.players.find(p => p.id === playerId);
 
@@ -181,6 +207,13 @@ export function advancePhase(state: MatchState): MatchState {
       phase: phaseToEnter
     };
 
+    addEvent(
+      nextState,
+      "TURN_PHASE_CHANGED",
+      activePlayer.id,
+      turnBoardEventPayload(nextState, "TURN_PHASE_CHANGED", activePlayer.id, phaseToEnter, "ADVANCE_PHASE")
+    );
+
     if (state.turn.phase === "SUMMON_MAGIC" && phaseToEnter === "COMBAT") {
       processBeginningOfCombatRuntimeEffects(nextState, addEvent);
     }
@@ -244,6 +277,20 @@ export function advanceTurn(state: MatchState): MatchState {
       (nextState.turn.turnStartCountsByPlayer[nextPlayerId] ?? 0) + 1
   }
 };
+
+addEvent(
+  nextState,
+  "TURN_STARTED",
+  nextPlayerId,
+  turnBoardEventPayload(nextState, "TURN_STARTED", nextPlayerId, "DRAW", "ADVANCE_TURN")
+);
+
+addEvent(
+  nextState,
+  "TURN_PHASE_CHANGED",
+  nextPlayerId,
+  turnBoardEventPayload(nextState, "TURN_PHASE_CHANGED", nextPlayerId, "DRAW", "ADVANCE_TURN")
+);
 
 removeExpiredSilenceFromTheGraveEffects(nextState, nextPlayerId, addEvent);
 removeExpiredStatModifiersForPlayerTurnStart(nextState, nextPlayerId, addEvent);

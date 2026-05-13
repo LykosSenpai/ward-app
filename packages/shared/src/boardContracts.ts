@@ -99,6 +99,8 @@ export type BoardEventType =
   | "CARD_HEALED"
   | "STATUS_APPLIED"
   | "STATUS_REMOVED"
+  | "RECURRING_EFFECT_TICKED"
+  | "SCHEDULED_EFFECT_RESOLVED"
   | "STAT_MODIFIER_APPLIED"
   | "STAT_MODIFIER_REMOVED"
   | "DICE_ROLLED"
@@ -157,6 +159,9 @@ export type BoardEvent =
       battleId?: string;
       strikeId?: string;
       amount?: number;
+      phase?: "DRAW" | "SUMMON_MAGIC" | "COMBAT" | "SECOND_MAGIC" | "END";
+      turnNumber?: number;
+      turnCycleNumber?: number;
       damageType?: string;
       healType?: string;
       values?: number[];

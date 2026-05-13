@@ -21,6 +21,18 @@ function boardZoneRef(playerId: string | undefined, zone: BoardZoneRef["zone"]):
   };
 }
 
+function timingBoardEventFields(state: MatchState): {
+  phase: MatchState["turn"]["phase"];
+  turnNumber: number;
+  turnCycleNumber: number;
+} {
+  return {
+    phase: state.turn.phase,
+    turnNumber: state.turn.turnNumber,
+    turnCycleNumber: state.turn.turnCycleNumber
+  };
+}
+
 function destroyCreaturesAnchoredToCard(
   state: MatchState,
   sourceCardInstanceId: string,
@@ -74,6 +86,9 @@ function destroyCreaturesAnchoredToCard(
         ownerPlayerId: ownerPlayer.id,
         fromZoneRef: boardZoneRef(fieldOwner.id, "LIMITED_SUMMON"),
         toZoneRef: boardZoneRef(ownerPlayer.id, "CEMETERY"),
+        phase: state.turn.phase,
+        turnNumber: state.turn.turnNumber,
+        turnCycleNumber: state.turn.turnCycleNumber,
         boardEvents: [
           {
             type: "SOURCE_LINK_CLEANUP_TRIGGERED",
@@ -82,7 +97,8 @@ function destroyCreaturesAnchoredToCard(
             actionType: "APPLY_SOURCE_LINKED_CLEANUP",
             reason: "ANCHOR_CLEANUP",
             cardInstanceId: creature.instanceId,
-            targetCardInstanceId: creature.instanceId
+            targetCardInstanceId: creature.instanceId,
+            ...timingBoardEventFields(state)
           },
           {
             type: "CARD_DESTROYED",
@@ -92,7 +108,8 @@ function destroyCreaturesAnchoredToCard(
             reason: "ANCHOR_CLEANUP",
             cardInstanceId: creature.instanceId,
             fromZoneRef: boardZoneRef(fieldOwner.id, "LIMITED_SUMMON"),
-            toZoneRef: boardZoneRef(ownerPlayer.id, "CEMETERY")
+            toZoneRef: boardZoneRef(ownerPlayer.id, "CEMETERY"),
+            ...timingBoardEventFields(state)
           }
         ]
       });
@@ -149,6 +166,9 @@ function destroyCreaturesAnchoredToCard(
       ownerPlayerId: ownerPlayer.id,
       fromZoneRef: boardZoneRef(fieldOwner.id, "PRIMARY_CREATURE"),
       toZoneRef: boardZoneRef(ownerPlayer.id, "CEMETERY"),
+      phase: state.turn.phase,
+      turnNumber: state.turn.turnNumber,
+      turnCycleNumber: state.turn.turnCycleNumber,
       boardEvents: [
         {
           type: "SOURCE_LINK_CLEANUP_TRIGGERED",
@@ -157,7 +177,8 @@ function destroyCreaturesAnchoredToCard(
           actionType: "APPLY_SOURCE_LINKED_CLEANUP",
           reason: "ANCHOR_CLEANUP",
           cardInstanceId: primary.instanceId,
-          targetCardInstanceId: primary.instanceId
+          targetCardInstanceId: primary.instanceId,
+          ...timingBoardEventFields(state)
         },
         {
           type: "CARD_DESTROYED",
@@ -167,7 +188,8 @@ function destroyCreaturesAnchoredToCard(
           reason: "ANCHOR_CLEANUP",
           cardInstanceId: primary.instanceId,
           fromZoneRef: boardZoneRef(fieldOwner.id, "PRIMARY_CREATURE"),
-          toZoneRef: boardZoneRef(ownerPlayer.id, "CEMETERY")
+          toZoneRef: boardZoneRef(ownerPlayer.id, "CEMETERY"),
+          ...timingBoardEventFields(state)
         }
       ]
     });
@@ -233,6 +255,9 @@ export function returnLinkedSummonsForInvalidatedSource(
       sourceCardName: args.sourceCardName,
       actionType: "APPLY_SOURCE_LINKED_CLEANUP",
       reason: args.reason,
+      phase: state.turn.phase,
+      turnNumber: state.turn.turnNumber,
+      turnCycleNumber: state.turn.turnCycleNumber,
       linkedDestroyedCreatures: linkedDestroyedCreatures.map(item => ({
         creatureInstanceId: item.creature.instanceId,
         creatureName: item.creatureName,
@@ -246,7 +271,8 @@ export function returnLinkedSummonsForInvalidatedSource(
         actionType: "APPLY_SOURCE_LINKED_CLEANUP",
         reason: args.reason,
         cardInstanceId: item.creature.instanceId,
-        targetCardInstanceId: item.creature.instanceId
+        targetCardInstanceId: item.creature.instanceId,
+        ...timingBoardEventFields(state)
       }))
     });
   }

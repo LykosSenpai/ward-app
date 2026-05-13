@@ -52,6 +52,8 @@ export type BoardRenderEventType =
   | "CARD_HEALED"
   | "STATUS_APPLIED"
   | "STATUS_REMOVED"
+  | "RECURRING_EFFECT_TICKED"
+  | "SCHEDULED_EFFECT_RESOLVED"
   | "STAT_MODIFIER_APPLIED"
   | "STAT_MODIFIER_REMOVED"
   | "PROMPT_OPENED"
@@ -63,6 +65,8 @@ export type BoardRenderEventType =
   | "MAGIC_STOLEN"
   | "STOLEN_MAGIC_PLAYED"
   | "STOLEN_MAGIC_SENT_TO_CEMETERY"
+  | "TURN_STARTED"
+  | "TURN_PHASE_CHANGED"
   | "CARD_MOVED_ZONE"
   | "BATTLE_STARTED"
   | "BATTLE_STRIKE_STARTED"
@@ -92,6 +96,9 @@ export type BoardRenderEvent = {
   toZoneRef?: BoardZoneRef;
   promptId?: string;
   targetCardInstanceId?: string;
+  phase?: AppMatchState["turn"]["phase"];
+  turnNumber?: number;
+  turnCycleNumber?: number;
   payload: AppMatchState["eventLog"][number]["payload"];
   visualTargets: {
     slotIds: string[];
