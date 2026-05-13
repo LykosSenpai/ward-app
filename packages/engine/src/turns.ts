@@ -246,7 +246,7 @@ export function advanceTurn(state: MatchState): MatchState {
 };
 
 removeExpiredSilenceFromTheGraveEffects(nextState, nextPlayerId, addEvent);
-removeExpiredStatModifiersForPlayerTurnStart(nextState, nextPlayerId);
+removeExpiredStatModifiersForPlayerTurnStart(nextState, nextPlayerId, addEvent);
 processBeginningOfTurnRuntimeEffects(nextState, addEvent);
 
 return nextState;

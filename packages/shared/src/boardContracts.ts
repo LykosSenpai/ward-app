@@ -150,8 +150,14 @@ export type BoardEvent =
       battleId?: string;
       strikeId?: string;
       amount?: number;
+      damageType?: string;
+      healType?: string;
       values?: number[];
+      status?: string;
       statusLabel?: string;
+      stat?: string;
+      delta?: number;
+      modifierId?: string;
       metadata?: Record<string, unknown>;
     });
 

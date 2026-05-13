@@ -225,6 +225,44 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
       break;
     }
 
+    case "CARD_DAMAGED":
+      addDamageOrHealSteps(steps, event, data, durationMs);
+      break;
+
+    case "CARD_HEALED":
+      addDamageOrHealSteps(steps, { ...event, actionType: event.actionType ?? "HEAL" }, data, durationMs);
+      break;
+
+    case "STATUS_APPLIED":
+    case "STATUS_REMOVED": {
+      const label = readString(data, "statusLabel", "label", "status", "effectType") ?? (event.type === "STATUS_REMOVED" ? "Status removed" : "Status");
+      addCardGlow(steps, event.cardInstanceId ?? event.targetCardInstanceId, event.type === "STATUS_REMOVED" ? "LOCKED" : "VALID", Math.min(durationMs, 260));
+      steps.push({
+        type: "SHOW_STATUS_CHIP",
+        cardInstanceId: event.cardInstanceId ?? event.targetCardInstanceId,
+        playerId: event.playerId,
+        label,
+        durationMs
+      });
+      break;
+    }
+
+    case "STAT_MODIFIER_APPLIED":
+    case "STAT_MODIFIER_REMOVED": {
+      const stat = readString(data, "stat", "rollKind") ?? "Stat";
+      const delta = readNumber(data, "delta", "amount", "diceLimitValue");
+      const label = delta !== undefined ? `${stat} ${delta > 0 ? "+" : ""}${delta}` : stat;
+      addCardGlow(steps, event.cardInstanceId ?? event.targetCardInstanceId, event.type === "STAT_MODIFIER_REMOVED" ? "LOCKED" : "VALID", Math.min(durationMs, 260));
+      steps.push({
+        type: "SHOW_STATUS_CHIP",
+        cardInstanceId: event.cardInstanceId ?? event.targetCardInstanceId,
+        playerId: event.playerId,
+        label,
+        durationMs
+      });
+      break;
+    }
+
     case "PROMPT_OPENED":
     case "EFFECT_PROMPT_OPENED":
       addCardGlow(steps, event.sourceCardInstanceId ?? event.cardInstanceId, "TARGET", durationMs);

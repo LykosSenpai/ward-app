@@ -75,6 +75,18 @@ type BoardEventPayload = {
   toZoneRef?: BoardZoneRef;
   targetCardInstanceId?: string;
   promptId?: string;
+  amount?: number;
+  damageType?: string;
+  healType?: string;
+  status?: string;
+  statusLabel?: string;
+  effectType?: string;
+  stat?: string;
+  delta?: number;
+  modifierId?: string;
+  rollKind?: string;
+  diceLimitMode?: string;
+  diceLimitValue?: number;
 };
 
 function boardZoneRef(playerId: string | undefined, zone: BoardZoneKind): BoardZoneRef {
@@ -96,6 +108,44 @@ function promptBoardEventBase(prompt: PendingEffectTargetPrompt, reason?: string
     actionType: prompt.actionType,
     promptId: prompt.id,
     ...(reason ? { reason } : {})
+  };
+}
+
+function cardDamagedBoardEvent(
+  prompt: PendingEffectTargetPrompt,
+  args: {
+    cardInstanceId: string;
+    amount: number;
+    damageType?: string;
+    reason?: string;
+  }
+): BoardEventPayload {
+  return {
+    type: "CARD_DAMAGED",
+    ...promptBoardEventBase(prompt, args.reason),
+    cardInstanceId: args.cardInstanceId,
+    targetCardInstanceId: args.cardInstanceId,
+    amount: args.amount,
+    damageType: args.damageType ?? prompt.actionType
+  };
+}
+
+function cardHealedBoardEvent(
+  prompt: PendingEffectTargetPrompt,
+  args: {
+    cardInstanceId: string;
+    amount: number;
+    healType?: string;
+    reason?: string;
+  }
+): BoardEventPayload {
+  return {
+    type: "CARD_HEALED",
+    ...promptBoardEventBase(prompt, args.reason),
+    cardInstanceId: args.cardInstanceId,
+    targetCardInstanceId: args.cardInstanceId,
+    amount: args.amount,
+    healType: args.healType ?? prompt.actionType
   };
 }
 
@@ -1594,7 +1644,15 @@ export function resolvePendingEffectTargetPrompt(
         targetKind: result.targetKind,
         damageAmount: result.damageAmount,
         remainingHp: result.remainingHp,
-        killed: result.killed
+        killed: result.killed,
+        boardEvents: [
+          cardDamagedBoardEvent(prompt, {
+            cardInstanceId: result.creature.instanceId,
+            amount: result.damageAmount,
+            damageType: "ROLL_TABLE_DAMAGE",
+            reason: "EFFECT_ROLL_TABLE"
+          })
+        ]
       });
 
       return nextState;
@@ -1621,7 +1679,15 @@ export function resolvePendingEffectTargetPrompt(
         targetKind: result.targetKind,
         healAmount: result.healAmount,
         remainingHp: result.remainingHp,
-        maxHp: result.maxHp
+        maxHp: result.maxHp,
+        boardEvents: [
+          cardHealedBoardEvent(prompt, {
+            cardInstanceId: result.creature.instanceId,
+            amount: result.healAmount,
+            healType: "ROLL_TABLE_HEAL",
+            reason: "EFFECT_ROLL_TABLE"
+          })
+        ]
       });
 
       return nextState;
@@ -1669,7 +1735,15 @@ export function resolvePendingEffectTargetPrompt(
       targetKind: result.targetKind,
       damageAmount: result.damageAmount,
       remainingHp: result.remainingHp,
-      killed: result.killed
+      killed: result.killed,
+      boardEvents: [
+        cardDamagedBoardEvent(prompt, {
+          cardInstanceId: result.creature.instanceId,
+          amount: result.damageAmount,
+          damageType: prompt.actionType,
+          reason: "EFFECT_DAMAGE"
+        })
+      ]
     });
 
     return nextState;
@@ -1699,7 +1773,15 @@ export function resolvePendingEffectTargetPrompt(
       targetKind: result.targetKind,
       healAmount: result.healAmount,
       remainingHp: result.remainingHp,
-      maxHp: result.maxHp
+      maxHp: result.maxHp,
+      boardEvents: [
+        cardHealedBoardEvent(prompt, {
+          cardInstanceId: result.creature.instanceId,
+          amount: result.healAmount,
+          healType: prompt.actionType,
+          reason: "EFFECT_HEAL"
+        })
+      ]
     });
 
     return nextState;
@@ -2038,7 +2120,19 @@ export function resolvePendingEffectTargetPrompt(
       diceLimitMode: result.activeInstance.diceLimitMode,
       diceLimitValue: result.activeInstance.diceLimitValue,
       expiresOnPlayerId: result.activeInstance.expiresOnPlayerId,
-      expiresAtPlayerTurnStartCount: result.activeInstance.expiresAtPlayerTurnStartCount
+      expiresAtPlayerTurnStartCount: result.activeInstance.expiresAtPlayerTurnStartCount,
+      boardEvents: [
+        {
+          type: "STAT_MODIFIER_APPLIED",
+          ...promptBoardEventBase(prompt, "DICE_LIMIT_APPLIED"),
+          cardInstanceId: result.target.card.instanceId,
+          targetCardInstanceId: result.target.card.instanceId,
+          statusLabel: result.activeInstance.label,
+          rollKind: result.activeInstance.rollKind,
+          diceLimitMode: result.activeInstance.diceLimitMode,
+          diceLimitValue: result.activeInstance.diceLimitValue
+        } satisfies BoardEventPayload
+      ]
     });
 
     return nextState;
@@ -2057,9 +2151,20 @@ export function resolvePendingEffectTargetPrompt(
       targetCreatureInstanceId: result.target.card.instanceId,
       targetCreatureName: result.target.definition.name,
       status: result.activeStatus.status,
+      label: result.activeStatus.label,
       flags: result.activeStatus.flags,
       expiresOnPlayerId: result.activeStatus.expiresOnPlayerId,
-      expiresAtPlayerTurnStartCount: result.activeStatus.expiresAtPlayerTurnStartCount
+      expiresAtPlayerTurnStartCount: result.activeStatus.expiresAtPlayerTurnStartCount,
+      boardEvents: [
+        {
+          type: "STATUS_APPLIED",
+          ...promptBoardEventBase(prompt, "STATUS_APPLIED"),
+          cardInstanceId: result.target.card.instanceId,
+          targetCardInstanceId: result.target.card.instanceId,
+          status: result.activeStatus.status,
+          statusLabel: result.activeStatus.label
+        } satisfies BoardEventPayload
+      ]
     });
 
     return nextState;
@@ -2083,7 +2188,19 @@ export function resolvePendingEffectTargetPrompt(
       tickTiming: result.recurring?.tickTiming,
       remainingTicks: result.recurring?.remainingTicks ?? 0,
       nextTickPlayerId: result.recurring?.nextTickPlayerId,
-      nextTickTurnStartCount: result.recurring?.nextTickTurnStartCount
+      nextTickTurnStartCount: result.recurring?.nextTickTurnStartCount,
+      boardEvents: [
+        {
+          type: "STATUS_APPLIED",
+          ...promptBoardEventBase(prompt, "RECURRING_EFFECT_APPLIED"),
+          cardInstanceId: result.target.card.instanceId,
+          targetCardInstanceId: result.target.card.instanceId,
+          amount: result.recurring?.amount,
+          status: result.recurring?.effectType ?? (prompt.actionType.includes("HEAL") ? "HEAL_OVER_TIME" : "DAMAGE_OVER_TIME"),
+          statusLabel: result.recurring?.label ?? (prompt.actionType.includes("HEAL") ? "Healing over time" : "Damage over time"),
+          effectType: result.recurring?.effectType
+        } satisfies BoardEventPayload
+      ]
     });
 
     return nextState;
@@ -2125,7 +2242,18 @@ export function resolvePendingEffectTargetPrompt(
       targetKind: result.targetKind,
       stat: result.stat,
       delta: result.delta,
-      modifierId: result.modifierId
+      modifierId: result.modifierId,
+      boardEvents: [
+        {
+          type: "STAT_MODIFIER_APPLIED",
+          ...promptBoardEventBase(prompt, "STAT_MODIFIER_APPLIED"),
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          stat: result.stat,
+          delta: result.delta,
+          modifierId: result.modifierId
+        } satisfies BoardEventPayload
+      ]
     });
 
     return nextState;

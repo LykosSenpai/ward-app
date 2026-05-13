@@ -128,6 +128,12 @@ function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"]
     case "MAGIC_ATTACHED":
     case "ANCHOR_LINK_CREATED":
     case "SOURCE_LINK_CLEANUP_TRIGGERED":
+    case "CARD_DAMAGED":
+    case "CARD_HEALED":
+    case "STATUS_APPLIED":
+    case "STATUS_REMOVED":
+    case "STAT_MODIFIER_APPLIED":
+    case "STAT_MODIFIER_REMOVED":
     case "PROMPT_OPENED":
     case "PROMPT_RESOLVED":
     case "CARD_MOVED_ZONE":
@@ -151,6 +157,7 @@ function inferEventType(rawType: string, data: Record<string, unknown>): BoardRe
   const normalizedRawType = rawType.toUpperCase();
   const combined = `${normalizedRawType} ${actionType ?? ""}`;
 
+  if (normalizedRawType === "BATTLE_DAMAGE_APPLIED") return "BATTLE_DAMAGE_APPLIED";
   if (combined.includes("SOURCE_LINK_CLEANUP_TRIGGERED") || combined.includes("SOURCE_LINKED_SUMMONS_RETURNED")) return "SOURCE_LINK_CLEANUP_TRIGGERED";
   if (combined.includes("ANCHOR_LINK_CREATED")) return "ANCHOR_LINK_CREATED";
   if (combined.includes("PROMPT") && (combined.includes("RESOLVE") || combined.includes("COMPLETE") || combined.includes("DECLINED"))) {
@@ -159,6 +166,12 @@ function inferEventType(rawType: string, data: Record<string, unknown>): BoardRe
   if (combined.includes("PROMPT") && (combined.includes("CREATED") || combined.includes("REQUESTED") || combined.includes("OPENED"))) {
     return "PROMPT_OPENED";
   }
+  if (combined.includes("STATUS") && (combined.includes("REMOVED") || combined.includes("EXPIRED"))) return "STATUS_REMOVED";
+  if (combined.includes("STATUS") && combined.includes("APPLIED")) return "STATUS_APPLIED";
+  if (combined.includes("STAT_MODIFIER") && (combined.includes("REMOVED") || combined.includes("EXPIRED"))) return "STAT_MODIFIER_REMOVED";
+  if ((combined.includes("STAT_MODIFIER") || combined.includes("DICE_LIMIT") || combined.includes("DICE_MODIFIER")) && combined.includes("APPLIED")) return "STAT_MODIFIER_APPLIED";
+  if (combined.includes("HEAL") && (combined.includes("RESOLVED") || combined.includes("TICK"))) return "CARD_HEALED";
+  if (combined.includes("DAMAGE") && (combined.includes("RESOLVED") || combined.includes("TICK") || combined.includes("APPLIED"))) return "CARD_DAMAGED";
   if (combined.includes("RETURN") && combined.includes("HAND")) return "CARD_RETURNED_TO_HAND";
   if (combined.includes("RETURN") && combined.includes("DECK")) return "CARD_RETURNED_TO_DECK";
   if (combined.includes("DISCARD")) return "CARD_DISCARDED";
@@ -182,6 +195,9 @@ function inferCardInstanceId(type: BoardRenderEvent["type"], data: Record<string
     return readFirstString(data, "summonedCardInstanceId", "cardInstanceId", "targetCardInstanceId");
   }
   if (type === "MAGIC_ATTACHED") return readFirstString(data, "magicCardInstanceId", "equippedMagicCardInstanceId", "cardInstanceId");
+  if (type === "CARD_DAMAGED" || type === "CARD_HEALED" || type === "STATUS_APPLIED" || type === "STATUS_REMOVED" || type === "STAT_MODIFIER_APPLIED" || type === "STAT_MODIFIER_REMOVED") {
+    return readFirstString(data, "cardInstanceId", "targetCardInstanceId", "targetCreatureInstanceId");
+  }
   return readFirstString(data, "cardInstanceId", "sourceCardInstanceId", "targetCardInstanceId");
 }
 
