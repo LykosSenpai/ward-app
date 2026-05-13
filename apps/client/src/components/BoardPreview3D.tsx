@@ -14,13 +14,13 @@ import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAni
 import { getBoardAnimationProfile } from "./boardAnimationProfiles";
 import { decideBoardReconciliation } from "./boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "./boardRuntimeHealth";
-import { canSummonCreatureFromHand, getAdvanceBlockReason, getBattleBlockReason, getCardName, getPlayerBattleCreatureOptions, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, isMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
+import { getAdvanceBlockReason, getBattleBlockReason, getCardName, getPlayerBattleCreatureOptions, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
 import { mapPointerGestureToIntent } from "./boardInteractionIntents";
 import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
-import { buildPendingEffectTargetAffordances } from "./boardAffordances";
+import { buildHandPlacementAffordances, buildPendingEffectTargetAffordances } from "./boardAffordances";
 import type { BoardAffordance, BoardZoneRef } from "@ward/shared";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
@@ -960,101 +960,66 @@ export function BoardPreview3D({
     });
   }, [sacrificeCandidateIds, selectedHandCardId, selectedSummonRequiredSacrifices]);
 
+  const occupiedMagicSlotIndexes = useMemo(
+    () => Array.from({ length: 5 }, (_, index) => index)
+      .filter(index => occupiedSlotIds.has(`${focusedPlayerId}-magic-${index + 1}`)),
+    [focusedPlayerId, occupiedSlotIds]
+  );
+  const handPlacementAffordances = useMemo(() => buildHandPlacementAffordances({
+    match,
+    playerId: focusedPlayerId,
+    controlledPlayerId,
+    selectedHandCardId,
+    selectedSacrificeIdsByCard,
+    occupiedMagicSlotIndexes
+  }), [controlledPlayerId, focusedPlayerId, match, occupiedMagicSlotIndexes, selectedHandCardId, selectedSacrificeIdsByCard]);
+  const getDropZoneSlotIdsForCard = useCallback((cardInstanceId: string) => {
+    return handPlacementAffordances.flatMap(affordance => {
+      if (
+        affordance.kind !== "VALID_DROP_ZONE" ||
+        affordance.sourceCardInstanceId !== cardInstanceId ||
+        affordance.highlightStyle !== "VALID"
+      ) {
+        return [] as string[];
+      }
+      const slotId = slotIdFromTargetZoneRef(affordance.targetZoneRef);
+      return slotId ? [slotId] : [];
+    });
+  }, [handPlacementAffordances]);
   const getLegalTargetSlotIdsForCard = useCallback((cardInstanceId: string) => {
-    const selectedCard = handCards.find(card => card.instanceId === cardInstanceId);
-    if (!selectedCard || !focusedPlayer) return [] as string[];
-    const isMatchComplete = match.status === "COMPLETE";
-    const anyDiscardRequired = Boolean(match.setup.handDiscardRequiredForPlayerId);
-    const replacementRequiredForThisPlayer =
-      match.setup.primaryReplacementRequiredForPlayerId === focusedPlayer.id;
-    const limitedSummonPromotionRequiredForThisPlayer =
-      replacementRequiredForThisPlayer && focusedPlayer.field.limitedSummons.length > 0;
-    const canControlThisPlayer = !controlledPlayerId || controlledPlayerId === focusedPlayer.id;
     if (
-      match.setup.handDiscardRequiredForPlayerId === focusedPlayer.id &&
-      canControlThisPlayer &&
+      match.setup.handDiscardRequiredForPlayerId === focusedPlayerId &&
+      canControlPlayer(focusedPlayerId) &&
       onDiscardHandCardToCemetery
     ) {
       return [`${focusedPlayerId}-cemetery`];
     }
-    const isActivePlayer = match.turn.activePlayerId === focusedPlayer.id;
-    const canPlayPrimaryNow =
-      !isMatchComplete &&
-      canControlThisPlayer &&
-      !match.pendingPrompt &&
-      !match.pendingChain &&
-      !anyDiscardRequired &&
-      !limitedSummonPromotionRequiredForThisPlayer &&
-      (replacementRequiredForThisPlayer ||
-        (isActivePlayer &&
-          match.turn.phase === "SUMMON_MAGIC" &&
-          !focusedPlayer.turnFlags.normalSummonUsed));
-    const canPlayMagicNow =
-      !isMatchComplete &&
-      canControlThisPlayer &&
-      isActivePlayer &&
-      !match.pendingPrompt &&
-      !match.pendingChain &&
-      !anyDiscardRequired &&
-      !match.setup.primaryReplacementRequiredForPlayerId &&
-      (match.turn.phase === "SUMMON_MAGIC" || match.turn.phase === "SECOND_MAGIC");
-
-    if (isCreature(match, selectedCard)) {
-      const requiredSacrifices = getRequiredSacrificesForCard(match, selectedCard);
-      const selectedSacrifices = selectedSacrificeIdsByCard[cardInstanceId] ?? [];
-      const hasEnoughSelectedSacrifices = selectedSacrifices.length >= requiredSacrifices;
-      return canPlayPrimaryNow && hasEnoughSelectedSacrifices && canSummonCreatureFromHand(match, focusedPlayer, selectedCard)
-        ? [`${focusedPlayerId}-primary`]
-        : [];
+    return getDropZoneSlotIdsForCard(cardInstanceId);
+  }, [focusedPlayerId, getDropZoneSlotIdsForCard, match.setup.handDiscardRequiredForPlayerId, onDiscardHandCardToCemetery]);
+  const playableHandCardIds = useMemo(
+    () => new Set(handPlacementAffordances
+      .filter(affordance => affordance.kind === "PLAYABLE_CARD" && affordance.sourceCardInstanceId)
+      .map(affordance => affordance.sourceCardInstanceId!)),
+    [handPlacementAffordances]
+  );
+  const disabledHandCardReasons = useMemo(() => {
+    const reasons = new Map<string, string>();
+    for (const affordance of handPlacementAffordances) {
+      if (
+        affordance.kind === "DISABLED_ACTION" &&
+        affordance.sourceCardInstanceId &&
+        !affordance.targetZoneRef &&
+        affordance.disabledReason
+      ) {
+        reasons.set(affordance.sourceCardInstanceId, affordance.disabledReason);
+      }
     }
-    if (isMagic(match, selectedCard)) {
-      return canPlayMagicNow
-        ? Array.from({ length: 5 }, (_, index) => `${focusedPlayerId}-magic-${index + 1}`)
-          .filter(slotId => !occupiedSlotIds.has(slotId))
-        : [];
-    }
-    return [] as string[];
-  }, [controlledPlayerId, focusedPlayer, focusedPlayerId, handCards, match, occupiedSlotIds, onDiscardHandCardToCemetery, selectedSacrificeIdsByCard]);
-  const getVisualTargetSlotIdsForCard = useCallback((cardInstanceId: string) => {
-    const selectedCard = handCards.find(card => card.instanceId === cardInstanceId);
-    if (!selectedCard || !focusedPlayer) return [] as string[];
-    const isMatchComplete = match.status === "COMPLETE";
-    const anyDiscardRequired = Boolean(match.setup.handDiscardRequiredForPlayerId);
-    const replacementRequiredForThisPlayer =
-      match.setup.primaryReplacementRequiredForPlayerId === focusedPlayer.id;
-    const limitedSummonPromotionRequiredForThisPlayer =
-      replacementRequiredForThisPlayer && focusedPlayer.field.limitedSummons.length > 0;
-    const canControlThisPlayer = !controlledPlayerId || controlledPlayerId === focusedPlayer.id;
-    if (
-      match.setup.handDiscardRequiredForPlayerId === focusedPlayer.id &&
-      canControlThisPlayer &&
-      onDiscardHandCardToCemetery
-    ) {
-      return [`${focusedPlayerId}-cemetery`];
-    }
-    const isActivePlayer = match.turn.activePlayerId === focusedPlayer.id;
-    const canPlayPrimaryNow =
-      !isMatchComplete &&
-      canControlThisPlayer &&
-      !match.pendingPrompt &&
-      !match.pendingChain &&
-      !anyDiscardRequired &&
-      !limitedSummonPromotionRequiredForThisPlayer &&
-      (replacementRequiredForThisPlayer ||
-        (isActivePlayer &&
-          match.turn.phase === "SUMMON_MAGIC" &&
-          !focusedPlayer.turnFlags.normalSummonUsed));
-
-    if (isCreature(match, selectedCard) && canPlayPrimaryNow && canSummonCreatureFromHand(match, focusedPlayer, selectedCard)) {
-      return [`${focusedPlayerId}-primary`];
-    }
-
-    return getLegalTargetSlotIdsForCard(cardInstanceId);
-  }, [controlledPlayerId, focusedPlayer, focusedPlayerId, getLegalTargetSlotIdsForCard, handCards, match, onDiscardHandCardToCemetery]);
+    return reasons;
+  }, [handPlacementAffordances]);
   const visualTargetSlotIds = useMemo(() => {
     if (!selectedHandCardId) return [] as string[];
-    return getVisualTargetSlotIdsForCard(selectedHandCardId);
-  }, [getVisualTargetSlotIdsForCard, selectedHandCardId]);
+    return getDropZoneSlotIdsForCard(selectedHandCardId);
+  }, [getDropZoneSlotIdsForCard, selectedHandCardId]);
   const sacrificeTargetSlotIds = sacrificeSelectionActive ? [sacrificeDropSlotId] : [];
   const sacrificeCandidatePieceIds = useMemo(() => {
     if (!sacrificeCandidateIds.size) return [] as string[];
@@ -1849,14 +1814,23 @@ export function BoardPreview3D({
   });
   const blockedReasonsBySlotId = useMemo<Record<string, string>>(() => {
     if (!selectedHandCardId) return {};
-    const selectedCard = handCards.find(card => card.instanceId === selectedHandCardId);
-    if (!selectedCard) return {};
-    return Object.fromEntries(
-      BOARD_SLOTS
-        .filter(slot => !visualTargetSlotIds.includes(slot.id) && !sacrificeTargetSlotIds.includes(slot.id))
-        .map(slot => [slot.id, `Cannot play ${match.cardCatalog[selectedCard.cardId]?.name ?? "this card"} to ${slot.label}`])
-    );
-  }, [handCards, match.cardCatalog, sacrificeTargetSlotIds, selectedHandCardId, visualTargetSlotIds]);
+    const reasons: Record<string, string> = {};
+    for (const affordance of handPlacementAffordances) {
+      if (
+        affordance.kind !== "DISABLED_ACTION" ||
+        affordance.sourceCardInstanceId !== selectedHandCardId ||
+        !affordance.targetZoneRef ||
+        !affordance.disabledReason
+      ) {
+        continue;
+      }
+      const slotId = slotIdFromTargetZoneRef(affordance.targetZoneRef);
+      if (slotId && !sacrificeTargetSlotIds.includes(slotId)) {
+        reasons[slotId] = affordance.disabledReason;
+      }
+    }
+    return reasons;
+  }, [handPlacementAffordances, sacrificeTargetSlotIds, selectedHandCardId]);
 
   const layoutDraftIsValid = (() => {
     if (!layoutDraft.trim()) return false;
@@ -2326,16 +2300,21 @@ export function BoardPreview3D({
             <section className="board-preview-3d__hand-rail" aria-label="3D board hand rail">
               <div className="board-preview-3d__hand-rail-tab">Hand {handCards.length}</div>
               <div className="board-preview-3d__hand-rail-cards">
-                {handCards.map(card => (
+                {handCards.map(card => {
+                  const disabledReason = disabledHandCardReasons.get(card.instanceId);
+                  return (
                   <button
                     key={card.instanceId}
                     type="button"
                     draggable
                     className={[
                       selectedHandCardId === card.instanceId ? "is-selected" : "",
+                      playableHandCardIds.has(card.instanceId) ? "is-playable" : "",
+                      disabledReason ? "is-disabled-action" : "",
                       sacrificeCandidateIds.has(card.instanceId) ? "is-sacrifice-candidate" : "",
                       selectedSacrificeIdSet.has(card.instanceId) ? "is-selected-sacrifice" : ""
                     ].filter(Boolean).join(" ") || undefined}
+                    title={disabledReason ?? undefined}
                     onClick={() => {
                       if (sacrificeCandidateIds.has(card.instanceId) && selectedHandCardId !== card.instanceId) {
                         toggleSacrificeSelection(card.instanceId);
@@ -2358,7 +2337,8 @@ export function BoardPreview3D({
                     <MatchCardImage match={match} card={card} className="board-preview-3d__hand-card-art" />
                     <span>{match.cardCatalog[card.cardId]?.name ?? card.cardId}</span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </section>
           ) : null}

@@ -8,7 +8,7 @@ import { decideBoardReconciliation } from "../src/components/boardRenderReconcil
 import { resolveBoardRuntimeMode } from "../src/components/boardRuntimeHealth";
 import { mapPointerGestureToIntent } from "../src/components/boardInteractionIntents";
 import { resolveBoardIntentCommand } from "../src/components/boardIntentCommands";
-import { buildPendingEffectTargetAffordances } from "../src/components/boardAffordances";
+import { buildHandPlacementAffordances, buildPendingEffectTargetAffordances } from "../src/components/boardAffordances";
 
 const mockMatch = {
   matchId: "m1",
@@ -126,5 +126,94 @@ assert.equal(targetAffordances[0].targetCardInstanceId, "target-1");
 assert.deepEqual(targetAffordances[0].targetZoneRef, { playerId: "player_2", zone: "MAGIC_SLOT" });
 assert.equal(targetAffordances[1].kind, "VALID_TARGET_ZONE");
 assert.deepEqual(targetAffordances[1].targetZoneRef, { playerId: "player_2", zone: "CEMETERY" });
+
+const placementMatch = {
+  matchId: "m-placement",
+  status: "ACTIVE",
+  turn: { activePlayerId: "player_1", phase: "SUMMON_MAGIC", turnNumber: 1, turnCycleNumber: 1 },
+  players: [
+    {
+      id: "player_1",
+      displayName: "Alice",
+      hand: [
+        { instanceId: "creature-1", cardId: "creature-low", ownerPlayerId: "player_1", controllerPlayerId: "player_1", zone: "HAND" },
+        { instanceId: "magic-1", cardId: "magic-standard", ownerPlayerId: "player_1", controllerPlayerId: "player_1", zone: "HAND" },
+        { instanceId: "big-creature-1", cardId: "creature-high", ownerPlayerId: "player_1", controllerPlayerId: "player_1", zone: "HAND" }
+      ],
+      deck: [],
+      cemetery: [],
+      cemeteryCreatureHpTotal: 0,
+      field: { primaryCreature: null, limitedSummons: [], magicSlots: [] },
+      turnFlags: { drawnThisTurn: true, normalSummonUsed: false, battleUsedCreatureInstanceIds: [] }
+    },
+    {
+      id: "player_2",
+      displayName: "Bob",
+      hand: [],
+      deck: [],
+      cemetery: [],
+      cemeteryCreatureHpTotal: 0,
+      field: { primaryCreature: null, limitedSummons: [], magicSlots: [] },
+      turnFlags: { drawnThisTurn: true, normalSummonUsed: false, battleUsedCreatureInstanceIds: [] }
+    }
+  ],
+  setup: { handDiscardRequiredForPlayerId: undefined, primaryReplacementRequiredForPlayerId: undefined },
+  pendingPrompt: null,
+  pendingChain: null,
+  pendingEffectTargetPrompt: null,
+  pendingBattle: null,
+  manualEffectQueue: [],
+  eventLog: [],
+  cardCatalog: {
+    "creature-low": { id: "creature-low", name: "Low Creature", cardType: "CREATURE", armorLevel: 4, speed: 3, attackDice: 1, modifier: 0, hp: 20 },
+    "creature-high": { id: "creature-high", name: "High Creature", cardType: "CREATURE", armorLevel: 9, speed: 3, attackDice: 1, modifier: 0, hp: 30 },
+    "magic-standard": { id: "magic-standard", name: "Standard Magic", cardType: "MAGIC", magicType: "STANDARD", magicSubType: "SINGLE_USE" }
+  }
+} as unknown as AppMatchState;
+
+const placementAffordances = buildHandPlacementAffordances({
+  match: placementMatch,
+  playerId: "player_1",
+  selectedHandCardId: "magic-1",
+  occupiedMagicSlotIndexes: [0, 2]
+});
+assert.equal(placementAffordances.some(affordance => affordance.kind === "PLAYABLE_CARD" && affordance.sourceCardInstanceId === "creature-1"), true);
+assert.equal(placementAffordances.some(affordance => affordance.kind === "PLAYABLE_CARD" && affordance.sourceCardInstanceId === "magic-1"), true);
+assert.equal(placementAffordances.some(affordance => affordance.kind === "VALID_DROP_ZONE" && affordance.sourceCardInstanceId === "creature-1" && affordance.targetZoneRef?.zone === "PRIMARY_CREATURE"), true);
+assert.deepEqual(
+  placementAffordances
+    .filter(affordance => affordance.kind === "VALID_DROP_ZONE" && affordance.sourceCardInstanceId === "magic-1")
+    .map(affordance => affordance.targetZoneRef)
+    .sort((left, right) => (left?.slotIndex ?? 0) - (right?.slotIndex ?? 0)),
+  [
+    { playerId: "player_1", zone: "MAGIC_SLOT", slotIndex: 1 },
+    { playerId: "player_1", zone: "MAGIC_SLOT", slotIndex: 3 },
+    { playerId: "player_1", zone: "MAGIC_SLOT", slotIndex: 4 }
+  ]
+);
+assert.equal(
+  placementAffordances.some(affordance =>
+    affordance.kind === "DISABLED_ACTION" &&
+    affordance.sourceCardInstanceId === "magic-1" &&
+    affordance.targetZoneRef?.zone === "MAGIC_SLOT" &&
+    affordance.targetZoneRef.slotIndex === 0 &&
+    affordance.disabledReason === "That Magic slot is already occupied."
+  ),
+  true
+);
+
+const blockedPlacementAffordances = buildHandPlacementAffordances({
+  match: {
+    ...placementMatch,
+    pendingChain: { id: "chain-1" }
+  } as unknown as AppMatchState,
+  playerId: "player_1",
+  selectedHandCardId: "creature-1"
+});
+assert.equal(blockedPlacementAffordances.some(affordance =>
+  affordance.kind === "DISABLED_ACTION" &&
+  affordance.sourceCardInstanceId === "creature-1" &&
+  affordance.disabledReason === "Resolve the pending Magic Chain before playing cards."
+), true);
 
 console.log("board render adapter checks passed");

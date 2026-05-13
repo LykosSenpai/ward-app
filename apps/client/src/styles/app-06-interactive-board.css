@@ -2061,6 +2061,16 @@
   box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.4) inset;
 }
 
+.board-preview-3d__hand-rail button.is-playable {
+  border-color: rgba(34, 197, 94, 0.76);
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.34) inset, 0 0 18px rgba(34, 197, 94, 0.18);
+}
+
+.board-preview-3d__hand-rail button.is-disabled-action {
+  border-color: rgba(148, 163, 184, 0.28);
+  filter: saturate(0.65);
+}
+
 .board-preview-3d__hand-rail button.is-sacrifice-candidate {
   border-color: rgba(248, 113, 113, 0.72);
   box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.28) inset, 0 0 18px rgba(248, 113, 113, 0.18);
