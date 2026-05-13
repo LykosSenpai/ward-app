@@ -3,6 +3,7 @@ import type { AppMatchState } from "../src/clientTypes";
 import { buildBoardInteractionContext, buildBoardRenderModel, translateGameEventsToBoardRenderEvents } from "../src/components/boardRenderAdapter";
 import { createBoardAnimationQueueState, enqueueBoardRenderEvents, settleActiveBoardAnimation, startNextBoardAnimation } from "../src/components/boardAnimationQueue";
 import { resetBoardAnimationQueueToSequence } from "../src/components/boardAnimationQueue";
+import { planBoardAnimationSteps } from "../src/components/boardAnimationPlanner";
 import { getBoardAnimationProfile } from "../src/components/boardAnimationProfiles";
 import { decideBoardReconciliation } from "../src/components/boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "../src/components/boardRuntimeHealth";
@@ -123,6 +124,107 @@ assert.equal(semanticEvents[3].type, "PROMPT_RESOLVED");
 assert.equal(semanticEvents[3].promptId, "prompt-resolved");
 assert.equal(semanticEvents[4].type, "CHAIN_RESOLVED");
 
+const destroySteps = planBoardAnimationSteps(semanticEvents[0]);
+assert.equal(destroySteps.some(step => step.type === "GLOW_CARD" && step.cardInstanceId === "magic-destroyed" && step.glowKind === "DAMAGE"), true);
+assert.equal(destroySteps.some(step => step.type === "DESTROY_CARD" && step.cardInstanceId === "magic-destroyed"), true);
+assert.equal(destroySteps.some(step => step.type === "MOVE_CARD" && step.cardInstanceId === "magic-destroyed" && step.toZoneRef.zone === "CEMETERY"), true);
+
+const summonSteps = planBoardAnimationSteps(semanticEvents[1]);
+assert.deepEqual(
+  summonSteps.find(step => step.type === "MOVE_CARD"),
+  {
+    type: "MOVE_CARD",
+    cardInstanceId: "limited-1",
+    toZoneRef: { playerId: "player_1", zone: "LIMITED_SUMMON" },
+    durationMs: getBoardAnimationProfile("CREATURE_SUMMONED_LIMITED").durationMs
+  }
+);
+assert.equal(summonSteps.some(step => step.type === "GLOW_ZONE" && step.zoneRef.zone === "LIMITED_SUMMON" && step.glowKind === "VALID_DROP"), true);
+
+const attachSteps = planBoardAnimationSteps(semanticEvents[2]);
+assert.deepEqual(
+  attachSteps.find(step => step.type === "ATTACH_CARD"),
+  {
+    type: "ATTACH_CARD",
+    attachmentInstanceId: "equip-1",
+    targetInstanceId: "creature-1",
+    durationMs: getBoardAnimationProfile("MAGIC_ATTACHED").durationMs
+  }
+);
+assert.equal(attachSteps.some(step => step.type === "GLOW_CARD" && step.cardInstanceId === "creature-1"), true);
+
+const damagePromptSteps = planBoardAnimationSteps(semanticEvents[3]);
+assert.equal(damagePromptSteps.some(step => step.type === "GLOW_CARD" && step.cardInstanceId === "target-1" && step.glowKind === "DAMAGE"), true);
+
+const chainSteps = planBoardAnimationSteps(semanticEvents[4]);
+assert.deepEqual(chainSteps, [{ type: "SHOW_STATUS_CHIP", playerId: "player_1", label: "Chain resolved", durationMs: getBoardAnimationProfile("CHAIN_RESOLVED").durationMs }]);
+
+const battleDamageEvent = translateGameEventsToBoardRenderEvents({
+  ...mockMatch,
+  eventLog: [
+    {
+      sequenceNumber: 13,
+      type: "BATTLE_DAMAGE_APPLIED",
+      playerId: "player_1",
+      payload: {
+        attackerCreatureInstanceId: "attacker-1",
+        targetCreatureInstanceId: "defender-1",
+        damageAmount: 12,
+        damageRollDice: [4, 8],
+        killed: true
+      }
+    }
+  ]
+} as unknown as AppMatchState)[0];
+const battleDamageSteps = planBoardAnimationSteps(battleDamageEvent);
+assert.deepEqual(battleDamageSteps.find(step => step.type === "ROLL_DICE"), {
+  type: "ROLL_DICE",
+  values: [4, 8],
+  rollKind: "BATTLE_DAMAGE",
+  durationMs: 700
+});
+assert.equal(battleDamageSteps.some(step => step.type === "DAMAGE_NUMBER" && step.cardInstanceId === "defender-1" && step.amount === 12), true);
+assert.equal(battleDamageSteps.some(step => step.type === "DESTROY_CARD" && step.cardInstanceId === "defender-1"), true);
+
+const healPromptEvent = translateGameEventsToBoardRenderEvents({
+  ...mockMatch,
+  eventLog: [
+    {
+      sequenceNumber: 14,
+      type: "EFFECT_PROGRAM_TARGET_PROMPT_RESOLVED",
+      playerId: "player_1",
+      payload: {
+        promptId: "prompt-heal",
+        actionType: "HEAL_CREATURE",
+        targetCreatureInstanceId: "target-heal",
+        healAmount: 7
+      }
+    }
+  ]
+} as unknown as AppMatchState)[0];
+const healPromptSteps = planBoardAnimationSteps(healPromptEvent);
+assert.equal(healPromptSteps.some(step => step.type === "GLOW_CARD" && step.cardInstanceId === "target-heal" && step.glowKind === "HEAL"), true);
+assert.equal(healPromptSteps.some(step => step.type === "HEAL_NUMBER" && step.cardInstanceId === "target-heal" && step.amount === 7), true);
+
+const promptOpenedEvent = translateGameEventsToBoardRenderEvents({
+  ...mockMatch,
+  eventLog: [
+    {
+      sequenceNumber: 15,
+      type: "EFFECT_PROGRAM_TARGET_PROMPT_CREATED",
+      playerId: "player_1",
+      payload: {
+        promptId: "prompt-open",
+        sourceCardInstanceId: "source-open",
+        actionType: "DESTROY_CARD"
+      }
+    }
+  ]
+} as unknown as AppMatchState)[0];
+const promptOpenedSteps = planBoardAnimationSteps(promptOpenedEvent);
+assert.equal(promptOpenedSteps.some(step => step.type === "GLOW_CARD" && step.cardInstanceId === "source-open" && step.glowKind === "TARGET"), true);
+assert.equal(promptOpenedSteps.some(step => step.type === "SHOW_STATUS_CHIP" && step.cardInstanceId === "source-open" && step.label === "Prompt"), true);
+
 const interaction = buildBoardInteractionContext(mockMatch);
 assert.equal(interaction.activePlayerId, "player_1");
 assert.equal(interaction.actions.some(action => action.kind === "DRAW" && action.enabled), true);
@@ -131,6 +233,8 @@ let queueState = createBoardAnimationQueueState();
 queueState = enqueueBoardRenderEvents(queueState, events);
 queueState = startNextBoardAnimation(queueState);
 assert.equal(queueState.activeEvent?.eventId, events[0].eventId);
+assert.equal(queueState.activeEvent?.usesPlannerOutput, true);
+assert.equal(queueState.activeEvent?.animationSteps.some(step => step.type === "MOVE_CARD" && step.cardInstanceId === "c-7"), true);
 queueState = settleActiveBoardAnimation(queueState);
 assert.equal(queueState.activeEvent, null);
 assert.equal(queueState.cursor, events[0].sequenceNumber);

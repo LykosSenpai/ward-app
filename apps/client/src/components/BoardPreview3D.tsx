@@ -701,13 +701,16 @@ export function BoardPreview3D({
   useEffect(() => {
     if (!animationQueue.activeEvent) return;
     const profile = getBoardAnimationProfile(animationQueue.activeEvent.type);
+    const plannedDurationMs = animationQueue.activeEvent.usesPlannerOutput
+      ? Math.max(profile.durationMs, ...animationQueue.activeEvent.animationSteps.map(step => "durationMs" in step ? step.durationMs : 0))
+      : profile.durationMs;
     if (runtimeMode === "FAST_FORWARD") {
       setAnimationQueue(current => settleActiveBoardAnimation(current));
       return;
     }
     const timeout = globalThis.setTimeout(() => {
       setAnimationQueue(current => settleActiveBoardAnimation(current));
-    }, profile.durationMs);
+    }, plannedDurationMs);
     return () => globalThis.clearTimeout(timeout);
   }, [animationQueue.activeEvent, runtimeMode]);
 
@@ -1940,7 +1943,7 @@ export function BoardPreview3D({
           <div className="board-preview-3d__hud-tab-panel">
             {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
             <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
-            <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
+            <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({animationQueue.activeEvent?.usesPlannerOutput ? "planner" : getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
             <p>Drag to pan | Wheel to zoom | WASD to move | +/- zoom | 0 reset</p>
             {intentLabel ? <p>Intent: {intentLabel}</p> : null}
             {commandLabel ? <p>Command: {commandLabel}</p> : null}
