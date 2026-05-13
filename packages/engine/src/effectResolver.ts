@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import type {
   ActiveEffectInstance,
   ActiveRecurringCreatureEffect,
+  BoardZoneRef,
   CardDefinition,
   CardInstance,
   MatchState,
@@ -28,6 +29,13 @@ type AddEventFn = (
 type CardDefinitionWithEffects = CardDefinition & {
   effects?: WardEngineEffect[];
 };
+
+function boardZoneRef(playerId: string | undefined, zone: BoardZoneRef["zone"]): BoardZoneRef {
+  return {
+    ...(playerId ? { playerId } : {}),
+    zone
+  };
+}
 
 function getPlayerOrThrow(state: MatchState, playerId: string): PlayerState {
   const player = state.players.find(item => item.id === playerId);
@@ -623,15 +631,32 @@ export function tryResolveAutomaticMagicEffect(
 
     addEvent(state, "AUTO_EFFECT_DESTROY_ALL_MAGIC_RESOLVED", controllerPlayerId, {
       sourceCardName,
+      sourceCardInstanceId: args.sourceCardInstanceId,
       effectId: effect.id,
+      sourceEffectId: effect.id,
       actionType: effect.actionType,
+      reason: "DESTROY_ALL_MAGIC_EFFECT",
       destroyedCount: result.destroyedCount,
       destroyedCards: result.destroyedCards.map(item => ({
         destroyedCardName: item.destroyedCardName,
         destroyedCardInstanceId: item.magicCard.instanceId,
+        cardInstanceId: item.magicCard.instanceId,
         fieldOwnerPlayerId: item.fieldOwnerPlayerId,
         cardOwnerPlayerId: item.cardOwnerPlayerId,
+        fromZoneRef: boardZoneRef(item.fieldOwnerPlayerId, "MAGIC_SLOT"),
+        toZoneRef: boardZoneRef(item.cardOwnerPlayerId, "CEMETERY"),
         linkedDestroyedCreatureCount: item.linkedDestroyedCreatures.length
+      })),
+      boardEvents: result.destroyedCards.map(item => ({
+        type: "CARD_DESTROYED",
+        playerId: controllerPlayerId,
+        sourceCardInstanceId: args.sourceCardInstanceId,
+        sourceEffectId: effect.id,
+        actionType: effect.actionType,
+        reason: "DESTROY_ALL_MAGIC_EFFECT",
+        cardInstanceId: item.magicCard.instanceId,
+        fromZoneRef: boardZoneRef(item.fieldOwnerPlayerId, "MAGIC_SLOT"),
+        toZoneRef: boardZoneRef(item.cardOwnerPlayerId, "CEMETERY")
       }))
     });
 

@@ -124,6 +124,122 @@ assert.equal(semanticEvents[3].type, "PROMPT_RESOLVED");
 assert.equal(semanticEvents[3].promptId, "prompt-resolved");
 assert.equal(semanticEvents[4].type, "CHAIN_RESOLVED");
 
+const structuredBoardEventMatch = {
+  ...mockMatch,
+  eventLog: [
+    {
+      sequenceNumber: 16,
+      type: "AUTO_EFFECT_LIMITED_SUMMON_AND_EQUIP_RESOLVED",
+      playerId: "player_1",
+      payload: {
+        promptId: "prompt-equip",
+        sourceCardInstanceId: "helping-hand",
+        sourceEffectId: "effect-equip",
+        actionType: "SUMMON_LIMITED_CREATURE_AND_EQUIP",
+        boardEvents: [
+          {
+            type: "CREATURE_SUMMONED_LIMITED",
+            cardInstanceId: "limited-helped",
+            sourceCardInstanceId: "helping-hand",
+            sourceEffectId: "effect-equip",
+            actionType: "SUMMON_LIMITED_CREATURE_AND_EQUIP",
+            reason: "LIMITED_SUMMON_AND_EQUIP",
+            fromZoneRef: { playerId: "player_1", zone: "CEMETERY" },
+            toZoneRef: { playerId: "player_1", zone: "LIMITED_SUMMON" }
+          },
+          {
+            type: "MAGIC_ATTACHED",
+            cardInstanceId: "helping-hand",
+            sourceCardInstanceId: "helping-hand",
+            sourceEffectId: "effect-equip",
+            actionType: "SUMMON_LIMITED_CREATURE_AND_EQUIP",
+            reason: "SOURCE_MAGIC_ATTACHED",
+            fromZoneRef: { playerId: "player_1", zone: "CHAIN" },
+            toZoneRef: { playerId: "player_1", zone: "ATTACHED_UNDER" },
+            targetCardInstanceId: "limited-helped"
+          },
+          {
+            type: "ANCHOR_LINK_CREATED",
+            cardInstanceId: "limited-helped",
+            sourceCardInstanceId: "helping-hand",
+            sourceEffectId: "effect-equip",
+            actionType: "SUMMON_LIMITED_CREATURE_AND_EQUIP",
+            reason: "SOURCE_LINK_CREATED",
+            targetCardInstanceId: "limited-helped"
+          }
+        ]
+      }
+    },
+    {
+      sequenceNumber: 17,
+      type: "SOURCE_LINKED_SUMMONS_RETURNED_TO_CEMETERY",
+      playerId: "player_1",
+      payload: {
+        sourceCardInstanceId: "helping-hand",
+        actionType: "APPLY_SOURCE_LINKED_CLEANUP",
+        reason: "ANCHOR_CLEANUP",
+        boardEvents: [
+          {
+            type: "SOURCE_LINK_CLEANUP_TRIGGERED",
+            cardInstanceId: "limited-helped",
+            targetCardInstanceId: "limited-helped",
+            sourceCardInstanceId: "helping-hand",
+            actionType: "APPLY_SOURCE_LINKED_CLEANUP",
+            reason: "ANCHOR_CLEANUP"
+          },
+          {
+            type: "CARD_DESTROYED",
+            cardInstanceId: "limited-helped",
+            sourceCardInstanceId: "helping-hand",
+            actionType: "DESTROY_LINKED_SUMMONED_CREATURE",
+            reason: "ANCHOR_CLEANUP",
+            fromZoneRef: { playerId: "player_1", zone: "LIMITED_SUMMON" },
+            toZoneRef: { playerId: "player_1", zone: "CEMETERY" }
+          }
+        ]
+      }
+    },
+    {
+      sequenceNumber: 18,
+      type: "AUTO_EFFECT_SEARCH_DECK_TO_HAND_RESOLVED",
+      playerId: "player_1",
+      payload: {
+        boardEvents: [
+          {
+            type: "CARD_MOVED",
+            cardInstanceId: "dragon-found",
+            sourceCardInstanceId: "dragon-tamer",
+            sourceEffectId: "effect-search",
+            actionType: "SEARCH_DECK_TO_HAND",
+            reason: "SEARCH_DECK_TO_HAND",
+            fromZoneRef: { playerId: "player_1", zone: "DECK" },
+            toZoneRef: { playerId: "player_1", zone: "HAND" }
+          }
+        ]
+      }
+    }
+  ]
+} as unknown as AppMatchState;
+
+const structuredBoardEvents = translateGameEventsToBoardRenderEvents(structuredBoardEventMatch);
+assert.equal(structuredBoardEvents.length, 6);
+assert.equal(structuredBoardEvents[0].type, "CREATURE_SUMMONED_LIMITED");
+assert.equal(structuredBoardEvents[1].type, "MAGIC_ATTACHED");
+assert.equal(structuredBoardEvents[2].type, "ANCHOR_LINK_CREATED");
+assert.equal(structuredBoardEvents[3].type, "SOURCE_LINK_CLEANUP_TRIGGERED");
+assert.equal(structuredBoardEvents[4].type, "CARD_DESTROYED");
+assert.equal(structuredBoardEvents[5].type, "CARD_MOVED");
+assert.deepEqual(structuredBoardEvents[5].fromZoneRef, { playerId: "player_1", zone: "DECK" });
+assert.deepEqual(structuredBoardEvents[5].toZoneRef, { playerId: "player_1", zone: "HAND" });
+
+const anchorSteps = planBoardAnimationSteps(structuredBoardEvents[2]);
+assert.equal(anchorSteps.some(step => step.type === "GLOW_CARD" && step.cardInstanceId === "helping-hand"), true);
+assert.equal(anchorSteps.some(step => step.type === "GLOW_CARD" && step.cardInstanceId === "limited-helped"), true);
+
+const cleanupSteps = planBoardAnimationSteps(structuredBoardEvents[3]);
+assert.equal(cleanupSteps.some(step => step.type === "GLOW_CARD" && step.cardInstanceId === "limited-helped" && step.glowKind === "DAMAGE"), true);
+assert.equal(cleanupSteps.some(step => step.type === "SHOW_STATUS_CHIP" && step.label === "Source cleanup"), true);
+
 const destroySteps = planBoardAnimationSteps(semanticEvents[0]);
 assert.equal(destroySteps.some(step => step.type === "GLOW_CARD" && step.cardInstanceId === "magic-destroyed" && step.glowKind === "DAMAGE"), true);
 assert.equal(destroySteps.some(step => step.type === "DESTROY_CARD" && step.cardInstanceId === "magic-destroyed"), true);

@@ -4,6 +4,9 @@ import type {
   ActiveEffectInstance,
   ActiveRecurringCreatureEffect,
   BattleParticipantSnapshot,
+  BoardEventType,
+  BoardZoneKind,
+  BoardZoneRef,
   CardDefinition,
   CardInstance,
   EffectTargetOption,
@@ -58,6 +61,43 @@ export type ChainLinkEffectSource = {
   cardName: string;
   playerId: string;
 };
+
+type BoardEventPayload = {
+  type: BoardEventType;
+  cardInstanceId?: string;
+  playerId?: string;
+  sourceCardInstanceId?: string;
+  sourceCardId?: string;
+  sourceEffectId?: string;
+  actionType?: string;
+  reason?: string;
+  fromZoneRef?: BoardZoneRef;
+  toZoneRef?: BoardZoneRef;
+  targetCardInstanceId?: string;
+  promptId?: string;
+};
+
+function boardZoneRef(playerId: string | undefined, zone: BoardZoneKind): BoardZoneRef {
+  return {
+    ...(playerId ? { playerId } : {}),
+    zone
+  };
+}
+
+function promptBoardEventBase(prompt: PendingEffectTargetPrompt, reason?: string): Pick<
+  BoardEventPayload,
+  "playerId" | "sourceCardInstanceId" | "sourceCardId" | "sourceEffectId" | "actionType" | "promptId" | "reason"
+> {
+  return {
+    playerId: prompt.controllerPlayerId,
+    sourceCardInstanceId: prompt.sourceCardInstanceId,
+    sourceCardId: prompt.sourceCardId,
+    sourceEffectId: prompt.effectId,
+    actionType: prompt.actionType,
+    promptId: prompt.id,
+    ...(reason ? { reason } : {})
+  };
+}
 
 function isCreatureTargetKind(kind: string): boolean {
   return kind === "PRIMARY_CREATURE" || kind === "LIMITED_SUMMON" || kind === "ANY_CREATURE";
@@ -1434,18 +1474,34 @@ export function resolvePendingEffectTargetPrompt(
     addEvent(nextState, "AUTO_EFFECT_DESTROY_MAGIC_CARD_RESOLVED", prompt.controllerPlayerId, {
       promptId,
       sourceCardName: prompt.sourceCardName,
+      sourceCardInstanceId: prompt.sourceCardInstanceId,
+      sourceCardId: prompt.sourceCardId,
       effectId: prompt.effectId,
+      sourceEffectId: prompt.effectId,
       actionType: prompt.actionType,
+      reason: "DESTROY_MAGIC_EFFECT",
       destroyedCardName: result.destroyedCardName,
       destroyedCardInstanceId: result.magicCard.instanceId,
+      cardInstanceId: result.magicCard.instanceId,
       fieldOwnerPlayerId: result.fieldOwnerPlayerId,
       cardOwnerPlayerId: result.cardOwnerPlayerId,
+      fromZoneRef: boardZoneRef(result.fieldOwnerPlayerId, "MAGIC_SLOT"),
+      toZoneRef: boardZoneRef(result.cardOwnerPlayerId, "CEMETERY"),
       linkedDestroyedCreatures: result.linkedDestroyedCreatures.map(item => ({
         creatureName: item.creatureName,
         creatureInstanceId: item.creature.instanceId,
         fieldOwnerPlayerId: item.fieldOwnerPlayerId,
         ownerPlayerId: item.ownerPlayerId
-      }))
+      })),
+      boardEvents: [
+        {
+          type: "CARD_DESTROYED",
+          ...promptBoardEventBase(prompt, "DESTROY_MAGIC_EFFECT"),
+          cardInstanceId: result.magicCard.instanceId,
+          fromZoneRef: boardZoneRef(result.fieldOwnerPlayerId, "MAGIC_SLOT"),
+          toZoneRef: boardZoneRef(result.cardOwnerPlayerId, "CEMETERY")
+        } satisfies BoardEventPayload
+      ]
     });
 
     return nextState;
@@ -1472,17 +1528,31 @@ export function resolvePendingEffectTargetPrompt(
     addEvent(nextState, "AUTO_EFFECT_DESTROY_ALL_MAGIC_RESOLVED", prompt.controllerPlayerId, {
       promptId,
       sourceCardName: prompt.sourceCardName,
+      sourceCardInstanceId: prompt.sourceCardInstanceId,
+      sourceCardId: prompt.sourceCardId,
       effectId: prompt.effectId,
+      sourceEffectId: prompt.effectId,
       actionType: prompt.actionType,
+      reason: "DESTROY_ALL_MAGIC_EFFECT",
       selectedPlayerId: selectedOption.playerId,
       destroyedCount: result.destroyedCount,
       destroyedCards: result.destroyedCards.map(item => ({
         destroyedCardName: item.destroyedCardName,
         destroyedCardInstanceId: item.magicCard.instanceId,
+        cardInstanceId: item.magicCard.instanceId,
         fieldOwnerPlayerId: item.fieldOwnerPlayerId,
         cardOwnerPlayerId: item.cardOwnerPlayerId,
+        fromZoneRef: boardZoneRef(item.fieldOwnerPlayerId, "MAGIC_SLOT"),
+        toZoneRef: boardZoneRef(item.cardOwnerPlayerId, "CEMETERY"),
         linkedDestroyedCreatureCount: item.linkedDestroyedCreatures.length
-      }))
+      })),
+      boardEvents: result.destroyedCards.map(item => ({
+        type: "CARD_DESTROYED",
+        ...promptBoardEventBase(prompt, "DESTROY_ALL_MAGIC_EFFECT"),
+        cardInstanceId: item.magicCard.instanceId,
+        fromZoneRef: boardZoneRef(item.fieldOwnerPlayerId, "MAGIC_SLOT"),
+        toZoneRef: boardZoneRef(item.cardOwnerPlayerId, "CEMETERY")
+      } satisfies BoardEventPayload))
     });
 
     applyDestroyedMagicCountModifier(nextState, {
@@ -1691,13 +1761,29 @@ export function resolvePendingEffectTargetPrompt(
     addEvent(nextState, "AUTO_EFFECT_DISCARD_TO_CEMETERY_RESOLVED", prompt.controllerPlayerId, {
       promptId,
       sourceCardName: prompt.sourceCardName,
+      sourceCardInstanceId: prompt.sourceCardInstanceId,
+      sourceCardId: prompt.sourceCardId,
       effectId: prompt.effectId,
+      sourceEffectId: prompt.effectId,
       actionType: prompt.actionType,
+      reason: "DISCARD_TO_CEMETERY",
       selectedCardName: result.cardName,
       selectedCardInstanceId: result.card.instanceId,
+      cardInstanceId: result.card.instanceId,
       sourcePlayerId: result.sourcePlayerId,
       sourceZone: result.sourceZone,
-      destinationPlayerId: result.destinationPlayerId
+      destinationPlayerId: result.destinationPlayerId,
+      fromZoneRef: boardZoneRef(result.sourcePlayerId, "HAND"),
+      toZoneRef: boardZoneRef(result.destinationPlayerId, "CEMETERY"),
+      boardEvents: [
+        {
+          type: "CARD_MOVED",
+          ...promptBoardEventBase(prompt, "DISCARD_TO_CEMETERY"),
+          cardInstanceId: result.card.instanceId,
+          fromZoneRef: boardZoneRef(result.sourcePlayerId, "HAND"),
+          toZoneRef: boardZoneRef(result.destinationPlayerId, "CEMETERY")
+        } satisfies BoardEventPayload
+      ]
     });
 
     return nextState;
@@ -1718,13 +1804,29 @@ export function resolvePendingEffectTargetPrompt(
       {
         promptId,
         sourceCardName: prompt.sourceCardName,
+        sourceCardInstanceId: prompt.sourceCardInstanceId,
+        sourceCardId: prompt.sourceCardId,
         effectId: prompt.effectId,
+        sourceEffectId: prompt.effectId,
         actionType: prompt.actionType,
+        reason: prompt.actionType === "SEARCH_DECK_TO_HAND" ? "SEARCH_DECK_TO_HAND" : "MOVE_CARD_TO_HAND",
         selectedCardName: result.cardName,
         selectedCardInstanceId: result.card.instanceId,
+        cardInstanceId: result.card.instanceId,
         sourcePlayerId: result.sourcePlayerId,
         sourceZone: result.sourceZone,
-        destinationPlayerId: result.destinationPlayerId
+        destinationPlayerId: result.destinationPlayerId,
+        fromZoneRef: boardZoneRef(result.sourcePlayerId, result.sourceZone as BoardZoneKind),
+        toZoneRef: boardZoneRef(result.destinationPlayerId, "HAND"),
+        boardEvents: [
+          {
+            type: "CARD_MOVED",
+            ...promptBoardEventBase(prompt, prompt.actionType === "SEARCH_DECK_TO_HAND" ? "SEARCH_DECK_TO_HAND" : "MOVE_CARD_TO_HAND"),
+            cardInstanceId: result.card.instanceId,
+            fromZoneRef: boardZoneRef(result.sourcePlayerId, result.sourceZone as BoardZoneKind),
+            toZoneRef: boardZoneRef(result.destinationPlayerId, "HAND")
+          } satisfies BoardEventPayload
+        ]
       }
     );
 
@@ -1747,10 +1849,15 @@ export function resolvePendingEffectTargetPrompt(
     addEvent(nextState, "AUTO_EFFECT_PRIMARY_SUMMON_FROM_CEMETERY_AND_EQUIP_RESOLVED", prompt.controllerPlayerId, {
       promptId,
       sourceCardName: prompt.sourceCardName,
+      sourceCardInstanceId: prompt.sourceCardInstanceId,
+      sourceCardId: prompt.sourceCardId,
       effectId: prompt.effectId,
+      sourceEffectId: prompt.effectId,
       actionType: prompt.actionType,
+      reason: "SUMMON_FROM_CEMETERY_AND_EQUIP",
       summonedCardName: result.cardName,
       summonedCardInstanceId: result.card.instanceId,
+      cardInstanceId: result.card.instanceId,
       equippedMagicCardName: result.equippedMagicCardName,
       equippedMagicCardInstanceId: result.equippedMagicCard.instanceId,
       attachedToInstanceId: result.card.instanceId,
@@ -1760,6 +1867,31 @@ export function resolvePendingEffectTargetPrompt(
       sourceZone: result.sourceZone,
       controllerPlayerId: result.controllerPlayerId,
       magicSlotCount: result.magicSlotCount,
+      fromZoneRef: boardZoneRef(result.sourcePlayerId, result.sourceZone as BoardZoneKind),
+      toZoneRef: boardZoneRef(result.controllerPlayerId, "PRIMARY_CREATURE"),
+      boardEvents: [
+        {
+          type: "CREATURE_SUMMONED_PRIMARY",
+          ...promptBoardEventBase(prompt, "SUMMON_FROM_CEMETERY_AND_EQUIP"),
+          cardInstanceId: result.card.instanceId,
+          fromZoneRef: boardZoneRef(result.sourcePlayerId, result.sourceZone as BoardZoneKind),
+          toZoneRef: boardZoneRef(result.controllerPlayerId, "PRIMARY_CREATURE")
+        },
+        {
+          type: "MAGIC_ATTACHED",
+          ...promptBoardEventBase(prompt, "SOURCE_MAGIC_ATTACHED"),
+          cardInstanceId: result.equippedMagicCard.instanceId,
+          fromZoneRef: boardZoneRef(result.equippedMagicSourcePlayerId, result.equippedMagicSourceZone as BoardZoneKind),
+          toZoneRef: boardZoneRef(result.controllerPlayerId, "ATTACHED_UNDER"),
+          targetCardInstanceId: result.card.instanceId
+        },
+        {
+          type: "ANCHOR_LINK_CREATED",
+          ...promptBoardEventBase(prompt, "SOURCE_LINK_CREATED"),
+          cardInstanceId: result.card.instanceId,
+          targetCardInstanceId: result.card.instanceId
+        }
+      ] satisfies BoardEventPayload[],
       note: "Source Magic anchors the temporary primary creature. If the source Magic leaves the field, the anchored primary is sent back to the cemetery."
     });
 
@@ -1782,10 +1914,15 @@ export function resolvePendingEffectTargetPrompt(
       addEvent(nextState, "AUTO_EFFECT_LIMITED_SUMMON_AND_EQUIP_RESOLVED", prompt.controllerPlayerId, {
         promptId,
         sourceCardName: prompt.sourceCardName,
+        sourceCardInstanceId: prompt.sourceCardInstanceId,
+        sourceCardId: prompt.sourceCardId,
         effectId: prompt.effectId,
+        sourceEffectId: prompt.effectId,
         actionType: prompt.actionType,
+        reason: "LIMITED_SUMMON_AND_EQUIP",
         summonedCardName: result.cardName,
         summonedCardInstanceId: result.card.instanceId,
+        cardInstanceId: result.card.instanceId,
         equippedMagicCardName: result.equippedMagicCardName,
         equippedMagicCardInstanceId: result.equippedMagicCard.instanceId,
         attachedToInstanceId: result.card.instanceId,
@@ -1794,6 +1931,31 @@ export function resolvePendingEffectTargetPrompt(
         controllerPlayerId: result.controllerPlayerId,
         limitedSummonSlotCount: result.slotCount,
         magicSlotCount: result.magicSlotCount,
+        fromZoneRef: boardZoneRef(result.sourcePlayerId, result.sourceZone as BoardZoneKind),
+        toZoneRef: boardZoneRef(result.controllerPlayerId, "LIMITED_SUMMON"),
+        boardEvents: [
+          {
+            type: "CREATURE_SUMMONED_LIMITED",
+            ...promptBoardEventBase(prompt, "LIMITED_SUMMON_AND_EQUIP"),
+            cardInstanceId: result.card.instanceId,
+            fromZoneRef: boardZoneRef(result.sourcePlayerId, result.sourceZone as BoardZoneKind),
+            toZoneRef: boardZoneRef(result.controllerPlayerId, "LIMITED_SUMMON")
+          },
+          {
+            type: "MAGIC_ATTACHED",
+            ...promptBoardEventBase(prompt, "SOURCE_MAGIC_ATTACHED"),
+            cardInstanceId: result.equippedMagicCard.instanceId,
+            fromZoneRef: boardZoneRef(result.equippedMagicSourcePlayerId, result.equippedMagicSourceZone as BoardZoneKind),
+            toZoneRef: boardZoneRef(result.controllerPlayerId, "ATTACHED_UNDER"),
+            targetCardInstanceId: result.card.instanceId
+          },
+          {
+            type: "ANCHOR_LINK_CREATED",
+            ...promptBoardEventBase(prompt, "SOURCE_LINK_CREATED"),
+            cardInstanceId: result.card.instanceId,
+            targetCardInstanceId: result.card.instanceId
+          }
+        ] satisfies BoardEventPayload[],
         note:
           "Source Magic is now attached to the summoned Limited Summon. If the source Magic is removed from the field, the anchored Limited Summon is destroyed."
       });
@@ -1821,15 +1983,39 @@ export function resolvePendingEffectTargetPrompt(
     addEvent(nextState, "AUTO_EFFECT_LIMITED_SUMMON_RESOLVED", prompt.controllerPlayerId, {
       promptId,
       sourceCardName: prompt.sourceCardName,
+      sourceCardInstanceId: prompt.sourceCardInstanceId,
+      sourceCardId: prompt.sourceCardId,
       effectId: prompt.effectId,
+      sourceEffectId: prompt.effectId,
       actionType: prompt.actionType,
+      reason: "LIMITED_SUMMON",
       summonedCardName: result.cardName,
       summonedCardInstanceId: result.card.instanceId,
+      cardInstanceId: result.card.instanceId,
       sourcePlayerId: result.sourcePlayerId,
       sourceZone: result.sourceZone,
       controllerPlayerId: result.controllerPlayerId,
       limitedSummonSlotCount: result.slotCount,
-      anchorSourceInstanceId: sourceLinked ? prompt.sourceCardInstanceId : undefined
+      anchorSourceInstanceId: sourceLinked ? prompt.sourceCardInstanceId : undefined,
+      fromZoneRef: boardZoneRef(result.sourcePlayerId, result.sourceZone as BoardZoneKind),
+      toZoneRef: boardZoneRef(result.controllerPlayerId, "LIMITED_SUMMON"),
+      boardEvents: [
+        {
+          type: "CREATURE_SUMMONED_LIMITED",
+          ...promptBoardEventBase(prompt, "LIMITED_SUMMON"),
+          cardInstanceId: result.card.instanceId,
+          fromZoneRef: boardZoneRef(result.sourcePlayerId, result.sourceZone as BoardZoneKind),
+          toZoneRef: boardZoneRef(result.controllerPlayerId, "LIMITED_SUMMON")
+        },
+        ...(sourceLinked
+          ? [{
+              type: "ANCHOR_LINK_CREATED",
+              ...promptBoardEventBase(prompt, "SOURCE_LINK_CREATED"),
+              cardInstanceId: result.card.instanceId,
+              targetCardInstanceId: result.card.instanceId
+            } satisfies BoardEventPayload]
+          : [])
+      ] satisfies BoardEventPayload[]
     });
 
     return nextState;

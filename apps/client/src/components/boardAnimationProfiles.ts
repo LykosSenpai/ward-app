@@ -20,6 +20,8 @@ const PROFILES: Record<BoardRenderEventType, BoardAnimationProfile> = {
   CREATURE_SUMMONED_PRIMARY: { durationMs: 340, label: "summon-primary" },
   CREATURE_SUMMONED_LIMITED: { durationMs: 340, label: "summon-limited" },
   MAGIC_ATTACHED: { durationMs: 320, label: "attach" },
+  ANCHOR_LINK_CREATED: { durationMs: 260, label: "anchor-link" },
+  SOURCE_LINK_CLEANUP_TRIGGERED: { durationMs: 280, label: "source-cleanup" },
   PROMPT_OPENED: { durationMs: 200, label: "prompt" },
   PROMPT_RESOLVED: { durationMs: 180, label: "prompt-resolve" },
   CARD_MOVED_ZONE: { durationMs: 300, label: "move" },

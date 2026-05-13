@@ -188,6 +188,23 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
       addCardGlow(steps, event.targetCardInstanceId, "VALID", Math.min(durationMs, 220));
       break;
 
+    case "ANCHOR_LINK_CREATED":
+      addCardGlow(steps, event.sourceCardInstanceId, "VALID", Math.min(durationMs, 220));
+      addCardGlow(steps, event.targetCardInstanceId ?? event.cardInstanceId, "VALID", Math.min(durationMs, 220));
+      break;
+
+    case "SOURCE_LINK_CLEANUP_TRIGGERED":
+      addCardGlow(steps, event.sourceCardInstanceId, "LOCKED", Math.min(durationMs, 220));
+      addCardGlow(steps, event.targetCardInstanceId ?? event.cardInstanceId, "DAMAGE", Math.min(durationMs, 220));
+      steps.push({
+        type: "SHOW_STATUS_CHIP",
+        cardInstanceId: event.targetCardInstanceId ?? event.cardInstanceId,
+        playerId: event.playerId,
+        label: "Source cleanup",
+        durationMs
+      });
+      break;
+
     case "BATTLE_STARTED":
       addCardGlow(steps, event.sourceCardInstanceId, "TARGET", Math.min(durationMs, 260));
       addCardGlow(steps, event.targetCardInstanceId, "TARGET", Math.min(durationMs, 260));
@@ -250,4 +267,3 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
 
   return steps;
 }
-

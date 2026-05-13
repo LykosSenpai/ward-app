@@ -101,11 +101,58 @@ function buildZoneRef(playerId: string | undefined, zone: BoardZoneKind | undefi
   };
 }
 
+function readZoneRef(value: unknown): BoardZoneRef | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const data = value as Record<string, unknown>;
+  const zone = normalizeZoneKind(data.zone);
+  if (!zone) return undefined;
+  const playerId = typeof data.playerId === "string" ? data.playerId : undefined;
+  const slotIndex = typeof data.slotIndex === "number" && Number.isFinite(data.slotIndex)
+    ? data.slotIndex
+    : undefined;
+  return buildZoneRef(playerId, zone, slotIndex);
+}
+
+function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"] | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toUpperCase();
+  switch (normalized) {
+    case "CARD_MOVED":
+    case "CARD_DRAWN":
+    case "CARD_DISCARDED":
+    case "CARD_DESTROYED":
+    case "CARD_RETURNED_TO_HAND":
+    case "CARD_RETURNED_TO_DECK":
+    case "CREATURE_SUMMONED_PRIMARY":
+    case "CREATURE_SUMMONED_LIMITED":
+    case "MAGIC_ATTACHED":
+    case "ANCHOR_LINK_CREATED":
+    case "SOURCE_LINK_CLEANUP_TRIGGERED":
+    case "PROMPT_OPENED":
+    case "PROMPT_RESOLVED":
+    case "CARD_MOVED_ZONE":
+    case "BATTLE_STARTED":
+    case "BATTLE_DAMAGE_APPLIED":
+    case "BATTLE_RESOLVED":
+    case "EFFECT_PROMPT_OPENED":
+    case "CHAIN_RESOLVED":
+    case "STATE_SYNCED":
+      return normalized;
+    default:
+      return undefined;
+  }
+}
+
 function inferEventType(rawType: string, data: Record<string, unknown>): BoardRenderEvent["type"] | undefined {
+  const explicitType = normalizeBoardRenderEventType(data.type);
+  if (explicitType) return explicitType;
+
   const actionType = readString(data, "actionType")?.toUpperCase();
   const normalizedRawType = rawType.toUpperCase();
   const combined = `${normalizedRawType} ${actionType ?? ""}`;
 
+  if (combined.includes("SOURCE_LINK_CLEANUP_TRIGGERED") || combined.includes("SOURCE_LINKED_SUMMONS_RETURNED")) return "SOURCE_LINK_CLEANUP_TRIGGERED";
+  if (combined.includes("ANCHOR_LINK_CREATED")) return "ANCHOR_LINK_CREATED";
   if (combined.includes("PROMPT") && (combined.includes("RESOLVE") || combined.includes("COMPLETE") || combined.includes("DECLINED"))) {
     return "PROMPT_RESOLVED";
   }
@@ -139,6 +186,9 @@ function inferCardInstanceId(type: BoardRenderEvent["type"], data: Record<string
 }
 
 function inferFromZoneRef(type: BoardRenderEvent["type"], playerId: string | undefined, data: Record<string, unknown>): BoardZoneRef | undefined {
+  const explicitZoneRef = readZoneRef(data.fromZoneRef);
+  if (explicitZoneRef) return explicitZoneRef;
+
   const sourcePlayerId = readString(data, "sourcePlayerId", "fieldOwnerPlayerId", "playerId") ?? playerId;
   const sourceZone = normalizeZoneKind(readString(data, "sourceZone", "fromZone"));
 
@@ -153,6 +203,9 @@ function inferFromZoneRef(type: BoardRenderEvent["type"], playerId: string | und
 }
 
 function inferToZoneRef(type: BoardRenderEvent["type"], playerId: string | undefined, data: Record<string, unknown>): BoardZoneRef | undefined {
+  const explicitZoneRef = readZoneRef(data.toZoneRef);
+  if (explicitZoneRef) return explicitZoneRef;
+
   const destinationPlayerId = readString(data, "destinationPlayerId", "cardOwnerPlayerId", "controllerPlayerId", "targetPlayerId", "playerId") ?? playerId;
   const destinationZone = normalizeZoneKind(readString(data, "destinationZone", "toZone"));
 
@@ -191,6 +244,17 @@ function mapEventToSemanticFields(
     promptId: readString(data, "promptId"),
     targetCardInstanceId: readString(data, "targetCardInstanceId", "targetCreatureInstanceId", "destroyedCardInstanceId", "attachedToInstanceId")
   };
+}
+
+function extractBoardEventPayloads(payload: unknown): Record<string, unknown>[] {
+  const data = readPayload(payload);
+  const boardEvents = data.boardEvents;
+  if (!Array.isArray(boardEvents)) return [data];
+
+  const structuredEvents = boardEvents
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item));
+
+  return structuredEvents.length > 0 ? structuredEvents : [data];
 }
 
 function extractVisualTargets(payload: unknown): BoardRenderEvent["visualTargets"] {
@@ -283,18 +347,25 @@ export function translateGameEventsToBoardRenderEvents(
     .filter(event => event.sequenceNumber > afterSequenceNumber)
     .slice(-limit);
 
-  return sourceEvents.map((event, index) => {
-    const semanticFields = mapEventToSemanticFields(event);
+  return sourceEvents.flatMap((event, sourceIndex) => {
+    const payloads = extractBoardEventPayloads(event.payload);
 
-    return {
-      eventId: `${match.matchId}:${event.sequenceNumber}:${event.type}:${index}`,
+    return payloads.map((payload, payloadIndex) => {
+      const semanticFields = mapEventToSemanticFields({
+        ...event,
+        payload
+      });
+
+      return {
+      eventId: `${match.matchId}:${event.sequenceNumber}:${event.type}:${sourceIndex}:${payloadIndex}`,
       sequenceNumber: event.sequenceNumber,
       matchId: match.matchId,
       rawType: event.type,
-      payload: event.payload,
-      visualTargets: extractVisualTargets(event.payload),
+      payload,
+      visualTargets: extractVisualTargets(payload),
       ...semanticFields
-    };
+      };
+    });
   });
 }
 
