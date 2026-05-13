@@ -45,6 +45,7 @@ export type BoardAffordanceKind =
   | "PLAYABLE_CARD"
   | "VALID_BATTLE_ATTACKER"
   | "VALID_BATTLE_DEFENDER"
+  | "AFFECTED_PLAYER_SIDE"
   | "VALID_DECK_STACK"
   | "VALID_SELECTED_DECK_CARD"
   | "VALID_DISCARD_CARD"
@@ -110,6 +111,8 @@ export type BoardEventType =
   | "SCHEDULED_EFFECT_RESOLVED"
   | "STAT_MODIFIER_APPLIED"
   | "STAT_MODIFIER_REMOVED"
+  | "PLAYER_STAT_CHANGED"
+  | "CEMETERY_HP_CHANGED"
   | "DICE_ROLLED"
   | "BATTLE_STARTED"
   | "BATTLE_STRIKE_STARTED"
@@ -129,6 +132,7 @@ export type BoardEventType =
   | "STOLEN_MAGIC_SENT_TO_CEMETERY"
   | "PLAYER_LOCK_APPLIED"
   | "PLAYER_LOCK_REMOVED"
+  | "TURN_SKIPPED"
   | "TURN_PHASE_CHANGED"
   | "TURN_STARTED"
   | "TURN_ENDED";
@@ -177,6 +181,10 @@ export type BoardEvent =
       stat?: string;
       delta?: number;
       modifierId?: string;
+      playerStat?: string;
+      previousValue?: number;
+      newValue?: number;
+      lockId?: string;
       metadata?: Record<string, unknown>;
     });
 
@@ -224,6 +232,20 @@ export type BoardAnimationStep =
       type: "GLOW_ZONE";
       zoneRef: BoardZoneRef;
       glowKind: BoardAnimationZoneGlowKind;
+      durationMs: number;
+    }
+  | {
+      type: "PULSE_PLAYER_SIDE";
+      playerId: string;
+      pulseKind: "STAT" | "CEMETERY_HP" | "LOCKED" | "UNLOCKED" | "TURN_SKIPPED";
+      durationMs: number;
+    }
+  | {
+      type: "CEMETERY_HP_NUMBER";
+      playerId: string;
+      amount: number;
+      previousValue?: number;
+      newValue?: number;
       durationMs: number;
     }
   | {

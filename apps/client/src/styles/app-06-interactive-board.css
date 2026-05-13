@@ -2221,6 +2221,10 @@
   margin: 0;
 }
 
+.board-preview-3d__cemetery-viewer-header span.is-cemetery-hp-adjusted {
+  color: #facc15;
+}
+
 .board-preview-3d__cemetery-viewer-header button {
   background: rgba(15, 23, 42, 0.84);
   border: 1px solid rgba(148, 163, 184, 0.38);
@@ -2313,6 +2317,24 @@
   color: #fef9c3;
   font-weight: 950;
   text-shadow: 0 2px 8px rgba(2, 6, 23, 0.9);
+}
+
+.board-preview-3d__player-effect-banner {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(250, 204, 21, 0.65);
+  border-radius: 6px;
+  color: #fef3c7;
+  font-size: 0.68rem;
+  font-weight: 950;
+  left: 50%;
+  letter-spacing: 0;
+  padding: 7px 12px;
+  pointer-events: none;
+  position: absolute;
+  text-transform: uppercase;
+  top: 8%;
+  transform: translate(-50%, -50%);
+  z-index: 34;
 }
 
 .board-preview-3d__slot.is-hovered:not(.is-blocked) {

@@ -192,6 +192,8 @@ function buildHandPlacementContext(
 function getGeneralPlayBlockedReason(match: AppMatchState, player: PlayerState, context: HandPlacementContext): string | null {
   if (context.isMatchComplete) return "Match is complete.";
   if (!context.canControlThisPlayer) return `You cannot control ${player.displayName ?? "this player"} right now.`;
+  const playerLockReason = getPlayerLockedReason(player);
+  if (playerLockReason) return playerLockReason;
   if (match.pendingPrompt) return "Resolve the pending prompt before playing cards.";
   if (match.pendingChain) return "Resolve the pending Magic Chain before playing cards.";
   if (context.anyDiscardRequired) {
@@ -205,6 +207,53 @@ function getGeneralPlayBlockedReason(match: AppMatchState, player: PlayerState, 
     return "A primary creature replacement is required before other cards can be played.";
   }
   return null;
+}
+
+function getPlayerLockedReason(player: PlayerState): string | null {
+  if (Number(player.skipNextTurnCount ?? 0) > 0) {
+    const skipLock = player.playerLocks?.find(lock => lock.kind === "SKIP_TURN");
+    return skipLock?.reason ?? skipLock?.label ?? `${player.displayName} must skip their next turn.`;
+  }
+
+  const actionLock = player.playerLocks?.find(lock => lock.kind === "ACTION_LOCK");
+  return actionLock?.reason ?? actionLock?.label ?? null;
+}
+
+export function buildPlayerGlobalAffordances(match: AppMatchState, controlledPlayerId?: string | null): BoardAffordance[] {
+  const affordances: BoardAffordance[] = [];
+
+  for (const player of match.players) {
+    if (controlledPlayerId && controlledPlayerId !== player.id) continue;
+
+    const lockReason = getPlayerLockedReason(player);
+    if (lockReason) {
+      affordances.push({
+        id: `player:${player.id}:locked`,
+        kind: "DISABLED_ACTION",
+        playerId: player.id,
+        targetZoneRef: { playerId: player.id, zone: "PROMPT" },
+        actionId: "PLAYER_ACTIONS_LOCKED",
+        label: `${player.displayName} locked`,
+        highlightStyle: "LOCKED",
+        disabledReason: lockReason
+      });
+    }
+
+    const cemeteryHpAdjustment = Number(player.cemeteryHpAdjustment ?? 0);
+    if (cemeteryHpAdjustment !== 0) {
+      affordances.push({
+        id: `player:${player.id}:cemetery-hp-adjustment`,
+        kind: "AFFECTED_PLAYER_SIDE",
+        playerId: player.id,
+        targetZoneRef: { playerId: player.id, zone: "CEMETERY" },
+        actionId: "CEMETERY_HP_ADJUSTED",
+        label: `${player.displayName} cemetery HP ${cemeteryHpAdjustment > 0 ? "+" : ""}${cemeteryHpAdjustment}`,
+        highlightStyle: "WARNING"
+      });
+    }
+  }
+
+  return affordances;
 }
 
 function getCreaturePlayBlockedReason(match: AppMatchState, player: PlayerState, card: CardInstance, context: HandPlacementContext): string | null {

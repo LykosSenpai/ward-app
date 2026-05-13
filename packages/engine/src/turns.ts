@@ -85,6 +85,107 @@ function resetPerTurnFlags(player: PlayerState): void {
   player.turnFlags.battleUsedCreatureInstanceIds = [];
 }
 
+function getSkipTurnReason(player: PlayerState): string | null {
+  if (Number(player.skipNextTurnCount ?? 0) > 0) {
+    const skipLock = player.playerLocks?.find(lock => lock.kind === "SKIP_TURN");
+    return skipLock?.reason ?? skipLock?.label ?? "A player-level effect skips this turn.";
+  }
+
+  const actionLock = player.playerLocks?.find(lock => lock.kind === "ACTION_LOCK");
+  return actionLock?.reason ?? actionLock?.label ?? null;
+}
+
+function consumeSkipTurnLock(state: MatchState, player: PlayerState, reason: string): void {
+  const previousSkipCount = Number(player.skipNextTurnCount ?? 0);
+  player.skipNextTurnCount = Math.max(0, previousSkipCount - 1);
+
+  const skipLocks = player.playerLocks?.filter(lock => lock.kind === "SKIP_TURN") ?? [];
+  const boardEvents = [
+    {
+      type: "TURN_SKIPPED",
+      playerId: player.id,
+      reason,
+      turnNumber: state.turn.turnNumber,
+      turnCycleNumber: state.turn.turnCycleNumber,
+      phase: state.turn.phase
+    },
+    ...skipLocks.flatMap(lock => {
+      const remainingTurns = Math.max(0, Number(lock.remainingTurns ?? previousSkipCount) - 1);
+      if (remainingTurns > 0) {
+        lock.remainingTurns = remainingTurns;
+        return [];
+      }
+      return [{
+        type: "PLAYER_LOCK_REMOVED",
+        playerId: player.id,
+        reason: "SKIP_TURN_CONSUMED",
+        status: "SKIP_TURN",
+        statusLabel: lock.label,
+        lockId: lock.id
+      }];
+    })
+  ];
+
+  player.playerLocks = (player.playerLocks ?? []).filter(lock =>
+    lock.kind !== "SKIP_TURN" || Number(lock.remainingTurns ?? 0) > 0
+  );
+
+  addEvent(state, "TURN_SKIPPED", player.id, {
+    playerId: player.id,
+    playerName: player.displayName,
+    reason,
+    previousSkipCount,
+    skipNextTurnCount: player.skipNextTurnCount,
+    turnNumber: state.turn.turnNumber,
+    turnCycleNumber: state.turn.turnCycleNumber,
+    boardEvents
+  });
+}
+
+function enterNextPlayerTurn(
+  state: MatchState,
+  nextPlayerId: string,
+  nextIndex: number,
+  completedCycle: boolean,
+  reason: string
+): void {
+  const nextPlayer = getPlayer(state, nextPlayerId);
+  resetPerTurnFlags(nextPlayer);
+
+  state.turn = {
+    ...state.turn,
+    activePlayerId: nextPlayerId,
+    currentTurnIndex: nextIndex,
+    phase: "DRAW",
+    turnNumber: state.turn.turnNumber + 1,
+    turnCycleNumber: completedCycle
+      ? state.turn.turnCycleNumber + 1
+      : state.turn.turnCycleNumber,
+    firstTurnCycleComplete: completedCycle
+      ? true
+      : state.turn.firstTurnCycleComplete,
+    turnStartCountsByPlayer: {
+      ...state.turn.turnStartCountsByPlayer,
+      [nextPlayerId]:
+        (state.turn.turnStartCountsByPlayer[nextPlayerId] ?? 0) + 1
+    }
+  };
+
+  addEvent(
+    state,
+    "TURN_STARTED",
+    nextPlayerId,
+    turnBoardEventPayload(state, "TURN_STARTED", nextPlayerId, "DRAW", reason)
+  );
+
+  addEvent(
+    state,
+    "TURN_PHASE_CHANGED",
+    nextPlayerId,
+    turnBoardEventPayload(state, "TURN_PHASE_CHANGED", nextPlayerId, "DRAW", reason)
+  );
+}
+
 export function getNextPhase(currentPhase: TurnPhase): TurnPhase | null {
   const index = PHASE_ORDER.indexOf(currentPhase);
 
@@ -248,53 +349,33 @@ export function advanceTurn(state: MatchState): MatchState {
   refreshRecurringRuntimeEffectsAtEndOfTurn(nextState, currentPlayer.id, addEvent);
   refreshRegeneratingHealsAtEndOfTurn(nextState, currentPlayer.id, addEvent);
 
-  const nextIndex =
-    (nextState.turn.currentTurnIndex + 1) %
-    nextState.turn.currentTurnOrder.length;
+  const playerCount = nextState.turn.currentTurnOrder.length;
+  const startingTurnIndex = nextState.turn.currentTurnIndex;
+  for (let offset = 1; offset <= playerCount; offset += 1) {
+    const nextIndex =
+      (startingTurnIndex + offset) %
+      playerCount;
+    const nextPlayerId = nextState.turn.currentTurnOrder[nextIndex];
+    const completedCycle = nextIndex === 0;
 
-  const nextPlayerId = nextState.turn.currentTurnOrder[nextIndex];
-  const nextPlayer = getPlayer(nextState, nextPlayerId);
+    enterNextPlayerTurn(nextState, nextPlayerId, nextIndex, completedCycle, "ADVANCE_TURN");
 
-  resetPerTurnFlags(nextPlayer);
+    const nextPlayer = getPlayer(nextState, nextPlayerId);
+    const skipReason = getSkipTurnReason(nextPlayer);
+    if (!skipReason) {
+      removeExpiredSilenceFromTheGraveEffects(nextState, nextPlayerId, addEvent);
+      removeExpiredStatModifiersForPlayerTurnStart(nextState, nextPlayerId, addEvent);
+      processBeginningOfTurnRuntimeEffects(nextState, addEvent);
+      return nextState;
+    }
 
-  const completedCycle = nextIndex === 0;
-
-  nextState.turn = {
-  ...nextState.turn,
-  activePlayerId: nextPlayerId,
-  currentTurnIndex: nextIndex,
-  phase: "DRAW",
-  turnNumber: nextState.turn.turnNumber + 1,
-  turnCycleNumber: completedCycle
-    ? nextState.turn.turnCycleNumber + 1
-    : nextState.turn.turnCycleNumber,
-  firstTurnCycleComplete: completedCycle
-    ? true
-    : nextState.turn.firstTurnCycleComplete,
-  turnStartCountsByPlayer: {
-    ...nextState.turn.turnStartCountsByPlayer,
-    [nextPlayerId]:
-      (nextState.turn.turnStartCountsByPlayer[nextPlayerId] ?? 0) + 1
+    consumeSkipTurnLock(nextState, nextPlayer, skipReason);
   }
-};
 
-addEvent(
-  nextState,
-  "TURN_STARTED",
-  nextPlayerId,
-  turnBoardEventPayload(nextState, "TURN_STARTED", nextPlayerId, "DRAW", "ADVANCE_TURN")
-);
-
-addEvent(
-  nextState,
-  "TURN_PHASE_CHANGED",
-  nextPlayerId,
-  turnBoardEventPayload(nextState, "TURN_PHASE_CHANGED", nextPlayerId, "DRAW", "ADVANCE_TURN")
-);
-
-removeExpiredSilenceFromTheGraveEffects(nextState, nextPlayerId, addEvent);
-removeExpiredStatModifiersForPlayerTurnStart(nextState, nextPlayerId, addEvent);
-processBeginningOfTurnRuntimeEffects(nextState, addEvent);
-
-return nextState;
+  const activePlayer = getPlayer(nextState, nextState.turn.activePlayerId);
+  addEvent(nextState, "TURN_SKIP_LOOP_STOPPED", activePlayer.id, {
+    playerId: activePlayer.id,
+    reason: "All players are currently locked or skipped; leaving control on the last skipped player."
+  });
+  return nextState;
 }

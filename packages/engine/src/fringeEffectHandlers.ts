@@ -19,6 +19,8 @@ const FRINGE_AUTOMATIC_ACTIONS = new Set([
   "SHUFFLE_DECK",
   "ADJUST_CEMETERY_HP",
   "ADD_CEMETERY_HP_ADJUSTMENT",
+  "MODIFY_CEMETERY_HP",
+  "PLAYER_TARGET_EFFECT",
   "APPLY_BATTLE_LOCK",
   "APPLY_TEMPORARY_HIT_OVERRIDE",
   "ADD_NEXT_ATTACK_SHIELD",
@@ -34,6 +36,7 @@ const FRINGE_AUTOMATIC_ACTIONS = new Set([
   "APPLY_NEGATION_WINDOW_RESTRICTION",
   "APPLY_PERMANENT_CREATURE_FLAG",
   "APPLY_SKIP_TURN",
+  "RESET_CURRENT_TURN",
   "DESTROY_SELF",
   "SET_TEMPORARY_CARD_BEHAVIOR",
   "SET_CARD_TYPE"
@@ -59,6 +62,16 @@ function firstPositiveInteger(text: string): number | undefined {
   return Number.isFinite(value) && value > 0 ? Math.trunc(value) : undefined;
 }
 
+function getEffectAmount(effect: WardEngineEffect, text: string): number | undefined {
+  const rawAmount = effect.params?.amount ?? effect.params?.value ?? effect.value;
+  const numeric = Number(rawAmount);
+  if (Number.isFinite(numeric) && numeric !== 0) {
+    return Math.trunc(numeric);
+  }
+
+  return firstPositiveInteger(text);
+}
+
 function controllerScopePlayers(state: MatchState, controllerPlayerId: string, text: string): PlayerState[] {
   if (text.includes("all player") || text.includes("each player") || text.includes("both player")) {
     return state.players;
@@ -67,6 +80,41 @@ function controllerScopePlayers(state: MatchState, controllerPlayerId: string, t
     return state.players.filter(player => player.id !== controllerPlayerId);
   }
   return [getPlayer(state, controllerPlayerId)];
+}
+
+function playerLockId(effect: WardEngineEffect, playerId: string, actionType: string): string {
+  return `${actionType}:${effect.id}:${playerId}`;
+}
+
+function applyPlayerLock(
+  state: MatchState,
+  player: PlayerState,
+  args: {
+    effect: WardEngineEffect;
+    controllerPlayerId: string;
+    sourceCardName: string;
+    sourceCardInstanceId?: string;
+    actionType: string;
+    label: string;
+    remainingTurns?: number;
+  }
+): string {
+  const id = playerLockId(args.effect, player.id, args.actionType);
+  player.playerLocks = (player.playerLocks ?? []).filter(lock => lock.id !== id);
+  player.playerLocks.push({
+    id,
+    kind: args.actionType === "APPLY_SKIP_TURN" ? "SKIP_TURN" : "ACTION_LOCK",
+    label: args.label,
+    reason: args.label,
+    sourceEffectId: args.effect.id,
+    sourceCardInstanceId: args.sourceCardInstanceId,
+    sourceCardName: args.sourceCardName,
+    sourcePlayerId: args.controllerPlayerId,
+    remainingTurns: args.remainingTurns,
+    appliedTurnNumber: state.turn.turnNumber,
+    appliedTurnCycle: state.turn.turnCycleNumber
+  });
+  return id;
 }
 
 function shuffleInPlace<T>(items: T[]): void {
@@ -190,23 +238,68 @@ export function tryResolveFringeAutomaticMagicEffect(
     return true;
   }
 
-  if (actionType === "ADJUST_CEMETERY_HP" || actionType === "ADD_CEMETERY_HP_ADJUSTMENT") {
-    const amount = firstPositiveInteger(text) ?? 0;
-    if (amount <= 0) return false;
-    const sign = text.includes("reduce") || text.includes("lower") || text.includes("-") ? -1 : 1;
+  if (actionType === "ADJUST_CEMETERY_HP" || actionType === "ADD_CEMETERY_HP_ADJUSTMENT" || actionType === "MODIFY_CEMETERY_HP") {
+    const parsedAmount = getEffectAmount(effect, text) ?? 0;
+    if (parsedAmount === 0) return false;
+    const sign = parsedAmount < 0 || text.includes("reduce") || text.includes("lower") || text.includes("-") ? -1 : 1;
+    const amount = Math.abs(parsedAmount) * sign;
     const players = controllerScopePlayers(state, controllerPlayerId, text);
+    const results: Array<{
+      playerId: string;
+      playerName: string;
+      previousAdjustment: number;
+      cemeteryHpAdjustment: number;
+      previousCemeteryHpTotal: number;
+      cemeteryCreatureHpTotal: number;
+    }> = [];
     for (const player of players) {
-      const mutable = player as PlayerState & { cemeteryHpAdjustment?: number };
-      mutable.cemeteryHpAdjustment = Number(mutable.cemeteryHpAdjustment ?? 0) + sign * amount;
-      player.cemeteryCreatureHpTotal = player.cemeteryCreatureHpTotal + sign * amount;
+      const previousAdjustment = Number(player.cemeteryHpAdjustment ?? 0);
+      const previousTotal = Number(player.cemeteryCreatureHpTotal ?? 0);
+      player.cemeteryHpAdjustment = previousAdjustment + amount;
+      player.cemeteryCreatureHpTotal = player.cemeteryCreatureHpTotal + amount;
+      results.push({
+        playerId: player.id,
+        playerName: player.displayName,
+        previousAdjustment,
+        cemeteryHpAdjustment: player.cemeteryHpAdjustment,
+        previousCemeteryHpTotal: previousTotal,
+        cemeteryCreatureHpTotal: player.cemeteryCreatureHpTotal
+      });
     }
     addEvent(state, "AUTO_EFFECT_CEMETERY_HP_ADJUSTED", controllerPlayerId, {
       sourceCardName,
       sourceCardInstanceId: args.sourceCardInstanceId,
       effectId: effect.id,
       actionType: effect.actionType,
-      amount: sign * amount,
+      amount,
       affectedPlayerIds: players.map(player => player.id),
+      results,
+      boardEvents: players.flatMap(player => [
+        {
+          type: "CEMETERY_HP_CHANGED",
+          playerId: player.id,
+          sourceCardInstanceId: args.sourceCardInstanceId,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: "CEMETERY_HP_ADJUSTMENT",
+          amount,
+          playerStat: "cemeteryCreatureHpTotal",
+          previousValue: results.find(result => result.playerId === player.id)?.previousCemeteryHpTotal,
+          newValue: player.cemeteryCreatureHpTotal
+        },
+        {
+          type: "PLAYER_STAT_CHANGED",
+          playerId: player.id,
+          sourceCardInstanceId: args.sourceCardInstanceId,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: "CEMETERY_HP_ADJUSTMENT",
+          amount,
+          playerStat: "cemeteryHpAdjustment",
+          previousValue: results.find(result => result.playerId === player.id)?.previousAdjustment,
+          newValue: player.cemeteryHpAdjustment
+        }
+      ]),
       note: "Cemetery HP adjustments can go below 0."
     });
     return true;
@@ -214,9 +307,20 @@ export function tryResolveFringeAutomaticMagicEffect(
 
   if (actionType === "APPLY_SKIP_TURN") {
     const players = controllerScopePlayers(state, controllerPlayerId, text.includes("opponent") ? "opponent" : text);
+    const affected = [];
     for (const player of players) {
-      const mutable = player as PlayerState & { skipNextTurnCount?: number };
-      mutable.skipNextTurnCount = Number(mutable.skipNextTurnCount ?? 0) + 1;
+      const previousSkipCount = Number(player.skipNextTurnCount ?? 0);
+      player.skipNextTurnCount = previousSkipCount + 1;
+      const lockId = applyPlayerLock(state, player, {
+        effect,
+        controllerPlayerId,
+        sourceCardName,
+        sourceCardInstanceId: args.sourceCardInstanceId,
+        actionType,
+        label: effect.value ?? effect.actionText ?? "Skip next turn",
+        remainingTurns: player.skipNextTurnCount
+      });
+      affected.push({ playerId: player.id, previousSkipCount, skipNextTurnCount: player.skipNextTurnCount, lockId });
     }
     addEvent(state, "AUTO_EFFECT_SKIP_TURN_FLAG_APPLIED", controllerPlayerId, {
       sourceCardName,
@@ -224,7 +328,66 @@ export function tryResolveFringeAutomaticMagicEffect(
       effectId: effect.id,
       actionType: effect.actionType,
       affectedPlayerIds: players.map(player => player.id),
+      affected,
+      boardEvents: affected.map(item => ({
+        type: "PLAYER_LOCK_APPLIED",
+        playerId: item.playerId,
+        sourceCardInstanceId: args.sourceCardInstanceId,
+        sourceEffectId: effect.id,
+        actionType: effect.actionType,
+        reason: "SKIP_TURN",
+        status: "SKIP_TURN",
+        statusLabel: "Skip next turn",
+        lockId: item.lockId
+      })),
       note: "The turn engine checks this flag at turn start in the handler foundation patch."
+    });
+    return true;
+  }
+
+  if (actionType === "RESET_CURRENT_TURN") {
+    const activePlayer = getPlayer(state, state.turn.activePlayerId);
+    addEvent(state, "AUTO_EFFECT_RESET_CURRENT_TURN_REQUIRES_MANUAL_SNAPSHOT", controllerPlayerId, {
+      sourceCardName,
+      sourceCardInstanceId: args.sourceCardInstanceId,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      targetPlayerId: activePlayer.id,
+      reason: "TURN_RESET_REQUIRES_SNAPSHOT",
+      boardEvents: [
+        {
+          type: "PLAYER_STAT_CHANGED",
+          playerId: activePlayer.id,
+          sourceCardInstanceId: args.sourceCardInstanceId,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: "TURN_RESET_REQUIRES_SNAPSHOT",
+          playerStat: "turnResetRequested"
+        }
+      ],
+      note: "Resetting all events in the current turn requires a turn snapshot and remains manual."
+    });
+    return true;
+  }
+
+  if (actionType === "PLAYER_TARGET_EFFECT") {
+    const players = controllerScopePlayers(state, controllerPlayerId, text);
+    addEvent(state, "AUTO_EFFECT_PLAYER_TARGET_RESOLVED", controllerPlayerId, {
+      sourceCardName,
+      sourceCardInstanceId: args.sourceCardInstanceId,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      affectedPlayerIds: players.map(player => player.id),
+      boardEvents: players.map(player => ({
+        type: "PLAYER_STAT_CHANGED",
+        playerId: player.id,
+        sourceCardInstanceId: args.sourceCardInstanceId,
+        sourceEffectId: effect.id,
+        actionType: effect.actionType,
+        reason: "PLAYER_TARGET_EFFECT",
+        playerStat: "playerTarget"
+      })),
+      note: "Generic player-target effect resolved as a player-side board event; specific stat changes should use dedicated action types."
     });
     return true;
   }

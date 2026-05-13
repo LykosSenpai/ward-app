@@ -1,7 +1,27 @@
 import type { MatchState } from "@ward/shared";
 import { getPendingManualEffects, getPlayer } from "./engineRuntime.js";
 
+export function getPlayerActionLockReason(state: MatchState, playerId: string): string | null {
+  const player = getPlayer(state, playerId);
+  if (Number(player.skipNextTurnCount ?? 0) > 0) {
+    const skipLock = player.playerLocks?.find(lock => lock.kind === "SKIP_TURN");
+    return skipLock?.reason ?? skipLock?.label ?? `${player.displayName} must skip their next turn.`;
+  }
+
+  const lock = player.playerLocks?.find(item => item.kind === "ACTION_LOCK");
+  return lock?.reason ?? lock?.label ?? null;
+}
+
+export function ensureActivePlayerCanAct(state: MatchState): void {
+  const reason = getPlayerActionLockReason(state, state.turn.activePlayerId);
+  if (reason) {
+    throw new Error(reason);
+  }
+}
+
 export function ensureNoHandDiscardRequired(state: MatchState): void {
+  ensureActivePlayerCanAct(state);
+
   if (state.setup.handDiscardRequiredForPlayerId) {
     const player = getPlayer(state, state.setup.handDiscardRequiredForPlayerId);
 

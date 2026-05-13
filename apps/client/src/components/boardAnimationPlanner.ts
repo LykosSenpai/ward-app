@@ -22,6 +22,20 @@ export type BoardAnimationStep =
       durationMs: number;
     }
   | {
+      type: "PULSE_PLAYER_SIDE";
+      playerId: string;
+      pulseKind: "STAT" | "CEMETERY_HP" | "LOCKED" | "UNLOCKED" | "TURN_SKIPPED";
+      durationMs: number;
+    }
+  | {
+      type: "CEMETERY_HP_NUMBER";
+      playerId: string;
+      amount: number;
+      previousValue?: number;
+      newValue?: number;
+      durationMs: number;
+    }
+  | {
       type: "DAMAGE_NUMBER";
       cardInstanceId: string;
       amount: number;
@@ -401,6 +415,56 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
       });
       break;
     }
+
+    case "PLAYER_STAT_CHANGED": {
+      if (event.playerId) {
+        steps.push({ type: "PULSE_PLAYER_SIDE", playerId: event.playerId, pulseKind: "STAT", durationMs });
+      }
+      const stat = readString(data, "playerStat", "stat") ?? "Player stat";
+      const amount = readNumber(data, "amount", "delta");
+      const label = amount !== undefined ? `${stat} ${amount > 0 ? "+" : ""}${amount}` : stat;
+      steps.push({ type: "SHOW_STATUS_CHIP", playerId: event.playerId, label, durationMs });
+      break;
+    }
+
+    case "CEMETERY_HP_CHANGED": {
+      if (event.playerId) {
+        const amount = readNumber(data, "amount", "delta") ?? 0;
+        steps.push({ type: "PULSE_PLAYER_SIDE", playerId: event.playerId, pulseKind: "CEMETERY_HP", durationMs });
+        steps.push({
+          type: "CEMETERY_HP_NUMBER",
+          playerId: event.playerId,
+          amount,
+          previousValue: readNumber(data, "previousValue"),
+          newValue: readNumber(data, "newValue"),
+          durationMs
+        });
+      }
+      steps.push({ type: "SHOW_STATUS_CHIP", playerId: event.playerId, label: "Cemetery HP", durationMs });
+      break;
+    }
+
+    case "PLAYER_LOCK_APPLIED":
+    case "PLAYER_LOCK_REMOVED": {
+      if (event.playerId) {
+        steps.push({
+          type: "PULSE_PLAYER_SIDE",
+          playerId: event.playerId,
+          pulseKind: event.type === "PLAYER_LOCK_APPLIED" ? "LOCKED" : "UNLOCKED",
+          durationMs
+        });
+      }
+      const label = readString(data, "statusLabel", "label", "reason") ?? (event.type === "PLAYER_LOCK_APPLIED" ? "Locked" : "Unlocked");
+      steps.push({ type: "SHOW_STATUS_CHIP", playerId: event.playerId, label, durationMs });
+      break;
+    }
+
+    case "TURN_SKIPPED":
+      if (event.playerId) {
+        steps.push({ type: "PULSE_PLAYER_SIDE", playerId: event.playerId, pulseKind: "TURN_SKIPPED", durationMs });
+      }
+      steps.push({ type: "SHOW_STATUS_CHIP", playerId: event.playerId, label: "Turn skipped", durationMs });
+      break;
 
     case "PROMPT_OPENED":
     case "EFFECT_PROMPT_OPENED":

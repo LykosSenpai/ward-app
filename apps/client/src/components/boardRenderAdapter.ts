@@ -153,6 +153,11 @@ function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"]
     case "SCHEDULED_EFFECT_RESOLVED":
     case "STAT_MODIFIER_APPLIED":
     case "STAT_MODIFIER_REMOVED":
+    case "PLAYER_STAT_CHANGED":
+    case "CEMETERY_HP_CHANGED":
+    case "PLAYER_LOCK_APPLIED":
+    case "PLAYER_LOCK_REMOVED":
+    case "TURN_SKIPPED":
     case "PROMPT_OPENED":
     case "PROMPT_RESOLVED":
     case "CHAIN_LINK_ADDED":
@@ -199,6 +204,11 @@ function inferEventType(rawType: string, data: Record<string, unknown>): BoardRe
   if (combined.includes("SOURCE_LINK_CLEANUP_TRIGGERED") || combined.includes("SOURCE_LINKED_SUMMONS_RETURNED")) return "SOURCE_LINK_CLEANUP_TRIGGERED";
   if (normalizedRawType === "TURN_STARTED") return "TURN_STARTED";
   if (normalizedRawType === "TURN_PHASE_CHANGED") return "TURN_PHASE_CHANGED";
+  if (normalizedRawType === "TURN_SKIPPED" || combined.includes("TURN_SKIPPED")) return "TURN_SKIPPED";
+  if (combined.includes("CEMETERY_HP_CHANGED") || combined.includes("CEMETERY_HP_ADJUST")) return "CEMETERY_HP_CHANGED";
+  if (combined.includes("PLAYER_STAT_CHANGED")) return "PLAYER_STAT_CHANGED";
+  if (combined.includes("PLAYER_LOCK_APPLIED") || combined.includes("SKIP_TURN_FLAG_APPLIED")) return "PLAYER_LOCK_APPLIED";
+  if (combined.includes("PLAYER_LOCK_REMOVED")) return "PLAYER_LOCK_REMOVED";
   if (combined.includes("RECURRING_EFFECT_TICKED")) return "RECURRING_EFFECT_TICKED";
   if (combined.includes("SCHEDULED_EFFECT_RESOLVED")) return "SCHEDULED_EFFECT_RESOLVED";
   if (combined.includes("ANCHOR_LINK_CREATED")) return "ANCHOR_LINK_CREATED";

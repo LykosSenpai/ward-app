@@ -20,7 +20,7 @@ import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
-import { buildBattleAffordances, buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances } from "./boardAffordances";
+import { buildBattleAffordances, buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances, buildPlayerGlobalAffordances } from "./boardAffordances";
 import type { BoardAffordance, BoardZoneRef } from "@ward/shared";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
@@ -990,13 +990,18 @@ export function BoardPreview3D({
     () => buildBattleAffordances(match, controlledPlayerId),
     [controlledPlayerId, match]
   );
+  const playerGlobalAffordances = useMemo(
+    () => buildPlayerGlobalAffordances(match, controlledPlayerId),
+    [controlledPlayerId, match]
+  );
   const combinedHandAffordances = useMemo(
     () => [
       ...handPlacementAffordances,
+      ...playerGlobalAffordances,
       ...(match.pendingChain ? magicChainAffordances : []),
       ...battleAffordances
     ],
-    [battleAffordances, handPlacementAffordances, magicChainAffordances, match.pendingChain]
+    [battleAffordances, handPlacementAffordances, magicChainAffordances, match.pendingChain, playerGlobalAffordances]
   );
   const getDropZoneSlotIdsForCard = useCallback((cardInstanceId: string) => {
     return combinedHandAffordances.flatMap(affordance => {
@@ -1058,6 +1063,14 @@ export function BoardPreview3D({
     if (!selectedHandCardId) return [] as string[];
     return getDropZoneSlotIdsForCard(selectedHandCardId);
   }, [getDropZoneSlotIdsForCard, selectedHandCardId]);
+  const playerGlobalSlotIds = useMemo(() => {
+    return playerGlobalAffordances.flatMap(affordance => {
+      if (affordance.kind !== "AFFECTED_PLAYER_SIDE" && affordance.kind !== "DISABLED_ACTION") return [] as string[];
+      const playerId = affordance.playerId === "player_1" || affordance.playerId === "player_2" ? affordance.playerId : null;
+      if (!playerId) return [] as string[];
+      return [`${playerId}-primary`, `${playerId}-limited-1`, `${playerId}-limited-2`, `${playerId}-magic-1`, `${playerId}-magic-2`, `${playerId}-magic-3`, `${playerId}-magic-4`, `${playerId}-magic-5`, `${playerId}-cemetery`];
+    });
+  }, [playerGlobalAffordances]);
   const sacrificeTargetSlotIds = sacrificeSelectionActive ? [sacrificeDropSlotId] : [];
   const sacrificeCandidatePieceIds = useMemo(() => {
     if (!sacrificeCandidateIds.size) return [] as string[];
@@ -1748,6 +1761,28 @@ export function BoardPreview3D({
     const candidateSlotIds = activeEvent.visualTargets.slotIds.filter(value =>
       BOARD_SLOTS.some(slot => slot.id === value)
     );
+    if (
+      (
+        activeEvent.type === "PLAYER_STAT_CHANGED" ||
+        activeEvent.type === "CEMETERY_HP_CHANGED" ||
+        activeEvent.type === "PLAYER_LOCK_APPLIED" ||
+        activeEvent.type === "PLAYER_LOCK_REMOVED" ||
+        activeEvent.type === "TURN_SKIPPED"
+      ) &&
+      (activeEvent.playerId === "player_1" || activeEvent.playerId === "player_2")
+    ) {
+      candidateSlotIds.push(
+        `${activeEvent.playerId}-primary`,
+        `${activeEvent.playerId}-limited-1`,
+        `${activeEvent.playerId}-limited-2`,
+        `${activeEvent.playerId}-magic-1`,
+        `${activeEvent.playerId}-magic-2`,
+        `${activeEvent.playerId}-magic-3`,
+        `${activeEvent.playerId}-magic-4`,
+        `${activeEvent.playerId}-magic-5`,
+        `${activeEvent.playerId}-cemetery`
+      );
+    }
     const instanceIds = activeEvent.visualTargets.cardInstanceIds;
     const pieceIds = boardObjects
       .filter(object => instanceIds.some(instanceId => object.id.includes(instanceId)))
@@ -2219,7 +2254,7 @@ export function BoardPreview3D({
               setDeckActionsExpanded(true);
               setDeckHandControlsOwner(owner);
             }}
-            draggableHandCardIds={handCards.map(card => card.instanceId)}
+            draggableHandCardIds={[...playableHandCardIds]}
             draggableBattleAttackerCardIds={[...legalBattleAttackerIds]}
             draggableEquipMagicCardIds={draggableEquipMagicCardIds}
             validBattleTargetPieceIds={battleDefender ? [battleDefender.object.id] : battleTargetPieceIds}
@@ -2227,7 +2262,7 @@ export function BoardPreview3D({
             validEffectTargetPieceIds={effectTargetPieceIds}
             validEffectTargetSlotIds={effectTargetSlotIds}
             effectSourcePieceIds={effectSourcePieceIds}
-            highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...sacrificeTargetSlotIds, ...(discardRequiredForFocusedPlayer ? [`${focusedPlayerId}-cemetery`] : []), ...battleTargetSlotIds, ...effectTargetSlotIds]}
+            highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...playerGlobalSlotIds, ...sacrificeTargetSlotIds, ...(discardRequiredForFocusedPlayer ? [`${focusedPlayerId}-cemetery`] : []), ...battleTargetSlotIds, ...effectTargetSlotIds]}
             highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...effectTargetPieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
             equipAttachSourcePieceIds={equipAttachSourcePieceIds}
             battleSpeedBadges={battleSpeedBadges}
@@ -2371,7 +2406,7 @@ export function BoardPreview3D({
                   <button
                     key={card.instanceId}
                     type="button"
-                    draggable
+                    draggable={playableHandCardIds.has(card.instanceId) || sacrificeCandidateIds.has(card.instanceId)}
                     className={[
                       selectedHandCardId === card.instanceId ? "is-selected" : "",
                       playableHandCardIds.has(card.instanceId) ? "is-playable" : "",
@@ -2400,6 +2435,11 @@ export function BoardPreview3D({
                     onBlur={() => setHoveredHandCardId(current => current === card.instanceId ? null : current)}
                     onMouseLeave={() => setHoveredHandCardId(current => current === card.instanceId ? null : current)}
                     onDragStart={(event) => {
+                      if (!playableHandCardIds.has(card.instanceId) && !sacrificeCandidateIds.has(card.instanceId)) {
+                        event.preventDefault();
+                        setStatusMessage(disabledReason ?? "That card cannot be played right now.");
+                        return;
+                      }
                       if (!sacrificeCandidateIds.has(card.instanceId)) {
                         setSelectedHandCardId(card.instanceId);
                       }
@@ -2420,7 +2460,10 @@ export function BoardPreview3D({
               <div className="board-preview-3d__cemetery-viewer-header">
                 <div>
                   <strong>{cemeteryViewerPlayer.displayName} Cemetery</strong>
-                  <span>{cemeteryCards.length} cards / {cemeteryViewerPlayer.cemeteryCreatureHpTotal} HP</span>
+                  <span className={Number(cemeteryViewerPlayer.cemeteryHpAdjustment ?? 0) !== 0 ? "is-cemetery-hp-adjusted" : undefined}>
+                    {cemeteryCards.length} cards / {cemeteryViewerPlayer.cemeteryCreatureHpTotal} HP
+                    {Number(cemeteryViewerPlayer.cemeteryHpAdjustment ?? 0) !== 0 ? ` (${Number(cemeteryViewerPlayer.cemeteryHpAdjustment ?? 0) > 0 ? "+" : ""}${cemeteryViewerPlayer.cemeteryHpAdjustment} effect)` : ""}
+                  </span>
                 </div>
                 <button type="button" onClick={() => {
                   setCemeteryViewerOwner(null);
