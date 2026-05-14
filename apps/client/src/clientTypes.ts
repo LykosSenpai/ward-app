@@ -226,6 +226,25 @@ export type EffectCoverageRow = {
 
 export type LlmMode = "LLM" | "LOCAL_FALLBACK";
 
+export type FeatureKey =
+  | "card-library"
+  | "deck-library"
+  | "saved-matches"
+  | "play-table"
+  | "board-preview"
+  | "admin-tools";
+
+export type ServerFeatureFlag = {
+  key: FeatureKey;
+  label: string;
+  description: string;
+  enabledForPlayers: boolean;
+  adminCanPreview: boolean;
+  adminOnly: boolean;
+  sortOrder: number;
+  updatedAt: string;
+};
+
 export type LlmServiceStatus = {
   configured: boolean;
   mode: "openai-compatible" | "local-fallback";
@@ -390,4 +409,3 @@ export type LlmPhase4ReportSummary = {
   coverageRecordCount: number;
   needsFixCount: number;
 };
-

@@ -121,6 +121,7 @@ import type { AuthUser } from "./auth/session.js";
 import { changeUserPassword, createUser, getUserProfile, listUsersForTournamentDeckReview, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
 import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
 import { checkDbConnection } from "./db/pool.js";
+import { listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const __filename = fileURLToPath(import.meta.url);
@@ -1615,6 +1616,36 @@ io.on("connection", async socket => {
   socket.emit("collection:ownership", connectedUser ? await loadUserCardOwnershipMap(connectedUser.id) : {});
   socket.emit("deck:details", getDeckDetailsForUser(connectedUser));
   socket.emit("lobby:list", listLobbySnapshots());
+  socket.emit("features:list", { ok: true, features: await listFeatureFlagsForUser(connectedUser) });
+
+  socket.on("features:list", async (ack?: (payload: { ok: boolean; features?: unknown[]; error?: string }) => void) => {
+    try {
+      const features = await listFeatureFlagsForUser(getSocketUser(socket));
+      ack?.({ ok: true, features });
+    } catch (error) {
+      ack?.({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("admin:features:list", async (ack?: (payload: { ok: boolean; features?: unknown[]; error?: string }) => void) => {
+    try {
+      const features = await listFeatureFlagsForUser(requireSocketUser(socket));
+      ack?.({ ok: true, features });
+    } catch (error) {
+      ack?.({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("admin:features:update", async (payload: { key: "card-library" | "deck-library" | "saved-matches" | "play-table" | "board-preview" | "admin-tools"; enabledForPlayers: boolean }, ack?: (response: { ok: boolean; error?: string }) => void) => {
+    try {
+      const user = requireSocketUser(socket);
+      await updateFeatureFlagForPlayers(user, payload.key, !!payload.enabledForPlayers);
+      io.emit("features:visibilityChanged");
+      ack?.({ ok: true });
+    } catch (error) {
+      ack?.({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
 
   socket.on(
     "match:create1v1",
