@@ -101,7 +101,10 @@ function getMarketplacePayloadItems(data: Record<string, unknown>, cardLibrary: 
         cardId,
         name: card?.name ?? String(item.cardName ?? item.name ?? cardId),
         variant: String(item.variant ?? "default"),
-        quantity: normalizeMarketplaceQuantity(item.quantity ?? item.missing ?? 1)
+        quantity: normalizeMarketplaceQuantity(item.quantity ?? item.missing ?? 1),
+        trade: item.trade !== false,
+        sale: item.sale === true,
+        price: typeof item.price === "string" ? item.price : undefined
       };
     })
     .filter(item => item.cardId);

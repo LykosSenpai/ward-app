@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { Server } from "socket.io";
+import { Server, type Socket } from "socket.io";
 import rateLimit from "express-rate-limit";
 
 import type { CardDefinition, CardInstance, CannotInflictAttackDamageBattlePolicy, DeckListDefinition, DevRollKind, MatchState, TurnPhase, WardEngineEffect } from "@ward/shared";
@@ -249,13 +249,15 @@ const MAX_UNDO_STEPS = 25;
 const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const IN_MATCH_LOBBY_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 const LOBBY_CLEANUP_INTERVAL_MS = 60 * 1000;
+const MARKETPLACE_MATCH_REFRESH_INTERVAL_MS = 30 * 1000;
 
 
 type MarketplaceMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
-type MarketplacePostItem = { cardId: string; variant?: string; quantity: number; pendingReservedQuantity?: number };
-type MarketplacePost = { id?: string; userId?: string; displayName?: string; linkedPostId?: string; haveItems?: MarketplacePostItem[]; needItems?: MarketplacePostItem[]; cardId?: string; quantity?: number; updatedAt?: string };
+type MarketplacePostItem = { cardId: string; variant?: string; quantity: number; pendingReservedQuantity?: number; trade?: boolean; sale?: boolean };
+type MarketplacePost = { id?: string; userId?: string; displayName?: string; linkedPostId?: string; status?: "OPEN" | "PENDING" | "CLOSED"; haveItems?: MarketplacePostItem[]; needItems?: MarketplacePostItem[]; cardId?: string; quantity?: number; updatedAt?: string };
 type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
-type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; linkedPostId?: string };
+type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; reciprocalMatchedItems?: MarketplaceMatchItem[]; linkedPostId?: string };
+type MarketplaceMatchGroup = { postId: string; matches: MarketplaceMatch[] };
 type MarketplaceTradeLine = { cardId: string; quantity: number };
 type MarketplaceTransactionStatus = "PENDING_CONFIRMATION" | "CONFIRMED_BY_ONE_PARTY" | "COMPLETED" | "DENIED" | "CANCELED" | "EXPIRED";
 type MarketplaceTransaction = {
@@ -274,15 +276,20 @@ type MarketplaceTransaction = {
 const marketplacePosts = new Map<string, MarketplacePost[]>();
 const marketplaceTransactions = new Map<string, MarketplaceTransaction>();
 
-function marketplaceCardKey(cardId: string, variant: string): string {
-  return `${cardId}::${variant}`;
+function normalizeMarketplaceVariant(value?: string): string {
+  return (value ?? "default").trim().toLowerCase().replace(/_/g, "-");
+}
+
+function marketplaceCardKey(cardId: string, variant?: string): string {
+  return `${cardId}::${normalizeMarketplaceVariant(variant)}`;
 }
 
 function toAvailabilityMap(items: MarketplacePostItem[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const item of items) {
+    if (item.trade === false) continue;
     const available = Math.max(0, item.quantity - (item.pendingReservedQuantity ?? 0));
-    map.set(marketplaceCardKey(item.cardId, item.variant ?? "DEFAULT"), available);
+    map.set(marketplaceCardKey(item.cardId, item.variant), available);
   }
   return map;
 }
@@ -290,11 +297,11 @@ function toAvailabilityMap(items: MarketplacePostItem[]): Map<string, number> {
 function collectMatchedItems(needs: MarketplacePostItem[], publicAvailability: Map<string, number>): MarketplaceMatchItem[] {
   const out: MarketplaceMatchItem[] = [];
   for (const need of needs) {
-    const key = marketplaceCardKey(need.cardId, need.variant ?? "DEFAULT");
+    const key = marketplaceCardKey(need.cardId, need.variant);
     const publicAvailableQty = publicAvailability.get(key) ?? 0;
     const matchedQuantity = Math.min(Math.max(0, need.quantity), Math.max(0, publicAvailableQty));
     if (matchedQuantity > 0) {
-      out.push({ cardId: need.cardId, variant: need.variant ?? "DEFAULT", matchedQuantity });
+      out.push({ cardId: need.cardId, variant: normalizeMarketplaceVariant(need.variant), matchedQuantity });
     }
   }
   return out;
@@ -319,6 +326,7 @@ function computeMarketplaceMatchesForPost(sourcePost: MarketplacePost, allPosts:
       type: mutual?.length ? "MUTUAL_TRADE_MATCH" : "THEY_HAVE_WHAT_I_NEED",
       postId,
       matchedItems,
+      reciprocalMatchedItems: mutual,
       linkedPostId: allPosts.find(post => post.id === postId)?.linkedPostId
     });
   }
@@ -722,8 +730,36 @@ function listMarketplacePosts(): MarketplacePost[] {
   return Array.from(marketplacePosts.values()).flat().sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
 }
 
+function listMarketplaceMatchesForUser(userId: string): MarketplaceMatchGroup[] {
+  const allPosts = listMarketplacePosts().filter(post => post.status !== "CLOSED");
+  const myPosts = allPosts.filter(post => post.userId === userId && post.id);
+  const otherPosts = allPosts.filter(post => post.userId !== userId && post.id);
+  const groups = [
+    ...myPosts.map(post => ({
+      postId: post.id!,
+      matches: computeMarketplaceMatchesForPost(post, otherPosts)
+    })),
+    ...otherPosts.map(post => ({
+      postId: post.id!,
+      matches: computeMarketplaceMatchesForPost(post, myPosts)
+    }))
+  ];
+
+  return groups.filter(group => group.matches.length > 0);
+}
+
+function emitMarketplaceMatches(socket: Socket): void {
+  const user = getSocketUser(socket);
+  socket.emit("marketplace:matches", user ? listMarketplaceMatchesForUser(user.id) : []);
+}
+
+function emitMarketplaceMatchesToAll(): void {
+  io.sockets.sockets.forEach(socket => emitMarketplaceMatches(socket));
+}
+
 function emitMarketplacePosts(): void {
   io.emit("marketplace:posts", listMarketplacePosts());
+  emitMarketplaceMatchesToAll();
 }
 
 function emitMarketplaceSettings(): void {
@@ -1802,6 +1838,10 @@ setInterval(() => {
     emitLobbyList();
   }
 }, LOBBY_CLEANUP_INTERVAL_MS).unref();
+
+setInterval(() => {
+  emitMarketplaceMatchesToAll();
+}, MARKETPLACE_MATCH_REFRESH_INTERVAL_MS).unref();
 
 returnExpiredItemsToPool();
 
@@ -3263,6 +3303,15 @@ io.on("connection", async socket => {
   socket.on("marketplace:listPosts", () => {
     try {
       socket.emit("marketplace:posts", listMarketplacePosts());
+      emitMarketplaceMatches(socket);
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+
+  socket.on("marketplace:listMatches", () => {
+    try {
+      emitMarketplaceMatches(socket);
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
@@ -3284,6 +3333,29 @@ io.on("connection", async socket => {
         },
         ...currentPosts
       ]);
+      emitMarketplacePosts();
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+
+  socket.on("marketplace:updatePost", (post: MarketplacePost) => {
+    try {
+      const user = getSocketUser(socket);
+      if (!user) throw new Error("Authentication required.");
+      if (!post.id) throw new Error("Marketplace post id is required.");
+      const currentPosts = marketplacePosts.get(user.id) ?? [];
+      const existing = currentPosts.find(item => item.id === post.id);
+      if (!existing) throw new Error("Marketplace post not found.");
+      const updatedAt = new Date().toISOString();
+      marketplacePosts.set(user.id, currentPosts.map(item => item.id === post.id ? {
+        ...existing,
+        ...post,
+        id: existing.id,
+        userId: user.id,
+        displayName: user.displayName,
+        updatedAt
+      } : item));
       emitMarketplacePosts();
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });

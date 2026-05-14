@@ -7,6 +7,9 @@ export type MarketplacePostLineItem = {
   name?: string;
   variant?: string;
   quantity: number;
+  trade?: boolean;
+  sale?: boolean;
+  price?: string;
 };
 
 export const MARKETPLACE_STATUS_LABELS: Record<MarketplacePostStatus, string> = {
