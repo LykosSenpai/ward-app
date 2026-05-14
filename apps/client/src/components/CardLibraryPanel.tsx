@@ -1,10 +1,11 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent } from "react";
-import type { CardLibraryCardSummary } from "../clientTypes";
+import type { CardLibraryCardSummary, CardOwnershipVariant } from "../clientTypes";
 import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, sanitizeDownloadFileName } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, getCardArtLabel } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
+import { buildGenerationCompletion, getOwnedQuantityForVariant } from "../collectionCompletionHelpers";
 
 type CardTypeFilter = "ALL" | "CREATURE" | "MAGIC";
 type DeckMembershipFilter = "ALL" | "IN_DECK" | "NOT_IN_DECK";
@@ -140,6 +141,15 @@ export function CardLibraryPanel({
   const [visibleCardCount, setVisibleCardCount] = useState(INITIAL_VISIBLE_CARD_COUNT);
   const [gridColumnCount, setGridColumnCount] = useState(1);
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
+  const [completionGeneration, setCompletionGeneration] = useState("ALL");
+  const [completionRequiredQuantity, setCompletionRequiredQuantity] = useState(1);
+  const [completionVariants, setCompletionVariants] = useState<Record<CardOwnershipVariant, boolean>>({
+    DEFAULT: true,
+    HOLO: true,
+    ZERO: false,
+    ZERO_HOLO: false
+  });
+  const [missingFocusEnabled, setMissingFocusEnabled] = useState(false);
   const cardGridRef = useRef<HTMLDivElement | null>(null);
   const loadPreviousSentinelRef = useRef<HTMLDivElement | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -297,13 +307,17 @@ export function CardLibraryPanel({
       });
   }, [cardLibrary, creatureTypeFilter, deckBuilderFormat, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
 
+  const displayCards = useMemo(
+    () => (missingFocusEnabled ? filteredCards.filter(card => missingCardIds.has(card.id)) : filteredCards),
+    [filteredCards, missingCardIds, missingFocusEnabled]
+  );
   const visibleCards = useMemo(
-    () => filteredCards.slice(unloadedCardCount, visibleCardCount),
-    [filteredCards, unloadedCardCount, visibleCardCount]
+    () => displayCards.slice(unloadedCardCount, visibleCardCount),
+    [displayCards, unloadedCardCount, visibleCardCount]
   );
   const unloadedTopSpacerHeight = Math.ceil(unloadedCardCount / gridColumnCount) * estimatedCardBlockSize;
   const hiddenAboveCardCount = unloadedCardCount;
-  const hiddenBelowCardCount = Math.max(0, filteredCards.length - visibleCardCount);
+  const hiddenBelowCardCount = Math.max(0, displayCards.length - visibleCardCount);
 
   useEffect(() => {
     setUnloadedCardCount(0);
@@ -335,7 +349,7 @@ export function CardLibraryPanel({
           return;
         }
 
-        setVisibleCardCount(current => Math.min(current + VISIBLE_CARD_INCREMENT, filteredCards.length));
+        setVisibleCardCount(current => Math.min(current + VISIBLE_CARD_INCREMENT, displayCards.length));
       },
       {
         root,
@@ -452,6 +466,24 @@ export function CardLibraryPanel({
       return total + (ownershipCounts[getCardArtOwnershipKey(cardId, artOption.key)] ?? 0);
     }, 0);
   }
+  function getOwnedCountByArt(cardId: string, artKey: string): number {
+    return ownershipCounts[getCardArtOwnershipKey(cardId, artKey as CardArtKey)] ?? 0;
+  }
+  const selectedCompletionVariants = useMemo(
+    () => (Object.keys(completionVariants) as CardOwnershipVariant[]).filter(variant => completionVariants[variant]),
+    [completionVariants]
+  );
+  const completionData = useMemo(() => {
+    if (completionGeneration === "ALL") return { variantSummaries: [], missingItems: [] };
+    return buildGenerationCompletion({
+      cards: cardLibrary,
+      generation: completionGeneration,
+      selectedVariants: selectedCompletionVariants,
+      requiredQuantity: Math.max(1, completionRequiredQuantity),
+      getOwnedCountByVariant: (cardId, variant) => getOwnedQuantityForVariant(getOwnedCountByArt, cardId, variant)
+    });
+  }, [cardLibrary, completionGeneration, completionRequiredQuantity, selectedCompletionVariants, ownershipCounts]);
+  const missingCardIds = useMemo(() => new Set(completionData.missingItems.map(item => item.cardId)), [completionData.missingItems]);
 
   function setSelectedArtOwnedCopies(cardId: string, requestedOwnedCount: number) {
     const ownershipKey = getCardArtOwnershipKey(cardId, getSelectedArtKey(cardId));
@@ -645,7 +677,7 @@ export function CardLibraryPanel({
         <aside className="library-option-a-filter-panel">
           <div className="library-option-a-panel-header">
             <h4>Filters</h4>
-            <span>{filteredCards.length}/{cardLibrary.length}</span>
+            <span>{displayCards.length}/{cardLibrary.length}</span>
           </div>
 
           <div className="library-option-a-filter-stack">
@@ -744,6 +776,46 @@ export function CardLibraryPanel({
 
               </div>
             </details>
+            <details className="library-option-a-details-drawer" open>
+              <summary>Generation Set Completion</summary>
+              <div className="library-option-a-drawer-grid">
+                <label>
+                  Generation
+                  <select value={completionGeneration} onChange={event => setCompletionGeneration(event.target.value)}>
+                    <option value="ALL">Select</option>
+                    {generations.map(value => <option value={value} key={value}>{value}</option>)}
+                  </select>
+                </label>
+                <label>
+                  Required Quantity
+                  <input
+                    type="number"
+                    min={1}
+                    value={completionRequiredQuantity}
+                    onChange={event => setCompletionRequiredQuantity(Math.max(1, sanitizeCopies(event.target.value)))}
+                  />
+                </label>
+                {(Object.keys(completionVariants) as CardOwnershipVariant[]).map(variant => (
+                  <label key={variant}>
+                    <input
+                      type="checkbox"
+                      checked={completionVariants[variant]}
+                      onChange={event => setCompletionVariants(current => ({ ...current, [variant]: event.target.checked }))}
+                    />
+                    {variant.replaceAll("_", " ")}
+                  </label>
+                ))}
+                {completionData.variantSummaries.map(summary => (
+                  <span key={summary.variant}>
+                    {summary.variant}: {summary.ownedCompleteCards}/{summary.totalCards} complete, {summary.missingCards} missing ({summary.percentComplete}%)
+                  </span>
+                ))}
+                <div className="actions small-actions">
+                  <button onClick={() => setMissingFocusEnabled(true)} disabled={completionData.missingItems.length === 0}>Show Remaining Needed</button>
+                  <button onClick={() => setMissingFocusEnabled(false)} disabled={!missingFocusEnabled}>Clear Remaining Focus</button>
+                </div>
+              </div>
+            </details>
           </div>
         </aside>
 
@@ -757,7 +829,7 @@ export function CardLibraryPanel({
 
           {cardLibrary.length === 0 ? (
             <p className="empty-zone">No cards loaded. Select at least one card pack.</p>
-          ) : filteredCards.length === 0 ? (
+          ) : displayCards.length === 0 ? (
             <p className="empty-zone">No cards match the current filters.</p>
           ) : (
             <div className="library-card-grid unified-library-card-grid library-option-a-card-grid" ref={cardGridRef}>
@@ -869,7 +941,7 @@ export function CardLibraryPanel({
                 <div className="library-option-a-load-more" ref={loadMoreSentinelRef}>
                   <button
                     type="button"
-                    onClick={() => setVisibleCardCount(current => Math.min(current + VISIBLE_CARD_INCREMENT, filteredCards.length))}
+                    onClick={() => setVisibleCardCount(current => Math.min(current + VISIBLE_CARD_INCREMENT, displayCards.length))}
                   >
                     Load More Now
                   </button>
