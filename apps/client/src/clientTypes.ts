@@ -1,4 +1,15 @@
-﻿import type { MatchState as BaseMatchState, WardEngineEffect } from "@ward/shared";
+﻿import type {
+  MatchState as BaseMatchState,
+  MarketplaceAutoListingSettings,
+  MarketplaceAutoNeedRule,
+  MarketplaceCardVariant,
+  MarketplaceMatch,
+  MarketplacePost,
+  MarketplaceRetainOverride,
+  MarketplaceTransaction,
+  MarketplaceTransactionStatus,
+  WardEngineEffect,
+} from "@ward/shared";
 
 export type ServerWelcome = {
   message: string;
@@ -159,6 +170,24 @@ export type MarketplaceTransaction = {
   confirmedByUserIds: string[];
 };
 
+export type CardOwnershipVariant = "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
+
+export type CardOwnershipRecord = Record<CardOwnershipVariant, number>;
+
+export type CollectionCompletionCardRequest = {
+  cardId: string;
+  requiredQuantity: number;
+  ownership?: Partial<CardOwnershipRecord>;
+};
+
+export type CollectionCompletionSummary = {
+  cardId: string;
+  requiredQuantity: number;
+  ownedQuantity: number;
+  missingQuantity: number;
+  ownership: CardOwnershipRecord;
+};
+
 export type CardDefinitionWithClientFields = BaseMatchState["cardCatalog"][string] & {
   text?: string;
   effects?: unknown[];
@@ -239,6 +268,25 @@ export type EffectCoverageRow = {
 };
 
 export type LlmMode = "LLM" | "LOCAL_FALLBACK";
+
+export type FeatureKey =
+  | "card-library"
+  | "deck-library"
+  | "saved-matches"
+  | "play-table"
+  | "board-preview"
+  | "admin-tools";
+
+export type ServerFeatureFlag = {
+  key: FeatureKey;
+  label: string;
+  description: string;
+  enabledForPlayers: boolean;
+  adminCanPreview: boolean;
+  adminOnly: boolean;
+  sortOrder: number;
+  updatedAt: string;
+};
 
 export type LlmServiceStatus = {
   configured: boolean;
