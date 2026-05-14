@@ -31,6 +31,7 @@ declare module "express-session" {
       state: string;
       mode: "login" | "link";
       createdAt: number;
+      clientOrigin?: string;
     };
   }
 }

@@ -168,6 +168,30 @@ function isAllowedClientOrigin(origin?: string): boolean {
   return process.env.NODE_ENV !== "production" && LOCAL_CLIENT_ORIGIN_PATTERN.test(origin);
 }
 
+function getRequestOrigin(req: express.Request): string {
+  const protocol = String(req.headers["x-forwarded-proto"] ?? req.protocol ?? "http").split(",")[0].trim();
+  return `${protocol}://${req.get("host")}`;
+}
+
+function getOAuthClientOrigin(req: express.Request): string {
+  const headerOrigin = typeof req.headers.origin === "string" ? req.headers.origin : undefined;
+  if (headerOrigin && isAllowedClientOrigin(headerOrigin)) return headerOrigin;
+
+  const referrer = req.get("referer") ?? req.get("referrer");
+  if (referrer) {
+    try {
+      const referrerOrigin = new URL(referrer).origin;
+      if (isAllowedClientOrigin(referrerOrigin) || referrerOrigin === getRequestOrigin(req)) {
+        return referrerOrigin;
+      }
+    } catch {
+      // Ignore malformed referrers and fall back to configured client origin.
+    }
+  }
+
+  return CLIENT_ORIGIN;
+}
+
 function isDevToolSocketEvent(eventName: string): boolean {
   return eventName.startsWith("dev:") ||
     eventName.startsWith("llm:") ||
@@ -261,13 +285,14 @@ function startDiscordOAuth(req: express.Request, res: express.Response, mode: Di
   req.session.discordOAuthState = {
     state,
     mode,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    clientOrigin: getOAuthClientOrigin(req)
   };
   res.redirect(getDiscordAuthUrl(mode, state));
 }
 
-function getDiscordCallbackRedirect(status: "linked" | "signed-in" | "error", message?: string): string {
-  const url = new URL("/", CLIENT_ORIGIN);
+function getDiscordCallbackRedirect(status: "linked" | "signed-in" | "error", clientOrigin?: string, message?: string): string {
+  const url = new URL("/", clientOrigin && isAllowedClientOrigin(clientOrigin) ? clientOrigin : CLIENT_ORIGIN);
   url.searchParams.set("page", "profile");
   url.searchParams.set("discord", status);
   if (message) url.searchParams.set("message", message);
@@ -1676,7 +1701,7 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
 
       const profile = await linkDiscordAccount(req.session.user.id, discordAccount);
       req.session.user = profile;
-      res.redirect(getDiscordCallbackRedirect("linked"));
+      res.redirect(getDiscordCallbackRedirect("linked", oauthState.clientOrigin));
       return;
     }
 
@@ -1686,9 +1711,9 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
       email: discordUser.email ?? null
     });
     req.session.user = user;
-    res.redirect(getDiscordCallbackRedirect("signed-in"));
+    res.redirect(getDiscordCallbackRedirect("signed-in", oauthState.clientOrigin));
   } catch (error) {
-    res.redirect(getDiscordCallbackRedirect("error", error instanceof Error ? error.message : "Discord sign-in failed."));
+    res.redirect(getDiscordCallbackRedirect("error", oauthState?.clientOrigin, error instanceof Error ? error.message : "Discord sign-in failed."));
   }
 });
 

@@ -1,6 +1,6 @@
 create table if not exists user_marketplace_auto_need_rules (
   id uuid primary key default gen_random_uuid(),
-  user_id text not null references users(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
   enabled boolean not null default true,
   desired_quantity_per_card integer not null default 1,
   selected_generations text[] not null default '{}',
@@ -10,7 +10,7 @@ create table if not exists user_marketplace_auto_need_rules (
 );
 
 create table if not exists user_marketplace_needs (
-  user_id text not null references users(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
   card_id text not null,
   art_key text not null,
   needed_count integer not null,
