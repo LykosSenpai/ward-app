@@ -8,6 +8,22 @@ This document is a Codex/LLM handoff for making the WARD engine, card-effect run
 
 The current repo already contains a partial 3D-board integration path. Do not restart the 3D board work from scratch.
 
+## Merged Implementation Status
+
+As of 2026-05-14, the branch stack for phases A-G has been merged into `main`.
+
+Implemented in the merged tree:
+
+- Shared board contracts in `packages/shared/src/boardContracts.ts`.
+- Board affordance builders and render-state helpers in `apps/client/src/components/boardAffordances.ts`.
+- Board event taxonomy and adapter coverage in `apps/client/src/components/boardRenderContracts.ts` and `boardRenderAdapter.ts`.
+- Board animation planning in `apps/client/src/components/boardAnimationPlanner.ts`.
+- Effect-family board event plumbing across engine/server/client paths.
+- Effect QA status fields for engine, board affordance, and board animation tracking.
+- Thin-board-preview extraction work that moved affordance and animation planning out of the renderer shell.
+
+Do not treat the phases in section 10 as unstarted work. Use them as historical implementation order and continue with targeted cleanup, QA expansion, and feature-specific fixes.
+
 Existing relevant files:
 
 ```text
