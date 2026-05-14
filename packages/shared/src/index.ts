@@ -1171,3 +1171,209 @@ export type PendingEffectTargetPrompt = {
   options: EffectTargetOption[];
 };
 export * from "./boardContracts.js";
+
+
+export type MarketplaceCardVariant = "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
+
+/**
+ * Strict compatibility note:
+ * MarketplaceCardVariant MUST map 1:1 to the existing ownership model values:
+ * DEFAULT=default artwork + holo unchecked,
+ * HOLO=default artwork + holo checked,
+ * ZERO=zero artwork + holo unchecked,
+ * ZERO_HOLO=zero artwork + holo checked.
+ */
+export type MarketplacePostStatus = "ACTIVE" | "PAUSED" | "CLOSED";
+export type MarketplaceItemPurpose = "HAVE" | "NEED";
+export type MarketplaceItemSource = "MANUAL" | "AUTO_COLLECTION" | "AUTO_COMPLETION_NEED";
+
+export interface MarketplacePostItem {
+  id: string;
+  source: MarketplaceItemSource;
+  purpose: MarketplaceItemPurpose;
+  cardId: string;
+  cardName: string;
+  generation: string;
+  cardNumber: string;
+  variant: MarketplaceCardVariant;
+  quantity: number;
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+  askingPriceText?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplacePost {
+  id: string;
+  userDisplayName: string;
+  discordHandle: string;
+  title: string;
+  description?: string;
+  status: MarketplacePostStatus;
+  manualItems: MarketplacePostItem[];
+  autoListingSettingsId?: string;
+  autoNeedRuleIds?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceAutoListingSettings {
+  id: string;
+  enabled: boolean;
+  retainByVariant: Record<MarketplaceCardVariant, number>;
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+  defaultSalePriceText?: string;
+  defaultTradeNote?: string;
+  includeGenerations: string[];
+  includeRarities?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceRetainOverride {
+  id: string;
+  cardId: string;
+  variant: MarketplaceCardVariant;
+  retainQuantity: number;
+  tradeEnabled?: boolean;
+  saleEnabled?: boolean;
+  forceListQuantity?: number;
+  neverAutoList?: boolean;
+  salePriceText?: string;
+  note?: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceAutoNeedRule {
+  id: string;
+  enabled: boolean;
+  generation: string;
+  variants: MarketplaceCardVariant[];
+  desiredQuantityPerCard: number;
+  includeOwnedBelowDesired: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MarketplaceMatchType =
+  | "THEY_HAVE_WHAT_I_NEED"
+  | "I_HAVE_WHAT_THEY_NEED"
+  | "MUTUAL_TRADE_MATCH";
+
+export interface MarketplaceMatch {
+  id: string;
+  type: MarketplaceMatchType;
+  sourcePostId: string;
+  targetPostId: string;
+  sourceItemId: string;
+  targetItemId: string;
+  cardId: string;
+  variant: MarketplaceCardVariant;
+  matchedQuantity: number;
+}
+
+export type MarketplaceTransactionStatus =
+  | "PENDING_CONFIRMATION"
+  | "CONFIRMED_BY_ONE_PARTY"
+  | "COMPLETED"
+  | "DENIED"
+  | "EXPIRED"
+  | "CANCELLED";
+
+export interface MarketplaceTransactionItem {
+  id: string;
+  ownerPostId: string;
+  cardId: string;
+  cardName: string;
+  generation: string;
+  cardNumber: string;
+  variant: MarketplaceCardVariant;
+  quantity: number;
+  source: MarketplaceItemSource;
+}
+
+export interface MarketplaceTransaction {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  status: MarketplaceTransactionStatus;
+  initiatorPostId: string;
+  counterpartyPostId: string;
+  initiatorUserDisplayName: string;
+  counterpartyUserDisplayName: string;
+  initiatorDiscordHandle: string;
+  counterpartyDiscordHandle: string;
+  itemsFromInitiator: MarketplaceTransactionItem[];
+  itemsFromCounterparty: MarketplaceTransactionItem[];
+  confirmations: {
+    initiatorConfirmedAt?: string;
+    counterpartyConfirmedAt?: string;
+    initiatorDeniedAt?: string;
+    counterpartyDeniedAt?: string;
+  };
+  completionNote?: string;
+}
+
+export type MarketplaceErrorPayload = { event: string; message: string; code?: string };
+
+export type MarketplaceGetSettingsRequest = Record<string, never>;
+export type MarketplaceGetSettingsResponse = {
+  settings?: MarketplaceAutoListingSettings;
+  overrides: MarketplaceRetainOverride[];
+  autoNeedRules: MarketplaceAutoNeedRule[];
+};
+export type MarketplaceUpdateSettingsRequest = {
+  settings: MarketplaceAutoListingSettings;
+  overrides?: MarketplaceRetainOverride[];
+  autoNeedRules?: MarketplaceAutoNeedRule[];
+};
+export type MarketplaceUpdateSettingsResponse = MarketplaceGetSettingsResponse;
+
+export type MarketplaceListPostsRequest = { status?: MarketplacePostStatus[] };
+export type MarketplaceListPostsResponse = { posts: MarketplacePost[] };
+export type MarketplaceCreatePostRequest = { post: Omit<MarketplacePost, "id" | "createdAt" | "updatedAt"> };
+export type MarketplaceCreatePostResponse = { post: MarketplacePost };
+export type MarketplaceUpdatePostRequest = { postId: string; patch: Partial<Omit<MarketplacePost, "id" | "createdAt">> };
+export type MarketplaceUpdatePostResponse = { post: MarketplacePost };
+export type MarketplaceDeletePostRequest = { postId: string };
+export type MarketplaceDeletePostResponse = { deletedPostId: string };
+
+export type MarketplaceListMatchesRequest = { postId?: string };
+export type MarketplaceListMatchesResponse = { matches: MarketplaceMatch[] };
+export type MarketplaceListMyMatchesRequest = { postId: string };
+export type MarketplaceListMyMatchesResponse = { matches: MarketplaceMatch[] };
+
+export type MarketplaceCreateTransactionRequest = {
+  initiatorPostId: string;
+  counterpartyPostId: string;
+  itemsFromInitiator: MarketplaceTransactionItem[];
+  itemsFromCounterparty: MarketplaceTransactionItem[];
+};
+export type MarketplaceCreateTransactionResponse = { transaction: MarketplaceTransaction };
+export type MarketplaceTransactionActionRequest = { transactionId: string; note?: string };
+export type MarketplaceTransactionActionResponse = { transaction: MarketplaceTransaction };
+export type MarketplaceReturnExpiredItemsToPoolRequest = { transactionId: string };
+export type MarketplaceReturnExpiredItemsToPoolResponse = { transaction: MarketplaceTransaction };
+export type MarketplaceListTransactionsRequest = { postId?: string; status?: MarketplaceTransactionStatus[] };
+export type MarketplaceListTransactionsResponse = { transactions: MarketplaceTransaction[] };
+
+export type MarketplaceSettingsEventPayload = MarketplaceGetSettingsResponse;
+export type MarketplacePostsEventPayload = MarketplaceListPostsResponse;
+export type MarketplaceMatchesEventPayload = MarketplaceListMatchesResponse;
+export type MarketplaceTransactionsEventPayload = MarketplaceListTransactionsResponse;
+
+export function marketplaceCardKey(cardId: string, variant: MarketplaceCardVariant): string {
+  return `${cardId}::${variant}`;
+}
+
+export function clampNonNegative(value: number): number {
+  return Math.max(0, value);
+}
+
+export function quantitySafeMin(a: number, b: number): number {
+  return Math.min(clampNonNegative(a), clampNonNegative(b));
+}

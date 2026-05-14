@@ -9968,3 +9968,68 @@ button:disabled:hover {
     grid-template-rows: auto minmax(0, auto) auto;
   }
 }
+
+.marketplace-page,
+.marketplace-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.marketplace-card {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.45rem;
+  background: rgba(15, 23, 42, 0.46);
+  padding: 0.85rem;
+}
+
+.marketplace-form-grid {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.marketplace-form-grid label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.marketplace-inline-check {
+  display: flex !important;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.marketplace-post-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.marketplace-status-pill {
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.09);
+  color: #fef3c7;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.marketplace-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.marketplace-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.marketplace-chip {
+  padding: 0.25rem 0.5rem;
+  min-height: auto;
+  font-size: 0.72rem;
+}

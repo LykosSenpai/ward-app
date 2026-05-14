@@ -27,6 +27,10 @@ const USER_DATA_DIR = path.join(DATA_DIR, "users");
 const CARD_LIMITS_DIR = path.join(DATA_DIR, "rules", "card-limits");
 const CARD_COLLECTION_DIR = path.join(DATA_DIR, "collection");
 const CARD_OWNERSHIP_FILE = path.join(CARD_COLLECTION_DIR, "card-ownership.json");
+const MARKETPLACE_DIR = path.join(DATA_DIR, "marketplace");
+const MARKETPLACE_POSTS_FILE = path.join(MARKETPLACE_DIR, "posts.json");
+const MARKETPLACE_SETTINGS_FILE = path.join(MARKETPLACE_DIR, "settings.json");
+const MARKETPLACE_TRANSACTIONS_FILE = path.join(MARKETPLACE_DIR, "transactions.json");
 const DEV_DATA_DIR = path.join(DATA_DIR, "dev");
 const DECK_PROOF_PHOTO_DIR_NAME = "deck-proof-photos";
 const EFFECT_RUNTIME_TEST_STATUS_FILE = path.join(DEV_DATA_DIR, "effect-runtime-test-status.json");
@@ -43,6 +47,7 @@ ensureDirectoryExists(USER_DATA_DIR);
 ensureDirectoryExists(CARD_LIMITS_DIR);
 ensureDirectoryExists(CARD_COLLECTION_DIR);
 ensureDirectoryExists(DEV_DATA_DIR);
+ensureDirectoryExists(MARKETPLACE_DIR);
 
 
 export type EffectRuntimeTestStatus = EffectQaStatus;
@@ -275,6 +280,163 @@ export function validateDataFileId(id: string): void {
       "IDs can only contain letters, numbers, underscores, and hyphens."
     );
   }
+}
+
+export const MARKETPLACE_VARIANTS = ["STANDARD", "FOIL", "ALT_ART"] as const;
+export type MarketplaceVariant = (typeof MARKETPLACE_VARIANTS)[number];
+export type MarketplacePostStatus = "OPEN" | "RESERVED" | "COMPLETED" | "CANCELLED";
+
+export type MarketplacePostRecord = {
+  id: string;
+  sellerUserId: string;
+  title: string;
+  discordHandle: string;
+  cardId: string;
+  variant: MarketplaceVariant;
+  quantity: number;
+  status: MarketplacePostStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MarketplaceTransactionRecord = {
+  id: string;
+  postId: string;
+  buyerUserId: string;
+  quantity: number;
+  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function validateMarketplaceVariant(value: string): MarketplaceVariant {
+  if ((MARKETPLACE_VARIANTS as readonly string[]).includes(value)) {
+    return value as MarketplaceVariant;
+  }
+  throw new Error(`Invalid marketplace variant: ${value}`);
+}
+
+export function validatePositiveQuantity(value: number, fieldName = "quantity"): number {
+  const normalized = Number.isFinite(value) ? Math.floor(value) : Number.NaN;
+  if (!Number.isFinite(normalized) || normalized <= 0) {
+    throw new Error(`${fieldName} must be a positive integer.`);
+  }
+  return normalized;
+}
+
+export function validateMarketplaceRequiredText(value: string, fieldName: "title" | "discordHandle"): string {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) {
+    throw new Error(`${fieldName} is required.`);
+  }
+  return normalized;
+}
+
+export function validateMarketplaceStatusTransition(from: MarketplacePostStatus, to: MarketplacePostStatus): void {
+  const allowed: Record<MarketplacePostStatus, MarketplacePostStatus[]> = {
+    OPEN: ["OPEN", "RESERVED", "CANCELLED", "COMPLETED"],
+    RESERVED: ["RESERVED", "OPEN", "CANCELLED", "COMPLETED"],
+    COMPLETED: ["COMPLETED"],
+    CANCELLED: ["CANCELLED"]
+  };
+  if (!allowed[from].includes(to)) {
+    throw new Error(`Invalid marketplace status transition: ${from} -> ${to}`);
+  }
+}
+
+function writeJsonFileAtomic(filePath: string, data: unknown): void {
+  const tempPath = `${filePath}.tmp`;
+  fs.writeFileSync(tempPath, `${JSON.stringify(data, null, 2)}\n`, "utf-8");
+  fs.renameSync(tempPath, filePath);
+}
+
+function ensureMarketplaceFilesExist(): void {
+  ensureDirectoryExists(MARKETPLACE_DIR);
+  if (!fs.existsSync(MARKETPLACE_POSTS_FILE)) {
+    writeJsonFileAtomic(MARKETPLACE_POSTS_FILE, { version: 1, posts: [] });
+  }
+  if (!fs.existsSync(MARKETPLACE_SETTINGS_FILE)) {
+    writeJsonFileAtomic(MARKETPLACE_SETTINGS_FILE, {
+      version: 1,
+      settings: { isMarketplaceOpen: true },
+      updatedAt: new Date().toISOString()
+    });
+  }
+  if (!fs.existsSync(MARKETPLACE_TRANSACTIONS_FILE)) {
+    writeJsonFileAtomic(MARKETPLACE_TRANSACTIONS_FILE, { version: 1, transactions: [] });
+  }
+}
+
+export function loadMarketplacePosts(): MarketplacePostRecord[] {
+  ensureMarketplaceFilesExist();
+  const data = readJsonFile<{ posts?: unknown }>(MARKETPLACE_POSTS_FILE);
+  if (!Array.isArray(data.posts)) return [];
+  return data.posts.filter((post): post is MarketplacePostRecord =>
+    typeof post === "object" && post !== null && typeof (post as MarketplacePostRecord).id === "string"
+  );
+}
+
+export function saveMarketplacePosts(posts: MarketplacePostRecord[]): void {
+  ensureMarketplaceFilesExist();
+  const now = new Date().toISOString();
+  const normalized = posts.map(post => ({
+    ...post,
+    createdAt: post.createdAt || now,
+    updatedAt: now
+  }));
+  writeJsonFileAtomic(MARKETPLACE_POSTS_FILE, { version: 1, posts: normalized });
+}
+
+export function loadMarketplaceSettings(): { isMarketplaceOpen: boolean; updatedAt?: string } {
+  ensureMarketplaceFilesExist();
+  const data = readJsonFile<{ settings?: unknown; updatedAt?: unknown }>(MARKETPLACE_SETTINGS_FILE);
+  const settings = data.settings as { isMarketplaceOpen?: unknown } | undefined;
+  return {
+    isMarketplaceOpen: settings?.isMarketplaceOpen !== false,
+    updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined
+  };
+}
+
+export function saveMarketplaceSettings(settings: { isMarketplaceOpen: boolean }): void {
+  ensureMarketplaceFilesExist();
+  writeJsonFileAtomic(MARKETPLACE_SETTINGS_FILE, {
+    version: 1,
+    settings,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+export function loadMarketplaceTransactions(): MarketplaceTransactionRecord[] {
+  ensureMarketplaceFilesExist();
+  const data = readJsonFile<{ transactions?: unknown }>(MARKETPLACE_TRANSACTIONS_FILE);
+  if (!Array.isArray(data.transactions)) return [];
+  return data.transactions.filter((item): item is MarketplaceTransactionRecord =>
+    typeof item === "object" && item !== null && typeof (item as MarketplaceTransactionRecord).id === "string"
+  );
+}
+
+export function saveMarketplaceTransactions(records: MarketplaceTransactionRecord[]): void {
+  ensureMarketplaceFilesExist();
+  const now = new Date().toISOString();
+  const normalized = records.map(record => ({
+    ...record,
+    createdAt: record.createdAt || now,
+    updatedAt: now
+  }));
+  writeJsonFileAtomic(MARKETPLACE_TRANSACTIONS_FILE, { version: 1, transactions: normalized });
+}
+
+export function getReservedQuantityByPostId(transactions: MarketplaceTransactionRecord[]): Record<string, number> {
+  return transactions.reduce<Record<string, number>>((result, tx) => {
+    if (tx.status === "PENDING" || tx.status === "CONFIRMED") {
+      result[tx.postId] = (result[tx.postId] ?? 0) + validatePositiveQuantity(tx.quantity);
+    }
+    return result;
+  }, {});
+}
+
+export function getReservedQuantityForPost(postId: string, transactions: MarketplaceTransactionRecord[]): number {
+  return getReservedQuantityByPostId(transactions)[postId] ?? 0;
 }
 
 function readJsonFile<T>(filePath: string): T {
@@ -834,6 +996,9 @@ export function listDefaultCardLibrary(): CardLibraryCardSummary[] {
 }
 
 export type CardOwnershipMap = Record<string, number>;
+export type CardOwnershipVariant = "default" | "holo" | "zero-art" | "zero-art-holo";
+export type CardOwnershipByVariant = Partial<Record<CardOwnershipVariant, number>>;
+export type CardOwnershipCollectionMap = Record<string, CardOwnershipByVariant>;
 
 type CardOwnershipFile = {
   version: 1;
@@ -907,6 +1072,60 @@ export function setCardOwnershipCount(cardId: string, ownedCount: number): CardO
 
   saveCardOwnershipMap(ownershipMap);
   return ownershipMap;
+}
+
+function normalizeCardOwnershipVariant(variant: string): CardOwnershipVariant {
+  if (variant === "default" || variant === "holo" || variant === "zero-art" || variant === "zero-art-holo") {
+    return variant;
+  }
+
+  throw new Error(`Unknown card variant "${variant}".`);
+}
+
+export function loadCardOwnershipCollection(): CardOwnershipCollectionMap {
+  const baseOwnershipMap = loadCardOwnershipMap();
+  return Object.entries(baseOwnershipMap).reduce<CardOwnershipCollectionMap>((result, [cardId, ownedCount]) => {
+    result[cardId] = { default: ownedCount };
+    return result;
+  }, {});
+}
+
+export function upsertCardOwnership(args: {
+  cardId: string;
+  variant?: string;
+  ownedCount: number;
+  requiredCount?: number;
+}): CardOwnershipCollectionMap {
+  validateDataFileId(args.cardId);
+  const variant = normalizeCardOwnershipVariant(String(args.variant ?? "default").trim());
+  const safeOwnedCount = normalizeOwnershipCount(args.ownedCount);
+
+  if (!Number.isFinite(args.ownedCount) || args.ownedCount < 0) {
+    throw new Error("Owned quantity cannot be negative.");
+  }
+
+  if (args.requiredCount !== undefined && (!Number.isFinite(args.requiredCount) || args.requiredCount < 1)) {
+    throw new Error("Required quantity must be greater than or equal to 1.");
+  }
+
+  const ownershipCollection = loadCardOwnershipCollection();
+  const current = ownershipCollection[args.cardId] ?? {};
+
+  if (safeOwnedCount <= 0) {
+    delete current[variant];
+  } else {
+    current[variant] = safeOwnedCount;
+  }
+
+  if (Object.keys(current).length === 0) {
+    delete ownershipCollection[args.cardId];
+    setCardOwnershipCount(args.cardId, 0);
+  } else {
+    ownershipCollection[args.cardId] = current;
+    setCardOwnershipCount(args.cardId, current.default ?? 0);
+  }
+
+  return ownershipCollection;
 }
 
 
@@ -1066,6 +1285,5 @@ export function deleteUserDeckFromDisk(userId: string, deckId: string): void {
 
   fs.unlinkSync(filePath);
 }
-
 
 
