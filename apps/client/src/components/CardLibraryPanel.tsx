@@ -138,6 +138,7 @@ export function CardLibraryPanel({
   const [deckShareMessage, setDeckShareMessage] = useState("");
   const [unloadedCardCount, setUnloadedCardCount] = useState(0);
   const [visibleCardCount, setVisibleCardCount] = useState(INITIAL_VISIBLE_CARD_COUNT);
+  const [missingFocusCardIds, setMissingFocusCardIds] = useState<string[] | null>(null);
   const [gridColumnCount, setGridColumnCount] = useState(1);
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
   const cardGridRef = useRef<HTMLDivElement | null>(null);
@@ -258,6 +259,32 @@ export function CardLibraryPanel({
     return warnings;
   }, [cardLibrary, deckBuilderFormat, deckCounts, deckStats.creatureCount, deckStats.total, ownershipCounts, selectedArtKeysByCardId]);
 
+  const missingCompletionSummary = useMemo(() => {
+    const entries = Object.entries(deckCounts)
+      .map(([cardId, count]) => {
+        const ownedCount = getTotalOwnedCopiesForCard(cardId);
+        const needed = Math.max(0, count - ownedCount);
+
+        if (needed === 0) return null;
+
+        return {
+          cardId,
+          needed,
+          ownedCount,
+          count,
+          card: cardLibrary.find(item => item.id === cardId)
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+      .sort((a, b) => b.needed - a.needed || (a.card?.name ?? a.cardId).localeCompare(b.card?.name ?? b.cardId));
+
+    return {
+      missingCardTypes: entries.length,
+      missingTotalCopies: entries.reduce((total, entry) => total + entry.needed, 0),
+      entries
+    };
+  }, [cardLibrary, deckCounts, ownershipCounts, selectedArtKeysByCardId]);
+
   const filteredCards = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
 
@@ -276,6 +303,7 @@ export function CardLibraryPanel({
         if (deckMembershipFilter === "NOT_IN_DECK" && deckCount > 0) return false;
         if (ownershipFilter === "OWNED" && ownedCount === 0) return false;
         if (ownershipFilter === "MISSING" && ownedCount > 0) return false;
+        if (missingFocusCardIds && !missingFocusCardIds.includes(card.id)) return false;
         if (deckBuilderFormat === "TOURNAMENT" && getTournamentLimitStatus(card) === "BANNED") return false;
         if (normalizedSearch && !getCardSearchText(card).includes(normalizedSearch)) return false;
         return true;
@@ -295,7 +323,7 @@ export function CardLibraryPanel({
 
         return getCardSortNumber(a).localeCompare(getCardSortNumber(b), undefined, { numeric: true }) || a.name.localeCompare(b.name);
       });
-  }, [cardLibrary, creatureTypeFilter, deckBuilderFormat, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
+  }, [cardLibrary, creatureTypeFilter, deckBuilderFormat, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, missingFocusCardIds, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
 
   const visibleCards = useMemo(
     () => filteredCards.slice(unloadedCardCount, visibleCardCount),
@@ -422,6 +450,7 @@ export function CardLibraryPanel({
     setDeckMembershipFilter("ALL");
     setOwnershipFilter("ALL");
     setSortMode("number");
+    setMissingFocusCardIds(null);
   }
 
   function setDeckCopiesFromInput(cardId: string, value: string, artKey: CardArtKey = "default") {
@@ -591,6 +620,19 @@ export function CardLibraryPanel({
 
   const saveDisabled = deckBuilderCardIds.length !== 30 || !deckBuilderName.trim() || !normalizeId(deckBuilderId);
 
+  function applyMissingFocus() {
+    if (missingCompletionSummary.entries.length === 0) {
+      setMissingFocusCardIds(null);
+      return;
+    }
+
+    setMissingFocusCardIds(missingCompletionSummary.entries.map(entry => entry.cardId));
+  }
+
+  function clearMissingFocus() {
+    setMissingFocusCardIds(null);
+  }
+
   return (
     <section className="setup-section library-option-a-section">
       <div className="library-option-a-toolbar">
@@ -623,6 +665,14 @@ export function CardLibraryPanel({
             <span><strong>{deckStats.total}/30</strong> deck</span>
             <span><strong>{deckStats.creatureCount}</strong> creatures</span>
             <span><strong>{deckStats.magicCount}</strong> magic</span>
+            <button type="button" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingTotalCopies === 0}>Show Remaining Needed</button>
+            <button type="button" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingCardTypes === 0}>
+              Missing cards: <strong>{missingCompletionSummary.missingCardTypes}</strong>
+            </button>
+            <button type="button" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingTotalCopies === 0}>
+              Missing copies: <strong>{missingCompletionSummary.missingTotalCopies}</strong>
+            </button>
+            <button type="button" onClick={clearMissingFocus} disabled={!missingFocusCardIds}>Clear Remaining Focus</button>
           </div>
         </div>
 
