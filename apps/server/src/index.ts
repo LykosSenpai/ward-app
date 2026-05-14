@@ -223,6 +223,42 @@ const matchUndoHistory = new Map<string, MatchState[]>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
 
+type MarketplacePostStatus = "ACTIVE" | "ARCHIVED";
+type MarketplacePostKind = "HAVE" | "NEED";
+
+type MarketplaceSettings = {
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+};
+
+type MarketplacePostCard = {
+  cardId: string;
+  name: string;
+  setId: string;
+  condition: string;
+  quantity: number;
+};
+
+type MarketplacePost = {
+  id: string;
+  ownerId: string;
+  ownerDisplayName: string;
+  kind: MarketplacePostKind;
+  status: MarketplacePostStatus;
+  notes?: string;
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+  cards: MarketplacePostCard[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+const marketplaceSettings: MarketplaceSettings = {
+  tradeEnabled: true,
+  saleEnabled: false
+};
+const marketplacePosts = new Map<string, MarketplacePost>();
+
 const MAX_UNDO_STEPS = 25;
 const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const IN_MATCH_LOBBY_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
@@ -600,6 +636,32 @@ function listLobbySnapshots() {
 
 function emitLobbyList(): void {
   io.emit("lobby:list", listLobbySnapshots());
+}
+
+function listMarketplacePosts(): MarketplacePost[] {
+  return Array.from(marketplacePosts.values()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+function emitMarketplacePosts(): void {
+  io.emit("marketplace:posts", listMarketplacePosts());
+}
+
+function emitMarketplaceSettings(): void {
+  io.emit("marketplace:settings", marketplaceSettings);
+}
+
+function ensureMarketplacePostCard(card: Partial<MarketplacePostCard>, index: number): MarketplacePostCard {
+  const cardId = String(card.cardId ?? "").trim();
+  const name = String(card.name ?? "").trim();
+  const setId = String(card.setId ?? "").trim();
+  const condition = String(card.condition ?? "").trim();
+  const quantity = Number(card.quantity ?? 0);
+
+  if (!cardId || !name || !setId || !condition || !Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error(`Invalid card metadata at index ${index}.`);
+  }
+
+  return { cardId, name, setId, condition, quantity: Math.floor(quantity) };
 }
 
 function emitLobbyUpdated(lobby: MatchLobbyRecord): void {
@@ -1615,6 +1677,116 @@ io.on("connection", async socket => {
   socket.emit("collection:ownership", connectedUser ? await loadUserCardOwnershipMap(connectedUser.id) : {});
   socket.emit("deck:details", getDeckDetailsForUser(connectedUser));
   socket.emit("lobby:list", listLobbySnapshots());
+  socket.emit("marketplace:settings", marketplaceSettings);
+  socket.emit("marketplace:posts", listMarketplacePosts());
+
+  socket.on("marketplace:settings:get", () => {
+    socket.emit("marketplace:settings", marketplaceSettings);
+  });
+
+  socket.on("marketplace:settings:update", (payload: Partial<MarketplaceSettings>) => {
+    try {
+      requireSocketUser(socket);
+      marketplaceSettings.tradeEnabled = payload.tradeEnabled !== false;
+      marketplaceSettings.saleEnabled = payload.saleEnabled === true;
+      emitMarketplaceSettings();
+    } catch (error) {
+      socket.emit("marketplace:error", { message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("marketplace:posts:list", () => {
+    socket.emit("marketplace:posts", listMarketplacePosts());
+  });
+
+  socket.on("marketplace:posts:create", (payload: Partial<MarketplacePost>) => {
+    try {
+      const user = requireSocketUser(socket);
+      const kind: MarketplacePostKind = payload.kind === "NEED" ? "NEED" : "HAVE";
+      const cards = Array.isArray(payload.cards) ? payload.cards.map(ensureMarketplacePostCard) : [];
+      if (cards.length === 0) {
+        throw new Error("Post requires at least one card.");
+      }
+      const now = new Date().toISOString();
+      const post: MarketplacePost = {
+        id: createId("market-post"),
+        ownerId: user.id,
+        ownerDisplayName: user.displayName,
+        kind,
+        status: "ACTIVE",
+        notes: typeof payload.notes === "string" ? payload.notes : undefined,
+        tradeEnabled: payload.tradeEnabled !== false,
+        saleEnabled: payload.saleEnabled === true,
+        cards,
+        createdAt: now,
+        updatedAt: now
+      };
+      marketplacePosts.set(post.id, post);
+      emitMarketplacePosts();
+      emitMarketplaceSettings();
+    } catch (error) {
+      socket.emit("marketplace:error", { message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("marketplace:posts:update", (payload: { id: string } & Partial<MarketplacePost>) => {
+    try {
+      const user = requireSocketUser(socket);
+      const existing = marketplacePosts.get(payload.id);
+      if (!existing) {
+        throw new Error("Post not found.");
+      }
+      if (existing.ownerId !== user.id) {
+        throw new Error("You can only modify your own posts.");
+      }
+      if (existing.status !== "ACTIVE") {
+        throw new Error("Only active posts can be updated.");
+      }
+      if (payload.status && payload.status !== "ACTIVE") {
+        throw new Error("Invalid post status update.");
+      }
+      const cards = payload.cards
+        ? (Array.isArray(payload.cards) ? payload.cards.map(ensureMarketplacePostCard) : (() => { throw new Error("Invalid cards payload."); })())
+        : existing.cards;
+      const updated: MarketplacePost = {
+        ...existing,
+        kind: payload.kind === "NEED" ? "NEED" : payload.kind === "HAVE" ? "HAVE" : existing.kind,
+        notes: typeof payload.notes === "string" ? payload.notes : existing.notes,
+        tradeEnabled: typeof payload.tradeEnabled === "boolean" ? payload.tradeEnabled : existing.tradeEnabled,
+        saleEnabled: typeof payload.saleEnabled === "boolean" ? payload.saleEnabled : existing.saleEnabled,
+        cards,
+        updatedAt: new Date().toISOString()
+      };
+      marketplacePosts.set(updated.id, updated);
+      emitMarketplacePosts();
+      emitMarketplaceSettings();
+    } catch (error) {
+      socket.emit("marketplace:error", { message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("marketplace:posts:delete", (payload: { id: string }) => {
+    try {
+      const user = requireSocketUser(socket);
+      const existing = marketplacePosts.get(payload.id);
+      if (!existing) {
+        throw new Error("Post not found.");
+      }
+      if (existing.ownerId !== user.id) {
+        throw new Error("You can only delete your own posts.");
+      }
+      if (existing.status !== "ACTIVE") {
+        throw new Error("Post already archived.");
+      }
+      existing.status = "ARCHIVED";
+      existing.updatedAt = new Date().toISOString();
+      marketplacePosts.set(existing.id, existing);
+      emitMarketplacePosts();
+      emitMarketplaceSettings();
+    } catch (error) {
+      socket.emit("marketplace:error", { message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
 
   socket.on(
     "match:create1v1",
