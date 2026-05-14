@@ -118,6 +118,8 @@ import { saveLlmPhase4VerificationReport } from "./llm/phase4Reports.js";
 import { runLlmHeadlessEffectTest } from "./llm/headlessEffectRunner.js";
 import type { EffectRuntimeTestStatusRecord } from "./dataStore.js";
 import type { LlmDirectEffectSmokeTestResult, LlmEffectResultReview, LlmEffectTestPlan } from "./llm/types.js";
+import { loadUserCardOwnershipMap } from "./collection/ownershipStore.js";
+import { createOrReplaceAutoNeedRule, disableAutoNeedRule, loadMarketplaceNeeds, recomputeMarketplaceNeedsForUser } from "./collection/marketplaceNeedRuleStore.js";
 import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
 import { changeUserPassword, createUser, getUserProfile, listUsersForTournamentDeckReview, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
@@ -237,9 +239,25 @@ const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
-type MarketplaceTransactionStatus = "PENDING_CONFIRMATION" | "CONFIRMED_BY_ONE_PARTY" | "COMPLETED" | "DENIED" | "CANCELED" | "EXPIRED";
+const TRANSACTION_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
+const marketplaceSettings = {
+  tradeEnabled: true,
+  saleEnabled: false
+};
+
+const MAX_UNDO_STEPS = 25;
+const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const IN_MATCH_LOBBY_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
+const LOBBY_CLEANUP_INTERVAL_MS = 60 * 1000;
+
+
+type MarketplaceMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
+type MarketplacePostItem = { cardId: string; variant?: string; quantity: number; pendingReservedQuantity?: number };
+type MarketplacePost = { id?: string; userId?: string; displayName?: string; linkedPostId?: string; haveItems?: MarketplacePostItem[]; needItems?: MarketplacePostItem[]; cardId?: string; quantity?: number; updatedAt?: string };
+type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
+type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; linkedPostId?: string };
 type MarketplaceTradeLine = { cardId: string; quantity: number };
-type MarketplacePost = { userId: string; cardId: string; quantity: number };
+type MarketplaceTransactionStatus = "PENDING_CONFIRMATION" | "CONFIRMED_BY_ONE_PARTY" | "COMPLETED" | "DENIED" | "CANCELED" | "EXPIRED";
 type MarketplaceTransaction = {
   id: string;
   createdAt: string;
@@ -252,59 +270,9 @@ type MarketplaceTransaction = {
   requested: MarketplaceTradeLine[];
   confirmedByUserIds: string[];
 };
+
 const marketplacePosts = new Map<string, MarketplacePost[]>();
 const marketplaceTransactions = new Map<string, MarketplaceTransaction>();
-const TRANSACTION_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
-
-type MarketplacePostStatus = "ACTIVE" | "ARCHIVED";
-type MarketplacePostKind = "HAVE" | "NEED";
-
-type MarketplaceSettings = {
-  tradeEnabled: boolean;
-  saleEnabled: boolean;
-};
-
-type MarketplacePostCard = {
-  cardId: string;
-  name: string;
-  setId: string;
-  condition: string;
-  quantity: number;
-};
-
-type MarketplacePost = {
-  id: string;
-  ownerId: string;
-  ownerDisplayName: string;
-  kind: MarketplacePostKind;
-  status: MarketplacePostStatus;
-  notes?: string;
-  tradeEnabled: boolean;
-  saleEnabled: boolean;
-  cards: MarketplacePostCard[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-const marketplaceSettings: MarketplaceSettings = {
-  tradeEnabled: true,
-  saleEnabled: false
-};
-const marketplacePosts = new Map<string, MarketplacePost>();
-
-const MAX_UNDO_STEPS = 25;
-const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
-const IN_MATCH_LOBBY_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
-const LOBBY_CLEANUP_INTERVAL_MS = 60 * 1000;
-
-
-type MarketplaceMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
-type MarketplacePostItem = { cardId: string; variant: string; quantity: number; pendingReservedQuantity?: number };
-type MarketplacePost = { id: string; userId: string; displayName: string; linkedPostId?: string; haveItems: MarketplacePostItem[]; needItems: MarketplacePostItem[] };
-type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
-type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; linkedPostId?: string };
-
-const marketplacePosts = new Map<string, MarketplacePost>();
 
 function marketplaceCardKey(cardId: string, variant: string): string {
   return `${cardId}::${variant}`;
@@ -314,7 +282,7 @@ function toAvailabilityMap(items: MarketplacePostItem[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const item of items) {
     const available = Math.max(0, item.quantity - (item.pendingReservedQuantity ?? 0));
-    map.set(marketplaceCardKey(item.cardId, item.variant), available);
+    map.set(marketplaceCardKey(item.cardId, item.variant ?? "DEFAULT"), available);
   }
   return map;
 }
@@ -322,11 +290,11 @@ function toAvailabilityMap(items: MarketplacePostItem[]): Map<string, number> {
 function collectMatchedItems(needs: MarketplacePostItem[], publicAvailability: Map<string, number>): MarketplaceMatchItem[] {
   const out: MarketplaceMatchItem[] = [];
   for (const need of needs) {
-    const key = marketplaceCardKey(need.cardId, need.variant);
+    const key = marketplaceCardKey(need.cardId, need.variant ?? "DEFAULT");
     const publicAvailableQty = publicAvailability.get(key) ?? 0;
     const matchedQuantity = Math.min(Math.max(0, need.quantity), Math.max(0, publicAvailableQty));
     if (matchedQuantity > 0) {
-      out.push({ cardId: need.cardId, variant: need.variant, matchedQuantity });
+      out.push({ cardId: need.cardId, variant: need.variant ?? "DEFAULT", matchedQuantity });
     }
   }
   return out;
@@ -338,9 +306,9 @@ function computeMarketplaceMatchesForPost(sourcePost: MarketplacePost, allPosts:
   const myHaveToTheirNeed = new Map<string, MarketplaceMatchItem[]>();
 
   for (const post of allPosts) {
-    if (post.id === sourcePost.id) continue;
-    const theyHave = collectMatchedItems(sourcePost.needItems, toAvailabilityMap(post.haveItems));
-    const iHave = collectMatchedItems(post.needItems, toAvailabilityMap(sourcePost.haveItems));
+    if (!post.id || !sourcePost.id || post.id === sourcePost.id) continue;
+    const theyHave = collectMatchedItems(sourcePost.needItems ?? [], toAvailabilityMap(post.haveItems ?? []));
+    const iHave = collectMatchedItems(post.needItems ?? [], toAvailabilityMap(sourcePost.haveItems ?? []));
     if (theyHave.length) myNeedToTheirHave.set(post.id, theyHave);
     if (iHave.length) myHaveToTheirNeed.set(post.id, iHave);
   }
@@ -743,7 +711,7 @@ function emitLobbyList(): void {
 }
 
 function listMarketplacePosts(): MarketplacePost[] {
-  return Array.from(marketplacePosts.values()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return Array.from(marketplacePosts.values()).flat().sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
 }
 
 function emitMarketplacePosts(): void {
@@ -754,18 +722,12 @@ function emitMarketplaceSettings(): void {
   io.emit("marketplace:settings", marketplaceSettings);
 }
 
-function ensureMarketplacePostCard(card: Partial<MarketplacePostCard>, index: number): MarketplacePostCard {
+function ensureMarketplacePostCard(card: Partial<Record<string, unknown>>, index: number): MarketplacePostItem {
   const cardId = String(card.cardId ?? "").trim();
-  const name = String(card.name ?? "").trim();
-  const setId = String(card.setId ?? "").trim();
-  const condition = String(card.condition ?? "").trim();
+  const variant = String(card.variant ?? "DEFAULT").trim();
   const quantity = Number(card.quantity ?? 0);
-
-  if (!cardId || !name || !setId || !condition || !Number.isFinite(quantity) || quantity <= 0) {
-    throw new Error(`Invalid card metadata at index ${index}.`);
-  }
-
-  return { cardId, name, setId, condition, quantity: Math.floor(quantity) };
+  if (!cardId || !Number.isFinite(quantity) || quantity <= 0) throw new Error(`Invalid card metadata at index ${index}.`);
+  return { cardId, variant, quantity: Math.floor(quantity) };
 }
 
 function emitLobbyUpdated(lobby: MatchLobbyRecord): void {
@@ -1803,7 +1765,7 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("admin:features:update", async (payload: { key: "card-library" | "deck-library" | "saved-matches" | "play-table" | "board-preview" | "admin-tools"; enabledForPlayers: boolean }, ack?: (response: { ok: boolean; error?: string }) => void) => {
+  socket.on("admin:features:update", async (payload: { key: "card-library" | "deck-builder" | "marketplace" | "saved-matches" | "play-table" | "match-lobby" | "online-gameplay" | "effect-tools" | "admin-tools"; enabledForPlayers: boolean }, ack?: (response: { ok: boolean; error?: string }) => void) => {
     try {
       const user = requireSocketUser(socket);
       await updateFeatureFlagForPlayers(user, payload.key, !!payload.enabledForPlayers);
@@ -3151,14 +3113,16 @@ io.on("connection", async socket => {
 
   socket.on(
     "collection:bulkUpdateOwnership",
-    (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }) => {
+    async (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }) => {
       try {
+        const user = requireSocketUser(socket);
         let ownershipMap = loadCardOwnershipCollection();
         for (const update of data.updates ?? []) {
           ownershipMap = upsertCardOwnership(update);
         }
         socket.emit("collection:ownership", ownershipMap);
-        const needs = await recomputeMarketplaceNeedsForUser(user.id, ownershipMap);
+        const ownership = await loadUserCardOwnershipMap(user.id);
+        const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
         socket.emit("marketplace:needs", needs);
       } catch (error) {
         socket.emit("collection:error", {
@@ -3186,7 +3150,7 @@ io.on("connection", async socket => {
       const currentPosts = marketplacePosts.get(user.id) ?? [];
       for (const line of data.offered) {
         const owned = ownership[line.cardId] ?? 0;
-        const posted = currentPosts.filter(post => post.cardId === line.cardId).reduce((sum, post) => sum + post.quantity, 0);
+        const posted = currentPosts.filter(post => post.cardId === line.cardId).reduce((sum, post) => sum + (post.quantity ?? 0), 0);
         if (line.quantity <= 0 || posted + line.quantity > owned) {
           throw new Error(`Insufficient public availability for card ${line.cardId}.`);
         }

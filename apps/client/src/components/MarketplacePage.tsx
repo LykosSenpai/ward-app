@@ -4,32 +4,25 @@ import { AddCardToMarketplaceModal } from "./AddCardToMarketplaceModal";
 import { MarketplacePostCard, type MarketplacePost } from "./MarketplacePostCard";
 import { MarketplacePostEditor, type MarketplacePostDraft } from "./MarketplacePostEditor";
 import { splitManualItems } from "../marketplaceHelpers";
+import { socket } from "../socket";
 
 type Props = {
   authUser: AuthUser;
   cardLibrary: CardLibraryCardSummary[];
 };
 
-const STORAGE_KEY = "ward_marketplace_posts_v1";
-
 export function MarketplacePage({ authUser, cardLibrary }: Props) {
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
   const [selectedCard, setSelectedCard] = useState("");
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as MarketplacePost[];
-      setPosts(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setPosts([]);
-    }
+    const onPosts = (incoming: MarketplacePost[]) => setPosts(incoming);
+    socket.on("marketplace:posts", onPosts);
+    socket.emit("marketplace:listPosts");
+    return () => {
+      socket.off("marketplace:posts", onPosts);
+    };
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
-  }, [posts]);
 
   const saveDraft = (draft: MarketplacePostDraft) => {
     const listingKinds = [draft.tradeEnabled ? "TRADE" : null, draft.saleEnabled ? "SALE" : null].filter(Boolean) as ("TRADE"|"SALE")[];
@@ -45,7 +38,7 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
       salePrice: draft.salePrice.trim() ? Number(draft.salePrice) : undefined,
       note: draft.note.trim() || undefined
     };
-    setPosts(prev => [next, ...prev]);
+    socket.emit("marketplace:createPost", next);
     setSelectedCard("");
   };
 
@@ -53,7 +46,7 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
     <section className="marketplace-page">
       <header className="marketplace-header marketplace-card">
         <h2>Marketplace</h2>
-        <p>Rollout disclaimer: marketplace posts are community-managed, manually verified, and should be finalized in Discord before exchange.</p>
+        <p>WARD Marketplace helps players find trade and sale matches. Payments, shipping, postage, addresses, and final trade terms are handled outside the website. Use Discord to contact the other user and work out the details directly.</p>
         <p>Signed in as <strong>{authUser.displayName}</strong>.</p>
       </header>
       <MarketplacePostEditor onSave={saveDraft} />
