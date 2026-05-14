@@ -164,6 +164,19 @@ function canUserReviewTournamentDecks(user: AuthUser | null | undefined): boolea
   return user?.role === "ADMIN" || user?.role === "HOST";
 }
 
+function returnExpiredItemsToPool(nowMs = Date.now()): boolean {
+  let changed = false;
+  for (const transaction of marketplaceTransactions.values()) {
+    if ((transaction.status === "PENDING_CONFIRMATION" || transaction.status === "CONFIRMED_BY_ONE_PARTY") && Date.parse(transaction.expiresAt) <= nowMs) {
+      transaction.status = "EXPIRED";
+      transaction.updatedAt = new Date(nowMs).toISOString();
+      transaction.confirmedByUserIds = [];
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 const ALLOWED_PROOF_PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const PROOF_PHOTO_EXTENSION_BY_MIME_TYPE: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -222,6 +235,24 @@ const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
+type MarketplaceTransactionStatus = "PENDING_CONFIRMATION" | "CONFIRMED_BY_ONE_PARTY" | "COMPLETED" | "DENIED" | "CANCELED" | "EXPIRED";
+type MarketplaceTradeLine = { cardId: string; quantity: number };
+type MarketplacePost = { userId: string; cardId: string; quantity: number };
+type MarketplaceTransaction = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  status: MarketplaceTransactionStatus;
+  requesterUserId: string;
+  responderUserId: string;
+  offered: MarketplaceTradeLine[];
+  requested: MarketplaceTradeLine[];
+  confirmedByUserIds: string[];
+};
+const marketplacePosts = new Map<string, MarketplacePost[]>();
+const marketplaceTransactions = new Map<string, MarketplaceTransaction>();
+const TRANSACTION_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 
 const MAX_UNDO_STEPS = 25;
 const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
@@ -1571,6 +1602,8 @@ setInterval(() => {
   }
 }, LOBBY_CLEANUP_INTERVAL_MS).unref();
 
+returnExpiredItemsToPool();
+
 io.on("connection", async socket => {
   console.log(`Client connected: ${socket.id}`);
   const connectedUser = getSocketUser(socket);
@@ -2916,6 +2949,87 @@ io.on("connection", async socket => {
       }
     }
   );
+
+  socket.on("marketplace:returnExpiredItemsToPool", () => {
+    try {
+      returnExpiredItemsToPool();
+      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+
+  socket.on("marketplace:createTransaction", async (data: { responderUserId: string; offered: MarketplaceTradeLine[]; requested: MarketplaceTradeLine[] }) => {
+    try {
+      const user = getSocketUser(socket);
+      if (!user) throw new Error("Authentication required.");
+      returnExpiredItemsToPool();
+      const ownership = await loadUserCardOwnershipMap(user.id);
+      const currentPosts = marketplacePosts.get(user.id) ?? [];
+      for (const line of data.offered) {
+        const owned = ownership[line.cardId] ?? 0;
+        const posted = currentPosts.filter(post => post.cardId === line.cardId).reduce((sum, post) => sum + post.quantity, 0);
+        if (line.quantity <= 0 || posted + line.quantity > owned) {
+          throw new Error(`Insufficient public availability for card ${line.cardId}.`);
+        }
+      }
+      const now = new Date().toISOString();
+      const transaction: MarketplaceTransaction = {
+        id: randomUUID(),
+        createdAt: now,
+        updatedAt: now,
+        expiresAt: new Date(Date.now() + TRANSACTION_EXPIRES_MS).toISOString(),
+        status: "PENDING_CONFIRMATION",
+        requesterUserId: user.id,
+        responderUserId: data.responderUserId,
+        offered: data.offered,
+        requested: data.requested,
+        confirmedByUserIds: []
+      };
+      marketplaceTransactions.set(transaction.id, transaction);
+      marketplacePosts.set(user.id, [...currentPosts, ...data.offered.map(line => ({ userId: user.id, cardId: line.cardId, quantity: line.quantity }))]);
+      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+
+  socket.on("marketplace:confirmTransaction", (transactionId: string) => {
+    try {
+      const user = getSocketUser(socket);
+      if (!user) throw new Error("Authentication required.");
+      returnExpiredItemsToPool();
+      const transaction = marketplaceTransactions.get(transactionId);
+      if (!transaction) throw new Error("Transaction not found.");
+      if (transaction.status !== "PENDING_CONFIRMATION" && transaction.status !== "CONFIRMED_BY_ONE_PARTY") throw new Error("Transaction is not confirmable.");
+      if (!transaction.confirmedByUserIds.includes(user.id)) transaction.confirmedByUserIds.push(user.id);
+      transaction.status = transaction.confirmedByUserIds.length >= 2 ? "COMPLETED" : "CONFIRMED_BY_ONE_PARTY";
+      transaction.updatedAt = new Date().toISOString();
+      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+  socket.on("marketplace:denyTransaction", (transactionId: string) => {
+    const transaction = marketplaceTransactions.get(transactionId);
+    if (transaction) {
+      transaction.status = "DENIED";
+      transaction.updatedAt = new Date().toISOString();
+    }
+    socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+  });
+  socket.on("marketplace:cancelTransaction", (transactionId: string) => {
+    const transaction = marketplaceTransactions.get(transactionId);
+    if (transaction) {
+      transaction.status = "CANCELED";
+      transaction.updatedAt = new Date().toISOString();
+    }
+    socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+  });
+  socket.on("marketplace:listTransactions", () => {
+    returnExpiredItemsToPool();
+    socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+  });
 
 
   socket.on(
