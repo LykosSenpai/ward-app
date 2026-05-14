@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent } from "react";
-import type { CardLibraryCardSummary, CardOwnershipVariant } from "../clientTypes";
+import type { CardLibraryCardSummary } from "../clientTypes";
 import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, sanitizeDownloadFileName } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, getCardArtLabel } from "./CardImagePreview";
@@ -174,6 +174,9 @@ export function CardLibraryPanel({
   const [completionGeneration, setCompletionGeneration] = useState("ALL");
   const [requiredQuantityPerCard, setRequiredQuantityPerCard] = useState(1);
   const [completionVariants, setCompletionVariants] = useState<Record<CollectionVariant, boolean>>({ default: true, holo: false, "zero-art": false, "zero-art-holo": false });
+  const [desiredQuantityPerCard, setDesiredQuantityPerCard] = useState(1);
+  const [includeDefaultArt, setIncludeDefaultArt] = useState(true);
+  const [includeZeroArt, setIncludeZeroArt] = useState(true);
   const cardGridRef = useRef<HTMLDivElement | null>(null);
   const loadPreviousSentinelRef = useRef<HTMLDivElement | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -450,8 +453,8 @@ export function CardLibraryPanel({
   }, [cardLibrary, creatureTypeFilter, deckBuilderFormat, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, missingFocusCardIds, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
 
   const displayCards = useMemo(
-    () => (missingFocusEnabled ? filteredCards.filter(card => missingCardIds.has(card.id)) : filteredCards),
-    [filteredCards, missingCardIds, missingFocusEnabled]
+    () => filteredCards,
+    [filteredCards]
   );
   const visibleCards = useMemo(
     () => displayCards.slice(unloadedCardCount, visibleCardCount),
@@ -618,25 +621,6 @@ export function CardLibraryPanel({
       return total + (ownershipCounts[getCardArtOwnershipKey(cardId, artOption.key)] ?? 0);
     }, 0);
   }
-  function getOwnedCountByArt(cardId: string, artKey: string): number {
-    return ownershipCounts[getCardArtOwnershipKey(cardId, artKey as CardArtKey)] ?? 0;
-  }
-  const selectedCompletionVariants = useMemo(
-    () => (Object.keys(completionVariants) as CardOwnershipVariant[]).filter(variant => completionVariants[variant]),
-    [completionVariants]
-  );
-  const completionData = useMemo(() => {
-    if (completionGeneration === "ALL") return { variantSummaries: [], missingItems: [] };
-    return buildGenerationCompletion({
-      cards: cardLibrary,
-      generation: completionGeneration,
-      selectedVariants: selectedCompletionVariants,
-      requiredQuantity: Math.max(1, completionRequiredQuantity),
-      getOwnedCountByVariant: (cardId, variant) => getOwnedQuantityForVariant(getOwnedCountByArt, cardId, variant)
-    });
-  }, [cardLibrary, completionGeneration, completionRequiredQuantity, selectedCompletionVariants, ownershipCounts]);
-  const missingCardIds = useMemo(() => new Set(completionData.missingItems.map(item => item.cardId)), [completionData.missingItems]);
-
   function setArtOwnedCopies(cardId: string, artKey: CardArtKey, requestedOwnedCount: number) {
     const ownershipKey = getCardArtOwnershipKey(cardId, artKey);
     onSetOwnedCopies(ownershipKey, Math.min(999, Math.max(0, Math.floor(requestedOwnedCount))));
@@ -837,8 +821,8 @@ export function CardLibraryPanel({
           <button onClick={onNewDeck}>New Deck</button>
           <button onClick={onClearDeckBuilder} disabled={deckBuilderCardIds.length === 0}>Clear Deck</button>
           <button onClick={onSaveDeck} disabled={saveDisabled}>Save Deck</button>
-          <button onClick={() => onAddMissingNeedsOnce?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Add Missing Once to Marketplace Needs</button>
-          <button onClick={() => onCreatePerpetualNeedRule?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Create Perpetual Need Rule</button>
+          <button onClick={() => onAddMarketplaceNeed?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Add Missing Once to Marketplace Needs</button>
+          <button onClick={() => onAddMarketplaceHave?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Create Perpetual Need Rule</button>
         </div>
       </div>
 
@@ -1006,46 +990,7 @@ export function CardLibraryPanel({
 
               </div>
             </details>
-            <details className="library-option-a-details-drawer" open>
-              <summary>Generation Set Completion</summary>
-              <div className="library-option-a-drawer-grid">
-                <label>
-                  Generation
-                  <select value={completionGeneration} onChange={event => setCompletionGeneration(event.target.value)}>
-                    <option value="ALL">Select</option>
-                    {generations.map(value => <option value={value} key={value}>{value}</option>)}
-                  </select>
-                </label>
-                <label>
-                  Required Quantity
-                  <input
-                    type="number"
-                    min={1}
-                    value={completionRequiredQuantity}
-                    onChange={event => setCompletionRequiredQuantity(Math.max(1, sanitizeCopies(event.target.value)))}
-                  />
-                </label>
-                {(Object.keys(completionVariants) as CardOwnershipVariant[]).map(variant => (
-                  <label key={variant}>
-                    <input
-                      type="checkbox"
-                      checked={completionVariants[variant]}
-                      onChange={event => setCompletionVariants(current => ({ ...current, [variant]: event.target.checked }))}
-                    />
-                    {variant.replaceAll("_", " ")}
-                  </label>
-                ))}
-                {completionData.variantSummaries.map(summary => (
-                  <span key={summary.variant}>
-                    {summary.variant}: {summary.ownedCompleteCards}/{summary.totalCards} complete, {summary.missingCards} missing ({summary.percentComplete}%)
-                  </span>
-                ))}
-                <div className="actions small-actions">
-                  <button onClick={() => setMissingFocusEnabled(true)} disabled={completionData.missingItems.length === 0}>Show Remaining Needed</button>
-                  <button onClick={() => setMissingFocusEnabled(false)} disabled={!missingFocusEnabled}>Clear Remaining Focus</button>
-                </div>
-              </div>
-            </details>
+
           </div>
         </aside>
 
