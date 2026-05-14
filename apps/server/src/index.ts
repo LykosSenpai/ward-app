@@ -3141,6 +3141,36 @@ io.on("connection", async socket => {
     }
   });
 
+  socket.on("marketplace:listPosts", () => {
+    try {
+      socket.emit("marketplace:posts", listMarketplacePosts());
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+
+  socket.on("marketplace:createPost", (post: MarketplacePost) => {
+    try {
+      const user = getSocketUser(socket);
+      if (!user) throw new Error("Authentication required.");
+      const currentPosts = marketplacePosts.get(user.id) ?? [];
+      const createdAt = new Date().toISOString();
+      marketplacePosts.set(user.id, [
+        {
+          ...post,
+          id: post.id ?? randomUUID(),
+          userId: user.id,
+          displayName: user.displayName,
+          updatedAt: createdAt
+        },
+        ...currentPosts
+      ]);
+      emitMarketplacePosts();
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+
   socket.on("marketplace:createTransaction", async (data: { responderUserId: string; offered: MarketplaceTradeLine[]; requested: MarketplaceTradeLine[] }) => {
     try {
       const user = getSocketUser(socket);

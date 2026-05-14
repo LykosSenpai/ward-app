@@ -7,7 +7,6 @@ import { socket } from "../socket";
 
 type Props = {
   authUser: AuthUser;
-  cardLibrary: CardLibraryCardSummary[];
 };
 
 export function MarketplacePage({ authUser, cardLibrary }: Props) {
