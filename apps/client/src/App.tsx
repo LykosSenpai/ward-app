@@ -18,6 +18,7 @@ import { MatchCompleteCard } from "./components/MatchCompleteCard";
 import { MatchLobbyPanel } from "./components/MatchLobbyPanel";
 import { CompactMatchControlPanel } from "./components/CompactMatchControlPanel";
 import { MatchStatePanel } from "./components/MatchStatePanel";
+import { MarketplaceTransactionPanel } from "./components/MarketplaceTransactionPanel";
 import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { BoardPreview3D } from "./components/BoardPreview3D";
 import type { PointerGestureIntent } from "./components/boardInteractionIntents";
@@ -58,6 +59,7 @@ import type {
   LlmRegressionScenarioSummary,
   LlmServiceStatus,
   MatchLobby,
+  MarketplaceTransaction,
   ManualEffectDurationType,
   ManualEffectStatKey,
   SavedMatchSummary,
@@ -220,6 +222,7 @@ export default function App() {
   const [activeLobby, setActiveLobby] = useState<MatchLobby | undefined>();
   const [selectedPackIds, setSelectedPackIds] = useState<string[]>([]);
   const [cardLibrary, setCardLibrary] = useState<CardLibraryCardSummary[]>([]);
+  const [marketplaceTransactions, setMarketplaceTransactions] = useState<MarketplaceTransaction[]>([]);
   const [effectCoverageRows, setEffectCoverageRows] = useState<EffectCoverageRow[]>([]);
   const [cardOwnershipCounts, setCardOwnershipCounts] = useState<CardOwnershipMap>({});
   const [ownershipSaveStatus, setOwnershipSaveStatus] = useState<OwnershipSaveStatus>("idle");
@@ -732,6 +735,7 @@ export default function App() {
       socket.off("deck:deleted");
       socket.off("dev:cardEffectsSaved");
       socket.off("dev:testMatchCreated");
+      socket.off("marketplace:transactions");
       socket.off("llm:status");
       socket.off("llm:batchProgress");
       socket.off("llm:effectTestPlan");
@@ -782,6 +786,10 @@ export default function App() {
       socket.emit("llm:getStatus");
     }
   }
+  function refreshMarketplaceTransactions() { socket.emit("marketplace:listTransactions"); }
+  function confirmMarketplaceTransaction(id: string) { socket.emit("marketplace:confirmTransaction", id); }
+  function denyMarketplaceTransaction(id: string) { socket.emit("marketplace:denyTransaction", id); }
+  function cancelMarketplaceTransaction(id: string) { socket.emit("marketplace:cancelTransaction", id); }
 
   function refreshEffectCoverage() {
     const packIds =
@@ -2129,6 +2137,13 @@ export default function App() {
               />
             </section>
           </section>
+          <MarketplaceTransactionPanel
+            transactions={marketplaceTransactions}
+            onRefresh={refreshMarketplaceTransactions}
+            onConfirm={confirmMarketplaceTransaction}
+            onDeny={denyMarketplaceTransaction}
+            onCancel={cancelMarketplaceTransaction}
+          />
         ) : (
           <>
             <section className="play-view-toolbar" aria-label="Play table view mode">

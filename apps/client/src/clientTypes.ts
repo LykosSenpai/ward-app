@@ -155,6 +155,20 @@ export type CardLibraryCardSummary = {
 };
 
 export type CardOwnershipMap = Record<string, number>;
+export type MarketplaceTradeLine = { cardId: string; quantity: number };
+export type MarketplaceTransactionStatus = "PENDING_CONFIRMATION" | "CONFIRMED_BY_ONE_PARTY" | "COMPLETED" | "DENIED" | "CANCELED" | "EXPIRED";
+export type MarketplaceTransaction = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  status: MarketplaceTransactionStatus;
+  requesterUserId: string;
+  responderUserId: string;
+  offered: MarketplaceTradeLine[];
+  requested: MarketplaceTradeLine[];
+  confirmedByUserIds: string[];
+};
 
 export type CardOwnershipVariant = "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
 
