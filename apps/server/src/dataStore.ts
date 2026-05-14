@@ -809,6 +809,9 @@ export function listDefaultCardLibrary(): CardLibraryCardSummary[] {
 }
 
 export type CardOwnershipMap = Record<string, number>;
+export type CardOwnershipVariant = "default" | "holo" | "zero-art" | "zero-art-holo";
+export type CardOwnershipByVariant = Partial<Record<CardOwnershipVariant, number>>;
+export type CardOwnershipCollectionMap = Record<string, CardOwnershipByVariant>;
 
 type CardOwnershipFile = {
   version: 1;
@@ -882,6 +885,60 @@ export function setCardOwnershipCount(cardId: string, ownedCount: number): CardO
 
   saveCardOwnershipMap(ownershipMap);
   return ownershipMap;
+}
+
+function normalizeCardOwnershipVariant(variant: string): CardOwnershipVariant {
+  if (variant === "default" || variant === "holo" || variant === "zero-art" || variant === "zero-art-holo") {
+    return variant;
+  }
+
+  throw new Error(`Unknown card variant "${variant}".`);
+}
+
+export function loadCardOwnershipCollection(): CardOwnershipCollectionMap {
+  const baseOwnershipMap = loadCardOwnershipMap();
+  return Object.entries(baseOwnershipMap).reduce<CardOwnershipCollectionMap>((result, [cardId, ownedCount]) => {
+    result[cardId] = { default: ownedCount };
+    return result;
+  }, {});
+}
+
+export function upsertCardOwnership(args: {
+  cardId: string;
+  variant?: string;
+  ownedCount: number;
+  requiredCount?: number;
+}): CardOwnershipCollectionMap {
+  validateDataFileId(args.cardId);
+  const variant = normalizeCardOwnershipVariant(String(args.variant ?? "default").trim());
+  const safeOwnedCount = normalizeOwnershipCount(args.ownedCount);
+
+  if (!Number.isFinite(args.ownedCount) || args.ownedCount < 0) {
+    throw new Error("Owned quantity cannot be negative.");
+  }
+
+  if (args.requiredCount !== undefined && (!Number.isFinite(args.requiredCount) || args.requiredCount < 1)) {
+    throw new Error("Required quantity must be greater than or equal to 1.");
+  }
+
+  const ownershipCollection = loadCardOwnershipCollection();
+  const current = ownershipCollection[args.cardId] ?? {};
+
+  if (safeOwnedCount <= 0) {
+    delete current[variant];
+  } else {
+    current[variant] = safeOwnedCount;
+  }
+
+  if (Object.keys(current).length === 0) {
+    delete ownershipCollection[args.cardId];
+    setCardOwnershipCount(args.cardId, 0);
+  } else {
+    ownershipCollection[args.cardId] = current;
+    setCardOwnershipCount(args.cardId, current.default ?? 0);
+  }
+
+  return ownershipCollection;
 }
 
 
@@ -1041,6 +1098,5 @@ export function deleteUserDeckFromDisk(userId: string, deckId: string): void {
 
   fs.unlinkSync(filePath);
 }
-
 
 
