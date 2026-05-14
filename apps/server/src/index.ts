@@ -120,6 +120,7 @@ import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
 import { changeUserPassword, createUser, getUserProfile, listUsersForTournamentDeckReview, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
 import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
+import { loadMarketplaceAutoListingSettings, saveMarketplaceAutoListingSettings } from "./collection/marketplaceSettingsStore.js";
 import { checkDbConnection } from "./db/pool.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -1613,6 +1614,7 @@ io.on("connection", async socket => {
   socket.emit("setup:options", getUserSetupOptions(connectedUser));
   socket.emit("cards:library", listDefaultCardLibrary());
   socket.emit("collection:ownership", connectedUser ? await loadUserCardOwnershipMap(connectedUser.id) : {});
+  socket.emit("marketplace:autoListingSettings", connectedUser ? loadMarketplaceAutoListingSettings(connectedUser.id) : { enabled: false });
   socket.emit("deck:details", getDeckDetailsForUser(connectedUser));
   socket.emit("lobby:list", listLobbySnapshots());
 

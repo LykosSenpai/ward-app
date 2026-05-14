@@ -42,6 +42,7 @@ type CardLibraryPanelProps = {
   onSaveDeck: () => void;
   canUseDevTools?: boolean;
   onSaveCardLimit?: (cardId: string, status: TournamentLimitStatus) => void;
+  onOpenMarketplaceOverride?: (cardId: string) => void;
 };
 
 function getUniqueValues(values: Array<string | number | undefined>): string[] {
@@ -118,7 +119,8 @@ export function CardLibraryPanel({
   onSetOwnedCopies,
   onSaveDeck,
   canUseDevTools = false,
-  onSaveCardLimit
+  onSaveCardLimit,
+  onOpenMarketplaceOverride
 }: CardLibraryPanelProps) {
   const [searchText, setSearchText] = useState("");
   const [typeFilter, setTypeFilter] = useState<CardTypeFilter>("ALL");
@@ -861,6 +863,16 @@ export function CardLibraryPanel({
                           +
                         </button>
                       </div>
+                      {onOpenMarketplaceOverride ? (
+                        <button
+                          type="button"
+                          className="library-option-a-mini-deck-add"
+                          onClick={() => onOpenMarketplaceOverride(card.id)}
+                          title="Open marketplace override settings for this card"
+                        >
+                          Override Auto-List
+                        </button>
+                      ) : null}
                     </div>
                   </article>
                 );
