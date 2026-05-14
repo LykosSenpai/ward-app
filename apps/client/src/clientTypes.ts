@@ -156,15 +156,23 @@ export type CardLibraryCardSummary = {
 
 export type CardOwnershipMap = Record<string, number>;
 
-export type MarketplacePostModel = MarketplacePost;
-export type MarketplaceMatchModel = MarketplaceMatch;
-export type MarketplaceTransactionModel = MarketplaceTransaction;
-export type MarketplaceSettingsModel = MarketplaceAutoListingSettings;
-export type MarketplaceRetainOverrideModel = MarketplaceRetainOverride;
-export type MarketplaceAutoNeedRuleModel = MarketplaceAutoNeedRule;
-export type MarketplaceVariant = MarketplaceCardVariant;
-export type MarketplaceTransactionState = MarketplaceTransactionStatus;
+export type CardOwnershipVariant = "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
 
+export type CardOwnershipRecord = Record<CardOwnershipVariant, number>;
+
+export type CollectionCompletionCardRequest = {
+  cardId: string;
+  requiredQuantity: number;
+  ownership?: Partial<CardOwnershipRecord>;
+};
+
+export type CollectionCompletionSummary = {
+  cardId: string;
+  requiredQuantity: number;
+  ownedQuantity: number;
+  missingQuantity: number;
+  ownership: CardOwnershipRecord;
+};
 
 export type CardDefinitionWithClientFields = BaseMatchState["cardCatalog"][string] & {
   text?: string;
@@ -246,6 +254,25 @@ export type EffectCoverageRow = {
 };
 
 export type LlmMode = "LLM" | "LOCAL_FALLBACK";
+
+export type FeatureKey =
+  | "card-library"
+  | "deck-library"
+  | "saved-matches"
+  | "play-table"
+  | "board-preview"
+  | "admin-tools";
+
+export type ServerFeatureFlag = {
+  key: FeatureKey;
+  label: string;
+  description: string;
+  enabledForPlayers: boolean;
+  adminCanPreview: boolean;
+  adminOnly: boolean;
+  sortOrder: number;
+  updatedAt: string;
+};
 
 export type LlmServiceStatus = {
   configured: boolean;
@@ -411,4 +438,3 @@ export type LlmPhase4ReportSummary = {
   coverageRecordCount: number;
   needsFixCount: number;
 };
-
