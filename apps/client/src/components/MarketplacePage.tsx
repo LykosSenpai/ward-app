@@ -10,7 +10,7 @@ type Props = {
   cardLibrary: CardLibraryCardSummary[];
 };
 
-export function MarketplacePage({ authUser }: Props) {
+export function MarketplacePage({ authUser, cardLibrary }: Props) {
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
 
   useEffect(() => {
@@ -37,6 +37,7 @@ export function MarketplacePage({ authUser }: Props) {
       note: draft.note.trim() || undefined
     };
     socket.emit("marketplace:createPost", next);
+    setSelectedCard("");
   };
 
   return (

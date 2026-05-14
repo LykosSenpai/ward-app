@@ -12,7 +12,7 @@ export type {
   MarketplacePost,
   MarketplaceRetainOverride,
   MarketplaceTransaction,
-  MarketplaceTransactionStatus
+  WardEngineEffect,
 } from "@ward/shared";
 
 export type ServerWelcome = {
