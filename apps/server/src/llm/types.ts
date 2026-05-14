@@ -15,9 +15,8 @@ export type LlmCoverageSuggestionStatus =
   | "WORKING"
   | "PARTIAL"
   | "BROKEN"
-  | "BLOCKED_RUNTIME"
-  | "BLOCKED_DATA"
-  | "NEEDS_RULES_REVIEW";
+  | "BLOCKED"
+  | "MANUAL";
 
 export type LlmCoverageIssueType =
   | "NONE"

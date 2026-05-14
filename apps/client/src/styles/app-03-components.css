@@ -519,12 +519,14 @@
   color: #ffb1b1;
 }
 
+.test-status-blocked,
 .test-status-blocked-runtime,
 .test-status-blocked-data {
   background: rgba(104, 156, 255, 0.18);
   color: #a9c7ff;
 }
 
+.test-status-manual,
 .test-status-needs-rules-review {
   background: rgba(168, 85, 247, 0.18);
   color: #d8b4fe;

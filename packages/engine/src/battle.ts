@@ -11,7 +11,6 @@ import type {
   CardDefinition,
   CardInstance,
   EffectTargetOption,
-  MagicChainState,
   ManualBattleSpeedModifiers,
   ManualBattleStrike,
   ManualBattleStrikeModifiers,
@@ -42,6 +41,14 @@ import {
 type CreatureDefinition = Extract<CardDefinition, { cardType: "CREATURE" }>;
 const HOGGAN_CARD_ID = "gen3_009_hoggan";
 const HOGGAN_BATTLE_INTERCEPT_ACTION = "HOGGAN_BATTLE_INTERCEPT";
+
+function handBoardZoneRef(playerId: string) {
+  return { playerId, zone: "HAND" as const };
+}
+
+function cemeteryBoardZoneRef(playerId: string) {
+  return { playerId, zone: "CEMETERY" as const };
+}
 
 type BattleCreatureRef = {
   playerId: string;
@@ -601,8 +608,10 @@ function getBattleAttackNegationResponseEffect(definition: CardDefinition) {
     ) &&
     (
       String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK_DAMAGE" ||
+      String(effect.actionType ?? "").trim().toUpperCase() === "PREVENT_ATTACK_DAMAGE" ||
       String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK_OR_MAGIC" ||
-      String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK"
+      String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK" ||
+      String(effect.actionType ?? "").trim().toUpperCase() === "PREVENT_ATTACK"
     )
   );
 }
@@ -893,7 +902,22 @@ function completeManualBattleSessionInPlace(
 
   clearCurrentBattleEffectInstancesInPlace(state, session);
 
-  addEvent(state, "MANUAL_BATTLE_RESOLVED", session.attackingPlayerId, result);
+  addEvent(state, "MANUAL_BATTLE_RESOLVED", session.attackingPlayerId, {
+    ...result,
+    boardEvents: [
+      {
+        type: "BATTLE_RESOLVED",
+        playerId: session.attackingPlayerId,
+        sourceCardInstanceId: session.declaredAttacker.creatureInstanceId,
+        targetCardInstanceId: session.declaredDefender.creatureInstanceId,
+        actionType: "RESOLVE_BATTLE",
+        battleId: session.id,
+        metadata: {
+          combatPhaseEnded: session.combatPhaseEnded
+        }
+      }
+    ]
+  });
 }
 
 function getBattleStrikeSkipReason(state: MatchState, attacker: BattleCreatureRef): string | undefined {
@@ -1020,6 +1044,23 @@ function advanceManualBattleAfterResolvedStrike(
   session.status = "AWAITING_HIT_ROLL";
   nextStrike.status = "AWAITING_HIT_ROLL";
   setSessionUpdated(session, "Retaliation is legal. Roll hit for the slower creature.");
+  addEvent(state, "BATTLE_STRIKE_STARTED", nextAttacker.playerId, {
+    battleSessionId: session.id,
+    strikeId: nextStrike.id,
+    attackerCreatureInstanceId: nextAttacker.card.instanceId,
+    defenderCreatureInstanceId: nextDefender.card.instanceId,
+    boardEvents: [
+      {
+        type: "BATTLE_STRIKE_STARTED",
+        playerId: nextAttacker.playerId,
+        sourceCardInstanceId: nextAttacker.card.instanceId,
+        targetCardInstanceId: nextDefender.card.instanceId,
+        actionType: "BATTLE_STRIKE",
+        battleId: session.id,
+        strikeId: nextStrike.id
+      }
+    ]
+  });
 }
 
 function resolveStrike(
@@ -1351,7 +1392,21 @@ export function startManualBattleSession(
   addEvent(nextState, "MANUAL_BATTLE_DECLARED", playerId, {
     battleSessionId: nextState.pendingBattle.id,
     attackerCreatureInstanceId: attackingCreature.card.instanceId,
-    defenderCreatureInstanceId: defendingCreature.card.instanceId
+    defenderCreatureInstanceId: defendingCreature.card.instanceId,
+    boardEvents: [
+      {
+        type: "BATTLE_STARTED",
+        playerId,
+        sourceCardInstanceId: attackingCreature.card.instanceId,
+        targetCardInstanceId: defendingCreature.card.instanceId,
+        actionType: "DECLARE_BATTLE",
+        battleId: nextState.pendingBattle.id,
+        metadata: {
+          attackerPlayerId: attackingPlayer.id,
+          defenderPlayerId: defendingPlayer.id
+        }
+      }
+    ]
   });
 
   return nextState;
@@ -1411,6 +1466,23 @@ export function runManualBattleSpeedCheck(
       session,
       "Limited Summons perform a one-way battle into the opponent primary. Roll hit for the Limited Summon."
     );
+    addEvent(nextState, "BATTLE_STRIKE_STARTED", attackingCreature.playerId, {
+      battleSessionId: session.id,
+      strikeId: session.strikes[0]?.id,
+      attackerCreatureInstanceId: attackingCreature.card.instanceId,
+      defenderCreatureInstanceId: defendingCreature.card.instanceId,
+      boardEvents: [
+        {
+          type: "BATTLE_STRIKE_STARTED",
+          playerId: attackingCreature.playerId,
+          sourceCardInstanceId: attackingCreature.card.instanceId,
+          targetCardInstanceId: defendingCreature.card.instanceId,
+          actionType: "BATTLE_STRIKE",
+          battleId: session.id,
+          strikeId: session.strikes[0]?.id
+        }
+      ]
+    });
     return nextState;
   }
 
@@ -1494,6 +1566,23 @@ export function runManualBattleSpeedCheck(
     session,
     `${firstStrike.card.instanceId === attackingCreature.card.instanceId ? session.declaredAttacker.creatureName : session.declaredDefender.creatureName} has first strike. ${speedModifiers.override === "AUTO" ? "Speed check complete." : "Speed order was manually overridden."} Roll hit.`
   );
+  addEvent(nextState, "BATTLE_STRIKE_STARTED", firstStrike.playerId, {
+    battleSessionId: session.id,
+    strikeId: session.strikes[0]?.id,
+    attackerCreatureInstanceId: firstStrike.card.instanceId,
+    defenderCreatureInstanceId: (secondStrike ?? defendingCreature).card.instanceId,
+    boardEvents: [
+      {
+        type: "BATTLE_STRIKE_STARTED",
+        playerId: firstStrike.playerId,
+        sourceCardInstanceId: firstStrike.card.instanceId,
+        targetCardInstanceId: (secondStrike ?? defendingCreature).card.instanceId,
+        actionType: "BATTLE_STRIKE",
+        battleId: session.id,
+        strikeId: session.strikes[0]?.id
+      }
+    ]
+  });
 
   return nextState;
 }
@@ -1512,10 +1601,6 @@ export function playBattleResponseFromHand(
 
   if (!session || session.id !== args.battleSessionId) {
     throw new Error("Pending battle session not found.");
-  }
-
-  if (nextState.pendingChain) {
-    throw new Error("Resolve the open Magic Chain before playing another battle response.");
   }
 
   if (session.status !== "AWAITING_DAMAGE_ROLL" && session.status !== "AWAITING_DAMAGE_APPLICATION") {
@@ -1558,58 +1643,66 @@ export function playBattleResponseFromHand(
     throw new Error("Battle response card is missing its attack negation effect data.");
   }
 
+  const modifiers = normalizeStrikeModifiers(strike.modifiers);
+  modifiers.preventAttackDamage = true;
+  modifiers.note = [
+    modifiers.note,
+    `${definition.name} ${effect.id ?? ""}: incoming attack damage negated`.trim()
+  ].filter(Boolean).join("; ").slice(0, 500);
+  strike.modifiers = modifiers;
+
+  if (strike.status === "AWAITING_DAMAGE_APPLICATION") {
+    strike.damageDealt = 0;
+    strike.damagePreventedReason = `${definition.name} negated the Atk damage meant for this creature.`;
+  }
+
   player.hand.splice(handIndex, 1);
-  card.zone = "CHAIN";
+  card.zone = "CEMETERY";
   card.controllerPlayerId = args.playerId;
-  nextState.chainZone.push(card);
+  player.cemetery.push(card);
 
-  const chainLinkId = uuidv4();
-  const pendingChain: MagicChainState = {
-    id: uuidv4(),
-    startedByPlayerId: args.playerId,
-    links: [
-      {
-        id: chainLinkId,
-        playerId: args.playerId,
-        cardInstanceId: card.instanceId,
-        cardId: card.cardId,
-        cardName: definition.name,
-        magicType: definition.cardType === "MAGIC" ? definition.magicType : "LIGHTNING",
-        magicSubType: definition.cardType === "MAGIC" ? definition.magicSubType : "NONE",
-        text: definition.text ?? "",
-        isLightningResponse: false,
-        status: "PENDING",
-        battleResponse: {
-          battleSessionId: session.id,
-          strikeId: strike.id,
-          actionType: effect.actionType,
-          effectId: effect.id
-        }
-      }
-    ],
-    respondedPlayerIds: [],
-    priorityPlayerId: strike.attacker.playerId,
-    lastLinkPlayerId: args.playerId,
-    passesSinceLastResponse: 0
-  };
-
-  nextState.pendingChain = pendingChain;
-
-  setSessionUpdated(session, `${definition.name} was played from hand. Opponent may respond before its damage prevention resolves.`);
+  setSessionUpdated(session, `${definition.name} was played from hand. This strike's attack damage is negated.`);
 
   addEvent(nextState, "BATTLE_RESPONSE_FROM_HAND_PLAYED", args.playerId, {
     battleSessionId: session.id,
     strikeId: strike.id,
-    chainId: pendingChain.id,
-    chainLinkId,
     sourceCardInstanceId: card.instanceId,
     sourceCardName: definition.name,
     effectId: effect.id,
     actionType: effect.actionType,
     protectedCreatureInstanceId: strike.defender.creatureInstanceId,
     protectedCreatureName: strike.defender.creatureName,
-    nextPriorityPlayerId: pendingChain.priorityPlayerId,
-    note: "This battle response opens a Magic Chain response window. If this link is negated, no attack damage prevention is applied."
+    boardEvents: [
+      {
+        type: "CARD_MOVED",
+        playerId: args.playerId,
+        cardInstanceId: card.instanceId,
+        sourceCardInstanceId: card.instanceId,
+        sourceCardId: card.cardId,
+        sourceEffectId: effect.id,
+        actionType: effect.actionType,
+        reason: "BATTLE_RESPONSE",
+        fromZoneRef: handBoardZoneRef(args.playerId),
+        toZoneRef: cemeteryBoardZoneRef(card.ownerPlayerId),
+        battleId: session.id,
+        strikeId: strike.id
+      },
+      {
+        type: "BATTLE_DAMAGE_PREVENTED",
+        playerId: args.playerId,
+        sourceCardInstanceId: card.instanceId,
+        sourceCardId: card.cardId,
+        sourceEffectId: effect.id,
+        actionType: effect.actionType,
+        reason: "BATTLE_RESPONSE",
+        targetCardInstanceId: strike.defender.creatureInstanceId,
+        battleId: session.id,
+        strikeId: strike.id,
+        metadata: {
+          protectedCreatureName: strike.defender.creatureName
+        }
+      }
+    ]
   });
 
   return nextState;
@@ -1795,6 +1888,38 @@ export function rollManualBattleHit(
   strike.hit = hit;
   strike.criticalHit = criticalHit;
   strike.criticalMiss = criticalMiss;
+
+  addEvent(nextState, "BATTLE_HIT_ROLLED", attacker.playerId, {
+    battleSessionId: session.id,
+    strikeId: strike.id,
+    attackerCreatureInstanceId: attacker.card.instanceId,
+    defenderCreatureInstanceId: defender.card.instanceId,
+    hitRollDice,
+    hitRollModifier,
+    hitRollTotal,
+    defenderArmorLevel: defenderStats.armorLevel,
+    hit,
+    criticalHit,
+    criticalMiss,
+    boardEvents: [
+      {
+        type: "BATTLE_HIT_ROLLED",
+        playerId: attacker.playerId,
+        sourceCardInstanceId: attacker.card.instanceId,
+        targetCardInstanceId: defender.card.instanceId,
+        actionType: "BATTLE_HIT_ROLL",
+        battleId: session.id,
+        strikeId: strike.id,
+        values: hitRollDice,
+        metadata: {
+          hit,
+          criticalHit,
+          criticalMiss,
+          total: hitRollTotal
+        }
+      }
+    ]
+  });
 
   runBattleTimingTriggers(nextState, {
     timing: "AFTER_HIT_ROLL",
@@ -2042,6 +2167,61 @@ export function rollManualBattleDamage(
     note: modifiers.note
   });
 
+  addEvent(nextState, "BATTLE_DAMAGE_ROLLED", attacker.playerId, {
+    battleSessionId: session.id,
+    strikeId: strike.id,
+    attackerCreatureInstanceId: attacker.card.instanceId,
+    attackerCreatureName: attackerStats.name,
+    defenderCreatureInstanceId: strike.defender.creatureInstanceId,
+    defenderCreatureName: strike.defender.creatureName,
+    damageRollDice,
+    damageAmount: damageDealt,
+    prevented: Boolean(modifiers.preventAttackDamage || activeStatusPreventsAttackDamage),
+    boardEvents: [
+      {
+        type: "BATTLE_DAMAGE_ROLLED",
+        playerId: attacker.playerId,
+        sourceCardInstanceId: attacker.card.instanceId,
+        targetCardInstanceId: strike.defender.creatureInstanceId,
+        actionType: "BATTLE_DAMAGE_ROLL",
+        battleId: session.id,
+        strikeId: strike.id,
+        values: damageRollDice,
+        amount: damageDealt,
+        metadata: {
+          damageBeforeCritical,
+          damageAfterModifiers,
+          damageAfterCritical,
+          prevented: Boolean(modifiers.preventAttackDamage || activeStatusPreventsAttackDamage)
+        }
+      }
+    ]
+  });
+
+  if (modifiers.preventAttackDamage || activeStatusPreventsAttackDamage) {
+    addEvent(nextState, "BATTLE_DAMAGE_PREVENTED", attacker.playerId, {
+      battleSessionId: session.id,
+      strikeId: strike.id,
+      attackerCreatureInstanceId: attacker.card.instanceId,
+      defenderCreatureInstanceId: strike.defender.creatureInstanceId,
+      reason: modifiers.preventAttackDamage
+        ? "BATTLE_RESPONSE"
+        : "ACTIVE_STATUS",
+      boardEvents: [
+        {
+          type: "BATTLE_DAMAGE_PREVENTED",
+          playerId: attacker.playerId,
+          sourceCardInstanceId: attacker.card.instanceId,
+          targetCardInstanceId: strike.defender.creatureInstanceId,
+          actionType: "PREVENT_ATTACK_DAMAGE",
+          reason: modifiers.preventAttackDamage ? "BATTLE_RESPONSE" : "ACTIVE_STATUS",
+          battleId: session.id,
+          strikeId: strike.id
+        }
+      ]
+    });
+  }
+
   strike.modifiers = modifiers;
   strike.attacker = snapshotParticipant(nextState, attacker);
   strike.damageRollDice = damageRollDice;
@@ -2132,7 +2312,25 @@ export function applyManualBattleDamage(
     damageAmount,
     remainingHp: damageResult.remainingHp,
     killed: damageResult.killed,
-    damageRollDice: strike.damageRollDice ?? strike.selfDamageDice ?? []
+    damageRollDice: strike.damageRollDice ?? strike.selfDamageDice ?? [],
+    boardEvents: [
+      {
+        type: "BATTLE_DAMAGE_APPLIED",
+        playerId: target.playerId,
+        sourceCardInstanceId: strike.attacker.creatureInstanceId,
+        targetCardInstanceId: target.card.instanceId,
+        actionType: "APPLY_BATTLE_DAMAGE",
+        battleId: session.id,
+        strikeId: strike.id,
+        amount: damageAmount,
+        values: strike.damageRollDice ?? strike.selfDamageDice ?? [],
+        metadata: {
+          remainingHp: damageResult.remainingHp,
+          killed: damageResult.killed,
+          damageTarget: strike.damageTarget
+        }
+      }
+    ]
   });
 
   runBattleTimingTriggers(nextState, {

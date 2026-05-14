@@ -31,6 +31,9 @@ function createPlayer(
     },
 
     cemeteryCreatureHpTotal: 0,
+    cemeteryHpAdjustment: 0,
+    skipNextTurnCount: 0,
+    playerLocks: [],
 
     hasLost: false,
 

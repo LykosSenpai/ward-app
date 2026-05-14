@@ -7318,7 +7318,7 @@ function classifyVariant(args: {
     const unsupported = /unsupported|no runtime route|not supported|not have a supported/i.test(message);
     return {
       name: args.variant.name,
-      status: unsupported ? "BLOCKED_RUNTIME" : "BROKEN",
+      status: unsupported ? "BLOCKED" : "BROKEN",
       issueType: unsupported ? "UNSUPPORTED_ACTION_TYPE" : "NONE",
       summary: `Headless run stopped: ${message}`,
       evidence: [...evidence, message],
@@ -7335,7 +7335,7 @@ function classifyVariant(args: {
   if (newManualQueueCount > 0) {
     return {
       name: args.variant.name,
-      status: "BLOCKED_RUNTIME",
+      status: "BLOCKED",
       issueType: "UNSUPPORTED_ACTION_TYPE",
       summary: "Headless run reached manual fallback instead of a reusable runtime route.",
       evidence,
@@ -7428,8 +7428,8 @@ function combineVariantStatuses(variants: LlmHeadlessVariantResult[]) {
     return { status: "PARTIAL" as const, issueType: success.issueType, summary: "At least one headless route worked, but another route needs review." };
   }
 
-  if (statuses.every(status => status === "BLOCKED_RUNTIME")) {
-    return { status: "BLOCKED_RUNTIME" as const, issueType: "UNSUPPORTED_ACTION_TYPE" as const, summary: "All headless routes were blocked by missing runtime support." };
+  if (statuses.every(status => status === "BLOCKED")) {
+    return { status: "BLOCKED" as const, issueType: "UNSUPPORTED_ACTION_TYPE" as const, summary: "All headless routes were blocked by missing runtime support." };
   }
 
   if (statuses.includes("BROKEN")) {

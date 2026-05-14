@@ -239,7 +239,7 @@ const statusMap = new Map(
 );
 const unverifiedEffects = effectRows.filter(row => {
   const record = statusMap.get(row.key);
-  return !record || record.status !== "WORKING" || (record.issueType ?? "NONE") !== "NONE";
+  return !record || (record.engineStatus ?? record.status) !== "WORKING" || (record.issueType ?? "NONE") !== "NONE";
 });
 
 if (unverifiedEffects.length > 0) {

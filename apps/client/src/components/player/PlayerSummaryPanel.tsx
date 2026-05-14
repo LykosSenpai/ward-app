@@ -85,7 +85,18 @@ export function PlayerSummaryPanel({
       <div className="player-stat">
         <span>Cemetery HP</span>
         <strong>{player.cemeteryCreatureHpTotal}</strong>
+        {Number(player.cemeteryHpAdjustment ?? 0) !== 0 ? (
+          <small className="player-stat-adjustment">
+            Effect {Number(player.cemeteryHpAdjustment ?? 0) > 0 ? "+" : ""}{player.cemeteryHpAdjustment}
+          </small>
+        ) : null}
       </div>
+
+      {(player.playerLocks?.length ?? 0) > 0 || Number(player.skipNextTurnCount ?? 0) > 0 ? (
+        <div className="warning-box">
+          {player.playerLocks?.[0]?.label ?? `${player.displayName} must skip their next turn.`}
+        </div>
+      ) : null}
 
       <section className="validation-box">
         <h3>Deck Validation</h3>

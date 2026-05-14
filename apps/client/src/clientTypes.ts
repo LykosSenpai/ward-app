@@ -167,9 +167,8 @@ export type EffectRuntimeTestStatus =
   | "WORKING"
   | "PARTIAL"
   | "BROKEN"
-  | "BLOCKED_RUNTIME"
-  | "BLOCKED_DATA"
-  | "NEEDS_RULES_REVIEW";
+  | "BLOCKED"
+  | "MANUAL";
 
 export type EffectRuntimeIssueType =
   | "NONE"
@@ -193,7 +192,10 @@ export type EffectRuntimeTestStatusRecord = {
   effectId: string;
   trigger?: string;
   actionType: string;
-  status: EffectRuntimeTestStatus;
+  status?: EffectRuntimeTestStatus;
+  engineStatus: EffectRuntimeTestStatus;
+  boardAffordanceStatus: EffectRuntimeTestStatus;
+  boardAnimationStatus: EffectRuntimeTestStatus;
   issueType: EffectRuntimeIssueType;
   notes: string;
   lastTestedAt?: string;
@@ -218,6 +220,9 @@ export type EffectCoverageRow = {
   needsReview?: boolean;
   effectNotes?: string;
   testStatus?: EffectRuntimeTestStatus;
+  engineStatus?: EffectRuntimeTestStatus;
+  boardAffordanceStatus?: EffectRuntimeTestStatus;
+  boardAnimationStatus?: EffectRuntimeTestStatus;
   testIssueType?: EffectRuntimeIssueType;
   testNotes?: string;
   lastTestedAt?: string;

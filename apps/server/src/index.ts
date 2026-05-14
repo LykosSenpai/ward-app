@@ -315,7 +315,9 @@ type EffectCoverageRow = {
   supportNotes: string;
   needsReview?: boolean;
   effectNotes?: string;
-  testStatus?: string;
+  engineStatus?: string;
+  boardAffordanceStatus?: string;
+  boardAnimationStatus?: string;
   testIssueType?: string;
   testNotes?: string;
   lastTestedAt?: string;
@@ -332,7 +334,7 @@ function buildEffectCoverageRows(packIds: string[]): EffectCoverageRow[] {
       const support = getEffectRuntimeSupport(effect);
       const key = `${card.packId}:${card.id}:${effect.id}`;
       const testRecord = testStatusMap[key];
-      const isQaVerified = testRecord?.status === "WORKING" && (testRecord.issueType ?? "NONE") === "NONE";
+      const isQaVerified = testRecord?.engineStatus === "WORKING" && (testRecord.issueType ?? "NONE") === "NONE";
 
       rows.push({
         packId: card.packId,
@@ -353,7 +355,9 @@ function buildEffectCoverageRows(packIds: string[]): EffectCoverageRow[] {
           : support.notes,
         needsReview: isQaVerified ? false : effect.needsReview,
         effectNotes: effect.notes,
-        testStatus: testRecord?.status ?? "UNTESTED",
+        engineStatus: testRecord?.engineStatus ?? "UNTESTED",
+        boardAffordanceStatus: testRecord?.boardAffordanceStatus ?? "UNTESTED",
+        boardAnimationStatus: testRecord?.boardAnimationStatus ?? "UNTESTED",
         testIssueType: testRecord?.issueType ?? "NONE",
         testNotes: testRecord?.notes ?? "",
         lastTestedAt: testRecord?.lastTestedAt,
@@ -938,7 +942,7 @@ function classifyDirectSmokeTest(args: {
       cardId: args.plan.card.cardId,
       cardName: args.cardName,
       effectId: args.plan.effect?.effectId,
-      status: unsupported ? "BLOCKED_RUNTIME" : "BROKEN",
+      status: unsupported ? "BLOCKED" : "BROKEN",
       issueType: unsupported ? "UNSUPPORTED_ACTION_TYPE" : "NONE",
       summary: `Direct smoke test stopped: ${message}`,
       evidence: [...evidence, message],
@@ -978,7 +982,7 @@ function classifyDirectSmokeTest(args: {
       cardId: args.plan.card.cardId,
       cardName: args.cardName,
       effectId: args.plan.effect?.effectId,
-      status: "BLOCKED_RUNTIME",
+      status: "BLOCKED",
       issueType: "UNSUPPORTED_ACTION_TYPE",
       summary: "Direct smoke test routed to manual fallback. This effect needs a reusable runtime handler or manual verification.",
       evidence,
@@ -1161,9 +1165,105 @@ function getUndoCount(matchId: string): number {
   return matchUndoHistory.get(matchId)?.length ?? 0;
 }
 
+function sanitizeEventPayloadForViewer(payload: unknown, viewerPlayerId?: string): unknown {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return payload;
+  const data = payload as Record<string, unknown>;
+  const viewerFromPayload = typeof data.viewerPlayerId === "string" ? data.viewerPlayerId : undefined;
+  const playerFromPayload = typeof data.playerId === "string" ? data.playerId : undefined;
+  const allowedViewer = viewerFromPayload ?? playerFromPayload;
+  const shouldHideRevealedCards = Array.isArray(data.revealedCards) && viewerPlayerId && allowedViewer && viewerPlayerId !== allowedViewer;
+  const next: Record<string, unknown> = { ...data };
+
+  if (shouldHideRevealedCards) {
+    next.revealedCards = [];
+    next.revealedCardCount = 0;
+    next.hiddenFromViewer = true;
+  }
+
+  if (Array.isArray(next.boardEvents) && viewerPlayerId) {
+    next.boardEvents = next.boardEvents.filter(item => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+      const event = item as Record<string, unknown>;
+      const type = typeof event.type === "string" ? event.type : "";
+      const eventPlayerId = typeof event.playerId === "string" ? event.playerId : undefined;
+      if ((type === "CARD_REVEALED" || type === "HAND_REVEALED") && eventPlayerId && eventPlayerId !== viewerPlayerId) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  return next;
+}
+
+function sanitizeMatchForViewer(match: MatchState, viewerPlayerId?: string): MatchState {
+  if (!viewerPlayerId) return match;
+
+  const next = cloneMatchState(match);
+  for (const player of next.players) {
+    if (player.id === viewerPlayerId) continue;
+
+    player.hand = player.hand.map(card => ({
+      ...card,
+      cardId: "HIDDEN_CARD"
+    }));
+    player.deck = player.deck.map(card => ({
+      ...card,
+      cardId: "HIDDEN_CARD"
+    }));
+  }
+
+  if (
+    next.pendingPrompt &&
+    "revealedCards" in next.pendingPrompt &&
+    Array.isArray(next.pendingPrompt.revealedCards)
+  ) {
+    const approvingPlayerId = "approvingPlayerId" in next.pendingPrompt && typeof next.pendingPrompt.approvingPlayerId === "string"
+      ? next.pendingPrompt.approvingPlayerId
+      : undefined;
+    const requestingPlayerId = "requestingPlayerId" in next.pendingPrompt && typeof next.pendingPrompt.requestingPlayerId === "string"
+      ? next.pendingPrompt.requestingPlayerId
+      : undefined;
+    if (viewerPlayerId !== approvingPlayerId && viewerPlayerId !== requestingPlayerId) {
+      next.pendingPrompt = {
+        ...next.pendingPrompt,
+        revealedCards: []
+      };
+    }
+  }
+
+  const prompt = next.pendingEffectTargetPrompt;
+
+  if (prompt && prompt.controllerPlayerId !== viewerPlayerId) {
+    next.pendingEffectTargetPrompt = {
+      ...prompt,
+      promptText: "Opponent is choosing an effect target.",
+      options: []
+    };
+  }
+
+  next.eventLog = next.eventLog.map(event => ({
+    ...event,
+    payload: sanitizeEventPayloadForViewer(event.payload, viewerPlayerId)
+  }));
+
+  return next;
+}
+
 function emitMatchState(match: MatchState): void {
   saveMatchToDisk(match);
-  io.to(match.matchId).emit("match:state", match);
+  const roomSocketIds = io.sockets.adapter.rooms.get(match.matchId);
+
+  if (!roomSocketIds || roomSocketIds.size === 0) {
+    io.to(match.matchId).emit("match:state", match);
+  } else {
+    for (const socketId of roomSocketIds) {
+      const socket = io.sockets.sockets.get(socketId);
+      if (!socket) continue;
+      const viewerPlayerId = getSocketOwnedPlayerId(socket, match.matchId);
+      socket.emit("match:state", sanitizeMatchForViewer(match, viewerPlayerId));
+    }
+  }
 
   if ((match.status ?? "ACTIVE") === "COMPLETE") {
     closeLobbyForMatch(match.matchId);
@@ -2955,7 +3055,10 @@ io.on("connection", async socket => {
         effectId: string;
         trigger?: string;
         actionType: string;
-        status: string;
+        status?: string;
+        engineStatus?: string;
+        boardAffordanceStatus?: string;
+        boardAnimationStatus?: string;
         issueType: string;
         notes: string;
         testedBy?: string;
@@ -2991,7 +3094,10 @@ io.on("connection", async socket => {
         effectId: string;
         trigger?: string;
         actionType: string;
-        status: string;
+        status?: string;
+        engineStatus?: string;
+        boardAffordanceStatus?: string;
+        boardAnimationStatus?: string;
         issueType: string;
         notes: string;
         testedBy?: string;

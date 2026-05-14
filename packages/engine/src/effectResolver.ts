@@ -2,6 +2,8 @@ import { v4 as uuidv4 } from "uuid";
 import type {
   ActiveEffectInstance,
   ActiveRecurringCreatureEffect,
+  BoardEventType,
+  BoardZoneRef,
   CardDefinition,
   CardInstance,
   MatchState,
@@ -25,9 +27,56 @@ type AddEventFn = (
   payload?: unknown
 ) => void;
 
+type BoardEventPayload = {
+  type: BoardEventType;
+  cardInstanceId?: string;
+  playerId?: string;
+  sourceCardInstanceId?: string;
+  sourceCardId?: string;
+  sourceEffectId?: string;
+  actionType?: string;
+  reason?: string;
+  fromZoneRef?: BoardZoneRef;
+  toZoneRef?: BoardZoneRef;
+  targetCardInstanceId?: string;
+  amount?: number;
+  damageType?: string;
+  healType?: string;
+  status?: string;
+  statusLabel?: string;
+  stat?: string;
+  delta?: number;
+  modifierId?: string;
+};
+
 type CardDefinitionWithEffects = CardDefinition & {
   effects?: WardEngineEffect[];
 };
+
+function boardZoneRef(playerId: string | undefined, zone: BoardZoneRef["zone"]): BoardZoneRef {
+  return {
+    ...(playerId ? { playerId } : {}),
+    zone
+  };
+}
+
+function effectBoardEventBase(args: {
+  playerId: string;
+  sourceCardInstanceId?: string;
+  sourceCardId?: string;
+  sourceEffectId: string;
+  actionType?: string;
+  reason?: string;
+}): Omit<BoardEventPayload, "type"> {
+  return {
+    playerId: args.playerId,
+    sourceCardInstanceId: args.sourceCardInstanceId,
+    sourceCardId: args.sourceCardId,
+    sourceEffectId: args.sourceEffectId,
+    actionType: args.actionType,
+    reason: args.reason
+  };
+}
 
 function getPlayerOrThrow(state: MatchState, playerId: string): PlayerState {
   const player = state.players.find(item => item.id === playerId);
@@ -124,8 +173,9 @@ export function applyDestroyedMagicCountModifier(
     sourceCard.activeStatModifiers = sourceCard.activeStatModifiers.filter(modifier =>
       !(modifier.sourceCardInstanceId === sourceCard.instanceId && modifier.sourceEffectId === effect.id)
     );
+    const modifierId = uuidv4();
     sourceCard.activeStatModifiers.push({
-      id: uuidv4(),
+      id: modifierId,
       sourceEffectId: effect.id,
       sourceCardInstanceId: sourceCard.instanceId,
       sourceCardName: args.sourceCardName,
@@ -144,7 +194,25 @@ export function applyDestroyedMagicCountModifier(
       actionType: effect.actionType,
       stat: "modifier",
       delta: args.destroyedCount,
-      destroyedCount: args.destroyedCount
+      destroyedCount: args.destroyedCount,
+      boardEvents: [
+        {
+          type: "STAT_MODIFIER_APPLIED",
+          ...effectBoardEventBase({
+            playerId: args.controllerPlayerId,
+            sourceCardInstanceId: sourceCard.instanceId,
+            sourceCardId: sourceCard.cardId,
+            sourceEffectId: effect.id,
+            actionType: effect.actionType,
+            reason: "DESTROYED_MAGIC_COUNT"
+          }),
+          cardInstanceId: sourceCard.instanceId,
+          targetCardInstanceId: sourceCard.instanceId,
+          stat: "modifier",
+          delta: args.destroyedCount,
+          modifierId
+        } satisfies BoardEventPayload
+      ]
     });
   }
 
@@ -278,8 +346,8 @@ function effectTargetsAllCreaturesOnField(effect: WardEngineEffect): boolean {
   );
 }
 
-function drawCardsForPlayer(player: PlayerState, count: number): number {
-  let drawn = 0;
+function drawCardsForPlayer(player: PlayerState, count: number): CardInstance[] {
+  const drawn: CardInstance[] = [];
 
   for (let index = 0; index < count; index++) {
     const card = player.deck.shift();
@@ -290,7 +358,7 @@ function drawCardsForPlayer(player: PlayerState, count: number): number {
 
     card.zone = "HAND";
     player.hand.push(card);
-    drawn++;
+    drawn.push(card);
   }
 
   return drawn;
@@ -361,7 +429,20 @@ function applyDamageToAllCreaturesOnField(
     effectId: args.effect.id,
     actionType: args.effect.actionType,
     damageAmount: Math.trunc(amount),
-    damagedCreatures
+    damagedCreatures,
+    boardEvents: damagedCreatures.map(item => ({
+      type: "CARD_DAMAGED",
+      ...effectBoardEventBase({
+        playerId: args.controllerPlayerId,
+        sourceEffectId: args.effect.id,
+        actionType: args.effect.actionType,
+        reason: "ALL_CREATURES_DAMAGE"
+      }),
+      cardInstanceId: item.creatureInstanceId,
+      targetCardInstanceId: item.creatureInstanceId,
+      amount: item.damageAmount,
+      damageType: args.effect.actionType
+    } satisfies BoardEventPayload))
   });
 
   return true;
@@ -436,7 +517,23 @@ function applyForcedFirstAutoHitMultiplierEffect(
     targetCreatureName: activeInstance.targetCardName,
     multiplier,
     durationType: activeInstance.durationType,
-    note: "The next battle involving this creature will apply first-strike override, forced hit success, and attack damage multiplier."
+    note: "The next battle involving this creature will apply first-strike override, forced hit success, and attack damage multiplier.",
+    boardEvents: [
+      {
+        type: "STAT_MODIFIER_APPLIED",
+        ...effectBoardEventBase({
+          playerId: args.controllerPlayerId,
+          sourceCardInstanceId: args.sourceCardInstanceId,
+          sourceEffectId: args.effect.id,
+          actionType: args.effect.actionType,
+          reason: "ATTACK_DAMAGE_MULTIPLIER"
+        }),
+        cardInstanceId: primaryCreature.instanceId,
+        targetCardInstanceId: primaryCreature.instanceId,
+        stat: "attackDamageMultiplier",
+        delta: multiplier
+      } satisfies BoardEventPayload
+    ]
   });
 
   return true;
@@ -623,15 +720,32 @@ export function tryResolveAutomaticMagicEffect(
 
     addEvent(state, "AUTO_EFFECT_DESTROY_ALL_MAGIC_RESOLVED", controllerPlayerId, {
       sourceCardName,
+      sourceCardInstanceId: args.sourceCardInstanceId,
       effectId: effect.id,
+      sourceEffectId: effect.id,
       actionType: effect.actionType,
+      reason: "DESTROY_ALL_MAGIC_EFFECT",
       destroyedCount: result.destroyedCount,
       destroyedCards: result.destroyedCards.map(item => ({
         destroyedCardName: item.destroyedCardName,
         destroyedCardInstanceId: item.magicCard.instanceId,
+        cardInstanceId: item.magicCard.instanceId,
         fieldOwnerPlayerId: item.fieldOwnerPlayerId,
         cardOwnerPlayerId: item.cardOwnerPlayerId,
+        fromZoneRef: boardZoneRef(item.fieldOwnerPlayerId, "MAGIC_SLOT"),
+        toZoneRef: boardZoneRef(item.cardOwnerPlayerId, "CEMETERY"),
         linkedDestroyedCreatureCount: item.linkedDestroyedCreatures.length
+      })),
+      boardEvents: result.destroyedCards.map(item => ({
+        type: "CARD_DESTROYED",
+        playerId: controllerPlayerId,
+        sourceCardInstanceId: args.sourceCardInstanceId,
+        sourceEffectId: effect.id,
+        actionType: effect.actionType,
+        reason: "DESTROY_ALL_MAGIC_EFFECT",
+        cardInstanceId: item.magicCard.instanceId,
+        fromZoneRef: boardZoneRef(item.fieldOwnerPlayerId, "MAGIC_SLOT"),
+        toZoneRef: boardZoneRef(item.cardOwnerPlayerId, "CEMETERY")
       }))
     });
 
@@ -669,9 +783,22 @@ export function tryResolveAutomaticMagicEffect(
       playerId: player.id,
       playerName: player.displayName,
       requestedDraw: drawAmount,
-      actualDrawn: drawn,
+      actualDrawn: drawn.length,
+      drawnCardInstanceIds: drawn.map(card => card.instanceId),
+      drawnCardIds: drawn.map(card => card.cardId),
       deckRemaining: player.deck.length,
-      handSize: player.hand.length
+      handSize: player.hand.length,
+      boardEvents: drawn.map(card => ({
+        type: "CARD_MOVED",
+        playerId: controllerPlayerId,
+        sourceCardInstanceId: args.sourceCardInstanceId,
+        sourceEffectId: effect.id,
+        actionType: effect.actionType,
+        reason: "DRAW_CARDS",
+        cardInstanceId: card.instanceId,
+        fromZoneRef: boardZoneRef(player.id, "DECK"),
+        toZoneRef: boardZoneRef(player.id, "HAND")
+      } satisfies BoardEventPayload))
     };
   });
 
@@ -679,7 +806,8 @@ export function tryResolveAutomaticMagicEffect(
     sourceCardName,
     effectId: effect.id,
     actionType: effect.actionType,
-    results
+    results,
+    boardEvents: results.flatMap(result => result.boardEvents)
   });
 
   return true;
@@ -712,6 +840,7 @@ export function applyWhileEquippedStatModifiers(
 
   for (const effect of equipStatEffects) {
     const statChanges = effect.params?.statChanges ?? [];
+    const boardEvents: BoardEventPayload[] = [];
 
     for (const change of statChanges) {
       const stat = normalizeStatKey(change.stat);
@@ -730,8 +859,9 @@ export function applyWhileEquippedStatModifiers(
         continue;
       }
 
+      const modifierId = uuidv4();
       targetCreature.activeStatModifiers.push({
-        id: uuidv4(),
+        id: modifierId,
         sourceEffectId: effect.id,
         sourceCardInstanceId: sourceMagicCard.instanceId,
         sourceCardName: getCardName(state, sourceMagicCard),
@@ -743,6 +873,22 @@ export function applyWhileEquippedStatModifiers(
       });
 
       appliedCount++;
+      boardEvents.push({
+        type: "STAT_MODIFIER_APPLIED",
+        ...effectBoardEventBase({
+          playerId: sourceMagicCard.controllerPlayerId,
+          sourceCardInstanceId: sourceMagicCard.instanceId,
+          sourceCardId: sourceMagicCard.cardId,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: "WHILE_EQUIPPED"
+        }),
+        cardInstanceId: targetCreature.instanceId,
+        targetCardInstanceId: targetCreature.instanceId,
+        stat,
+        delta,
+        modifierId
+      });
     }
 
     addEvent(state, "AUTO_EQUIP_STAT_EFFECT_RESOLVED", sourceMagicCard.controllerPlayerId, {
@@ -753,7 +899,8 @@ export function applyWhileEquippedStatModifiers(
       effectId: effect.id,
       actionType: effect.actionType,
       value: effect.value,
-      appliedCount
+      appliedCount,
+      boardEvents
     });
   }
 
@@ -936,7 +1083,24 @@ export function applyOnEquipRegeneratingHealEffects(
         hpBefore,
         remainingHp: hpAfter,
         maxHp,
-        counterConsumed: false
+        counterConsumed: false,
+        boardEvents: [
+          {
+            type: "CARD_HEALED",
+            ...effectBoardEventBase({
+              playerId: sourceMagicCard.controllerPlayerId,
+              sourceCardInstanceId: sourceMagicCard.instanceId,
+              sourceCardId: sourceMagicCard.cardId,
+              sourceEffectId: effect.id,
+              actionType: effect.actionType,
+              reason: "REGENERATING_HEAL_INITIAL_TICK"
+            }),
+            cardInstanceId: targetCreature.instanceId,
+            targetCardInstanceId: targetCreature.instanceId,
+            amount: hpAfter - hpBefore,
+            healType: "REGENERATING_HEAL"
+          } satisfies BoardEventPayload
+        ]
       });
     }
 
@@ -957,7 +1121,25 @@ export function applyOnEquipRegeneratingHealEffects(
       refreshAmount: instance.refreshAmount,
       maxRefreshCounter: instance.maxRefreshCounter,
       nextTickPlayerId: instance.nextTickPlayerId,
-      nextTickTurnStartCount: instance.nextTickTurnStartCount
+      nextTickTurnStartCount: instance.nextTickTurnStartCount,
+      boardEvents: [
+        {
+          type: "STATUS_APPLIED",
+          ...effectBoardEventBase({
+            playerId: sourceMagicCard.controllerPlayerId,
+            sourceCardInstanceId: sourceMagicCard.instanceId,
+            sourceCardId: sourceMagicCard.cardId,
+            sourceEffectId: effect.id,
+            actionType: effect.actionType,
+            reason: "REGENERATING_HEAL_APPLIED"
+          }),
+          cardInstanceId: targetCreature.instanceId,
+          targetCardInstanceId: targetCreature.instanceId,
+          amount,
+          status: "REGENERATING_HEAL",
+          statusLabel: instance.label
+        } satisfies BoardEventPayload
+      ]
     });
   }
 
@@ -1078,7 +1260,24 @@ export function applyOnEquipRecurringEffects(
         hpBefore,
         remainingHp: hpAfter,
         maxHp,
-        counterConsumed: false
+        counterConsumed: false,
+        boardEvents: [
+          {
+            type: "CARD_HEALED",
+            ...effectBoardEventBase({
+              playerId: sourceMagicCard.controllerPlayerId,
+              sourceCardInstanceId: sourceMagicCard.instanceId,
+              sourceCardId: sourceMagicCard.cardId,
+              sourceEffectId: effect.id,
+              actionType: effect.actionType,
+              reason: "HEAL_OVER_TIME_INITIAL_TICK"
+            }),
+            cardInstanceId: targetCreature.instanceId,
+            targetCardInstanceId: targetCreature.instanceId,
+            amount: hpAfter - hpBefore,
+            healType: "HEAL_OVER_TIME"
+          } satisfies BoardEventPayload
+        ]
       });
     }
 
@@ -1099,7 +1298,25 @@ export function applyOnEquipRecurringEffects(
       refreshAmount: recurring.refreshAmount,
       maxRefreshCounter: recurring.maxRefreshCounter,
       nextTickPlayerId: recurring.nextTickPlayerId,
-      nextTickTurnStartCount: recurring.nextTickTurnStartCount
+      nextTickTurnStartCount: recurring.nextTickTurnStartCount,
+      boardEvents: [
+        {
+          type: "STATUS_APPLIED",
+          ...effectBoardEventBase({
+            playerId: sourceMagicCard.controllerPlayerId,
+            sourceCardInstanceId: sourceMagicCard.instanceId,
+            sourceCardId: sourceMagicCard.cardId,
+            sourceEffectId: effect.id,
+            actionType: effect.actionType,
+            reason: "HEAL_OVER_TIME_APPLIED"
+          }),
+          cardInstanceId: targetCreature.instanceId,
+          targetCardInstanceId: targetCreature.instanceId,
+          amount,
+          status: "HEAL_OVER_TIME",
+          statusLabel: recurring.label
+        } satisfies BoardEventPayload
+      ]
     });
   }
 
@@ -1181,7 +1398,24 @@ export function applyOnEquipPercentageDamageEffects(
       damageAmount,
       remainingHp: targetCreature.currentHp,
       maxHp,
-      note: "Percentage damage uses current remaining HP. Half values round up for damage."
+      note: "Percentage damage uses current remaining HP. Half values round up for damage.",
+      boardEvents: [
+        {
+          type: "CARD_DAMAGED",
+          ...effectBoardEventBase({
+            playerId: sourceMagicCard.controllerPlayerId,
+            sourceCardInstanceId: sourceMagicCard.instanceId,
+            sourceCardId: sourceMagicCard.cardId,
+            sourceEffectId: effect.id,
+            actionType: effect.actionType,
+            reason: "ON_EQUIP_PERCENTAGE_DAMAGE"
+          }),
+          cardInstanceId: targetCreature.instanceId,
+          targetCardInstanceId: targetCreature.instanceId,
+          amount: damageAmount,
+          damageType: "PERCENTAGE_DAMAGE"
+        } satisfies BoardEventPayload
+      ]
     });
   }
 
@@ -1324,7 +1558,24 @@ export function applyOnEquipImmediateEffects(
       actionType: effect.actionType,
       healAmount,
       remainingHp: targetCreature.currentHp,
-      maxHp
+      maxHp,
+      boardEvents: [
+        {
+          type: "CARD_HEALED",
+          ...effectBoardEventBase({
+            playerId: sourceMagicCard.controllerPlayerId,
+            sourceCardInstanceId: sourceMagicCard.instanceId,
+            sourceCardId: sourceMagicCard.cardId,
+            sourceEffectId: effect.id,
+            actionType: effect.actionType,
+            reason: "ON_EQUIP_HEAL"
+          }),
+          cardInstanceId: targetCreature.instanceId,
+          targetCardInstanceId: targetCreature.instanceId,
+          amount: healAmount,
+          healType: effect.actionType
+        } satisfies BoardEventPayload
+      ]
     });
   }
 

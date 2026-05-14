@@ -30,9 +30,8 @@ const REPORT_DIR = path.join(ROOT_DIR, "data", "dev", "llm-phase4-reports");
 const NEEDS_FIX_STATUSES = new Set([
   "PARTIAL",
   "BROKEN",
-  "BLOCKED_RUNTIME",
-  "BLOCKED_DATA",
-  "NEEDS_RULES_REVIEW"
+  "BLOCKED",
+  "MANUAL"
 ]);
 
 function ensureReportDir(): void {
@@ -98,7 +97,7 @@ function buildEffectReportSection(
 
   for (const plan of plans) {
     const coverage = coverageByKey.get(getPlanKey(plan));
-    const status = coverage?.status ?? plan.coverageSuggestion.status;
+    const status = coverage?.engineStatus ?? coverage?.status ?? plan.coverageSuggestion.status;
     const issueType = coverage?.issueType ?? plan.coverageSuggestion.issueType;
     const notes = coverage?.notes || plan.coverageSuggestion.notes || "No notes entered.";
 
@@ -174,7 +173,7 @@ export function saveLlmPhase4VerificationReport(args: SaveLlmPhase4ReportArgs): 
     const coverage = coverageByKey.get(getPlanKey(plan));
     return {
       plan,
-      status: coverage?.status ?? plan.coverageSuggestion.status,
+      status: coverage?.engineStatus ?? coverage?.status ?? plan.coverageSuggestion.status,
       issueType: coverage?.issueType ?? plan.coverageSuggestion.issueType
     };
   });

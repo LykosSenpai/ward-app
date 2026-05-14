@@ -33,7 +33,11 @@ type EffectToolsPageProps = {
   onCreateScenarioMatch: (row: EffectCoverageRow) => void;
   onSaveTestStatus: (
     row: EffectCoverageRow,
-    status: EffectRuntimeTestStatus,
+    statuses: {
+      engineStatus: EffectRuntimeTestStatus;
+      boardAffordanceStatus: EffectRuntimeTestStatus;
+      boardAnimationStatus: EffectRuntimeTestStatus;
+    },
     issueType: EffectRuntimeIssueType,
     notes: string
   ) => void;

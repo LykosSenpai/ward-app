@@ -1,11 +1,17 @@
 import type { BoardRenderEvent } from "./boardRenderContracts";
+import { planBoardAnimationSteps, type BoardAnimationStep } from "./boardAnimationPlanner";
 
 const MAX_BOARD_ANIMATION_QUEUE_LENGTH = 12;
 
+export type BoardAnimationQueueItem = BoardRenderEvent & {
+  animationSteps: BoardAnimationStep[];
+  usesPlannerOutput: boolean;
+};
+
 export type BoardAnimationQueueState = {
   cursor: number;
-  queue: BoardRenderEvent[];
-  activeEvent: BoardRenderEvent | null;
+  queue: BoardAnimationQueueItem[];
+  activeEvent: BoardAnimationQueueItem | null;
 };
 
 export function createBoardAnimationQueueState(): BoardAnimationQueueState {
@@ -21,15 +27,23 @@ export function enqueueBoardRenderEvents(
   events: BoardRenderEvent[]
 ): BoardAnimationQueueState {
   const unseen = events.filter(event => event.sequenceNumber > state.cursor);
-  const deduped = unseen.filter(
+  const planned = unseen.map(event => {
+    const animationSteps = planBoardAnimationSteps(event);
+    return {
+      ...event,
+      animationSteps,
+      usesPlannerOutput: animationSteps.length > 0
+    };
+  });
+  const dedupedPlanned = planned.filter(
     event => !state.queue.some(queued => queued.eventId === event.eventId) && state.activeEvent?.eventId !== event.eventId
   );
 
-  const priorityDamageEvent = deduped.find(event => event.type === "BATTLE_DAMAGE_APPLIED");
+  const priorityDamageEvent = dedupedPlanned.find(event => event.type === "BATTLE_DAMAGE_APPLIED");
   if (priorityDamageEvent && state.activeEvent?.type !== "BATTLE_DAMAGE_APPLIED") {
     const queue = [
       priorityDamageEvent,
-      ...deduped.filter(event =>
+      ...dedupedPlanned.filter(event =>
         event.eventId !== priorityDamageEvent.eventId &&
         event.sequenceNumber > priorityDamageEvent.sequenceNumber
       )
@@ -42,7 +56,7 @@ export function enqueueBoardRenderEvents(
     };
   }
 
-  const queue = [...state.queue, ...deduped].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+  const queue = [...state.queue, ...dedupedPlanned].sort((a, b) => a.sequenceNumber - b.sequenceNumber);
   return {
     ...state,
     queue: queue.slice(-MAX_BOARD_ANIMATION_QUEUE_LENGTH)

@@ -1,5 +1,6 @@
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import type {
+  BoardEventType,
   CardDefinition,
   CardInstance,
   MatchState,
@@ -20,6 +21,44 @@ export type EffectiveCreatureStats = {
   attackDice: number;
   modifier: number;
 };
+
+type AddEventFn = (
+  state: MatchState,
+  type: string,
+  playerId?: string,
+  payload?: unknown
+) => void;
+
+type BoardEventPayload = {
+  type: BoardEventType;
+  cardInstanceId?: string;
+  playerId?: string;
+  sourceCardInstanceId?: string;
+  sourceEffectId?: string;
+  actionType?: string;
+  reason?: string;
+  targetCardInstanceId?: string;
+  phase?: MatchState["turn"]["phase"];
+  turnNumber?: number;
+  turnCycleNumber?: number;
+  status?: string;
+  statusLabel?: string;
+  stat?: string;
+  delta?: number;
+  modifierId?: string;
+};
+
+function timingBoardEventFields(state: MatchState): {
+  phase: MatchState["turn"]["phase"];
+  turnNumber: number;
+  turnCycleNumber: number;
+} {
+  return {
+    phase: state.turn.phase,
+    turnNumber: state.turn.turnNumber,
+    turnCycleNumber: state.turn.turnCycleNumber
+  };
+}
 
 type CreatureDefinition = Extract<CardDefinition, { cardType: "CREATURE" }>;
 type FieldSource = {
@@ -321,8 +360,8 @@ function moveDurationExpiredSourceMagicToCemetery(
   targetCard: CardInstance,
   instance: NonNullable<CardInstance["activeEffectInstances"]>[number],
   expiredOnPlayerId: string
-): void {
-  if (!instance.sourceCardInstanceId) return;
+): boolean {
+  if (!instance.sourceCardInstanceId) return false;
 
   for (const fieldOwner of state.players) {
     const magicSlotIndex = fieldOwner.field.magicSlots.findIndex(card => card.instanceId === instance.sourceCardInstanceId);
@@ -331,8 +370,8 @@ function moveDurationExpiredSourceMagicToCemetery(
     const sourceMagic = fieldOwner.field.magicSlots[magicSlotIndex];
     const sourceDefinition = state.cardCatalog[sourceMagic.cardId];
 
-    if (sourceDefinition?.cardType !== "MAGIC") return;
-    if (sourceMagic.attachedToInstanceId && sourceMagic.attachedToInstanceId !== targetCard.instanceId) return;
+    if (sourceDefinition?.cardType !== "MAGIC") return false;
+    if (sourceMagic.attachedToInstanceId && sourceMagic.attachedToInstanceId !== targetCard.instanceId) return false;
 
     fieldOwner.field.magicSlots.splice(magicSlotIndex, 1);
     sourceMagic.zone = "CEMETERY";
@@ -350,28 +389,151 @@ function moveDurationExpiredSourceMagicToCemetery(
       targetCardInstanceId: targetCard.instanceId,
       targetCardName: instance.targetCardName,
       expiredOnPlayerId,
-      expiresAtPlayerTurnStartCount: instance.expiresAtPlayerTurnStartCount
+      expiresAtPlayerTurnStartCount: instance.expiresAtPlayerTurnStartCount,
+      phase: state.turn.phase,
+      turnNumber: state.turn.turnNumber,
+      turnCycleNumber: state.turn.turnCycleNumber,
+      boardEvents: [
+        {
+          type: "SCHEDULED_EFFECT_RESOLVED",
+          playerId: instance.sourcePlayerId,
+          sourceCardInstanceId: sourceMagic.instanceId,
+          sourceEffectId: instance.sourceEffectId,
+          actionType: instance.actionType,
+          reason: "DURATION_EXPIRED",
+          cardInstanceId: targetCard.instanceId,
+          targetCardInstanceId: targetCard.instanceId,
+          statusLabel: instance.label,
+          ...timingBoardEventFields(state)
+        } satisfies BoardEventPayload,
+        {
+          type: "CARD_SENT_TO_CEMETERY",
+          playerId: instance.sourcePlayerId,
+          sourceCardInstanceId: sourceMagic.instanceId,
+          sourceEffectId: instance.sourceEffectId,
+          actionType: instance.actionType,
+          reason: "DURATION_EXPIRED",
+          cardInstanceId: sourceMagic.instanceId,
+          targetCardInstanceId: targetCard.instanceId,
+          ...timingBoardEventFields(state)
+        } satisfies BoardEventPayload
+      ]
     });
 
-    return;
+    return true;
   }
+
+  return false;
 }
 
-function removeExpiredFromCard(state: MatchState, card: CardInstance, playerId: string, currentTurnStartCount: number): void {
+function removeExpiredFromCard(state: MatchState, card: CardInstance, playerId: string, currentTurnStartCount: number, addBoardEvent?: AddEventFn): void {
   if (card.activeStatModifiers) {
-    card.activeStatModifiers = card.activeStatModifiers.filter(modifier => {
-      if (modifier.durationType !== "TARGET_PLAYER_TURN_STARTS") return true;
-      if (modifier.expiresOnPlayerId !== playerId) return true;
-      return (modifier.expiresAtPlayerTurnStartCount ?? Number.POSITIVE_INFINITY) > currentTurnStartCount;
+    const removed = card.activeStatModifiers.filter(modifier => {
+      if (modifier.durationType !== "TARGET_PLAYER_TURN_STARTS") return false;
+      if (modifier.expiresOnPlayerId !== playerId) return false;
+      return (modifier.expiresAtPlayerTurnStartCount ?? Number.POSITIVE_INFINITY) <= currentTurnStartCount;
     });
+    card.activeStatModifiers = card.activeStatModifiers.filter(modifier => !removed.includes(modifier));
+    for (const modifier of removed) {
+      addBoardEvent?.(state, "STAT_MODIFIER_EXPIRED", modifier.sourceCardInstanceId, {
+        sourceCardInstanceId: modifier.sourceCardInstanceId,
+        sourceCardName: modifier.sourceCardName,
+        sourceEffectId: modifier.sourceEffectId,
+        targetCardInstanceId: card.instanceId,
+        stat: modifier.stat,
+        delta: modifier.delta,
+        modifierId: modifier.id,
+        expiredOnPlayerId: playerId,
+        phase: state.turn.phase,
+        turnNumber: state.turn.turnNumber,
+        turnCycleNumber: state.turn.turnCycleNumber,
+        boardEvents: [
+          {
+            type: "SCHEDULED_EFFECT_RESOLVED",
+            playerId,
+            sourceCardInstanceId: modifier.sourceCardInstanceId,
+            sourceEffectId: modifier.sourceEffectId,
+            actionType: "APPLY_STAT_MODIFIER",
+            reason: "DURATION_EXPIRED",
+            cardInstanceId: card.instanceId,
+            targetCardInstanceId: card.instanceId,
+            stat: modifier.stat,
+            delta: modifier.delta,
+            modifierId: modifier.id,
+            ...timingBoardEventFields(state)
+          } satisfies BoardEventPayload,
+          {
+            type: "STAT_MODIFIER_REMOVED",
+            playerId,
+            sourceCardInstanceId: modifier.sourceCardInstanceId,
+            sourceEffectId: modifier.sourceEffectId,
+            actionType: "APPLY_STAT_MODIFIER",
+            reason: "DURATION_EXPIRED",
+            cardInstanceId: card.instanceId,
+            targetCardInstanceId: card.instanceId,
+            stat: modifier.stat,
+            delta: modifier.delta,
+            modifierId: modifier.id,
+            ...timingBoardEventFields(state)
+          } satisfies BoardEventPayload
+        ]
+      });
+    }
   }
 
   if (card.activeStatuses) {
+    const removed = card.activeStatuses.filter(status => {
+      if (status.durationType !== "TARGET_PLAYER_TURN_STARTS") return false;
+      if (status.expiresOnPlayerId !== playerId) return false;
+      return (status.expiresAtPlayerTurnStartCount ?? Number.POSITIVE_INFINITY) <= currentTurnStartCount;
+    });
     card.activeStatuses = card.activeStatuses.filter(status => {
       if (status.durationType !== "TARGET_PLAYER_TURN_STARTS") return true;
       if (status.expiresOnPlayerId !== playerId) return true;
       return (status.expiresAtPlayerTurnStartCount ?? Number.POSITIVE_INFINITY) > currentTurnStartCount;
     });
+    for (const status of removed) {
+      addBoardEvent?.(state, "STATUS_EXPIRED", status.sourcePlayerId, {
+        sourceCardInstanceId: status.sourceCardInstanceId,
+        sourceCardName: status.sourceCardName,
+        sourceEffectId: status.sourceEffectId,
+        targetCardInstanceId: card.instanceId,
+        status: status.status,
+        label: status.label,
+        expiredOnPlayerId: playerId,
+        phase: state.turn.phase,
+        turnNumber: state.turn.turnNumber,
+        turnCycleNumber: state.turn.turnCycleNumber,
+        boardEvents: [
+          {
+            type: "SCHEDULED_EFFECT_RESOLVED",
+            playerId: status.sourcePlayerId,
+            sourceCardInstanceId: status.sourceCardInstanceId,
+            sourceEffectId: status.sourceEffectId,
+            actionType: "APPLY_STATUS",
+            reason: "DURATION_EXPIRED",
+            cardInstanceId: card.instanceId,
+            targetCardInstanceId: card.instanceId,
+            status: status.status,
+            statusLabel: status.label,
+            ...timingBoardEventFields(state)
+          } satisfies BoardEventPayload,
+          {
+            type: "STATUS_REMOVED",
+            playerId: status.sourcePlayerId,
+            sourceCardInstanceId: status.sourceCardInstanceId,
+            sourceEffectId: status.sourceEffectId,
+            actionType: "APPLY_STATUS",
+            reason: "DURATION_EXPIRED",
+            cardInstanceId: card.instanceId,
+            targetCardInstanceId: card.instanceId,
+            status: status.status,
+            statusLabel: status.label,
+            ...timingBoardEventFields(state)
+          } satisfies BoardEventPayload
+        ]
+      });
+    }
   }
 
   if (card.activeRecurringEffects) {
@@ -391,7 +553,38 @@ function removeExpiredFromCard(state: MatchState, card: CardInstance, playerId: 
 
       const stillActive = (instance.expiresAtPlayerTurnStartCount ?? Number.POSITIVE_INFINITY) > currentTurnStartCount;
       if (!stillActive) {
-        moveDurationExpiredSourceMagicToCemetery(state, card, instance, playerId);
+        const movedSourceMagic = moveDurationExpiredSourceMagicToCemetery(state, card, instance, playerId);
+        if (!movedSourceMagic) {
+          addBoardEvent?.(state, "ACTIVE_EFFECT_INSTANCE_EXPIRED", instance.sourcePlayerId, {
+            playerId: instance.sourcePlayerId,
+            sourceCardInstanceId: instance.sourceCardInstanceId,
+            sourceCardName: instance.sourceCardName,
+            sourceEffectId: instance.sourceEffectId,
+            actionType: instance.actionType,
+            targetCardInstanceId: card.instanceId,
+            targetCardName: instance.targetCardName,
+            expiredOnPlayerId: playerId,
+            expiresAtPlayerTurnStartCount: instance.expiresAtPlayerTurnStartCount,
+            phase: state.turn.phase,
+            turnNumber: state.turn.turnNumber,
+            turnCycleNumber: state.turn.turnCycleNumber,
+            boardEvents: [
+              {
+                type: "SCHEDULED_EFFECT_RESOLVED",
+                playerId: instance.sourcePlayerId,
+                sourceCardInstanceId: instance.sourceCardInstanceId,
+                sourceEffectId: instance.sourceEffectId,
+                actionType: instance.actionType,
+                reason: "DURATION_EXPIRED",
+                cardInstanceId: card.instanceId,
+                targetCardInstanceId: card.instanceId,
+                status: instance.status ?? instance.effectType,
+                statusLabel: instance.label,
+                ...timingBoardEventFields(state)
+              } satisfies BoardEventPayload
+            ]
+          });
+        }
       }
 
       return stillActive;
@@ -401,17 +594,18 @@ function removeExpiredFromCard(state: MatchState, card: CardInstance, playerId: 
 
 export function removeExpiredStatModifiersForPlayerTurnStart(
   state: MatchState,
-  playerId: string
+  playerId: string,
+  addBoardEvent?: AddEventFn
 ): MatchState {
   const currentTurnStartCount = state.turn.turnStartCountsByPlayer[playerId] ?? 0;
 
   for (const player of state.players) {
     if (player.field.primaryCreature) {
-      removeExpiredFromCard(state, player.field.primaryCreature, playerId, currentTurnStartCount);
+      removeExpiredFromCard(state, player.field.primaryCreature, playerId, currentTurnStartCount, addBoardEvent);
     }
 
     for (const limited of player.field.limitedSummons) {
-      removeExpiredFromCard(state, limited, playerId, currentTurnStartCount);
+      removeExpiredFromCard(state, limited, playerId, currentTurnStartCount, addBoardEvent);
     }
   }
 

@@ -1,4 +1,5 @@
 import type { AppMatchState } from "../clientTypes";
+import type { BoardZoneRef } from "@ward/shared";
 import type { BoardObject } from "./boardPreview3dAdapter";
 import type { BoardPlayerId } from "./boardPreview3dTypes";
 
@@ -32,8 +33,53 @@ export type BoardRenderModel = {
 };
 
 export type BoardRenderEventType =
+  | "CARD_MOVED"
+  | "CARD_DRAWN"
+  | "CARD_DISCARDED"
+  | "CARD_DESTROYED"
+  | "CARD_RETURNED_TO_HAND"
+  | "CARD_RETURNED_TO_DECK"
+  | "CARD_SENT_TO_CEMETERY"
+  | "CREATURE_SUMMONED_PRIMARY"
+  | "CREATURE_SUMMONED_LIMITED"
+  | "MAGIC_PLAYED_TO_CHAIN"
+  | "MAGIC_RESOLVED"
+  | "MAGIC_NEGATED"
+  | "MAGIC_ATTACHED"
+  | "ANCHOR_LINK_CREATED"
+  | "SOURCE_LINK_CLEANUP_TRIGGERED"
+  | "CARD_DAMAGED"
+  | "CARD_HEALED"
+  | "CARD_REVEALED"
+  | "HAND_REVEALED"
+  | "STATUS_APPLIED"
+  | "STATUS_REMOVED"
+  | "RECURRING_EFFECT_TICKED"
+  | "SCHEDULED_EFFECT_RESOLVED"
+  | "STAT_MODIFIER_APPLIED"
+  | "STAT_MODIFIER_REMOVED"
+  | "PLAYER_STAT_CHANGED"
+  | "CEMETERY_HP_CHANGED"
+  | "PLAYER_LOCK_APPLIED"
+  | "PLAYER_LOCK_REMOVED"
+  | "TURN_SKIPPED"
+  | "PROMPT_OPENED"
+  | "PROMPT_RESOLVED"
+  | "CHAIN_LINK_ADDED"
+  | "CHAIN_PRIORITY_PASSED"
+  | "CHAIN_LINK_NEGATED"
+  | "CHAIN_LINK_RESOLVED"
+  | "MAGIC_STOLEN"
+  | "STOLEN_MAGIC_PLAYED"
+  | "STOLEN_MAGIC_SENT_TO_CEMETERY"
+  | "TURN_STARTED"
+  | "TURN_PHASE_CHANGED"
   | "CARD_MOVED_ZONE"
   | "BATTLE_STARTED"
+  | "BATTLE_STRIKE_STARTED"
+  | "BATTLE_HIT_ROLLED"
+  | "BATTLE_DAMAGE_ROLLED"
+  | "BATTLE_DAMAGE_PREVENTED"
   | "BATTLE_DAMAGE_APPLIED"
   | "BATTLE_RESOLVED"
   | "EFFECT_PROMPT_OPENED"
@@ -46,6 +92,20 @@ export type BoardRenderEvent = {
   matchId: string;
   type: BoardRenderEventType;
   rawType: string;
+  playerId?: string;
+  cardInstanceId?: string;
+  sourceCardInstanceId?: string;
+  sourceCardId?: string;
+  sourceEffectId?: string;
+  actionType?: string;
+  reason?: string;
+  fromZoneRef?: BoardZoneRef;
+  toZoneRef?: BoardZoneRef;
+  promptId?: string;
+  targetCardInstanceId?: string;
+  phase?: AppMatchState["turn"]["phase"];
+  turnNumber?: number;
+  turnCycleNumber?: number;
   payload: AppMatchState["eventLog"][number]["payload"];
   visualTargets: {
     slotIds: string[];

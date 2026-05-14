@@ -74,6 +74,14 @@ export type MatchFormat = "1v1" | "2v2" | "3v3" | "raid";
 export type BattleCreatureKind = "PRIMARY_CREATURE" | "LIMITED_SUMMON";
 export type MatchStatus = "ACTIVE" | "COMPLETE";
 
+export type EffectQaStatus =
+  | "UNTESTED"
+  | "WORKING"
+  | "PARTIAL"
+  | "BROKEN"
+  | "BLOCKED"
+  | "MANUAL";
+
 export type CannotInflictAttackDamageBattlePolicy = "DAMAGE_ONLY" | "SKIP_BATTLE";
 
 export type CreatureCardDefinition = {
@@ -351,6 +359,20 @@ export type PlayerField = {
   magicSlots: CardInstance[];
 };
 
+export type PlayerLock = {
+  id: string;
+  kind: "SKIP_TURN" | "ACTION_LOCK" | "MAGIC_PLAY_LOCK" | string;
+  label: string;
+  reason?: string;
+  sourceEffectId?: string;
+  sourceCardInstanceId?: string;
+  sourceCardName?: string;
+  sourcePlayerId?: string;
+  remainingTurns?: number;
+  appliedTurnNumber: number;
+  appliedTurnCycle: number;
+};
+
 export type PlayerState = {
   id: string;
   displayName: string;
@@ -364,6 +386,9 @@ export type PlayerState = {
   field: PlayerField;
 
   cemeteryCreatureHpTotal: number;
+  cemeteryHpAdjustment?: number;
+  skipNextTurnCount?: number;
+  playerLocks?: PlayerLock[];
 
   hasLost: boolean;
   lossReason?: string;
@@ -1145,3 +1170,4 @@ export type PendingEffectTargetPrompt = {
   targetKind: EffectTargetKind;
   options: EffectTargetOption[];
 };
+export * from "./boardContracts.js";

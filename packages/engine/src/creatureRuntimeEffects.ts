@@ -3,6 +3,7 @@ import type {
   ActiveCreatureStatus,
   ActiveEffectInstance,
   ActiveRecurringCreatureEffect,
+  BoardEventType,
   CannotInflictAttackDamageBattlePolicy,
   BattleParticipantSnapshot,
   CardDefinition,
@@ -58,6 +59,61 @@ type ActiveEffectSource = {
   definition: CardDefinition;
   zone: "PRIMARY_CREATURE" | "LIMITED_SUMMON" | "MAGIC_SLOT" | "CEMETERY";
 };
+
+type BoardEventPayload = {
+  type: BoardEventType;
+  cardInstanceId?: string;
+  playerId?: string;
+  sourceCardInstanceId?: string;
+  sourceCardId?: string;
+  sourceEffectId?: string;
+  actionType?: string;
+  reason?: string;
+  targetCardInstanceId?: string;
+  amount?: number;
+  phase?: MatchState["turn"]["phase"];
+  turnNumber?: number;
+  turnCycleNumber?: number;
+  ticksRemainingAfterThis?: number;
+  damageType?: string;
+  healType?: string;
+  status?: string;
+  statusLabel?: string;
+  effectType?: string;
+  stat?: string;
+  delta?: number;
+  modifierId?: string;
+  rollKind?: string;
+  diceLimitMode?: string;
+  diceLimitValue?: number;
+};
+
+function runtimeBoardEventBase(
+  source: ActiveEffectSource,
+  effect: WardEngineEffect,
+  reason?: string
+): Omit<BoardEventPayload, "type"> {
+  return {
+    playerId: source.player.id,
+    sourceCardInstanceId: source.card.instanceId,
+    sourceCardId: source.card.cardId,
+    sourceEffectId: effect.id,
+    actionType: effect.actionType,
+    reason
+  };
+}
+
+function timingBoardEventFields(state: MatchState): {
+  phase: MatchState["turn"]["phase"];
+  turnNumber: number;
+  turnCycleNumber: number;
+} {
+  return {
+    phase: state.turn.phase,
+    turnNumber: state.turn.turnNumber,
+    turnCycleNumber: state.turn.turnCycleNumber
+  };
+}
 
 function normalize(value: unknown): string {
   return typeof value === "string" ? value.trim().toUpperCase() : "";
@@ -606,7 +662,17 @@ function addStatusToCreature(
     status: status.status,
     label: status.label,
     flags: status.flags,
-    duration: effect.duration ?? effect.params?.duration
+    duration: effect.duration ?? effect.params?.duration,
+    boardEvents: [
+      {
+        type: "STATUS_APPLIED",
+        ...runtimeBoardEventBase(source, effect, "STATUS_APPLIED"),
+        cardInstanceId: target.card.instanceId,
+        targetCardInstanceId: target.card.instanceId,
+        status: status.status,
+        statusLabel: status.label
+      } satisfies BoardEventPayload
+    ]
   });
 }
 
@@ -717,7 +783,17 @@ function addRecurringEffectToCreature(
       healAmount: result.healAmount,
       requestedHealAmount: activeRecurring.amount,
       remainingHp: result.remainingHp,
-      counterConsumed: false
+      counterConsumed: false,
+      boardEvents: [
+        {
+          type: "CARD_HEALED",
+          ...runtimeBoardEventBase(source, effect, "RECURRING_HEAL_INITIAL_TICK"),
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          amount: result.healAmount,
+          healType: "HEAL_OVER_TIME"
+        } satisfies BoardEventPayload
+      ]
     });
   }
 
@@ -735,7 +811,19 @@ function addRecurringEffectToCreature(
     tickTiming,
     nextTickPlayerId: activeRecurring.nextTickPlayerId,
     nextTickTurnStartCount: activeRecurring.nextTickTurnStartCount,
-    remainingTicks: activeRecurring.remainingTicks
+    remainingTicks: activeRecurring.remainingTicks,
+    boardEvents: [
+      {
+        type: "STATUS_APPLIED",
+        ...runtimeBoardEventBase(source, effect, "RECURRING_EFFECT_APPLIED"),
+        cardInstanceId: target.card.instanceId,
+        targetCardInstanceId: target.card.instanceId,
+        amount,
+        status: effectType,
+        statusLabel: activeRecurring.label,
+        effectType
+      } satisfies BoardEventPayload
+    ]
   });
 }
 
@@ -791,7 +879,18 @@ function applyTemporaryStatModifiers(
       targetCreatureName: result.creatureName,
       stat,
       delta,
-      duration: effect.duration ?? effect.params?.duration
+      duration: effect.duration ?? effect.params?.duration,
+      boardEvents: [
+        {
+          type: "STAT_MODIFIER_APPLIED",
+          ...runtimeBoardEventBase(source, effect, "STAT_MODIFIER_APPLIED"),
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          stat,
+          delta,
+          modifierId: result.modifierId
+        } satisfies BoardEventPayload
+      ]
     });
   }
 }
@@ -1126,7 +1225,17 @@ function applyBattleDamageMultiplier(
     multiplier,
     conditionName: condition.conditionName,
     conditionEvidence: condition.evidence,
-    stackedDamageMultiplier: strike.modifiers.damageMultiplier
+    stackedDamageMultiplier: strike.modifiers.damageMultiplier,
+    boardEvents: [
+      {
+        type: "STAT_MODIFIER_APPLIED",
+        ...runtimeBoardEventBase(source, effect, "ATTACK_DAMAGE_MULTIPLIER"),
+        cardInstanceId: target.card.instanceId,
+        targetCardInstanceId: target.card.instanceId,
+        stat: "attackDamageMultiplier",
+        delta: multiplier
+      } satisfies BoardEventPayload
+    ]
   });
 }
 
@@ -1190,7 +1299,17 @@ function applyPercentageDamage(
     damageAmount: result.damageAmount,
     remainingHp: result.remainingHp,
     killed: result.killed,
-    note: "Half values are rounded up."
+    note: "Half values are rounded up.",
+    boardEvents: [
+      {
+        type: "CARD_DAMAGED",
+        ...runtimeBoardEventBase(source, effect, "PERCENTAGE_DAMAGE"),
+        cardInstanceId: result.creature.instanceId,
+        targetCardInstanceId: result.creature.instanceId,
+        amount: result.damageAmount,
+        damageType: "PERCENTAGE_DAMAGE"
+      } satisfies BoardEventPayload
+    ]
   });
 }
 
@@ -1217,7 +1336,17 @@ function applyHealByDamageDealt(
     targetCreatureName: result.creatureName,
     remainingHp: result.remainingHp,
     maxHp: result.maxHp,
-    note: "Uses actual damage inflicted; half values are rounded up."
+    note: "Uses actual damage inflicted; half values are rounded up.",
+    boardEvents: [
+      {
+        type: "CARD_HEALED",
+        ...runtimeBoardEventBase(source, effect, "HEAL_BY_DAMAGE_DEALT"),
+        cardInstanceId: result.creature.instanceId,
+        targetCardInstanceId: result.creature.instanceId,
+        amount: result.healAmount,
+        healType: "HEAL_BY_DAMAGE_DEALT"
+      } satisfies BoardEventPayload
+    ]
   });
 }
 
@@ -1245,7 +1374,17 @@ function applyImmediateDamageOrHeal(
       targetCreatureName: result.creatureName,
       healAmount: result.healAmount,
       remainingHp: result.remainingHp,
-      maxHp: result.maxHp
+      maxHp: result.maxHp,
+      boardEvents: [
+        {
+          type: "CARD_HEALED",
+          ...runtimeBoardEventBase(source, effect, "EFFECT_HEAL"),
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          amount: result.healAmount,
+          healType: effect.actionType
+        } satisfies BoardEventPayload
+      ]
     });
     return;
   }
@@ -1260,7 +1399,17 @@ function applyImmediateDamageOrHeal(
     targetCreatureName: result.creatureName,
     damageAmount: result.damageAmount,
     remainingHp: result.remainingHp,
-    killed: result.killed
+    killed: result.killed,
+    boardEvents: [
+      {
+        type: "CARD_DAMAGED",
+        ...runtimeBoardEventBase(source, effect, "EFFECT_DAMAGE"),
+        cardInstanceId: result.creature.instanceId,
+        targetCardInstanceId: result.creature.instanceId,
+        amount: result.damageAmount,
+        damageType: effect.actionType
+      } satisfies BoardEventPayload
+    ]
   });
 }
 
@@ -1302,7 +1451,17 @@ function applyForcedDamageDice(
     damageAmount: result.damageAmount,
     remainingHp: result.remainingHp,
     killed: result.killed,
-    note: "Forced effect damage dice use dice total only; attack modifiers and critical rules do not apply."
+    note: "Forced effect damage dice use dice total only; attack modifiers and critical rules do not apply.",
+    boardEvents: [
+      {
+        type: "CARD_DAMAGED",
+        ...runtimeBoardEventBase(source, effect, "FORCED_DAMAGE_DICE"),
+        cardInstanceId: result.creature.instanceId,
+        targetCardInstanceId: result.creature.instanceId,
+        amount: result.damageAmount,
+        damageType: "ROLL_DAMAGE_DICE"
+      } satisfies BoardEventPayload
+    ]
   });
 }
 
@@ -1566,13 +1725,47 @@ function processRecurringRuntimeEffectsForTiming(
         sourceCardInstanceId: recurring.sourceCardInstanceId,
         sourceCardName: recurring.sourceCardName,
         sourceEffectId: recurring.sourceEffectId,
+        phase: state.turn.phase,
+        turnNumber: state.turn.turnNumber,
+        turnCycleNumber: state.turn.turnCycleNumber,
         targetPlayerId: result.playerId,
         targetCreatureInstanceId: result.creature.instanceId,
         targetCreatureName: result.creatureName,
         healAmount: result.healAmount,
         remainingHp: result.remainingHp,
         tickTiming,
-        ticksRemainingAfterThis
+        ticksRemainingAfterThis,
+        boardEvents: [
+          {
+            type: "RECURRING_EFFECT_TICKED",
+            playerId: recurring.sourcePlayerId,
+            sourceCardInstanceId: recurring.sourceCardInstanceId,
+            sourceEffectId: recurring.sourceEffectId,
+            actionType: "APPLY_HEALING_OVER_TIME",
+            reason: "RECURRING_HEAL_TICK",
+            cardInstanceId: result.creature.instanceId,
+            targetCardInstanceId: result.creature.instanceId,
+            amount: result.healAmount,
+            effectType: recurring.effectType,
+            status: recurring.effectType,
+            statusLabel: recurring.label,
+            ticksRemainingAfterThis,
+            ...timingBoardEventFields(state)
+          } satisfies BoardEventPayload,
+          {
+            type: "CARD_HEALED",
+            playerId: recurring.sourcePlayerId,
+            sourceCardInstanceId: recurring.sourceCardInstanceId,
+            sourceEffectId: recurring.sourceEffectId,
+            actionType: "APPLY_HEALING_OVER_TIME",
+            reason: "RECURRING_HEAL_TICK",
+            cardInstanceId: result.creature.instanceId,
+            targetCardInstanceId: result.creature.instanceId,
+            amount: result.healAmount,
+            healType: recurring.effectType,
+            ...timingBoardEventFields(state)
+          } satisfies BoardEventPayload
+        ]
       });
     } else {
       const result = applyDamageToCreatureTarget(state, option, recurring.amount);
@@ -1580,6 +1773,9 @@ function processRecurringRuntimeEffectsForTiming(
         sourceCardInstanceId: recurring.sourceCardInstanceId,
         sourceCardName: recurring.sourceCardName,
         sourceEffectId: recurring.sourceEffectId,
+        phase: state.turn.phase,
+        turnNumber: state.turn.turnNumber,
+        turnCycleNumber: state.turn.turnCycleNumber,
         targetPlayerId: result.playerId,
         targetCreatureInstanceId: result.creature.instanceId,
         targetCreatureName: result.creatureName,
@@ -1587,7 +1783,38 @@ function processRecurringRuntimeEffectsForTiming(
         remainingHp: result.remainingHp,
         killed: result.killed,
         tickTiming,
-        ticksRemainingAfterThis
+        ticksRemainingAfterThis,
+        boardEvents: [
+          {
+            type: "RECURRING_EFFECT_TICKED",
+            playerId: recurring.sourcePlayerId,
+            sourceCardInstanceId: recurring.sourceCardInstanceId,
+            sourceEffectId: recurring.sourceEffectId,
+            actionType: "APPLY_DAMAGE_OVER_TIME",
+            reason: "RECURRING_DAMAGE_TICK",
+            cardInstanceId: result.creature.instanceId,
+            targetCardInstanceId: result.creature.instanceId,
+            amount: result.damageAmount,
+            effectType: recurring.effectType,
+            status: recurring.effectType,
+            statusLabel: recurring.label,
+            ticksRemainingAfterThis,
+            ...timingBoardEventFields(state)
+          } satisfies BoardEventPayload,
+          {
+            type: "CARD_DAMAGED",
+            playerId: recurring.sourcePlayerId,
+            sourceCardInstanceId: recurring.sourceCardInstanceId,
+            sourceEffectId: recurring.sourceEffectId,
+            actionType: "APPLY_DAMAGE_OVER_TIME",
+            reason: "RECURRING_DAMAGE_TICK",
+            cardInstanceId: result.creature.instanceId,
+            targetCardInstanceId: result.creature.instanceId,
+            amount: result.damageAmount,
+            damageType: recurring.effectType,
+            ...timingBoardEventFields(state)
+          } satisfies BoardEventPayload
+        ]
       });
     }
 
@@ -1613,6 +1840,33 @@ function processRecurringRuntimeEffectsForTiming(
         instance.id === dueEffect.recurringId &&
         (instance.kind === "DAMAGE_OVER_TIME" || instance.kind === "HEAL_OVER_TIME")
       ));
+      addEvent?.(state, "RECURRING_EFFECT_EXPIRED", updatedRecurring.sourcePlayerId, {
+        sourceCardInstanceId: updatedRecurring.sourceCardInstanceId,
+        sourceCardName: updatedRecurring.sourceCardName,
+        sourceEffectId: updatedRecurring.sourceEffectId,
+        phase: state.turn.phase,
+        turnNumber: state.turn.turnNumber,
+        turnCycleNumber: state.turn.turnCycleNumber,
+        targetPlayerId: stillOnField.player.id,
+        targetCreatureInstanceId: stillOnField.card.instanceId,
+        targetCreatureName: stillOnField.definition.name,
+        effectType: updatedRecurring.effectType,
+        boardEvents: [
+          {
+            type: "STATUS_REMOVED",
+            playerId: updatedRecurring.sourcePlayerId,
+            sourceCardInstanceId: updatedRecurring.sourceCardInstanceId,
+            sourceEffectId: updatedRecurring.sourceEffectId,
+            actionType: updatedRecurring.effectType === "HEAL_OVER_TIME" ? "APPLY_HEALING_OVER_TIME" : "APPLY_DAMAGE_OVER_TIME",
+            reason: "RECURRING_EFFECT_EXPIRED",
+            cardInstanceId: stillOnField.card.instanceId,
+            targetCardInstanceId: stillOnField.card.instanceId,
+            status: updatedRecurring.effectType,
+            statusLabel: updatedRecurring.label,
+            ...timingBoardEventFields(state)
+          } satisfies BoardEventPayload
+        ]
+      });
     }
   }
 }
@@ -1805,6 +2059,9 @@ export function processRegeneratingHealsAtTurnStart(
       sourceCardInstanceId: instance.sourceCardInstanceId,
       sourceCardName: instance.sourceCardName,
       sourceEffectId: instance.sourceEffectId,
+      phase: state.turn.phase,
+      turnNumber: state.turn.turnNumber,
+      turnCycleNumber: state.turn.turnCycleNumber,
       targetPlayerId: result.playerId,
       targetCreatureInstanceId: result.creature.instanceId,
       targetCreatureName: result.creatureName,
@@ -1813,7 +2070,38 @@ export function processRegeneratingHealsAtTurnStart(
       remainingHp: result.remainingHp,
       ticksRemainingAfterThis,
       nextTickPlayerId: instance.nextTickPlayerId,
-      nextTickTurnStartCount: instance.nextTickTurnStartCount
+      nextTickTurnStartCount: instance.nextTickTurnStartCount,
+      boardEvents: [
+        {
+          type: "RECURRING_EFFECT_TICKED",
+          playerId: instance.sourcePlayerId,
+          sourceCardInstanceId: instance.sourceCardInstanceId,
+          sourceEffectId: instance.sourceEffectId,
+          actionType: "APPLY_REGENERATING_HEAL",
+          reason: "REGENERATING_HEAL_TICK",
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          amount: result.healAmount,
+          effectType: "REGENERATING_HEAL",
+          status: "REGENERATING_HEAL",
+          statusLabel: instance.label,
+          ticksRemainingAfterThis,
+          ...timingBoardEventFields(state)
+        } satisfies BoardEventPayload,
+        {
+          type: "CARD_HEALED",
+          playerId: instance.sourcePlayerId,
+          sourceCardInstanceId: instance.sourceCardInstanceId,
+          sourceEffectId: instance.sourceEffectId,
+          actionType: "APPLY_REGENERATING_HEAL",
+          reason: "REGENERATING_HEAL_TICK",
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          amount: result.healAmount,
+          healType: "REGENERATING_HEAL",
+          ...timingBoardEventFields(state)
+        } satisfies BoardEventPayload
+      ]
     });
 
     if (instance.ticksRemaining <= 0) {

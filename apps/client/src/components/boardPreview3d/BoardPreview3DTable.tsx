@@ -272,7 +272,7 @@ function AttackStreamCanvas({
   return <canvas ref={canvasRef} className="board-preview-3d__attack-fx-canvas" aria-hidden="true" />;
 }
 
-export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onDropBattleAttackerToPiece, onDropEquipMagicToPiece, onDropEffectSourceToPiece, onDropEffectSourceToSlot, onCemeteryStackClick, draggableHandCardIds, draggableBattleAttackerCardIds, draggableEquipMagicCardIds, validBattleTargetPieceIds, validEquipTargetPieceIds, validEffectTargetPieceIds, validEffectTargetSlotIds, effectSourcePieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, equipAttachSourcePieceIds, battleSpeedBadges, diceRollVisual, attackAnimation, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
+export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onDropBattleAttackerToPiece, onDropEquipMagicToPiece, onDropEffectSourceToPiece, onDropEffectSourceToSlot, onCemeteryStackClick, draggableHandCardIds, draggableBattleAttackerCardIds, draggableEquipMagicCardIds, validBattleTargetPieceIds, validEquipTargetPieceIds, validEffectTargetPieceIds, validEffectTargetSlotIds, effectSourcePieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, equipAttachSourcePieceIds, battleSpeedBadges, diceRollVisual, attackAnimation, activeEventType, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
   const highlightedSet = new Set(highlightedSlotIds ?? []);
   const highlightedPieceSet = new Set(highlightedPieceIds ?? []);
   const draggableHandCardSet = new Set(draggableHandCardIds ?? []);
@@ -286,6 +286,18 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
   const effectSourcePieceSet = new Set(effectSourcePieceIds ?? []);
   const sacrificeCandidateSet = new Set(sacrificeCandidateCardIds ?? []);
   const selectedSacrificeSet = new Set(selectedSacrificeCardIds ?? []);
+  const playerEffectBanner =
+    activeEventType === "TURN_SKIPPED"
+      ? "Turn skipped"
+      : activeEventType === "PLAYER_LOCK_APPLIED"
+        ? "Player locked"
+        : activeEventType === "PLAYER_LOCK_REMOVED"
+          ? "Player lock removed"
+          : activeEventType === "CEMETERY_HP_CHANGED"
+            ? "Cemetery HP changed"
+            : activeEventType === "PLAYER_STAT_CHANGED"
+              ? "Player effect"
+              : null;
   const [hoveredSlotId, setHoveredSlotId] = useState<string | null>(null);
   const [hoveredFieldCardId, setHoveredFieldCardId] = useState<string | null>(null);
   const [pinnedFieldCardId, setPinnedFieldCardId] = useState<string | null>(null);
@@ -367,6 +379,11 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
     <>
       <div className="board-preview-3d__camera has-webgl-cards" style={cameraStyle}>
         <div className="board-preview-3d__table" style={{ transform: `translate(-50%, -50%) rotateX(${tiltDegrees}deg) translateZ(-20px)` }}>
+        {playerEffectBanner ? (
+          <div className="board-preview-3d__player-effect-banner" aria-live="polite">
+            {playerEffectBanner}
+          </div>
+        ) : null}
         <div className="board-preview-3d__grid" aria-hidden="true" />
         <BoardPreview3DWebGLCards
           cardByInstanceId={cardByInstanceId}

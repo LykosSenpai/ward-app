@@ -100,7 +100,16 @@ export function drawCards(
     sourceSlotId: `${playerId === "player_2" ? "player_2" : "player_1"}-deck`,
     targetSlotIds: drawnCards.map((_, index) => getHandAnimationSlotId(playerId, startingHandSize + index)),
     drawnCardInstanceIds: drawnCards.map(card => card.instanceId),
-    drawnCardIds: drawnCards.map(card => card.cardId)
+    drawnCardIds: drawnCards.map(card => card.cardId),
+    boardEvents: drawnCards.map(card => ({
+      type: "CARD_MOVED",
+      playerId,
+      actionType: "DRAW_CARDS",
+      reason: "DRAW_CARDS",
+      cardInstanceId: card.instanceId,
+      fromZoneRef: { playerId, zone: "DECK" },
+      toZoneRef: { playerId, zone: "HAND" }
+    }))
   });
 
   return nextState;

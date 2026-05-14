@@ -1471,7 +1471,11 @@ export default function App() {
 
   function saveEffectRuntimeTestStatus(
     row: EffectCoverageRow,
-    status: EffectRuntimeTestStatus,
+    statuses: {
+      engineStatus: EffectRuntimeTestStatus;
+      boardAffordanceStatus: EffectRuntimeTestStatus;
+      boardAnimationStatus: EffectRuntimeTestStatus;
+    },
     issueType: EffectRuntimeIssueType,
     notes: string
   ) {
@@ -1488,7 +1492,9 @@ export default function App() {
         effectId: row.effectId,
         trigger: row.trigger,
         actionType: row.actionType,
-        status,
+        engineStatus: statuses.engineStatus,
+        boardAffordanceStatus: statuses.boardAffordanceStatus,
+        boardAnimationStatus: statuses.boardAnimationStatus,
         issueType,
         notes,
         testedBy: "Dev"
@@ -2107,6 +2113,17 @@ export default function App() {
                         if (slotId.includes("-magic")) {
                           socket.emit("match:playMagic", { matchId: match.matchId, playerId: handOwner.id, cardInstanceId });
                         }
+                      }}
+                      onPlayLightningResponse={(playerId, cardInstanceId) => {
+                        socket.emit("match:playLightningResponse", {
+                          matchId: match.matchId,
+                          playerId,
+                          cardInstanceId
+                        });
+                      }}
+                      onPlayBattleResponse={playBattleResponseFromHand}
+                      onPassMagicChainPriority={(playerId) => {
+                        passMagicChainPriority(playerId);
                       }}
                       onAttachEquipMagicToCreature={(fieldOwnerPlayerId, magicCardInstanceId, targetPlayerId, targetCreatureInstanceId, targetKind) => {
                         socket.emit("match:attachEquipMagicToCreature", {

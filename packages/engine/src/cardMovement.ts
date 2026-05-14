@@ -712,6 +712,8 @@ export function summonPrimaryFromCemeteryAndEquipSource(
   sourceZone: EffectTargetOption["zone"];
   equippedMagicCard: CardInstance;
   equippedMagicCardName: string;
+  equippedMagicSourcePlayerId?: string;
+  equippedMagicSourceZone: RemovableCardLocation["zone"];
   magicSlotCount: number;
   replacedPrimaryCardInstanceId?: string;
   replacedPrimaryCardName?: string;
@@ -856,6 +858,8 @@ export function summonPrimaryFromCemeteryAndEquipSource(
     sourceZone: selected.zone,
     equippedMagicCard: sourceLocation.card,
     equippedMagicCardName: sourceDefinition.name,
+    equippedMagicSourcePlayerId: sourceLocation.player?.id ?? sourceLocation.card.controllerPlayerId,
+    equippedMagicSourceZone: sourceLocation.zone,
     magicSlotCount: controllerPlayer.field.magicSlots.length,
     replacedPrimaryCardInstanceId,
     replacedPrimaryCardName
@@ -876,6 +880,8 @@ export function limitedSummonSelectedCreatureAndEquipSource(
   slotCount: number;
   equippedMagicCard: CardInstance;
   equippedMagicCardName: string;
+  equippedMagicSourcePlayerId?: string;
+  equippedMagicSourceZone: RemovableCardLocation["zone"];
   magicSlotCount: number;
 } {
   const controllerPlayer = getPlayer(state, controllerPlayerId);
@@ -934,6 +940,8 @@ export function limitedSummonSelectedCreatureAndEquipSource(
     ...summonResult,
     equippedMagicCard: sourceLocation.card,
     equippedMagicCardName: sourceDefinition.name,
+    equippedMagicSourcePlayerId: sourceLocation.player?.id ?? sourceLocation.card.controllerPlayerId,
+    equippedMagicSourceZone: sourceLocation.zone,
     magicSlotCount: controllerPlayer.field.magicSlots.length
   };
 }

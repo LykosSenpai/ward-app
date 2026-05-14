@@ -2402,7 +2402,17 @@
 .coverage-status-select-grid {
   display: grid;
   grid-template-columns: 1fr;
+  gap: 0.35rem;
   margin-bottom: 0.35rem;
+}
+
+.coverage-status-select-grid label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .coverage-status-select-grid select {
@@ -3838,6 +3848,7 @@
 }
 
 .llm-effect-status-partial,
+.llm-effect-status-manual,
 .llm-effect-status-needs_rules_review {
   border-color: rgba(250, 204, 21, 0.55);
   background: rgba(113, 63, 18, 0.22);
@@ -3845,6 +3856,7 @@
 }
 
 .llm-effect-status-broken,
+.llm-effect-status-blocked,
 .llm-effect-status-blocked_runtime,
 .llm-effect-status-blocked_data {
   border-color: rgba(248, 113, 113, 0.58);

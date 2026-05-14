@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import type {
   CardDefinition,
   CardPackDefinition,
+  EffectQaStatus,
   WardEngineEffect,
   DeckCardLimitListDefinition,
   DeckCardLimitMap,
@@ -44,14 +45,7 @@ ensureDirectoryExists(CARD_COLLECTION_DIR);
 ensureDirectoryExists(DEV_DATA_DIR);
 
 
-export type EffectRuntimeTestStatus =
-  | "UNTESTED"
-  | "WORKING"
-  | "PARTIAL"
-  | "BROKEN"
-  | "BLOCKED_RUNTIME"
-  | "BLOCKED_DATA"
-  | "NEEDS_RULES_REVIEW";
+export type EffectRuntimeTestStatus = EffectQaStatus;
 
 export type EffectRuntimeIssueType =
   | "NONE"
@@ -75,7 +69,10 @@ export type EffectRuntimeTestStatusRecord = {
   effectId: string;
   trigger?: string;
   actionType: string;
-  status: EffectRuntimeTestStatus;
+  status?: EffectRuntimeTestStatus;
+  engineStatus: EffectRuntimeTestStatus;
+  boardAffordanceStatus: EffectRuntimeTestStatus;
+  boardAnimationStatus: EffectRuntimeTestStatus;
   issueType: EffectRuntimeIssueType;
   notes: string;
   lastTestedAt?: string;
@@ -84,7 +81,10 @@ export type EffectRuntimeTestStatusRecord = {
 
 export type EffectRuntimeTestStatusMap = Record<string, EffectRuntimeTestStatusRecord>;
 
-export type EffectRuntimeTestStatusInput = Omit<Partial<EffectRuntimeTestStatusRecord>, "status" | "issueType"> & {
+export type EffectRuntimeTestStatusInput = Omit<Partial<EffectRuntimeTestStatusRecord>, "status" | "engineStatus" | "boardAffordanceStatus" | "boardAnimationStatus" | "issueType"> & {
+  engineStatus?: string;
+  boardAffordanceStatus?: string;
+  boardAnimationStatus?: string;
   status?: string;
   issueType?: string;
 };
@@ -99,9 +99,8 @@ const VALID_EFFECT_TEST_STATUSES = new Set<EffectRuntimeTestStatus>([
   "WORKING",
   "PARTIAL",
   "BROKEN",
-  "BLOCKED_RUNTIME",
-  "BLOCKED_DATA",
-  "NEEDS_RULES_REVIEW"
+  "BLOCKED",
+  "MANUAL"
 ]);
 
 const VALID_EFFECT_ISSUE_TYPES = new Set<EffectRuntimeIssueType>([
@@ -136,9 +135,9 @@ function normalizeEffectRuntimeTestStatusRecord(record: EffectRuntimeTestStatusI
   validateDataFileId(cardId);
   validateDataFileId(effectId);
 
-  const status = VALID_EFFECT_TEST_STATUSES.has(record.status as EffectRuntimeTestStatus)
-    ? record.status as EffectRuntimeTestStatus
-    : "UNTESTED";
+  const engineStatus = normalizeEffectRuntimeTestStatus(record.engineStatus ?? record.status);
+  const boardAffordanceStatus = normalizeEffectRuntimeTestStatus(record.boardAffordanceStatus);
+  const boardAnimationStatus = normalizeEffectRuntimeTestStatus(record.boardAnimationStatus);
 
   const issueType = VALID_EFFECT_ISSUE_TYPES.has(record.issueType as EffectRuntimeIssueType)
     ? record.issueType as EffectRuntimeIssueType
@@ -152,12 +151,38 @@ function normalizeEffectRuntimeTestStatusRecord(record: EffectRuntimeTestStatusI
     effectId,
     trigger: record.trigger ? String(record.trigger) : undefined,
     actionType: String(record.actionType ?? "UNKNOWN"),
-    status,
+    engineStatus,
+    boardAffordanceStatus,
+    boardAnimationStatus,
     issueType,
     notes: String(record.notes ?? ""),
     lastTestedAt: record.lastTestedAt ? String(record.lastTestedAt) : new Date().toISOString(),
     testedBy: record.testedBy ? String(record.testedBy) : "Dev"
   };
+}
+
+function normalizeEffectRuntimeTestStatus(value: unknown): EffectRuntimeTestStatus {
+  if (VALID_EFFECT_TEST_STATUSES.has(value as EffectRuntimeTestStatus)) {
+    return value as EffectRuntimeTestStatus;
+  }
+
+  switch (value) {
+    case "BLOCKED_RUNTIME":
+    case "BLOCKED_DATA":
+      return "BLOCKED";
+    case "NEEDS_RULES_REVIEW":
+      return "MANUAL";
+    default:
+      return "UNTESTED";
+  }
+}
+
+function hasSavedEffectRuntimeTestStatus(record: EffectRuntimeTestStatusRecord): boolean {
+  return record.engineStatus !== "UNTESTED" ||
+    record.boardAffordanceStatus !== "UNTESTED" ||
+    record.boardAnimationStatus !== "UNTESTED" ||
+    record.notes.trim().length > 0 ||
+    record.issueType !== "NONE";
 }
 
 export function loadEffectRuntimeTestStatusMap(): EffectRuntimeTestStatusMap {
@@ -190,7 +215,7 @@ function saveEffectRuntimeTestStatusMap(statusMap: EffectRuntimeTestStatusMap): 
   const fileData: EffectRuntimeTestStatusFile = {
     version: 1,
     records: Object.values(statusMap)
-      .filter(record => record.status !== "UNTESTED" || record.notes.trim() || record.issueType !== "NONE")
+      .filter(hasSavedEffectRuntimeTestStatus)
       .sort((a, b) =>
         a.packId.localeCompare(b.packId) ||
         a.cardId.localeCompare(b.cardId) ||
@@ -208,7 +233,7 @@ export function saveEffectRuntimeTestStatusRecord(record: EffectRuntimeTestStatu
     lastTestedAt: new Date().toISOString()
   });
 
-  if (normalized.status === "UNTESTED" && normalized.issueType === "NONE" && !normalized.notes.trim()) {
+  if (!hasSavedEffectRuntimeTestStatus(normalized)) {
     delete statusMap[normalized.key];
   } else {
     statusMap[normalized.key] = normalized;
@@ -227,7 +252,7 @@ export function saveEffectRuntimeTestStatusRecords(records: EffectRuntimeTestSta
       lastTestedAt: new Date().toISOString()
     });
 
-    if (normalized.status === "UNTESTED" && normalized.issueType === "NONE" && !normalized.notes.trim()) {
+    if (!hasSavedEffectRuntimeTestStatus(normalized)) {
       delete statusMap[normalized.key];
     } else {
       statusMap[normalized.key] = normalized;

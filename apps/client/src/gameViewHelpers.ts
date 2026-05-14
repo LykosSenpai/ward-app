@@ -300,6 +300,9 @@ export function getAdvanceBlockReason(match: AppMatchState): string {
     return "Active player was not found.";
   }
 
+  const activeLock = getPlayerActionLockReason(activePlayer);
+  if (activeLock) return activeLock;
+
   if (match.turn.phase === "DRAW" && !activePlayer.turnFlags.drawnThisTurn) {
     return "Draw for turn before leaving Draw Phase.";
   }
@@ -317,6 +320,16 @@ export function getAdvanceBlockReason(match: AppMatchState): string {
   }
 
   return "";
+}
+
+function getPlayerActionLockReason(player: PlayerState): string {
+  if (Number(player.skipNextTurnCount ?? 0) > 0) {
+    const skipLock = player.playerLocks?.find(lock => lock.kind === "SKIP_TURN");
+    return skipLock?.reason ?? skipLock?.label ?? `${player.displayName} must skip their next turn.`;
+  }
+
+  const actionLock = player.playerLocks?.find(lock => lock.kind === "ACTION_LOCK");
+  return actionLock?.reason ?? actionLock?.label ?? "";
 }
 
 
@@ -400,6 +413,8 @@ export function getBattleBlockReason(match: AppMatchState): string {
   const defendingPlayer = match.players.find(player => player.id !== match.turn.activePlayerId);
 
   if (!activePlayer) return "Active player was not found.";
+  const activeLock = getPlayerActionLockReason(activePlayer);
+  if (activeLock) return activeLock;
   if (!activePlayer.field.primaryCreature && activePlayer.field.limitedSummons.length === 0) {
     return "The active player has no creature that can declare battle.";
   }

@@ -9,6 +9,7 @@ import type {
   MatchState,
   PendingEffectRollSession,
   PlayerField,
+  PlayerLock,
   PlayerState
 } from "@ward/shared";
 import { calculateCemeteryCreatureHp } from "./cemetery.js";
@@ -158,6 +159,27 @@ function normalizeField(field: unknown): PlayerField {
   };
 }
 
+function normalizePlayerLock(lock: unknown): PlayerLock | undefined {
+  const data = asRecord(lock);
+  if (!data.id || !data.kind || !data.label) return undefined;
+
+  return {
+    id: String(data.id),
+    kind: String(data.kind),
+    label: String(data.label),
+    reason: typeof data.reason === "string" ? data.reason : undefined,
+    sourceEffectId: typeof data.sourceEffectId === "string" ? data.sourceEffectId : undefined,
+    sourceCardInstanceId: typeof data.sourceCardInstanceId === "string" ? data.sourceCardInstanceId : undefined,
+    sourceCardName: typeof data.sourceCardName === "string" ? data.sourceCardName : undefined,
+    sourcePlayerId: typeof data.sourcePlayerId === "string" ? data.sourcePlayerId : undefined,
+    remainingTurns: Number.isFinite(Number(data.remainingTurns))
+      ? Math.max(0, Math.trunc(Number(data.remainingTurns)))
+      : undefined,
+    appliedTurnNumber: Number(data.appliedTurnNumber ?? 0),
+    appliedTurnCycle: Number(data.appliedTurnCycle ?? 0)
+  };
+}
+
 function normalizePlayer(player: PlayerState): PlayerState {
   player.deck = asArray<CardInstance>(player.deck).map(normalizeCardInstance);
   player.hand = asArray<CardInstance>(player.hand).map(normalizeCardInstance);
@@ -183,6 +205,11 @@ function normalizePlayer(player: PlayerState): PlayerState {
   };
 
   player.hasLost = Boolean(player.hasLost);
+  player.cemeteryHpAdjustment = Number(player.cemeteryHpAdjustment ?? 0);
+  player.skipNextTurnCount = Math.max(0, Math.trunc(Number(player.skipNextTurnCount ?? 0)));
+  player.playerLocks = asArray<PlayerLock>(player.playerLocks)
+    .map(normalizePlayerLock)
+    .filter((lock): lock is PlayerLock => !!lock);
   player.cemeteryCreatureHpTotal = calculateCemeteryCreatureHp(player);
 
   return player;

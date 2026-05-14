@@ -1016,6 +1016,15 @@ BLOCKED
 MANUAL
 ```
 
+Migration/default rule:
+
+```text
+Existing single status values migrate into engineStatus.
+boardAffordanceStatus and boardAnimationStatus default to UNTESTED.
+Legacy BLOCKED_RUNTIME and BLOCKED_DATA collapse to BLOCKED.
+Legacy NEEDS_RULES_REVIEW collapses to MANUAL.
+```
+
 Meaning:
 
 ```text

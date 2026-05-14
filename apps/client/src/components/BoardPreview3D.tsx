@@ -12,17 +12,16 @@ import { parseLayoutSnapshotJson, resolveSlotPosition, toLayoutSnapshot } from "
 import { buildBoardInteractionContext, buildBoardRenderModel, translateGameEventsToBoardRenderEvents } from "./boardRenderAdapter";
 import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAnimationQueueToSequence, settleActiveBoardAnimation, startNextBoardAnimation } from "./boardAnimationQueue";
 import { getBoardAnimationProfile } from "./boardAnimationProfiles";
-import { getBoardAnimationHighlights, planBoardAttackAnimation } from "./boardAnimationPlanner";
 import { decideBoardReconciliation } from "./boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "./boardRuntimeHealth";
-import { getAdvanceBlockReason, getBattleBlockReason, getCardName, getPlayerBattleCreatureOptions, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
+import { getAdvanceBlockReason, getBattleBlockReason, getCardName, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
 import { mapPointerGestureToIntent } from "./boardInteractionIntents";
 import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
-import { buildCardInstanceMap, getFocusedHandCards, getFocusedPlayer, getOpponentPlayer, resolveBoardHandRevealMode } from "./boardViewModel";
-import { getBoardEffectTargetOptions, getEffectSourcePieceIds, getEffectTargetOptionByCardId, getLegalTargetSlotIdsForHandCard, getUniqueEffectTargetPieceIds, getUniqueEffectTargetSlotIds, getVisualTargetSlotIdsForHandCard } from "./boardAffordances";
+import { buildBattleAffordances, buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances, buildPlayerGlobalAffordances } from "./boardAffordances";
+import type { BoardAffordance, BoardZoneRef } from "@ward/shared";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
 const BOARD_PREVIEW_STORAGE_VERSION = 11;
@@ -33,6 +32,7 @@ const BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION = 1;
 type FloatingDockPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 type ActionDockPosition = "bottom" | "left" | "right";
 type AttachTargetKind = "PRIMARY_CREATURE" | "LIMITED_SUMMON";
+type EffectTargetBoardOption = { optionId: string; pieceId?: string; slotId?: string };
 
 const FLOATING_DOCK_POSITIONS: FloatingDockPosition[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
 const ACTION_DOCK_POSITIONS: ActionDockPosition[] = ["bottom", "left", "right"];
@@ -185,6 +185,64 @@ function getLatestDiceRollVisual(match: AppMatchState): { id: string; label: str
   return null;
 }
 
+function getAttackAnimationTheme(creatureType: string | undefined): BoardAttackAnimation["theme"] {
+  switch ((creatureType ?? "").toLowerCase()) {
+    case "beast":
+    case "dinosaur":
+      return "beast";
+    case "bug":
+      return "bug";
+    case "cosmic":
+      return "cosmic";
+    case "demon":
+      return "demon";
+    case "dragon":
+      return "dragon";
+    case "elemental":
+      return "elemental";
+    case "humanoid":
+    case "human":
+      return "humanoid";
+    case "mechanical":
+      return "mechanical";
+    case "undead":
+      return "undead";
+    default:
+      return "generic";
+  }
+}
+
+function isBoardPlayerId(value: string | undefined): value is BoardPlayerId {
+  return value === "player_1" || value === "player_2";
+}
+
+function slotIdFromTargetZoneRef(zoneRef: BoardZoneRef | undefined): BoardSlotId | null {
+  if (!zoneRef || !isBoardPlayerId(zoneRef.playerId)) return null;
+
+  switch (zoneRef.zone) {
+    case "PRIMARY_CREATURE":
+      return `${zoneRef.playerId}-primary` as BoardSlotId;
+    case "DECK":
+      return `${zoneRef.playerId}-deck` as BoardSlotId;
+    case "CEMETERY":
+      return `${zoneRef.playerId}-cemetery` as BoardSlotId;
+    case "HAND":
+      return typeof zoneRef.slotIndex === "number"
+        ? `${zoneRef.playerId}-hand-${zoneRef.slotIndex + 1}` as BoardSlotId
+        : null;
+    case "LIMITED_SUMMON":
+      return typeof zoneRef.slotIndex === "number"
+        ? `${zoneRef.playerId}-limited-${zoneRef.slotIndex + 1}` as BoardSlotId
+        : null;
+    case "MAGIC_SLOT":
+      return typeof zoneRef.slotIndex === "number"
+        ? `${zoneRef.playerId}-magic-${zoneRef.slotIndex + 1}` as BoardSlotId
+        : null;
+    default:
+      return null;
+  }
+}
+
 function BoardBattleResolverHud({
   battle,
   effectRoll,
@@ -313,6 +371,9 @@ type BoardPreview3DProps = {
   onApproveRevealRedraw?: () => void;
   onOpeningRoll?: (playerId: "player_1" | "player_2") => void;
   onPlayHandCardToSlot?: (cardInstanceId: string, slotId: string, sacrificeCardInstanceIds?: string[]) => void;
+  onPlayLightningResponse?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
+  onPlayBattleResponse?: (battleSessionId: string, strikeId: string, playerId: BoardPlayerId, cardInstanceId: string) => void;
+  onPassMagicChainPriority?: (playerId: BoardPlayerId) => void;
   onDiscardHandCardToCemetery?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
   onEndTurn?: () => void;
   onAttachEquipMagicToCreature?: (
@@ -504,6 +565,9 @@ export function BoardPreview3D({
   onApproveRevealRedraw,
   onOpeningRoll,
   onPlayHandCardToSlot,
+  onPlayLightningResponse,
+  onPlayBattleResponse,
+  onPassMagicChainPriority,
   onDiscardHandCardToCemetery,
   onEndTurn,
   onAttachEquipMagicToCreature,
@@ -527,12 +591,14 @@ export function BoardPreview3D({
   const focusedPlayerId: BoardPlayerId = controlledPlayerId ?? (match.turn.activePlayerId === "player_1" ? "player_1" : "player_2");
   const [locallyRevealedHands, setLocallyRevealedHands] = useState<Partial<Record<BoardPlayerId, boolean>>>({});
   const revealedHandPlayerIds = match.setup.revealedHandPlayerIds ?? [];
-  const handRevealMode = resolveBoardHandRevealMode({
-    adminView,
-    presentation,
-    locallyRevealedHands,
-    revealedHandPlayerIds
-  });
+  const handRevealMode = (() => {
+    if (adminView && presentation === "lab") return "all";
+    const revealedOwners = new Set<BoardPlayerId>();
+    if (locallyRevealedHands.player_1 || revealedHandPlayerIds.includes("player_1")) revealedOwners.add("player_1");
+    if (locallyRevealedHands.player_2 || revealedHandPlayerIds.includes("player_2")) revealedOwners.add("player_2");
+    if (revealedOwners.size === 0) return null;
+    return revealedOwners.size > 1 ? "all" : [...revealedOwners][0]!;
+  })();
   const renderModel = useMemo(
     () => buildBoardRenderModel(match, { revealHandsForPlayerId: handRevealMode }),
     [handRevealMode, match]
@@ -641,13 +707,16 @@ export function BoardPreview3D({
   useEffect(() => {
     if (!animationQueue.activeEvent) return;
     const profile = getBoardAnimationProfile(animationQueue.activeEvent.type);
+    const plannedDurationMs = animationQueue.activeEvent.usesPlannerOutput
+      ? Math.max(profile.durationMs, ...animationQueue.activeEvent.animationSteps.map(step => "durationMs" in step ? step.durationMs : 0))
+      : profile.durationMs;
     if (runtimeMode === "FAST_FORWARD") {
       setAnimationQueue(current => settleActiveBoardAnimation(current));
       return;
     }
     const timeout = globalThis.setTimeout(() => {
       setAnimationQueue(current => settleActiveBoardAnimation(current));
-    }, profile.durationMs);
+    }, plannedDurationMs);
     return () => globalThis.clearTimeout(timeout);
   }, [animationQueue.activeEvent, runtimeMode]);
 
@@ -756,8 +825,21 @@ export function BoardPreview3D({
   }, [actionDockCollapsed, actionDockPosition, boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, controlsDockPosition, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, selectedZoneId, showAnchors, showDebugPanel, showDiagnostics, showZoneRects, slotOffsets, storageKey, tiltDegrees, visibleSlotLayers, zoneAdjustments, zoomScale]);
 
   const slotById = useMemo(() => new Map(BOARD_SLOTS.map((slot) => [slot.id, slot])), []);
-  const handCards = useMemo(() => getFocusedHandCards(match, focusedPlayerId), [focusedPlayerId, match]);
-  const cardByInstanceId = useMemo(() => buildCardInstanceMap(match), [match]);
+  const handCards = useMemo(() => {
+    const player = match.players.find((item) => item.id === focusedPlayerId);
+    return player?.hand ?? [];
+  }, [focusedPlayerId, match.players]);
+  const cardByInstanceId = useMemo(() => {
+    const cards = match.players.flatMap(player => [
+      ...player.hand,
+      ...player.deck,
+      ...player.cemetery,
+      ...player.field.limitedSummons,
+      ...player.field.magicSlots.filter(Boolean),
+      ...(player.field.primaryCreature ? [player.field.primaryCreature] : [])
+    ]);
+    return new Map(cards.map(card => [card.instanceId, card]));
+  }, [match.players]);
   const inspectedHandCardId = hoveredHandCardId ?? selectedHandCardId;
   const inspectedHandCard = inspectedHandCardId
     ? handCards.find(card => card.instanceId === inspectedHandCardId) ?? null
@@ -765,8 +847,14 @@ export function BoardPreview3D({
   const selectedHandCard = selectedHandCardId
     ? handCards.find(card => card.instanceId === selectedHandCardId) ?? null
     : null;
-  const focusedPlayer = useMemo(() => getFocusedPlayer(match, focusedPlayerId), [focusedPlayerId, match]);
-  const opponentPlayer = useMemo(() => getOpponentPlayer(match, focusedPlayerId), [focusedPlayerId, match]);
+  const focusedPlayer = useMemo(
+    () => match.players.find((player) => player.id === focusedPlayerId) ?? null,
+    [focusedPlayerId, match.players]
+  );
+  const opponentPlayer = useMemo(
+    () => match.players.find((player) => player.id !== focusedPlayerId) ?? null,
+    [focusedPlayerId, match.players]
+  );
   const opponentPlayerId: BoardPlayerId | null = opponentPlayer
     ? opponentPlayer.id === "player_1" ? "player_1" : "player_2"
     : null;
@@ -881,36 +969,108 @@ export function BoardPreview3D({
     });
   }, [sacrificeCandidateIds, selectedHandCardId, selectedSummonRequiredSacrifices]);
 
+  const occupiedMagicSlotIndexes = useMemo(
+    () => Array.from({ length: 5 }, (_, index) => index)
+      .filter(index => occupiedSlotIds.has(`${focusedPlayerId}-magic-${index + 1}`)),
+    [focusedPlayerId, occupiedSlotIds]
+  );
+  const handPlacementAffordances = useMemo(() => buildHandPlacementAffordances({
+    match,
+    playerId: focusedPlayerId,
+    controlledPlayerId,
+    selectedHandCardId,
+    selectedSacrificeIdsByCard,
+    occupiedMagicSlotIndexes
+  }), [controlledPlayerId, focusedPlayerId, match, occupiedMagicSlotIndexes, selectedHandCardId, selectedSacrificeIdsByCard]);
+  const magicChainAffordances = useMemo(
+    () => buildMagicChainAffordances(match, controlledPlayerId),
+    [controlledPlayerId, match]
+  );
+  const battleAffordances = useMemo(
+    () => buildBattleAffordances(match, controlledPlayerId),
+    [controlledPlayerId, match]
+  );
+  const playerGlobalAffordances = useMemo(
+    () => buildPlayerGlobalAffordances(match, controlledPlayerId),
+    [controlledPlayerId, match]
+  );
+  const combinedHandAffordances = useMemo(
+    () => [
+      ...handPlacementAffordances,
+      ...playerGlobalAffordances,
+      ...(match.pendingChain ? magicChainAffordances : []),
+      ...battleAffordances
+    ],
+    [battleAffordances, handPlacementAffordances, magicChainAffordances, match.pendingChain, playerGlobalAffordances]
+  );
+  const getDropZoneSlotIdsForCard = useCallback((cardInstanceId: string) => {
+    return combinedHandAffordances.flatMap(affordance => {
+      if (
+        affordance.kind !== "VALID_DROP_ZONE" ||
+        affordance.sourceCardInstanceId !== cardInstanceId ||
+        affordance.highlightStyle !== "VALID"
+      ) {
+        return [] as string[];
+      }
+      const slotId = slotIdFromTargetZoneRef(affordance.targetZoneRef);
+      return slotId ? [slotId] : [];
+    });
+  }, [combinedHandAffordances]);
   const getLegalTargetSlotIdsForCard = useCallback((cardInstanceId: string) => {
-    return getLegalTargetSlotIdsForHandCard({
-      match,
-      handCards,
-      focusedPlayer,
-      focusedPlayerId,
-      controlledPlayerId,
-      occupiedSlotIds,
-      selectedSacrificeIdsByCard,
-      canDiscardHandCardToCemetery: Boolean(onDiscardHandCardToCemetery),
-      cardInstanceId
-    });
-  }, [controlledPlayerId, focusedPlayer, focusedPlayerId, handCards, match, occupiedSlotIds, onDiscardHandCardToCemetery, selectedSacrificeIdsByCard]);
-  const getVisualTargetSlotIdsForCard = useCallback((cardInstanceId: string) => {
-    return getVisualTargetSlotIdsForHandCard({
-      match,
-      handCards,
-      focusedPlayer,
-      focusedPlayerId,
-      controlledPlayerId,
-      occupiedSlotIds,
-      selectedSacrificeIdsByCard,
-      canDiscardHandCardToCemetery: Boolean(onDiscardHandCardToCemetery),
-      cardInstanceId
-    });
-  }, [controlledPlayerId, focusedPlayer, focusedPlayerId, handCards, match, occupiedSlotIds, onDiscardHandCardToCemetery, selectedSacrificeIdsByCard]);
+    if (
+      match.setup.handDiscardRequiredForPlayerId === focusedPlayerId &&
+      canControlPlayer(focusedPlayerId) &&
+      onDiscardHandCardToCemetery
+    ) {
+      return [`${focusedPlayerId}-cemetery`];
+    }
+    return getDropZoneSlotIdsForCard(cardInstanceId);
+  }, [focusedPlayerId, getDropZoneSlotIdsForCard, match.setup.handDiscardRequiredForPlayerId, onDiscardHandCardToCemetery]);
+  const playableHandCardIds = useMemo(
+    () => new Set(combinedHandAffordances
+      .filter(affordance => (affordance.kind === "PLAYABLE_CARD" || affordance.kind === "VALID_CHAIN_RESPONSE" || affordance.kind === "VALID_BATTLE_RESPONSE") && affordance.sourceCardInstanceId)
+      .map(affordance => affordance.sourceCardInstanceId!)),
+    [combinedHandAffordances]
+  );
+  const playableChainResponseCardIds = useMemo(
+    () => new Set(magicChainAffordances
+      .filter(affordance => affordance.kind === "VALID_CHAIN_RESPONSE" && affordance.actionId === "PLAY_LIGHTNING_RESPONSE" && affordance.sourceCardInstanceId)
+      .map(affordance => affordance.sourceCardInstanceId!)),
+    [magicChainAffordances]
+  );
+  const playableBattleResponseCardIds = useMemo(
+    () => new Set(battleAffordances
+      .filter(affordance => affordance.kind === "VALID_BATTLE_RESPONSE" && affordance.actionId === "PLAY_BATTLE_RESPONSE" && affordance.sourceCardInstanceId)
+      .map(affordance => affordance.sourceCardInstanceId!)),
+    [battleAffordances]
+  );
+  const disabledHandCardReasons = useMemo(() => {
+    const reasons = new Map<string, string>();
+    for (const affordance of combinedHandAffordances) {
+      if (
+        affordance.kind === "DISABLED_ACTION" &&
+        affordance.sourceCardInstanceId &&
+        !playableHandCardIds.has(affordance.sourceCardInstanceId) &&
+        !affordance.targetZoneRef &&
+        affordance.disabledReason
+      ) {
+        reasons.set(affordance.sourceCardInstanceId, affordance.disabledReason);
+      }
+    }
+    return reasons;
+  }, [combinedHandAffordances, playableHandCardIds]);
   const visualTargetSlotIds = useMemo(() => {
     if (!selectedHandCardId) return [] as string[];
-    return getVisualTargetSlotIdsForCard(selectedHandCardId);
-  }, [getVisualTargetSlotIdsForCard, selectedHandCardId]);
+    return getDropZoneSlotIdsForCard(selectedHandCardId);
+  }, [getDropZoneSlotIdsForCard, selectedHandCardId]);
+  const playerGlobalSlotIds = useMemo(() => {
+    return playerGlobalAffordances.flatMap(affordance => {
+      if (affordance.kind !== "AFFECTED_PLAYER_SIDE" && affordance.kind !== "DISABLED_ACTION") return [] as string[];
+      const playerId = affordance.playerId === "player_1" || affordance.playerId === "player_2" ? affordance.playerId : null;
+      if (!playerId) return [] as string[];
+      return [`${playerId}-primary`, `${playerId}-limited-1`, `${playerId}-limited-2`, `${playerId}-magic-1`, `${playerId}-magic-2`, `${playerId}-magic-3`, `${playerId}-magic-4`, `${playerId}-magic-5`, `${playerId}-cemetery`];
+    });
+  }, [playerGlobalAffordances]);
   const sacrificeTargetSlotIds = sacrificeSelectionActive ? [sacrificeDropSlotId] : [];
   const sacrificeCandidatePieceIds = useMemo(() => {
     if (!sacrificeCandidateIds.size) return [] as string[];
@@ -973,23 +1133,96 @@ export function BoardPreview3D({
       return [card.instanceId];
     });
   }, [boardObjects, cardByInstanceId, canControlPlayer, match]);
+  const pendingEffectTargetAffordances = useMemo(() => {
+    const prompt = match.pendingEffectTargetPrompt;
+    if (!prompt) return [] as BoardAffordance[];
+    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [] as BoardAffordance[];
+    return buildPendingEffectTargetAffordances(prompt, controlledPlayerId);
+  }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
+
   const effectTargetBoardOptions = useMemo(() => {
-    return getBoardEffectTargetOptions({ match, boardObjects, controlledPlayerId });
-  }, [boardObjects, controlledPlayerId, match.pendingEffectTargetPrompt]);
+    const affordanceOptions: EffectTargetBoardOption[] = pendingEffectTargetAffordances.flatMap(affordance => {
+      const optionId = affordance.actionId;
+      if (!optionId || affordance.highlightStyle !== "TARGET") return [];
+
+      if (
+        (
+          affordance.kind === "VALID_TARGET_CARD" ||
+          affordance.kind === "VALID_DISCARD_CARD" ||
+          affordance.kind === "REVEALED_HAND_CARD"
+        ) &&
+        affordance.targetCardInstanceId
+      ) {
+        const object = boardObjects.find(candidate => candidate.cardInstanceId === affordance.targetCardInstanceId);
+        if (!object || !["primary", "limited", "magic", "hand"].includes(object.lane)) return [];
+        return [{
+          optionId,
+          pieceId: object.id,
+          slotId: object.slotId
+        }];
+      }
+
+      if (affordance.kind === "VALID_TARGET_ZONE" || affordance.kind === "VALID_DECK_STACK") {
+        const slotId = slotIdFromTargetZoneRef(affordance.targetZoneRef);
+        return slotId ? [{ optionId, slotId }] : [];
+      }
+
+      return [];
+    });
+    if (affordanceOptions.length > 0) return affordanceOptions;
+
+    const prompt = match.pendingEffectTargetPrompt;
+    if (!prompt) return [] as EffectTargetBoardOption[];
+    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [] as EffectTargetBoardOption[];
+
+    return prompt.options.flatMap(option => {
+      if (!option.cardInstanceId) return [];
+      const object = boardObjects.find(candidate => candidate.cardInstanceId === option.cardInstanceId);
+      if (!object || !["primary", "limited", "magic"].includes(object.lane)) return [];
+      return [{
+        optionId: option.id,
+        pieceId: object.id,
+        slotId: object.slotId
+      }];
+    });
+  }, [boardObjects, controlledPlayerId, match.pendingEffectTargetPrompt, pendingEffectTargetAffordances]);
   const effectTargetSlotIds = useMemo(
-    () => getUniqueEffectTargetSlotIds(effectTargetBoardOptions),
+    () => [...new Set(effectTargetBoardOptions.map(option => option.slotId).filter((slotId): slotId is string => !!slotId))],
     [effectTargetBoardOptions]
   );
   const effectTargetPieceIds = useMemo(
-    () => getUniqueEffectTargetPieceIds(effectTargetBoardOptions),
+    () => [...new Set(effectTargetBoardOptions.map(option => option.pieceId).filter((pieceId): pieceId is string => !!pieceId))],
     [effectTargetBoardOptions]
   );
   const effectSourcePieceIds = useMemo(() => {
-    return getEffectSourcePieceIds({ match, boardObjects });
+    const prompt = match.pendingEffectTargetPrompt;
+    if (!prompt) return [] as string[];
+    const sourceObject = boardObjects.find(object => object.cardInstanceId === prompt.sourceCardInstanceId);
+    return sourceObject ? [sourceObject.id] : [];
   }, [boardObjects, match.pendingEffectTargetPrompt]);
   const effectTargetOptionByCardId = useMemo(() => {
-    return getEffectTargetOptionByCardId({ match, controlledPlayerId });
-  }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
+    const prompt = match.pendingEffectTargetPrompt;
+    const options = new Map<string, string>();
+    for (const affordance of pendingEffectTargetAffordances) {
+      if (
+        (
+          affordance.kind === "VALID_TARGET_CARD" ||
+          affordance.kind === "VALID_DISCARD_CARD" ||
+          affordance.kind === "REVEALED_HAND_CARD"
+        ) &&
+        affordance.targetCardInstanceId &&
+        affordance.actionId
+      ) {
+        options.set(affordance.targetCardInstanceId, affordance.actionId);
+      }
+    }
+    if (!prompt || options.size > 0) return options;
+    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return options;
+    for (const option of prompt.options) {
+      if (option.cardInstanceId) options.set(option.cardInstanceId, option.id);
+    }
+    return options;
+  }, [controlledPlayerId, match.pendingEffectTargetPrompt, pendingEffectTargetAffordances]);
   const resolveBoardEffectTarget = (optionId: string) => {
     const prompt = match.pendingEffectTargetPrompt;
     if (!prompt) return;
@@ -1069,11 +1302,11 @@ export function BoardPreview3D({
   const legalBattleAttackerIds = useMemo(() => {
     if (!activeBattlePlayer || !battleControlEnabled) return new Set<string>();
     return new Set(
-      getPlayerBattleCreatureOptions(match, activeBattlePlayer)
-        .filter(option => !option.usedThisCombat && !option.statusBattleSkipReason)
-        .map(option => option.card.instanceId)
+      battleAffordances
+        .filter(affordance => affordance.kind === "VALID_BATTLE_ATTACKER" && affordance.sourceCardInstanceId)
+        .map(affordance => affordance.sourceCardInstanceId!)
     );
-  }, [activeBattlePlayer, battleControlEnabled, match]);
+  }, [activeBattlePlayer, battleAffordances, battleControlEnabled]);
   const battleDefender = useMemo(() => {
     if (!activeBattlePlayer || !battleControlEnabled) return null;
     const defenderPlayer = match.players.find(player => player.id !== activeBattlePlayer.id);
@@ -1480,7 +1713,9 @@ export function BoardPreview3D({
     currentAttackAnimationKeyRef.current = null;
   }, [activeEvent?.eventId, activeEvent?.type]);
   const activeAttackAnimation = useMemo<BoardAttackAnimation | null>(() => {
-    if (activeEvent?.type !== "BATTLE_DAMAGE_APPLIED") return null;
+    if (activeEvent?.type !== "BATTLE_DAMAGE_APPLIED" || !activeEvent.payload || typeof activeEvent.payload !== "object") {
+      return null;
+    }
     const attackAnimationKey = `${activeEvent.matchId}:${activeEvent.sequenceNumber}:${activeEvent.rawType}`;
     if (currentAttackAnimationKeyRef.current !== attackAnimationKey) {
       if (playedAttackAnimationKeysRef.current.has(attackAnimationKey)) {
@@ -1489,15 +1724,70 @@ export function BoardPreview3D({
       currentAttackAnimationKeyRef.current = attackAnimationKey;
       playedAttackAnimationKeysRef.current.add(attackAnimationKey);
     }
-    return planBoardAttackAnimation({
-      activeEvent,
-      boardObjects,
-      cardByInstanceId,
-      cardCatalog: match.cardCatalog
-    });
+
+    const payload = activeEvent.payload as Record<string, unknown>;
+    const attackerCreatureInstanceId = typeof payload.attackerCreatureInstanceId === "string" ? payload.attackerCreatureInstanceId : null;
+    const targetCreatureInstanceId = typeof payload.targetCreatureInstanceId === "string" ? payload.targetCreatureInstanceId : null;
+    if (!attackerCreatureInstanceId || !targetCreatureInstanceId) return null;
+
+    const sourceObject = boardObjects.find(object => object.cardInstanceId === attackerCreatureInstanceId);
+    const targetObject = boardObjects.find(object => object.cardInstanceId === targetCreatureInstanceId);
+    if (!sourceObject || !targetObject) return null;
+
+    const attackerCard = cardByInstanceId.get(attackerCreatureInstanceId);
+    const attackerDefinition = attackerCard ? match.cardCatalog[attackerCard.cardId] : undefined;
+    const creatureType = attackerDefinition?.cardType === "CREATURE"
+      ? attackerDefinition.creatureType
+      : "Creature";
+    const rawDamageAmount = payload.damageAmount;
+    const damageAmount = typeof rawDamageAmount === "number" ? rawDamageAmount : 0;
+    const damageRollDice = Array.isArray(payload.damageRollDice)
+      ? payload.damageRollDice.filter((value): value is number => typeof value === "number")
+      : [];
+
+    return {
+      id: activeEvent.eventId,
+      sourcePieceId: sourceObject.id,
+      targetPieceId: targetObject.id,
+      creatureType,
+      theme: getAttackAnimationTheme(creatureType),
+      damageAmount,
+      damageRollDice,
+      killed: payload.killed === true
+    };
   }, [activeEvent, boardObjects, cardByInstanceId, match.cardCatalog]);
   const animationHighlights = useMemo(() => {
-    return getBoardAnimationHighlights({ activeEvent, boardObjects });
+    if (!activeEvent) return { slotIds: [] as string[], pieceIds: [] as string[] };
+    const candidateSlotIds = activeEvent.visualTargets.slotIds.filter(value =>
+      BOARD_SLOTS.some(slot => slot.id === value)
+    );
+    if (
+      (
+        activeEvent.type === "PLAYER_STAT_CHANGED" ||
+        activeEvent.type === "CEMETERY_HP_CHANGED" ||
+        activeEvent.type === "PLAYER_LOCK_APPLIED" ||
+        activeEvent.type === "PLAYER_LOCK_REMOVED" ||
+        activeEvent.type === "TURN_SKIPPED"
+      ) &&
+      (activeEvent.playerId === "player_1" || activeEvent.playerId === "player_2")
+    ) {
+      candidateSlotIds.push(
+        `${activeEvent.playerId}-primary`,
+        `${activeEvent.playerId}-limited-1`,
+        `${activeEvent.playerId}-limited-2`,
+        `${activeEvent.playerId}-magic-1`,
+        `${activeEvent.playerId}-magic-2`,
+        `${activeEvent.playerId}-magic-3`,
+        `${activeEvent.playerId}-magic-4`,
+        `${activeEvent.playerId}-magic-5`,
+        `${activeEvent.playerId}-cemetery`
+      );
+    }
+    const instanceIds = activeEvent.visualTargets.cardInstanceIds;
+    const pieceIds = boardObjects
+      .filter(object => instanceIds.some(instanceId => object.id.includes(instanceId)))
+      .map(object => object.id);
+    return { slotIds: [...new Set(candidateSlotIds)], pieceIds: [...new Set(pieceIds)] };
   }, [activeEvent, boardObjects]);
 
   const copySelectedSlotSnapshot = async () => {
@@ -1612,14 +1902,23 @@ export function BoardPreview3D({
   });
   const blockedReasonsBySlotId = useMemo<Record<string, string>>(() => {
     if (!selectedHandCardId) return {};
-    const selectedCard = handCards.find(card => card.instanceId === selectedHandCardId);
-    if (!selectedCard) return {};
-    return Object.fromEntries(
-      BOARD_SLOTS
-        .filter(slot => !visualTargetSlotIds.includes(slot.id) && !sacrificeTargetSlotIds.includes(slot.id))
-        .map(slot => [slot.id, `Cannot play ${match.cardCatalog[selectedCard.cardId]?.name ?? "this card"} to ${slot.label}`])
-    );
-  }, [handCards, match.cardCatalog, sacrificeTargetSlotIds, selectedHandCardId, visualTargetSlotIds]);
+    const reasons: Record<string, string> = {};
+    for (const affordance of handPlacementAffordances) {
+      if (
+        affordance.kind !== "DISABLED_ACTION" ||
+        affordance.sourceCardInstanceId !== selectedHandCardId ||
+        !affordance.targetZoneRef ||
+        !affordance.disabledReason
+      ) {
+        continue;
+      }
+      const slotId = slotIdFromTargetZoneRef(affordance.targetZoneRef);
+      if (slotId && !sacrificeTargetSlotIds.includes(slotId)) {
+        reasons[slotId] = affordance.disabledReason;
+      }
+    }
+    return reasons;
+  }, [handPlacementAffordances, sacrificeTargetSlotIds, selectedHandCardId]);
 
   const layoutDraftIsValid = (() => {
     if (!layoutDraft.trim()) return false;
@@ -1729,7 +2028,7 @@ export function BoardPreview3D({
           <div className="board-preview-3d__hud-tab-panel">
             {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
             <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
-            <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
+            <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({animationQueue.activeEvent?.usesPlannerOutput ? "planner" : getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
             <p>Drag to pan | Wheel to zoom | WASD to move | +/- zoom | 0 reset</p>
             {intentLabel ? <p>Intent: {intentLabel}</p> : null}
             {commandLabel ? <p>Command: {commandLabel}</p> : null}
@@ -1955,7 +2254,7 @@ export function BoardPreview3D({
               setDeckActionsExpanded(true);
               setDeckHandControlsOwner(owner);
             }}
-            draggableHandCardIds={handCards.map(card => card.instanceId)}
+            draggableHandCardIds={[...playableHandCardIds]}
             draggableBattleAttackerCardIds={[...legalBattleAttackerIds]}
             draggableEquipMagicCardIds={draggableEquipMagicCardIds}
             validBattleTargetPieceIds={battleDefender ? [battleDefender.object.id] : battleTargetPieceIds}
@@ -1963,7 +2262,7 @@ export function BoardPreview3D({
             validEffectTargetPieceIds={effectTargetPieceIds}
             validEffectTargetSlotIds={effectTargetSlotIds}
             effectSourcePieceIds={effectSourcePieceIds}
-            highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...sacrificeTargetSlotIds, ...(discardRequiredForFocusedPlayer ? [`${focusedPlayerId}-cemetery`] : []), ...battleTargetSlotIds, ...effectTargetSlotIds]}
+            highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...playerGlobalSlotIds, ...sacrificeTargetSlotIds, ...(discardRequiredForFocusedPlayer ? [`${focusedPlayerId}-cemetery`] : []), ...battleTargetSlotIds, ...effectTargetSlotIds]}
             highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...effectTargetPieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
             equipAttachSourcePieceIds={equipAttachSourcePieceIds}
             battleSpeedBadges={battleSpeedBadges}
@@ -2085,21 +2384,46 @@ export function BoardPreview3D({
               {actionDock}
             </div>
           ) : null}
+          {match.pendingChain?.priorityPlayerId && onPassMagicChainPriority && (!controlledPlayerId || controlledPlayerId === match.pendingChain.priorityPlayerId) ? (
+            <aside className="board-dice-control board-dice-control--player_1 is-ready" aria-label="Magic Chain priority">
+              <button
+                type="button"
+                className="board-dice-control__event"
+                onClick={() => onPassMagicChainPriority(match.pendingChain!.priorityPlayerId as BoardPlayerId)}
+              >
+                <strong>Chain Priority</strong>
+                <span>Pass response priority</span>
+              </button>
+            </aside>
+          ) : null}
           {handCards.length > 0 ? (
             <section className="board-preview-3d__hand-rail" aria-label="3D board hand rail">
               <div className="board-preview-3d__hand-rail-tab">Hand {handCards.length}</div>
               <div className="board-preview-3d__hand-rail-cards">
-                {handCards.map(card => (
+                {handCards.map(card => {
+                  const disabledReason = disabledHandCardReasons.get(card.instanceId);
+                  return (
                   <button
                     key={card.instanceId}
                     type="button"
-                    draggable
+                    draggable={playableHandCardIds.has(card.instanceId) || sacrificeCandidateIds.has(card.instanceId)}
                     className={[
                       selectedHandCardId === card.instanceId ? "is-selected" : "",
+                      playableHandCardIds.has(card.instanceId) ? "is-playable" : "",
+                      disabledReason ? "is-disabled-action" : "",
                       sacrificeCandidateIds.has(card.instanceId) ? "is-sacrifice-candidate" : "",
                       selectedSacrificeIdSet.has(card.instanceId) ? "is-selected-sacrifice" : ""
                     ].filter(Boolean).join(" ") || undefined}
+                    title={disabledReason ?? undefined}
                     onClick={() => {
+                      if (playableChainResponseCardIds.has(card.instanceId) && onPlayLightningResponse) {
+                        onPlayLightningResponse(focusedPlayerId, card.instanceId);
+                        return;
+                      }
+                      if (playableBattleResponseCardIds.has(card.instanceId) && match.pendingBattle && pendingBattleStrike && onPlayBattleResponse) {
+                        onPlayBattleResponse(match.pendingBattle.id, pendingBattleStrike.id, focusedPlayerId, card.instanceId);
+                        return;
+                      }
                       if (sacrificeCandidateIds.has(card.instanceId) && selectedHandCardId !== card.instanceId) {
                         toggleSacrificeSelection(card.instanceId);
                         return;
@@ -2111,6 +2435,11 @@ export function BoardPreview3D({
                     onBlur={() => setHoveredHandCardId(current => current === card.instanceId ? null : current)}
                     onMouseLeave={() => setHoveredHandCardId(current => current === card.instanceId ? null : current)}
                     onDragStart={(event) => {
+                      if (!playableHandCardIds.has(card.instanceId) && !sacrificeCandidateIds.has(card.instanceId)) {
+                        event.preventDefault();
+                        setStatusMessage(disabledReason ?? "That card cannot be played right now.");
+                        return;
+                      }
                       if (!sacrificeCandidateIds.has(card.instanceId)) {
                         setSelectedHandCardId(card.instanceId);
                       }
@@ -2121,7 +2450,8 @@ export function BoardPreview3D({
                     <MatchCardImage match={match} card={card} className="board-preview-3d__hand-card-art" />
                     <span>{match.cardCatalog[card.cardId]?.name ?? card.cardId}</span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </section>
           ) : null}
@@ -2130,7 +2460,10 @@ export function BoardPreview3D({
               <div className="board-preview-3d__cemetery-viewer-header">
                 <div>
                   <strong>{cemeteryViewerPlayer.displayName} Cemetery</strong>
-                  <span>{cemeteryCards.length} cards / {cemeteryViewerPlayer.cemeteryCreatureHpTotal} HP</span>
+                  <span className={Number(cemeteryViewerPlayer.cemeteryHpAdjustment ?? 0) !== 0 ? "is-cemetery-hp-adjusted" : undefined}>
+                    {cemeteryCards.length} cards / {cemeteryViewerPlayer.cemeteryCreatureHpTotal} HP
+                    {Number(cemeteryViewerPlayer.cemeteryHpAdjustment ?? 0) !== 0 ? ` (${Number(cemeteryViewerPlayer.cemeteryHpAdjustment ?? 0) > 0 ? "+" : ""}${cemeteryViewerPlayer.cemeteryHpAdjustment} effect)` : ""}
+                  </span>
                 </div>
                 <button type="button" onClick={() => {
                   setCemeteryViewerOwner(null);

@@ -218,7 +218,18 @@ export function discardCardFromHand(
     sourceSlotId: getHandAnimationSlotId(playerId, handIndex),
     targetSlotId: `${playerId === "player_2" ? "player_2" : "player_1"}-cemetery`,
     handSizeAfterDiscard: player.hand.length,
-    cemeteryCreatureHpTotal: player.cemeteryCreatureHpTotal
+    cemeteryCreatureHpTotal: player.cemeteryCreatureHpTotal,
+    boardEvents: [
+      {
+        type: "CARD_DISCARDED",
+        playerId,
+        actionType: "DISCARD_CARD",
+        reason: "HAND_SIZE_DISCARD",
+        cardInstanceId,
+        fromZoneRef: { playerId, zone: "HAND" },
+        toZoneRef: { playerId, zone: "CEMETERY" }
+      }
+    ]
   });
 
   if (player.hand.length <= 8) {
@@ -312,7 +323,30 @@ export function requestNoCreatureRedrawReveal(
     approvingPlayerId: opponent.id,
     redrawCount: player.hand.length,
     revealedCards,
-    wasForcedReplacement: isForcedPrimaryReplacement
+    wasForcedReplacement: isForcedPrimaryReplacement,
+    boardEvents: [
+      {
+        type: "HAND_REVEALED",
+        playerId: opponent.id,
+        actionType: "REVEAL_HAND",
+        reason: "NO_CREATURE_REDRAW_REVEAL",
+        fromZoneRef: { playerId: player.id, zone: "HAND" },
+        toZoneRef: { playerId: opponent.id, zone: "PROMPT" },
+        metadata: {
+          viewerPlayerId: opponent.id,
+          revealedPlayerId: player.id
+        }
+      },
+      ...revealedCards.map(card => ({
+        type: "CARD_REVEALED",
+        cardInstanceId: card.cardInstanceId,
+        playerId: opponent.id,
+        actionType: "REVEAL_HAND",
+        reason: "NO_CREATURE_REDRAW_REVEAL",
+        fromZoneRef: { playerId: player.id, zone: "HAND" },
+        toZoneRef: { playerId: opponent.id, zone: "PROMPT" }
+      }))
+    ]
   });
 
   return nextState;
