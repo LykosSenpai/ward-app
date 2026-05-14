@@ -2069,6 +2069,8 @@ export default function App() {
             socket.disconnect();
             socket.connect();
           }} />
+        ) : activePage === "marketplace" ? (
+          <MarketplacePage authUser={authUser} cardLibrary={cardLibrary} />
         ) : activePage === "card-library" ? (
           <LibraryDecksPage
             selectedPackCount={selectedPackIds.length}
