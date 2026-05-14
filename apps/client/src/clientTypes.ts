@@ -145,6 +145,24 @@ export type CardLibraryCardSummary = {
 
 export type CardOwnershipMap = Record<string, number>;
 
+export type CardOwnershipVariant = "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
+
+export type CardOwnershipRecord = Record<CardOwnershipVariant, number>;
+
+export type CollectionCompletionCardRequest = {
+  cardId: string;
+  requiredQuantity: number;
+  ownership?: Partial<CardOwnershipRecord>;
+};
+
+export type CollectionCompletionSummary = {
+  cardId: string;
+  requiredQuantity: number;
+  ownedQuantity: number;
+  missingQuantity: number;
+  ownership: CardOwnershipRecord;
+};
+
 export type CardDefinitionWithClientFields = BaseMatchState["cardCatalog"][string] & {
   text?: string;
   effects?: unknown[];
