@@ -188,6 +188,33 @@ export type CollectionCompletionSummary = {
   ownership: CardOwnershipRecord;
 };
 
+export type CardOwnershipVariant = "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
+
+export type CardOwnershipRecord = {
+  cardId: string;
+  owned: Record<CardOwnershipVariant, number>;
+  updatedAt: string;
+};
+
+export type VariantCompletionSummary = {
+  variant: CardOwnershipVariant;
+  ownedCompleteCards: number;
+  totalCards: number;
+  missingCards: number;
+  percentComplete: number;
+};
+
+export type MissingCollectionItem = {
+  cardId: string;
+  cardName: string;
+  generation: string;
+  cardNumber: string;
+  variant: CardOwnershipVariant;
+  ownedQuantity: number;
+  requiredQuantity: number;
+  missingQuantity: number;
+};
+
 export type CardDefinitionWithClientFields = BaseMatchState["cardCatalog"][string] & {
   text?: string;
   effects?: unknown[];
