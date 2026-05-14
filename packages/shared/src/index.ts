@@ -1145,3 +1145,145 @@ export type PendingEffectTargetPrompt = {
   targetKind: EffectTargetKind;
   options: EffectTargetOption[];
 };
+
+export type MarketplaceCardVariant =
+  | "DEFAULT"
+  | "HOLO"
+  | "ZERO"
+  | "ZERO_HOLO";
+
+export type MarketplacePostStatus = "ACTIVE" | "PAUSED" | "CLOSED";
+export type MarketplaceItemPurpose = "HAVE" | "NEED";
+export type MarketplaceItemSource =
+  | "MANUAL"
+  | "AUTO_COLLECTION"
+  | "AUTO_COMPLETION_NEED";
+
+export interface MarketplacePostItem {
+  id: string;
+  source: MarketplaceItemSource;
+  purpose: MarketplaceItemPurpose;
+  cardId: string;
+  cardName: string;
+  generation: string;
+  cardNumber: string;
+  variant: MarketplaceCardVariant;
+  quantity: number;
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+  askingPriceText?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplacePost {
+  id: string;
+  userDisplayName: string;
+  discordHandle: string;
+  title: string;
+  description?: string;
+  status: MarketplacePostStatus;
+  manualItems: MarketplacePostItem[];
+  autoListingSettingsId?: string;
+  autoNeedRuleIds?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceAutoListingSettings {
+  id: string;
+  enabled: boolean;
+  retainByVariant: Record<MarketplaceCardVariant, number>;
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+  defaultSalePriceText?: string;
+  defaultTradeNote?: string;
+  includeGenerations: string[];
+  includeRarities?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceRetainOverride {
+  id: string;
+  cardId: string;
+  variant: MarketplaceCardVariant;
+  retainQuantity: number;
+  tradeEnabled?: boolean;
+  saleEnabled?: boolean;
+  forceListQuantity?: number;
+  neverAutoList?: boolean;
+  salePriceText?: string;
+  note?: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceAutoNeedRule {
+  id: string;
+  enabled: boolean;
+  generation: string;
+  variants: MarketplaceCardVariant[];
+  desiredQuantityPerCard: number;
+  includeOwnedBelowDesired: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MarketplaceMatchType =
+  | "THEY_HAVE_WHAT_I_NEED"
+  | "I_HAVE_WHAT_THEY_NEED"
+  | "MUTUAL_TRADE_MATCH";
+
+export type MarketplaceTransactionStatus =
+  | "PENDING_CONFIRMATION"
+  | "CONFIRMED_BY_ONE_PARTY"
+  | "COMPLETED"
+  | "DENIED"
+  | "EXPIRED"
+  | "CANCELLED";
+
+export interface MarketplaceTransactionItem {
+  id: string;
+  ownerPostId: string;
+  cardId: string;
+  cardName: string;
+  generation: string;
+  cardNumber: string;
+  variant: MarketplaceCardVariant;
+  quantity: number;
+  source: MarketplaceItemSource;
+}
+
+export interface MarketplaceTransaction {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  status: MarketplaceTransactionStatus;
+  initiatorPostId: string;
+  counterpartyPostId: string;
+  initiatorUserDisplayName: string;
+  counterpartyUserDisplayName: string;
+  initiatorDiscordHandle: string;
+  counterpartyDiscordHandle: string;
+  itemsFromInitiator: MarketplaceTransactionItem[];
+  itemsFromCounterparty: MarketplaceTransactionItem[];
+  confirmations: {
+    initiatorConfirmedAt?: string;
+    counterpartyConfirmedAt?: string;
+    initiatorDeniedAt?: string;
+    counterpartyDeniedAt?: string;
+  };
+  completionNote?: string;
+}
+
+export interface MarketplaceSettingsRecord {
+  autoListings: MarketplaceAutoListingSettings[];
+  retainOverrides: MarketplaceRetainOverride[];
+  autoNeedRules: MarketplaceAutoNeedRule[];
+}
+
+export function marketplaceCardKey(cardId: string, variant: MarketplaceCardVariant): string {
+  return `${cardId}::${variant}`;
+}
