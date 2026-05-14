@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { AuthUser } from "../clientTypes";
+import type { AuthUser, CardLibraryCardSummary } from "../clientTypes";
 import { MarketplacePostCard, type MarketplacePost } from "./MarketplacePostCard";
 import { MarketplacePostEditor, type MarketplacePostDraft } from "./MarketplacePostEditor";
 import { splitManualItems } from "../marketplaceHelpers";
@@ -9,7 +9,7 @@ type Props = {
   authUser: AuthUser;
 };
 
-export function MarketplacePage({ authUser }: Props) {
+export function MarketplacePage({ authUser, cardLibrary }: Props) {
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
 
   useEffect(() => {
@@ -36,6 +36,7 @@ export function MarketplacePage({ authUser }: Props) {
       note: draft.note.trim() || undefined
     };
     socket.emit("marketplace:createPost", next);
+    setSelectedCard("");
   };
 
   return (
