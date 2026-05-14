@@ -10,6 +10,13 @@ export type BoardEffectTargetOption = {
   slotId?: string;
 };
 
+export type BoardAffordanceRenderState = {
+  effectTargetOptions: BoardEffectTargetOption[];
+  effectTargetSlotIds: string[];
+  effectTargetPieceIds: string[];
+  effectTargetOptionByCardId: Map<string, string>;
+};
+
 type PendingEffectTargetOption = NonNullable<AppMatchState["pendingEffectTargetPrompt"]>["options"][number];
 
 type HandCardSlotParams = {
@@ -274,4 +281,35 @@ export function getEffectTargetOptionByCardIdFromAffordances(affordances: BoardA
     }
   }
   return options;
+}
+
+export function buildBoardAffordanceRenderState(params: {
+  match: AppMatchState;
+  boardObjects: BoardObject[];
+  controlledPlayerId: BoardPlayerId | null;
+  affordances: BoardAffordance[];
+}): BoardAffordanceRenderState {
+  const affordanceTargetOptions = getBoardEffectTargetOptionsFromAffordances({
+    affordances: params.affordances,
+    boardObjects: params.boardObjects
+  });
+  const effectTargetOptions = affordanceTargetOptions.length > 0
+    ? affordanceTargetOptions
+    : getBoardEffectTargetOptions({
+      match: params.match,
+      boardObjects: params.boardObjects,
+      controlledPlayerId: params.controlledPlayerId
+    });
+  const affordanceOptionByCardId = getEffectTargetOptionByCardIdFromAffordances(params.affordances);
+  return {
+    effectTargetOptions,
+    effectTargetSlotIds: getUniqueEffectTargetSlotIds(effectTargetOptions),
+    effectTargetPieceIds: getUniqueEffectTargetPieceIds(effectTargetOptions),
+    effectTargetOptionByCardId: affordanceOptionByCardId.size > 0
+      ? affordanceOptionByCardId
+      : getEffectTargetOptionByCardId({
+        match: params.match,
+        controlledPlayerId: params.controlledPlayerId
+      })
+  };
 }

@@ -4,7 +4,7 @@ import { buildBoardInteractionContext, buildBoardRenderModel, translateGameEvent
 import { createBoardAnimationQueueState, enqueueBoardRenderEvents, settleActiveBoardAnimation, startNextBoardAnimation } from "../src/components/boardAnimationQueue";
 import { resetBoardAnimationQueueToSequence } from "../src/components/boardAnimationQueue";
 import { getBoardAnimationProfile } from "../src/components/boardAnimationProfiles";
-import { buildBoardAffordances } from "../src/components/boardAffordances";
+import { buildBoardAffordanceRenderState, buildBoardAffordances } from "../src/components/boardAffordances";
 import { decideBoardReconciliation } from "../src/components/boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "../src/components/boardRuntimeHealth";
 import { mapPointerGestureToIntent } from "../src/components/boardInteractionIntents";
@@ -118,5 +118,24 @@ assert.equal(affordances[0].promptId, "prompt-1");
 assert.equal(affordances[0].actionId, "option-1");
 assert.equal(affordances[0].targetCardInstanceId, "target-1");
 assert.deepEqual(affordances[0].targetZoneRef, { playerId: "player_2", zone: "PRIMARY_CREATURE" });
+const affordanceRenderState = buildBoardAffordanceRenderState({
+  match: promptMatch,
+  controlledPlayerId: "player_1",
+  affordances,
+  boardObjects: [{
+    id: "player_2-primary",
+    cardInstanceId: "target-1",
+    label: "Player 2 Primary",
+    owner: "player_2",
+    xPercent: 50,
+    zPercent: 26,
+    yDepth: 12,
+    lane: "primary",
+    slotId: "player_2-primary"
+  }]
+});
+assert.deepEqual(affordanceRenderState.effectTargetPieceIds, ["player_2-primary"]);
+assert.deepEqual(affordanceRenderState.effectTargetSlotIds, ["player_2-primary"]);
+assert.equal(affordanceRenderState.effectTargetOptionByCardId.get("target-1"), "option-1");
 
 console.log("board render adapter checks passed");
