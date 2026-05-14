@@ -25,6 +25,8 @@ type LibraryDecksPageProps = {
   onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
+  onAddMarketplaceNeed?: (payload: Record<string, unknown>) => void;
+  onAddMarketplaceHave?: (payload: Record<string, unknown>) => void;
   canUseDevTools?: boolean;
   onSaveCardLimit?: (cardId: string, status: "LEGAL" | "LIMITED" | "BANNED") => void;
 };
@@ -52,6 +54,8 @@ export function LibraryDecksPage({
   onSetCardCopies,
   onSetOwnedCopies,
   onSaveDeck,
+  onAddMarketplaceNeed,
+  onAddMarketplaceHave,
   canUseDevTools = false,
   onSaveCardLimit
 }: LibraryDecksPageProps) {
@@ -80,6 +84,8 @@ export function LibraryDecksPage({
         onSetCardCopies={onSetCardCopies}
         onSetOwnedCopies={onSetOwnedCopies}
         onSaveDeck={onSaveDeck}
+        onAddMarketplaceNeed={onAddMarketplaceNeed}
+        onAddMarketplaceHave={onAddMarketplaceHave}
         canUseDevTools={canUseDevTools}
         onSaveCardLimit={onSaveCardLimit}
       />
