@@ -19,6 +19,7 @@ import { MatchLobbyPanel } from "./components/MatchLobbyPanel";
 import { CompactMatchControlPanel } from "./components/CompactMatchControlPanel";
 import { MatchStatePanel } from "./components/MatchStatePanel";
 import { MarketplaceTransactionPanel } from "./components/MarketplaceTransactionPanel";
+import { MarketplacePage } from "./components/MarketplacePage";
 import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { BoardPreview3D } from "./components/BoardPreview3D";
 import type { PointerGestureIntent } from "./components/boardInteractionIntents";
@@ -70,7 +71,7 @@ import type {
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
-type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
+type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
 type PlayViewMode = "board3d";
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
@@ -288,9 +289,10 @@ export default function App() {
     if (isAdminUser) return true;
     if (page === "play") return featureFlagsByKey["play-table"]?.enabledForPlayers === true;
     if (page === "card-library") return featureFlagsByKey["card-library"]?.enabledForPlayers === true;
-    if (page === "deck-library") return featureFlagsByKey["deck-library"]?.enabledForPlayers === true;
+    if (page === "deck-library") return featureFlagsByKey["deck-builder"]?.enabledForPlayers === true;
+    if (page === "marketplace") return featureFlagsByKey.marketplace?.enabledForPlayers === true;
     if (page === "saved-matches") return featureFlagsByKey["saved-matches"]?.enabledForPlayers === true;
-    if (page === "board-preview") return featureFlagsByKey["board-preview"]?.enabledForPlayers === true;
+    if (page === "board-preview") return canUseDevTools;
     return canUseDevTools;
   }
 
@@ -1937,6 +1939,12 @@ export default function App() {
           >
             Saved Matches
           </button>}
+          {canSeePage("marketplace") && <button
+            className={activePage === "marketplace" ? "app-page-nav-button active" : "app-page-nav-button"}
+            onClick={() => setActivePage("marketplace")}
+          >
+            Marketplace
+          </button>}
           <button
             className={activePage === "profile" ? "app-page-nav-button active" : "app-page-nav-button"}
             onClick={() => setActivePage("profile")}
@@ -2117,9 +2125,10 @@ export default function App() {
             onSaveCardLimit={saveCardTournamentLimit}
           />
         ) : !match ? (
-          <section className="play-lobby-workspace">
-            <section className="play-setup-main">
-              <MatchLobbyPanel
+          <>
+            <section className="play-lobby-workspace">
+              <section className="play-setup-main">
+                <MatchLobbyPanel
                 user={authUser}
                 lobbies={matchLobbies}
                 activeLobby={activeLobby}
@@ -2136,16 +2145,17 @@ export default function App() {
                 onStartMatch={startLobbyMatch}
                 canUseDevTools={canUseDevTools}
                 onCleanupStaleLobbies={cleanupStaleLobbies}
-              />
+                />
+              </section>
             </section>
-          </section>
-          <MarketplaceTransactionPanel
-            transactions={marketplaceTransactions}
-            onRefresh={refreshMarketplaceTransactions}
-            onConfirm={confirmMarketplaceTransaction}
-            onDeny={denyMarketplaceTransaction}
-            onCancel={cancelMarketplaceTransaction}
-          />
+            <MarketplaceTransactionPanel
+              transactions={marketplaceTransactions}
+              onRefresh={refreshMarketplaceTransactions}
+              onConfirm={confirmMarketplaceTransaction}
+              onDeny={denyMarketplaceTransaction}
+              onCancel={cancelMarketplaceTransaction}
+            />
+          </>
         ) : (
           <>
             <section className="play-view-toolbar" aria-label="Play table view mode">

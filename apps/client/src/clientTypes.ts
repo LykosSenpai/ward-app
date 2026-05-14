@@ -7,7 +7,6 @@
   MarketplacePost,
   MarketplaceRetainOverride,
   MarketplaceTransaction,
-  MarketplaceTransactionStatus,
   WardEngineEffect,
 } from "@ward/shared";
 
@@ -155,21 +154,6 @@ export type CardLibraryCardSummary = {
 };
 
 export type CardOwnershipMap = Record<string, number>;
-export type MarketplaceTradeLine = { cardId: string; quantity: number };
-export type MarketplaceTransactionStatus = "PENDING_CONFIRMATION" | "CONFIRMED_BY_ONE_PARTY" | "COMPLETED" | "DENIED" | "CANCELED" | "EXPIRED";
-export type MarketplaceTransaction = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  expiresAt: string;
-  status: MarketplaceTransactionStatus;
-  requesterUserId: string;
-  responderUserId: string;
-  offered: MarketplaceTradeLine[];
-  requested: MarketplaceTradeLine[];
-  confirmedByUserIds: string[];
-};
-
 export type CardOwnershipVariant = "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
 
 export type CardOwnershipRecord = Record<CardOwnershipVariant, number>;
@@ -188,12 +172,9 @@ export type CollectionCompletionSummary = {
   ownership: CardOwnershipRecord;
 };
 
-export type CardOwnershipVariant = "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
-
-export type CardOwnershipRecord = {
-  cardId: string;
-  owned: Record<CardOwnershipVariant, number>;
-  updatedAt: string;
+export type MarketplaceMyMatchesGroup = {
+  postId: string;
+  matches: MarketplaceMatch[];
 };
 
 export type VariantCompletionSummary = {
@@ -298,10 +279,13 @@ export type LlmMode = "LLM" | "LOCAL_FALLBACK";
 
 export type FeatureKey =
   | "card-library"
-  | "deck-library"
+  | "deck-builder"
+  | "marketplace"
   | "saved-matches"
   | "play-table"
-  | "board-preview"
+  | "match-lobby"
+  | "online-gameplay"
+  | "effect-tools"
   | "admin-tools";
 
 export type ServerFeatureFlag = {
