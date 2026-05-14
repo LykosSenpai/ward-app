@@ -251,7 +251,6 @@ export default function App() {
   const [llmPhase4Report, setLlmPhase4Report] = useState<LlmPhase4ReportSummary | undefined>();
   const [llmBatchProgress, setLlmBatchProgress] = useState<LlmBatchProgress | undefined>();
   const [llmDirectTestResults, setLlmDirectTestResults] = useState<Record<string, LlmDirectEffectSmokeTestResult>>({});
-  const [marketplaceMyMatches, setMarketplaceMyMatches] = useState<MarketplaceMyMatchesGroup[]>([]);
   const [llmBusy, setLlmBusy] = useState(false);
   const [featureFlags, setFeatureFlags] = useState<ServerFeatureFlag[]>([]);
   const canUseDevTools = !!authUser?.devToolsEnabled;
@@ -699,10 +698,11 @@ export default function App() {
       setSaveMessage(`Headless auto-run complete for ${data.length} included draft${data.length === 1 ? "" : "s"}.`);
     });
 
-    socket.on("marketplace:myMatches", (data: MarketplaceMyMatchesGroup[]) => {
-      setMarketplaceMyMatches(data);
-    });
 
+
+    socket.on("marketplace:transactions", (data: MarketplaceTransaction[]) => {
+      setMarketplaceTransactions(data);
+    });
     socket.on("connect_error", () => {
       setServerMessage("Could not connect to Ward Nexus server.");
     });
@@ -2119,8 +2119,8 @@ export default function App() {
             onSetCardCopies={setDeckBuilderCardCopies}
             onSetOwnedCopies={setOwnedCardCopies}
             onSaveDeck={saveBuiltDeck}
-            onAddMissingNeedsOnce={data => socket.emit("collection:addMissingNeedsOnce", { ...data, packIds: selectedPackIds })}
-            onCreatePerpetualNeedRule={data => socket.emit("collection:createMarketplaceAutoNeedRule", data)}
+            onAddMarketplaceNeed={data => socket.emit("collection:addMissingNeedsOnce", { ...data, packIds: selectedPackIds })}
+            onAddMarketplaceHave={data => socket.emit("collection:createMarketplaceAutoNeedRule", data)}
             canUseDevTools={canUseDevTools}
             onSaveCardLimit={saveCardTournamentLimit}
           />

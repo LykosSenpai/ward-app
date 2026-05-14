@@ -16,8 +16,8 @@ export function MarketplaceTransactionPanel({ transactions, onConfirm, onDeny, o
       {transactions.map(tx => (
         <div key={tx.id} style={{ borderTop: "1px solid #333", paddingTop: 8, marginTop: 8 }}>
           <div><strong>{tx.status}</strong> · expires {new Date(tx.expiresAt).toLocaleString()}</div>
-          <div>Offer: {tx.offered.map(line => `${line.cardId} x${line.quantity}`).join(", ") || "-"}</div>
-          <div>Request: {tx.requested.map(line => `${line.cardId} x${line.quantity}`).join(", ") || "-"}</div>
+          <div>Offer: {tx.itemsFromInitiator.map(line => `${line.cardId} x${line.quantity}`).join(", ") || "-"}</div>
+          <div>Request: {tx.itemsFromCounterparty.map(line => `${line.cardId} x${line.quantity}`).join(", ") || "-"}</div>
           <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
             <button onClick={() => onConfirm(tx.id)} disabled={!(tx.status === "PENDING_CONFIRMATION" || tx.status === "CONFIRMED_BY_ONE_PARTY")}>Confirm</button>
             <button onClick={() => onDeny(tx.id)} disabled={tx.status === "COMPLETED"}>Deny</button>

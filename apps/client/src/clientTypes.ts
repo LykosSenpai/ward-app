@@ -1,5 +1,10 @@
 ﻿import type {
   MatchState as BaseMatchState,
+  MarketplaceMatch,
+  WardEngineEffect,
+} from "@ward/shared";
+
+export type {
   MarketplaceAutoListingSettings,
   MarketplaceAutoNeedRule,
   MarketplaceCardVariant,

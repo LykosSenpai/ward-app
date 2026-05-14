@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { AuthUser, CardLibraryCardSummary } from "../clientTypes";
-import { AddCardToMarketplaceModal } from "./AddCardToMarketplaceModal";
 import { MarketplacePostCard, type MarketplacePost } from "./MarketplacePostCard";
 import { MarketplacePostEditor, type MarketplacePostDraft } from "./MarketplacePostEditor";
 import { splitManualItems } from "../marketplaceHelpers";
@@ -13,7 +12,6 @@ type Props = {
 
 export function MarketplacePage({ authUser, cardLibrary }: Props) {
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
-  const [selectedCard, setSelectedCard] = useState("");
 
   useEffect(() => {
     const onPosts = (incoming: MarketplacePost[]) => setPosts(incoming);
@@ -29,7 +27,7 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
     const next: MarketplacePost = {
       id: `${Date.now()}`,
       discordHandle: draft.discordHandle.trim(),
-      title: selectedCard ? `${draft.title.trim()} • ${selectedCard}` : draft.title.trim(),
+      title: draft.title.trim(),
       description: draft.description.trim(),
       status: draft.status,
       haveItems: splitManualItems(draft.haveItemsText),
@@ -50,8 +48,6 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
         <p>Signed in as <strong>{authUser.displayName}</strong>.</p>
       </header>
       <MarketplacePostEditor onSave={saveDraft} />
-      <AddCardToMarketplaceModal cards={cardLibrary} onAdd={setSelectedCard} />
-      {selectedCard && <p className="marketplace-selected-card">Selected card for next listing: <strong>{selectedCard}</strong></p>}
       <section className="marketplace-list">
         {posts.length === 0 ? <p className="subtitle">No listings yet.</p> : posts.map(post => <MarketplacePostCard key={post.id} post={post} />)}
       </section>

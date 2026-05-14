@@ -18,14 +18,12 @@ export function MarketplaceMatchesPanel({ groups, onRefresh, onOpenLinkedPost }:
           <article key={group.postId}>
             <h3>My Post: {group.postId}</h3>
             {group.matches.length === 0 ? <p>No active matches for this post.</p> : group.matches.map((match: MarketplaceMatch) => (
-              <div key={`${group.postId}-${match.postId}-${match.type}`}>
-                <strong>{match.type}</strong> with <code>{match.postId}</code>
+              <div key={match.id}>
+                <strong>{match.type}</strong> with <code>{match.targetPostId}</code>
                 <ul>
-                  {match.matchedItems.map(item => <li key={`${item.cardId}-${item.variant}`}>{item.cardId} ({item.variant}) × {item.matchedQuantity}</li>)}
+                  <li>{match.cardId} ({match.variant}) × {match.matchedQuantity}</li>
                 </ul>
-                {match.linkedPostId ? (
-                  <button type="button" className="secondary" onClick={() => onOpenLinkedPost(match.linkedPostId!)}>Open Linked Post</button>
-                ) : null}
+                <button type="button" className="secondary" onClick={() => onOpenLinkedPost(match.targetPostId)}>Open Linked Post</button>
               </div>
             ))}
           </article>
