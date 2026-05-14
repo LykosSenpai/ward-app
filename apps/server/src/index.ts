@@ -6,7 +6,7 @@ import cors from "cors";
 import http from "http";
 import fs from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Server, type Socket } from "socket.io";
 import rateLimit from "express-rate-limit";
@@ -122,7 +122,7 @@ import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collectio
 import { createOrReplaceAutoNeedRule, disableAutoNeedRule, loadMarketplaceNeeds, recomputeMarketplaceNeedsForUser } from "./collection/marketplaceNeedRuleStore.js";
 import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
-import { changeUserPassword, createUser, getUserProfile, listUsersForTournamentDeckReview, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
+import { changeUserPassword, createUser, createUserFromDiscord, findUserByDiscordId, getUserProfile, linkDiscordAccount, listUsersForTournamentDeckReview, unlinkDiscordAccount, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
 import { checkDbConnection } from "./db/pool.js";
 import { listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
 
@@ -147,6 +147,20 @@ if (isProduction) {
 
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
 const LOCAL_CLIENT_ORIGIN_PATTERN = /^http:\/\/(?:localhost|127\.0\.0\.1):\d+$/;
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID ?? "";
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET ?? "";
+const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI ?? `http://localhost:${PORT}/api/auth/discord/callback`;
+const DISCORD_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+
+type DiscordOAuthMode = "login" | "link";
+
+type DiscordUserResponse = {
+  id: string;
+  username: string;
+  global_name?: string | null;
+  avatar?: string | null;
+  email?: string | null;
+};
 
 function isAllowedClientOrigin(origin?: string): boolean {
   if (!origin) return true;
@@ -166,6 +180,98 @@ function canSocketUseDevTools(socket: { request: unknown }): boolean {
 
 function canUserReviewTournamentDecks(user: AuthUser | null | undefined): boolean {
   return user?.role === "ADMIN" || user?.role === "HOST";
+}
+
+function getDiscordOAuthConfigured(): boolean {
+  return DISCORD_CLIENT_ID.length > 0 && DISCORD_CLIENT_SECRET.length > 0 && DISCORD_REDIRECT_URI.length > 0;
+}
+
+function getDiscordDisplayName(discord: AuthUser["discord"]): string {
+  if (!discord) return "";
+  return discord.globalName?.trim() || discord.username;
+}
+
+function getDiscordAvatarUrl(discordUserId: string, avatar?: string | null): string | undefined {
+  if (!avatar) return undefined;
+  const extension = avatar.startsWith("a_") ? "gif" : "png";
+  return `https://cdn.discordapp.com/avatars/${discordUserId}/${avatar}.${extension}`;
+}
+
+function getDiscordAuthUrl(mode: DiscordOAuthMode, state: string): string {
+  const url = new URL("https://discord.com/oauth2/authorize");
+  url.searchParams.set("client_id", DISCORD_CLIENT_ID);
+  url.searchParams.set("redirect_uri", DISCORD_REDIRECT_URI);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", mode === "login" ? "identify email" : "identify");
+  url.searchParams.set("state", state);
+  url.searchParams.set("prompt", "consent");
+  return url.toString();
+}
+
+async function fetchDiscordUser(code: string): Promise<DiscordUserResponse> {
+  if (!getDiscordOAuthConfigured()) {
+    throw new Error("Discord OAuth is not configured.");
+  }
+
+  const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: new URLSearchParams({
+      client_id: DISCORD_CLIENT_ID,
+      client_secret: DISCORD_CLIENT_SECRET,
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: DISCORD_REDIRECT_URI
+    })
+  });
+
+  const tokenData = await tokenResponse.json() as { access_token?: string; error_description?: string };
+  if (!tokenResponse.ok || !tokenData.access_token) {
+    throw new Error(tokenData.error_description ?? "Discord token exchange failed.");
+  }
+
+  const userResponse = await fetch("https://discord.com/api/users/@me", {
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`
+    }
+  });
+
+  const userData = await userResponse.json() as DiscordUserResponse & { message?: string };
+  if (!userResponse.ok || !userData.id || !userData.username) {
+    throw new Error(userData.message ?? "Unable to load Discord user.");
+  }
+
+  return userData;
+}
+
+function startDiscordOAuth(req: express.Request, res: express.Response, mode: DiscordOAuthMode): void {
+  if (!getDiscordOAuthConfigured()) {
+    res.status(503).json({ message: "Discord OAuth is not configured." });
+    return;
+  }
+
+  if (mode === "link" && !req.session.user) {
+    res.status(401).json({ message: "Login required." });
+    return;
+  }
+
+  const state = randomBytes(24).toString("hex");
+  req.session.discordOAuthState = {
+    state,
+    mode,
+    createdAt: Date.now()
+  };
+  res.redirect(getDiscordAuthUrl(mode, state));
+}
+
+function getDiscordCallbackRedirect(status: "linked" | "signed-in" | "error", message?: string): string {
+  const url = new URL("/", CLIENT_ORIGIN);
+  url.searchParams.set("page", "profile");
+  url.searchParams.set("discord", status);
+  if (message) url.searchParams.set("message", message);
+  return url.toString();
 }
 
 function returnExpiredItemsToPool(nowMs = Date.now()): boolean {
@@ -254,7 +360,7 @@ const MARKETPLACE_MATCH_REFRESH_INTERVAL_MS = 30 * 1000;
 
 type MarketplaceMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
 type MarketplacePostItem = { cardId: string; variant?: string; quantity: number; pendingReservedQuantity?: number; trade?: boolean; sale?: boolean };
-type MarketplacePost = { id?: string; userId?: string; displayName?: string; linkedPostId?: string; status?: "OPEN" | "PENDING" | "CLOSED"; haveItems?: MarketplacePostItem[]; needItems?: MarketplacePostItem[]; cardId?: string; quantity?: number; updatedAt?: string };
+type MarketplacePost = { id?: string; userId?: string; displayName?: string; discordHandle?: string; discord?: AuthUser["discord"]; linkedPostId?: string; status?: "OPEN" | "PENDING" | "CLOSED"; haveItems?: MarketplacePostItem[]; needItems?: MarketplacePostItem[]; cardId?: string; quantity?: number; updatedAt?: string };
 type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
 type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; reciprocalMatchedItems?: MarketplaceMatchItem[]; linkedPostId?: string };
 type MarketplaceMatchGroup = { postId: string; matches: MarketplaceMatch[] };
@@ -1531,6 +1637,61 @@ app.get("/api/auth/me", (req, res) => {
   });
 });
 
+app.get("/api/auth/discord/start", authRateLimit, (req, res) => {
+  startDiscordOAuth(req, res, req.session.user ? "link" : "login");
+});
+
+app.get("/api/auth/discord/link", authRateLimit, (req, res) => {
+  startDiscordOAuth(req, res, "link");
+});
+
+app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
+  const oauthState = req.session.discordOAuthState;
+  delete req.session.discordOAuthState;
+
+  try {
+    const code = String(req.query.code ?? "");
+    const state = String(req.query.state ?? "");
+
+    if (!oauthState || oauthState.state !== state || Date.now() - oauthState.createdAt > DISCORD_OAUTH_STATE_TTL_MS) {
+      throw new Error("Discord sign-in expired. Try connecting again.");
+    }
+
+    if (!code) {
+      throw new Error("Discord did not return an authorization code.");
+    }
+
+    const discordUser = await fetchDiscordUser(code);
+    const discordAccount = {
+      discordUserId: discordUser.id,
+      discordUsername: discordUser.username,
+      discordGlobalName: discordUser.global_name ?? null,
+      discordAvatar: getDiscordAvatarUrl(discordUser.id, discordUser.avatar)
+    };
+
+    if (oauthState.mode === "link") {
+      if (!req.session.user) {
+        throw new Error("Login required before linking Discord.");
+      }
+
+      const profile = await linkDiscordAccount(req.session.user.id, discordAccount);
+      req.session.user = profile;
+      res.redirect(getDiscordCallbackRedirect("linked"));
+      return;
+    }
+
+    const existingUser = await findUserByDiscordId(discordUser.id);
+    const user = existingUser ?? await createUserFromDiscord({
+      ...discordAccount,
+      email: discordUser.email ?? null
+    });
+    req.session.user = user;
+    res.redirect(getDiscordCallbackRedirect("signed-in"));
+  } catch (error) {
+    res.redirect(getDiscordCallbackRedirect("error", error instanceof Error ? error.message : "Discord sign-in failed."));
+  }
+});
+
 app.post("/api/auth/register", authRateLimit, async (req, res) => {
   try {
     const user = await createUser({
@@ -1631,6 +1792,23 @@ app.post("/api/profile/change-password", passwordRateLimit, async (req, res) => 
   } catch (error) {
     res.status(400).json({
       message: error instanceof Error ? error.message : "Unable to change password."
+    });
+  }
+});
+
+app.post("/api/profile/discord/unlink", async (req, res) => {
+  try {
+    if (!req.session.user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const profile = await unlinkDiscordAccount(req.session.user.id);
+    req.session.user = profile;
+    res.json({ profile, user: req.session.user });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to unlink Discord."
     });
   }
 });
@@ -3321,6 +3499,7 @@ io.on("connection", async socket => {
     try {
       const user = getSocketUser(socket);
       if (!user) throw new Error("Authentication required.");
+      if (!user.discord?.userId) throw new Error("Connect Discord from your profile before posting in the marketplace.");
       const currentPosts = marketplacePosts.get(user.id) ?? [];
       const createdAt = new Date().toISOString();
       marketplacePosts.set(user.id, [
@@ -3329,6 +3508,8 @@ io.on("connection", async socket => {
           id: post.id ?? randomUUID(),
           userId: user.id,
           displayName: user.displayName,
+          discord: user.discord,
+          discordHandle: getDiscordDisplayName(user.discord),
           updatedAt: createdAt
         },
         ...currentPosts
@@ -3343,6 +3524,7 @@ io.on("connection", async socket => {
     try {
       const user = getSocketUser(socket);
       if (!user) throw new Error("Authentication required.");
+      if (!user.discord?.userId) throw new Error("Connect Discord from your profile before updating marketplace posts.");
       if (!post.id) throw new Error("Marketplace post id is required.");
       const currentPosts = marketplacePosts.get(user.id) ?? [];
       const existing = currentPosts.find(item => item.id === post.id);
@@ -3354,6 +3536,8 @@ io.on("connection", async socket => {
         id: existing.id,
         userId: user.id,
         displayName: user.displayName,
+        discord: user.discord,
+        discordHandle: getDiscordDisplayName(user.discord),
         updatedAt
       } : item));
       emitMarketplacePosts();

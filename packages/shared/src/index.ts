@@ -1208,7 +1208,14 @@ export interface MarketplacePostItem {
 export interface MarketplacePost {
   id: string;
   userDisplayName: string;
-  discordHandle: string;
+  discordHandle?: string;
+  discord?: {
+    userId: string;
+    username: string;
+    globalName?: string;
+    avatar?: string;
+    linkedAt?: string;
+  };
   title: string;
   description?: string;
   status: MarketplacePostStatus;

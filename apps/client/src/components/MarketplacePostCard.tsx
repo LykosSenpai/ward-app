@@ -8,7 +8,14 @@ export type MarketplacePost = {
   userId?: string;
   displayName?: string;
   isTestPost?: boolean;
-  discordHandle: string;
+  discordHandle?: string;
+  discord?: {
+    userId: string;
+    username: string;
+    globalName?: string;
+    avatar?: string;
+    linkedAt?: string;
+  };
   title: string;
   description: string;
   status: MarketplacePostStatus;
@@ -110,9 +117,11 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
   const needCount = getItemQuantity(post.needItems);
   const visibleMatches = matches.slice(0, 3);
   const contactLabel = contactCopied ? "Copied" : "Contact";
+  const discordName = post.discord?.globalName || post.discord?.username || post.discordHandle || "";
+  const discordProfileUrl = post.discord?.userId ? `https://discord.com/users/${post.discord.userId}` : undefined;
 
   async function copyContact() {
-    const handle = post.discordHandle.trim();
+    const handle = discordName.trim();
     if (!handle) return;
 
     try {
@@ -144,7 +153,7 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
         <MarketplacePostStat label="Have" value={`${haveCount}`} />
         <MarketplacePostStat label="Need" value={`${needCount}`} />
         <MarketplacePostStat label="Player" value={post.displayName ?? "Player"} />
-        <MarketplacePostStat label="Discord" value={post.discordHandle} />
+        <MarketplacePostStat label="Discord" value={discordName ? `Verified: ${discordName}` : "Not linked"} />
         <MarketplacePostStat label="Mode" value={post.listingKinds.map(kind => MARKETPLACE_LISTING_VARIANT_LABELS[kind]).join(" / ")} />
         {typeof post.salePrice === "number" ? <MarketplacePostStat label="Price" value={formatCurrencyUsd(post.salePrice)} /> : null}
       </div>
@@ -165,9 +174,12 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
             ))}
           </div>
         ) : (
-          <button type="button" className="marketplace-contact-button" onClick={copyContact} disabled={!post.discordHandle.trim()}>
-            {contactLabel}
-          </button>
+          <div className="marketplace-contact-actions">
+            {discordProfileUrl ? <a className="marketplace-contact-button" href={discordProfileUrl} target="_blank" rel="noreferrer">Open Discord</a> : null}
+            <button type="button" className="marketplace-contact-button" onClick={copyContact} disabled={!discordName.trim()}>
+              {contactLabel}
+            </button>
+          </div>
         )}
       </div>
       {!!post.note && <p><strong>Note:</strong> {post.note}</p>}

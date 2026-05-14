@@ -59,6 +59,10 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
     }
   }
 
+  function continueWithDiscord() {
+    window.location.href = `${API_BASE_URL}/api/auth/discord/start`;
+  }
+
   return (
     <main className="login-page">
       <section className="login-entry">
@@ -146,8 +150,13 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
             </button>
           </form>
 
+          <button className="login-mode-toggle" type="button" onClick={continueWithDiscord}>
+            Continue with Discord
+          </button>
+
           <button
             className="login-mode-toggle"
+            type="button"
             onClick={() => {
               setMode(current => current === "login" ? "register" : "login");
               setError("");

@@ -9,6 +9,13 @@ export type AuthUser = {
   role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   canAccessDevTools: boolean;
   devToolsEnabled: boolean;
+  discord?: {
+    userId: string;
+    username: string;
+    globalName?: string;
+    avatar?: string;
+    linkedAt?: string;
+  };
 };
 
 declare module "express-session" {
@@ -19,6 +26,11 @@ declare module "express-session" {
       matchId?: string;
       view?: string;
       expiresAt: number;
+    };
+    discordOAuthState?: {
+      state: string;
+      mode: "login" | "link";
+      createdAt: number;
     };
   }
 }

@@ -44,7 +44,7 @@ function buildTestMarketplacePosts(cardLibrary: CardLibraryCardSummary[]): Marke
       userId: "__test_marketplace__1",
       displayName: "Test Trader",
       isTestPost: true,
-      discordHandle: "@test-trader",
+      discordHandle: "test-trader",
       title: "Gen starter trade bundle",
       description: "A sample post with several available cards and a short want list.",
       status: "OPEN",
@@ -58,7 +58,7 @@ function buildTestMarketplacePosts(cardLibrary: CardLibraryCardSummary[]): Marke
       userId: "__test_marketplace__2",
       displayName: "Preview Seller",
       isTestPost: true,
-      discordHandle: "@preview-seller",
+      discordHandle: "preview-seller",
       title: "Holo singles available",
       description: "A sample sale/trade post to exercise price and mixed card grids.",
       status: "OPEN",
@@ -73,7 +73,7 @@ function buildTestMarketplacePosts(cardLibrary: CardLibraryCardSummary[]): Marke
       userId: "__test_marketplace__3",
       displayName: "Completion Tester",
       isTestPost: true,
-      discordHandle: "@completion-test",
+      discordHandle: "completion-test",
       title: "Trying to finish Zero variants",
       description: "A sample need-heavy post for checking larger Need grids.",
       status: "PENDING",
@@ -129,6 +129,8 @@ function getPostSearchText(post: MarketplacePost, cardById: Map<string, CardLibr
     post.title,
     post.description,
     post.displayName,
+    post.discord?.globalName,
+    post.discord?.username,
     post.discordHandle,
     post.note,
     post.status,
@@ -199,6 +201,7 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
   const [feedSort, setFeedSort] = useState<MarketplaceFeedSort>("UPDATED");
   const cardById = useMemo(() => new Map(cardLibrary.map(card => [card.id, card])), [cardLibrary]);
   const testPosts = useMemo(() => import.meta.env.DEV ? buildTestMarketplacePosts(cardLibrary) : [], [cardLibrary]);
+  const canPost = !!authUser.discord?.userId;
   const myPosts = useMemo(() => posts.filter(post => post.userId === authUser.id), [authUser.id, posts]);
   const otherPosts = useMemo(() => [...posts.filter(post => post.userId !== authUser.id), ...testPosts], [authUser.id, posts, testPosts]);
   const visibleOtherPosts = useMemo(() => otherPosts.filter(post => post.status !== "CLOSED"), [otherPosts]);
@@ -235,7 +238,6 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
     ].filter(Boolean) as ("TRADE"|"SALE")[];
     const next: MarketplacePost = {
       id: editingPost?.id ?? `${Date.now()}`,
-      discordHandle: draft.discordHandle.trim(),
       title: draft.title.trim(),
       description: draft.description.trim(),
       status: draft.status,
@@ -266,7 +268,6 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
       }));
 
     return {
-      discordHandle: editingPost.discordHandle,
       title: editingPost.title,
       description: editingPost.description,
       status: editingPost.status,
@@ -280,11 +281,13 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
   }, [editingPost]);
 
   function startEditingPost(post: MarketplacePost) {
+    if (!canPost) return;
     setEditingPost(post);
     setEditorOpen(true);
   }
 
   function startCreatingPost() {
+    if (!canPost) return;
     setEditingPost(null);
     setEditorOpen(true);
   }
@@ -302,10 +305,11 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
             <p>Post the cards you have, the cards you need, or both. Payments, shipping, postage, addresses, and final trade terms are handled outside the website.</p>
             <p>Signed in as <strong>{authUser.displayName}</strong>.</p>
           </div>
-          <button type="button" className="marketplace-create-post-button" onClick={startCreatingPost}>
+          <button type="button" className="marketplace-create-post-button" onClick={startCreatingPost} disabled={!canPost}>
             Create Post
           </button>
         </div>
+        {!canPost ? <p className="subtitle">Connect Discord from your profile to create or edit marketplace posts.</p> : null}
       </header>
 
       {editorOpen ? (

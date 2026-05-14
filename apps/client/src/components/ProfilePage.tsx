@@ -22,6 +22,25 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
     void loadProfile();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const discordStatus = params.get("discord");
+    if (!discordStatus) return;
+
+    if (discordStatus === "linked") {
+      setMessage("Discord connected.");
+    } else if (discordStatus === "signed-in") {
+      setMessage("Signed in with Discord.");
+    } else if (discordStatus === "error") {
+      setError(params.get("message") ?? "Discord connection failed.");
+    }
+
+    params.delete("discord");
+    params.delete("message");
+    const nextSearch = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`);
+  }, []);
+
   async function loadProfile() {
     setError("");
 
@@ -124,6 +143,36 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
     }
   }
 
+  function connectDiscord() {
+    window.location.href = `${API_BASE_URL}/api/auth/discord/link`;
+  }
+
+  async function unlinkDiscord() {
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/discord/unlink`, {
+        method: "POST",
+        credentials: "include"
+      });
+      const data = await response.json() as { profile?: UserProfile; user?: AuthUser; message?: string };
+
+      if (!response.ok || !data.profile || !data.user) {
+        throw new Error(data.message ?? "Unable to unlink Discord.");
+      }
+
+      setProfile(data.profile);
+      onUserUpdated(data.user);
+      setMessage("Discord disconnected.");
+    } catch (discordError) {
+      setError(discordError instanceof Error ? discordError.message : "Unable to unlink Discord.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <section className="profile-page">
       <header className="profile-header">
@@ -138,7 +187,7 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
       {message && <div className="success-box">{message}</div>}
 
       <div className="profile-grid">
-        <section className="profile-card">
+        <section className="profile-card profile-card-account">
           <h3>Account</h3>
           <div className="profile-readonly-grid">
             <span>Username</span>
@@ -162,7 +211,7 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
           </form>
         </section>
 
-        <section className="profile-card">
+        <section className="profile-card profile-card-collection">
           <h3>Collection</h3>
           <div className="profile-stat-grid">
             <div>
@@ -176,8 +225,37 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
           </div>
         </section>
 
+        <section className="profile-card profile-card-discord">
+          <h3>Discord</h3>
+          {profile?.discord ? (
+            <>
+              <div className="profile-readonly-grid">
+                <span>Status</span>
+                <strong>Verified</strong>
+                <span>Discord</span>
+                <strong>{profile.discord.globalName || profile.discord.username}</strong>
+                <span>User ID</span>
+                <strong>{profile.discord.userId}</strong>
+              </div>
+              <div className="profile-action-row">
+                <a href={`https://discord.com/users/${profile.discord.userId}`} target="_blank" rel="noreferrer">Open Discord Profile</a>
+                <button type="button" onClick={() => void unlinkDiscord()} disabled={busy}>
+                  {busy ? "Working..." : "Disconnect Discord"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="muted">Connect Discord to post in the marketplace and show verified contact info.</p>
+              <button type="button" onClick={connectDiscord} disabled={busy}>
+                Connect Discord
+              </button>
+            </>
+          )}
+        </section>
+
         {profile?.canAccessDevTools && (
-          <section className="profile-card">
+          <section className="profile-card profile-card-developer">
             <h3>Developer Access</h3>
             <div className="profile-readonly-grid">
               <span>Role</span>
@@ -199,7 +277,7 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
           </section>
         )}
 
-        <section className="profile-card">
+        <section className="profile-card profile-card-password">
           <h3>Password</h3>
           <form className="profile-form" onSubmit={changePassword}>
             <label>

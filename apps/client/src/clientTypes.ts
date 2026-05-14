@@ -27,6 +27,13 @@ export type AuthUser = {
   role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   canAccessDevTools: boolean;
   devToolsEnabled: boolean;
+  discord?: {
+    userId: string;
+    username: string;
+    globalName?: string;
+    avatar?: string;
+    linkedAt?: string;
+  };
 };
 
 export type UserProfile = AuthUser & {

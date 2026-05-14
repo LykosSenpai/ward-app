@@ -6,7 +6,6 @@ import type { CardArtKey } from "./CardImagePreview";
 import { CardImageThumbnail } from "./CardImagePreview";
 
 export type MarketplacePostDraft = {
-  discordHandle: string;
   title: string;
   description: string;
   status: MarketplacePostStatus;
@@ -34,7 +33,6 @@ const MARKETPLACE_VARIANTS: Array<{ key: CardArtKey; label: string }> = [
 ];
 
 const INITIAL_DRAFT: MarketplacePostDraft = {
-  discordHandle: "",
   title: "",
   description: "",
   status: "OPEN",
@@ -173,7 +171,7 @@ export function MarketplacePostEditor({ cardLibrary, initialDraft, mode = "creat
 
   const isValid = useMemo(() => {
     const allItems = [...draft.haveItems, ...draft.needItems];
-    if (!draft.discordHandle.trim() || !draft.title.trim()) return false;
+    if (!draft.title.trim()) return false;
     if (!allItems.length) return false;
     if (allItems.some(item => item.trade === false && !item.sale)) return false;
     if (draft.saleEnabled && draft.salePrice.trim() && Number.isNaN(Number(draft.salePrice))) return false;
@@ -302,7 +300,6 @@ export function MarketplacePostEditor({ cardLibrary, initialDraft, mode = "creat
 
         <div className="marketplace-builder-controls">
           <div className="marketplace-form-grid">
-            <label>Discord Handle<input value={draft.discordHandle} onChange={e => setDraft(prev => ({ ...prev, discordHandle: e.target.value }))} placeholder="@your-handle" /></label>
             <label>Title<input value={draft.title} onChange={e => setDraft(prev => ({ ...prev, title: e.target.value }))} placeholder="Trading Gen 1 extras for missing cards" /></label>
             <label>Description<textarea value={draft.description} onChange={e => setDraft(prev => ({ ...prev, description: e.target.value }))} rows={2} placeholder="Optional context for this post" /></label>
             <label>Status
