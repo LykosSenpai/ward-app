@@ -19,6 +19,7 @@ import { MatchLobbyPanel } from "./components/MatchLobbyPanel";
 import { CompactMatchControlPanel } from "./components/CompactMatchControlPanel";
 import { MatchStatePanel } from "./components/MatchStatePanel";
 import { MarketplaceTransactionPanel } from "./components/MarketplaceTransactionPanel";
+import { MarketplacePage } from "./components/MarketplacePage";
 import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { BoardPreview3D } from "./components/BoardPreview3D";
 import type { PointerGestureIntent } from "./components/boardInteractionIntents";
@@ -70,7 +71,7 @@ import type {
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
-type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
+type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
 type PlayViewMode = "board3d";
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
@@ -250,7 +251,6 @@ export default function App() {
   const [llmPhase4Report, setLlmPhase4Report] = useState<LlmPhase4ReportSummary | undefined>();
   const [llmBatchProgress, setLlmBatchProgress] = useState<LlmBatchProgress | undefined>();
   const [llmDirectTestResults, setLlmDirectTestResults] = useState<Record<string, LlmDirectEffectSmokeTestResult>>({});
-  const [marketplaceMyMatches, setMarketplaceMyMatches] = useState<MarketplaceMyMatchesGroup[]>([]);
   const [llmBusy, setLlmBusy] = useState(false);
   const [featureFlags, setFeatureFlags] = useState<ServerFeatureFlag[]>([]);
   const canUseDevTools = !!authUser?.devToolsEnabled;
@@ -288,9 +288,10 @@ export default function App() {
     if (isAdminUser) return true;
     if (page === "play") return featureFlagsByKey["play-table"]?.enabledForPlayers === true;
     if (page === "card-library") return featureFlagsByKey["card-library"]?.enabledForPlayers === true;
-    if (page === "deck-library") return featureFlagsByKey["deck-library"]?.enabledForPlayers === true;
+    if (page === "deck-library") return featureFlagsByKey["deck-builder"]?.enabledForPlayers === true;
+    if (page === "marketplace") return featureFlagsByKey.marketplace?.enabledForPlayers === true;
     if (page === "saved-matches") return featureFlagsByKey["saved-matches"]?.enabledForPlayers === true;
-    if (page === "board-preview") return featureFlagsByKey["board-preview"]?.enabledForPlayers === true;
+    if (page === "board-preview") return canUseDevTools;
     return canUseDevTools;
   }
 
@@ -697,10 +698,11 @@ export default function App() {
       setSaveMessage(`Headless auto-run complete for ${data.length} included draft${data.length === 1 ? "" : "s"}.`);
     });
 
-    socket.on("marketplace:myMatches", (data: MarketplaceMyMatchesGroup[]) => {
-      setMarketplaceMyMatches(data);
-    });
 
+
+    socket.on("marketplace:transactions", (data: MarketplaceTransaction[]) => {
+      setMarketplaceTransactions(data);
+    });
     socket.on("connect_error", () => {
       setServerMessage("Could not connect to Ward Nexus server.");
     });
@@ -1937,6 +1939,12 @@ export default function App() {
           >
             Saved Matches
           </button>}
+          {canSeePage("marketplace") && <button
+            className={activePage === "marketplace" ? "app-page-nav-button active" : "app-page-nav-button"}
+            onClick={() => setActivePage("marketplace")}
+          >
+            Marketplace
+          </button>}
           <button
             className={activePage === "profile" ? "app-page-nav-button active" : "app-page-nav-button"}
             onClick={() => setActivePage("profile")}
@@ -2083,7 +2091,7 @@ export default function App() {
             socket.connect();
           }} />
         ) : activePage === "marketplace" ? (
-          <MarketplacePage authUser={authUser} cardLibrary={cardLibrary} />
+          <MarketplacePage authUser={authUser} />
         ) : activePage === "card-library" ? (
           <LibraryDecksPage
             selectedPackCount={selectedPackIds.length}
@@ -2111,15 +2119,16 @@ export default function App() {
             onSetCardCopies={setDeckBuilderCardCopies}
             onSetOwnedCopies={setOwnedCardCopies}
             onSaveDeck={saveBuiltDeck}
-            onAddMissingNeedsOnce={data => socket.emit("collection:addMissingNeedsOnce", { ...data, packIds: selectedPackIds })}
-            onCreatePerpetualNeedRule={data => socket.emit("collection:createMarketplaceAutoNeedRule", data)}
+            onAddMarketplaceNeed={data => socket.emit("collection:addMissingNeedsOnce", { ...data, packIds: selectedPackIds })}
+            onAddMarketplaceHave={data => socket.emit("collection:createMarketplaceAutoNeedRule", data)}
             canUseDevTools={canUseDevTools}
             onSaveCardLimit={saveCardTournamentLimit}
           />
         ) : !match ? (
-          <section className="play-lobby-workspace">
-            <section className="play-setup-main">
-              <MatchLobbyPanel
+          <>
+            <section className="play-lobby-workspace">
+              <section className="play-setup-main">
+                <MatchLobbyPanel
                 user={authUser}
                 lobbies={matchLobbies}
                 activeLobby={activeLobby}
@@ -2136,16 +2145,17 @@ export default function App() {
                 onStartMatch={startLobbyMatch}
                 canUseDevTools={canUseDevTools}
                 onCleanupStaleLobbies={cleanupStaleLobbies}
-              />
+                />
+              </section>
             </section>
-          </section>
-          <MarketplaceTransactionPanel
-            transactions={marketplaceTransactions}
-            onRefresh={refreshMarketplaceTransactions}
-            onConfirm={confirmMarketplaceTransaction}
-            onDeny={denyMarketplaceTransaction}
-            onCancel={cancelMarketplaceTransaction}
-          />
+            <MarketplaceTransactionPanel
+              transactions={marketplaceTransactions}
+              onRefresh={refreshMarketplaceTransactions}
+              onConfirm={confirmMarketplaceTransaction}
+              onDeny={denyMarketplaceTransaction}
+              onCancel={cancelMarketplaceTransaction}
+            />
+          </>
         ) : (
           <>
             <section className="play-view-toolbar" aria-label="Play table view mode">
