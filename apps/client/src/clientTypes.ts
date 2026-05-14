@@ -1,4 +1,15 @@
-﻿import type { MatchState as BaseMatchState, WardEngineEffect } from "@ward/shared";
+﻿import type {
+  MatchState as BaseMatchState,
+  MarketplaceAutoListingSettings,
+  MarketplaceAutoNeedRule,
+  MarketplaceCardVariant,
+  MarketplaceMatch,
+  MarketplacePost,
+  MarketplaceRetainOverride,
+  MarketplaceTransaction,
+  MarketplaceTransactionStatus,
+  WardEngineEffect,
+} from "@ward/shared";
 
 export type ServerWelcome = {
   message: string;
