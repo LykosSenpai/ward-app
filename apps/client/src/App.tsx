@@ -247,6 +247,7 @@ export default function App() {
   const [llmPhase4Report, setLlmPhase4Report] = useState<LlmPhase4ReportSummary | undefined>();
   const [llmBatchProgress, setLlmBatchProgress] = useState<LlmBatchProgress | undefined>();
   const [llmDirectTestResults, setLlmDirectTestResults] = useState<Record<string, LlmDirectEffectSmokeTestResult>>({});
+  const [marketplaceMyMatches, setMarketplaceMyMatches] = useState<MarketplaceMyMatchesGroup[]>([]);
   const [llmBusy, setLlmBusy] = useState(false);
   const [featureFlags, setFeatureFlags] = useState<ServerFeatureFlag[]>([]);
   const canUseDevTools = !!authUser?.devToolsEnabled;
@@ -691,6 +692,10 @@ export default function App() {
       });
       setLlmBusy(false);
       setSaveMessage(`Headless auto-run complete for ${data.length} included draft${data.length === 1 ? "" : "s"}.`);
+    });
+
+    socket.on("marketplace:myMatches", (data: MarketplaceMyMatchesGroup[]) => {
+      setMarketplaceMyMatches(data);
     });
 
     socket.on("connect_error", () => {
