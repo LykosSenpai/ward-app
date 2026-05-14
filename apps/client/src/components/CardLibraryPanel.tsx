@@ -13,6 +13,27 @@ type TournamentLimitStatus = "LEGAL" | "LIMITED" | "BANNED";
 type DeckFormat = "FREE_PLAY" | "TOURNAMENT";
 type SortMode = "number" | "name" | "generation" | "deckCount" | "ownedCount" | "armorLevel" | "hp" | "speed";
 
+type CollectionVariant = "default" | "holo" | "zero-art" | "zero-art-holo";
+
+type VariantCompletionSummary = {
+  variant: CollectionVariant;
+  label: string;
+  ownedMatches: number;
+  requiredMatches: number;
+  completionPercent: number;
+};
+
+type MissingCollectionItem = {
+  cardId: string;
+  cardName: string;
+  generation: string;
+  variant: CollectionVariant;
+  variantLabel: string;
+  owned: number;
+  required: number;
+  missing: number;
+};
+
 const FIXED_HOLO_INTENSITY = 10;
 const INITIAL_VISIBLE_CARD_COUNT = 72;
 const VISIBLE_CARD_INCREMENT = 72;
@@ -140,6 +161,9 @@ export function CardLibraryPanel({
   const [visibleCardCount, setVisibleCardCount] = useState(INITIAL_VISIBLE_CARD_COUNT);
   const [gridColumnCount, setGridColumnCount] = useState(1);
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
+  const [completionGeneration, setCompletionGeneration] = useState("ALL");
+  const [requiredQuantityPerCard, setRequiredQuantityPerCard] = useState(1);
+  const [completionVariants, setCompletionVariants] = useState<Record<CollectionVariant, boolean>>({ default: true, holo: false, "zero-art": false, "zero-art-holo": false });
   const cardGridRef = useRef<HTMLDivElement | null>(null);
   const loadPreviousSentinelRef = useRef<HTMLDivElement | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -166,6 +190,61 @@ export function CardLibraryPanel({
     () => getUniqueValues(cardLibrary.flatMap(card => card.effectTypes ?? [])),
     [cardLibrary]
   );
+
+  const collectionVariantOptions: Array<{ key: CollectionVariant; label: string }> = [
+    { key: "default", label: "Default" },
+    { key: "holo", label: "Holo" },
+    { key: "zero-art", label: "Zero" },
+    { key: "zero-art-holo", label: "Zero Holo" }
+  ];
+
+  const selectedCompletionVariants = collectionVariantOptions.filter(option => completionVariants[option.key]);
+
+  const completionCards = useMemo(
+    () => cardLibrary.filter(card => completionGeneration === "ALL" || `${card.generation ?? ""}` === completionGeneration),
+    [cardLibrary, completionGeneration]
+  );
+
+  const variantCompletion = useMemo(() => {
+    const summaries: VariantCompletionSummary[] = [];
+    const missingItems: MissingCollectionItem[] = [];
+
+    for (const variantOption of selectedCompletionVariants) {
+      const requiredMatches = completionCards.length * requiredQuantityPerCard;
+      const ownedMatches = completionCards.reduce((total, card) => {
+        const owned = ownershipCounts[getCardArtOwnershipKey(card.id, variantOption.key)] ?? 0;
+        return total + Math.min(requiredQuantityPerCard, owned);
+      }, 0);
+
+      for (const card of completionCards) {
+        const owned = ownershipCounts[getCardArtOwnershipKey(card.id, variantOption.key)] ?? 0;
+        const missing = Math.max(0, requiredQuantityPerCard - owned);
+
+        if (missing > 0) {
+          missingItems.push({
+            cardId: card.id,
+            cardName: card.name,
+            generation: `${card.generation ?? ""}`,
+            variant: variantOption.key,
+            variantLabel: variantOption.label,
+            owned,
+            required: requiredQuantityPerCard,
+            missing
+          });
+        }
+      }
+
+      summaries.push({
+        variant: variantOption.key,
+        label: variantOption.label,
+        ownedMatches,
+        requiredMatches,
+        completionPercent: requiredMatches === 0 ? 100 : Math.round((ownedMatches / requiredMatches) * 1000) / 10
+      });
+    }
+
+    return { summaries, missingItems };
+  }, [completionCards, ownershipCounts, requiredQuantityPerCard, selectedCompletionVariants]);
 
   const deckCards = useMemo(() => {
     const variantCounts = deckBuilderCardIds.reduce<Record<string, { cardId: string; artKey: CardArtKey; count: number }>>(
@@ -680,6 +759,53 @@ export function CardLibraryPanel({
                 <option value="speed">Highest SPD</option>
               </select>
             </label>
+
+            <details className="library-option-a-details-drawer">
+              <summary>Collection completion</summary>
+              <div className="library-option-a-drawer-grid">
+                <label>
+                  Generation
+                  <select value={completionGeneration} onChange={event => setCompletionGeneration(event.target.value)}>
+                    <option value="ALL">All</option>
+                    {generations.map(value => <option value={value} key={`completion-${value}`}>{value}</option>)}
+                  </select>
+                </label>
+                <label>
+                  Required per card
+                  <input
+                    type="number"
+                    min={1}
+                    value={requiredQuantityPerCard}
+                    onChange={event => setRequiredQuantityPerCard(Math.max(1, sanitizeCopies(event.target.value) || 1))}
+                  />
+                </label>
+              </div>
+              <div className="library-option-a-chip-row" role="group" aria-label="Collection variants">
+                {collectionVariantOptions.map(option => (
+                  <label key={`variant-${option.key}`}>
+                    <input
+                      type="checkbox"
+                      checked={completionVariants[option.key]}
+                      onChange={event => setCompletionVariants(current => ({ ...current, [option.key]: event.target.checked }))}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+              {variantCompletion.summaries.length === 0 ? (
+                <p className="event-meta">Select at least one variant.</p>
+              ) : (
+                <div className="library-option-a-filter-stack">
+                  {variantCompletion.summaries.map(summary => (
+                    <div key={`summary-${summary.variant}`}>
+                      <strong>{summary.label}</strong>
+                      <span> {summary.ownedMatches}/{summary.requiredMatches} ({summary.completionPercent.toFixed(1)}%)</span>
+                    </div>
+                  ))}
+                  <span>{variantCompletion.missingItems.length} missing card-variant targets.</span>
+                </div>
+              )}
+            </details>
 
             <details className="library-option-a-details-drawer">
               <summary>Advanced filters</summary>
