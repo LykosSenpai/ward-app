@@ -5,6 +5,7 @@ import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeW
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, getCardArtLabel } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
+import { AddCardToMarketplaceModal } from "./AddCardToMarketplaceModal";
 
 type CardTypeFilter = "ALL" | "CREATURE" | "MAGIC";
 type DeckMembershipFilter = "ALL" | "IN_DECK" | "NOT_IN_DECK";
@@ -40,6 +41,8 @@ type CardLibraryPanelProps = {
   onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
+  onAddMarketplaceNeed?: (payload: Record<string, unknown>) => void;
+  onAddMarketplaceHave?: (payload: Record<string, unknown>) => void;
   canUseDevTools?: boolean;
   onSaveCardLimit?: (cardId: string, status: TournamentLimitStatus) => void;
 };
@@ -117,6 +120,8 @@ export function CardLibraryPanel({
   onSetCardCopies,
   onSetOwnedCopies,
   onSaveDeck,
+  onAddMarketplaceNeed,
+  onAddMarketplaceHave,
   canUseDevTools = false,
   onSaveCardLimit
 }: CardLibraryPanelProps) {
@@ -139,6 +144,8 @@ export function CardLibraryPanel({
   const [unloadedCardCount, setUnloadedCardCount] = useState(0);
   const [visibleCardCount, setVisibleCardCount] = useState(INITIAL_VISIBLE_CARD_COUNT);
   const [gridColumnCount, setGridColumnCount] = useState(1);
+  const [activeMarketplaceAction, setActiveMarketplaceAction] = useState<null | { cardId: string; mode: "need" | "have" }>(null);
+
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
   const cardGridRef = useRef<HTMLDivElement | null>(null);
   const loadPreviousSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -827,6 +834,8 @@ export function CardLibraryPanel({
                             </select>
                           </label>
                         ) : null}
+                        <button type="button" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "need" })}>Add to Marketplace Need</button>
+                        <button type="button" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "have" })}>Add to Marketplace Have</button>
                         <button
                           className="library-option-a-mini-deck-add"
                           onClick={() => onAddCard(card.id, selectedArtKey)}
@@ -980,6 +989,18 @@ export function CardLibraryPanel({
           )}
           </div>
         </aside>
+      {activeMarketplaceAction ? (
+        <AddCardToMarketplaceModal
+          title={activeMarketplaceAction.mode === "need" ? "Add to Marketplace Need" : "Add to Marketplace Have"}
+          onClose={() => setActiveMarketplaceAction(null)}
+          onSubmit={payload => {
+            const nextPayload = { ...payload, cardId: activeMarketplaceAction.cardId };
+            if (activeMarketplaceAction.mode === "need") onAddMarketplaceNeed?.(nextPayload);
+            else onAddMarketplaceHave?.(nextPayload);
+            setActiveMarketplaceAction(null);
+          }}
+        />
+      ) : null}
       </div>
     </section>
   );
