@@ -2929,6 +2929,46 @@ io.on("connection", async socket => {
     }
   });
 
+  socket.on("marketplace:listNeeds", async () => {
+    try {
+      const user = requireSocketUser(socket);
+      socket.emit("marketplace:needs", await loadMarketplaceNeeds(user.id));
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("marketplace:createAutoNeedRule", async (data: { generation: string; includeVariants: boolean; quantityPolicy: "ONE_PER_CARD" | "DECK_LIMIT"; enabled?: boolean }) => {
+    try {
+      const user = requireSocketUser(socket);
+      const rule = await createOrReplaceAutoNeedRule({ userId: user.id, generation: data.generation, includeVariants: !!data.includeVariants, quantityPolicy: data.quantityPolicy, enabled: data.enabled ?? true });
+      const ownership = await loadUserCardOwnershipMap(user.id);
+      const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
+      socket.emit("marketplace:autoNeedRuleSaved", rule);
+      socket.emit("marketplace:needs", needs);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("marketplace:disableAutoNeedRule", async (data: { ruleId: string; remove?: boolean }) => {
+    try {
+      const user = requireSocketUser(socket);
+      await disableAutoNeedRule({ userId: user.id, ruleId: data.ruleId, remove: data.remove });
+      const ownership = await loadUserCardOwnershipMap(user.id);
+      const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
+      socket.emit("marketplace:needs", needs);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   socket.on(
     "collection:updateOwnership",
     (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }) => {
@@ -2952,6 +2992,8 @@ io.on("connection", async socket => {
           ownershipMap = upsertCardOwnership(update);
         }
         socket.emit("collection:ownership", ownershipMap);
+        const needs = await recomputeMarketplaceNeedsForUser(user.id, ownershipMap);
+        socket.emit("marketplace:needs", needs);
       } catch (error) {
         socket.emit("collection:error", {
           message: error instanceof Error ? error.message : "Unknown error"
