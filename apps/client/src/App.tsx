@@ -1053,6 +1053,19 @@ export default function App() {
 
   function setOwnedCardCopies(cardId: string, requestedOwnedCount: number) {
     const safeOwnedCount = Math.min(999, Math.max(0, Math.floor(requestedOwnedCount)));
+    const artMarker = "__art_";
+    const artMarkerIndex = cardId.indexOf(artMarker);
+    const ownershipPayload = artMarkerIndex >= 0
+      ? {
+          cardId: cardId.slice(0, artMarkerIndex),
+          variant: cardId.slice(artMarkerIndex + artMarker.length),
+          ownedCount: safeOwnedCount
+        }
+      : {
+          cardId,
+          variant: "default",
+          ownedCount: safeOwnedCount
+        };
 
     setOwnershipSaveStatus("saving");
     setCardOwnershipCounts(current => ({
@@ -1060,10 +1073,7 @@ export default function App() {
       [cardId]: safeOwnedCount
     }));
 
-    socket.emit("collection:setCardOwnership", {
-      cardId,
-      ownedCount: safeOwnedCount
-    });
+    socket.emit("collection:updateOwnership", ownershipPayload);
   }
 
   function loadDeckIntoBuilder(deckId: string, mode: "edit" | "clone") {

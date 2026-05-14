@@ -998,7 +998,7 @@ export function listDefaultCardLibrary(): CardLibraryCardSummary[] {
 export type CardOwnershipMap = Record<string, number>;
 export type CardOwnershipVariant = "default" | "holo" | "zero-art" | "zero-art-holo";
 export type CardOwnershipByVariant = Partial<Record<CardOwnershipVariant, number>>;
-export type CardOwnershipCollectionMap = Record<string, CardOwnershipByVariant>;
+export type CardOwnershipCollectionMap = CardOwnershipMap;
 
 type CardOwnershipFile = {
   version: 1;
@@ -1082,12 +1082,12 @@ function normalizeCardOwnershipVariant(variant: string): CardOwnershipVariant {
   throw new Error(`Unknown card variant "${variant}".`);
 }
 
+function getCardArtOwnershipKey(cardId: string, variant: CardOwnershipVariant): string {
+  return variant === "default" ? cardId : `${cardId}__art_${variant.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+}
+
 export function loadCardOwnershipCollection(): CardOwnershipCollectionMap {
-  const baseOwnershipMap = loadCardOwnershipMap();
-  return Object.entries(baseOwnershipMap).reduce<CardOwnershipCollectionMap>((result, [cardId, ownedCount]) => {
-    result[cardId] = { default: ownedCount };
-    return result;
-  }, {});
+  return loadCardOwnershipMap();
 }
 
 export function upsertCardOwnership(args: {
@@ -1108,24 +1108,10 @@ export function upsertCardOwnership(args: {
     throw new Error("Required quantity must be greater than or equal to 1.");
   }
 
-  const ownershipCollection = loadCardOwnershipCollection();
-  const current = ownershipCollection[args.cardId] ?? {};
+  const ownershipKey = getCardArtOwnershipKey(args.cardId, variant);
+  setCardOwnershipCount(ownershipKey, safeOwnedCount);
 
-  if (safeOwnedCount <= 0) {
-    delete current[variant];
-  } else {
-    current[variant] = safeOwnedCount;
-  }
-
-  if (Object.keys(current).length === 0) {
-    delete ownershipCollection[args.cardId];
-    setCardOwnershipCount(args.cardId, 0);
-  } else {
-    ownershipCollection[args.cardId] = current;
-    setCardOwnershipCount(args.cardId, current.default ?? 0);
-  }
-
-  return ownershipCollection;
+  return loadCardOwnershipCollection();
 }
 
 

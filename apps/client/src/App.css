@@ -2586,6 +2586,13 @@
   white-space: nowrap;
 }
 
+.library-option-a-chip-row .library-option-a-summary-action {
+  border-radius: 0.45rem;
+  font-size: 0.72rem;
+  min-height: 1.8rem;
+  padding: 0.28rem 0.55rem;
+}
+
 .library-option-a-deck-fields {
   display: grid;
   gap: 0.55rem;
@@ -2696,6 +2703,64 @@
 
 .library-option-a-drawer-grid {
   margin-top: 0.55rem;
+}
+
+.library-option-a-variant-checklist {
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.55rem;
+}
+
+.library-option-a-variant-checklist.compact {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  margin-top: 0;
+}
+
+.library-option-a-variant-checklist label {
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.45rem;
+  background: rgba(15, 23, 42, 0.6);
+  color: #dbeafe;
+  display: inline-grid;
+  font-size: 0.72rem;
+  font-weight: 850;
+  gap: 0.35rem;
+  grid-template-columns: 0.9rem minmax(0, max-content);
+  min-height: 1.8rem;
+  padding: 0.28rem 0.45rem;
+}
+
+.library-option-a-variant-checklist input[type="checkbox"] {
+  height: 0.9rem;
+  margin: 0;
+  width: 0.9rem;
+}
+
+.library-option-a-completion-actions {
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+}
+
+.library-option-a-completion-actions > label {
+  display: grid;
+  gap: 0.22rem;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.library-option-a-completion-actions input[type="number"] {
+  min-height: 1.75rem;
+  padding: 0.3rem 0.45rem;
+}
+
+.library-option-a-completion-actions button {
+  min-height: 1.9rem;
+  width: 100%;
 }
 
 .library-option-a-effect-toggle {
@@ -2975,17 +3040,22 @@
   align-items: center;
   display: grid;
   gap: 0.25rem;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .library-option-a-limit-add-row:has(.library-option-a-limit-editor) {
-  grid-template-columns: auto minmax(82px, 0.85fr) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .library-option-a-limit-add-row .limit-badge {
   font-size: 0.58rem;
+  grid-column: 1 / -1;
   min-width: 0;
   padding: 0.17rem 0.38rem;
+}
+
+.library-option-a-limit-add-row:has(.library-option-a-limit-editor) .limit-badge {
+  grid-column: auto;
 }
 
 .library-option-a-limit-editor {
@@ -3016,9 +3086,22 @@
   border-radius: 999px;
   font-size: 0.58rem;
   font-weight: 900;
+  grid-column: 1 / -1;
   min-height: 1.22rem;
   min-width: 0;
   padding: 0.1rem 0.24rem;
+  white-space: nowrap;
+}
+
+.library-option-a-marketplace-action {
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 900;
+  min-height: 1.22rem;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.1rem 0.24rem;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -4911,10 +4994,10 @@
 }
 
 .library-option-a-title-block {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 0.55rem;
+  align-items: start;
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
 .library-option-a-title-block h3 {
@@ -4939,11 +5022,18 @@
 
 .library-option-a-actions {
   gap: 0.3rem;
+  justify-content: end;
 }
 
 .library-option-a-actions button {
   min-height: 1.9rem;
   padding: 0.35rem 0.7rem;
+}
+
+.library-option-a-chip-row .library-option-a-summary-action {
+  font-size: 0.68rem;
+  min-height: 1.55rem;
+  padding: 0.18rem 0.45rem;
 }
 
 .library-option-a-warning-strip {
@@ -5086,7 +5176,7 @@
 
 .card-image-button img,
 .card-image-thumb img {
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .library-option-a-card-details {

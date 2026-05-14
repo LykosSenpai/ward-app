@@ -118,7 +118,7 @@ import { saveLlmPhase4VerificationReport } from "./llm/phase4Reports.js";
 import { runLlmHeadlessEffectTest } from "./llm/headlessEffectRunner.js";
 import type { EffectRuntimeTestStatusRecord } from "./dataStore.js";
 import type { LlmDirectEffectSmokeTestResult, LlmEffectResultReview, LlmEffectTestPlan } from "./llm/types.js";
-import { loadUserCardOwnershipMap } from "./collection/ownershipStore.js";
+import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
 import { createOrReplaceAutoNeedRule, disableAutoNeedRule, loadMarketplaceNeeds, recomputeMarketplaceNeedsForUser } from "./collection/marketplaceNeedRuleStore.js";
 import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
@@ -590,6 +590,10 @@ function getUserSetupOptions(user: AuthUser | null): SetupOptions {
     ...options,
     decks: user ? listUserDecks(user.id) : []
   };
+}
+
+async function loadOwnershipForSocketUser(user: AuthUser | null) {
+  return user ? await loadUserCardOwnershipMap(user.id) : loadCardOwnershipCollection();
 }
 
 function loadDeckForUser(userId: string, deckId: string): DeckListDefinition {
@@ -1842,7 +1846,7 @@ io.on("connection", async socket => {
   socket.emit("match:savedList", listSavedMatches());
   socket.emit("setup:options", getUserSetupOptions(connectedUser));
   socket.emit("cards:library", listDefaultCardLibrary());
-  socket.emit("collection:ownership", loadCardOwnershipCollection());
+  socket.emit("collection:ownership", await loadOwnershipForSocketUser(connectedUser));
   socket.emit("deck:details", getDeckDetailsForUser(connectedUser));
   socket.emit("lobby:list", listLobbySnapshots());
   socket.emit("features:list", { ok: true, features: await listFeatureFlagsForUser(connectedUser) });
@@ -3042,7 +3046,7 @@ io.on("connection", async socket => {
       const user = getSocketUser(socket);
       socket.emit("setup:options", getUserSetupOptions(user));
       socket.emit("cards:library", listDefaultCardLibrary());
-      socket.emit("collection:ownership", loadCardOwnershipCollection());
+      socket.emit("collection:ownership", await loadOwnershipForSocketUser(user));
       socket.emit("deck:details", getDeckDetailsForUser(user));
       socket.emit("lobby:list", listLobbySnapshots());
     } catch (error) {
@@ -3147,9 +3151,9 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("collection:getOwnership", () => {
+  socket.on("collection:getOwnership", async () => {
     try {
-      socket.emit("collection:ownership", loadCardOwnershipCollection());
+      socket.emit("collection:ownership", await loadOwnershipForSocketUser(getSocketUser(socket)));
     } catch (error) {
       socket.emit("collection:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -3199,9 +3203,16 @@ io.on("connection", async socket => {
 
   socket.on(
     "collection:updateOwnership",
-    (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }) => {
+    async (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }) => {
       try {
-        const ownershipMap = upsertCardOwnership(data);
+        const user = getSocketUser(socket);
+        const ownershipMap = user
+          ? await setUserCardOwnershipCount({
+            userId: user.id,
+            ownershipKey: data.variant && data.variant !== "default" ? `${data.cardId}__art_${data.variant}` : data.cardId,
+            ownedCount: data.ownedCount
+          })
+          : upsertCardOwnership(data);
         socket.emit("collection:ownership", ownershipMap);
       } catch (error) {
         socket.emit("collection:error", {
@@ -3215,15 +3226,23 @@ io.on("connection", async socket => {
     "collection:bulkUpdateOwnership",
     async (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }) => {
       try {
-        const user = requireSocketUser(socket);
-        let ownershipMap = loadCardOwnershipCollection();
+        const user = getSocketUser(socket);
+        let ownershipMap = await loadOwnershipForSocketUser(user);
         for (const update of data.updates ?? []) {
-          ownershipMap = upsertCardOwnership(update);
+          ownershipMap = user
+            ? await setUserCardOwnershipCount({
+              userId: user.id,
+              ownershipKey: update.variant && update.variant !== "default" ? `${update.cardId}__art_${update.variant}` : update.cardId,
+              ownedCount: update.ownedCount
+            })
+            : upsertCardOwnership(update);
         }
         socket.emit("collection:ownership", ownershipMap);
-        const ownership = await loadUserCardOwnershipMap(user.id);
-        const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
-        socket.emit("marketplace:needs", needs);
+        if (user) {
+          const ownership = await loadUserCardOwnershipMap(user.id);
+          const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
+          socket.emit("marketplace:needs", needs);
+        }
       } catch (error) {
         socket.emit("collection:error", {
           message: error instanceof Error ? error.message : "Unknown error"

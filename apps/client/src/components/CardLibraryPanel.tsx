@@ -804,14 +804,14 @@ export function CardLibraryPanel({
             <span><strong>{deckStats.total}/30</strong> deck</span>
             <span><strong>{deckStats.creatureCount}</strong> creatures</span>
             <span><strong>{deckStats.magicCount}</strong> magic</span>
-            <button type="button" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingTotalCopies === 0}>Show Remaining Needed</button>
-            <button type="button" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingCardTypes === 0}>
+            <button type="button" className="library-option-a-summary-action" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingTotalCopies === 0}>Show Remaining Needed</button>
+            <button type="button" className="library-option-a-summary-action" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingCardTypes === 0}>
               Missing cards: <strong>{missingCompletionSummary.missingCardTypes}</strong>
             </button>
-            <button type="button" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingTotalCopies === 0}>
+            <button type="button" className="library-option-a-summary-action" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingTotalCopies === 0}>
               Missing copies: <strong>{missingCompletionSummary.missingTotalCopies}</strong>
             </button>
-            <button type="button" onClick={clearMissingFocus} disabled={!missingFocusCardIds}>Clear Remaining Focus</button>
+            <button type="button" className="library-option-a-summary-action" onClick={clearMissingFocus} disabled={!missingFocusCardIds}>Clear Remaining Focus</button>
           </div>
         </div>
 
@@ -821,8 +821,6 @@ export function CardLibraryPanel({
           <button onClick={onNewDeck}>New Deck</button>
           <button onClick={onClearDeckBuilder} disabled={deckBuilderCardIds.length === 0}>Clear Deck</button>
           <button onClick={onSaveDeck} disabled={saveDisabled}>Save Deck</button>
-          <button onClick={() => onAddMarketplaceNeed?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Add Missing Once to Marketplace Needs</button>
-          <button onClick={() => onAddMarketplaceHave?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Create Perpetual Need Rule</button>
         </div>
       </div>
 
@@ -892,7 +890,7 @@ export function CardLibraryPanel({
                   />
                 </label>
               </div>
-              <div className="library-option-a-chip-row" role="group" aria-label="Collection variants">
+              <div className="library-option-a-variant-checklist" role="group" aria-label="Collection variants">
                 {collectionVariantOptions.map(option => (
                   <label key={`variant-${option.key}`}>
                     <input
@@ -917,6 +915,41 @@ export function CardLibraryPanel({
                   <span>{variantCompletion.missingItems.length} missing card-variant targets.</span>
                 </div>
               )}
+              <div className="library-option-a-completion-actions">
+                <label>
+                  Need quantity
+                  <input
+                    type="number"
+                    min={1}
+                    value={desiredQuantityPerCard}
+                    onChange={event => setDesiredQuantityPerCard(Math.max(1, sanitizeCopies(event.target.value) || 1))}
+                  />
+                </label>
+                <div className="library-option-a-variant-checklist compact" role="group" aria-label="Marketplace need variants">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={includeDefaultArt}
+                      onChange={event => setIncludeDefaultArt(event.target.checked)}
+                    />
+                    Default
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={includeZeroArt}
+                      onChange={event => setIncludeZeroArt(event.target.checked)}
+                    />
+                    Zero
+                  </label>
+                </div>
+                <button type="button" onClick={() => onAddMarketplaceNeed?.({ desiredQuantityPerCard, selectedGenerations: completionGeneration === "ALL" ? [] : [completionGeneration], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>
+                  Add Missing to Marketplace Needs
+                </button>
+                <button type="button" onClick={() => onAddMarketplaceHave?.({ desiredQuantityPerCard, selectedGenerations: completionGeneration === "ALL" ? [] : [completionGeneration], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>
+                  Create Perpetual Need Rule
+                </button>
+              </div>
             </details>
 
             <details className="library-option-a-details-drawer">
@@ -1028,12 +1061,8 @@ export function CardLibraryPanel({
                 const selectedArtworkMode = selectedArtKey === "zero-art" || selectedArtKey === "zero-art-holo" ? "ZERO" : "DEFAULT";
                 const selectedIsHolo = selectedArtKey === "holo" || selectedArtKey === "zero-art-holo";
                 const effectivePreviewVariant = getOwnershipVariantFromArtworkAndHolo(selectedArtworkMode, selectedIsHolo);
-                const ownershipVariants: Array<{ label: string; key: CardArtKey }> = [
-                  { label: "Default", key: "default" },
-                  { label: "Holo", key: "holo" },
-                  { label: "Zero", key: "zero-art" },
-                  { label: "Zero Holo", key: "zero-art-holo" }
-                ];
+                const selectedOwnershipLabel = getCardArtLabel(effectivePreviewVariant);
+                const selectedOwnedCount = getOwnedCopiesForArt(card.id, effectivePreviewVariant);
                 const deckLimit = getEffectiveDeckLimit(card, deckBuilderFormat);
                 const canAdd = getCanAddCardToDeck(card.id);
                 const deckLimitLabel = deckBuilderFormat === "TOURNAMENT"
@@ -1081,8 +1110,8 @@ export function CardLibraryPanel({
                             </select>
                           </label>
                         ) : null}
-                        <button type="button" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "need" })}>Add to Marketplace Need</button>
-                        <button type="button" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "have" })}>Add to Marketplace Have</button>
+                        <button type="button" className="library-option-a-marketplace-action" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "need" })}>Market Need</button>
+                        <button type="button" className="library-option-a-marketplace-action" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "have" })}>Market Have</button>
                         <button
                           className="library-option-a-mini-deck-add"
                           onClick={() => onAddCard(card.id, selectedArtKey)}
@@ -1093,40 +1122,33 @@ export function CardLibraryPanel({
                         </button>
                       </div>
 
-                      <div className="library-option-a-ownership-grid" aria-label={`${card.name} ownership controls`}>
-                        {ownershipVariants.map(({ label, key }) => {
-                          const variantOwnedCount = getOwnedCopiesForArt(card.id, key);
-                          const isSelectedPreviewVariant = key === effectivePreviewVariant;
-
-                          return (
-                            <div className="copy-stepper labeled-stepper art-owned-stepper" key={key}>
-                              <span title={`Owned ${label}${isSelectedPreviewVariant ? " (current preview)" : ""}`}>
-                                Own {label}{isSelectedPreviewVariant ? "*" : ""}
-                              </span>
-                              <button
-                                onClick={() => setArtOwnedCopies(card.id, key, Math.max(0, variantOwnedCount - 1))}
-                                disabled={variantOwnedCount === 0}
-                                aria-label={`Remove one owned ${label} copy of ${card.name}`}
-                                title={`Remove one owned ${label} copy`}
-                              >
-                                -
-                              </button>
-                              <input
-                                value={variantOwnedCount}
-                                onChange={event => setArtOwnedCopiesFromInput(card.id, key, event.target.value)}
-                                aria-label={`${card.name} ${label} owned copies`}
-                                title={`${label} copies you own`}
-                              />
-                              <button
-                                onClick={() => setArtOwnedCopies(card.id, key, variantOwnedCount + 1)}
-                                aria-label={`Add one owned ${label} copy of ${card.name}`}
-                                title={`Add one owned ${label} copy`}
-                              >
-                                +
-                              </button>
-                            </div>
-                          );
-                        })}
+                      <div className="library-option-a-ownership-grid" aria-label={`${card.name} selected variant ownership controls`}>
+                        <div className="copy-stepper labeled-stepper art-owned-stepper">
+                          <span title={`Owned ${selectedOwnershipLabel}`}>
+                            Own {selectedOwnershipLabel}
+                          </span>
+                          <button
+                            onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, Math.max(0, selectedOwnedCount - 1))}
+                            disabled={selectedOwnedCount === 0}
+                            aria-label={`Remove one owned ${selectedOwnershipLabel} copy of ${card.name}`}
+                            title={`Remove one owned ${selectedOwnershipLabel} copy`}
+                          >
+                            -
+                          </button>
+                          <input
+                            value={selectedOwnedCount}
+                            onChange={event => setArtOwnedCopiesFromInput(card.id, effectivePreviewVariant, event.target.value)}
+                            aria-label={`${card.name} ${selectedOwnershipLabel} owned copies`}
+                            title={`${selectedOwnershipLabel} copies you own`}
+                          />
+                          <button
+                            onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, selectedOwnedCount + 1)}
+                            aria-label={`Add one owned ${selectedOwnershipLabel} copy of ${card.name}`}
+                            title={`Add one owned ${selectedOwnershipLabel} copy`}
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                       {onOpenMarketplaceOverride ? (
                         <button
