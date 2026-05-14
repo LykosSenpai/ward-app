@@ -87,6 +87,7 @@ import {
   listTournamentDeckSubmissions,
   listUserDecks,
   loadCardCatalog,
+  loadCardOwnershipCollection,
   loadCardLimitMap,
   loadDeckList,
   loadUserDeckList,
@@ -98,6 +99,7 @@ import {
   updateCardLimitRule,
   reviewTournamentDeckSubmission,
   saveMatchToDisk,
+  upsertCardOwnership,
   validateDataFileId
 } from "./dataStore.js";
 import type { SetupOptions } from "./dataStore.js";
@@ -119,7 +121,6 @@ import type { LlmDirectEffectSmokeTestResult, LlmEffectResultReview, LlmEffectTe
 import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
 import { changeUserPassword, createUser, getUserProfile, listUsersForTournamentDeckReview, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
-import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
 import { checkDbConnection } from "./db/pool.js";
 import { listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
 
@@ -1613,7 +1614,7 @@ io.on("connection", async socket => {
   socket.emit("match:savedList", listSavedMatches());
   socket.emit("setup:options", getUserSetupOptions(connectedUser));
   socket.emit("cards:library", listDefaultCardLibrary());
-  socket.emit("collection:ownership", connectedUser ? await loadUserCardOwnershipMap(connectedUser.id) : {});
+  socket.emit("collection:ownership", loadCardOwnershipCollection());
   socket.emit("deck:details", getDeckDetailsForUser(connectedUser));
   socket.emit("lobby:list", listLobbySnapshots());
   socket.emit("features:list", { ok: true, features: await listFeatureFlagsForUser(connectedUser) });
@@ -2813,7 +2814,7 @@ io.on("connection", async socket => {
       const user = getSocketUser(socket);
       socket.emit("setup:options", getUserSetupOptions(user));
       socket.emit("cards:library", listDefaultCardLibrary());
-      socket.emit("collection:ownership", user ? await loadUserCardOwnershipMap(user.id) : {});
+      socket.emit("collection:ownership", loadCardOwnershipCollection());
       socket.emit("deck:details", getDeckDetailsForUser(user));
       socket.emit("lobby:list", listLobbySnapshots());
     } catch (error) {
@@ -2918,30 +2919,41 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("collection:listOwnership", async () => {
+  socket.on("collection:getOwnership", () => {
     try {
-      const user = getSocketUser(socket);
-      socket.emit("collection:ownership", user ? await loadUserCardOwnershipMap(user.id) : {});
+      socket.emit("collection:ownership", loadCardOwnershipCollection());
     } catch (error) {
-      socket.emit("match:error", {
+      socket.emit("collection:error", {
         message: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
 
   socket.on(
-    "collection:setCardOwnership",
-    async (data: { cardId: string; ownedCount: number }) => {
+    "collection:updateOwnership",
+    (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }) => {
       try {
-        const user = requireSocketUser(socket);
-        const ownershipMap = await setUserCardOwnershipCount({
-          userId: user.id,
-          ownershipKey: data.cardId,
-          ownedCount: data.ownedCount
-        });
+        const ownershipMap = upsertCardOwnership(data);
         socket.emit("collection:ownership", ownershipMap);
       } catch (error) {
-        socket.emit("match:error", {
+        socket.emit("collection:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "collection:bulkUpdateOwnership",
+    (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }) => {
+      try {
+        let ownershipMap = loadCardOwnershipCollection();
+        for (const update of data.updates ?? []) {
+          ownershipMap = upsertCardOwnership(update);
+        }
+        socket.emit("collection:ownership", ownershipMap);
+      } catch (error) {
+        socket.emit("collection:error", {
           message: error instanceof Error ? error.message : "Unknown error"
         });
       }
