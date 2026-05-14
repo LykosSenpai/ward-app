@@ -225,6 +225,42 @@ const matchUndoHistory = new Map<string, MatchState[]>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
 
+type MarketplacePostStatus = "ACTIVE" | "ARCHIVED";
+type MarketplacePostKind = "HAVE" | "NEED";
+
+type MarketplaceSettings = {
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+};
+
+type MarketplacePostCard = {
+  cardId: string;
+  name: string;
+  setId: string;
+  condition: string;
+  quantity: number;
+};
+
+type MarketplacePost = {
+  id: string;
+  ownerId: string;
+  ownerDisplayName: string;
+  kind: MarketplacePostKind;
+  status: MarketplacePostStatus;
+  notes?: string;
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+  cards: MarketplacePostCard[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+const marketplaceSettings: MarketplaceSettings = {
+  tradeEnabled: true,
+  saleEnabled: false
+};
+const marketplacePosts = new Map<string, MarketplacePost>();
+
 const MAX_UNDO_STEPS = 25;
 const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const IN_MATCH_LOBBY_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
@@ -602,6 +638,32 @@ function listLobbySnapshots() {
 
 function emitLobbyList(): void {
   io.emit("lobby:list", listLobbySnapshots());
+}
+
+function listMarketplacePosts(): MarketplacePost[] {
+  return Array.from(marketplacePosts.values()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+function emitMarketplacePosts(): void {
+  io.emit("marketplace:posts", listMarketplacePosts());
+}
+
+function emitMarketplaceSettings(): void {
+  io.emit("marketplace:settings", marketplaceSettings);
+}
+
+function ensureMarketplacePostCard(card: Partial<MarketplacePostCard>, index: number): MarketplacePostCard {
+  const cardId = String(card.cardId ?? "").trim();
+  const name = String(card.name ?? "").trim();
+  const setId = String(card.setId ?? "").trim();
+  const condition = String(card.condition ?? "").trim();
+  const quantity = Number(card.quantity ?? 0);
+
+  if (!cardId || !name || !setId || !condition || !Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error(`Invalid card metadata at index ${index}.`);
+  }
+
+  return { cardId, name, setId, condition, quantity: Math.floor(quantity) };
 }
 
 function emitLobbyUpdated(lobby: MatchLobbyRecord): void {
