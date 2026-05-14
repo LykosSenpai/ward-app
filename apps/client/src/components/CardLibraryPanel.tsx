@@ -443,9 +443,18 @@ export function CardLibraryPanel({
     return artKey === "default" ? cardId : `${cardId}__art_${artKey.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
   }
 
-  function getOwnedCopiesForSelectedArt(cardId: string): number {
-    return ownershipCounts[getCardArtOwnershipKey(cardId, getSelectedArtKey(cardId))] ?? 0;
+  function getOwnershipVariantFromArtworkAndHolo(artworkMode: "DEFAULT" | "ZERO", isHolo: boolean): CardArtKey {
+    if (artworkMode === "ZERO") {
+      return isHolo ? "zero-art-holo" : "zero-art";
+    }
+
+    return isHolo ? "holo" : "default";
   }
+
+  function getOwnedCopiesForArt(cardId: string, artKey: CardArtKey): number {
+    return ownershipCounts[getCardArtOwnershipKey(cardId, artKey)] ?? 0;
+  }
+
 
   function getTotalOwnedCopiesForCard(cardId: string): number {
     return ACTIVE_CARD_ART_OPTIONS.reduce((total, artOption) => {
@@ -453,13 +462,13 @@ export function CardLibraryPanel({
     }, 0);
   }
 
-  function setSelectedArtOwnedCopies(cardId: string, requestedOwnedCount: number) {
-    const ownershipKey = getCardArtOwnershipKey(cardId, getSelectedArtKey(cardId));
+  function setArtOwnedCopies(cardId: string, artKey: CardArtKey, requestedOwnedCount: number) {
+    const ownershipKey = getCardArtOwnershipKey(cardId, artKey);
     onSetOwnedCopies(ownershipKey, Math.min(999, Math.max(0, Math.floor(requestedOwnedCount))));
   }
 
-  function setSelectedArtOwnedCopiesFromInput(cardId: string, value: string) {
-    setSelectedArtOwnedCopies(cardId, sanitizeCopies(value));
+  function setArtOwnedCopiesFromInput(cardId: string, artKey: CardArtKey, value: string) {
+    setArtOwnedCopies(cardId, artKey, sanitizeCopies(value));
   }
 
   function getCanAddCardToDeck(cardId: string) {
@@ -778,8 +787,15 @@ export function CardLibraryPanel({
               )}
               {visibleCards.map(card => {
                 const selectedArtKey = getSelectedArtKey(card.id);
-                const selectedArtLabel = getCardArtLabel(selectedArtKey);
-                const ownedCount = getOwnedCopiesForSelectedArt(card.id);
+                const selectedArtworkMode = selectedArtKey === "zero-art" || selectedArtKey === "zero-art-holo" ? "ZERO" : "DEFAULT";
+                const selectedIsHolo = selectedArtKey === "holo" || selectedArtKey === "zero-art-holo";
+                const effectivePreviewVariant = getOwnershipVariantFromArtworkAndHolo(selectedArtworkMode, selectedIsHolo);
+                const ownershipVariants: Array<{ label: string; key: CardArtKey }> = [
+                  { label: "Default", key: "default" },
+                  { label: "Holo", key: "holo" },
+                  { label: "Zero", key: "zero-art" },
+                  { label: "Zero Holo", key: "zero-art-holo" }
+                ];
                 const deckLimit = getEffectiveDeckLimit(card, deckBuilderFormat);
                 const canAdd = getCanAddCardToDeck(card.id);
                 const deckLimitLabel = deckBuilderFormat === "TOURNAMENT"
@@ -837,29 +853,40 @@ export function CardLibraryPanel({
                         </button>
                       </div>
 
-                      <div className="copy-stepper labeled-stepper art-owned-stepper">
-                        <span title={`Owned ${selectedArtLabel}`}>Own {selectedArtLabel}</span>
-                        <button
-                          onClick={() => setSelectedArtOwnedCopies(card.id, ownedCount - 1)}
-                          disabled={ownedCount === 0}
-                          aria-label={`Remove one owned ${selectedArtLabel} copy of ${card.name}`}
-                          title={`Remove one owned ${selectedArtLabel} copy`}
-                        >
-                          -
-                        </button>
-                        <input
-                          value={ownedCount}
-                          onChange={event => setSelectedArtOwnedCopiesFromInput(card.id, event.target.value)}
-                          aria-label={`${card.name} ${selectedArtLabel} owned copies`}
-                          title={`${selectedArtLabel} copies you own`}
-                        />
-                        <button
-                          onClick={() => setSelectedArtOwnedCopies(card.id, ownedCount + 1)}
-                          aria-label={`Add one owned ${selectedArtLabel} copy of ${card.name}`}
-                          title={`Add one owned ${selectedArtLabel} copy`}
-                        >
-                          +
-                        </button>
+                      <div className="library-option-a-ownership-grid" aria-label={`${card.name} ownership controls`}>
+                        {ownershipVariants.map(({ label, key }) => {
+                          const variantOwnedCount = getOwnedCopiesForArt(card.id, key);
+                          const isSelectedPreviewVariant = key === effectivePreviewVariant;
+
+                          return (
+                            <div className="copy-stepper labeled-stepper art-owned-stepper" key={key}>
+                              <span title={`Owned ${label}${isSelectedPreviewVariant ? " (current preview)" : ""}`}>
+                                Own {label}{isSelectedPreviewVariant ? "*" : ""}
+                              </span>
+                              <button
+                                onClick={() => setArtOwnedCopies(card.id, key, Math.max(0, variantOwnedCount - 1))}
+                                disabled={variantOwnedCount === 0}
+                                aria-label={`Remove one owned ${label} copy of ${card.name}`}
+                                title={`Remove one owned ${label} copy`}
+                              >
+                                -
+                              </button>
+                              <input
+                                value={variantOwnedCount}
+                                onChange={event => setArtOwnedCopiesFromInput(card.id, key, event.target.value)}
+                                aria-label={`${card.name} ${label} owned copies`}
+                                title={`${label} copies you own`}
+                              />
+                              <button
+                                onClick={() => setArtOwnedCopies(card.id, key, variantOwnedCount + 1)}
+                                aria-label={`Add one owned ${label} copy of ${card.name}`}
+                                title={`Add one owned ${label} copy`}
+                              >
+                                +
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </article>
