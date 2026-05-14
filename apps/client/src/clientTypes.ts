@@ -1,4 +1,15 @@
-﻿import type { MatchState as BaseMatchState, WardEngineEffect } from "@ward/shared";
+﻿import type {
+  MatchState as BaseMatchState,
+  MarketplaceAutoListingSettings,
+  MarketplaceAutoNeedRule,
+  MarketplaceCardVariant,
+  MarketplaceMatch,
+  MarketplacePost,
+  MarketplaceRetainOverride,
+  MarketplaceTransaction,
+  MarketplaceTransactionStatus,
+  WardEngineEffect,
+} from "@ward/shared";
 
 export type ServerWelcome = {
   message: string;
@@ -144,6 +155,16 @@ export type CardLibraryCardSummary = {
 };
 
 export type CardOwnershipMap = Record<string, number>;
+
+export type MarketplacePostModel = MarketplacePost;
+export type MarketplaceMatchModel = MarketplaceMatch;
+export type MarketplaceTransactionModel = MarketplaceTransaction;
+export type MarketplaceSettingsModel = MarketplaceAutoListingSettings;
+export type MarketplaceRetainOverrideModel = MarketplaceRetainOverride;
+export type MarketplaceAutoNeedRuleModel = MarketplaceAutoNeedRule;
+export type MarketplaceVariant = MarketplaceCardVariant;
+export type MarketplaceTransactionState = MarketplaceTransactionStatus;
+
 
 export type CardDefinitionWithClientFields = BaseMatchState["cardCatalog"][string] & {
   text?: string;
