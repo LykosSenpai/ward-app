@@ -4233,6 +4233,46 @@ socket.on(
   }
 );
 
+
+
+  socket.on("marketplace:addMissingNeedsFromCompletion", (data: {
+    cardItems: Array<{ cardId: string; variant?: string; quantity?: number; trade?: boolean; sale?: boolean; price?: string; note?: string }>;
+    mergeWithExisting?: boolean;
+  }) => {
+    try {
+      const user = requireSocketUser(socket);
+      const items = Array.isArray(data.cardItems) ? data.cardItems : [];
+      const userKey = user.id;
+      const current = (globalThis as { __marketplaceNeeds?: Record<string, typeof items> }).__marketplaceNeeds ?? {};
+      const existing = current[userKey] ?? [];
+      const merged = [...existing];
+
+      for (const item of items) {
+        const quantity = Math.max(1, Math.floor(item.quantity ?? 1));
+        const incoming = { ...item, quantity };
+        if (data.mergeWithExisting) {
+          const idx = merged.findIndex(existingItem =>
+            existingItem.cardId === incoming.cardId &&
+            (existingItem.variant ?? "default") === (incoming.variant ?? "default") &&
+            Boolean(existingItem.trade) === Boolean(incoming.trade) &&
+            Boolean(existingItem.sale) === Boolean(incoming.sale) &&
+            (existingItem.price ?? "") === (incoming.price ?? "") &&
+            (existingItem.note ?? "") === (incoming.note ?? "")
+          );
+          if (idx >= 0) merged[idx] = { ...merged[idx], quantity: Math.max(1, (merged[idx].quantity ?? 1) + quantity) };
+          else merged.push(incoming);
+        } else {
+          merged.push(incoming);
+        }
+      }
+
+      (globalThis as { __marketplaceNeeds?: Record<string, typeof items> }).__marketplaceNeeds = { ...current, [userKey]: merged };
+      socket.emit("marketplace:needsUpdated", { items: merged });
+    } catch (error) {
+      socket.emit("match:error", { message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log(`Client disconnected: ${socket.id}`);
   });
