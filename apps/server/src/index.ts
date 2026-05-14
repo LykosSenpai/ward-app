@@ -120,6 +120,7 @@ import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
 import { changeUserPassword, createUser, getUserProfile, listUsersForTournamentDeckReview, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
 import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
+import { addMissingNeedsOnce, createMarketplaceAutoNeedRule, listMarketplaceAutoNeedRules, listMarketplaceNeedsWithDerived } from "./collection/marketplaceNeedStore.js";
 import { checkDbConnection } from "./db/pool.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -2916,6 +2917,39 @@ io.on("connection", async socket => {
       }
     }
   );
+
+  socket.on("collection:listMarketplaceNeeds", async (data?: { packIds?: string[] }) => {
+    try {
+      const user = requireSocketUser(socket);
+      const cards = listCardLibraryForPacks(data?.packIds?.length ? data.packIds : listSetupOptions().cardPacks.map(pack => pack.id), loadCardLimitMap());
+      const ownership = await loadUserCardOwnershipMap(user.id);
+      socket.emit("collection:marketplaceNeeds", await listMarketplaceNeedsWithDerived({ userId: user.id, ownershipCounts: ownership, cards: cards.map(card => ({ id: card.id, generation: card.generation })) }));
+      socket.emit("collection:marketplaceAutoNeedRules", await listMarketplaceAutoNeedRules(user.id));
+    } catch (error) {
+      socket.emit("match:error", { message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("collection:addMissingNeedsOnce", async (data: { packIds?: string[]; desiredQuantityPerCard: number; selectedGenerations: string[]; selectedArtKeys: string[] }) => {
+    try {
+      const user = requireSocketUser(socket);
+      const cards = listCardLibraryForPacks(data.packIds?.length ? data.packIds : listSetupOptions().cardPacks.map(pack => pack.id), loadCardLimitMap());
+      const ownership = await loadUserCardOwnershipMap(user.id);
+      await addMissingNeedsOnce({ userId: user.id, ownershipCounts: ownership, cards: cards.map(card => ({ id: card.id, generation: card.generation })), desiredQuantityPerCard: data.desiredQuantityPerCard, selectedGenerations: data.selectedGenerations ?? [], selectedArtKeys: data.selectedArtKeys ?? [] });
+      socket.emit("collection:marketplaceNeeds", await listMarketplaceNeedsWithDerived({ userId: user.id, ownershipCounts: ownership, cards: cards.map(card => ({ id: card.id, generation: card.generation })) }));
+    } catch (error) {
+      socket.emit("match:error", { message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("collection:createMarketplaceAutoNeedRule", async (data: { desiredQuantityPerCard: number; selectedGenerations: string[]; selectedArtKeys: string[]; enabled?: boolean }) => {
+    try {
+      const user = requireSocketUser(socket);
+      socket.emit("collection:marketplaceAutoNeedRules", await createMarketplaceAutoNeedRule(user.id, { desiredQuantityPerCard: data.desiredQuantityPerCard, selectedGenerations: data.selectedGenerations ?? [], selectedArtKeys: data.selectedArtKeys ?? [], enabled: data.enabled ?? true }));
+    } catch (error) {
+      socket.emit("match:error", { message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
 
 
   socket.on(

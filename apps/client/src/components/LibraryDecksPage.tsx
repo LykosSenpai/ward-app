@@ -25,6 +25,8 @@ type LibraryDecksPageProps = {
   onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
+  onAddMissingNeedsOnce?: (data: { desiredQuantityPerCard: number; selectedGenerations: string[]; selectedArtKeys: CardArtKey[] }) => void;
+  onCreatePerpetualNeedRule?: (data: { desiredQuantityPerCard: number; selectedGenerations: string[]; selectedArtKeys: CardArtKey[] }) => void;
   canUseDevTools?: boolean;
   onSaveCardLimit?: (cardId: string, status: "LEGAL" | "LIMITED" | "BANNED") => void;
 };
@@ -52,6 +54,8 @@ export function LibraryDecksPage({
   onSetCardCopies,
   onSetOwnedCopies,
   onSaveDeck,
+  onAddMissingNeedsOnce,
+  onCreatePerpetualNeedRule,
   canUseDevTools = false,
   onSaveCardLimit
 }: LibraryDecksPageProps) {
@@ -80,6 +84,8 @@ export function LibraryDecksPage({
         onSetCardCopies={onSetCardCopies}
         onSetOwnedCopies={onSetOwnedCopies}
         onSaveDeck={onSaveDeck}
+        onAddMissingNeedsOnce={onAddMissingNeedsOnce}
+        onCreatePerpetualNeedRule={onCreatePerpetualNeedRule}
         canUseDevTools={canUseDevTools}
         onSaveCardLimit={onSaveCardLimit}
       />

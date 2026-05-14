@@ -2038,6 +2038,8 @@ export default function App() {
             onSetCardCopies={setDeckBuilderCardCopies}
             onSetOwnedCopies={setOwnedCardCopies}
             onSaveDeck={saveBuiltDeck}
+            onAddMissingNeedsOnce={data => socket.emit("collection:addMissingNeedsOnce", { ...data, packIds: selectedPackIds })}
+            onCreatePerpetualNeedRule={data => socket.emit("collection:createMarketplaceAutoNeedRule", data)}
             canUseDevTools={canUseDevTools}
             onSaveCardLimit={saveCardTournamentLimit}
           />

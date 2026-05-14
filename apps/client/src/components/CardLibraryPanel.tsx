@@ -40,6 +40,8 @@ type CardLibraryPanelProps = {
   onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
+  onAddMissingNeedsOnce?: (data: { desiredQuantityPerCard: number; selectedGenerations: string[]; selectedArtKeys: CardArtKey[] }) => void;
+  onCreatePerpetualNeedRule?: (data: { desiredQuantityPerCard: number; selectedGenerations: string[]; selectedArtKeys: CardArtKey[] }) => void;
   canUseDevTools?: boolean;
   onSaveCardLimit?: (cardId: string, status: TournamentLimitStatus) => void;
 };
@@ -117,6 +119,8 @@ export function CardLibraryPanel({
   onSetCardCopies,
   onSetOwnedCopies,
   onSaveDeck,
+  onAddMissingNeedsOnce,
+  onCreatePerpetualNeedRule,
   canUseDevTools = false,
   onSaveCardLimit
 }: CardLibraryPanelProps) {
@@ -139,6 +143,9 @@ export function CardLibraryPanel({
   const [unloadedCardCount, setUnloadedCardCount] = useState(0);
   const [visibleCardCount, setVisibleCardCount] = useState(INITIAL_VISIBLE_CARD_COUNT);
   const [gridColumnCount, setGridColumnCount] = useState(1);
+  const [desiredQuantityPerCard, setDesiredQuantityPerCard] = useState(1);
+  const [includeDefaultArt, setIncludeDefaultArt] = useState(true);
+  const [includeZeroArt, setIncludeZeroArt] = useState(false);
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
   const cardGridRef = useRef<HTMLDivElement | null>(null);
   const loadPreviousSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -632,6 +639,8 @@ export function CardLibraryPanel({
           <button onClick={onNewDeck}>New Deck</button>
           <button onClick={onClearDeckBuilder} disabled={deckBuilderCardIds.length === 0}>Clear Deck</button>
           <button onClick={onSaveDeck} disabled={saveDisabled}>Save Deck</button>
+          <button onClick={() => onAddMissingNeedsOnce?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Add Missing Once to Marketplace Needs</button>
+          <button onClick={() => onCreatePerpetualNeedRule?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Create Perpetual Need Rule</button>
         </div>
       </div>
 
@@ -732,6 +741,14 @@ export function CardLibraryPanel({
                     <option value="NOT_IN_DECK">Not In Deck</option>
                   </select>
                 </label>
+
+                <label>
+                  Desired Qty/Card
+                  <input type="number" min={1} max={999} value={desiredQuantityPerCard} onChange={event => setDesiredQuantityPerCard(Math.max(1, sanitizeCopies(event.target.value)))} />
+                </label>
+
+                <label><input type="checkbox" checked={includeDefaultArt} onChange={event => setIncludeDefaultArt(event.target.checked)} /> Include Default variant</label>
+                <label><input type="checkbox" checked={includeZeroArt} onChange={event => setIncludeZeroArt(event.target.checked)} /> Include Zero variant</label>
 
                 <label>
                   Owned
