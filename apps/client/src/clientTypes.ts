@@ -1,4 +1,15 @@
-﻿import type { MatchState as BaseMatchState, WardEngineEffect } from "@ward/shared";
+﻿import type {
+  MatchState as BaseMatchState,
+  MarketplaceAutoListingSettings,
+  MarketplaceAutoNeedRule,
+  MarketplaceCardVariant,
+  MarketplaceMatch,
+  MarketplacePost,
+  MarketplaceRetainOverride,
+  MarketplaceTransaction,
+  MarketplaceTransactionStatus,
+  WardEngineEffect,
+} from "@ward/shared";
 
 export type ServerWelcome = {
   message: string;
@@ -144,6 +155,38 @@ export type CardLibraryCardSummary = {
 };
 
 export type CardOwnershipMap = Record<string, number>;
+export type MarketplaceTradeLine = { cardId: string; quantity: number };
+export type MarketplaceTransactionStatus = "PENDING_CONFIRMATION" | "CONFIRMED_BY_ONE_PARTY" | "COMPLETED" | "DENIED" | "CANCELED" | "EXPIRED";
+export type MarketplaceTransaction = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  status: MarketplaceTransactionStatus;
+  requesterUserId: string;
+  responderUserId: string;
+  offered: MarketplaceTradeLine[];
+  requested: MarketplaceTradeLine[];
+  confirmedByUserIds: string[];
+};
+
+export type CardOwnershipVariant = "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
+
+export type CardOwnershipRecord = Record<CardOwnershipVariant, number>;
+
+export type CollectionCompletionCardRequest = {
+  cardId: string;
+  requiredQuantity: number;
+  ownership?: Partial<CardOwnershipRecord>;
+};
+
+export type CollectionCompletionSummary = {
+  cardId: string;
+  requiredQuantity: number;
+  ownedQuantity: number;
+  missingQuantity: number;
+  ownership: CardOwnershipRecord;
+};
 
 export type CardDefinitionWithClientFields = BaseMatchState["cardCatalog"][string] & {
   text?: string;
@@ -225,6 +268,25 @@ export type EffectCoverageRow = {
 };
 
 export type LlmMode = "LLM" | "LOCAL_FALLBACK";
+
+export type FeatureKey =
+  | "card-library"
+  | "deck-library"
+  | "saved-matches"
+  | "play-table"
+  | "board-preview"
+  | "admin-tools";
+
+export type ServerFeatureFlag = {
+  key: FeatureKey;
+  label: string;
+  description: string;
+  enabledForPlayers: boolean;
+  adminCanPreview: boolean;
+  adminOnly: boolean;
+  sortOrder: number;
+  updatedAt: string;
+};
 
 export type LlmServiceStatus = {
   configured: boolean;
@@ -390,4 +452,3 @@ export type LlmPhase4ReportSummary = {
   coverageRecordCount: number;
   needsFixCount: number;
 };
-
