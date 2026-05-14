@@ -227,6 +227,77 @@ const MAX_UNDO_STEPS = 25;
 const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const IN_MATCH_LOBBY_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 const LOBBY_CLEANUP_INTERVAL_MS = 60 * 1000;
+
+
+type MarketplaceMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
+type MarketplacePostItem = { cardId: string; variant: string; quantity: number; pendingReservedQuantity?: number };
+type MarketplacePost = { id: string; userId: string; displayName: string; linkedPostId?: string; haveItems: MarketplacePostItem[]; needItems: MarketplacePostItem[] };
+type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
+type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; linkedPostId?: string };
+
+const marketplacePosts = new Map<string, MarketplacePost>();
+
+function marketplaceCardKey(cardId: string, variant: string): string {
+  return `${cardId}::${variant}`;
+}
+
+function toAvailabilityMap(items: MarketplacePostItem[]): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const item of items) {
+    const available = Math.max(0, item.quantity - (item.pendingReservedQuantity ?? 0));
+    map.set(marketplaceCardKey(item.cardId, item.variant), available);
+  }
+  return map;
+}
+
+function collectMatchedItems(needs: MarketplacePostItem[], publicAvailability: Map<string, number>): MarketplaceMatchItem[] {
+  const out: MarketplaceMatchItem[] = [];
+  for (const need of needs) {
+    const key = marketplaceCardKey(need.cardId, need.variant);
+    const publicAvailableQty = publicAvailability.get(key) ?? 0;
+    const matchedQuantity = Math.min(Math.max(0, need.quantity), Math.max(0, publicAvailableQty));
+    if (matchedQuantity > 0) {
+      out.push({ cardId: need.cardId, variant: need.variant, matchedQuantity });
+    }
+  }
+  return out;
+}
+
+function computeMarketplaceMatchesForPost(sourcePost: MarketplacePost, allPosts: MarketplacePost[]): MarketplaceMatch[] {
+  const matches: MarketplaceMatch[] = [];
+  const myNeedToTheirHave = new Map<string, MarketplaceMatchItem[]>();
+  const myHaveToTheirNeed = new Map<string, MarketplaceMatchItem[]>();
+
+  for (const post of allPosts) {
+    if (post.id === sourcePost.id) continue;
+    const theyHave = collectMatchedItems(sourcePost.needItems, toAvailabilityMap(post.haveItems));
+    const iHave = collectMatchedItems(post.needItems, toAvailabilityMap(sourcePost.haveItems));
+    if (theyHave.length) myNeedToTheirHave.set(post.id, theyHave);
+    if (iHave.length) myHaveToTheirNeed.set(post.id, iHave);
+  }
+
+  for (const [postId, matchedItems] of myNeedToTheirHave) {
+    const mutual = myHaveToTheirNeed.get(postId);
+    matches.push({
+      type: mutual?.length ? "MUTUAL_TRADE_MATCH" : "THEY_HAVE_WHAT_I_NEED",
+      postId,
+      matchedItems,
+      linkedPostId: allPosts.find(post => post.id === postId)?.linkedPostId
+    });
+  }
+
+  for (const [postId, matchedItems] of myHaveToTheirNeed) {
+    if (myNeedToTheirHave.has(postId)) continue;
+    matches.push({
+      type: "I_HAVE_WHAT_THEY_NEED",
+      postId,
+      matchedItems,
+      linkedPostId: allPosts.find(post => post.id === postId)?.linkedPostId
+    });
+  }
+
+  return matches;
+}
 const EMBED_ALLOWED_ORIGINS = (process.env.EMBED_ALLOWED_ORIGINS ?? "")
   .split(",")
   .map(value => value.trim())
@@ -2885,6 +2956,32 @@ io.on("connection", async socket => {
         message: error instanceof Error ? error.message : "Unknown error"
       });
     }
+  });
+
+  socket.on("marketplace:listMatches", () => {
+    const user = getSocketUser(socket);
+    if (!user) {
+      socket.emit("marketplace:error", { message: "You must be logged in." });
+      return;
+    }
+
+    const allPosts = Array.from(marketplacePosts.values());
+    const myPosts = allPosts.filter(post => post.userId === user.id);
+    const matches = myPosts.flatMap(post => computeMarketplaceMatchesForPost(post, allPosts));
+    socket.emit("marketplace:matches", matches);
+  });
+
+  socket.on("marketplace:listMyMatches", () => {
+    const user = getSocketUser(socket);
+    if (!user) {
+      socket.emit("marketplace:error", { message: "You must be logged in." });
+      return;
+    }
+
+    const allPosts = Array.from(marketplacePosts.values());
+    const myPosts = allPosts.filter(post => post.userId === user.id);
+    const grouped = myPosts.map(post => ({ postId: post.id, linkedPostId: post.linkedPostId, matches: computeMarketplaceMatchesForPost(post, allPosts) }));
+    socket.emit("marketplace:myMatches", grouped);
   });
 
   socket.on("collection:listOwnership", async () => {

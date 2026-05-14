@@ -23,6 +23,7 @@ import { BoardPreview3D } from "./components/BoardPreview3D";
 import type { PointerGestureIntent } from "./components/boardInteractionIntents";
 import type { BoardIntentCommand } from "./components/boardIntentCommands";
 import { ProfilePage } from "./components/ProfilePage";
+import { MarketplaceMatchesPanel } from "./components/MarketplaceMatchesPanel";
 import { SaveLoadPanel } from "./components/SaveLoadPanel";
 import { TargetPromptCard } from "./components/TargetPromptCard";
 import { ModalPanel } from "./components/ui/ModalPanel";
@@ -61,12 +62,13 @@ import type {
   ManualEffectStatKey,
   SavedMatchSummary,
   ServerWelcome,
-  SetupOptions
+  SetupOptions,
+  MarketplaceMyMatchesGroup
 } from "./clientTypes";
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
-type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview";
+type AppPage = "play" | "card-library" | "deck-library" | "saved-matches" | "profile" | "marketplace" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview";
 type PlayViewMode = "board3d";
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
@@ -245,6 +247,7 @@ export default function App() {
   const [llmPhase4Report, setLlmPhase4Report] = useState<LlmPhase4ReportSummary | undefined>();
   const [llmBatchProgress, setLlmBatchProgress] = useState<LlmBatchProgress | undefined>();
   const [llmDirectTestResults, setLlmDirectTestResults] = useState<Record<string, LlmDirectEffectSmokeTestResult>>({});
+  const [marketplaceMyMatches, setMarketplaceMyMatches] = useState<MarketplaceMyMatchesGroup[]>([]);
   const [llmBusy, setLlmBusy] = useState(false);
   const canUseDevTools = !!authUser?.devToolsEnabled;
 
@@ -645,6 +648,10 @@ export default function App() {
       });
       setLlmBusy(false);
       setSaveMessage(`Headless auto-run complete for ${data.length} included draft${data.length === 1 ? "" : "s"}.`);
+    });
+
+    socket.on("marketplace:myMatches", (data: MarketplaceMyMatchesGroup[]) => {
+      setMarketplaceMyMatches(data);
     });
 
     socket.on("connect_error", () => {
@@ -1882,6 +1889,15 @@ export default function App() {
           >
             Profile
           </button>
+          <button
+            className={activePage === "marketplace" ? "app-page-nav-button active" : "app-page-nav-button"}
+            onClick={() => {
+              setActivePage("marketplace");
+              socket.emit("marketplace:listMyMatches");
+            }}
+          >
+            Marketplace
+          </button>
           {canUseDevTools && (
             <>
               <button
@@ -2011,6 +2027,12 @@ export default function App() {
             socket.disconnect();
             socket.connect();
           }} />
+        ) : activePage === "marketplace" ? (
+          <MarketplaceMatchesPanel
+            groups={marketplaceMyMatches}
+            onRefresh={() => socket.emit("marketplace:listMyMatches")}
+            onOpenLinkedPost={(postId) => socket.emit("marketplace:openLinkedPost", { postId })}
+          />
         ) : activePage === "card-library" ? (
           <LibraryDecksPage
             selectedPackCount={selectedPackIds.length}

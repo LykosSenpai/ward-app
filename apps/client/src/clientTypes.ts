@@ -391,3 +391,24 @@ export type LlmPhase4ReportSummary = {
   needsFixCount: number;
 };
 
+
+export type MarketplaceMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
+
+export type MarketplaceMatchItem = {
+  cardId: string;
+  variant: string;
+  matchedQuantity: number;
+};
+
+export type MarketplaceMatch = {
+  type: MarketplaceMatchType;
+  postId: string;
+  matchedItems: MarketplaceMatchItem[];
+  linkedPostId?: string;
+};
+
+export type MarketplaceMyMatchesGroup = {
+  postId: string;
+  linkedPostId?: string;
+  matches: MarketplaceMatch[];
+};
