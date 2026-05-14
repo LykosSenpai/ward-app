@@ -5,7 +5,7 @@ import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeW
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, getCardArtLabel } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
-import { buildGenerationCompletion, getOwnedQuantityForVariant } from "../collectionCompletionHelpers";
+import { AddCardToMarketplaceModal } from "./AddCardToMarketplaceModal";
 
 type CardTypeFilter = "ALL" | "CREATURE" | "MAGIC";
 type DeckMembershipFilter = "ALL" | "IN_DECK" | "NOT_IN_DECK";
@@ -13,6 +13,27 @@ type OwnershipFilter = "ALL" | "OWNED" | "MISSING";
 type TournamentLimitStatus = "LEGAL" | "LIMITED" | "BANNED";
 type DeckFormat = "FREE_PLAY" | "TOURNAMENT";
 type SortMode = "number" | "name" | "generation" | "deckCount" | "ownedCount" | "armorLevel" | "hp" | "speed";
+
+type CollectionVariant = "default" | "holo" | "zero-art" | "zero-art-holo";
+
+type VariantCompletionSummary = {
+  variant: CollectionVariant;
+  label: string;
+  ownedMatches: number;
+  requiredMatches: number;
+  completionPercent: number;
+};
+
+type MissingCollectionItem = {
+  cardId: string;
+  cardName: string;
+  generation: string;
+  variant: CollectionVariant;
+  variantLabel: string;
+  owned: number;
+  required: number;
+  missing: number;
+};
 
 const FIXED_HOLO_INTENSITY = 10;
 const INITIAL_VISIBLE_CARD_COUNT = 72;
@@ -41,8 +62,11 @@ type CardLibraryPanelProps = {
   onSetCardCopies: (cardId: string, copyCount: number, artKey?: CardArtKey) => void;
   onSetOwnedCopies: (cardId: string, ownedCount: number) => void;
   onSaveDeck: () => void;
+  onAddMarketplaceNeed?: (payload: Record<string, unknown>) => void;
+  onAddMarketplaceHave?: (payload: Record<string, unknown>) => void;
   canUseDevTools?: boolean;
   onSaveCardLimit?: (cardId: string, status: TournamentLimitStatus) => void;
+  onOpenMarketplaceOverride?: (cardId: string) => void;
 };
 
 function getUniqueValues(values: Array<string | number | undefined>): string[] {
@@ -118,8 +142,11 @@ export function CardLibraryPanel({
   onSetCardCopies,
   onSetOwnedCopies,
   onSaveDeck,
+  onAddMarketplaceNeed,
+  onAddMarketplaceHave,
   canUseDevTools = false,
-  onSaveCardLimit
+  onSaveCardLimit,
+  onOpenMarketplaceOverride
 }: CardLibraryPanelProps) {
   const [searchText, setSearchText] = useState("");
   const [typeFilter, setTypeFilter] = useState<CardTypeFilter>("ALL");
@@ -139,17 +166,14 @@ export function CardLibraryPanel({
   const [deckShareMessage, setDeckShareMessage] = useState("");
   const [unloadedCardCount, setUnloadedCardCount] = useState(0);
   const [visibleCardCount, setVisibleCardCount] = useState(INITIAL_VISIBLE_CARD_COUNT);
+  const [missingFocusCardIds, setMissingFocusCardIds] = useState<string[] | null>(null);
   const [gridColumnCount, setGridColumnCount] = useState(1);
+  const [activeMarketplaceAction, setActiveMarketplaceAction] = useState<null | { cardId: string; mode: "need" | "have" }>(null);
+
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
   const [completionGeneration, setCompletionGeneration] = useState("ALL");
-  const [completionRequiredQuantity, setCompletionRequiredQuantity] = useState(1);
-  const [completionVariants, setCompletionVariants] = useState<Record<CardOwnershipVariant, boolean>>({
-    DEFAULT: true,
-    HOLO: true,
-    ZERO: false,
-    ZERO_HOLO: false
-  });
-  const [missingFocusEnabled, setMissingFocusEnabled] = useState(false);
+  const [requiredQuantityPerCard, setRequiredQuantityPerCard] = useState(1);
+  const [completionVariants, setCompletionVariants] = useState<Record<CollectionVariant, boolean>>({ default: true, holo: false, "zero-art": false, "zero-art-holo": false });
   const cardGridRef = useRef<HTMLDivElement | null>(null);
   const loadPreviousSentinelRef = useRef<HTMLDivElement | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -176,6 +200,61 @@ export function CardLibraryPanel({
     () => getUniqueValues(cardLibrary.flatMap(card => card.effectTypes ?? [])),
     [cardLibrary]
   );
+
+  const collectionVariantOptions: Array<{ key: CollectionVariant; label: string }> = [
+    { key: "default", label: "Default" },
+    { key: "holo", label: "Holo" },
+    { key: "zero-art", label: "Zero" },
+    { key: "zero-art-holo", label: "Zero Holo" }
+  ];
+
+  const selectedCompletionVariants = collectionVariantOptions.filter(option => completionVariants[option.key]);
+
+  const completionCards = useMemo(
+    () => cardLibrary.filter(card => completionGeneration === "ALL" || `${card.generation ?? ""}` === completionGeneration),
+    [cardLibrary, completionGeneration]
+  );
+
+  const variantCompletion = useMemo(() => {
+    const summaries: VariantCompletionSummary[] = [];
+    const missingItems: MissingCollectionItem[] = [];
+
+    for (const variantOption of selectedCompletionVariants) {
+      const requiredMatches = completionCards.length * requiredQuantityPerCard;
+      const ownedMatches = completionCards.reduce((total, card) => {
+        const owned = ownershipCounts[getCardArtOwnershipKey(card.id, variantOption.key)] ?? 0;
+        return total + Math.min(requiredQuantityPerCard, owned);
+      }, 0);
+
+      for (const card of completionCards) {
+        const owned = ownershipCounts[getCardArtOwnershipKey(card.id, variantOption.key)] ?? 0;
+        const missing = Math.max(0, requiredQuantityPerCard - owned);
+
+        if (missing > 0) {
+          missingItems.push({
+            cardId: card.id,
+            cardName: card.name,
+            generation: `${card.generation ?? ""}`,
+            variant: variantOption.key,
+            variantLabel: variantOption.label,
+            owned,
+            required: requiredQuantityPerCard,
+            missing
+          });
+        }
+      }
+
+      summaries.push({
+        variant: variantOption.key,
+        label: variantOption.label,
+        ownedMatches,
+        requiredMatches,
+        completionPercent: requiredMatches === 0 ? 100 : Math.round((ownedMatches / requiredMatches) * 1000) / 10
+      });
+    }
+
+    return { summaries, missingItems };
+  }, [completionCards, ownershipCounts, requiredQuantityPerCard, selectedCompletionVariants]);
 
   const deckCards = useMemo(() => {
     const variantCounts = deckBuilderCardIds.reduce<Record<string, { cardId: string; artKey: CardArtKey; count: number }>>(
@@ -207,6 +286,42 @@ export function CardLibraryPanel({
         getCardArtLabel(a.artKey).localeCompare(getCardArtLabel(b.artKey))
       );
   }, [cardLibrary, deckBuilderCardArtKeys, deckBuilderCardIds]);
+
+
+  const missingDeckVariants = useMemo(() => {
+    return deckCards
+      .map(({ cardId, artKey, count, card }) => {
+        const ownedCount = ownershipCounts[getCardArtOwnershipKey(cardId, artKey)] ?? 0;
+        const missingCount = Math.max(0, count - ownedCount);
+
+        return {
+          cardId,
+          artKey,
+          requiredCount: count,
+          ownedCount,
+          missingCount,
+          card
+        };
+      })
+      .filter(entry => entry.missingCount > 0)
+      .sort((a, b) => {
+        const generationA = Number.parseInt(`${a.card?.generation ?? ""}`, 10);
+        const generationB = Number.parseInt(`${b.card?.generation ?? ""}`, 10);
+        const normalizedGenerationA = Number.isFinite(generationA) ? generationA : Number.MAX_SAFE_INTEGER;
+        const normalizedGenerationB = Number.isFinite(generationB) ? generationB : Number.MAX_SAFE_INTEGER;
+        if (normalizedGenerationA !== normalizedGenerationB) return normalizedGenerationA - normalizedGenerationB;
+
+        const numberA = `${a.card?.cardNumber ?? ""}`;
+        const numberB = `${b.card?.cardNumber ?? ""}`;
+        const byNumber = numberA.localeCompare(numberB, undefined, { numeric: true });
+        if (byNumber !== 0) return byNumber;
+
+        const byId = a.cardId.localeCompare(b.cardId, undefined, { numeric: true });
+        if (byId !== 0) return byId;
+
+        return getCardArtLabel(a.artKey).localeCompare(getCardArtLabel(b.artKey));
+      });
+  }, [deckCards, ownershipCounts]);
 
   const deckStats = useMemo(() => {
     const creatureCards = deckBuilderCardIds
@@ -268,6 +383,32 @@ export function CardLibraryPanel({
     return warnings;
   }, [cardLibrary, deckBuilderFormat, deckCounts, deckStats.creatureCount, deckStats.total, ownershipCounts, selectedArtKeysByCardId]);
 
+  const missingCompletionSummary = useMemo(() => {
+    const entries = Object.entries(deckCounts)
+      .map(([cardId, count]) => {
+        const ownedCount = getTotalOwnedCopiesForCard(cardId);
+        const needed = Math.max(0, count - ownedCount);
+
+        if (needed === 0) return null;
+
+        return {
+          cardId,
+          needed,
+          ownedCount,
+          count,
+          card: cardLibrary.find(item => item.id === cardId)
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+      .sort((a, b) => b.needed - a.needed || (a.card?.name ?? a.cardId).localeCompare(b.card?.name ?? b.cardId));
+
+    return {
+      missingCardTypes: entries.length,
+      missingTotalCopies: entries.reduce((total, entry) => total + entry.needed, 0),
+      entries
+    };
+  }, [cardLibrary, deckCounts, ownershipCounts, selectedArtKeysByCardId]);
+
   const filteredCards = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
 
@@ -286,6 +427,7 @@ export function CardLibraryPanel({
         if (deckMembershipFilter === "NOT_IN_DECK" && deckCount > 0) return false;
         if (ownershipFilter === "OWNED" && ownedCount === 0) return false;
         if (ownershipFilter === "MISSING" && ownedCount > 0) return false;
+        if (missingFocusCardIds && !missingFocusCardIds.includes(card.id)) return false;
         if (deckBuilderFormat === "TOURNAMENT" && getTournamentLimitStatus(card) === "BANNED") return false;
         if (normalizedSearch && !getCardSearchText(card).includes(normalizedSearch)) return false;
         return true;
@@ -305,7 +447,7 @@ export function CardLibraryPanel({
 
         return getCardSortNumber(a).localeCompare(getCardSortNumber(b), undefined, { numeric: true }) || a.name.localeCompare(b.name);
       });
-  }, [cardLibrary, creatureTypeFilter, deckBuilderFormat, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
+  }, [cardLibrary, creatureTypeFilter, deckBuilderFormat, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, missingFocusCardIds, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
 
   const displayCards = useMemo(
     () => (missingFocusEnabled ? filteredCards.filter(card => missingCardIds.has(card.id)) : filteredCards),
@@ -436,6 +578,7 @@ export function CardLibraryPanel({
     setDeckMembershipFilter("ALL");
     setOwnershipFilter("ALL");
     setSortMode("number");
+    setMissingFocusCardIds(null);
   }
 
   function setDeckCopiesFromInput(cardId: string, value: string, artKey: CardArtKey = "default") {
@@ -457,9 +600,18 @@ export function CardLibraryPanel({
     return artKey === "default" ? cardId : `${cardId}__art_${artKey.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
   }
 
-  function getOwnedCopiesForSelectedArt(cardId: string): number {
-    return ownershipCounts[getCardArtOwnershipKey(cardId, getSelectedArtKey(cardId))] ?? 0;
+  function getOwnershipVariantFromArtworkAndHolo(artworkMode: "DEFAULT" | "ZERO", isHolo: boolean): CardArtKey {
+    if (artworkMode === "ZERO") {
+      return isHolo ? "zero-art-holo" : "zero-art";
+    }
+
+    return isHolo ? "holo" : "default";
   }
+
+  function getOwnedCopiesForArt(cardId: string, artKey: CardArtKey): number {
+    return ownershipCounts[getCardArtOwnershipKey(cardId, artKey)] ?? 0;
+  }
+
 
   function getTotalOwnedCopiesForCard(cardId: string): number {
     return ACTIVE_CARD_ART_OPTIONS.reduce((total, artOption) => {
@@ -485,13 +637,13 @@ export function CardLibraryPanel({
   }, [cardLibrary, completionGeneration, completionRequiredQuantity, selectedCompletionVariants, ownershipCounts]);
   const missingCardIds = useMemo(() => new Set(completionData.missingItems.map(item => item.cardId)), [completionData.missingItems]);
 
-  function setSelectedArtOwnedCopies(cardId: string, requestedOwnedCount: number) {
-    const ownershipKey = getCardArtOwnershipKey(cardId, getSelectedArtKey(cardId));
+  function setArtOwnedCopies(cardId: string, artKey: CardArtKey, requestedOwnedCount: number) {
+    const ownershipKey = getCardArtOwnershipKey(cardId, artKey);
     onSetOwnedCopies(ownershipKey, Math.min(999, Math.max(0, Math.floor(requestedOwnedCount))));
   }
 
-  function setSelectedArtOwnedCopiesFromInput(cardId: string, value: string) {
-    setSelectedArtOwnedCopies(cardId, sanitizeCopies(value));
+  function setArtOwnedCopiesFromInput(cardId: string, artKey: CardArtKey, value: string) {
+    setArtOwnedCopies(cardId, artKey, sanitizeCopies(value));
   }
 
   function getCanAddCardToDeck(cardId: string) {
@@ -623,6 +775,19 @@ export function CardLibraryPanel({
 
   const saveDisabled = deckBuilderCardIds.length !== 30 || !deckBuilderName.trim() || !normalizeId(deckBuilderId);
 
+  function applyMissingFocus() {
+    if (missingCompletionSummary.entries.length === 0) {
+      setMissingFocusCardIds(null);
+      return;
+    }
+
+    setMissingFocusCardIds(missingCompletionSummary.entries.map(entry => entry.cardId));
+  }
+
+  function clearMissingFocus() {
+    setMissingFocusCardIds(null);
+  }
+
   return (
     <section className="setup-section library-option-a-section">
       <div className="library-option-a-toolbar">
@@ -655,6 +820,14 @@ export function CardLibraryPanel({
             <span><strong>{deckStats.total}/30</strong> deck</span>
             <span><strong>{deckStats.creatureCount}</strong> creatures</span>
             <span><strong>{deckStats.magicCount}</strong> magic</span>
+            <button type="button" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingTotalCopies === 0}>Show Remaining Needed</button>
+            <button type="button" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingCardTypes === 0}>
+              Missing cards: <strong>{missingCompletionSummary.missingCardTypes}</strong>
+            </button>
+            <button type="button" onClick={applyMissingFocus} disabled={missingCompletionSummary.missingTotalCopies === 0}>
+              Missing copies: <strong>{missingCompletionSummary.missingTotalCopies}</strong>
+            </button>
+            <button type="button" onClick={clearMissingFocus} disabled={!missingFocusCardIds}>Clear Remaining Focus</button>
           </div>
         </div>
 
@@ -664,6 +837,8 @@ export function CardLibraryPanel({
           <button onClick={onNewDeck}>New Deck</button>
           <button onClick={onClearDeckBuilder} disabled={deckBuilderCardIds.length === 0}>Clear Deck</button>
           <button onClick={onSaveDeck} disabled={saveDisabled}>Save Deck</button>
+          <button onClick={() => onAddMissingNeedsOnce?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Add Missing Once to Marketplace Needs</button>
+          <button onClick={() => onCreatePerpetualNeedRule?.({ desiredQuantityPerCard, selectedGenerations: generationFilter === "ALL" ? [] : [generationFilter], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>Create Perpetual Need Rule</button>
         </div>
       </div>
 
@@ -712,6 +887,53 @@ export function CardLibraryPanel({
                 <option value="speed">Highest SPD</option>
               </select>
             </label>
+
+            <details className="library-option-a-details-drawer">
+              <summary>Collection completion</summary>
+              <div className="library-option-a-drawer-grid">
+                <label>
+                  Generation
+                  <select value={completionGeneration} onChange={event => setCompletionGeneration(event.target.value)}>
+                    <option value="ALL">All</option>
+                    {generations.map(value => <option value={value} key={`completion-${value}`}>{value}</option>)}
+                  </select>
+                </label>
+                <label>
+                  Required per card
+                  <input
+                    type="number"
+                    min={1}
+                    value={requiredQuantityPerCard}
+                    onChange={event => setRequiredQuantityPerCard(Math.max(1, sanitizeCopies(event.target.value) || 1))}
+                  />
+                </label>
+              </div>
+              <div className="library-option-a-chip-row" role="group" aria-label="Collection variants">
+                {collectionVariantOptions.map(option => (
+                  <label key={`variant-${option.key}`}>
+                    <input
+                      type="checkbox"
+                      checked={completionVariants[option.key]}
+                      onChange={event => setCompletionVariants(current => ({ ...current, [option.key]: event.target.checked }))}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+              {variantCompletion.summaries.length === 0 ? (
+                <p className="event-meta">Select at least one variant.</p>
+              ) : (
+                <div className="library-option-a-filter-stack">
+                  {variantCompletion.summaries.map(summary => (
+                    <div key={`summary-${summary.variant}`}>
+                      <strong>{summary.label}</strong>
+                      <span> {summary.ownedMatches}/{summary.requiredMatches} ({summary.completionPercent.toFixed(1)}%)</span>
+                    </div>
+                  ))}
+                  <span>{variantCompletion.missingItems.length} missing card-variant targets.</span>
+                </div>
+              )}
+            </details>
 
             <details className="library-option-a-details-drawer">
               <summary>Advanced filters</summary>
@@ -764,6 +986,14 @@ export function CardLibraryPanel({
                     <option value="NOT_IN_DECK">Not In Deck</option>
                   </select>
                 </label>
+
+                <label>
+                  Desired Qty/Card
+                  <input type="number" min={1} max={999} value={desiredQuantityPerCard} onChange={event => setDesiredQuantityPerCard(Math.max(1, sanitizeCopies(event.target.value)))} />
+                </label>
+
+                <label><input type="checkbox" checked={includeDefaultArt} onChange={event => setIncludeDefaultArt(event.target.checked)} /> Include Default variant</label>
+                <label><input type="checkbox" checked={includeZeroArt} onChange={event => setIncludeZeroArt(event.target.checked)} /> Include Zero variant</label>
 
                 <label>
                   Owned
@@ -850,8 +1080,15 @@ export function CardLibraryPanel({
               )}
               {visibleCards.map(card => {
                 const selectedArtKey = getSelectedArtKey(card.id);
-                const selectedArtLabel = getCardArtLabel(selectedArtKey);
-                const ownedCount = getOwnedCopiesForSelectedArt(card.id);
+                const selectedArtworkMode = selectedArtKey === "zero-art" || selectedArtKey === "zero-art-holo" ? "ZERO" : "DEFAULT";
+                const selectedIsHolo = selectedArtKey === "holo" || selectedArtKey === "zero-art-holo";
+                const effectivePreviewVariant = getOwnershipVariantFromArtworkAndHolo(selectedArtworkMode, selectedIsHolo);
+                const ownershipVariants: Array<{ label: string; key: CardArtKey }> = [
+                  { label: "Default", key: "default" },
+                  { label: "Holo", key: "holo" },
+                  { label: "Zero", key: "zero-art" },
+                  { label: "Zero Holo", key: "zero-art-holo" }
+                ];
                 const deckLimit = getEffectiveDeckLimit(card, deckBuilderFormat);
                 const canAdd = getCanAddCardToDeck(card.id);
                 const deckLimitLabel = deckBuilderFormat === "TOURNAMENT"
@@ -899,6 +1136,8 @@ export function CardLibraryPanel({
                             </select>
                           </label>
                         ) : null}
+                        <button type="button" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "need" })}>Add to Marketplace Need</button>
+                        <button type="button" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "have" })}>Add to Marketplace Have</button>
                         <button
                           className="library-option-a-mini-deck-add"
                           onClick={() => onAddCard(card.id, selectedArtKey)}
@@ -909,30 +1148,51 @@ export function CardLibraryPanel({
                         </button>
                       </div>
 
-                      <div className="copy-stepper labeled-stepper art-owned-stepper">
-                        <span title={`Owned ${selectedArtLabel}`}>Own {selectedArtLabel}</span>
-                        <button
-                          onClick={() => setSelectedArtOwnedCopies(card.id, ownedCount - 1)}
-                          disabled={ownedCount === 0}
-                          aria-label={`Remove one owned ${selectedArtLabel} copy of ${card.name}`}
-                          title={`Remove one owned ${selectedArtLabel} copy`}
-                        >
-                          -
-                        </button>
-                        <input
-                          value={ownedCount}
-                          onChange={event => setSelectedArtOwnedCopiesFromInput(card.id, event.target.value)}
-                          aria-label={`${card.name} ${selectedArtLabel} owned copies`}
-                          title={`${selectedArtLabel} copies you own`}
-                        />
-                        <button
-                          onClick={() => setSelectedArtOwnedCopies(card.id, ownedCount + 1)}
-                          aria-label={`Add one owned ${selectedArtLabel} copy of ${card.name}`}
-                          title={`Add one owned ${selectedArtLabel} copy`}
-                        >
-                          +
-                        </button>
+                      <div className="library-option-a-ownership-grid" aria-label={`${card.name} ownership controls`}>
+                        {ownershipVariants.map(({ label, key }) => {
+                          const variantOwnedCount = getOwnedCopiesForArt(card.id, key);
+                          const isSelectedPreviewVariant = key === effectivePreviewVariant;
+
+                          return (
+                            <div className="copy-stepper labeled-stepper art-owned-stepper" key={key}>
+                              <span title={`Owned ${label}${isSelectedPreviewVariant ? " (current preview)" : ""}`}>
+                                Own {label}{isSelectedPreviewVariant ? "*" : ""}
+                              </span>
+                              <button
+                                onClick={() => setArtOwnedCopies(card.id, key, Math.max(0, variantOwnedCount - 1))}
+                                disabled={variantOwnedCount === 0}
+                                aria-label={`Remove one owned ${label} copy of ${card.name}`}
+                                title={`Remove one owned ${label} copy`}
+                              >
+                                -
+                              </button>
+                              <input
+                                value={variantOwnedCount}
+                                onChange={event => setArtOwnedCopiesFromInput(card.id, key, event.target.value)}
+                                aria-label={`${card.name} ${label} owned copies`}
+                                title={`${label} copies you own`}
+                              />
+                              <button
+                                onClick={() => setArtOwnedCopies(card.id, key, variantOwnedCount + 1)}
+                                aria-label={`Add one owned ${label} copy of ${card.name}`}
+                                title={`Add one owned ${label} copy`}
+                              >
+                                +
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
+                      {onOpenMarketplaceOverride ? (
+                        <button
+                          type="button"
+                          className="library-option-a-mini-deck-add"
+                          onClick={() => onOpenMarketplaceOverride(card.id)}
+                          title="Open marketplace override settings for this card"
+                        >
+                          Override Auto-List
+                        </button>
+                      ) : null}
                     </div>
                   </article>
                 );
@@ -974,6 +1234,29 @@ export function CardLibraryPanel({
 
             {deckShareMessage && <p className="event-meta">{deckShareMessage}</p>}
           </div>
+
+
+          <div className="library-option-a-details-drawer deck-share-tools-card library-option-a-code-tools library-option-a-deck-rail-codes">
+            <div className="current-deck-header-row library-option-a-current-deck-header">
+              <h4>Missing for Completion</h4>
+              <span>{missingDeckVariants.length} variant{missingDeckVariants.length === 1 ? "" : "s"}</span>
+            </div>
+            {missingDeckVariants.length === 0 ? (
+              <p className="event-meta">All current deck card variants meet required quantity.</p>
+            ) : (
+              <div className="builder-card-list current-deck-list unified-current-deck-list library-option-a-current-deck-list">
+                {missingDeckVariants.map(entry => (
+                  <div className="builder-card-entry current-deck-entry library-option-a-current-deck-entry" key={`missing-${entry.cardId}-${entry.artKey}`}>
+                    <div className="visual-deck-card-copy">
+                      <strong>{entry.card?.cardNumber ?? "?"} · {entry.card?.name ?? entry.cardId} · Gen {entry.card?.generation ?? "?"} · {getCardArtLabel(entry.artKey)}</strong>
+                      <div className="event-meta">Owned: {entry.ownedCount} | Required: {entry.requiredCount} | Missing: {entry.missingCount}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
 
           <div
             className={`current-deck-panel unified-current-deck-panel library-option-a-current-deck-panel ${deckDropActive ? "drag-over" : ""}`}
@@ -1052,6 +1335,18 @@ export function CardLibraryPanel({
           )}
           </div>
         </aside>
+      {activeMarketplaceAction ? (
+        <AddCardToMarketplaceModal
+          title={activeMarketplaceAction.mode === "need" ? "Add to Marketplace Need" : "Add to Marketplace Have"}
+          onClose={() => setActiveMarketplaceAction(null)}
+          onSubmit={payload => {
+            const nextPayload = { ...payload, cardId: activeMarketplaceAction.cardId };
+            if (activeMarketplaceAction.mode === "need") onAddMarketplaceNeed?.(nextPayload);
+            else onAddMarketplaceHave?.(nextPayload);
+            setActiveMarketplaceAction(null);
+          }}
+        />
+      ) : null}
       </div>
     </section>
   );

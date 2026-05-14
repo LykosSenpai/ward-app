@@ -87,6 +87,7 @@ import {
   listTournamentDeckSubmissions,
   listUserDecks,
   loadCardCatalog,
+  loadCardOwnershipCollection,
   loadCardLimitMap,
   loadDeckList,
   loadUserDeckList,
@@ -98,6 +99,7 @@ import {
   updateCardLimitRule,
   reviewTournamentDeckSubmission,
   saveMatchToDisk,
+  upsertCardOwnership,
   validateDataFileId
 } from "./dataStore.js";
 import type { SetupOptions } from "./dataStore.js";
@@ -119,8 +121,8 @@ import type { LlmDirectEffectSmokeTestResult, LlmEffectResultReview, LlmEffectTe
 import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
 import { changeUserPassword, createUser, getUserProfile, listUsersForTournamentDeckReview, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
-import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
 import { checkDbConnection } from "./db/pool.js";
+import { listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const __filename = fileURLToPath(import.meta.url);
@@ -162,6 +164,19 @@ function canSocketUseDevTools(socket: { request: unknown }): boolean {
 
 function canUserReviewTournamentDecks(user: AuthUser | null | undefined): boolean {
   return user?.role === "ADMIN" || user?.role === "HOST";
+}
+
+function returnExpiredItemsToPool(nowMs = Date.now()): boolean {
+  let changed = false;
+  for (const transaction of marketplaceTransactions.values()) {
+    if ((transaction.status === "PENDING_CONFIRMATION" || transaction.status === "CONFIRMED_BY_ONE_PARTY") && Date.parse(transaction.expiresAt) <= nowMs) {
+      transaction.status = "EXPIRED";
+      transaction.updatedAt = new Date(nowMs).toISOString();
+      transaction.confirmedByUserIds = [];
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 const ALLOWED_PROOF_PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -222,11 +237,136 @@ const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
+type MarketplaceTransactionStatus = "PENDING_CONFIRMATION" | "CONFIRMED_BY_ONE_PARTY" | "COMPLETED" | "DENIED" | "CANCELED" | "EXPIRED";
+type MarketplaceTradeLine = { cardId: string; quantity: number };
+type MarketplacePost = { userId: string; cardId: string; quantity: number };
+type MarketplaceTransaction = {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  status: MarketplaceTransactionStatus;
+  requesterUserId: string;
+  responderUserId: string;
+  offered: MarketplaceTradeLine[];
+  requested: MarketplaceTradeLine[];
+  confirmedByUserIds: string[];
+};
+const marketplacePosts = new Map<string, MarketplacePost[]>();
+const marketplaceTransactions = new Map<string, MarketplaceTransaction>();
+const TRANSACTION_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
+
+type MarketplacePostStatus = "ACTIVE" | "ARCHIVED";
+type MarketplacePostKind = "HAVE" | "NEED";
+
+type MarketplaceSettings = {
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+};
+
+type MarketplacePostCard = {
+  cardId: string;
+  name: string;
+  setId: string;
+  condition: string;
+  quantity: number;
+};
+
+type MarketplacePost = {
+  id: string;
+  ownerId: string;
+  ownerDisplayName: string;
+  kind: MarketplacePostKind;
+  status: MarketplacePostStatus;
+  notes?: string;
+  tradeEnabled: boolean;
+  saleEnabled: boolean;
+  cards: MarketplacePostCard[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+const marketplaceSettings: MarketplaceSettings = {
+  tradeEnabled: true,
+  saleEnabled: false
+};
+const marketplacePosts = new Map<string, MarketplacePost>();
 
 const MAX_UNDO_STEPS = 25;
 const OPEN_LOBBY_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const IN_MATCH_LOBBY_IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 const LOBBY_CLEANUP_INTERVAL_MS = 60 * 1000;
+
+
+type MarketplaceMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
+type MarketplacePostItem = { cardId: string; variant: string; quantity: number; pendingReservedQuantity?: number };
+type MarketplacePost = { id: string; userId: string; displayName: string; linkedPostId?: string; haveItems: MarketplacePostItem[]; needItems: MarketplacePostItem[] };
+type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
+type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; linkedPostId?: string };
+
+const marketplacePosts = new Map<string, MarketplacePost>();
+
+function marketplaceCardKey(cardId: string, variant: string): string {
+  return `${cardId}::${variant}`;
+}
+
+function toAvailabilityMap(items: MarketplacePostItem[]): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const item of items) {
+    const available = Math.max(0, item.quantity - (item.pendingReservedQuantity ?? 0));
+    map.set(marketplaceCardKey(item.cardId, item.variant), available);
+  }
+  return map;
+}
+
+function collectMatchedItems(needs: MarketplacePostItem[], publicAvailability: Map<string, number>): MarketplaceMatchItem[] {
+  const out: MarketplaceMatchItem[] = [];
+  for (const need of needs) {
+    const key = marketplaceCardKey(need.cardId, need.variant);
+    const publicAvailableQty = publicAvailability.get(key) ?? 0;
+    const matchedQuantity = Math.min(Math.max(0, need.quantity), Math.max(0, publicAvailableQty));
+    if (matchedQuantity > 0) {
+      out.push({ cardId: need.cardId, variant: need.variant, matchedQuantity });
+    }
+  }
+  return out;
+}
+
+function computeMarketplaceMatchesForPost(sourcePost: MarketplacePost, allPosts: MarketplacePost[]): MarketplaceMatch[] {
+  const matches: MarketplaceMatch[] = [];
+  const myNeedToTheirHave = new Map<string, MarketplaceMatchItem[]>();
+  const myHaveToTheirNeed = new Map<string, MarketplaceMatchItem[]>();
+
+  for (const post of allPosts) {
+    if (post.id === sourcePost.id) continue;
+    const theyHave = collectMatchedItems(sourcePost.needItems, toAvailabilityMap(post.haveItems));
+    const iHave = collectMatchedItems(post.needItems, toAvailabilityMap(sourcePost.haveItems));
+    if (theyHave.length) myNeedToTheirHave.set(post.id, theyHave);
+    if (iHave.length) myHaveToTheirNeed.set(post.id, iHave);
+  }
+
+  for (const [postId, matchedItems] of myNeedToTheirHave) {
+    const mutual = myHaveToTheirNeed.get(postId);
+    matches.push({
+      type: mutual?.length ? "MUTUAL_TRADE_MATCH" : "THEY_HAVE_WHAT_I_NEED",
+      postId,
+      matchedItems,
+      linkedPostId: allPosts.find(post => post.id === postId)?.linkedPostId
+    });
+  }
+
+  for (const [postId, matchedItems] of myHaveToTheirNeed) {
+    if (myNeedToTheirHave.has(postId)) continue;
+    matches.push({
+      type: "I_HAVE_WHAT_THEY_NEED",
+      postId,
+      matchedItems,
+      linkedPostId: allPosts.find(post => post.id === postId)?.linkedPostId
+    });
+  }
+
+  return matches;
+}
 const EMBED_ALLOWED_ORIGINS = (process.env.EMBED_ALLOWED_ORIGINS ?? "")
   .split(",")
   .map(value => value.trim())
@@ -600,6 +740,32 @@ function listLobbySnapshots() {
 
 function emitLobbyList(): void {
   io.emit("lobby:list", listLobbySnapshots());
+}
+
+function listMarketplacePosts(): MarketplacePost[] {
+  return Array.from(marketplacePosts.values()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+function emitMarketplacePosts(): void {
+  io.emit("marketplace:posts", listMarketplacePosts());
+}
+
+function emitMarketplaceSettings(): void {
+  io.emit("marketplace:settings", marketplaceSettings);
+}
+
+function ensureMarketplacePostCard(card: Partial<MarketplacePostCard>, index: number): MarketplacePostCard {
+  const cardId = String(card.cardId ?? "").trim();
+  const name = String(card.name ?? "").trim();
+  const setId = String(card.setId ?? "").trim();
+  const condition = String(card.condition ?? "").trim();
+  const quantity = Number(card.quantity ?? 0);
+
+  if (!cardId || !name || !setId || !condition || !Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error(`Invalid card metadata at index ${index}.`);
+  }
+
+  return { cardId, name, setId, condition, quantity: Math.floor(quantity) };
 }
 
 function emitLobbyUpdated(lobby: MatchLobbyRecord): void {
@@ -1571,6 +1737,8 @@ setInterval(() => {
   }
 }, LOBBY_CLEANUP_INTERVAL_MS).unref();
 
+returnExpiredItemsToPool();
+
 io.on("connection", async socket => {
   console.log(`Client connected: ${socket.id}`);
   const connectedUser = getSocketUser(socket);
@@ -1612,9 +1780,39 @@ io.on("connection", async socket => {
   socket.emit("match:savedList", listSavedMatches());
   socket.emit("setup:options", getUserSetupOptions(connectedUser));
   socket.emit("cards:library", listDefaultCardLibrary());
-  socket.emit("collection:ownership", connectedUser ? await loadUserCardOwnershipMap(connectedUser.id) : {});
+  socket.emit("collection:ownership", loadCardOwnershipCollection());
   socket.emit("deck:details", getDeckDetailsForUser(connectedUser));
   socket.emit("lobby:list", listLobbySnapshots());
+  socket.emit("features:list", { ok: true, features: await listFeatureFlagsForUser(connectedUser) });
+
+  socket.on("features:list", async (ack?: (payload: { ok: boolean; features?: unknown[]; error?: string }) => void) => {
+    try {
+      const features = await listFeatureFlagsForUser(getSocketUser(socket));
+      ack?.({ ok: true, features });
+    } catch (error) {
+      ack?.({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("admin:features:list", async (ack?: (payload: { ok: boolean; features?: unknown[]; error?: string }) => void) => {
+    try {
+      const features = await listFeatureFlagsForUser(requireSocketUser(socket));
+      ack?.({ ok: true, features });
+    } catch (error) {
+      ack?.({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("admin:features:update", async (payload: { key: "card-library" | "deck-library" | "saved-matches" | "play-table" | "board-preview" | "admin-tools"; enabledForPlayers: boolean }, ack?: (response: { ok: boolean; error?: string }) => void) => {
+    try {
+      const user = requireSocketUser(socket);
+      await updateFeatureFlagForPlayers(user, payload.key, !!payload.enabledForPlayers);
+      io.emit("features:visibilityChanged");
+      ack?.({ ok: true });
+    } catch (error) {
+      ack?.({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
 
   socket.on(
     "match:create1v1",
@@ -2782,7 +2980,7 @@ io.on("connection", async socket => {
       const user = getSocketUser(socket);
       socket.emit("setup:options", getUserSetupOptions(user));
       socket.emit("cards:library", listDefaultCardLibrary());
-      socket.emit("collection:ownership", user ? await loadUserCardOwnershipMap(user.id) : {});
+      socket.emit("collection:ownership", loadCardOwnershipCollection());
       socket.emit("deck:details", getDeckDetailsForUser(user));
       socket.emit("lobby:list", listLobbySnapshots());
     } catch (error) {
@@ -2887,10 +3085,49 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("collection:listOwnership", async () => {
+  socket.on("collection:getOwnership", () => {
     try {
-      const user = getSocketUser(socket);
-      socket.emit("collection:ownership", user ? await loadUserCardOwnershipMap(user.id) : {});
+      socket.emit("collection:ownership", loadCardOwnershipCollection());
+    } catch (error) {
+      socket.emit("collection:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("marketplace:listNeeds", async () => {
+    try {
+      const user = requireSocketUser(socket);
+      socket.emit("marketplace:needs", await loadMarketplaceNeeds(user.id));
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("marketplace:createAutoNeedRule", async (data: { generation: string; includeVariants: boolean; quantityPolicy: "ONE_PER_CARD" | "DECK_LIMIT"; enabled?: boolean }) => {
+    try {
+      const user = requireSocketUser(socket);
+      const rule = await createOrReplaceAutoNeedRule({ userId: user.id, generation: data.generation, includeVariants: !!data.includeVariants, quantityPolicy: data.quantityPolicy, enabled: data.enabled ?? true });
+      const ownership = await loadUserCardOwnershipMap(user.id);
+      const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
+      socket.emit("marketplace:autoNeedRuleSaved", rule);
+      socket.emit("marketplace:needs", needs);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("marketplace:disableAutoNeedRule", async (data: { ruleId: string; remove?: boolean }) => {
+    try {
+      const user = requireSocketUser(socket);
+      await disableAutoNeedRule({ userId: user.id, ruleId: data.ruleId, remove: data.remove });
+      const ownership = await loadUserCardOwnershipMap(user.id);
+      const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
+      socket.emit("marketplace:needs", needs);
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -2899,23 +3136,118 @@ io.on("connection", async socket => {
   });
 
   socket.on(
-    "collection:setCardOwnership",
-    async (data: { cardId: string; ownedCount: number }) => {
+    "collection:updateOwnership",
+    (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }) => {
       try {
-        const user = requireSocketUser(socket);
-        const ownershipMap = await setUserCardOwnershipCount({
-          userId: user.id,
-          ownershipKey: data.cardId,
-          ownedCount: data.ownedCount
-        });
+        const ownershipMap = upsertCardOwnership(data);
         socket.emit("collection:ownership", ownershipMap);
       } catch (error) {
-        socket.emit("match:error", {
+        socket.emit("collection:error", {
           message: error instanceof Error ? error.message : "Unknown error"
         });
       }
     }
   );
+
+  socket.on(
+    "collection:bulkUpdateOwnership",
+    (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }) => {
+      try {
+        let ownershipMap = loadCardOwnershipCollection();
+        for (const update of data.updates ?? []) {
+          ownershipMap = upsertCardOwnership(update);
+        }
+        socket.emit("collection:ownership", ownershipMap);
+        const needs = await recomputeMarketplaceNeedsForUser(user.id, ownershipMap);
+        socket.emit("marketplace:needs", needs);
+      } catch (error) {
+        socket.emit("collection:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on("marketplace:returnExpiredItemsToPool", () => {
+    try {
+      returnExpiredItemsToPool();
+      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+
+  socket.on("marketplace:createTransaction", async (data: { responderUserId: string; offered: MarketplaceTradeLine[]; requested: MarketplaceTradeLine[] }) => {
+    try {
+      const user = getSocketUser(socket);
+      if (!user) throw new Error("Authentication required.");
+      returnExpiredItemsToPool();
+      const ownership = await loadUserCardOwnershipMap(user.id);
+      const currentPosts = marketplacePosts.get(user.id) ?? [];
+      for (const line of data.offered) {
+        const owned = ownership[line.cardId] ?? 0;
+        const posted = currentPosts.filter(post => post.cardId === line.cardId).reduce((sum, post) => sum + post.quantity, 0);
+        if (line.quantity <= 0 || posted + line.quantity > owned) {
+          throw new Error(`Insufficient public availability for card ${line.cardId}.`);
+        }
+      }
+      const now = new Date().toISOString();
+      const transaction: MarketplaceTransaction = {
+        id: randomUUID(),
+        createdAt: now,
+        updatedAt: now,
+        expiresAt: new Date(Date.now() + TRANSACTION_EXPIRES_MS).toISOString(),
+        status: "PENDING_CONFIRMATION",
+        requesterUserId: user.id,
+        responderUserId: data.responderUserId,
+        offered: data.offered,
+        requested: data.requested,
+        confirmedByUserIds: []
+      };
+      marketplaceTransactions.set(transaction.id, transaction);
+      marketplacePosts.set(user.id, [...currentPosts, ...data.offered.map(line => ({ userId: user.id, cardId: line.cardId, quantity: line.quantity }))]);
+      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+
+  socket.on("marketplace:confirmTransaction", (transactionId: string) => {
+    try {
+      const user = getSocketUser(socket);
+      if (!user) throw new Error("Authentication required.");
+      returnExpiredItemsToPool();
+      const transaction = marketplaceTransactions.get(transactionId);
+      if (!transaction) throw new Error("Transaction not found.");
+      if (transaction.status !== "PENDING_CONFIRMATION" && transaction.status !== "CONFIRMED_BY_ONE_PARTY") throw new Error("Transaction is not confirmable.");
+      if (!transaction.confirmedByUserIds.includes(user.id)) transaction.confirmedByUserIds.push(user.id);
+      transaction.status = transaction.confirmedByUserIds.length >= 2 ? "COMPLETED" : "CONFIRMED_BY_ONE_PARTY";
+      transaction.updatedAt = new Date().toISOString();
+      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
+  });
+  socket.on("marketplace:denyTransaction", (transactionId: string) => {
+    const transaction = marketplaceTransactions.get(transactionId);
+    if (transaction) {
+      transaction.status = "DENIED";
+      transaction.updatedAt = new Date().toISOString();
+    }
+    socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+  });
+  socket.on("marketplace:cancelTransaction", (transactionId: string) => {
+    const transaction = marketplaceTransactions.get(transactionId);
+    if (transaction) {
+      transaction.status = "CANCELED";
+      transaction.updatedAt = new Date().toISOString();
+    }
+    socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+  });
+  socket.on("marketplace:listTransactions", () => {
+    returnExpiredItemsToPool();
+    socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+  });
 
 
   socket.on(
@@ -4189,6 +4521,46 @@ socket.on(
     }
   }
 );
+
+
+
+  socket.on("marketplace:addMissingNeedsFromCompletion", (data: {
+    cardItems: Array<{ cardId: string; variant?: string; quantity?: number; trade?: boolean; sale?: boolean; price?: string; note?: string }>;
+    mergeWithExisting?: boolean;
+  }) => {
+    try {
+      const user = requireSocketUser(socket);
+      const items = Array.isArray(data.cardItems) ? data.cardItems : [];
+      const userKey = user.id;
+      const current = (globalThis as { __marketplaceNeeds?: Record<string, typeof items> }).__marketplaceNeeds ?? {};
+      const existing = current[userKey] ?? [];
+      const merged = [...existing];
+
+      for (const item of items) {
+        const quantity = Math.max(1, Math.floor(item.quantity ?? 1));
+        const incoming = { ...item, quantity };
+        if (data.mergeWithExisting) {
+          const idx = merged.findIndex(existingItem =>
+            existingItem.cardId === incoming.cardId &&
+            (existingItem.variant ?? "default") === (incoming.variant ?? "default") &&
+            Boolean(existingItem.trade) === Boolean(incoming.trade) &&
+            Boolean(existingItem.sale) === Boolean(incoming.sale) &&
+            (existingItem.price ?? "") === (incoming.price ?? "") &&
+            (existingItem.note ?? "") === (incoming.note ?? "")
+          );
+          if (idx >= 0) merged[idx] = { ...merged[idx], quantity: Math.max(1, (merged[idx].quantity ?? 1) + quantity) };
+          else merged.push(incoming);
+        } else {
+          merged.push(incoming);
+        }
+      }
+
+      (globalThis as { __marketplaceNeeds?: Record<string, typeof items> }).__marketplaceNeeds = { ...current, [userKey]: merged };
+      socket.emit("marketplace:needsUpdated", { items: merged });
+    } catch (error) {
+      socket.emit("match:error", { message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
 
   socket.on("disconnect", () => {
     console.log(`Client disconnected: ${socket.id}`);
