@@ -80,6 +80,33 @@ function isDevToolPage(page: AppPage): boolean {
   return DEV_TOOL_PAGES.has(page);
 }
 
+function normalizeMarketplaceQuantity(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Math.max(1, Number.isFinite(parsed) ? Math.floor(parsed) : 1);
+}
+
+function getMarketplacePayloadItems(data: Record<string, unknown>, cardLibrary: CardLibraryCardSummary[]) {
+  const rawItems = Array.isArray(data.cardItems)
+    ? data.cardItems
+    : data.cardId
+      ? [data]
+      : [];
+
+  return rawItems
+    .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
+    .map(item => {
+      const cardId = String(item.cardId ?? "");
+      const card = cardLibrary.find(candidate => candidate.id === cardId);
+      return {
+        cardId,
+        name: card?.name ?? String(item.cardName ?? item.name ?? cardId),
+        variant: String(item.variant ?? "default"),
+        quantity: normalizeMarketplaceQuantity(item.quantity ?? item.missing ?? 1)
+      };
+    })
+    .filter(item => item.cardId);
+}
+
 function getLobbyCreatedTime(lobby: MatchLobby): number {
   const createdAt = Date.parse(lobby.createdAt);
   return Number.isFinite(createdAt) ? createdAt : 0;
@@ -2107,7 +2134,7 @@ export default function App() {
             socket.connect();
           }} />
         ) : activePage === "marketplace" ? (
-          <MarketplacePage authUser={authUser} />
+          <MarketplacePage authUser={authUser} cardLibrary={cardLibrary} />
         ) : activePage === "card-library" ? (
           <LibraryDecksPage
             selectedPackCount={selectedPackIds.length}
@@ -2135,8 +2162,36 @@ export default function App() {
             onSetCardCopies={setDeckBuilderCardCopies}
             onSetOwnedCopies={setOwnedCardCopies}
             onSaveDeck={saveBuiltDeck}
-            onAddMarketplaceNeed={data => socket.emit("collection:addMissingNeedsOnce", { ...data, packIds: selectedPackIds })}
-            onAddMarketplaceHave={data => socket.emit("collection:createMarketplaceAutoNeedRule", data)}
+            onAddMarketplaceNeed={data => {
+              const needItems = getMarketplacePayloadItems(data, cardLibrary);
+              if (needItems.length === 0) return;
+              socket.emit("marketplace:createPost", {
+                discordHandle: authUser.username,
+                title: needItems.length === 1 ? `Need ${needItems[0].name}` : `Need ${needItems.length} missing cards`,
+                description: "Created from collection completion.",
+                status: "OPEN",
+                haveItems: [],
+                needItems,
+                listingKinds: ["TRADE"],
+                note: typeof data.note === "string" ? data.note : undefined
+              });
+            }}
+            onAddMarketplaceHave={data => {
+              const haveItems = getMarketplacePayloadItems(data, cardLibrary);
+              if (haveItems.length === 0) return;
+              const salePrice = typeof data.price === "string" && data.price.trim() ? Number(data.price) : undefined;
+              socket.emit("marketplace:createPost", {
+                discordHandle: authUser.username,
+                title: haveItems.length === 1 ? `Have ${haveItems[0].name}` : `Have ${haveItems.length} cards available`,
+                description: "Created from the card library.",
+                status: "OPEN",
+                haveItems,
+                needItems: [],
+                listingKinds: [data.trade === false ? null : "TRADE", data.sale ? "SALE" : null].filter(Boolean),
+                salePrice: Number.isFinite(salePrice) ? salePrice : undefined,
+                note: typeof data.note === "string" ? data.note : undefined
+              });
+            }}
             canUseDevTools={canUseDevTools}
             onSaveCardLimit={saveCardTournamentLimit}
           />

@@ -174,9 +174,6 @@ export function CardLibraryPanel({
   const [completionGeneration, setCompletionGeneration] = useState("ALL");
   const [requiredQuantityPerCard, setRequiredQuantityPerCard] = useState(1);
   const [completionVariants, setCompletionVariants] = useState<Record<CollectionVariant, boolean>>({ default: true, holo: false, "zero-art": false, "zero-art-holo": false });
-  const [desiredQuantityPerCard, setDesiredQuantityPerCard] = useState(1);
-  const [includeDefaultArt, setIncludeDefaultArt] = useState(true);
-  const [includeZeroArt, setIncludeZeroArt] = useState(true);
   const cardGridRef = useRef<HTMLDivElement | null>(null);
   const loadPreviousSentinelRef = useRef<HTMLDivElement | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -916,38 +913,19 @@ export function CardLibraryPanel({
                 </div>
               )}
               <div className="library-option-a-completion-actions">
-                <label>
-                  Need quantity
-                  <input
-                    type="number"
-                    min={1}
-                    value={desiredQuantityPerCard}
-                    onChange={event => setDesiredQuantityPerCard(Math.max(1, sanitizeCopies(event.target.value) || 1))}
-                  />
-                </label>
-                <div className="library-option-a-variant-checklist compact" role="group" aria-label="Marketplace need variants">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={includeDefaultArt}
-                      onChange={event => setIncludeDefaultArt(event.target.checked)}
-                    />
-                    Default
-                  </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={includeZeroArt}
-                      onChange={event => setIncludeZeroArt(event.target.checked)}
-                    />
-                    Zero
-                  </label>
-                </div>
-                <button type="button" onClick={() => onAddMarketplaceNeed?.({ desiredQuantityPerCard, selectedGenerations: completionGeneration === "ALL" ? [] : [completionGeneration], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>
+                <button
+                  type="button"
+                  disabled={variantCompletion.missingItems.length === 0}
+                  onClick={() => onAddMarketplaceNeed?.({
+                    cardItems: variantCompletion.missingItems.map(item => ({
+                      cardId: item.cardId,
+                      cardName: item.cardName,
+                      variant: item.variant,
+                      quantity: item.missing
+                    }))
+                  })}
+                >
                   Add Missing to Marketplace Needs
-                </button>
-                <button type="button" onClick={() => onAddMarketplaceHave?.({ desiredQuantityPerCard, selectedGenerations: completionGeneration === "ALL" ? [] : [completionGeneration], selectedArtKeys: [includeDefaultArt ? "default" : null, includeZeroArt ? "zero" : null].filter(Boolean) as CardArtKey[] })}>
-                  Create Perpetual Need Rule
                 </button>
               </div>
             </details>
@@ -1003,14 +981,6 @@ export function CardLibraryPanel({
                     <option value="NOT_IN_DECK">Not In Deck</option>
                   </select>
                 </label>
-
-                <label>
-                  Desired Qty/Card
-                  <input type="number" min={1} max={999} value={desiredQuantityPerCard} onChange={event => setDesiredQuantityPerCard(Math.max(1, sanitizeCopies(event.target.value)))} />
-                </label>
-
-                <label><input type="checkbox" checked={includeDefaultArt} onChange={event => setIncludeDefaultArt(event.target.checked)} /> Include Default variant</label>
-                <label><input type="checkbox" checked={includeZeroArt} onChange={event => setIncludeZeroArt(event.target.checked)} /> Include Zero variant</label>
 
                 <label>
                   Owned
@@ -1305,6 +1275,8 @@ export function CardLibraryPanel({
       {activeMarketplaceAction ? (
         <AddCardToMarketplaceModal
           title={activeMarketplaceAction.mode === "need" ? "Add to Marketplace Need" : "Add to Marketplace Have"}
+          mode={activeMarketplaceAction.mode}
+          defaultVariant={getSelectedArtKey(activeMarketplaceAction.cardId)}
           onClose={() => setActiveMarketplaceAction(null)}
           onSubmit={payload => {
             const nextPayload = { ...payload, cardId: activeMarketplaceAction.cardId };

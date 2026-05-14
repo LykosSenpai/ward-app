@@ -2,6 +2,13 @@ export type MarketplacePostStatus = "OPEN" | "PENDING" | "CLOSED";
 
 export type MarketplaceListingKind = "TRADE" | "SALE";
 
+export type MarketplacePostLineItem = {
+  cardId: string;
+  name?: string;
+  variant?: string;
+  quantity: number;
+};
+
 export const MARKETPLACE_STATUS_LABELS: Record<MarketplacePostStatus, string> = {
   OPEN: "Open",
   PENDING: "Pending",
@@ -26,4 +33,20 @@ export function splitManualItems(value: string): string[] {
 
 export function joinManualItems(items: string[]): string {
   return items.join("\n");
+}
+
+export function getMarketplaceVariantLabel(variant?: string): string {
+  switch (variant) {
+    case "holo":
+    case "HOLO":
+      return "Holo";
+    case "zero-art":
+    case "ZERO":
+      return "Zero";
+    case "zero-art-holo":
+    case "ZERO_HOLO":
+      return "Zero Holo";
+    default:
+      return "Default";
+  }
 }

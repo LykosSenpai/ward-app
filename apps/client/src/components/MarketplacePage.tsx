@@ -1,16 +1,19 @@
-import { useEffect, useState } from "react";
-import type { AuthUser } from "../clientTypes";
+import { useEffect, useMemo, useState } from "react";
+import type { AuthUser, CardLibraryCardSummary } from "../clientTypes";
 import { MarketplacePostCard, type MarketplacePost } from "./MarketplacePostCard";
 import { MarketplacePostEditor, type MarketplacePostDraft } from "./MarketplacePostEditor";
-import { splitManualItems } from "../marketplaceHelpers";
 import { socket } from "../socket";
 
 type Props = {
   authUser: AuthUser;
+  cardLibrary: CardLibraryCardSummary[];
 };
 
-export function MarketplacePage({ authUser }: Props) {
+export function MarketplacePage({ authUser, cardLibrary }: Props) {
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
+  const cardById = useMemo(() => new Map(cardLibrary.map(card => [card.id, card])), [cardLibrary]);
+  const myPosts = useMemo(() => posts.filter(post => post.userId === authUser.id), [authUser.id, posts]);
+  const otherPosts = useMemo(() => posts.filter(post => post.userId !== authUser.id), [authUser.id, posts]);
 
   useEffect(() => {
     const onPosts = (incoming: MarketplacePost[]) => setPosts(incoming);
@@ -29,8 +32,8 @@ export function MarketplacePage({ authUser }: Props) {
       title: draft.title.trim(),
       description: draft.description.trim(),
       status: draft.status,
-      haveItems: splitManualItems(draft.haveItemsText),
-      needItems: splitManualItems(draft.needItemsText),
+      haveItems: draft.haveItems,
+      needItems: draft.needItems,
       listingKinds,
       salePrice: draft.salePrice.trim() ? Number(draft.salePrice) : undefined,
       note: draft.note.trim() || undefined
@@ -42,12 +45,23 @@ export function MarketplacePage({ authUser }: Props) {
     <section className="marketplace-page">
       <header className="marketplace-header marketplace-card">
         <h2>Marketplace</h2>
-        <p>WARD Marketplace helps players find trade and sale matches. Payments, shipping, postage, addresses, and final trade terms are handled outside the website. Use Discord to contact the other user and work out the details directly.</p>
+        <p>Post the cards you have, the cards you need, or both. Payments, shipping, postage, addresses, and final trade terms are handled outside the website.</p>
         <p>Signed in as <strong>{authUser.displayName}</strong>.</p>
       </header>
-      <MarketplacePostEditor onSave={saveDraft} />
+      <MarketplacePostEditor cardLibrary={cardLibrary} onSave={saveDraft} />
+      <section className="marketplace-list marketplace-my-posts">
+        <div className="marketplace-list-heading">
+          <h3>My Posts</h3>
+          <span>{myPosts.length}</span>
+        </div>
+        {myPosts.length === 0 ? <p className="subtitle">You have no marketplace posts yet.</p> : myPosts.map(post => <MarketplacePostCard key={post.id} post={post} cardById={cardById} isMine />)}
+      </section>
       <section className="marketplace-list">
-        {posts.length === 0 ? <p className="subtitle">No listings yet.</p> : posts.map(post => <MarketplacePostCard key={post.id} post={post} />)}
+        <div className="marketplace-list-heading">
+          <h3>Marketplace Feed</h3>
+          <span>{otherPosts.length}</span>
+        </div>
+        {otherPosts.length === 0 ? <p className="subtitle">No public listings from other players yet.</p> : otherPosts.map(post => <MarketplacePostCard key={post.id} post={post} cardById={cardById} />)}
       </section>
     </section>
   );
