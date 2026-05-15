@@ -42,9 +42,11 @@ Do not reuse the local development `SESSION_SECRET`.
 Initial combined app service settings:
 
 ```text
-Build command: pnpm install --frozen-lockfile && pnpm --filter @ward/client build && pnpm --filter @ward/server build
-Start command: pnpm --filter @ward/server start
+Build command: pnpm run railway:build
+Start command: pnpm start
 ```
+
+These commands are also checked into `railway.json` so Railway deployments do not fall back to running TypeScript source files directly.
 
 Before using account-backed production data, run migrations against Railway:
 

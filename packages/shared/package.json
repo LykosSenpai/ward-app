@@ -5,6 +5,14 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "node": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "check": "tsc --noEmit --project tsconfig.json --pretty false",
     "build": "tsc --project tsconfig.json"
