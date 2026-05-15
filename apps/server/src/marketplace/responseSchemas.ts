@@ -134,37 +134,3 @@ export const marketplaceCardsListResponseSchema = z.object({
     limit: z.number().int().positive()
   })
 });
-
-
-const marketplaceCardSummarySchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  packId: z.string(),
-  packName: z.string(),
-  type: z.string().optional(),
-  rarity: z.string().optional()
-});
-
-export const marketplaceCardDetailResponseSchema = z.object({
-  ok: z.literal(true),
-  data: z.object({
-    item: marketplaceCardSummarySchema.extend({
-      effectText: z.string()
-    })
-  })
-});
-
-export const marketplaceCardRecommendationsResponseSchema = z.object({
-  ok: z.literal(true),
-  data: z.object({
-    source: z.object({
-      id: z.string(),
-      name: z.string(),
-      packId: z.string(),
-      packName: z.string()
-    }),
-    items: z.array(marketplaceCardSummarySchema),
-    total: z.number().int().nonnegative(),
-    limit: z.number().int().positive()
-  })
-});

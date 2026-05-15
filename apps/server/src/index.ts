@@ -142,7 +142,7 @@ import { getMarketplaceMatchStatusesForUser, setMarketplaceMatchStatus } from ".
 import { validateMarketplaceMessagePolicy } from "./marketplace/messagePolicy.js";
 import { fail, ok } from "./marketplace/http.js";
 import { marketplaceCardsQuerySchema, marketplaceCatalogQuerySchema, marketplaceRecommendationsQuerySchema } from "./marketplace/schemas.js";
-import { marketplaceCardDetailResponseSchema, marketplaceCardRecommendationsResponseSchema, marketplaceCardsListResponseSchema, marketplaceCatalogResponseSchema } from "./marketplace/responseSchemas.js";
+import { marketplaceCardsListResponseSchema, marketplaceCatalogResponseSchema } from "./marketplace/responseSchemas.js";
 import { buildMatchId, scoreMarketplaceMatch } from "./marketplace/matching.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -2114,7 +2114,7 @@ app.get("/api/marketplace/cards/:cardId", (req, res) => {
     return;
   }
 
-  const response = ok({
+  res.json(ok({
     item: {
       id: card.id,
       name: card.name,
@@ -2124,9 +2124,7 @@ app.get("/api/marketplace/cards/:cardId", (req, res) => {
       rarity: card.rarity,
       effectText: card.text ?? ""
     }
-  });
-  marketplaceCardDetailResponseSchema.parse(response);
-  res.json(response);
+  }));
 });
 
 app.get("/api/marketplace/cards/:cardId/recommendations", (req, res) => {
@@ -2162,7 +2160,7 @@ app.get("/api/marketplace/cards/:cardId/recommendations", (req, res) => {
       rarity: card.rarity
     }));
 
-  const response = ok({
+  res.json(ok({
     source: {
       id: source.id,
       name: source.name,
@@ -2172,9 +2170,7 @@ app.get("/api/marketplace/cards/:cardId/recommendations", (req, res) => {
     items: recommendations,
     total: recommendations.length,
     limit
-  });
-  marketplaceCardRecommendationsResponseSchema.parse(response);
-  res.json(response);
+  }));
 });
 
 app.get("/api/marketplace/demo-seed", (_req, res) => {
