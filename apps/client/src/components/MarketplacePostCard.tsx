@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MARKETPLACE_LISTING_VARIANT_LABELS, MARKETPLACE_STATUS_LABELS, formatCurrencyUsd, getMarketplaceVariantLabel, type MarketplaceListingKind, type MarketplacePostLineItem, type MarketplacePostStatus } from "../marketplaceHelpers";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { CardImageThumbnail } from "./CardImagePreview";
+import { ModalPanel } from "./ui/ModalPanel";
 
 export type MarketplacePost = {
   id: string;
@@ -115,6 +116,7 @@ function MarketplaceLineItem({ item, cardById, onContact }: { item: string | Mar
 
 export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, onStatusChange, matches = [], onLineItemContact }: Props) {
   const [contactCopied, setContactCopied] = useState(false);
+  const [cardsOpen, setCardsOpen] = useState(false);
   const haveCount = getItemQuantity(post.haveItems);
   const needCount = getItemQuantity(post.needItems);
   const visibleMatches = matches.slice(0, 3);
