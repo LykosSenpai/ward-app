@@ -1,6 +1,6 @@
 create table if not exists marketplace_posts (
   id text primary key,
-  user_id text not null references app_users(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
   game_id text not null,
   card_id text not null,
   quantity integer not null check (quantity > 0),
@@ -18,7 +18,7 @@ create index if not exists idx_marketplace_posts_status on marketplace_posts(sta
 
 create table if not exists marketplace_wants (
   id text primary key,
-  user_id text not null references app_users(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
   game_id text not null,
   card_id text not null,
   desired_quantity integer not null check (desired_quantity > 0),
@@ -33,8 +33,8 @@ create index if not exists idx_marketplace_wants_card_id on marketplace_wants(ca
 
 create table if not exists marketplace_trade_offers (
   id text primary key,
-  created_by_user_id text not null references app_users(id) on delete cascade,
-  recipient_user_id text not null references app_users(id) on delete cascade,
+  created_by_user_id uuid not null references users(id) on delete cascade,
+  recipient_user_id uuid not null references users(id) on delete cascade,
   status text not null check (status in ('DRAFT','SENT','ACCEPTED','REJECTED','COUNTERED','CANCELED','COMPLETED_MANUALLY')),
   message text,
   created_at timestamptz not null default now(),
@@ -55,7 +55,7 @@ create table if not exists marketplace_message_threads (
 create table if not exists marketplace_message_thread_participants (
   id text primary key,
   thread_id text not null references marketplace_message_threads(id) on delete cascade,
-  user_id text not null references app_users(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
   unique (thread_id, user_id)
 );
 
@@ -64,7 +64,7 @@ create index if not exists idx_marketplace_thread_participants_user on marketpla
 create table if not exists marketplace_messages (
   id text primary key,
   thread_id text not null references marketplace_message_threads(id) on delete cascade,
-  sender_user_id text not null references app_users(id) on delete cascade,
+  sender_user_id uuid not null references users(id) on delete cascade,
   body text not null,
   created_at timestamptz not null default now()
 );
@@ -73,7 +73,7 @@ create index if not exists idx_marketplace_messages_thread on marketplace_messag
 
 create table if not exists marketplace_match_statuses (
   id text primary key,
-  user_id text not null references app_users(id) on delete cascade,
+  user_id uuid not null references users(id) on delete cascade,
   status text not null check (status in ('NEW','VIEWED','SAVED','DISMISSED')),
   updated_at timestamptz not null default now()
 );
