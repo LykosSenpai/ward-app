@@ -610,6 +610,16 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
     socket.emit("marketplace:updatePost", { ...post, status });
   }
 
+  async function handleLineItemContact(post: MarketplacePost, item: MarketplacePostLineItem) {
+    const seller = post.discord?.globalName || post.discord?.username || post.discordHandle || post.displayName || "seller";
+    const message = `Hi ${seller}, I'm interested in ${item.quantity}x ${item.name} (${getMarketplaceVariantLabel(item.variant)}) from your post "${post.title}".`;
+    try {
+      await navigator.clipboard?.writeText(message);
+    } catch {
+      // noop: clipboard unavailable in some browser contexts
+    }
+  }
+
   return (
     <section className="marketplace-page marketplace-dashboard-page">
       <header className="marketplace-dashboard-topnav marketplace-card">
@@ -756,7 +766,12 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
                     <span className={`marketplace-listing-type ${getListingType(post).toLowerCase().replace(/_/g, "-")}`}>{getListingTypeLabel(post)}</span>
                     <span>{getPostGenerationLabel(post, cardById)} - {getPostRarityLabel(post, cardById)}</span>
                   </div>
-                  <MarketplacePostCard post={post} cardById={cardById} matches={matchesByPostId.get(post.id)} />
+                  <MarketplacePostCard
+                    post={post}
+                    cardById={cardById}
+                    matches={matchesByPostId.get(post.id)}
+                    onLineItemContact={item => handleLineItemContact(post, item)}
+                  />
                   <div className="marketplace-listing-action-strip">
                     <button type="button">{getPrimaryActionLabel(post)}</button>
                     <button type="button">Add to Wants</button>

@@ -48,6 +48,7 @@ type Props = {
   onEdit?: (post: MarketplacePost) => void;
   onStatusChange?: (post: MarketplacePost, status: MarketplacePostStatus) => void;
   matches?: MarketplacePostMatchSummary[];
+  onLineItemContact?: (item: MarketplacePostLineItem) => void;
 };
 
 function getLineItemKey(item: string | MarketplacePostLineItem): string {
@@ -85,7 +86,7 @@ function MarketplaceMatchLineList({ title, lines }: { title: string; lines: Mark
   );
 }
 
-function MarketplaceLineItem({ item, cardById }: { item: string | MarketplacePostLineItem; cardById?: Map<string, CardLibraryCardSummary> }) {
+function MarketplaceLineItem({ item, cardById, onContact }: { item: string | MarketplacePostLineItem; cardById?: Map<string, CardLibraryCardSummary>; onContact?: (item: MarketplacePostLineItem) => void }) {
   if (typeof item === "string") {
     return <li className="marketplace-item-card text-only"><strong>{item}</strong></li>;
   }
@@ -106,12 +107,13 @@ function MarketplaceLineItem({ item, cardById }: { item: string | MarketplacePos
           {item.sale ? `Sale${item.price ? ` $${item.price}` : ""}` : null}
           {item.trade === false && !item.sale ? "Unavailable" : null}
         </span>
+        {onContact ? <button type="button" className="marketplace-item-inquire-button" onClick={() => onContact(item)}>Ask</button> : null}
       </div>
     </li>
   );
 }
 
-export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, onStatusChange, matches = [] }: Props) {
+export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, onStatusChange, matches = [], onLineItemContact }: Props) {
   const [contactCopied, setContactCopied] = useState(false);
   const haveCount = getItemQuantity(post.haveItems);
   const needCount = getItemQuantity(post.needItems);
@@ -202,7 +204,7 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
       <details className="marketplace-post-details">
         <summary>View cards</summary>
         <div className="marketplace-columns">
-          <div className="marketplace-item-section"><strong>Have</strong><ul className="marketplace-item-grid">{post.haveItems.length ? post.haveItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} />) : <li className="muted">Nothing listed.</li>}</ul></div>
+          <div className="marketplace-item-section"><strong>Have</strong><ul className="marketplace-item-grid">{post.haveItems.length ? post.haveItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} onContact={!isMine ? onLineItemContact : undefined} />) : <li className="muted">Nothing listed.</li>}</ul></div>
           <div className="marketplace-item-section"><strong>Need</strong><ul className="marketplace-item-grid">{post.needItems.length ? post.needItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} />) : <li className="muted">Nothing listed.</li>}</ul></div>
         </div>
       </details>
