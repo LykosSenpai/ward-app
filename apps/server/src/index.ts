@@ -1689,10 +1689,20 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
-app.get("/api/auth/me", (req, res) => {
-  res.json({
-    user: req.session.user ?? null
-  });
+app.get("/api/auth/me", async (req, res) => {
+  if (!req.session.user) {
+    res.json({ user: null });
+    return;
+  }
+
+  try {
+    const profile = await getUserProfile(req.session.user.id);
+    req.session.user = profile;
+    res.json({ user: req.session.user });
+  } catch {
+    delete req.session.user;
+    res.json({ user: null });
+  }
 });
 
 app.get("/api/auth/discord/start", authRateLimit, (req, res) => {

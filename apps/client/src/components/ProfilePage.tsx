@@ -55,6 +55,7 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
       }
 
       setProfile(data.profile);
+      onUserUpdated(data.profile);
       setDisplayName(data.profile.displayName);
       setEmail(data.profile.email);
       setDevToolsEnabled(data.profile.devToolsEnabled);
