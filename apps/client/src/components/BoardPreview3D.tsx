@@ -9,6 +9,7 @@ import { BoardPreview3DTable, type BoardAttackAnimation } from "./boardPreview3d
 import { BoardCardInspector } from "./boardPreview3d/BoardCardInspector";
 import { MatchCardImage } from "./MatchCardImage";
 import { parseLayoutSnapshotJson, resolveSlotPosition, toLayoutSnapshot } from "./boardPreview3dAdapter";
+import { buildEffectTargetBoardOptions, slotIdFromTargetZoneRef } from "./boardTargetPromptMapping";
 import { buildBoardInteractionContext, buildBoardRenderModel, translateGameEventsToBoardRenderEvents } from "./boardRenderAdapter";
 import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAnimationQueueToSequence, settleActiveBoardAnimation, startNextBoardAnimation } from "./boardAnimationQueue";
 import { getBoardAnimationProfile } from "./boardAnimationProfiles";
@@ -21,7 +22,7 @@ import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 import { buildBattleAffordances, buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances, buildPlayerGlobalAffordances } from "./boardAffordances";
-import type { BoardAffordance, BoardZoneRef } from "@ward/shared";
+import type { BoardAffordance } from "@ward/shared";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
 const BOARD_PREVIEW_STORAGE_VERSION = 11;
@@ -32,7 +33,6 @@ const BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION = 1;
 type FloatingDockPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 type ActionDockPosition = "bottom" | "left" | "right";
 type AttachTargetKind = "PRIMARY_CREATURE" | "LIMITED_SUMMON";
-type EffectTargetBoardOption = { optionId: string; pieceId?: string; slotId?: string };
 
 const FLOATING_DOCK_POSITIONS: FloatingDockPosition[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
 const ACTION_DOCK_POSITIONS: ActionDockPosition[] = ["bottom", "left", "right"];
@@ -209,37 +209,6 @@ function getAttackAnimationTheme(creatureType: string | undefined): BoardAttackA
       return "undead";
     default:
       return "generic";
-  }
-}
-
-function isBoardPlayerId(value: string | undefined): value is BoardPlayerId {
-  return value === "player_1" || value === "player_2";
-}
-
-function slotIdFromTargetZoneRef(zoneRef: BoardZoneRef | undefined): BoardSlotId | null {
-  if (!zoneRef || !isBoardPlayerId(zoneRef.playerId)) return null;
-
-  switch (zoneRef.zone) {
-    case "PRIMARY_CREATURE":
-      return `${zoneRef.playerId}-primary` as BoardSlotId;
-    case "DECK":
-      return `${zoneRef.playerId}-deck` as BoardSlotId;
-    case "CEMETERY":
-      return `${zoneRef.playerId}-cemetery` as BoardSlotId;
-    case "HAND":
-      return typeof zoneRef.slotIndex === "number"
-        ? `${zoneRef.playerId}-hand-${zoneRef.slotIndex + 1}` as BoardSlotId
-        : null;
-    case "LIMITED_SUMMON":
-      return typeof zoneRef.slotIndex === "number"
-        ? `${zoneRef.playerId}-limited-${zoneRef.slotIndex + 1}` as BoardSlotId
-        : null;
-    case "MAGIC_SLOT":
-      return typeof zoneRef.slotIndex === "number"
-        ? `${zoneRef.playerId}-magic-${zoneRef.slotIndex + 1}` as BoardSlotId
-        : null;
-    default:
-      return null;
   }
 }
 
@@ -1140,52 +1109,12 @@ export function BoardPreview3D({
     return buildPendingEffectTargetAffordances(prompt, controlledPlayerId);
   }, [controlledPlayerId, match.pendingEffectTargetPrompt]);
 
-  const effectTargetBoardOptions = useMemo(() => {
-    const affordanceOptions: EffectTargetBoardOption[] = pendingEffectTargetAffordances.flatMap(affordance => {
-      const optionId = affordance.actionId;
-      if (!optionId || affordance.highlightStyle !== "TARGET") return [];
-
-      if (
-        (
-          affordance.kind === "VALID_TARGET_CARD" ||
-          affordance.kind === "VALID_DISCARD_CARD" ||
-          affordance.kind === "REVEALED_HAND_CARD"
-        ) &&
-        affordance.targetCardInstanceId
-      ) {
-        const object = boardObjects.find(candidate => candidate.cardInstanceId === affordance.targetCardInstanceId);
-        if (!object || !["primary", "limited", "magic", "hand"].includes(object.lane)) return [];
-        return [{
-          optionId,
-          pieceId: object.id,
-          slotId: object.slotId
-        }];
-      }
-
-      if (affordance.kind === "VALID_TARGET_ZONE" || affordance.kind === "VALID_DECK_STACK") {
-        const slotId = slotIdFromTargetZoneRef(affordance.targetZoneRef);
-        return slotId ? [{ optionId, slotId }] : [];
-      }
-
-      return [];
-    });
-    if (affordanceOptions.length > 0) return affordanceOptions;
-
-    const prompt = match.pendingEffectTargetPrompt;
-    if (!prompt) return [] as EffectTargetBoardOption[];
-    if (controlledPlayerId && controlledPlayerId !== prompt.controllerPlayerId) return [] as EffectTargetBoardOption[];
-
-    return prompt.options.flatMap(option => {
-      if (!option.cardInstanceId) return [];
-      const object = boardObjects.find(candidate => candidate.cardInstanceId === option.cardInstanceId);
-      if (!object || !["primary", "limited", "magic"].includes(object.lane)) return [];
-      return [{
-        optionId: option.id,
-        pieceId: object.id,
-        slotId: object.slotId
-      }];
-    });
-  }, [boardObjects, controlledPlayerId, match.pendingEffectTargetPrompt, pendingEffectTargetAffordances]);
+  const effectTargetBoardOptions = useMemo(() => buildEffectTargetBoardOptions({
+    pendingEffectTargetAffordances,
+    boardObjects,
+    prompt: match.pendingEffectTargetPrompt,
+    controlledPlayerId
+  }), [boardObjects, controlledPlayerId, match.pendingEffectTargetPrompt, pendingEffectTargetAffordances]);
   const effectTargetSlotIds = useMemo(
     () => [...new Set(effectTargetBoardOptions.map(option => option.slotId).filter((slotId): slotId is string => !!slotId))],
     [effectTargetBoardOptions]

@@ -1,6 +1,6 @@
 # WARD 3D Board Migration Status
 
-Last updated: 2026-05-09
+Last updated: 2026-05-15
 
 ## Phase 1 — Stabilize 3D mode wiring in App shell
 ### Completed
@@ -35,7 +35,7 @@ Last updated: 2026-05-09
 - Legacy 2D/split/text mode CSS blocks were removed from compact workspace styles.
 
 ### Remaining
-- Audit and remove any residual 2D-only components/utilities after dev preview dependencies are confirmed.
+- None for Play Table runtime. Keep any preview-only helpers scoped to dev/admin flows.
 
 ## Phase 4 — QA and hardening
 ### Completed
@@ -74,3 +74,12 @@ Last updated: 2026-05-09
 ### Pending
 - None for repository validation scope; run live two-client seat/spectator verification during operational test match signoff.
 
+
+## Current non-live verification commands
+- `pnpm.cmd check`
+- `pnpm.cmd check:board-3d`
+- `pnpm.cmd check:release`
+- `pnpm.cmd --filter @ward/client check:board-preview-integration`
+- `pnpm.cmd --filter @ward/client check:phase4-qa`
+
+These are repository automation gates only; live multiplayer seat/spectator verification remains a live operational signoff task.

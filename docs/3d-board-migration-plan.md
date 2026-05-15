@@ -3,11 +3,11 @@
 ## Goal
 Ship the 3D board as the only playable table experience for WARD and fully remove the legacy 2D board UI path.
 
-## Current-state findings
-- `App.tsx` still models multiple play views (`board`, `split`, `text`, and 3D variants), so the product is currently dual-mode instead of 3D-first.
-- View-mode naming is inconsistent (`board3d`, `board-3d`) and there is a likely typo (`show3DBoardView` vs `show3dBoardView`) that can break rendering/compile.
-- Legacy 2D board components are still in the primary match workspace and toolbar.
-- 3D board exists both in `board-preview` and in-game contexts, but behavior parity with gameplay actions should be validated before cutting 2D.
+## Current-state findings (historical context)
+- ✅ Live Play Table is now 3D-only (`board3d`) in runtime.
+- ✅ Legacy query `view` values (`board`, `split`, `text`, `board-3d`, `3d`) normalize to `board3d` for backward compatibility.
+- ✅ Legacy 2D live board component/style paths were removed from active gameplay runtime.
+- ℹ️ `board-preview` remains a dev/admin preview surface and is not the canonical live Play Table.
 
 ## Definition of done
 - The Play Table only renders the 3D board experience in production gameplay.
@@ -56,7 +56,8 @@ Ship the 3D board as the only playable table experience for WARD and fully remov
 4. **PR D:** QA automation updates + docs cleanup.
 
 ## Immediate next implementation tasks
-- [ ] Lock `PlayViewMode` to 3D-first values and remove mixed-mode toolbar options.
-- [ ] Resolve `board3d` vs `board-3d` naming mismatch and any compile-time references.
-- [ ] Remove `CardBoardView` branch from live match workspace once action parity checklist is satisfied.
-- [ ] Add/adjust tests in `apps/client/scripts/*board*` to reflect 3D-only expectations.
+- [x] Lock `PlayViewMode` to 3D-first values and remove mixed-mode toolbar options.
+- [x] Keep legacy `view` values mapped to `board3d` for compatibility.
+- [x] Remove `CardBoardView` branch from live match workspace.
+- [x] Add/adjust non-live script checks in `apps/client/scripts/*board*`.
+- [ ] Complete live multiplayer seat/spectator operational signoff (live-only).

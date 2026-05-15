@@ -515,3 +515,67 @@ assert.equal(blockedPlacementAffordances.some(affordance =>
 ), true);
 
 console.log("board render adapter checks passed");
+
+
+function eventTemplate(sequenceNumber: number, type: string, payload: Record<string, unknown>) {
+  return { id: `evt-${sequenceNumber}`, sequenceNumber, type, playerId: "player_1", payload } as any;
+}
+
+const translationCoverageMatch = {
+  ...mockMatch,
+  eventLog: [
+    eventTemplate(101, "CARD_MOVED", { cardInstanceId: "c1", fromZoneRef: { playerId: "player_1", zone: "HAND" }, toZoneRef: { playerId: "player_1", zone: "MAGIC_SLOT", slotIndex: 0 } }),
+    eventTemplate(102, "DRAW_CARD", { cardInstanceId: "c2" }),
+    eventTemplate(103, "PRIMARY_CREATURE_PLAYED", { summonedCardInstanceId: "c3", sourcePlayerId: "player_1", cardOwnerPlayerId: "player_1" }),
+    eventTemplate(104, "LIMITED_SUMMON_CREATED", { summonedCardInstanceId: "c4", sourcePlayerId: "player_1", cardOwnerPlayerId: "player_1" }),
+    eventTemplate(105, "MAGIC_PLAYED_TO_CHAIN", { cardInstanceId: "c5", sourcePlayerId: "player_1", cardOwnerPlayerId: "player_1" }),
+    eventTemplate(106, "MAGIC_CHAIN_STARTED", { cardInstanceId: "c6", sourcePlayerId: "player_1", cardOwnerPlayerId: "player_1" }),
+    eventTemplate(107, "CHAIN_LINK_RESOLVED", { cardInstanceId: "c7", sourcePlayerId: "player_1", cardOwnerPlayerId: "player_1" }),
+    eventTemplate(108, "EQUIP_MAGIC_ATTACHED", { magicCardInstanceId: "c8", targetCreatureInstanceId: "c3", targetPlayerId: "player_1" }),
+    eventTemplate(109, "AUTO_EFFECT_DESTROY_MAGIC_CARD_RESOLVED", { destroyedCardInstanceId: "c9", fieldOwnerPlayerId: "player_2", cardOwnerPlayerId: "player_2" }),
+    eventTemplate(110, "MANUAL_BATTLE_DECLARED", { attackerCreatureInstanceId: "c3", targetCreatureInstanceId: "d1" }),
+    eventTemplate(111, "BATTLE_HIT_ROLLED", { targetCreatureInstanceId: "d1", values: [6], hit: true }),
+    eventTemplate(112, "BATTLE_DAMAGE_ROLLED", { targetCreatureInstanceId: "d1", values: [4, 5] }),
+    eventTemplate(113, "BATTLE_DAMAGE_APPLIED", { targetCreatureInstanceId: "d1", damageAmount: 9, damageRollDice: [4, 5] }),
+    eventTemplate(114, "STATUS_APPLIED", { cardInstanceId: "c3", statusLabel: "Shielded" }),
+    eventTemplate(115, "STATUS_REMOVED", { cardInstanceId: "c3", statusLabel: "Shielded", reason: "DURATION_EXPIRED" }),
+    eventTemplate(116, "TURN_PHASE_CHANGED", { phase: "COMBAT" })
+  ]
+} as unknown as AppMatchState;
+
+const translatedCoverage = translateGameEventsToBoardRenderEvents(translationCoverageMatch);
+assert.equal(translatedCoverage.length, 16);
+const expectedTypes = [
+  "CARD_MOVED","CARD_DRAWN","CREATURE_SUMMONED_PRIMARY","CREATURE_SUMMONED_LIMITED","MAGIC_PLAYED_TO_CHAIN","CHAIN_LINK_ADDED","CHAIN_LINK_RESOLVED","MAGIC_ATTACHED","CARD_DESTROYED","BATTLE_STARTED","BATTLE_HIT_ROLLED","BATTLE_DAMAGE_ROLLED","BATTLE_DAMAGE_APPLIED","STATUS_APPLIED","STATUS_REMOVED","TURN_PHASE_CHANGED"
+];
+for (const t of expectedTypes) {
+  const ev = translatedCoverage.find(e => e.type === t);
+  assert.ok(ev, `missing translated event type ${t}`);
+  const steps = planBoardAnimationSteps(ev!);
+  assert.ok(Array.isArray(steps), `planner failed for ${t}`);
+}
+assert.equal(planBoardAnimationSteps(translatedCoverage.find(e => e.type === "CARD_MOVED")!).some(step => step.type === "MOVE_CARD"), true);
+assert.equal(planBoardAnimationSteps(translatedCoverage.find(e => e.type === "MAGIC_PLAYED_TO_CHAIN")!).some(step => step.type === "GLOW_CARD"), true);
+assert.equal(planBoardAnimationSteps(translatedCoverage.find(e => e.type === "CHAIN_LINK_RESOLVED")!).some(step => step.type === "SHOW_STATUS_CHIP"), true);
+assert.equal(planBoardAnimationSteps(translatedCoverage.find(e => e.type === "MAGIC_ATTACHED")!).some(step => step.type === "ATTACH_CARD"), true);
+assert.equal(planBoardAnimationSteps(translatedCoverage.find(e => e.type === "BATTLE_HIT_ROLLED")!).some(step => step.type === "ROLL_DICE"), true);
+assert.equal(planBoardAnimationSteps(translatedCoverage.find(e => e.type === "BATTLE_DAMAGE_APPLIED")!).some(step => step.type === "DAMAGE_NUMBER"), true);
+
+let queueRegression = createBoardAnimationQueueState();
+const queueEvents = translatedCoverage.slice(0, 3);
+queueRegression = enqueueBoardRenderEvents(queueRegression, queueEvents);
+const qLen = queueRegression.queue.length;
+queueRegression = enqueueBoardRenderEvents(queueRegression, queueEvents);
+assert.equal(queueRegression.queue.length, qLen);
+queueRegression = startNextBoardAnimation(queueRegression);
+queueRegression = settleActiveBoardAnimation(queueRegression);
+assert.equal(queueRegression.cursor >= queueEvents[0].sequenceNumber, true);
+queueRegression = resetBoardAnimationQueueToSequence(queueRegression, 50);
+assert.equal(queueRegression.cursor, 50);
+assert.equal(queueRegression.queue.length, 0);
+assert.equal(queueRegression.activeEvent, null);
+
+const battlePriorityEvents = translatedCoverage.filter(e => e.type === "BATTLE_DAMAGE_APPLIED" || e.type === "CARD_MOVED");
+let priorityState = createBoardAnimationQueueState();
+priorityState = enqueueBoardRenderEvents(priorityState, battlePriorityEvents);
+assert.equal(priorityState.queue[0].type, "BATTLE_DAMAGE_APPLIED");
