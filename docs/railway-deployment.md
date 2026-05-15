@@ -36,6 +36,10 @@ VITE_ENABLE_DEV_TOOLS=false
 PORT=4173
 ```
 
+`VITE_API_BASE_URL` is baked into the client during the Vite build. If this
+value is added or changed, redeploy the `@ward/client` service so the browser
+bundle is rebuilt with the server URL.
+
 Generate a session secret locally with:
 
 ```powershell

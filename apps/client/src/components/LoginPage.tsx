@@ -8,6 +8,11 @@ type LoginPageProps = {
 
 type AuthMode = "login" | "register";
 
+type AuthResponse = {
+  user?: AuthUser;
+  message?: string;
+};
+
 const SHOWCASE_CARDS = [
   "/card-images/gen1_001_blue_dragon.png",
   "/card-images/gen1_018_wizard.png",
@@ -45,7 +50,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
         })
       });
 
-      const data = await response.json() as { user?: AuthUser; message?: string };
+      const data = await readAuthResponse(response);
 
       if (!response.ok || !data.user) {
         throw new Error(data.message ?? "Authentication failed.");
@@ -172,4 +177,24 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
       </section>
     </main>
   );
+}
+
+async function readAuthResponse(response: Response): Promise<AuthResponse> {
+  const body = await response.text();
+
+  if (!body.trim()) {
+    throw new Error(
+      response.ok
+        ? "The auth server returned an empty response."
+        : `The auth server returned ${response.status} ${response.statusText || "without a response body"}.`
+    );
+  }
+
+  try {
+    return JSON.parse(body) as AuthResponse;
+  } catch {
+    throw new Error(
+      `The auth request did not return JSON from ${new URL(response.url).origin}. Check that VITE_API_BASE_URL points to the Railway server service.`
+    );
+  }
 }
