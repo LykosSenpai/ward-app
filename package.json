@@ -46,7 +46,10 @@
     "qa:all-gens:setup-users": "powershell -NoProfile -Command \"$env:WARD_QA_PACK_IDS='ward-gen1,ward-gen2,ward-gen3'; $env:WARD_QA_LABEL='Gen1+Gen2+Gen3'; $env:WARD_QA_SLUG='gen1_gen2_gen3'; $env:WARD_QA_DECK_COUNT='26'; pnpm --filter @ward/server exec tsx ../../tools/setup-gen1-qa-users.ts\"",
     "qa:all-gens:lobby-smoke": "powershell -NoProfile -Command \"$env:WARD_QA_PACK_IDS='ward-gen1,ward-gen2,ward-gen3'; $env:WARD_QA_LABEL='Gen1+Gen2+Gen3'; $env:WARD_QA_SLUG='gen1_gen2_gen3'; $env:WARD_QA_DECK_COUNT='26'; $env:WARD_QA_EXPECTED_CARD_COUNT='453'; pnpm --filter @ward/client exec tsx ../../tools/run-gen1-lobby-smoke.ts\"",
     "qa:all-gens:lobby-sweep": "pnpm qa:all-gens:lobby-smoke",
-    "qa:all-gens:lobby-cleanup": "powershell -NoProfile -Command \"$env:WARD_QA_PACK_IDS='ward-gen1,ward-gen2,ward-gen3'; $env:WARD_QA_LABEL='Gen1+Gen2+Gen3'; $env:WARD_QA_SLUG='gen1_gen2_gen3'; $env:WARD_QA_DECK_COUNT='26'; $env:WARD_QA_CLEANUP_ONLY='1'; pnpm --filter @ward/client exec tsx ../../tools/run-gen1-lobby-smoke.ts\""
+    "qa:all-gens:lobby-cleanup": "powershell -NoProfile -Command \"$env:WARD_QA_PACK_IDS='ward-gen1,ward-gen2,ward-gen3'; $env:WARD_QA_LABEL='Gen1+Gen2+Gen3'; $env:WARD_QA_SLUG='gen1_gen2_gen3'; $env:WARD_QA_DECK_COUNT='26'; $env:WARD_QA_CLEANUP_ONLY='1'; pnpm --filter @ward/client exec tsx ../../tools/run-gen1-lobby-smoke.ts\"",
+    "check:board-3d": "pnpm check:board-3d-readiness && pnpm --filter @ward/client check:board-preview-integration && pnpm --filter @ward/client check:phase4-qa",
+    "check:release": "pnpm cards:check && pnpm effects:audit && pnpm check && pnpm check:board-3d",
+    "check:board-3d-readiness": "node tools/board3d-readiness-report.mjs"
   },
   "devDependencies": {
     "tsx": "^4.21.0",

@@ -12,11 +12,14 @@
     "check": "tsc -b --pretty false",
     "check:dispatch-guards": "tsx scripts/boardPreview3dDispatchChecks.ts",
     "check:board-render-adapter": "tsx scripts/boardRenderAdapterChecks.ts",
-    "check:board-preview-integration": "pnpm check && pnpm check:dispatch-guards && pnpm check:board-render-adapter && pnpm check:board-3d-gameplay-smoke && pnpm check:board-3d-battle-smoke && pnpm check:board-3d-multiplayer-smoke",
+    "check:board-preview-integration": "pnpm check && pnpm check:dispatch-guards && pnpm check:board-3d-only-regression && pnpm check:board-render-adapter && pnpm check:board-3d-gameplay-smoke && pnpm check:board-3d-battle-smoke && pnpm check:board-3d-multiplayer-smoke && pnpm check:board-3d-target-prompt-smoke && pnpm check:embed",
     "check:board-3d-gameplay-smoke": "tsx scripts/board3dGameplaySmoke.ts",
     "check:phase4-qa": "node scripts/phase4QaSuite.mjs",
     "check:board-3d-battle-smoke": "tsx scripts/board3dBattlePromptSmoke.ts",
-    "check:board-3d-multiplayer-smoke": "tsx scripts/board3dMultiplayerMatrixSmoke.ts"
+    "check:board-3d-multiplayer-smoke": "tsx scripts/board3dMultiplayerMatrixSmoke.ts",
+    "check:board-3d-only-regression": "tsx scripts/board3dOnlyRegressionChecks.ts",
+    "check:board-3d-target-prompt-smoke": "tsx scripts/board3dTargetPromptSmoke.ts",
+    "check:embed": "tsx scripts/embedProtocolChecks.ts"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",

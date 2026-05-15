@@ -38,6 +38,7 @@ import {
   parseReferrerOrigin
 } from "./embed/embedProtocol";
 import type { EmbedPage, EmbedView } from "./embed/embedTypes";
+import { canApplyEmbedPage, canApplyEmbedView, parseRequestedEmbedView, type PlayViewMode } from "./embed/embedGuards";
 import { useEmbedBridge } from "./embed/useEmbedBridge";
 import type { DevRollKind, WardEngineEffect } from "@ward/shared";
 import type {
@@ -72,7 +73,6 @@ import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
-type PlayViewMode = "board3d";
 
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
 
@@ -127,14 +127,6 @@ function parseRequestedPage(search: string): AppPage | null {
   return requestedPage === "board-preview" ? "board-preview" : null;
 }
 
-function parseRequestedView(search: string): PlayViewMode | null {
-  const requestedView = new URLSearchParams(search).get("view");
-  if (requestedView === "board" || requestedView === "split" || requestedView === "text" || requestedView === "board3d" || requestedView === "board-3d" || requestedView === "3d") {
-    return "board3d";
-  }
-  return null;
-}
-
 function parseBoardWindowMode(search: string): boolean {
   return new URLSearchParams(search).get("boardWindow") === "1";
 }
@@ -142,14 +134,6 @@ function parseBoardWindowMode(search: string): boolean {
 function parseEmbedToken(search: string): string | null {
   const token = new URLSearchParams(search).get("embedToken");
   return token && token.trim().length > 0 ? token.trim() : null;
-}
-
-function canApplyEmbedPage(page: string): page is EmbedPage {
-  return page === "play" || page === "board-preview";
-}
-
-function canApplyEmbedView(view: string): view is EmbedView {
-  return view === "board" || view === "split" || view === "text";
 }
 
 function isManualDrawEffect(effect: AppMatchState["manualEffectQueue"][number]): boolean {
@@ -230,7 +214,7 @@ export default function App() {
   const [locationSearch, setLocationSearch] = useState(() => window.location.search);
   const embedModeEnabled = useMemo(() => parseEmbedMode(locationSearch), [locationSearch]);
   const requestedPage = useMemo(() => parseRequestedPage(locationSearch), [locationSearch]);
-  const requestedView = useMemo(() => parseRequestedView(locationSearch), [locationSearch]);
+  const requestedView = useMemo(() => parseRequestedEmbedView(locationSearch), [locationSearch]);
   const boardWindowMode = useMemo(() => parseBoardWindowMode(locationSearch), [locationSearch]);
   const embedToken = useMemo(() => parseEmbedToken(locationSearch), [locationSearch]);
   const embedParentOrigin = useMemo(() => parseEmbedParentOrigin(locationSearch), [locationSearch]);

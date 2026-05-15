@@ -1,11 +1,20 @@
 # Phase 4 QA Signoff (3D Board Rollout)
 
-Date: 2026-05-09
+Date: 2026-05-15
 
 ## Automated checks
 - ✅ `npm -C apps/client run -s check:board-preview-integration`
 - ✅ `npm -C apps/client run -s build`
 - ✅ `npm -C apps/client run -s check:phase4-qa`
+
+## Repository-level non-live gate commands
+- ✅ `pnpm.cmd check`
+- ✅ `pnpm.cmd check:board-3d`
+- ✅ `pnpm.cmd check:release`
+- ✅ `pnpm.cmd --filter @ward/client check:board-preview-integration`
+- ✅ `pnpm.cmd --filter @ward/client check:phase4-qa`
+
+These commands intentionally run only automated/non-live checks and do **not** require a running dev server, browser clients, socket sessions, or manual two-client multiplayer execution.
 
 ## Coverage included by automation
 - Dispatch guard validation for summon/magic/battle routing.

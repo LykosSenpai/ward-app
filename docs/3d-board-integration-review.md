@@ -1,5 +1,9 @@
 # 3D Game Board Integration Review (Browser + Embedding)
 
+> **Status note (May 15, 2026):** This document predates the 3D-only migration decision. The live Play Table is now board3d-only. Any mentions of required 2D runtime fallback are superseded for current release scope.
+>
+> 2D fallback ideas in this document should be treated as optional future resilience work (for low-power/unsupported environments), not as current rollout blockers.
+
 ## Scope Reviewed
 
 - `apps/client/src/components/CardBoardView.tsx`
@@ -9,14 +13,14 @@
 
 ## Executive Summary
 
-The current client is in a **good position** for a 3D board integration because the board is already separated into a dedicated composition layer (`CardBoardView`) and a preview harness (`BoardPreviewPage`). The architecture is componentized enough to progressively swap visual layers (2D CSS board → 3D renderer) without rewriting match logic.
+The client has completed migration to a **3D-only live Play Table**. `BoardPreviewPage` continues to serve as a preview harness for dev/admin validation, while live gameplay runs through the 3D board surface.
 
 Embedding into a website is also feasible, but you should formalize an **embed mode contract** (URL params + auth + reduced chrome + postMessage API) before shipping.
 
 ## What Is Already Strong
 
-1. **Board view is a distinct component boundary.**
-   - `CardBoardView` receives a match snapshot and actions as props, which makes it a strong integration seam for a 3D presentation layer.
+1. **Board preview and runtime contracts are separated.**
+   - Live gameplay uses the 3D board runtime path; preview and adapter contracts remain useful seams for automation and embed validation.
 2. **Preview harness exists.**
    - `BoardPreviewPage` can build synthetic match state from catalog data for visual iteration without needing full multiplayer setup.
 3. **State and control flow are explicit.**
@@ -47,9 +51,9 @@ Embedding into a website is also feasible, but you should formalize an **embed m
 
 ### Phase 2: Introduce 3D Renderer Behind Feature Flag
 
-- Add `playViewMode: "board-2d" | "board-3d" | "split" | "text"`.
+- Superseded: runtime `PlayViewMode` is board3d-only; legacy query values normalize to `board3d`.
 - Implement a `BoardScene3D` component that only consumes render model + callbacks.
-- Maintain `CardBoardView` as fallback for low-power devices or unsupported browsers.
+- Optional future work: add a low-power fallback path if required, without reintroducing 2D as a release dependency.
 
 ### Phase 3: Embed Mode
 
@@ -80,7 +84,7 @@ Embedding into a website is also feasible, but you should formalize an **embed m
 - [ ] Dynamic sizing strategy (fixed, responsive, or auto-height messaging)
 - [ ] Snapshot/loading states exposed to host
 - [ ] Mobile touch input pass tested inside iframe
-- [ ] Browser fallback path tested (2D board fallback)
+- [ ] Optional future fallback strategy validated (if introduced).
 
 ## Conclusion
 
@@ -111,7 +115,7 @@ You are close, but there are several production-critical layers between engine t
 - Add a serializer for deterministic event payloads from match updates.
 
 ### Milestone 1 — 2D/3D Parallel Adapter (2–4 days)
-- Keep existing `CardBoardView` as baseline.
+- Superseded: `CardBoardView` is no longer part of live Play Table runtime.
 - Create `BoardScene3D` behind feature flag.
 - Feed both from the same render model.
 
@@ -144,4 +148,4 @@ You are ready when all of the following are true:
 - [ ] Reconnect during animation recovers to correct board state without stuck UI.
 - [ ] Embed host can control and observe board via stable message API.
 - [ ] Mobile touch interactions are reliable in iframe context.
-- [ ] 2D fallback path works when 3D is unavailable.
+- [ ] Optional future low-power fallback path works when introduced.
