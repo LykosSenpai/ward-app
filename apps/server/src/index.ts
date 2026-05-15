@@ -125,6 +125,25 @@ import type { AuthUser } from "./auth/session.js";
 import { changeUserPassword, createUser, createUserFromDiscord, findUserByDiscordId, getUserProfile, linkDiscordAccount, listUsersForTournamentDeckReview, unlinkDiscordAccount, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
 import { checkDbConnection } from "./db/pool.js";
 import { listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
+import { createDisabledCommerceRouter } from "./marketplace/api/commerceDisabledRoutes.js";
+import { createMarketplaceListingsRouter } from "./marketplace/api/listingsRoutes.js";
+import { createWantsRouter } from "./marketplace/api/wantsRoutes.js";
+import { createTradeOffersRouter } from "./marketplace/api/tradeOffersRoutes.js";
+import { createMessagesRouter } from "./marketplace/api/messagesRoutes.js";
+import { createMatchesRouter } from "./marketplace/api/matchesRoutes.js";
+import { isMarketplaceListingStatus, isMarketplaceListingType } from "./marketplace/domainConstants.js";
+import { sanitizeMarketplaceText } from "./marketplace/sanitize.js";
+import { MARKETPLACE_GAME, assertSingleGameId } from "./marketplace/catalog.js";
+import { createMarketplaceWant, deleteMarketplaceWant, listMarketplaceWantsByUser, updateMarketplaceWant } from "./marketplace/repositories/wantsRepository.js";
+import { createMarketplaceListing, deleteMarketplaceListing, getMarketplaceListingById, listMarketplaceListings, updateMarketplaceListing } from "./marketplace/repositories/listingsRepository.js";
+import { createMarketplaceTradeOffer, getMarketplaceTradeOfferForUser, listMarketplaceTradeOffersForUser, updateMarketplaceTradeOfferStatus } from "./marketplace/repositories/tradeOffersRepository.js";
+import { addMarketplaceMessage, createMarketplaceThread, getMarketplaceThreadForUser, listMarketplaceMessagesForThread, listMarketplaceThreadsForUser } from "./marketplace/repositories/messagesRepository.js";
+import { getMarketplaceMatchStatusesForUser, setMarketplaceMatchStatus } from "./marketplace/repositories/matchStatusesRepository.js";
+import { validateMarketplaceMessagePolicy } from "./marketplace/messagePolicy.js";
+import { fail, ok } from "./marketplace/http.js";
+import { marketplaceCardsQuerySchema, marketplaceCatalogQuerySchema, marketplaceRecommendationsQuerySchema } from "./marketplace/schemas.js";
+import { marketplaceCardDetailResponseSchema, marketplaceCardRecommendationsResponseSchema, marketplaceCardsListResponseSchema, marketplaceCatalogResponseSchema } from "./marketplace/responseSchemas.js";
+import { buildMatchId, scoreMarketplaceMatch } from "./marketplace/matching.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const __filename = fileURLToPath(import.meta.url);
@@ -365,6 +384,20 @@ const passwordRateLimit = rateLimit({
   legacyHeaders: false,
   message: { message: "Too many password attempts. Try again shortly." }
 });
+const marketplaceOfferRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  limit: isProduction ? 20 : 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many trade offer actions. Please slow down." }
+});
+const marketplaceMessageRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  limit: isProduction ? 30 : 180,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many message actions. Please slow down." }
+});
 
 const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
@@ -385,7 +418,7 @@ const MARKETPLACE_MATCH_REFRESH_INTERVAL_MS = 30 * 1000;
 
 type MarketplaceMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
 type MarketplacePostItem = { cardId: string; variant?: string; quantity: number; pendingReservedQuantity?: number; trade?: boolean; sale?: boolean };
-type MarketplacePost = { id?: string; userId?: string; displayName?: string; discordHandle?: string; discord?: AuthUser["discord"]; linkedPostId?: string; status?: "OPEN" | "PENDING" | "CLOSED"; haveItems?: MarketplacePostItem[]; needItems?: MarketplacePostItem[]; cardId?: string; quantity?: number; updatedAt?: string };
+type MarketplacePost = { id?: string; userId?: string; displayName?: string; discordHandle?: string; discord?: AuthUser["discord"]; linkedPostId?: string; status?: "OPEN" | "PENDING" | "CLOSED"; haveItems?: MarketplacePostItem[]; needItems?: MarketplacePostItem[]; gameId?: string; cardId?: string; quantity?: number; updatedAt?: string };
 type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
 type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; reciprocalMatchedItems?: MarketplaceMatchItem[]; linkedPostId?: string };
 type MarketplaceMatchGroup = { postId: string; matches: MarketplaceMatch[] };
@@ -404,8 +437,8 @@ type MarketplaceTransaction = {
   confirmedByUserIds: string[];
 };
 
-const marketplacePosts = new Map<string, MarketplacePost[]>();
 const marketplaceTransactions = new Map<string, MarketplaceTransaction>();
+const marketplacePosts = new Map<string, MarketplacePost[]>();
 
 function normalizeMarketplaceVariant(value?: string): string {
   return (value ?? "default").trim().toLowerCase().replace(/_/g, "-");
@@ -2008,6 +2041,367 @@ app.post("/api/embed/consume", (req, res) => {
     view: session.view
   });
 });
+
+app.get("/api/marketplace/catalog", (req, res) => {
+  const query = marketplaceCatalogQuerySchema.safeParse(req.query ?? {});
+  if (!query.success) {
+    res.status(400).json(fail("VALIDATION_ERROR", "Invalid catalog query params."));
+    return;
+  }
+  const packIdFilter = String(query.data.packId ?? "").trim();
+  const q = String(query.data.q ?? "").trim().toLowerCase();
+  const setup = listSetupOptions();
+  const packs = setup.cardPacks
+    .filter(pack => pack.id.startsWith("ward-"))
+    .filter(pack => (packIdFilter ? pack.id === packIdFilter : true))
+    .filter(pack => (q ? pack.name.toLowerCase().includes(q) || pack.id.toLowerCase().includes(q) : true))
+    .map(pack => ({
+      id: pack.id,
+      name: pack.name,
+      version: pack.version,
+      cardCount: pack.cardCount
+    }));
+  const response = ok({ game: MARKETPLACE_GAME, packs });
+  marketplaceCatalogResponseSchema.parse(response);
+  res.json(response);
+});
+
+app.get("/api/marketplace/cards", (req, res) => {
+  const query = marketplaceCardsQuerySchema.safeParse(req.query ?? {});
+  if (!query.success) {
+    res.status(400).json(fail("VALIDATION_ERROR", "Invalid card query params."));
+    return;
+  }
+  const q = String(query.data.q ?? "").trim().toLowerCase();
+  const packId = String(query.data.packId ?? "").trim();
+  const limit = query.data.limit;
+
+  const allCards = listDefaultCardLibrary();
+  const filtered = allCards.filter(card => {
+    if (packId && card.packId !== packId) return false;
+    if (!q) return true;
+    return (
+      card.name.toLowerCase().includes(q) ||
+      card.id.toLowerCase().includes(q) ||
+      card.cardType.toLowerCase().includes(q)
+    );
+  });
+
+  const items = filtered.slice(0, limit).map(card => ({
+    id: card.id,
+    name: card.name,
+    packId: card.packId,
+    packName: card.packId,
+    type: card.cardType,
+    rarity: card.rarity
+  }));
+
+  const response = ok({ items, total: filtered.length, limit });
+  marketplaceCardsListResponseSchema.parse(response);
+  res.json(response);
+});
+
+app.get("/api/marketplace/cards/:cardId", (req, res) => {
+  const cardId = String(req.params.cardId ?? "").trim();
+  if (!cardId) {
+    res.status(400).json(fail("BAD_REQUEST", "cardId is required."));
+    return;
+  }
+
+  const card = listDefaultCardLibrary().find(item => item.id === cardId);
+  if (!card) {
+    res.status(404).json(fail("NOT_FOUND", "Card not found."));
+    return;
+  }
+
+  const response = ok({
+    item: {
+      id: card.id,
+      name: card.name,
+      packId: card.packId,
+      packName: card.packId,
+      type: card.cardType,
+      rarity: card.rarity,
+      effectText: card.text ?? ""
+    }
+  });
+  marketplaceCardDetailResponseSchema.parse(response);
+  res.json(response);
+});
+
+app.get("/api/marketplace/cards/:cardId/recommendations", (req, res) => {
+  const cardId = String(req.params.cardId ?? "").trim();
+  const query = marketplaceRecommendationsQuerySchema.safeParse(req.query ?? {});
+  if (!query.success) {
+    res.status(400).json(fail("VALIDATION_ERROR", "Invalid recommendations query params."));
+    return;
+  }
+  const limit = query.data.limit;
+
+  if (!cardId) {
+    res.status(400).json(fail("BAD_REQUEST", "cardId is required."));
+    return;
+  }
+
+  const cards = listDefaultCardLibrary();
+  const source = cards.find(card => card.id === cardId);
+  if (!source) {
+    res.status(404).json(fail("NOT_FOUND", "Card not found."));
+    return;
+  }
+
+  const recommendations = cards
+    .filter(card => card.id !== source.id && card.packId === source.packId)
+    .slice(0, limit)
+    .map(card => ({
+      id: card.id,
+      name: card.name,
+      packId: card.packId,
+      packName: card.packId,
+      type: card.cardType,
+      rarity: card.rarity
+    }));
+
+  const response = ok({
+    source: {
+      id: source.id,
+      name: source.name,
+      packId: source.packId,
+      packName: source.packId
+    },
+    items: recommendations,
+    total: recommendations.length,
+    limit
+  });
+  marketplaceCardRecommendationsResponseSchema.parse(response);
+  res.json(response);
+});
+
+app.get("/api/marketplace/demo-seed", (_req, res) => {
+  const sampleCards = listDefaultCardLibrary().slice(0, 12).map(card => ({
+    id: card.id,
+    name: card.name,
+    packId: card.packId,
+    packName: card.packId,
+    type: card.cardType,
+    rarity: card.rarity
+  }));
+
+  res.json({
+    ok: true,
+    data: {
+      users: [
+        { username: "Arcanist42", reputation: 97, verified: true },
+        { username: "DragonTamer77", reputation: 98, verified: true },
+        { username: "ShadowBinder", reputation: 97, verified: true },
+        { username: "MysticMages", reputation: 99, verified: true }
+      ],
+      cards: sampleCards,
+      emptyStates: {
+        listings: "No listings found. Try adjusting your filters or add cards to your want list.",
+        matches: "No matches yet. Post cards you have or add cards to your want list to unlock match suggestions.",
+        checkout: "Checkout is not available in this release. You can still message sellers and make trade offers.",
+        shipping: "Platform shipping is not available yet. Coordinate trade handoff or shipping manually with the other user."
+      }
+    }
+  });
+});
+
+app.use(
+  "/api",
+  createMarketplaceListingsRouter({
+    list: async (args?: { page?: number; limit?: number }) => listMarketplaceListings(args),
+    getById: async (id: string) => getMarketplaceListingById(id),
+    create: async (userId: string, payload: Record<string, unknown>) => {
+      const listingType = String(payload.listingType ?? "TRADE_ONLY");
+      const status = String(payload.status ?? "OPEN");
+      assertSingleGameId(payload.gameId);
+      if (!isMarketplaceListingType(listingType)) {
+        throw new Error("Invalid listing type.");
+      }
+      if (!isMarketplaceListingStatus(status)) {
+        throw new Error("Invalid listing status.");
+      }
+      return createMarketplaceListing({
+        userId,
+        gameId: MARKETPLACE_GAME.id,
+        cardId: String(payload.cardId ?? ""),
+        quantity: Number(payload.quantity ?? 1),
+        status: status as "OPEN" | "PENDING" | "CLOSED",
+        listingType: listingType as "TRADE_ONLY" | "SELL_ONLY" | "TRADE_OR_SELL",
+        preferredReturn: sanitizeMarketplaceText(payload.preferredReturn, { maxLength: 280 }),
+        description: sanitizeMarketplaceText(payload.description, { maxLength: 1200 })
+      });
+    },
+    update: async (userId: string, listingId: string, payload: Record<string, unknown>) => {
+      const target = await getMarketplaceListingById(listingId);
+      if (!target) return undefined;
+      const nextListingType = payload.listingType === undefined ? target.listingType : String(payload.listingType);
+      const nextStatus = payload.status === undefined ? target.status : String(payload.status);
+      assertSingleGameId(payload.gameId);
+      if (!isMarketplaceListingType(nextListingType)) {
+        throw new Error("Invalid listing type.");
+      }
+      if (!isMarketplaceListingStatus(nextStatus)) {
+        throw new Error("Invalid listing status.");
+      }
+      const updated = await updateMarketplaceListing({
+        userId,
+        id: listingId,
+        cardId: payload.cardId === undefined ? target.cardId : String(payload.cardId),
+        quantity: payload.quantity === undefined ? target.quantity : Number(payload.quantity),
+        listingType: nextListingType as "TRADE_ONLY" | "SELL_ONLY" | "TRADE_OR_SELL",
+        status: nextStatus as "OPEN" | "PENDING" | "CLOSED",
+        preferredReturn: payload.preferredReturn === undefined ? target.preferredReturn : sanitizeMarketplaceText(payload.preferredReturn, { maxLength: 280 }),
+        description: payload.description === undefined ? target.description : sanitizeMarketplaceText(payload.description, { maxLength: 1200 })
+      });
+      return updated;
+    },
+    remove: async (userId: string, listingId: string) => deleteMarketplaceListing({ userId, id: listingId })
+  })
+);
+app.use(
+  "/api",
+  createMatchesRouter({
+    listForUser: async (userId: string, type?: string) => {
+      const persistedStatuses = await getMarketplaceMatchStatusesForUser(userId);
+      const groups = listMarketplaceMatchesForUser(userId);
+      const flat = groups.flatMap(group =>
+        group.matches.map(match => {
+          const id = buildMatchId(group.postId, match.postId, match.type);
+          const matchedQty = (match.matchedItems ?? []).reduce((sum, item) => sum + Math.max(0, item.matchedQuantity ?? 0), 0);
+          const reciprocalQty = (match.reciprocalMatchedItems ?? []).reduce((sum, item) => sum + Math.max(0, item.matchedQuantity ?? 0), 0);
+          const scored = scoreMarketplaceMatch({
+            type: match.type,
+            matchedQuantity: matchedQty,
+            reciprocalQuantity: reciprocalQty,
+            sourceUpdatedAt: group.postId ? listMarketplacePosts().find(post => post.id === group.postId)?.updatedAt : undefined,
+            targetUpdatedAt: match.postId ? listMarketplacePosts().find(post => post.id === match.postId)?.updatedAt : undefined
+          });
+          return { id, groupPostId: group.postId, ...match, status: persistedStatuses.get(id) ?? "NEW", score: scored.score, explanation: scored.explanation };
+        })
+      );
+      if (!type || type === "ALL") return flat;
+      return flat.filter(item => item.type === type);
+    },
+    setStatus: async (userId: string, matchId: string, status) => {
+      const parts = matchId.split(":");
+      if (parts.length < 3 || parts.some(part => !part.trim())) return false;
+      await setMarketplaceMatchStatus({ userId, id: matchId, status });
+      return true;
+    }
+  })
+);
+app.use("/api", createDisabledCommerceRouter());
+app.use(
+  "/api",
+  createWantsRouter({
+    listByUser: async (userId: string, args?: { page?: number; limit?: number }) => listMarketplaceWantsByUser(userId, args),
+    create: async (userId: string, payload: Record<string, unknown>) => {
+      const cardId = String(payload.cardId ?? "").trim();
+      if (!cardId) throw new Error("cardId is required.");
+      assertSingleGameId(payload.gameId);
+      const priority = String(payload.priority ?? "MEDIUM");
+      if (!["LOW", "MEDIUM", "HIGH", "TOP"].includes(priority)) throw new Error("Invalid priority.");
+      return createMarketplaceWant({
+        userId,
+        gameId: MARKETPLACE_GAME.id,
+        cardId,
+        desiredQuantity: Math.max(1, Number(payload.desiredQuantity ?? 1)),
+        priority: priority as "LOW" | "MEDIUM" | "HIGH" | "TOP",
+        notes: sanitizeMarketplaceText(payload.notes, { maxLength: 600 }) || undefined
+      });
+    },
+    update: async (userId: string, id: string, payload: Record<string, unknown>) => {
+      const current = await listMarketplaceWantsByUser(userId);
+      const target = current.find(item => item.id === id);
+      if (!target) return undefined;
+      const priority = payload.priority === undefined ? target.priority : String(payload.priority);
+      assertSingleGameId(payload.gameId);
+      if (!["LOW", "MEDIUM", "HIGH", "TOP"].includes(priority)) throw new Error("Invalid priority.");
+      return updateMarketplaceWant({
+        userId,
+        id,
+        cardId: payload.cardId === undefined ? target.cardId : String(payload.cardId),
+        desiredQuantity: payload.desiredQuantity === undefined ? target.desiredQuantity : Math.max(1, Number(payload.desiredQuantity)),
+        priority: priority as "LOW" | "MEDIUM" | "HIGH" | "TOP",
+        notes: payload.notes === undefined ? target.notes : (sanitizeMarketplaceText(payload.notes, { maxLength: 600 }) || undefined)
+      });
+    },
+    remove: async (userId: string, id: string) => deleteMarketplaceWant({ userId, id })
+  })
+);
+app.use("/api/trade-offers", marketplaceOfferRateLimit);
+app.use(
+  "/api",
+  createTradeOffersRouter({
+    listForUser: async (userId: string, args?: { page?: number; limit?: number }) => listMarketplaceTradeOffersForUser(userId, args),
+    create: async (userId: string, payload: Record<string, unknown>) => {
+      const recipientUserId = String(payload.recipientUserId ?? "").trim();
+      if (!recipientUserId) throw new Error("recipientUserId is required.");
+      if (recipientUserId === userId) throw new Error("You cannot send an offer to yourself.");
+      const listingId = String(payload.listingId ?? "").trim();
+      if (listingId) {
+        const listing = await getMarketplaceListingById(listingId);
+        if (!listing) throw new Error("Referenced listing not found.");
+        if (listing.status !== "OPEN") throw new Error("Cannot create an offer for an inactive listing.");
+        if (listing.quantity <= 0) throw new Error("Cannot create an offer for an unavailable listing.");
+        if (listing.userId !== recipientUserId) throw new Error("Recipient must match referenced listing owner.");
+      }
+      return createMarketplaceTradeOffer({
+        createdByUserId: userId,
+        recipientUserId,
+        status: "SENT" as const,
+        message: sanitizeMarketplaceText(payload.message, { maxLength: 1000 }) || undefined
+      });
+    },
+    getById: async (userId: string, offerId: string) => getMarketplaceTradeOfferForUser({ userId, id: offerId }),
+    updateStatus: async (userId: string, offerId: string, status, message) => {
+      const offer = await getMarketplaceTradeOfferForUser({ userId, id: offerId });
+      if (!offer) return undefined;
+      if (offer.createdByUserId !== userId && offer.recipientUserId !== userId) return undefined;
+      if ((status === "ACCEPTED" || status === "REJECTED" || status === "COUNTERED") && offer.recipientUserId !== userId) {
+        throw new Error("Only the recipient can accept, reject, or counter an offer.");
+      }
+      if (status === "CANCELED" && offer.createdByUserId !== userId) {
+        throw new Error("Only the creator can cancel an offer.");
+      }
+      return updateMarketplaceTradeOfferStatus({
+        userId,
+        id: offerId,
+        status,
+        message: message?.trim() ? sanitizeMarketplaceText(message, { maxLength: 1000 }) : offer.message
+      });
+    }
+  })
+);
+app.use("/api/messages", marketplaceMessageRateLimit);
+app.use(
+  "/api",
+  createMessagesRouter({
+    listThreadsForUser: async (userId: string, args?: { page?: number; limit?: number }) => listMarketplaceThreadsForUser(userId, args),
+    createThread: async (userId: string, payload: Record<string, unknown>) => {
+      const otherUserId = String(payload.otherUserId ?? "").trim();
+      if (!otherUserId) throw new Error("otherUserId is required.");
+      if (otherUserId === userId) throw new Error("You cannot create a thread with yourself.");
+      return createMarketplaceThread({
+        requesterUserId: userId,
+        otherUserId,
+        relatedPostId: String(payload.relatedPostId ?? "").trim() || undefined,
+        relatedTradeOfferId: String(payload.relatedTradeOfferId ?? "").trim() || undefined
+      });
+    },
+    getThreadForUser: async (userId: string, threadId: string, args?: { page?: number; limit?: number }) => getMarketplaceThreadForUser({ userId, threadId, page: args?.page, limit: args?.limit }),
+    listMessagesForThread: async (userId: string, threadId: string, args?: { page?: number; limit?: number }) =>
+      listMarketplaceMessagesForThread({ userId, threadId, page: args?.page, limit: args?.limit }),
+    addMessage: async (userId: string, threadId: string, payload: Record<string, unknown>) => {
+      const body = sanitizeMarketplaceText(payload.body, { maxLength: 2000 });
+      if (!body) throw new Error("Message body is required.");
+      validateMarketplaceMessagePolicy(body);
+      return addMarketplaceMessage({ userId, threadId, body: body.slice(0, 2000) });
+    }
+  })
+);
 
 if (isProduction) {
   app.use(express.static(CLIENT_DIST_DIR));
