@@ -5,7 +5,7 @@
     "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @ward/shared build && pnpm --filter @ward/engine build && pnpm --filter @ward/client build && pnpm --filter @ward/server build"
   },
   "deploy": {
-    "startCommand": "pnpm start",
+    "startCommand": "pnpm --filter @ward/server start",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",
