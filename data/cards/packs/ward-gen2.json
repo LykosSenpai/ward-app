@@ -1250,7 +1250,7 @@
       "name": "Natural Selection",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Common",
+      "rarity": "Epic",
       "cardNumber": "016",
       "text": "Only affects non-effect creatures of AL 5 or less. Atk: +7. Hit: +7.",
       "effects": [
@@ -3358,7 +3358,7 @@
       "name": "Undead Tower",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Common",
+      "rarity": "Epic",
       "cardNumber": "047",
       "text": "",
       "effects": [],
@@ -3415,7 +3415,7 @@
       "name": "Ignitus",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Common",
+      "rarity": "Rare",
       "cardNumber": "050",
       "text": "Roll 1 die to inflict damage on a creature. If the result is: 1-5: 15 damage. 6: 30 damage.",
       "effects": [
@@ -3489,7 +3489,7 @@
       "name": "Evil Queen",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Epic",
+      "rarity": "Rare",
       "cardNumber": "051",
       "text": "Destroy 1 magic card on the field.",
       "effects": [
@@ -4216,7 +4216,7 @@
       "name": "Martial Arts Man",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Rare",
+      "rarity": "Epic",
       "cardNumber": "062",
       "text": "On hit, play this card from your hand. Inflict 20 damage to the creature you are battling.",
       "effects": [
@@ -4747,7 +4747,7 @@
       "name": "Maniac",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Common",
+      "rarity": "Rare",
       "cardNumber": "068",
       "text": "When this creature rolls to hit, ignore the target's AL. Use the following outcomes instead: 1-7: Critical Fail. 8-12: Critical Hit. 13+: Normal Hit. This card is unaffected by Hit Modifier increases.",
       "effects": [
@@ -5738,7 +5738,7 @@
       "name": "Raging Inferno",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Common",
+      "rarity": "Rare",
       "cardNumber": "079",
       "text": "If the equipped creature is damaged in battle, inflict 5 damage to the attacking creature.",
       "effects": [
@@ -5794,7 +5794,7 @@
       "name": "Sticky Goo",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Rare",
       "cardNumber": "080",
       "text": "Play this card from your hand when your opponent lands a hit. Negate the attack and reduce the attacking creature's Modifier to +0 for 1 turn cycle.",
       "effects": [
@@ -6327,7 +6327,7 @@
       "name": "Thief",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Common",
       "cardNumber": "086",
       "text": "When summoned, steal 1 equip card from your opponent's side of the field and equip it to this card. Send the stolen card to its original owner's cemetery if this card leaves the field, changes control, or this effect is negated.",
       "effects": [
@@ -6642,7 +6642,7 @@
       "name": "Gnome Dragoon",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Rare",
       "cardNumber": "089",
       "text": "For every card in your hand with \"Gnome\" in its name, add: Atk Dice Rolls: +1. Modifier: +1.",
       "effects": [
@@ -6786,7 +6786,7 @@
       "name": "The Seer",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Epic",
+      "rarity": "Rare",
       "cardNumber": "091",
       "text": "While this card is on the field, your opponent must show you their hand whenever you request.",
       "effects": [
@@ -7049,7 +7049,7 @@
       "name": "Water Eleotoid",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Rare",
+      "rarity": "Common",
       "cardNumber": "095",
       "text": "",
       "effects": [],
@@ -7423,7 +7423,7 @@
       "name": "Acolyte",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Common",
       "cardNumber": "102",
       "text": "At the beginning of your turn, heal this creature 5 HP.",
       "effects": [
@@ -7562,7 +7562,7 @@
       "name": "Claws of the Beast",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Common",
       "cardNumber": "104",
       "text": "Equipped creature gains +2 Atk Dice Rolls for 1 turn cycle. If \"Wings of the Beast\" is also equipped to this creature, it gains +3 Atk Dice Rolls instead.",
       "effects": [
@@ -7633,7 +7633,7 @@
       "name": "Nightmare Claw",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Epic",
+      "rarity": "Common",
       "cardNumber": "105",
       "text": "Atk Dice Rolls: +1.",
       "effects": [
@@ -7755,7 +7755,7 @@
       "name": "Reverse Polarity",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Common",
       "cardNumber": "107",
       "text": "While this card is active on the field, the creature with lower SPD attacks first.",
       "effects": [
@@ -7887,7 +7887,7 @@
       "name": "The Guide",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Epic",
+      "rarity": "Uncommon",
       "cardNumber": "109",
       "text": "When a creature is sent to the cemetery, heal this card for 1/2 of the total HP of the sent creature.",
       "effects": [
@@ -8191,7 +8191,7 @@
       "name": "The Alchemist",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Common",
       "cardNumber": "113",
       "text": "During your turn, roll 1 die. If the result is: 1-2: Heal this creature 5 HP. 3-4: Inflict 10 damage to opponent's creature. 5-6: Inflict 5 damage to this card.",
       "effects": [
@@ -8354,7 +8354,7 @@
       "name": "Magic Artillery",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Rare",
       "cardNumber": "115",
       "text": "At the beginning of your turn, you may roll 1 die. If the result is: 6: Opponent must discard 1 Magic card. 2-5: Nothing happens. 1: Destroy this card.",
       "effects": [
@@ -8446,7 +8446,7 @@
       "name": "Ring of Extremes",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Common",
       "cardNumber": "116",
       "text": "When the equipped creature rolls to hit, ignore its Hit Modifier and the target's AL. Use the following outcomes instead: 1-8: Critical Fail. 9-12: Critical Hit. 13+: Normal Hit.",
       "effects": [
@@ -8681,7 +8681,7 @@
       "name": "Foggy Night",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Common",
+      "rarity": "Rare",
       "cardNumber": "119",
       "text": "For 3 turn cycles, only creatures and equip cards can be played.",
       "effects": [
@@ -8947,7 +8947,7 @@
       "name": "Sleepy Scent",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Rare",
       "cardNumber": "123",
       "text": "Equipped creature is put to sleep for 2 turn cycles. It cannot initiate battle, but also heals 10 HP per turn cycle. Any damage wakes the sleeping creature and sends this card to your cemetery.",
       "effects": [
@@ -9124,7 +9124,7 @@
       "name": "Reduce the Burden",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Uncommon",
+      "rarity": "Rare",
       "cardNumber": "125",
       "text": "Play this card to the field. When it is played to the field send it to your cemetery. Reduce your overall cemetery by 30 HP.",
       "effects": [
@@ -9400,7 +9400,7 @@
       "name": "Peddling Partridge",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Rare",
+      "rarity": "Epic",
       "cardNumber": "129",
       "text": "Trade 1 creature in your hand for 1 in your cemetery.",
       "effects": [
@@ -9461,7 +9461,7 @@
       "name": "Scroll of Silence",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Epic",
+      "rarity": "Rare",
       "cardNumber": "130",
       "text": "Play this card from your hand if your opponent plays a Lightning card. Negate the Lightning card effect and send it to the cemetery. This card cannot be negated.",
       "effects": [
@@ -9630,7 +9630,7 @@
       "name": "Hands of Fate",
       "generation": "2",
       "edition": "2nd Edition",
-      "rarity": "Epic",
+      "rarity": "Common",
       "cardNumber": "132",
       "text": "You and your opponent may look at the top 5 cards of your opponent's deck. You may rearrange them in any order. Once finished, place them on the top of their deck.",
       "effects": [
