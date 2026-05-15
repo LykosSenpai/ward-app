@@ -289,6 +289,14 @@ export function planBoardAnimationSteps(event: BoardRenderEvent): BoardAnimation
       break;
     }
 
+    case "DICE_ROLLED": {
+      const diceValues = readNumberArray(data, "values", "dice", "diceValues");
+      if (diceValues.length > 0) {
+        steps.push({ type: "ROLL_DICE", values: diceValues, rollKind: readString(data, "rollKind") ?? "EFFECT_ROLL", durationMs: Math.min(durationMs, 700) });
+      }
+      break;
+    }
+
     case "BATTLE_DAMAGE_PREVENTED":
       addCardGlow(steps, event.targetCardInstanceId ?? event.cardInstanceId, "LOCKED", Math.min(durationMs, 360));
       steps.push({

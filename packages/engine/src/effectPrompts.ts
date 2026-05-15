@@ -85,6 +85,7 @@ type BoardEventPayload = {
   delta?: number;
   modifierId?: string;
   rollKind?: string;
+  values?: number[];
   diceLimitMode?: string;
   diceLimitValue?: number;
   metadata?: Record<string, unknown>;
@@ -189,12 +190,33 @@ function cardHealedBoardEvent(
   };
 }
 
+function diceRolledBoardEvent(
+  prompt: PendingEffectTargetPrompt,
+  args: {
+    dice: number[];
+    rollTotal: number;
+    reason?: string;
+  }
+): BoardEventPayload {
+  return {
+    type: "DICE_ROLLED",
+    ...promptBoardEventBase(prompt, args.reason ?? "EFFECT_ROLL_TABLE"),
+    rollKind: "EFFECT_ROLL",
+    values: args.dice,
+    metadata: {
+      rollTotal: args.rollTotal
+    }
+  };
+}
+
 function isCreatureTargetKind(kind: string): boolean {
   return kind === "PRIMARY_CREATURE" || kind === "LIMITED_SUMMON" || kind === "ANY_CREATURE";
 }
 
-function creatureDefinitionHasMagicImmunity(definition: CardDefinition | undefined): boolean {
-  if (!definition || definition.cardType !== "CREATURE") return false;
+type MagicImmunityScope = "ALL_MAGIC" | "OPPONENT_MAGIC";
+
+function definitionMagicImmunityText(definition: CardDefinition | undefined): string {
+  if (!definition) return "";
 
   const effectText = (definition.effects ?? [])
     .flatMap(effect => [
@@ -209,11 +231,67 @@ function creatureDefinitionHasMagicImmunity(definition: CardDefinition | undefin
     ])
     .filter(Boolean)
     .join(" ");
-  const text = `${definition.text ?? ""} ${effectText}`.toLowerCase();
 
-  return (
-    (text.includes("unaffected") || text.includes("not affected") || text.includes("immune")) &&
-    text.includes("magic")
+  return `${definition.text ?? ""} ${effectText}`.toLowerCase();
+}
+
+function getMagicImmunityScope(definition: CardDefinition | undefined): MagicImmunityScope | undefined {
+  const text = definitionMagicImmunityText(definition);
+  if (!text.includes("magic")) return undefined;
+  if (text.includes("normally unaffected") && text.includes("now affected")) return undefined;
+
+  const hasMagicImmunity =
+    text.includes("apply_magic_immunity") ||
+    text.includes("unaffected") ||
+    text.includes("not affected") ||
+    text.includes("immune");
+
+  if (!hasMagicImmunity) return undefined;
+
+  return /opponents?'?\s+magic|opposing\s+magic|enemy\s+magic/.test(text)
+    ? "OPPONENT_MAGIC"
+    : "ALL_MAGIC";
+}
+
+function magicImmunityBlocksSource(
+  scope: MagicImmunityScope | undefined,
+  targetPlayerId: string,
+  sourcePlayerId: string
+): boolean {
+  if (!scope) return false;
+  if (scope === "ALL_MAGIC") return true;
+  return sourcePlayerId !== targetPlayerId;
+}
+
+function targetHasMagicImmunityAgainstSource(
+  state: MatchState,
+  option: EffectTargetOption,
+  link: ChainLinkEffectSource
+): boolean {
+  if (!option.cardInstanceId || !option.cardId) return false;
+
+  const targetDefinition = state.cardCatalog[option.cardId];
+  if (
+    targetDefinition?.cardType === "CREATURE" &&
+    magicImmunityBlocksSource(getMagicImmunityScope(targetDefinition), option.playerId, link.playerId)
+  ) {
+    return true;
+  }
+
+  return state.players.some(player =>
+    player.field.magicSlots.some(magic => {
+      if (magic.attachedToInstanceId !== option.cardInstanceId) return false;
+
+      const magicDefinition = state.cardCatalog[magic.cardId];
+      if (magicDefinition?.cardType !== "MAGIC") return false;
+
+      const immunityText = definitionMagicImmunityText(magicDefinition);
+      if (magic.instanceId === link.cardInstanceId && immunityText.includes("does not include this card")) {
+        return false;
+      }
+
+      return magicImmunityBlocksSource(getMagicImmunityScope(magicDefinition), option.playerId, link.playerId);
+    })
   );
 }
 
@@ -244,10 +322,8 @@ function filterMagicImmuneCreatureTargetOptions(
 
   return options.filter(option => {
     if (!option.cardInstanceId || !option.cardId) return true;
-    if (option.playerId === link.playerId) return true;
 
-    const targetDefinition = state.cardCatalog[option.cardId];
-    if (!creatureDefinitionHasMagicImmunity(targetDefinition)) return true;
+    if (!targetHasMagicImmunityAgainstSource(state, option, link)) return true;
 
     return canUseSummonResponseWindow &&
       isSummonResponseWindowForTarget(state, option.cardInstanceId);
@@ -1698,6 +1774,11 @@ export function resolvePendingEffectTargetPrompt(
         remainingHp: result.remainingHp,
         killed: result.killed,
         boardEvents: [
+          diceRolledBoardEvent(prompt, {
+            dice,
+            rollTotal,
+            reason: "EFFECT_ROLL_TABLE"
+          }),
           cardDamagedBoardEvent(prompt, {
             cardInstanceId: result.creature.instanceId,
             amount: result.damageAmount,
@@ -1733,6 +1814,11 @@ export function resolvePendingEffectTargetPrompt(
         remainingHp: result.remainingHp,
         maxHp: result.maxHp,
         boardEvents: [
+          diceRolledBoardEvent(prompt, {
+            dice,
+            rollTotal,
+            reason: "EFFECT_ROLL_TABLE"
+          }),
           cardHealedBoardEvent(prompt, {
             cardInstanceId: result.creature.instanceId,
             amount: result.healAmount,
@@ -1755,7 +1841,14 @@ export function resolvePendingEffectTargetPrompt(
       dice,
       rollTotal,
       outcome,
-      note: "The roll was automated, but the table outcome needs manual follow-up."
+      note: "The roll was automated, but the table outcome needs manual follow-up.",
+      boardEvents: [
+        diceRolledBoardEvent(prompt, {
+          dice,
+          rollTotal,
+          reason: "EFFECT_ROLL_TABLE"
+        })
+      ]
     });
 
     return nextState;

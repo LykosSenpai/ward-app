@@ -2615,12 +2615,12 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-width: min(236px, calc(100% - 24px));
+  max-width: min(340px, calc(100% - 24px));
   pointer-events: none;
   position: absolute;
   right: 12px;
   transform: translateZ(42px);
-  width: min(236px, calc(100% - 24px));
+  width: min(340px, calc(100% - 24px));
   z-index: 35;
 }
 
@@ -2629,16 +2629,26 @@
 }
 
 .board-preview-3d__turn-controls .board-phase-control,
-.board-preview-3d__turn-controls .board-dice-control {
+.board-preview-3d__turn-controls .board-dice-control,
+.board-preview-3d__turn-controls .board-preview-3d__deck-actions {
   bottom: auto;
   position: static;
   right: auto;
   transform: none;
 }
 
+.board-preview-3d__turn-controls .board-phase-control {
+  width: min(236px, 100%);
+}
+
 .board-preview-3d__turn-controls .board-dice-control {
   max-width: 180px;
   width: max-content;
+}
+
+.board-preview-3d__turn-controls .board-preview-3d__deck-actions {
+  max-width: 100%;
+  width: auto;
 }
 
 .board-phase-control {

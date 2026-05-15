@@ -612,6 +612,8 @@ export function BoardPreview3D({
   );
   const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(null);
   const [selectedEquipMagicCardId, setSelectedEquipMagicCardId] = useState<string | null>(null);
+  const [pendingEquipMagicCardId, setPendingEquipMagicCardId] = useState<string | null>(null);
+  const [selectedCreatureCardId, setSelectedCreatureCardId] = useState<string | null>(null);
   const [selectedBattleAttackerId, setSelectedBattleAttackerId] = useState<string | null>(null);
   const [selectedSacrificeIdsByCard, setSelectedSacrificeIdsByCard] = useState<Record<string, string[]>>({});
   const [hoveredHandCardId, setHoveredHandCardId] = useState<string | null>(null);
@@ -634,10 +636,12 @@ export function BoardPreview3D({
   const cameraDragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   const currentAttackAnimationKeyRef = useRef<string | null>(null);
   const playedAttackAnimationKeysRef = useRef<Set<string>>(new Set());
+  const seenUnattachedEquipMagicIdsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     currentAttackAnimationKeyRef.current = null;
     playedAttackAnimationKeysRef.current.clear();
+    seenUnattachedEquipMagicIdsRef.current = null;
   }, [match.matchId]);
 
   useEffect(() => {
@@ -829,7 +833,10 @@ export function BoardPreview3D({
   const opponentPlayerId: BoardPlayerId | null = opponentPlayer
     ? opponentPlayer.id === "player_1" ? "player_1" : "player_2"
     : null;
-  const canControlPlayer = (playerId: string) => !controlledPlayerId || controlledPlayerId === playerId;
+  const canControlPlayer = useCallback(
+    (playerId: string) => !controlledPlayerId || controlledPlayerId === playerId,
+    [controlledPlayerId]
+  );
   const opponentHandIsRevealed = opponentPlayerId
     ? Boolean(locallyRevealedHands[opponentPlayerId]) || revealedHandPlayerIds.includes(opponentPlayerId)
     : false;
@@ -1049,6 +1056,22 @@ export function BoardPreview3D({
       .filter(object => object.cardInstanceId && sacrificeCandidateIds.has(object.cardInstanceId))
       .map(object => object.id);
   }, [boardObjects, sacrificeCandidateIds]);
+  const selectedCreatureEquipmentFocusPieceIds = useMemo(() => {
+    if (!selectedCreatureCardId) return [] as string[];
+    const creatureObject = boardObjects.find(object =>
+      object.cardInstanceId === selectedCreatureCardId &&
+      (object.lane === "primary" || object.lane === "limited")
+    );
+    if (!creatureObject) return [] as string[];
+
+    const attachedEquipmentPieceIds = boardObjects.flatMap(object => {
+      if (!object.cardInstanceId || object.lane !== "magic") return [] as string[];
+      const card = cardByInstanceId.get(object.cardInstanceId);
+      return card?.attachedToInstanceId === selectedCreatureCardId ? [object.id] : [];
+    });
+
+    return [creatureObject.id, ...attachedEquipmentPieceIds];
+  }, [boardObjects, cardByInstanceId, selectedCreatureCardId]);
   const selectedEquipMagic = useMemo(() => {
     if (!selectedEquipMagicCardId) return null;
     const object = boardObjects.find(candidate => candidate.cardInstanceId === selectedEquipMagicCardId);
@@ -1215,10 +1238,71 @@ export function BoardPreview3D({
     if (!selectedEquipMagicCardId) return;
     const card = cardByInstanceId.get(selectedEquipMagicCardId);
     const object = boardObjects.find(candidate => candidate.cardInstanceId === selectedEquipMagicCardId);
-    if (!card || !object || object.lane !== "magic" || !isEquipMagic(match, card) || card.attachedToInstanceId) {
+    if (!card || card.attachedToInstanceId || !isEquipMagic(match, card)) {
       setSelectedEquipMagicCardId(null);
+      if (pendingEquipMagicCardId === selectedEquipMagicCardId) setPendingEquipMagicCardId(null);
+      return;
     }
-  }, [boardObjects, cardByInstanceId, match, selectedEquipMagicCardId]);
+    if (!object || object.lane !== "magic") {
+      if (pendingEquipMagicCardId === selectedEquipMagicCardId && (!object || object.lane === "hand")) return;
+      setSelectedEquipMagicCardId(null);
+      if (pendingEquipMagicCardId === selectedEquipMagicCardId) setPendingEquipMagicCardId(null);
+    }
+  }, [boardObjects, cardByInstanceId, match, pendingEquipMagicCardId, selectedEquipMagicCardId]);
+
+  useEffect(() => {
+    if (!pendingEquipMagicCardId) return;
+    const card = cardByInstanceId.get(pendingEquipMagicCardId);
+    const object = boardObjects.find(candidate => candidate.cardInstanceId === pendingEquipMagicCardId);
+    if (!card || card.attachedToInstanceId || !isEquipMagic(match, card)) {
+      setPendingEquipMagicCardId(null);
+      if (selectedEquipMagicCardId === pendingEquipMagicCardId) setSelectedEquipMagicCardId(null);
+      return;
+    }
+    if (!object || object.lane === "hand") return;
+    if (object.lane !== "magic") {
+      setPendingEquipMagicCardId(null);
+      if (selectedEquipMagicCardId === pendingEquipMagicCardId) setSelectedEquipMagicCardId(null);
+      return;
+    }
+    setSelectedEquipMagicCardId(pendingEquipMagicCardId);
+    setPendingEquipMagicCardId(null);
+  }, [boardObjects, cardByInstanceId, match, pendingEquipMagicCardId, selectedEquipMagicCardId]);
+
+  useEffect(() => {
+    const currentUnattachedEquipMagicIds = new Set<string>();
+    const newlySeenEquipMagicIds: string[] = [];
+    const previousUnattachedEquipMagicIds = seenUnattachedEquipMagicIdsRef.current;
+
+    for (const object of boardObjects) {
+      if (object.lane !== "magic" || !object.cardInstanceId || !canControlPlayer(object.owner)) continue;
+      const card = cardByInstanceId.get(object.cardInstanceId);
+      if (!card || card.attachedToInstanceId || !isEquipMagic(match, card)) continue;
+
+      currentUnattachedEquipMagicIds.add(card.instanceId);
+      if (previousUnattachedEquipMagicIds && !previousUnattachedEquipMagicIds.has(card.instanceId)) {
+        newlySeenEquipMagicIds.push(card.instanceId);
+      }
+    }
+
+    seenUnattachedEquipMagicIdsRef.current = currentUnattachedEquipMagicIds;
+    const nextEquipMagicCardId = newlySeenEquipMagicIds.at(-1);
+    if (!nextEquipMagicCardId || selectedEquipMagicCardId === nextEquipMagicCardId) return;
+
+    setSelectedCreatureCardId(null);
+    setPendingEquipMagicCardId(null);
+    setSelectedEquipMagicCardId(nextEquipMagicCardId);
+    setStatusMessage("Select a creature on the 3D board to attach this Equip Magic.");
+  }, [boardObjects, cardByInstanceId, canControlPlayer, match, selectedEquipMagicCardId]);
+
+  useEffect(() => {
+    if (!selectedCreatureCardId) return;
+    const creatureStillOnBoard = boardObjects.some(object =>
+      object.cardInstanceId === selectedCreatureCardId &&
+      (object.lane === "primary" || object.lane === "limited")
+    );
+    if (!creatureStillOnBoard) setSelectedCreatureCardId(null);
+  }, [boardObjects, selectedCreatureCardId]);
 
   const activeBattlePlayer = useMemo(
     () => match.players.find(player => player.id === match.turn.activePlayerId) ?? null,
@@ -1572,6 +1656,25 @@ export function BoardPreview3D({
     onSlotFocus?.({ slotId, source });
   };
 
+  const focusCreatureEquipment = (creatureInstanceId: string) => {
+    const nextCreatureCardId = selectedCreatureCardId === creatureInstanceId ? null : creatureInstanceId;
+    setSelectedCreatureCardId(nextCreatureCardId);
+    if (!nextCreatureCardId) {
+      setStatusMessage("Equipment highlights cleared.");
+      return;
+    }
+
+    const attachedCount = boardObjects.filter(object => {
+      if (!object.cardInstanceId || object.lane !== "magic") return false;
+      return cardByInstanceId.get(object.cardInstanceId)?.attachedToInstanceId === nextCreatureCardId;
+    }).length;
+    setStatusMessage(
+      attachedCount > 0
+        ? `Showing ${attachedCount} equipped card${attachedCount === 1 ? "" : "s"}.`
+        : "No Equip Magic is attached to this creature."
+    );
+  };
+
   const selectPiece = (pieceId: string, source: "mini-map" | "table") => {
     if (resolveBoardEffectTargetFromPiece(pieceId)) return;
 
@@ -1591,12 +1694,15 @@ export function BoardPreview3D({
         );
         setStatusMessage("Attaching Equip Magic.");
         setSelectedEquipMagicCardId(null);
+        setPendingEquipMagicCardId(null);
+        setSelectedCreatureCardId(attachTarget.creatureInstanceId);
         return;
       }
 
       const clickedSource = selectedEquipMagic.object.id === pieceId;
       if (clickedSource) {
         setSelectedEquipMagicCardId(null);
+        setPendingEquipMagicCardId(null);
         setStatusMessage("Equip attachment canceled.");
         return;
       }
@@ -1618,6 +1724,8 @@ export function BoardPreview3D({
         setStatusMessage("Resolve the current prompt before attaching Equip Magic.");
         return;
       }
+      setSelectedCreatureCardId(null);
+      setPendingEquipMagicCardId(null);
       setSelectedEquipMagicCardId(pieceCard.instanceId);
       setStatusMessage("Select a creature on the 3D board to attach this Equip Magic.");
       onPieceFocus?.({ pieceId, source });
@@ -1632,7 +1740,21 @@ export function BoardPreview3D({
 
     if (piece?.cardInstanceId && legalBattleAttackerIds.has(piece.cardInstanceId)) {
       setSelectedBattleAttackerId(current => current === piece.cardInstanceId ? null : piece.cardInstanceId!);
+      setSelectedCreatureCardId(piece.cardInstanceId);
       setStatusMessage("Select the defending primary creature to start battle.");
+      onPieceFocus?.({ pieceId, source });
+      return;
+    }
+
+    if (piece?.cardInstanceId && (piece.lane === "primary" || piece.lane === "limited")) {
+      focusCreatureEquipment(piece.cardInstanceId);
+      onPieceFocus?.({ pieceId, source });
+      return;
+    }
+
+    if (piece?.lane === "magic" && pieceCard?.attachedToInstanceId) {
+      setSelectedCreatureCardId(pieceCard.attachedToInstanceId);
+      setStatusMessage("Showing the creature this Equip Magic is attached to.");
       onPieceFocus?.({ pieceId, source });
       return;
     }
@@ -2103,6 +2225,8 @@ export function BoardPreview3D({
               const playedCardInstanceId = selectedHandCardId;
               setSelectedHandCardId(null);
               if (shouldChooseEquipTarget) {
+                setSelectedCreatureCardId(null);
+                setPendingEquipMagicCardId(playedCardInstanceId);
                 setSelectedEquipMagicCardId(playedCardInstanceId);
                 setStatusMessage("Choose a blue creature target to attach this Equip Magic.");
               }
@@ -2133,6 +2257,8 @@ export function BoardPreview3D({
               });
               setSelectedHandCardId(null);
               if (shouldChooseEquipTarget) {
+                setSelectedCreatureCardId(null);
+                setPendingEquipMagicCardId(cardInstanceId);
                 setSelectedEquipMagicCardId(cardInstanceId);
                 setStatusMessage("Choose a blue creature target to attach this Equip Magic.");
               }
@@ -2171,6 +2297,8 @@ export function BoardPreview3D({
                 attachTarget.targetKind
               );
               setSelectedEquipMagicCardId(null);
+              setPendingEquipMagicCardId(null);
+              setSelectedCreatureCardId(attachTarget.creatureInstanceId);
               setStatusMessage("Attaching Equip Magic.");
             }}
             onDropEffectSourceToPiece={(targetPieceId) => {
@@ -2204,7 +2332,7 @@ export function BoardPreview3D({
             validEffectTargetSlotIds={effectTargetSlotIds}
             effectSourcePieceIds={effectSourcePieceIds}
             highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...playerGlobalSlotIds, ...sacrificeTargetSlotIds, ...(discardRequiredForFocusedPlayer ? [`${focusedPlayerId}-cemetery`] : []), ...battleTargetSlotIds, ...effectTargetSlotIds]}
-            highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...effectTargetPieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
+            highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...selectedCreatureEquipmentFocusPieceIds, ...effectTargetPieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
             equipAttachSourcePieceIds={equipAttachSourcePieceIds}
             battleSpeedBadges={battleSpeedBadges}
             diceRollVisual={diceRollVisual}
@@ -2264,71 +2392,71 @@ export function BoardPreview3D({
                 </button>
               </aside>
             ) : null}
-          </aside>
-          {boardDeckActions.map(action => (
-            <div
-              key={`${action.owner}-deck-actions`}
-              className={`board-preview-3d__deck-actions board-preview-3d__deck-actions--${action.owner}${action.shouldShowHandControls ? " has-hand-controls" : ""}${deckActionsExpanded ? " is-expanded" : " is-collapsed"}`}
-            >
-              <button
-                type="button"
-                className="board-preview-3d__deck-actions-menu"
-                onClick={() => {
-                  setDeckActionsExpanded(current => !current);
-                  setDeckHandControlsOwner(action.owner);
-                }}
-                aria-expanded={deckActionsExpanded}
+            {boardDeckActions.map(action => (
+              <div
+                key={`${action.owner}-deck-actions`}
+                className={`board-preview-3d__deck-actions board-preview-3d__deck-actions--${action.owner}${action.shouldShowHandControls ? " has-hand-controls" : ""}${deckActionsExpanded ? " is-expanded" : " is-collapsed"}`}
               >
-                <span aria-hidden="true"><i /><i /><i /></span>
-                Menu
-              </button>
-              <div className="board-preview-3d__deck-actions-panel">
-                <button type="button" disabled={!action.canUndo} onClick={onUndoLastAction}>
-                  Undo
+                <button
+                  type="button"
+                  className="board-preview-3d__deck-actions-menu"
+                  onClick={() => {
+                    setDeckActionsExpanded(current => !current);
+                    setDeckHandControlsOwner(action.owner);
+                  }}
+                  aria-expanded={deckActionsExpanded}
+                >
+                  <span aria-hidden="true"><i /><i /><i /></span>
+                  Menu
                 </button>
-                {action.shouldShowHandControls ? (
-                  <>
-                    <button
-                      type="button"
-                      className="is-hand-control"
-                      onClick={() => {
-                        const nextRevealed = !action.handIsLocallyRevealed;
-                        setLocallyRevealedHands(current => ({
-                          ...current,
-                          [action.owner]: nextRevealed
-                        }));
-                        onSetHandRevealed?.(action.owner, nextRevealed);
-                      }}
-                      title="Toggle this hand face-up on the 3D board for manual reveal effects."
-                    >
-                      {action.handIsLocallyRevealed ? "Hide Hand" : "Reveal Hand"}
-                    </button>
-                    {action.isApprovingReveal ? (
-                      <button type="button" className="is-emphasis is-hand-control" onClick={onApproveRevealRedraw} disabled={!onApproveRevealRedraw}>
-                        Accept Hand
-                      </button>
-                    ) : (
+                <div className="board-preview-3d__deck-actions-panel">
+                  <button type="button" disabled={!action.canUndo} onClick={onUndoLastAction}>
+                    Undo
+                  </button>
+                  {action.shouldShowHandControls ? (
+                    <>
                       <button
                         type="button"
-                        className={`${action.canRequestNoCreatureRedraw ? "is-emphasis " : ""}is-hand-control`}
-                        disabled={!action.canRequestNoCreatureRedraw}
+                        className="is-hand-control"
                         onClick={() => {
+                          const nextRevealed = !action.handIsLocallyRevealed;
                           setLocallyRevealedHands(current => ({
                             ...current,
-                            [action.owner]: true
+                            [action.owner]: nextRevealed
                           }));
-                          onRequestNoCreatureRedraw?.(action.owner);
+                          onSetHandRevealed?.(action.owner, nextRevealed);
                         }}
-                        title="Reveal this hand and request a no-creature redraw."
+                        title="Toggle this hand face-up on the 3D board for manual reveal effects."
                       >
-                        {action.isRequestingReveal ? "Mulligan Pending" : "Mulligan Reveal"}
+                        {action.handIsLocallyRevealed ? "Hide Hand" : "Reveal Hand"}
                       </button>
-                    )}
-                  </>
-                ) : null}
+                      {action.isApprovingReveal ? (
+                        <button type="button" className="is-emphasis is-hand-control" onClick={onApproveRevealRedraw} disabled={!onApproveRevealRedraw}>
+                          Accept Hand
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className={`${action.canRequestNoCreatureRedraw ? "is-emphasis " : ""}is-hand-control`}
+                          disabled={!action.canRequestNoCreatureRedraw}
+                          onClick={() => {
+                            setLocallyRevealedHands(current => ({
+                              ...current,
+                              [action.owner]: true
+                            }));
+                            onRequestNoCreatureRedraw?.(action.owner);
+                          }}
+                          title="Reveal this hand and request a no-creature redraw."
+                        >
+                          {action.isRequestingReveal ? "Mulligan Pending" : "Mulligan Reveal"}
+                        </button>
+                      )}
+                    </>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </aside>
           {actionDock && !actionDockCollapsed ? (
             <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
               <div className="board-preview-3d__floating-title">

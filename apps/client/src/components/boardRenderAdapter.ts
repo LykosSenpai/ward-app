@@ -155,6 +155,7 @@ function normalizeBoardRenderEventType(value: unknown): BoardRenderEvent["type"]
     case "STAT_MODIFIER_REMOVED":
     case "PLAYER_STAT_CHANGED":
     case "CEMETERY_HP_CHANGED":
+    case "DICE_ROLLED":
     case "PLAYER_LOCK_APPLIED":
     case "PLAYER_LOCK_REMOVED":
     case "TURN_SKIPPED":
@@ -207,6 +208,7 @@ function inferEventType(rawType: string, data: Record<string, unknown>): BoardRe
   if (normalizedRawType === "TURN_SKIPPED" || combined.includes("TURN_SKIPPED")) return "TURN_SKIPPED";
   if (combined.includes("CEMETERY_HP_CHANGED") || combined.includes("CEMETERY_HP_ADJUST")) return "CEMETERY_HP_CHANGED";
   if (combined.includes("PLAYER_STAT_CHANGED")) return "PLAYER_STAT_CHANGED";
+  if (combined.includes("DICE_ROLLED")) return "DICE_ROLLED";
   if (combined.includes("PLAYER_LOCK_APPLIED") || combined.includes("SKIP_TURN_FLAG_APPLIED")) return "PLAYER_LOCK_APPLIED";
   if (combined.includes("PLAYER_LOCK_REMOVED")) return "PLAYER_LOCK_REMOVED";
   if (combined.includes("RECURRING_EFFECT_TICKED")) return "RECURRING_EFFECT_TICKED";

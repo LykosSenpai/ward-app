@@ -63,6 +63,7 @@ export type BoardRenderEventType =
   | "PLAYER_LOCK_APPLIED"
   | "PLAYER_LOCK_REMOVED"
   | "TURN_SKIPPED"
+  | "DICE_ROLLED"
   | "PROMPT_OPENED"
   | "PROMPT_RESOLVED"
   | "CHAIN_LINK_ADDED"

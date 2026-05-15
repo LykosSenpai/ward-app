@@ -41,6 +41,7 @@ const PROFILES: Record<BoardRenderEventType, BoardAnimationProfile> = {
   PLAYER_LOCK_APPLIED: { durationMs: 520, label: "player-lock" },
   PLAYER_LOCK_REMOVED: { durationMs: 360, label: "player-unlock" },
   TURN_SKIPPED: { durationMs: 620, label: "turn-skipped" },
+  DICE_ROLLED: { durationMs: 800, label: "dice-roll" },
   PROMPT_OPENED: { durationMs: 200, label: "prompt" },
   PROMPT_RESOLVED: { durationMs: 180, label: "prompt-resolve" },
   CHAIN_LINK_ADDED: { durationMs: 320, label: "chain-add" },
