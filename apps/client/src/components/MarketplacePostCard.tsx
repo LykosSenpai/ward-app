@@ -203,25 +203,13 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
           {matches.length > visibleMatches.length ? <small>+{matches.length - visibleMatches.length} more linked post{matches.length - visibleMatches.length === 1 ? "" : "s"}</small> : null}
         </div>
       ) : null}
-      <button type="button" className="marketplace-view-cards-button" onClick={() => setCardsOpen(true)}>View cards</button>
-      {cardsOpen ? (
-        <ModalPanel title={`${post.title} cards`} onClose={() => setCardsOpen(false)} wide>
-          <div className="marketplace-cards-modal-layout">
-            <div className="marketplace-item-section">
-              <strong>Have</strong>
-              <ul className="marketplace-item-grid">
-                {post.haveItems.length ? post.haveItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} onContact={!isMine ? onLineItemContact : undefined} />) : <li className="muted">Nothing listed.</li>}
-              </ul>
-            </div>
-            <div className="marketplace-item-section">
-              <strong>Need</strong>
-              <ul className="marketplace-item-grid">
-                {post.needItems.length ? post.needItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} />) : <li className="muted">Nothing listed.</li>}
-              </ul>
-            </div>
-          </div>
-        </ModalPanel>
-      ) : null}
+      <details className="marketplace-post-details">
+        <summary>View cards</summary>
+        <div className="marketplace-columns">
+          <div className="marketplace-item-section"><strong>Have</strong><ul className="marketplace-item-grid">{post.haveItems.length ? post.haveItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} onContact={!isMine ? onLineItemContact : undefined} />) : <li className="muted">Nothing listed.</li>}</ul></div>
+          <div className="marketplace-item-section"><strong>Need</strong><ul className="marketplace-item-grid">{post.needItems.length ? post.needItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} />) : <li className="muted">Nothing listed.</li>}</ul></div>
+        </div>
+      </details>
     </article>
   );
 }
