@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MARKETPLACE_LISTING_VARIANT_LABELS, MARKETPLACE_STATUS_LABELS, formatCurrencyUsd, getMarketplaceVariantLabel, type MarketplaceListingKind, type MarketplacePostLineItem, type MarketplacePostStatus } from "../marketplaceHelpers";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { CardImageThumbnail } from "./CardImagePreview";
+import { ModalPanel } from "./ui/ModalPanel";
 
 export type MarketplacePost = {
   id: string;
@@ -48,6 +49,7 @@ type Props = {
   onEdit?: (post: MarketplacePost) => void;
   onStatusChange?: (post: MarketplacePost, status: MarketplacePostStatus) => void;
   matches?: MarketplacePostMatchSummary[];
+  onLineItemContact?: (item: MarketplacePostLineItem) => void;
 };
 
 function getLineItemKey(item: string | MarketplacePostLineItem): string {
@@ -85,7 +87,7 @@ function MarketplaceMatchLineList({ title, lines }: { title: string; lines: Mark
   );
 }
 
-function MarketplaceLineItem({ item, cardById }: { item: string | MarketplacePostLineItem; cardById?: Map<string, CardLibraryCardSummary> }) {
+function MarketplaceLineItem({ item, cardById, onContact }: { item: string | MarketplacePostLineItem; cardById?: Map<string, CardLibraryCardSummary>; onContact?: (item: MarketplacePostLineItem) => void }) {
   if (typeof item === "string") {
     return <li className="marketplace-item-card text-only"><strong>{item}</strong></li>;
   }
@@ -106,13 +108,15 @@ function MarketplaceLineItem({ item, cardById }: { item: string | MarketplacePos
           {item.sale ? `Sale${item.price ? ` $${item.price}` : ""}` : null}
           {item.trade === false && !item.sale ? "Unavailable" : null}
         </span>
+        {onContact ? <button type="button" className="marketplace-item-inquire-button" onClick={() => onContact(item)}>Ask</button> : null}
       </div>
     </li>
   );
 }
 
-export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, onStatusChange, matches = [] }: Props) {
+export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, onStatusChange, matches = [], onLineItemContact }: Props) {
   const [contactCopied, setContactCopied] = useState(false);
+  const [cardsOpen, setCardsOpen] = useState(false);
   const haveCount = getItemQuantity(post.haveItems);
   const needCount = getItemQuantity(post.needItems);
   const visibleMatches = matches.slice(0, 3);
@@ -199,13 +203,25 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
           {matches.length > visibleMatches.length ? <small>+{matches.length - visibleMatches.length} more linked post{matches.length - visibleMatches.length === 1 ? "" : "s"}</small> : null}
         </div>
       ) : null}
-      <details className="marketplace-post-details">
-        <summary>View cards</summary>
-        <div className="marketplace-columns">
-          <div className="marketplace-item-section"><strong>Have</strong><ul className="marketplace-item-grid">{post.haveItems.length ? post.haveItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} />) : <li className="muted">Nothing listed.</li>}</ul></div>
-          <div className="marketplace-item-section"><strong>Need</strong><ul className="marketplace-item-grid">{post.needItems.length ? post.needItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} />) : <li className="muted">Nothing listed.</li>}</ul></div>
-        </div>
-      </details>
+      <button type="button" className="marketplace-view-cards-button" onClick={() => setCardsOpen(true)}>View cards</button>
+      {cardsOpen ? (
+        <ModalPanel title={`${post.title} cards`} onClose={() => setCardsOpen(false)} wide>
+          <div className="marketplace-cards-modal-layout">
+            <div className="marketplace-item-section">
+              <strong>Have</strong>
+              <ul className="marketplace-item-grid">
+                {post.haveItems.length ? post.haveItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} onContact={!isMine ? onLineItemContact : undefined} />) : <li className="muted">Nothing listed.</li>}
+              </ul>
+            </div>
+            <div className="marketplace-item-section">
+              <strong>Need</strong>
+              <ul className="marketplace-item-grid">
+                {post.needItems.length ? post.needItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} />) : <li className="muted">Nothing listed.</li>}
+              </ul>
+            </div>
+          </div>
+        </ModalPanel>
+      ) : null}
     </article>
   );
 }

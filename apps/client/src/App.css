@@ -10078,12 +10078,12 @@ button:disabled:hover {
   border-radius: 0.45rem;
   background: linear-gradient(145deg, rgba(15, 23, 42, 0.62), rgba(2, 6, 23, 0.46));
   box-shadow: 0 16px 38px rgba(2, 6, 23, 0.18);
-  padding: 0.85rem;
+  padding: 0.65rem;
 }
 
 .marketplace-post-card {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.4rem;
   transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
@@ -10131,7 +10131,7 @@ button:disabled:hover {
 }
 
 .marketplace-post-header h3 {
-  font-size: 1rem;
+  font-size: 0.92rem;
   line-height: 1.15;
   margin: 0;
   min-width: 0;
@@ -10203,7 +10203,7 @@ button:disabled:hover {
 }
 
 .marketplace-post-short-details {
-  grid-template-columns: repeat(auto-fit, minmax(5.8rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(4.8rem, 1fr));
 }
 
 .marketplace-post-description {
@@ -10231,8 +10231,13 @@ button:disabled:hover {
   color: #e0f2fe;
   display: inline-flex;
   justify-content: center;
-  min-height: 2rem;
-  min-width: 7rem;
+  min-height: 1.75rem;
+  min-width: 5.8rem;
+}
+
+.marketplace-view-cards-button {
+  min-height: 1.8rem;
+  font-size: 0.78rem;
 }
 
 .marketplace-status-controls {
@@ -10488,13 +10493,13 @@ button:disabled:hover {
 }
 
 .marketplace-post-grid .marketplace-item-card {
-  grid-template-rows: minmax(2.65rem, auto) minmax(6.8rem, 1fr) auto;
-  min-height: 11.2rem;
-  padding: 0.45rem;
+  grid-template-rows: minmax(2.35rem, auto) minmax(5.6rem, 1fr) auto;
+  min-height: 9.8rem;
+  padding: 0.35rem;
 }
 
 .marketplace-post-grid .marketplace-item-card .marketplace-line-thumb {
-  height: 6.8rem;
+  height: 5.6rem;
   width: min(6.3rem, 100%);
 }
 
@@ -10576,11 +10581,11 @@ button:disabled:hover {
   border-radius: 0.45rem;
   background: rgba(15, 23, 42, 0.62);
   display: grid;
-  grid-template-rows: minmax(2.65rem, auto) minmax(6.1rem, 1fr) auto;
+  grid-template-rows: minmax(2.4rem, auto) minmax(5.4rem, 1fr) auto;
   gap: 0.4rem;
-  min-height: 10.4rem;
+  min-height: 9rem;
   overflow: visible;
-  padding: 0.45rem;
+  padding: 0.35rem;
   position: relative;
 }
 
@@ -10645,7 +10650,7 @@ button:disabled:hover {
 
 .marketplace-line-thumb {
   align-self: stretch;
-  height: 6.1rem;
+  height: 5.4rem;
   justify-self: center;
   width: min(5.6rem, 100%);
 }
@@ -10689,6 +10694,7 @@ button:disabled:hover {
   z-index: 405;
 }
 
+.marketplace-line-thumb:focus-within img,
 .marketplace-line-thumb:hover img {
   background: rgba(2, 6, 23, 0.96);
   border-radius: 0.35rem;
@@ -10723,6 +10729,26 @@ button:disabled:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
+}
+
+
+.marketplace-post-grid .marketplace-item-card {
+  isolation: isolate;
+}
+
+.marketplace-item-inquire-button {
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.16);
+  color: #dbeafe;
+  font-size: 0.66rem;
+  font-weight: 800;
+  margin-left: auto;
+  padding: 0.12rem 0.4rem;
+}
+
+.marketplace-item-bottom-row {
+  align-items: center;
 }
 
 .marketplace-item-mode {
@@ -11123,16 +11149,16 @@ button:disabled:hover {
 .marketplace-listing-grid {
   display: grid;
   gap: 0.85rem;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 }
 
 .marketplace-listing-shell {
   background: rgba(2, 6, 23, 0.26);
   border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 1rem;
+  border-radius: 0.8rem;
   display: grid;
   gap: 0.55rem;
-  padding: 0.55rem;
+  padding: 0.45rem;
 }
 
 .marketplace-listing-shell .marketplace-post-card {
@@ -11178,7 +11204,25 @@ button:disabled:hover {
 .marketplace-listing-action-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.35rem;
+}
+
+.marketplace-listing-action-strip button {
+  min-height: 1.9rem;
+  padding: 0.28rem 0.62rem;
+}
+
+.marketplace-cards-modal-layout {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.marketplace-cards-modal-layout .marketplace-item-grid {
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  max-height: min(64vh, 42rem);
+  overflow: auto;
+  padding-right: 0.25rem;
 }
 
 .marketplace-disabled-action,
