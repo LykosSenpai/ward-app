@@ -7,6 +7,7 @@ export default defineConfig({
   preview: {
     allowedHosts: [
       'wardclient-production.up.railway.app',
+      'wardnexus.app',
       'healthcheck.railway.app',
     ],
   },
