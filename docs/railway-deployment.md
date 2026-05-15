@@ -7,26 +7,33 @@ These notes are for the first hosted WARD deployment once the local account/deck
 Create one Railway project with:
 
 - A Postgres database service.
-- A Node app service for the WARD server.
-- One Node app service can serve both the WARD API/Socket.IO server and the built Vite client from `apps/client/dist`.
+- A Node app service for `@ward/server`.
+- A Node app service for `@ward/client`.
 
-The current repo is still optimized for local split dev:
+The current repo is split by package:
 
 - Client: `apps/client`, Vite dev port `5173`
 - Server: `apps/server`, Express/Socket.IO port from `PORT`
 
 ## Required Variables
 
-Set these on Railway:
+Set these on the `@ward/server` service:
 
 ```env
-DATABASE_URL=<Railway Postgres connection string>
+DATABASE_URL=${{Postgres.DATABASE_URL}}
 SESSION_SECRET=<at least 32 random characters>
-CLIENT_ORIGIN=https://your-client-domain.example
+CLIENT_ORIGIN=https://your-client-domain.up.railway.app
 ENABLE_DEV_TOOLS=false
-VITE_API_BASE_URL=
-VITE_ENABLE_DEV_TOOLS=false
 NODE_ENV=production
+PORT=3001
+```
+
+Set these on the `@ward/client` service:
+
+```env
+VITE_API_BASE_URL=https://your-server-domain.up.railway.app
+VITE_ENABLE_DEV_TOOLS=false
+PORT=4173
 ```
 
 Generate a session secret locally with:
@@ -39,14 +46,31 @@ Do not reuse the local development `SESSION_SECRET`.
 
 ## Build And Start
 
-Initial combined app service settings:
+`railway.json` only defines the shared Railpack build. Keep start commands and
+healthchecks in the Railway dashboard so the client and server can start
+different packages.
+
+`@ward/server` settings:
 
 ```text
 Build command: pnpm run railway:build
-Start command: pnpm start
+Start command: pnpm --filter @ward/server start
+Public networking port: 3001
+Healthcheck path: /health
+Pre-deploy command: pnpm --filter @ward/server db:migrate
 ```
 
-These commands are also checked into `railway.json` so Railway deployments do not fall back to running TypeScript source files directly.
+`@ward/client` settings:
+
+```text
+Build command: pnpm run railway:build
+Start command: pnpm --filter @ward/client preview -- --host 0.0.0.0 --port $PORT
+Public networking port: 4173
+Healthcheck path: leave blank
+```
+
+Do not configure a shared `deploy.startCommand` in `railway.json`; Railway
+applies it to both services, which can make the client try to run the server.
 
 Before using account-backed production data, run migrations against Railway:
 
@@ -68,7 +92,8 @@ The server refuses to start in production if `SESSION_SECRET` is shorter than 32
 
 Express sessions are stored in Postgres in the `user_sessions` table so logins survive server restarts.
 
-Leave `VITE_API_BASE_URL` blank for a combined Railway deployment where the server serves the built client from the same origin. Set it only if the client is hosted on a different domain from the server.
+Set `VITE_API_BASE_URL` on the client to the hosted server domain because the
+client and server are deployed as separate Railway services.
 
 Keep `ENABLE_DEV_TOOLS=false` and `VITE_ENABLE_DEV_TOOLS=false` for public player builds. Set both to `true` only for private development deployments that should expose effect authoring, coverage, LLM test, debug, and forced-roll controls.
 
