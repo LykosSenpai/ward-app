@@ -114,6 +114,41 @@ function MarketplaceLineItem({ item, cardById, onContact }: { item: string | Mar
   );
 }
 
+function MarketplaceItemSection({
+  title,
+  items,
+  cardById,
+  onContact
+}: {
+  title: string;
+  items: Array<string | MarketplacePostLineItem>;
+  cardById?: Map<string, CardLibraryCardSummary>;
+  onContact?: (item: MarketplacePostLineItem) => void;
+}) {
+  return (
+    <div className="marketplace-item-section">
+      <div className="marketplace-item-section-heading">
+        <strong>{title}</strong>
+        <span>{getItemQuantity(items)}</span>
+      </div>
+      <ul className="marketplace-item-grid">
+        {items.length ? (
+          items.map(item => (
+            <MarketplaceLineItem
+              key={getLineItemKey(item)}
+              item={item}
+              cardById={cardById}
+              onContact={onContact}
+            />
+          ))
+        ) : (
+          <li className="muted">Nothing listed.</li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
 export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, onStatusChange, matches = [], onLineItemContact }: Props) {
   const [contactCopied, setContactCopied] = useState(false);
   const [cardsOpen, setCardsOpen] = useState(false);
@@ -162,6 +197,14 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
         {typeof post.salePrice === "number" ? <MarketplacePostStat label="Price" value={formatCurrencyUsd(post.salePrice)} /> : null}
       </div>
       <div className="marketplace-post-actions">
+        <button
+          type="button"
+          className="marketplace-contact-button marketplace-view-cards-button"
+          aria-haspopup="dialog"
+          onClick={() => setCardsOpen(true)}
+        >
+          View cards
+        </button>
         {isMine ? (
           <div className="marketplace-status-controls" aria-label={`${post.title} post status controls`}>
             <span>Status</span>
@@ -203,13 +246,14 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
           {matches.length > visibleMatches.length ? <small>+{matches.length - visibleMatches.length} more linked post{matches.length - visibleMatches.length === 1 ? "" : "s"}</small> : null}
         </div>
       ) : null}
-      <details className="marketplace-post-details">
-        <summary>View cards</summary>
-        <div className="marketplace-columns">
-          <div className="marketplace-item-section"><strong>Have</strong><ul className="marketplace-item-grid">{post.haveItems.length ? post.haveItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} onContact={!isMine ? onLineItemContact : undefined} />) : <li className="muted">Nothing listed.</li>}</ul></div>
-          <div className="marketplace-item-section"><strong>Need</strong><ul className="marketplace-item-grid">{post.needItems.length ? post.needItems.map(item => <MarketplaceLineItem key={getLineItemKey(item)} item={item} cardById={cardById} />) : <li className="muted">Nothing listed.</li>}</ul></div>
-        </div>
-      </details>
+      {cardsOpen ? (
+        <ModalPanel title={`Cards in ${post.title}`} onClose={() => setCardsOpen(false)} wide>
+          <div className="marketplace-cards-modal-layout">
+            <MarketplaceItemSection title="Have" items={post.haveItems} cardById={cardById} onContact={!isMine ? onLineItemContact : undefined} />
+            <MarketplaceItemSection title="Need" items={post.needItems} cardById={cardById} />
+          </div>
+        </ModalPanel>
+      ) : null}
     </article>
   );
 }

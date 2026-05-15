@@ -10390,7 +10390,24 @@ button:disabled:hover {
   border: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 0.45rem;
   background: rgba(2, 6, 23, 0.18);
+  min-width: 0;
   padding: 0.6rem;
+}
+
+.marketplace-item-section-heading {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.marketplace-item-section-heading span {
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 999px;
+  color: #bae6fd;
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 0.1rem 0.45rem;
 }
 
 .marketplace-columns ul,
@@ -10916,7 +10933,8 @@ button:disabled:hover {
   .marketplace-builder-layout,
   .marketplace-builder-summary,
   .marketplace-header-row,
-  .marketplace-columns {
+  .marketplace-columns,
+  .marketplace-cards-modal-layout {
     grid-template-columns: 1fr;
   }
 
