@@ -64,10 +64,14 @@ Pre-deploy command: pnpm --filter @ward/server db:migrate
 
 ```text
 Build command: pnpm run railway:build
-Start command: pnpm --filter @ward/client preview -- --host 0.0.0.0 --port $PORT
+Start command: pnpm --filter @ward/client exec vite preview --host 0.0.0.0 --port $PORT
 Public networking port: 4173
 Healthcheck path: leave blank
 ```
+
+The client Vite preview config allows `wardclient-production.up.railway.app`
+and `healthcheck.railway.app`. If the Railway client domain changes, add the
+new client host to `apps/client/vite.config.ts` under `preview.allowedHosts`.
 
 Do not configure a shared `deploy.startCommand` in `railway.json`; Railway
 applies it to both services, which can make the client try to run the server.
