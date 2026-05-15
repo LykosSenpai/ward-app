@@ -2,6 +2,7 @@
   "name": "ward-app",
   "private": true,
   "version": "0.1.0",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "dev:client": "pnpm --filter @ward/client dev",
@@ -16,6 +17,7 @@
     "user:set-email": "pnpm --filter @ward/server user:set-email",
     "user:set-role": "pnpm --filter @ward/server user:set-role",
     "build": "pnpm -r build",
+    "vercel:client:build": "pnpm --filter @ward/shared build && pnpm --filter @ward/client build",
     "railway:build": "pnpm --filter @ward/shared build && pnpm --filter @ward/engine build && pnpm --filter @ward/client build && pnpm --filter @ward/server build",
     "start": "pnpm --filter @ward/server start",
     "cards:build": "node tools/card-generation/build-card-packs.mjs",

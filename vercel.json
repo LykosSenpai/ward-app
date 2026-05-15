@@ -1,0 +1,6 @@
+{
+  "framework": "vite",
+  "installCommand": "corepack enable && pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm vercel:client:build",
+  "outputDirectory": "apps/client/dist"
+}

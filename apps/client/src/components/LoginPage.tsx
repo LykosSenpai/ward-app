@@ -185,8 +185,8 @@ async function readAuthResponse(response: Response): Promise<AuthResponse> {
   if (!body.trim()) {
     throw new Error(
       response.ok
-        ? "The auth server returned an empty response."
-        : `The auth server returned ${response.status} ${response.statusText || "without a response body"}.`
+        ? `The auth server returned an empty response from ${response.url}.`
+        : `The auth server returned ${response.status} ${response.statusText || "without a response body"} from ${response.url}.`
     );
   }
 
