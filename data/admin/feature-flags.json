@@ -11,13 +11,83 @@
       "updatedAt": "1970-01-01T00:00:00.000Z"
     },
     {
-      "key": "deck-library",
-      "label": "Deck Library",
-      "description": "Manage saved decks.",
+      "key": "deck-builder",
+      "label": "Deck Builder",
+      "description": "Build and manage decks.",
       "enabledForPlayers": true,
       "adminCanPreview": true,
       "adminOnly": false,
       "sortOrder": 20,
+      "updatedAt": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "key": "marketplace",
+      "label": "Marketplace",
+      "description": "Trade and want-list marketplace.",
+      "enabledForPlayers": false,
+      "adminCanPreview": true,
+      "adminOnly": false,
+      "sortOrder": 30,
+      "updatedAt": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "key": "saved-matches",
+      "label": "Saved Matches",
+      "description": "Access saved matches.",
+      "enabledForPlayers": true,
+      "adminCanPreview": true,
+      "adminOnly": false,
+      "sortOrder": 40,
+      "updatedAt": "2026-05-15T11:14:43.892Z"
+    },
+    {
+      "key": "play-table",
+      "label": "Play Table",
+      "description": "Lobby and active play table.",
+      "enabledForPlayers": true,
+      "adminCanPreview": true,
+      "adminOnly": false,
+      "sortOrder": 50,
+      "updatedAt": "2026-05-15T11:14:48.213Z"
+    },
+    {
+      "key": "match-lobby",
+      "label": "Match Lobby",
+      "description": "Multiplayer lobby flows.",
+      "enabledForPlayers": true,
+      "adminCanPreview": true,
+      "adminOnly": false,
+      "sortOrder": 60,
+      "updatedAt": "2026-05-15T11:14:49.004Z"
+    },
+    {
+      "key": "online-gameplay",
+      "label": "Online Gameplay",
+      "description": "Online gameplay systems.",
+      "enabledForPlayers": true,
+      "adminCanPreview": true,
+      "adminOnly": false,
+      "sortOrder": 70,
+      "updatedAt": "2026-05-15T11:14:52.234Z"
+    },
+    {
+      "key": "effect-tools",
+      "label": "Effect Tools",
+      "description": "Effect authoring and diagnostics.",
+      "enabledForPlayers": false,
+      "adminCanPreview": true,
+      "adminOnly": true,
+      "sortOrder": 80,
+      "updatedAt": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "key": "admin-tools",
+      "label": "Admin Controls",
+      "description": "Admin controls and rollout toggles.",
+      "enabledForPlayers": false,
+      "adminCanPreview": true,
+      "adminOnly": true,
+      "sortOrder": 999,
       "updatedAt": "1970-01-01T00:00:00.000Z"
     }
   ]
