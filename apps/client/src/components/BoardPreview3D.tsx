@@ -339,6 +339,7 @@ type BoardPreview3DProps = {
   onSetHandRevealed?: (playerId: "player_1" | "player_2", revealed: boolean) => void;
   onApproveRevealRedraw?: () => void;
   onOpeningRoll?: (playerId: "player_1" | "player_2") => void;
+  onOpenDiceRoller?: () => void;
   onPlayHandCardToSlot?: (cardInstanceId: string, slotId: string, sacrificeCardInstanceIds?: string[]) => void;
   onPlayLightningResponse?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
   onPlayBattleResponse?: (battleSessionId: string, strikeId: string, playerId: BoardPlayerId, cardInstanceId: string) => void;
@@ -533,6 +534,7 @@ export function BoardPreview3D({
   onSetHandRevealed,
   onApproveRevealRedraw,
   onOpeningRoll,
+  onOpenDiceRoller,
   onPlayHandCardToSlot,
   onPlayLightningResponse,
   onPlayBattleResponse,
@@ -1378,14 +1380,24 @@ export function BoardPreview3D({
       };
     }
 
-    return null;
+    if (match.status === "COMPLETE" || !onOpenDiceRoller) return null;
+
+    return {
+      id: `manual-dice-${focusedPlayerId}`,
+      label: "Dice Roller",
+      detail: "Open manual dice tray",
+      owner: focusedPlayerId,
+      onClick: onOpenDiceRoller
+    };
   }, [
     battleStepControllerLabel,
     battleStepControllerPlayerId,
     canAdvanceBattleResolver,
     controlledPlayerId,
+    focusedPlayerId,
     match,
     onOpeningRoll,
+    onOpenDiceRoller,
     onRollBattleDamage,
     onRollBattleHit,
     onRollEffectRoll,
@@ -2207,38 +2219,52 @@ export function BoardPreview3D({
             controlledPlayerId={controlledPlayerId}
             onOpeningRoll={onOpeningRoll}
           />
-          <aside className="board-phase-control" aria-label="Turn phase controls">
-            <div className="board-phase-control__status">
-              <span>Current Phase</span>
-              <strong>{currentPhaseLabel}</strong>
-              <small>{activePlayer?.displayName ?? match.turn.activePlayerId} | Turn {match.turn.turnNumber}</small>
-            </div>
-            <div className="board-phase-control__actions">
-              {shouldShowAdvancePhaseButton ? (
+          <aside className="board-preview-3d__turn-controls" aria-label="Board turn and dice controls">
+            <section className="board-phase-control" aria-label="Turn phase controls">
+              <div className="board-phase-control__status">
+                <span>Current Phase</span>
+                <strong>{currentPhaseLabel}</strong>
+                <small>{activePlayer?.displayName ?? match.turn.activePlayerId} | Turn {match.turn.turnNumber}</small>
+              </div>
+              <div className="board-phase-control__actions">
+                {shouldShowAdvancePhaseButton ? (
+                  <button
+                    type="button"
+                    disabled={!canUseTurnControls || !onAdvancePhase}
+                    onClick={onAdvancePhase}
+                    title={advanceBlockReason || `Move to ${nextPhaseLabel}`}
+                  >
+                    Move to {nextPhaseLabel}
+                  </button>
+                ) : null}
                 <button
                   type="button"
-                  disabled={!canUseTurnControls || !onAdvancePhase}
-                  onClick={onAdvancePhase}
-                  title={advanceBlockReason || `Move to ${nextPhaseLabel}`}
+                  className="secondary"
+                  disabled={!canEndTurnFromBoard || !onEndTurn}
+                  onClick={onEndTurn}
+                  title={
+                    advanceBlockReason ||
+                    (match.turn.phase === "DRAW" && !activePlayer?.turnFlags.drawnThisTurn ? "Draw before ending your turn" : "End your turn")
+                  }
                 >
-                  Move to {nextPhaseLabel}
+                  End Turn
                 </button>
-              ) : null}
-              <button
-                type="button"
-                className="secondary"
-                disabled={!canEndTurnFromBoard || !onEndTurn}
-                onClick={onEndTurn}
-                title={
-                  advanceBlockReason ||
-                  (match.turn.phase === "DRAW" && !activePlayer?.turnFlags.drawnThisTurn ? "Draw before ending your turn" : "End your turn")
-                }
-              >
-                End Turn
-              </button>
-            </div>
+              </div>
+            </section>
+            {boardDiceRollAction ? <BoardDiceRollControl action={boardDiceRollAction} /> : null}
+            {match.pendingChain?.priorityPlayerId && onPassMagicChainPriority && (!controlledPlayerId || controlledPlayerId === match.pendingChain.priorityPlayerId) ? (
+              <aside className="board-dice-control board-dice-control--player_1 is-ready" aria-label="Magic Chain priority">
+                <button
+                  type="button"
+                  className="board-dice-control__event"
+                  onClick={() => onPassMagicChainPriority(match.pendingChain!.priorityPlayerId as BoardPlayerId)}
+                >
+                  <strong>Chain Priority</strong>
+                  <span>Pass response priority</span>
+                </button>
+              </aside>
+            ) : null}
           </aside>
-          {boardDiceRollAction ? <BoardDiceRollControl action={boardDiceRollAction} /> : null}
           {boardDeckActions.map(action => (
             <div
               key={`${action.owner}-deck-actions`}
@@ -2312,18 +2338,6 @@ export function BoardPreview3D({
               </div>
               {actionDock}
             </div>
-          ) : null}
-          {match.pendingChain?.priorityPlayerId && onPassMagicChainPriority && (!controlledPlayerId || controlledPlayerId === match.pendingChain.priorityPlayerId) ? (
-            <aside className="board-dice-control board-dice-control--player_1 is-ready" aria-label="Magic Chain priority">
-              <button
-                type="button"
-                className="board-dice-control__event"
-                onClick={() => onPassMagicChainPriority(match.pendingChain!.priorityPlayerId as BoardPlayerId)}
-              >
-                <strong>Chain Priority</strong>
-                <span>Pass response priority</span>
-              </button>
-            </aside>
           ) : null}
           {handCards.length > 0 ? (
             <section className="board-preview-3d__hand-rail" aria-label="3D board hand rail">

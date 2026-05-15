@@ -1532,13 +1532,16 @@ function sanitizeMatchForViewer(match: MatchState, viewerPlayerId?: string): Mat
   if (!viewerPlayerId) return match;
 
   const next = cloneMatchState(match);
+  const revealedHandPlayerIds = new Set(next.setup.revealedHandPlayerIds ?? []);
   for (const player of next.players) {
     if (player.id === viewerPlayerId) continue;
 
-    player.hand = player.hand.map(card => ({
-      ...card,
-      cardId: "HIDDEN_CARD"
-    }));
+    if (!revealedHandPlayerIds.has(player.id)) {
+      player.hand = player.hand.map(card => ({
+        ...card,
+        cardId: "HIDDEN_CARD"
+      }));
+    }
     player.deck = player.deck.map(card => ({
       ...card,
       cardId: "HIDDEN_CARD"
