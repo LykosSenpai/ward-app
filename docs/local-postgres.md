@@ -39,11 +39,26 @@ DATABASE_URL=postgres://ward_app:ward_app_dev@localhost:5432/ward_app
 CLIENT_ORIGIN=http://localhost:5173
 SESSION_SECRET=ward-local-dev-session-secret-change-before-hosting
 ENABLE_DEV_TOOLS=true
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+DISCORD_REDIRECT_URI=http://localhost:3001/api/auth/discord/callback
 VITE_API_BASE_URL=http://localhost:3001
 VITE_ENABLE_DEV_TOOLS=true
 ```
 
 `.env` is ignored by git. `.env.example` has the same local template without secrets that matter.
+
+### Optional Discord OAuth
+
+For local Discord sign-in or account linking, create a Discord application in the Discord Developer Portal and copy its OAuth2 client ID and client secret into `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`.
+
+Add this exact redirect URL to the application's OAuth2 redirect list:
+
+```text
+http://localhost:3001/api/auth/discord/callback
+```
+
+Restart the server after changing `.env`. The local client can stay on `http://localhost:5173`; Discord redirects back to the server on port `3001`, and the server redirects the browser back to the client after the callback completes.
 
 ## 4. Run Migrations
 
