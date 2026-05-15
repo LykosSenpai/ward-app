@@ -2,6 +2,23 @@
 
 These commands operate on the local `DATABASE_URL` from `.env`.
 
+## Create User
+
+Set the password in an environment variable so it does not appear in the
+command itself:
+
+```powershell
+$env:WARD_ADMIN_PASSWORD = "Use-A-Temporary-Password-Here"
+pnpm user:create brjaru8 brjaru8@gmail.com LykosSenpai ADMIN on
+Remove-Item Env:\WARD_ADMIN_PASSWORD
+```
+
+Arguments are:
+
+```text
+pnpm user:create <username> <email> <display-name> [PLAYER|HOST|DEVELOPER|ADMIN] [dev-tools:on|off]
+```
+
 ## List Users
 
 ```powershell

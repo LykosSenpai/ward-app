@@ -17,6 +17,7 @@ type UserRow = {
 };
 
 type Command =
+  | "create"
   | "list"
   | "set-email"
   | "set-role"
@@ -31,6 +32,7 @@ function printUsage(): void {
 WARD local user admin
 
 Commands:
+  pnpm user:create <username> <email> <display-name> [PLAYER|HOST|DEVELOPER|ADMIN] [dev-tools:on|off]
   pnpm user:list
   pnpm user:set-email <username> <email>
   pnpm user:set-role <username> <PLAYER|HOST|DEVELOPER|ADMIN>
@@ -40,6 +42,7 @@ Commands:
 
 Notes:
   - These commands operate on the local DATABASE_URL.
+  - Create reads the new account password from WARD_ADMIN_PASSWORD.
   - Delete is intended for local test accounts.
   `.trim());
 }
@@ -101,6 +104,46 @@ async function listUsers(): Promise<void> {
   })));
 }
 
+async function createUser(usernameArg: string | undefined, emailArg: string | undefined, displayNameArg: string | undefined, roleArg: string | undefined, devToolsArg: string | undefined): Promise<void> {
+  const username = normalizeUsername(requireArg(usernameArg, "username"));
+  const email = normalizeEmail(requireArg(emailArg, "email"));
+  const displayName = requireArg(displayNameArg, "display-name").trim();
+  const password = requireArg(process.env.WARD_ADMIN_PASSWORD, "WARD_ADMIN_PASSWORD");
+  const role = roleArg ? normalizeRole(roleArg) : "PLAYER";
+  const devToolsRequested = devToolsArg ? parseToggle(devToolsArg) : role === "DEVELOPER" || role === "ADMIN";
+  const devToolsEnabled = role === "DEVELOPER" || role === "ADMIN" ? devToolsRequested : false;
+
+  if (!displayName) {
+    throw new Error("Display name is required.");
+  }
+
+  if (password.length < 8) {
+    throw new Error("WARD_ADMIN_PASSWORD must be at least 8 characters.");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  try {
+    const result = await getDbPool().query<UserRow>(
+      `
+        insert into users (username, email, password_hash, display_name, role, dev_tools_enabled)
+        values ($1, $2, $3, $4, $5, $6)
+        returning id, username, email, display_name, role, dev_tools_enabled, created_at, 0 as owned_unique_cards, 0 as owned_total_copies
+      `,
+      [username, email, passwordHash, displayName, role, devToolsEnabled]
+    );
+
+    const user = result.rows[0];
+    console.log(`Created ${user.username} (${user.email}) as ${user.role}; developer tools ${user.dev_tools_enabled ? "on" : "off"}.`);
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      throw new Error("That username or email is already taken.");
+    }
+
+    throw error;
+  }
+}
+
 async function setEmail(usernameArg: string | undefined, emailArg: string | undefined): Promise<void> {
   const username = normalizeUsername(requireArg(usernameArg, "username"));
   const email = normalizeEmail(requireArg(emailArg, "email"));
@@ -141,6 +184,13 @@ function parseToggle(value: string): boolean {
   if (["0", "false", "no", "off", "disabled"].includes(normalized)) return false;
 
   throw new Error("Toggle must be on or off.");
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "23505";
 }
 
 async function setRole(usernameArg: string | undefined, roleArg: string | undefined): Promise<void> {
@@ -249,6 +299,11 @@ async function deleteUser(usernameArg: string | undefined): Promise<void> {
 async function run(): Promise<void> {
   if (!command) {
     printUsage();
+    return;
+  }
+
+  if (command === "create") {
+    await createUser(args[0], args[1], args[2], args[3], args[4]);
     return;
   }
 

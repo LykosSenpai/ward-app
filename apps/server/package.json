@@ -9,6 +9,7 @@
     "db:check": "tsx src/db/check.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "user:admin": "tsx src/admin/users.ts",
+    "user:create": "tsx src/admin/users.ts create",
     "user:delete": "tsx src/admin/users.ts delete",
     "user:list": "tsx src/admin/users.ts list",
     "user:reset-password": "tsx src/admin/users.ts reset-password",

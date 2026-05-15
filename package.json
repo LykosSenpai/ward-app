@@ -10,6 +10,7 @@
     "db:check": "pnpm --filter @ward/server db:check",
     "db:migrate": "pnpm --filter @ward/server db:migrate",
     "user:admin": "pnpm --filter @ward/server user:admin",
+    "user:create": "pnpm --filter @ward/server user:create",
     "user:delete": "pnpm --filter @ward/server user:delete",
     "user:list": "pnpm --filter @ward/server user:list",
     "user:reset-password": "pnpm --filter @ward/server user:reset-password",
