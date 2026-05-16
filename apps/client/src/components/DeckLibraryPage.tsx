@@ -257,13 +257,13 @@ export function DeckLibraryPage({
       <div className="deck-library-import-panel">
         <div>
           <strong>Import Deck Code</strong>
-          <span>Paste a WARDDECK1 code to open it in the Card Library deck editor.</span>
+          <span>Paste a WARDDECK3 code to open it in the Card Library deck editor.</span>
         </div>
         <textarea
           value={importCode}
           onChange={event => setImportCode(event.target.value)}
           rows={2}
-          placeholder="WARDDECK1:..."
+          placeholder="WARDDECK3:..."
         />
         <button onClick={importDeckCode} disabled={!importCode.trim()}>Import</button>
       </div>

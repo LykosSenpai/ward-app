@@ -325,6 +325,11 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
     }
   }
 
+  const emailStatus = profile?.emailVerifiedAt ? "Verified" : "Not verified";
+  const twoFactorStatus = profile?.twoFactorEnabled ? "Enabled" : "Off";
+  const discordStatus = profile?.discord ? "Connected" : discordAuthEnabled ? "Not connected" : "Disabled";
+  const collectionStatus = `${profile?.ownedUniqueCards ?? 0} unique / ${profile?.ownedTotalCopies ?? 0} total`;
+
   return (
     <section className="profile-page">
       <header className="profile-header">
@@ -338,212 +343,238 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
       {error && <div className="error-box">{error}</div>}
       {message && <div className="success-box">{message}</div>}
 
+      <div className="profile-summary-grid" aria-label="Profile summary">
+        <div className="profile-summary-chip">
+          <span>Account</span>
+          <strong>{profile?.username ?? "Loading..."}</strong>
+        </div>
+        <div className={profile?.emailVerifiedAt ? "profile-summary-chip is-good" : "profile-summary-chip is-warning"}>
+          <span>Email</span>
+          <strong>{emailStatus}</strong>
+        </div>
+        <div className={profile?.twoFactorEnabled ? "profile-summary-chip is-good" : "profile-summary-chip"}>
+          <span>2FA</span>
+          <strong>{twoFactorStatus}</strong>
+        </div>
+        <div className={profile?.discord ? "profile-summary-chip is-good" : "profile-summary-chip"}>
+          <span>Discord</span>
+          <strong>{discordStatus}</strong>
+        </div>
+        <div className="profile-summary-chip">
+          <span>Collection</span>
+          <strong>{collectionStatus}</strong>
+        </div>
+      </div>
+
       <div className="profile-grid">
-        <section className="profile-card profile-card-account">
-          <h3>Account</h3>
-          <div className="profile-readonly-grid">
-            <span>Username</span>
-            <strong>{profile?.username ?? "Loading..."}</strong>
-            <span>User ID</span>
-            <strong>{profile?.id ?? "Loading..."}</strong>
-            <span>Email</span>
-            <strong>{profile?.emailVerifiedAt ? "Verified" : "Not verified"}</strong>
-          </div>
-
-          <form className="profile-form" onSubmit={saveProfile}>
-            <label>
-              Display Name
-              <input value={displayName} onChange={event => setDisplayName(event.target.value)} />
-            </label>
-
-            <label>
-              Email
-              <input value={email} onChange={event => setEmail(event.target.value)} type="email" />
-            </label>
-
-            <button disabled={busy}>{busy ? "Saving..." : "Save Profile"}</button>
-          </form>
-
-          {!profile?.emailVerifiedAt && (
-            <button type="button" onClick={() => void sendEmailVerification()} disabled={busy || !profile}>
-              {busy ? "Sending..." : "Send Verification Email"}
-            </button>
-          )}
-        </section>
-
-        <section className="profile-card profile-card-collection">
-          <h3>Collection</h3>
-          <div className="profile-stat-grid">
-            <div>
-              <span>Unique Owned</span>
-              <strong>{profile?.ownedUniqueCards ?? 0}</strong>
+        <div className="profile-main-stack">
+          <section className="profile-card profile-card-account">
+            <div className="profile-card-header">
+              <h3>Account</h3>
+              <span className={profile?.emailVerifiedAt ? "profile-status-pill is-good" : "profile-status-pill is-warning"}>
+                {emailStatus}
+              </span>
             </div>
-            <div>
-              <span>Total Copies</span>
-              <strong>{profile?.ownedTotalCopies ?? 0}</strong>
-            </div>
-          </div>
-        </section>
 
-        <section className="profile-card profile-card-discord">
-          <h3>Discord</h3>
-          {profile?.discord ? (
-            <>
-              <div className="profile-readonly-grid">
-                <span>Status</span>
-                <strong>Verified</strong>
-                <span>Discord</span>
-                <strong>{profile.discord.globalName || profile.discord.username}</strong>
-                <span>User ID</span>
-                <strong>{profile.discord.userId}</strong>
-              </div>
-              <div className="profile-action-row">
-                <a href={`https://discord.com/users/${profile.discord.userId}`} target="_blank" rel="noreferrer">Open Discord Profile</a>
-                <button type="button" onClick={() => void unlinkDiscord()} disabled={busy}>
-                  {busy ? "Working..." : "Disconnect Discord"}
-                </button>
-              </div>
-            </>
-          ) : discordAuthEnabled ? (
-            <>
-              <p className="muted">Connect Discord to post in the marketplace and show verified contact info.</p>
-              <button type="button" onClick={() => void connectDiscord()} disabled={busy}>
-                Connect Discord
-              </button>
-            </>
-          ) : (
-            <p className="muted">Discord login and linking are temporarily disabled.</p>
-          )}
-        </section>
-
-        {profile?.canAccessDevTools && (
-          <section className="profile-card profile-card-developer">
-            <h3>Developer Access</h3>
             <div className="profile-readonly-grid">
-              <span>Role</span>
-              <strong>{profile.role}</strong>
+              <span>Username</span>
+              <strong>{profile?.username ?? "Loading..."}</strong>
+              <span>User ID</span>
+              <strong>{profile?.id ?? "Loading..."}</strong>
             </div>
 
-            <label className="profile-toggle-row">
-              <input
-                checked={devToolsEnabled}
-                onChange={event => setDevToolsEnabled(event.target.checked)}
-                type="checkbox"
-              />
-              <span>Show developer tools</span>
-            </label>
+            <form className="profile-form profile-form-inline" onSubmit={saveProfile}>
+              <label>
+                Display Name
+                <input value={displayName} onChange={event => setDisplayName(event.target.value)} />
+              </label>
 
-            <button onClick={() => void saveProfileChanges()} disabled={busy}>
-              {busy ? "Saving..." : "Save Developer Tools"}
-            </button>
+              <label>
+                Email
+                <input value={email} onChange={event => setEmail(event.target.value)} type="email" />
+              </label>
+
+              <div className="profile-action-row profile-action-row-stretch">
+                <button disabled={busy}>{busy ? "Saving..." : "Save Profile"}</button>
+                {!profile?.emailVerifiedAt && (
+                  <button type="button" onClick={() => void sendEmailVerification()} disabled={busy || !profile}>
+                    {busy ? "Sending..." : "Send Verification Email"}
+                  </button>
+                )}
+              </div>
+            </form>
           </section>
-        )}
 
-        <section className="profile-card profile-card-password">
-          <h3>Password</h3>
-          <form className="profile-form" onSubmit={changePassword}>
-            <label>
-              Current Password
-              <PasswordInput
-                value={currentPassword}
-                onChange={setCurrentPassword}
-                autoComplete="current-password"
-              />
-            </label>
+          <section className="profile-card profile-card-security">
+            <div className="profile-card-header">
+              <h3>Security</h3>
+              <span className={profile?.twoFactorEnabled ? "profile-status-pill is-good" : "profile-status-pill"}>
+                2FA {twoFactorStatus}
+              </span>
+            </div>
+            <div className="profile-readonly-grid">
+              <span>2FA</span>
+              <strong>{twoFactorStatus}</strong>
+              <span>Device Check</span>
+              <strong>Email code on new browser</strong>
+            </div>
 
-            <label>
-              New Password
-              <PasswordInput
-                value={newPassword}
-                onChange={setNewPassword}
-                autoComplete="new-password"
-              />
-            </label>
+            {!profile?.twoFactorEnabled ? (
+              <>
+                {!twoFactorSetup ? (
+                  <button type="button" onClick={() => void startTwoFactorSetup()} disabled={busy || !profile}>
+                    {busy ? "Starting..." : "Set Up Authenticator"}
+                  </button>
+                ) : (
+                  <form className="profile-form" onSubmit={enableTwoFactor}>
+                    <label>
+                      Setup Key
+                      <input value={twoFactorSetup.secret} readOnly />
+                    </label>
 
-            <label>
-              Confirm New Password
-              <PasswordInput
-                value={confirmPassword}
-                onChange={setConfirmPassword}
-                autoComplete="new-password"
-              />
-            </label>
+                    <label>
+                      Authenticator URI
+                      <input value={twoFactorSetup.otpauthUrl} readOnly />
+                    </label>
 
-            <button disabled={busy}>{busy ? "Saving..." : "Change Password"}</button>
-          </form>
-        </section>
+                    <label>
+                      Authenticator Code
+                      <input
+                        value={twoFactorCode}
+                        onChange={event => setTwoFactorCode(event.target.value)}
+                        autoComplete="one-time-code"
+                        inputMode="numeric"
+                      />
+                    </label>
 
-        <section className="profile-card profile-card-security">
-          <h3>Security</h3>
-          <div className="profile-readonly-grid">
-            <span>2FA</span>
-            <strong>{profile?.twoFactorEnabled ? "Enabled" : "Off"}</strong>
-            <span>Device Check</span>
-            <strong>Email code on new browser</strong>
-          </div>
+                    <button disabled={busy}>{busy ? "Checking..." : "Enable 2FA"}</button>
+                  </form>
+                )}
+              </>
+            ) : (
+              <form className="profile-form profile-form-inline" onSubmit={disableTwoFactor}>
+                <label>
+                  Current Password
+                  <PasswordInput
+                    value={disableTwoFactorPassword}
+                    onChange={setDisableTwoFactorPassword}
+                    autoComplete="current-password"
+                  />
+                </label>
 
-          {!profile?.twoFactorEnabled ? (
-            <>
-              {!twoFactorSetup ? (
-                <button type="button" onClick={() => void startTwoFactorSetup()} disabled={busy || !profile}>
-                  {busy ? "Starting..." : "Set Up Authenticator"}
+                <label>
+                  Authenticator or Recovery Code
+                  <input
+                    value={disableTwoFactorCode}
+                    onChange={event => setDisableTwoFactorCode(event.target.value)}
+                    autoComplete="one-time-code"
+                  />
+                </label>
+
+                <button disabled={busy}>{busy ? "Saving..." : "Disable 2FA"}</button>
+              </form>
+            )}
+
+            {recoveryCodes.length > 0 && (
+              <div className="profile-recovery-code-box">
+                {recoveryCodes.map(code => <code key={code}>{code}</code>)}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <aside className="profile-side-stack">
+          <section className="profile-card profile-card-discord">
+            <div className="profile-card-header">
+              <h3>Discord</h3>
+              <span className={profile?.discord ? "profile-status-pill is-good" : "profile-status-pill"}>
+                {discordStatus}
+              </span>
+            </div>
+            {profile?.discord ? (
+              <>
+                <div className="profile-readonly-grid">
+                  <span>Status</span>
+                  <strong>Verified</strong>
+                  <span>Discord</span>
+                  <strong>{profile.discord.globalName || profile.discord.username}</strong>
+                  <span>User ID</span>
+                  <strong>{profile.discord.userId}</strong>
+                </div>
+                <div className="profile-action-row">
+                  <a href={`https://discord.com/users/${profile.discord.userId}`} target="_blank" rel="noreferrer">Open Discord Profile</a>
+                  <button type="button" onClick={() => void unlinkDiscord()} disabled={busy}>
+                    {busy ? "Working..." : "Disconnect Discord"}
+                  </button>
+                </div>
+              </>
+            ) : discordAuthEnabled ? (
+              <>
+                <p className="muted">Connect Discord to post in the marketplace and show verified contact info.</p>
+                <button type="button" onClick={() => void connectDiscord()} disabled={busy}>
+                  Connect Discord
                 </button>
-              ) : (
-                <form className="profile-form" onSubmit={enableTwoFactor}>
-                  <label>
-                    Setup Key
-                    <input value={twoFactorSetup.secret} readOnly />
-                  </label>
+              </>
+            ) : (
+              <p className="muted">Discord login and linking are temporarily disabled.</p>
+            )}
+          </section>
 
-                  <label>
-                    Authenticator URI
-                    <input value={twoFactorSetup.otpauthUrl} readOnly />
-                  </label>
-
-                  <label>
-                    Authenticator Code
-                    <input
-                      value={twoFactorCode}
-                      onChange={event => setTwoFactorCode(event.target.value)}
-                      autoComplete="one-time-code"
-                      inputMode="numeric"
-                    />
-                  </label>
-
-                  <button disabled={busy}>{busy ? "Checking..." : "Enable 2FA"}</button>
-                </form>
-              )}
-            </>
-          ) : (
-            <form className="profile-form" onSubmit={disableTwoFactor}>
+          <section className="profile-card profile-card-password">
+            <h3>Password</h3>
+            <form className="profile-form" onSubmit={changePassword}>
               <label>
                 Current Password
                 <PasswordInput
-                  value={disableTwoFactorPassword}
-                  onChange={setDisableTwoFactorPassword}
+                  value={currentPassword}
+                  onChange={setCurrentPassword}
                   autoComplete="current-password"
                 />
               </label>
 
               <label>
-                Authenticator or Recovery Code
-                <input
-                  value={disableTwoFactorCode}
-                  onChange={event => setDisableTwoFactorCode(event.target.value)}
-                  autoComplete="one-time-code"
+                New Password
+                <PasswordInput
+                  value={newPassword}
+                  onChange={setNewPassword}
+                  autoComplete="new-password"
                 />
               </label>
 
-              <button disabled={busy}>{busy ? "Saving..." : "Disable 2FA"}</button>
-            </form>
-          )}
+              <label>
+                Confirm New Password
+                <PasswordInput
+                  value={confirmPassword}
+                  onChange={setConfirmPassword}
+                  autoComplete="new-password"
+                />
+              </label>
 
-          {recoveryCodes.length > 0 && (
-            <div className="profile-recovery-code-box">
-              {recoveryCodes.map(code => <code key={code}>{code}</code>)}
-            </div>
+              <button disabled={busy}>{busy ? "Saving..." : "Change Password"}</button>
+            </form>
+          </section>
+
+          {profile?.canAccessDevTools && (
+            <section className="profile-card profile-card-developer">
+              <div className="profile-card-header">
+                <h3>Developer Access</h3>
+                <span className="profile-status-pill">{profile.role}</span>
+              </div>
+              <label className="profile-toggle-row">
+                <input
+                  checked={devToolsEnabled}
+                  onChange={event => setDevToolsEnabled(event.target.checked)}
+                  type="checkbox"
+                />
+                <span>Show developer tools</span>
+              </label>
+
+              <button type="button" onClick={() => void saveProfileChanges()} disabled={busy}>
+                {busy ? "Saving..." : "Save Developer Tools"}
+              </button>
+            </section>
           )}
-        </section>
+        </aside>
       </div>
     </section>
   );

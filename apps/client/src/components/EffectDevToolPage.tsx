@@ -1180,7 +1180,7 @@ export function EffectDevToolPage({
 
           <label>
             Export String
-            <textarea value={shareString} readOnly rows={3} placeholder="Click Copy String to generate WARDDECK1 output." />
+            <textarea value={shareString} readOnly rows={3} placeholder="Click Copy String to generate WARDDECK3 output." />
           </label>
 
           <label>
@@ -1189,7 +1189,7 @@ export function EffectDevToolPage({
               value={importString}
               onChange={event => setTestDeckImportStrings(current => ({ ...current, [owner]: event.target.value }))}
               rows={3}
-              placeholder="Paste WARDDECK1:... here."
+              placeholder="Paste WARDDECK3:... here."
             />
           </label>
 

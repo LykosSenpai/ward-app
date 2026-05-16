@@ -1175,7 +1175,7 @@ export function CardLibraryPanel({
 
               <label>
                 Import Code
-                <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={2} placeholder="Paste WARDDECK1:... here." />
+                <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={2} placeholder="Paste WARDDECK3:... here." />
               </label>
             </div>
 
