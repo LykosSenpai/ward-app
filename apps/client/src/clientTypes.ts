@@ -62,6 +62,9 @@ export type SupportTicketDetail = SupportTicketSummary & {
 
 export type UserProfile = AuthUser & {
   email: string;
+  emailVerifiedAt?: string;
+  twoFactorEnabled: boolean;
+  twoFactorEnabledAt?: string;
   ownedUniqueCards: number;
   ownedTotalCopies: number;
 };

@@ -93,6 +93,15 @@
   padding: 0.55rem;
 }
 
+.login-success {
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 0.45rem;
+  background: rgba(20, 83, 45, 0.26);
+  color: #bbf7d0;
+  margin: 0;
+  padding: 0.55rem;
+}
+
 .login-mode-toggle {
   background: transparent;
   border-color: rgba(148, 163, 184, 0.28);
@@ -498,6 +507,22 @@
 
 .profile-stat-grid strong {
   font-size: 1.35rem;
+}
+
+.profile-recovery-code-box {
+  border: 1px solid rgba(125, 211, 252, 0.24);
+  border-radius: 0.45rem;
+  background: rgba(2, 6, 23, 0.42);
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0.7rem;
+}
+
+.profile-recovery-code-box code {
+  color: #f8fafc;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
 }
 
 .ownership-save-status {
@@ -7736,6 +7761,33 @@ button.playmat-stack-zone:disabled {
   object-fit: contain;
 }
 
+.login-holo-card .holo-rainbow-layer {
+  animation: login-holo-color-flow 7s linear infinite;
+  background-size: 180% 180%;
+}
+
+.login-holo-card .holo-soft-band-layer {
+  animation: login-holo-band-drift 4.8s ease-in-out infinite;
+  background-size: 160% 160%;
+}
+
+.login-holo-card .holo-speckle-layer {
+  animation: login-holo-sparkle 3.6s steps(6) infinite;
+}
+
+.login-holo-card::after {
+  animation: login-holo-glint 4.2s ease-in-out infinite;
+  background: linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, 0.34) 47%, rgba(125, 249, 255, 0.26) 50%, transparent 63%);
+  border-radius: inherit;
+  content: "";
+  inset: -28% -74%;
+  mix-blend-mode: screen;
+  opacity: 0.42;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-34%) rotate(8deg);
+}
+
 .login-card-image.card-1 {
   transform: rotate(-7deg) translateY(12px);
 }
@@ -7749,18 +7801,104 @@ button.playmat-stack-zone:disabled {
   transform: rotate(7deg) translateY(12px);
 }
 
+.login-background-card-field {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
 .login-background-card {
   aspect-ratio: 5 / 7;
   border-radius: 10px;
   box-shadow: 0 34px 78px rgba(0, 0, 0, 0.46);
   filter: saturate(1.1);
-  opacity: 0.28;
+  opacity: 0.22;
   position: absolute;
-  right: clamp(1.5rem, 6vw, 5rem);
-  top: clamp(0.5rem, 5vh, 3rem);
+}
+
+.login-background-card.background-1 {
+  opacity: 0.3;
+  right: clamp(0.5rem, 5vw, 4rem);
+  top: clamp(0.2rem, 4vh, 2.4rem);
   transform: rotate(-8deg);
-  width: min(34vw, 390px);
+  width: min(39vw, 450px);
+  z-index: 1;
+}
+
+.login-background-card.background-2 {
+  bottom: clamp(1rem, 7vh, 5rem);
+  left: clamp(-1rem, 1vw, 1rem);
+  opacity: 0.17;
+  transform: rotate(9deg);
+  width: min(27vw, 320px);
   z-index: 0;
+}
+
+.login-background-card.background-3 {
+  bottom: -3.4rem;
+  opacity: 0.14;
+  right: clamp(9rem, 24vw, 18rem);
+  transform: rotate(4deg);
+  width: min(24vw, 285px);
+  z-index: 0;
+}
+
+@keyframes login-holo-color-flow {
+  0% {
+    background-position: 0% 35%;
+  }
+
+  50% {
+    background-position: 100% 65%;
+  }
+
+  100% {
+    background-position: 0% 35%;
+  }
+}
+
+@keyframes login-holo-band-drift {
+  0% {
+    background-position: 0 0, 30% 25%, 76% 70%;
+  }
+
+  50% {
+    background-position: 24px 18px, 38% 16%, 66% 78%;
+  }
+
+  100% {
+    background-position: 0 0, 30% 25%, 76% 70%;
+  }
+}
+
+@keyframes login-holo-sparkle {
+  0% {
+    background-position: 0 0, 7px 11px, 17px 5px;
+  }
+
+  100% {
+    background-position: 19px 23px, 36px 42px, 54px 46px;
+  }
+}
+
+@keyframes login-holo-glint {
+  0%,
+  18% {
+    opacity: 0;
+    transform: translateX(-46%) rotate(8deg);
+  }
+
+  42% {
+    opacity: 0.46;
+  }
+
+  68%,
+  100% {
+    opacity: 0;
+    transform: translateX(46%) rotate(8deg);
+  }
 }
 
 .login-entry .login-panel {
@@ -7793,13 +7931,27 @@ button.playmat-stack-zone:disabled {
     min-height: 10.5rem;
   }
 
-  .login-background-card {
+  .login-background-card.background-1 {
     left: 50%;
-    opacity: 0.18;
+    opacity: 0.22;
     right: auto;
     top: -1.2rem;
     transform: translateX(-50%) rotate(-6deg);
-    width: min(56vw, 230px);
+    width: min(64vw, 270px);
+  }
+
+  .login-background-card.background-2,
+  .login-background-card.background-3 {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-holo-card .holo-rainbow-layer,
+  .login-holo-card .holo-soft-band-layer,
+  .login-holo-card .holo-speckle-layer,
+  .login-holo-card::after {
+    animation: none;
   }
 }
 

@@ -6,6 +6,11 @@ type ProfilePageProps = {
   onUserUpdated: (user: AuthUser) => void;
 };
 
+type TwoFactorSetup = {
+  secret: string;
+  otpauthUrl: string;
+};
+
 export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -14,6 +19,11 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [twoFactorSetup, setTwoFactorSetup] = useState<TwoFactorSetup | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [disableTwoFactorPassword, setDisableTwoFactorPassword] = useState("");
+  const [disableTwoFactorCode, setDisableTwoFactorCode] = useState("");
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -144,6 +154,127 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
     }
   }
 
+  async function sendEmailVerification() {
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/email-verification/send`, {
+        method: "POST",
+        credentials: "include"
+      });
+      const data = await response.json() as { message?: string };
+
+      if (!response.ok) {
+        throw new Error(data.message ?? "Unable to send verification email.");
+      }
+
+      setMessage("Verification email sent.");
+    } catch (verificationError) {
+      setError(verificationError instanceof Error ? verificationError.message : "Unable to send verification email.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startTwoFactorSetup() {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    setRecoveryCodes([]);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/security/2fa/setup`, {
+        method: "POST",
+        credentials: "include"
+      });
+      const data = await response.json() as { setup?: TwoFactorSetup; message?: string };
+
+      if (!response.ok || !data.setup) {
+        throw new Error(data.message ?? "Unable to start 2FA setup.");
+      }
+
+      setTwoFactorSetup(data.setup);
+      setTwoFactorCode("");
+    } catch (setupError) {
+      setError(setupError instanceof Error ? setupError.message : "Unable to start 2FA setup.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function enableTwoFactor(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/security/2fa/enable`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ code: twoFactorCode })
+      });
+      const data = await response.json() as { profile?: UserProfile; user?: AuthUser; recoveryCodes?: string[]; message?: string };
+
+      if (!response.ok || !data.profile || !data.user) {
+        throw new Error(data.message ?? "Unable to enable 2FA.");
+      }
+
+      setProfile(data.profile);
+      onUserUpdated(data.user);
+      setTwoFactorSetup(null);
+      setTwoFactorCode("");
+      setRecoveryCodes(data.recoveryCodes ?? []);
+      setMessage("Two-factor authentication enabled.");
+    } catch (setupError) {
+      setError(setupError instanceof Error ? setupError.message : "Unable to enable 2FA.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disableTwoFactor(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/security/2fa/disable`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          currentPassword: disableTwoFactorPassword,
+          code: disableTwoFactorCode
+        })
+      });
+      const data = await response.json() as { profile?: UserProfile; user?: AuthUser; message?: string };
+
+      if (!response.ok || !data.profile || !data.user) {
+        throw new Error(data.message ?? "Unable to disable 2FA.");
+      }
+
+      setProfile(data.profile);
+      onUserUpdated(data.user);
+      setDisableTwoFactorPassword("");
+      setDisableTwoFactorCode("");
+      setRecoveryCodes([]);
+      setMessage("Two-factor authentication disabled.");
+    } catch (setupError) {
+      setError(setupError instanceof Error ? setupError.message : "Unable to disable 2FA.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function connectDiscord() {
     window.location.href = `${API_BASE_URL}/api/auth/discord/link`;
   }
@@ -195,6 +326,8 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
             <strong>{profile?.username ?? "Loading..."}</strong>
             <span>User ID</span>
             <strong>{profile?.id ?? "Loading..."}</strong>
+            <span>Email</span>
+            <strong>{profile?.emailVerifiedAt ? "Verified" : "Not verified"}</strong>
           </div>
 
           <form className="profile-form" onSubmit={saveProfile}>
@@ -210,6 +343,12 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
 
             <button disabled={busy}>{busy ? "Saving..." : "Save Profile"}</button>
           </form>
+
+          {!profile?.emailVerifiedAt && (
+            <button type="button" onClick={() => void sendEmailVerification()} disabled={busy || !profile}>
+              {busy ? "Sending..." : "Send Verification Email"}
+            </button>
+          )}
         </section>
 
         <section className="profile-card profile-card-collection">
@@ -313,6 +452,79 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
 
             <button disabled={busy}>{busy ? "Saving..." : "Change Password"}</button>
           </form>
+        </section>
+
+        <section className="profile-card profile-card-security">
+          <h3>Security</h3>
+          <div className="profile-readonly-grid">
+            <span>2FA</span>
+            <strong>{profile?.twoFactorEnabled ? "Enabled" : "Off"}</strong>
+            <span>Device Check</span>
+            <strong>Email code on new browser</strong>
+          </div>
+
+          {!profile?.twoFactorEnabled ? (
+            <>
+              {!twoFactorSetup ? (
+                <button type="button" onClick={() => void startTwoFactorSetup()} disabled={busy || !profile}>
+                  {busy ? "Starting..." : "Set Up Authenticator"}
+                </button>
+              ) : (
+                <form className="profile-form" onSubmit={enableTwoFactor}>
+                  <label>
+                    Setup Key
+                    <input value={twoFactorSetup.secret} readOnly />
+                  </label>
+
+                  <label>
+                    Authenticator URI
+                    <input value={twoFactorSetup.otpauthUrl} readOnly />
+                  </label>
+
+                  <label>
+                    Authenticator Code
+                    <input
+                      value={twoFactorCode}
+                      onChange={event => setTwoFactorCode(event.target.value)}
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
+                    />
+                  </label>
+
+                  <button disabled={busy}>{busy ? "Checking..." : "Enable 2FA"}</button>
+                </form>
+              )}
+            </>
+          ) : (
+            <form className="profile-form" onSubmit={disableTwoFactor}>
+              <label>
+                Current Password
+                <input
+                  value={disableTwoFactorPassword}
+                  onChange={event => setDisableTwoFactorPassword(event.target.value)}
+                  autoComplete="current-password"
+                  type="password"
+                />
+              </label>
+
+              <label>
+                Authenticator or Recovery Code
+                <input
+                  value={disableTwoFactorCode}
+                  onChange={event => setDisableTwoFactorCode(event.target.value)}
+                  autoComplete="one-time-code"
+                />
+              </label>
+
+              <button disabled={busy}>{busy ? "Saving..." : "Disable 2FA"}</button>
+            </form>
+          )}
+
+          {recoveryCodes.length > 0 && (
+            <div className="profile-recovery-code-box">
+              {recoveryCodes.map(code => <code key={code}>{code}</code>)}
+            </div>
+          )}
         </section>
       </div>
     </section>

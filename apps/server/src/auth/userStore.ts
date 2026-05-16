@@ -11,6 +11,8 @@ type UserRow = {
   password_hash: string;
   role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   dev_tools_enabled: boolean;
+  email_verified_at?: string | null;
+  totp_enabled_at?: string | null;
   discord_user_id?: string | null;
   discord_username?: string | null;
   discord_global_name?: string | null;
@@ -20,8 +22,19 @@ type UserRow = {
 
 export type UserProfile = AuthUser & {
   email: string;
+  emailVerifiedAt?: string;
+  twoFactorEnabled: boolean;
+  twoFactorEnabledAt?: string;
   ownedUniqueCards: number;
   ownedTotalCopies: number;
+};
+
+export type SecurityUser = {
+  id: string;
+  username: string;
+  email: string;
+  displayName: string;
+  passwordHash: string;
 };
 
 export async function createUser(args: {
@@ -50,7 +63,7 @@ export async function createUser(args: {
       `
         insert into users (username, email, password_hash, display_name)
         values ($1, $2, $3, $4)
-        returning id, username, email, display_name, password_hash, role, dev_tools_enabled,
+        returning id, username, email, display_name, password_hash, role, dev_tools_enabled, email_verified_at,
           discord_user_id, discord_username, discord_global_name, discord_avatar, discord_linked_at
       `,
       [username, email, passwordHash, displayName]
@@ -78,7 +91,7 @@ export async function verifyUserLogin(args: {
 
   const result = await getDbPool().query<UserRow>(
     `
-      select id, username, email, display_name, password_hash, role, dev_tools_enabled,
+      select id, username, email, display_name, password_hash, role, dev_tools_enabled, email_verified_at,
         discord_user_id, discord_username, discord_global_name, discord_avatar, discord_linked_at
       from users
       where username = $1 or email = $1
@@ -104,7 +117,7 @@ export async function verifyUserLogin(args: {
 export async function findUserByDiscordId(discordUserId: string): Promise<AuthUser | null> {
   const result = await getDbPool().query<UserRow>(
     `
-      select id, username, email, display_name, password_hash, role, dev_tools_enabled,
+      select id, username, email, display_name, password_hash, role, dev_tools_enabled, email_verified_at,
         discord_user_id, discord_username, discord_global_name, discord_avatar, discord_linked_at
       from users
       where discord_user_id = $1
@@ -136,7 +149,7 @@ export async function createUserFromDiscord(args: {
           discord_user_id, discord_username, discord_global_name, discord_avatar, discord_linked_at
         )
         values ($1, $2, $3, $4, $5, $6, $7, $8, now())
-        returning id, username, email, display_name, password_hash, role, dev_tools_enabled,
+        returning id, username, email, display_name, password_hash, role, dev_tools_enabled, email_verified_at,
           discord_user_id, discord_username, discord_global_name, discord_avatar, discord_linked_at
       `,
       [
@@ -226,6 +239,8 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
         u.password_hash,
         u.role,
         u.dev_tools_enabled,
+        u.email_verified_at,
+        s.totp_enabled_at,
         u.discord_user_id,
         u.discord_username,
         u.discord_global_name,
@@ -235,8 +250,9 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
         coalesce(sum(o.owned_count) filter (where o.owned_count > 0), 0) as owned_total_copies
       from users u
       left join user_card_ownership o on o.user_id = u.id
+      left join user_security_settings s on s.user_id = u.id
       where u.id = $1
-      group by u.id
+      group by u.id, s.totp_enabled_at
     `,
     [userId]
   );
@@ -250,6 +266,9 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
   return {
     ...toAuthUser(user),
     email: user.email,
+    emailVerifiedAt: user.email_verified_at ?? undefined,
+    twoFactorEnabled: Boolean(user.totp_enabled_at),
+    twoFactorEnabledAt: user.totp_enabled_at ?? undefined,
     ownedUniqueCards: Number(user.owned_unique_cards ?? 0),
     ownedTotalCopies: Number(user.owned_total_copies ?? 0)
   };
@@ -277,7 +296,11 @@ export async function updateUserProfile(userId: string, args: {
     await getDbPool().query(
       `
         update users
-        set email = $2, display_name = $3, dev_tools_enabled = $4, updated_at = now()
+        set email = $2,
+            email_verified_at = case when email = $2 then email_verified_at else null end,
+            display_name = $3,
+            dev_tools_enabled = $4,
+            updated_at = now()
         where id = $1
       `,
       [userId, email, displayName, devToolsEnabled]
@@ -371,6 +394,84 @@ function normalizeEmail(value: string): string {
   return email;
 }
 
+export async function findUserByEmailForSecurity(emailValue: string): Promise<SecurityUser | null> {
+  const email = normalizeEmail(emailValue);
+  const result = await getDbPool().query<UserRow>(
+    `
+      select id, username, email, display_name, password_hash, role, dev_tools_enabled
+      from users
+      where email = $1
+    `,
+    [email]
+  );
+
+  const user = result.rows[0];
+  return user ? toSecurityUser(user) : null;
+}
+
+export async function getUserForSecurity(userId: string): Promise<SecurityUser> {
+  const result = await getDbPool().query<UserRow>(
+    `
+      select id, username, email, display_name, password_hash, role, dev_tools_enabled
+      from users
+      where id = $1
+    `,
+    [userId]
+  );
+
+  const user = result.rows[0];
+
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  return toSecurityUser(user);
+}
+
+export async function setUserPassword(userId: string, newPasswordValue: string): Promise<void> {
+  const newPassword = String(newPasswordValue ?? "");
+
+  if (newPassword.length < 8) {
+    throw new Error("Password must be at least 8 characters.");
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  await getDbPool().query(
+    `
+      update users
+      set password_hash = $2, updated_at = now()
+      where id = $1
+    `,
+    [userId, passwordHash]
+  );
+}
+
+export async function markUserEmailVerified(userId: string, targetEmail: string): Promise<void> {
+  const email = normalizeEmail(targetEmail);
+
+  const result = await getDbPool().query<{ id: string }>(
+    `
+      update users
+      set email_verified_at = now(), updated_at = now()
+      where id = $1 and email = $2
+      returning id
+    `,
+    [userId, email]
+  );
+
+  if (!result.rows[0]) {
+    throw new Error("Verification link does not match the current email.");
+  }
+}
+
+export async function deleteUserSessions(userId: string): Promise<void> {
+  await getDbPool().query(
+    "delete from user_sessions where sess::jsonb -> 'user' ->> 'id' = $1",
+    [userId]
+  );
+}
+
 function normalizeOptionalEmail(value: unknown): string | undefined {
   const raw = String(value ?? "").trim();
   if (!raw) return undefined;
@@ -406,6 +507,16 @@ async function getAvailableUsername(baseUsername: string): Promise<string> {
 
 function randomPasswordSeed(discordUserId: string): string {
   return `discord-oauth:${discordUserId}:${Date.now()}:${Math.random()}`;
+}
+
+function toSecurityUser(row: UserRow): SecurityUser {
+  return {
+    id: row.id,
+    username: row.username,
+    email: row.email,
+    displayName: row.display_name,
+    passwordHash: row.password_hash
+  };
 }
 
 function toAuthUser(row: UserRow): AuthUser {

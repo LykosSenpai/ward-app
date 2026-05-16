@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { Server, type Socket } from "socket.io";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
 import type { CardDefinition, CardInstance, CannotInflictAttackDamageBattlePolicy, DeckListDefinition, DevRollKind, MatchState, TurnPhase, WardEngineEffect } from "@ward/shared";
 
@@ -123,7 +124,26 @@ import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collectio
 import { createOrReplaceAutoNeedRule, disableAutoNeedRule, loadMarketplaceNeeds, recomputeMarketplaceNeedsForUser } from "./collection/marketplaceNeedRuleStore.js";
 import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
-import { changeUserPassword, createUser, createUserFromDiscord, findUserByDiscordId, getUserProfile, linkDiscordAccount, listUsersForTournamentDeckReview, unlinkDiscordAccount, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
+import { changeUserPassword, createUser, createUserFromDiscord, deleteUserSessions, findUserByDiscordId, findUserByEmailForSecurity, getUserForSecurity, getUserProfile, linkDiscordAccount, listUsersForTournamentDeckReview, markUserEmailVerified, setUserPassword, unlinkDiscordAccount, updateUserProfile, verifyUserLogin } from "./auth/userStore.js";
+import {
+  addLoginChallengeAttempt,
+  beginTotpSetup,
+  consumeLoginChallenge,
+  consumeSecurityToken,
+  createEmailCode,
+  createLoginChallenge,
+  createSecurityToken,
+  disableTotp,
+  enableTotp,
+  getActiveLoginChallenge,
+  isTotpEnabled,
+  isTrustedDevice,
+  maskEmail,
+  trustDevice,
+  verifyLoginChallengeCode,
+  verifyTotpOrRecoveryCode
+} from "./auth/securityStore.js";
+import { sendSecurityEmail } from "./email/brevoEmail.js";
 import { checkDbConnection } from "./db/pool.js";
 import { listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
 import { createDisabledCommerceRouter } from "./marketplace/api/commerceDisabledRoutes.js";
@@ -172,6 +192,10 @@ const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID ?? "";
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET ?? "";
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI ?? `http://localhost:${PORT}/api/auth/discord/callback`;
 const DISCORD_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+const PASSWORD_RESET_TTL_MS = 15 * 60 * 1000;
+const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+const LOGIN_CHALLENGE_TTL_MS = 10 * 60 * 1000;
+const MAX_LOGIN_CHALLENGE_ATTEMPTS = 6;
 
 type DiscordOAuthMode = "login" | "link";
 
@@ -322,6 +346,143 @@ function getDiscordCallbackRedirect(status: "linked" | "signed-in" | "error", cl
   url.searchParams.set("discord", status);
   if (message) url.searchParams.set("message", message);
   return url.toString();
+}
+
+function getLoginChallengeRedirect(args: {
+  challengeId: string;
+  type: "TOTP" | "NEW_DEVICE_EMAIL";
+  clientOrigin?: string;
+  destination?: string;
+}): string {
+  const url = new URL("/", args.clientOrigin && isAllowedClientOrigin(args.clientOrigin) ? args.clientOrigin : CLIENT_ORIGIN);
+  url.searchParams.set("loginChallengeId", args.challengeId);
+  url.searchParams.set("loginChallengeType", args.type);
+  if (args.destination) url.searchParams.set("loginChallengeDestination", args.destination);
+  return url.toString();
+}
+
+function getClientActionUrl(params: Record<string, string>): string {
+  const url = new URL("/", CLIENT_ORIGIN);
+
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+
+  return url.toString();
+}
+
+async function sendEmailVerificationMessage(userId: string, email: string, displayName: string): Promise<void> {
+  const token = await createSecurityToken({
+    userId,
+    purpose: "EMAIL_VERIFY",
+    targetEmail: email,
+    ttlMs: EMAIL_VERIFICATION_TTL_MS
+  });
+  const link = getClientActionUrl({ verifyEmailToken: token });
+
+  await sendSecurityEmail({
+    to: email,
+    subject: "Verify your Ward Nexus email",
+    text: [
+      `Hi ${displayName || "there"},`,
+      "",
+      "Verify this email address for your Ward Nexus account:",
+      link,
+      "",
+      "This link expires in 24 hours."
+    ].join("\n")
+  });
+}
+
+async function sendPasswordResetMessage(userId: string, email: string, displayName: string): Promise<void> {
+  const token = await createSecurityToken({
+    userId,
+    purpose: "PASSWORD_RESET",
+    targetEmail: email,
+    ttlMs: PASSWORD_RESET_TTL_MS
+  });
+  const link = getClientActionUrl({ resetToken: token });
+
+  await sendSecurityEmail({
+    to: email,
+    subject: "Reset your Ward Nexus password",
+    text: [
+      `Hi ${displayName || "there"},`,
+      "",
+      "Reset your Ward Nexus password here:",
+      link,
+      "",
+      "This link expires in 15 minutes. If you did not request this, you can ignore this email."
+    ].join("\n")
+  });
+}
+
+async function sendNewDeviceCodeMessage(userId: string, email: string, displayName: string): Promise<{ challengeId: string; destination: string }> {
+  const code = createEmailCode();
+  const challenge = await createLoginChallenge({
+    userId,
+    type: "NEW_DEVICE_EMAIL",
+    code,
+    ttlMs: LOGIN_CHALLENGE_TTL_MS
+  });
+
+  await sendSecurityEmail({
+    to: email,
+    subject: "Ward Nexus login code",
+    text: [
+      `Hi ${displayName || "there"},`,
+      "",
+      `Your Ward Nexus login code is: ${code}`,
+      "",
+      "This code expires in 10 minutes."
+    ].join("\n")
+  });
+
+  return {
+    challengeId: challenge.id,
+    destination: maskEmail(email)
+  };
+}
+
+function sendLoginChallenge(res: express.Response, challenge: { challengeId: string; type: "TOTP" | "NEW_DEVICE_EMAIL"; destination?: string }): void {
+  res.status(202).json({
+    challenge
+  });
+}
+
+async function finishLogin(req: express.Request, res: express.Response, user: AuthUser): Promise<void> {
+  req.session.user = user;
+  await trustDevice(user.id, req, res);
+  res.json({ user });
+}
+
+async function continueLoginAfterPassword(req: express.Request, res: express.Response, user: AuthUser): Promise<void> {
+  if (await isTotpEnabled(user.id)) {
+    const challenge = await createLoginChallenge({
+      userId: user.id,
+      type: "TOTP",
+      ttlMs: LOGIN_CHALLENGE_TTL_MS
+    });
+    sendLoginChallenge(res, { challengeId: challenge.id, type: "TOTP" });
+    return;
+  }
+
+  await continueLoginAfterTotp(req, res, user);
+}
+
+async function continueLoginAfterTotp(req: express.Request, res: express.Response, user: AuthUser): Promise<void> {
+  if (await isTrustedDevice(user.id, req)) {
+    await finishLogin(req, res, user);
+    return;
+  }
+
+  const securityUser = await getUserForSecurity(user.id);
+  const emailChallenge = await sendNewDeviceCodeMessage(user.id, securityUser.email, securityUser.displayName);
+  sendLoginChallenge(res, {
+    challengeId: emailChallenge.challengeId,
+    type: "NEW_DEVICE_EMAIL",
+    destination: emailChallenge.destination
+  });
 }
 
 function returnExpiredItemsToPool(nowMs = Date.now()): boolean {
@@ -581,6 +742,27 @@ const siteReportRequestSchema = z.object({
   description: z.string().trim().min(1).max(2400),
   severity: z.enum(["LOW", "NORMAL", "HIGH", "BLOCKING"]).default("NORMAL"),
   clientContext: z.record(z.unknown()).optional().default({})
+});
+const passwordResetRequestSchema = z.object({
+  email: z.string().trim().email().max(320)
+});
+const passwordResetConfirmSchema = z.object({
+  token: z.string().trim().min(20),
+  password: z.string().min(8).max(200)
+});
+const loginChallengeRequestSchema = z.object({
+  challengeId: z.string().uuid(),
+  code: z.string().trim().min(4).max(32)
+});
+const emailVerificationRequestSchema = z.object({
+  token: z.string().trim().min(20)
+});
+const totpEnableRequestSchema = z.object({
+  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit authenticator code.")
+});
+const totpDisableRequestSchema = z.object({
+  currentPassword: z.string().min(1),
+  code: z.string().trim().min(4).max(32)
 });
 const supportTicketStatusSchema = z.enum(["OPEN", "TRIAGED", "RESOLVED", "DISMISSED"]);
 const supportTicketListQuerySchema = z.object({
@@ -1810,7 +1992,35 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
       ...discordAccount,
       email: discordUser.email ?? null
     });
+
+    if (existingUser && await isTotpEnabled(user.id)) {
+      const challenge = await createLoginChallenge({
+        userId: user.id,
+        type: "TOTP",
+        ttlMs: LOGIN_CHALLENGE_TTL_MS
+      });
+      res.redirect(getLoginChallengeRedirect({
+        challengeId: challenge.id,
+        type: "TOTP",
+        clientOrigin: oauthState.clientOrigin
+      }));
+      return;
+    }
+
+    if (existingUser && !await isTrustedDevice(user.id, req)) {
+      const securityUser = await getUserForSecurity(user.id);
+      const emailChallenge = await sendNewDeviceCodeMessage(user.id, securityUser.email, securityUser.displayName);
+      res.redirect(getLoginChallengeRedirect({
+        challengeId: emailChallenge.challengeId,
+        type: "NEW_DEVICE_EMAIL",
+        destination: emailChallenge.destination,
+        clientOrigin: oauthState.clientOrigin
+      }));
+      return;
+    }
+
     req.session.user = user;
+    await trustDevice(user.id, req, res);
     res.redirect(getDiscordCallbackRedirect("signed-in", oauthState.clientOrigin));
   } catch (error) {
     res.redirect(getDiscordCallbackRedirect("error", oauthState?.clientOrigin, error instanceof Error ? error.message : "Discord sign-in failed."));
@@ -1826,11 +2036,89 @@ app.post("/api/auth/register", authRateLimit, async (req, res) => {
       displayName: String(req.body?.displayName ?? "")
     });
 
-    req.session.user = user;
-    res.status(201).json({ user });
+    const profile = await getUserProfile(user.id);
+    req.session.user = profile;
+    await trustDevice(profile.id, req, res);
+    void sendEmailVerificationMessage(profile.id, profile.email, profile.displayName)
+      .catch(error => console.error(error instanceof Error ? error.message : error));
+    res.status(201).json({ user: req.session.user });
   } catch (error) {
     res.status(400).json({
       message: error instanceof Error ? error.message : "Unable to register."
+    });
+  }
+});
+
+app.post("/api/auth/password-reset/request", passwordRateLimit, async (req, res) => {
+  const parsed = passwordResetRequestSchema.safeParse(req.body);
+
+  if (parsed.success) {
+    try {
+      const user = await findUserByEmailForSecurity(parsed.data.email);
+
+      if (user) {
+        await sendPasswordResetMessage(user.id, user.email, user.displayName);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : error);
+    }
+  }
+
+  res.json({
+    ok: true,
+    message: "If that email belongs to an account, a reset link has been sent."
+  });
+});
+
+app.post("/api/auth/password-reset/confirm", passwordRateLimit, async (req, res) => {
+  try {
+    const parsed = passwordResetConfirmSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid reset request." });
+      return;
+    }
+
+    const token = await consumeSecurityToken(parsed.data.token, "PASSWORD_RESET");
+    if (!token) {
+      res.status(400).json({ message: "Reset link is invalid or expired." });
+      return;
+    }
+
+    await setUserPassword(token.userId, parsed.data.password);
+    await deleteUserSessions(token.userId);
+    res.clearCookie("ward.sid");
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to reset password."
+    });
+  }
+});
+
+app.post("/api/auth/email/verify", authRateLimit, async (req, res) => {
+  try {
+    const parsed = emailVerificationRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid verification request." });
+      return;
+    }
+
+    const token = await consumeSecurityToken(parsed.data.token, "EMAIL_VERIFY");
+    if (!token?.targetEmail) {
+      res.status(400).json({ message: "Verification link is invalid or expired." });
+      return;
+    }
+
+    await markUserEmailVerified(token.userId, token.targetEmail);
+
+    if (req.session.user?.id === token.userId) {
+      req.session.user = await getUserProfile(token.userId);
+    }
+
+    res.json({ ok: true, user: req.session.user ?? undefined });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to verify email."
     });
   }
 });
@@ -1842,11 +2130,59 @@ app.post("/api/auth/login", authRateLimit, async (req, res) => {
       password: String(req.body?.password ?? "")
     });
 
-    req.session.user = user;
-    res.json({ user });
+    await continueLoginAfterPassword(req, res, user);
   } catch (error) {
     res.status(401).json({
       message: error instanceof Error ? error.message : "Unable to login."
+    });
+  }
+});
+
+app.post("/api/auth/login/challenge", authRateLimit, async (req, res) => {
+  try {
+    const parsed = loginChallengeRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid login challenge." });
+      return;
+    }
+
+    const challenge = await getActiveLoginChallenge(parsed.data.challengeId);
+    if (!challenge) {
+      res.status(400).json({ message: "Login challenge is invalid or expired." });
+      return;
+    }
+
+    if (challenge.attempts >= MAX_LOGIN_CHALLENGE_ATTEMPTS) {
+      res.status(429).json({ message: "Too many attempts. Start login again." });
+      return;
+    }
+
+    let valid = false;
+
+    if (challenge.type === "TOTP") {
+      valid = await verifyTotpOrRecoveryCode(challenge.userId, parsed.data.code);
+    } else {
+      valid = await verifyLoginChallengeCode(challenge, parsed.data.code);
+    }
+
+    if (!valid) {
+      await addLoginChallengeAttempt(challenge.id);
+      res.status(401).json({ message: "Invalid code." });
+      return;
+    }
+
+    await consumeLoginChallenge(challenge.id);
+    const user = await getUserProfile(challenge.userId);
+
+    if (challenge.type === "TOTP") {
+      await continueLoginAfterTotp(req, res, user);
+      return;
+    }
+
+    await finishLogin(req, res, user);
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to verify login."
     });
   }
 });
@@ -1885,6 +2221,7 @@ app.patch("/api/profile", async (req, res) => {
       return;
     }
 
+    const currentProfile = await getUserProfile(req.session.user.id);
     const profile = await updateUserProfile(req.session.user.id, {
       email: String(req.body?.email ?? ""),
       displayName: String(req.body?.displayName ?? ""),
@@ -1892,6 +2229,11 @@ app.patch("/api/profile", async (req, res) => {
     });
 
     req.session.user = profile;
+
+    if (currentProfile.email !== profile.email) {
+      void sendEmailVerificationMessage(profile.id, profile.email, profile.displayName)
+        .catch(error => console.error(error instanceof Error ? error.message : error));
+    }
 
     res.json({ profile, user: req.session.user });
   } catch (error) {
@@ -1917,6 +2259,101 @@ app.post("/api/profile/change-password", passwordRateLimit, async (req, res) => 
   } catch (error) {
     res.status(400).json({
       message: error instanceof Error ? error.message : "Unable to change password."
+    });
+  }
+});
+
+app.post("/api/profile/email-verification/send", passwordRateLimit, async (req, res) => {
+  try {
+    if (!req.session.user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const profile = await getUserProfile(req.session.user.id);
+    await sendEmailVerificationMessage(profile.id, profile.email, profile.displayName);
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to send verification email."
+    });
+  }
+});
+
+app.post("/api/profile/security/2fa/setup", passwordRateLimit, async (req, res) => {
+  try {
+    if (!req.session.user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const securityUser = await getUserForSecurity(req.session.user.id);
+    const setup = await beginTotpSetup(securityUser.id, securityUser.username);
+    res.json({ setup });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to start 2FA setup."
+    });
+  }
+});
+
+app.post("/api/profile/security/2fa/enable", passwordRateLimit, async (req, res) => {
+  try {
+    if (!req.session.user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const parsed = totpEnableRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid authenticator code." });
+      return;
+    }
+
+    const recoveryCodes = await enableTotp(req.session.user.id, parsed.data.code);
+    const profile = await getUserProfile(req.session.user.id);
+    req.session.user = profile;
+    res.json({ profile, user: req.session.user, recoveryCodes });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to enable 2FA."
+    });
+  }
+});
+
+app.post("/api/profile/security/2fa/disable", passwordRateLimit, async (req, res) => {
+  try {
+    if (!req.session.user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const parsed = totpDisableRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid 2FA request." });
+      return;
+    }
+
+    const securityUser = await getUserForSecurity(req.session.user.id);
+    const validPassword = await bcrypt.compare(parsed.data.currentPassword, securityUser.passwordHash);
+    if (!validPassword) {
+      res.status(400).json({ message: "Current password is incorrect." });
+      return;
+    }
+
+    const validCode = await verifyTotpOrRecoveryCode(securityUser.id, parsed.data.code);
+    if (!validCode) {
+      res.status(400).json({ message: "Invalid authenticator or recovery code." });
+      return;
+    }
+
+    await disableTotp(securityUser.id);
+    const profile = await getUserProfile(req.session.user.id);
+    req.session.user = profile;
+    res.json({ profile, user: req.session.user });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to disable 2FA."
     });
   }
 });

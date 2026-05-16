@@ -9,10 +9,17 @@ type LoginPageProps = {
   onAuthenticated: (user: AuthUser) => void;
 };
 
-type AuthMode = "login" | "register";
+type AuthMode = "login" | "register" | "forgot" | "reset";
+
+type LoginChallenge = {
+  challengeId: string;
+  type: "TOTP" | "NEW_DEVICE_EMAIL";
+  destination?: string;
+};
 
 type AuthResponse = {
   user?: AuthUser;
+  challenge?: LoginChallenge;
   message?: string;
 };
 
@@ -63,6 +70,24 @@ const FALLBACK_SHOWCASE_CARDS: CardLibraryCardSummary[] = [
     generation: "1",
     cardNumber: "003",
     deckLimit: 3
+  },
+  {
+    id: "gen1_010_red_dragon",
+    name: "Red Dragon",
+    packId: "ward-gen1",
+    cardType: "CREATURE",
+    generation: "1",
+    cardNumber: "010",
+    deckLimit: 3
+  },
+  {
+    id: "gen1_020_eternal_dragon",
+    name: "Eternal Dragon",
+    packId: "ward-gen1",
+    cardType: "CREATURE",
+    generation: "1",
+    cardNumber: "020",
+    deckLimit: 3
   }
 ];
 
@@ -73,7 +98,13 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [authChallenge, setAuthChallenge] = useState<LoginChallenge | null>(null);
+  const [challengeCode, setChallengeCode] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [cardLibrary, setCardLibrary] = useState<CardLibraryCardSummary[]>(FALLBACK_SHOWCASE_CARDS);
 
@@ -110,17 +141,56 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
     };
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const resetTokenParam = params.get("resetToken");
+    const verifyEmailToken = params.get("verifyEmailToken");
+    const loginChallengeId = params.get("loginChallengeId");
+    const loginChallengeType = params.get("loginChallengeType");
+    const loginChallengeDestination = params.get("loginChallengeDestination") ?? undefined;
+
+    if (resetTokenParam) {
+      setResetToken(resetTokenParam);
+      setMode("reset");
+      params.delete("resetToken");
+      window.history.replaceState({}, "", `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`);
+    }
+
+    if (
+      loginChallengeId &&
+      (loginChallengeType === "TOTP" || loginChallengeType === "NEW_DEVICE_EMAIL")
+    ) {
+      setAuthChallenge({
+        challengeId: loginChallengeId,
+        type: loginChallengeType,
+        destination: loginChallengeDestination
+      });
+      params.delete("loginChallengeId");
+      params.delete("loginChallengeType");
+      params.delete("loginChallengeDestination");
+      window.history.replaceState({}, "", `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`);
+    }
+
+    if (verifyEmailToken) {
+      params.delete("verifyEmailToken");
+      window.history.replaceState({}, "", `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`);
+      void verifyEmailTokenFromLink(verifyEmailToken);
+    }
+  }, []);
+
   const showcaseSelections = useMemo(
     () => buildLoginShowcaseSelections(cardLibrary),
     [cardLibrary]
   );
-  const backgroundSelection = showcaseSelections[0] ?? buildLoginShowcaseSelections(FALLBACK_SHOWCASE_CARDS)[0];
-  const displaySelections = showcaseSelections.slice(1, 4);
+  const fallbackSelections = useMemo(() => buildLoginShowcaseSelections(FALLBACK_SHOWCASE_CARDS), []);
+  const backgroundSelections = (showcaseSelections.length >= 6 ? showcaseSelections : fallbackSelections).slice(0, 3);
+  const displaySelections = (showcaseSelections.length >= 6 ? showcaseSelections : fallbackSelections).slice(3, 6);
 
   async function submitAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError("");
+    setMessage("");
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/${mode}`, {
@@ -140,6 +210,12 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
 
       const data = await readAuthResponse(response);
 
+      if (response.status === 202 && data.challenge) {
+        setAuthChallenge(data.challenge);
+        setChallengeCode("");
+        return;
+      }
+
       if (!response.ok || !data.user) {
         throw new Error(data.message ?? "Authentication failed.");
       }
@@ -147,6 +223,149 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
       onAuthenticated(data.user);
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "Authentication failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitLoginChallenge(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!authChallenge) return;
+
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login/challenge`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          challengeId: authChallenge.challengeId,
+          code: challengeCode
+        })
+      });
+      const data = await readAuthResponse(response);
+
+      if (response.status === 202 && data.challenge) {
+        setAuthChallenge(data.challenge);
+        setChallengeCode("");
+        return;
+      }
+
+      if (!response.ok || !data.user) {
+        throw new Error(data.message ?? "Unable to verify login.");
+      }
+
+      setAuthChallenge(null);
+      onAuthenticated(data.user);
+    } catch (challengeError) {
+      setError(challengeError instanceof Error ? challengeError.message : "Unable to verify login.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function requestPasswordReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/password-reset/request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email })
+      });
+      const data = await readAuthResponse(response);
+
+      if (!response.ok) {
+        throw new Error(data.message ?? "Unable to send reset email.");
+      }
+
+      setMessage(data.message ?? "If that email belongs to an account, a reset link has been sent.");
+    } catch (resetError) {
+      setError(resetError instanceof Error ? resetError.message : "Unable to send reset email.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmPasswordReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    if (resetPassword !== resetConfirmPassword) {
+      setBusy(false);
+      setError("New passwords do not match.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/password-reset/confirm`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          token: resetToken,
+          password: resetPassword
+        })
+      });
+      const data = await readAuthResponse(response);
+
+      if (!response.ok) {
+        throw new Error(data.message ?? "Unable to reset password.");
+      }
+
+      setResetToken("");
+      setResetPassword("");
+      setResetConfirmPassword("");
+      setMode("login");
+      setMessage("Password reset. You can log in now.");
+    } catch (resetError) {
+      setError(resetError instanceof Error ? resetError.message : "Unable to reset password.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyEmailTokenFromLink(token: string) {
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/email/verify`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ token })
+      });
+      const data = await readAuthResponse(response);
+
+      if (!response.ok) {
+        throw new Error(data.message ?? "Unable to verify email.");
+      }
+
+      if (data.user) {
+        onAuthenticated(data.user);
+        return;
+      }
+
+      setMessage("Email verified. You can log in now.");
+    } catch (verifyError) {
+      setError(verifyError instanceof Error ? verifyError.message : "Unable to verify email.");
     } finally {
       setBusy(false);
     }
@@ -160,12 +379,15 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
     <main className="login-page">
       <section className="login-entry">
         <section className="login-showcase" aria-label="Ward Nexus card artwork">
-          {backgroundSelection && (
-            <LoginShowcaseCard
-              className="login-background-card"
-              selection={backgroundSelection}
-            />
-          )}
+          <div className="login-background-card-field" aria-hidden="true">
+            {backgroundSelections.map((selection, index) => (
+              <LoginShowcaseCard
+                className={`login-background-card background-${index + 1}`}
+                key={`${selection.card.id}:${selection.artVariant}:background:${index}`}
+                selection={selection}
+              />
+            ))}
+          </div>
 
           <div className="login-showcase-copy">
             <span>Ward Nexus</span>
@@ -187,82 +409,177 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
         <section className="login-panel">
           <div className="login-title">
             <span>Ward Nexus</span>
-            <h1>{mode === "login" ? "Login" : "Create Account"}</h1>
+            <h1>{getLoginTitle(mode, authChallenge)}</h1>
           </div>
 
-          <form className="login-form" onSubmit={submitAuth}>
-            <label>
-              {mode === "login" ? "Username or Email" : "Username"}
-              <input
-                value={mode === "login" ? login : username}
-                onChange={event => {
-                  if (mode === "login") {
-                    setLogin(event.target.value);
-                  } else {
-                    setUsername(event.target.value);
-                  }
+          {error && <p className="login-error">{error}</p>}
+          {message && <p className="login-success">{message}</p>}
+
+          {authChallenge ? (
+            <form className="login-form" onSubmit={submitLoginChallenge}>
+              <label>
+                {authChallenge.type === "TOTP" ? "Authenticator Code" : `Email Code${authChallenge.destination ? ` (${authChallenge.destination})` : ""}`}
+                <input
+                  value={challengeCode}
+                  onChange={event => setChallengeCode(event.target.value)}
+                  autoComplete="one-time-code"
+                  inputMode={authChallenge.type === "NEW_DEVICE_EMAIL" ? "numeric" : "text"}
+                />
+              </label>
+
+              <button disabled={busy} type="submit">
+                {busy ? "Checking..." : "Verify"}
+              </button>
+            </form>
+          ) : mode === "forgot" ? (
+            <form className="login-form" onSubmit={requestPasswordReset}>
+              <label>
+                Email
+                <input
+                  value={email}
+                  onChange={event => setEmail(event.target.value)}
+                  autoComplete="email"
+                  placeholder="player@email.com"
+                  type="email"
+                />
+              </label>
+
+              <button disabled={busy} type="submit">
+                {busy ? "Sending..." : "Send Reset Email"}
+              </button>
+            </form>
+          ) : mode === "reset" ? (
+            <form className="login-form" onSubmit={confirmPasswordReset}>
+              <label>
+                New Password
+                <input
+                  value={resetPassword}
+                  onChange={event => setResetPassword(event.target.value)}
+                  autoComplete="new-password"
+                  type="password"
+                />
+              </label>
+
+              <label>
+                Confirm New Password
+                <input
+                  value={resetConfirmPassword}
+                  onChange={event => setResetConfirmPassword(event.target.value)}
+                  autoComplete="new-password"
+                  type="password"
+                />
+              </label>
+
+              <button disabled={busy || !resetToken} type="submit">
+                {busy ? "Saving..." : "Reset Password"}
+              </button>
+            </form>
+          ) : (
+            <>
+              <form className="login-form" onSubmit={submitAuth}>
+                <label>
+                  {mode === "login" ? "Username or Email" : "Username"}
+                  <input
+                    value={mode === "login" ? login : username}
+                    onChange={event => {
+                      if (mode === "login") {
+                        setLogin(event.target.value);
+                      } else {
+                        setUsername(event.target.value);
+                      }
+                    }}
+                    autoComplete="username"
+                    placeholder={mode === "login" ? "player_name or player@email.com" : "player_name"}
+                  />
+                </label>
+
+                {mode === "register" && (
+                  <>
+                    <label>
+                      Email
+                      <input
+                        value={email}
+                        onChange={event => setEmail(event.target.value)}
+                        autoComplete="email"
+                        placeholder="player@email.com"
+                        type="email"
+                      />
+                    </label>
+
+                    <label>
+                      Display Name
+                      <input
+                        value={displayName}
+                        onChange={event => setDisplayName(event.target.value)}
+                        autoComplete="nickname"
+                        placeholder="Player Name"
+                      />
+                    </label>
+                  </>
+                )}
+
+                <label>
+                  Password
+                  <input
+                    value={password}
+                    onChange={event => setPassword(event.target.value)}
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                    type="password"
+                  />
+                </label>
+
+                <button disabled={busy} type="submit">
+                  {busy ? "Working..." : mode === "login" ? "Login" : "Create Account"}
+                </button>
+              </form>
+
+              <button className="login-mode-toggle" type="button" onClick={continueWithDiscord}>
+                Continue with Discord
+              </button>
+
+              {mode === "login" && (
+                <button
+                  className="login-mode-toggle"
+                  type="button"
+                  onClick={() => {
+                    setMode("forgot");
+                    setError("");
+                    setMessage("");
+                  }}
+                >
+                  Forgot password?
+                </button>
+              )}
+
+              <button
+                className="login-mode-toggle"
+                type="button"
+                onClick={() => {
+                  setMode(current => current === "login" ? "register" : "login");
+                  setError("");
+                  setMessage("");
                 }}
-                autoComplete="username"
-                placeholder={mode === "login" ? "player_name or player@email.com" : "player_name"}
-              />
-            </label>
+              >
+                {mode === "login" ? "Need an account?" : "Already have an account?"}
+              </button>
+            </>
+          )}
 
-            {mode === "register" && (
-              <>
-                <label>
-                  Email
-                  <input
-                    value={email}
-                    onChange={event => setEmail(event.target.value)}
-                    autoComplete="email"
-                    placeholder="player@email.com"
-                    type="email"
-                  />
-                </label>
-
-                <label>
-                  Display Name
-                  <input
-                    value={displayName}
-                    onChange={event => setDisplayName(event.target.value)}
-                    autoComplete="nickname"
-                    placeholder="Player Name"
-                  />
-                </label>
-              </>
-            )}
-
-            <label>
-              Password
-              <input
-                value={password}
-                onChange={event => setPassword(event.target.value)}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                type="password"
-              />
-            </label>
-
-            {error && <p className="login-error">{error}</p>}
-
-            <button disabled={busy} type="submit">
-              {busy ? "Working..." : mode === "login" ? "Login" : "Create Account"}
+          {(mode === "forgot" || mode === "reset" || authChallenge) && (
+            <button
+              className="login-mode-toggle"
+              type="button"
+              onClick={() => {
+                setMode("login");
+                setAuthChallenge(null);
+                setChallengeCode("");
+                setError("");
+                setMessage("");
+              }}
+            >
+              Back to Login
             </button>
-          </form>
-
-          <button className="login-mode-toggle" type="button" onClick={continueWithDiscord}>
-            Continue with Discord
-          </button>
-
-          <button
-            className="login-mode-toggle"
-            type="button"
-            onClick={() => {
-              setMode(current => current === "login" ? "register" : "login");
-              setError("");
-            }}
-          >
-            {mode === "login" ? "Need an account?" : "Already have an account?"}
-          </button>
+          )}
 
           <p className="login-disclaimer">
             Ward Nexus is an unofficial fan-made tool and online battler for WARD TCG. It is not affiliated with, endorsed by, or sponsored by the WARD creators or rights holders. All card names, artwork, rules text, and related game materials remain the property of their respective owners.
@@ -273,10 +590,20 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
   );
 }
 
+function getLoginTitle(mode: AuthMode, challenge: LoginChallenge | null): string {
+  if (challenge?.type === "TOTP") return "Two-Factor Code";
+  if (challenge?.type === "NEW_DEVICE_EMAIL") return "Email Code";
+  if (mode === "register") return "Create Account";
+  if (mode === "forgot") return "Forgot Password";
+  if (mode === "reset") return "Reset Password";
+  return "Login";
+}
+
 function LoginShowcaseCard({ className, selection }: { className: string; selection: LoginShowcaseSelection }) {
   const [candidateIndex, setCandidateIndex] = useState(0);
   const imageCandidates = useMemo(() => getImageCandidates(selection.card, "default"), [selection.card]);
   const imageCandidate = imageCandidates[candidateIndex] ?? imageCandidates[0];
+  const holoEnabled = selection.artVariant === "holo";
 
   useEffect(() => {
     setCandidateIndex(0);
@@ -289,9 +616,9 @@ function LoginShowcaseCard({ className, selection }: { className: string; select
   return (
     <HolographicCardImage
       alt=""
-      className={className}
-      enabled={selection.artVariant === "holo"}
-      intensity={className.includes("login-background-card") ? 0.46 : 0.68}
+      className={holoEnabled ? `${className} login-holo-card` : className}
+      enabled={holoEnabled}
+      intensity={className.includes("login-background-card") ? 3.4 : 5.4}
       key={`${selection.card.id}:${selection.artVariant}:${imageCandidate.url}`}
       seed={`login:${selection.card.packId}:${selection.card.id}:${selection.artVariant}`}
       src={imageCandidate.url}
@@ -302,9 +629,9 @@ function LoginShowcaseCard({ className, selection }: { className: string; select
 
 function buildLoginShowcaseSelections(cards: CardLibraryCardSummary[]): LoginShowcaseSelection[] {
   const displayableCards = cards.filter(isDisplayableCard);
-  const selectedCards = shuffleCards(displayableCards).slice(0, 4);
+  const selectedCards = shuffleCards(displayableCards).slice(0, 6);
   const fallbackCards = FALLBACK_SHOWCASE_CARDS.filter(card => !selectedCards.some(selected => selected.id === card.id));
-  const completeCards = [...selectedCards, ...fallbackCards].slice(0, 4);
+  const completeCards = [...selectedCards, ...fallbackCards].slice(0, 6);
   const selections = completeCards.map(card => ({
     artVariant: Math.random() > 0.52 ? "holo" : "default",
     card
@@ -319,6 +646,16 @@ function buildLoginShowcaseSelections(cards: CardLibraryCardSummary[]): LoginSho
 
   if (selections.length > 1 && !hasDefault) {
     selections[Math.floor(Math.random() * selections.length)].artVariant = "default";
+  }
+
+  const displaySelections = selections.slice(3, 6);
+
+  if (displaySelections.length > 1 && !displaySelections.some(selection => selection.artVariant === "holo")) {
+    displaySelections[Math.floor(Math.random() * displaySelections.length)].artVariant = "holo";
+  }
+
+  if (displaySelections.length > 1 && !displaySelections.some(selection => selection.artVariant === "default")) {
+    displaySelections[Math.floor(Math.random() * displaySelections.length)].artVariant = "default";
   }
 
   return selections;
