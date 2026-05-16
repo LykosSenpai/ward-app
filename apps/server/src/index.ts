@@ -174,6 +174,8 @@ const ROOT_DIR = path.resolve(__dirname, "../../..");
 const CLIENT_DIST_DIR = path.join(ROOT_DIR, "apps", "client", "dist");
 const isProduction = process.env.NODE_ENV === "production";
 const ENABLE_DEV_TOOLS = process.env.ENABLE_DEV_TOOLS === "true" || (!isProduction && process.env.ENABLE_DEV_TOOLS !== "false");
+const SKIP_LOCAL_EMAIL_LOGIN_CODE = !isProduction &&
+  (process.env.SKIP_LOCAL_EMAIL_LOGIN_CODE === "true" || process.env.SKIP_LOCAL_EMAIL_LOGIN_CODE === "1");
 const DEV_SOCKET_EVENTS = new Set([
   "match:devForceRolls",
   "match:devClearForcedRolls",
@@ -471,6 +473,11 @@ async function continueLoginAfterPassword(req: express.Request, res: express.Res
 }
 
 async function continueLoginAfterTotp(req: express.Request, res: express.Response, user: AuthUser): Promise<void> {
+  if (SKIP_LOCAL_EMAIL_LOGIN_CODE) {
+    await finishLogin(req, res, user);
+    return;
+  }
+
   if (await isTrustedDevice(user.id, req)) {
     await finishLogin(req, res, user);
     return;
