@@ -8,6 +8,7 @@ type HolographicCardImageProps = {
   enabled?: boolean;
   intensity?: number;
   className?: string;
+  draggable?: ImgHTMLAttributes<HTMLImageElement>["draggable"];
   onError?: ImgHTMLAttributes<HTMLImageElement>["onError"];
 };
 
@@ -151,6 +152,7 @@ export function HolographicCardImage({
   enabled = false,
   intensity,
   className,
+  draggable,
   onError
 }: HolographicCardImageProps) {
   const clampedIntensity = clampIntensity(intensity);
@@ -161,7 +163,7 @@ export function HolographicCardImage({
 
   return (
     <span className={wrapClassName} style={style}>
-      <img className="holo-card-base-image" src={src} alt={alt} loading="lazy" decoding="async" onError={onError} />
+      <img className="holo-card-base-image" src={src} alt={alt} draggable={draggable} loading="lazy" decoding="async" onError={onError} />
       {showHolo ? (
         <>
           <span className="holo-rainbow-layer" aria-hidden="true" />

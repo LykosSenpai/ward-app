@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
+import { useZeroCardSrc } from "../hooks/useZeroCardSrc";
 import { HolographicCardImage } from "./HolographicCardImage";
 import { ModalPanel } from "./ui/ModalPanel";
 
@@ -35,6 +36,8 @@ type CardImagePreviewProps = {
 type CardImageThumbnailProps = {
   card: CardLibraryCardSummary;
   className?: string;
+  artKey?: CardArtKey;
+  holoIntensity?: number;
 };
 
 type ImageCandidate = {
@@ -95,11 +98,15 @@ export const ACTIVE_CARD_ART_OPTIONS = CARD_ART_OPTIONS.filter(option =>
   option.key === "default" || option.key === "holo" || option.key === "zero-art" || option.key === "zero-art-holo"
 );
 
-function getBaseArtKey(artKey: CardArtKey): "default" | "zero-art" {
+export function normalizeCardArtKey(value: string | undefined): CardArtKey {
+  return value === "holo" || value === "zero-art" || value === "zero-art-holo" ? value : "default";
+}
+
+export function getBaseArtKey(artKey: CardArtKey): "default" | "zero-art" {
   return artKey === "zero-art" || artKey === "zero-art-holo" ? "zero-art" : "default";
 }
 
-function isHoloArtKey(artKey: CardArtKey): boolean {
+export function isHoloArtKey(artKey: CardArtKey): boolean {
   return artKey === "holo" || artKey === "zero-art-holo";
 }
 
@@ -196,29 +203,45 @@ function ExpandedCardImage({
   onArtChange
 }: ExpandedCardImageProps) {
   const [expandedCandidateIndex, setExpandedCandidateIndex] = useState(0);
-  const imageArtKey = activeArtKey === "holo" ? "default" : activeArtKey;
+  const [expandedZeroFallbackCandidateIndex, setExpandedZeroFallbackCandidateIndex] = useState(0);
+  const imageArtKey = getBaseArtKey(activeArtKey);
   const imageCandidates = useMemo(
     () => getImageCandidates(card, imageArtKey),
     [card, imageArtKey]
   );
-  const imageCandidate = imageCandidates[expandedCandidateIndex] ?? imageCandidates[0];
+  const imageCandidate = imageCandidates[expandedCandidateIndex];
+  const defaultImageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
+  const defaultImageCandidate = defaultImageCandidates[expandedZeroFallbackCandidateIndex];
+  const selectedImageSrc = imageCandidate?.url;
+  const regularImageSrc = defaultImageCandidate?.url;
+  const shouldGenerateZero = imageArtKey === "zero-art" && !selectedImageSrc && Boolean(regularImageSrc);
+  const generatedZeroSrc = useZeroCardSrc(regularImageSrc, shouldGenerateZero);
+  const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : selectedImageSrc;
 
   useEffect(() => {
     setExpandedCandidateIndex(0);
+    setExpandedZeroFallbackCandidateIndex(0);
   }, [card.id, imageArtKey]);
 
   return (
     <div className="expanded-card-image-wrap">
-      {imageCandidate ? (
+      {displayImageSrc ? (
         <HolographicCardImage
-          key={`${card.id}:${activeArtKey}:${imageCandidate.url}:expanded`}
-          src={imageCandidate.url}
+          key={`${card.id}:${activeArtKey}:${displayImageSrc}:expanded`}
+          src={displayImageSrc}
           alt={`${card.name} expanded ${selectedArtLabel} card`}
           seed={holoSeed}
           enabled={holoEnabled}
           intensity={holoIntensity}
           className="expanded-card-holo-image"
-          onError={() => setExpandedCandidateIndex(current => current + 1)}
+          onError={() => {
+            if (shouldGenerateZero) {
+              setExpandedZeroFallbackCandidateIndex(current => current + 1);
+              return;
+            }
+
+            setExpandedCandidateIndex(current => current + 1);
+          }}
         />
       ) : (
         <div className="card-image-placeholder">
@@ -253,16 +276,27 @@ function ExpandedCardImage({
   );
 }
 
-export function CardImageThumbnail({ card, className }: CardImageThumbnailProps) {
+export function CardImageThumbnail({ card, className, artKey = "default", holoIntensity = 0.55 }: CardImageThumbnailProps) {
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const imageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
-  const imageCandidate = imageCandidates[candidateIndex] ?? imageCandidates[0];
+  const [zeroFallbackCandidateIndex, setZeroFallbackCandidateIndex] = useState(0);
+  const imageArtKey = getBaseArtKey(artKey);
+  const holoEnabled = isHoloArtKey(artKey);
+  const imageCandidates = useMemo(() => getImageCandidates(card, imageArtKey), [card, imageArtKey]);
+  const defaultImageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
+  const imageCandidate = imageCandidates[candidateIndex];
+  const defaultImageCandidate = defaultImageCandidates[zeroFallbackCandidateIndex];
+  const selectedImageSrc = imageCandidate?.url;
+  const regularImageSrc = defaultImageCandidate?.url;
+  const shouldGenerateZero = imageArtKey === "zero-art" && !selectedImageSrc && Boolean(regularImageSrc);
+  const generatedZeroSrc = useZeroCardSrc(regularImageSrc, shouldGenerateZero);
+  const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : selectedImageSrc;
 
   useEffect(() => {
     setCandidateIndex(0);
-  }, [card.id]);
+    setZeroFallbackCandidateIndex(0);
+  }, [card.id, imageArtKey]);
 
-  if (!imageCandidate) {
+  if (!displayImageSrc) {
     return (
       <span className={className ? `card-image-thumb missing ${className}` : "card-image-thumb missing"} aria-hidden="true">
         {card.name.slice(0, 1)}
@@ -272,11 +306,21 @@ export function CardImageThumbnail({ card, className }: CardImageThumbnailProps)
 
   return (
     <span className={className ? `card-image-thumb ${className}` : "card-image-thumb"} aria-hidden="true">
-      <img
-        src={imageCandidate.url}
+      <HolographicCardImage
+        key={`${card.id}:${artKey}:${displayImageSrc}:thumb`}
+        src={displayImageSrc}
         alt=""
-        loading="lazy"
-        onError={() => setCandidateIndex(current => current + 1)}
+        seed={`thumbnail:${card.packId}:${card.id}:${artKey}`}
+        enabled={holoEnabled}
+        intensity={holoIntensity}
+        onError={() => {
+          if (shouldGenerateZero) {
+            setZeroFallbackCandidateIndex(current => current + 1);
+            return;
+          }
+
+          setCandidateIndex(current => current + 1);
+        }}
       />
     </span>
   );
@@ -285,6 +329,7 @@ export function CardImageThumbnail({ card, className }: CardImageThumbnailProps)
 export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, onSelectedArtKeyChange }: CardImagePreviewProps) {
   const [internalSelectedArtKey, setInternalSelectedArtKey] = useState<CardArtKey>("default");
   const [candidateIndex, setCandidateIndex] = useState(0);
+  const [zeroFallbackCandidateIndex, setZeroFallbackCandidateIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const activeArtKey = selectedArtKey ?? internalSelectedArtKey;
@@ -297,10 +342,12 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
     () => getImageCandidates(card, imageArtKey),
     [card, imageArtKey]
   );
+  const defaultImageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
 
   useEffect(() => {
     setCandidateIndex(0);
-  }, [card.id, activeArtKey]);
+    setZeroFallbackCandidateIndex(0);
+  }, [card.id, imageArtKey]);
 
   useEffect(() => {
     setPreviewOpen(false);
@@ -308,6 +355,7 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
 
   function handleArtChange(nextArtKey: CardArtKey) {
     setCandidateIndex(0);
+    setZeroFallbackCandidateIndex(0);
 
     if (onSelectedArtKeyChange) {
       onSelectedArtKeyChange(nextArtKey);
@@ -318,26 +366,39 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
   }
 
   const imageCandidate = imageCandidates[candidateIndex];
+  const defaultImageCandidate = defaultImageCandidates[zeroFallbackCandidateIndex];
+  const selectedImageSrc = imageCandidate?.url;
+  const regularImageSrc = defaultImageCandidate?.url;
+  const shouldGenerateZero = baseArtKey === "zero-art" && !selectedImageSrc && Boolean(regularImageSrc);
+  const generatedZeroSrc = useZeroCardSrc(regularImageSrc, shouldGenerateZero);
+  const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : selectedImageSrc;
   const primaryExpectedFileName = imageCandidates[0]?.fileName ?? `${card.id}.webp`;
   const selectedArtLabel = getCardArtLabel(activeArtKey);
 
   return (
     <div className="card-image-preview-shell">
       <div className="card-image-frame">
-        {imageCandidate ? (
+        {displayImageSrc ? (
           <button
             className="card-image-button"
             onClick={() => setPreviewOpen(true)}
             title={`Expand ${card.name} image`}
           >
             <HolographicCardImage
-              key={`${card.id}:${activeArtKey}:${imageCandidate.url}:thumbnail`}
-              src={imageCandidate.url}
+              key={`${card.id}:${activeArtKey}:${displayImageSrc}:thumbnail`}
+              src={displayImageSrc}
               alt={`${card.name} ${selectedArtLabel} card art`}
               seed={holoSeed}
               enabled={holoEnabled}
               intensity={holoIntensity}
-              onError={() => setCandidateIndex(current => current + 1)}
+              onError={() => {
+                if (shouldGenerateZero) {
+                  setZeroFallbackCandidateIndex(current => current + 1);
+                  return;
+                }
+
+                setCandidateIndex(current => current + 1);
+              }}
             />
           </button>
         ) : (
@@ -371,7 +432,7 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
       </label>
       <small className="card-art-select-label">Variant: {selectedArtLabel}</small>
 
-      {previewOpen && imageCandidate && (
+      {previewOpen && displayImageSrc && (
         <ModalPanel title={`${card.name}  -  ${selectedArtLabel}`} onClose={() => setPreviewOpen(false)}>
           <div className="expanded-card-detail-layout">
             <ExpandedCardImage

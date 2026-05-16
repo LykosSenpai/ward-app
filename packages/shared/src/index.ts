@@ -331,6 +331,7 @@ export type ActiveEffectInstance = {
 export type CardInstance = {
   instanceId: string;
   cardId: string;
+  artKey?: "default" | "holo" | "zero-art" | "zero-art-holo";
 
   ownerPlayerId: string;
   controllerPlayerId: string;

@@ -3219,7 +3219,9 @@ io.on("connection", async socket => {
           cardCatalog,
           cardLimits,
           player1DeckCardIds: demoDeck.cardIds,
+          player1DeckCardArtKeys: demoDeck.cardArtKeys,
           player2DeckCardIds: demoDeck.cardIds,
+          player2DeckCardArtKeys: demoDeck.cardArtKeys,
           player1Name: "Player 1",
           player2Name: "Player 2"
         });
@@ -3272,7 +3274,9 @@ io.on("connection", async socket => {
           cardCatalog,
           cardLimits,
           player1DeckCardIds: player1Deck.cardIds,
+          player1DeckCardArtKeys: player1Deck.cardArtKeys,
           player2DeckCardIds: player2Deck.cardIds,
+          player2DeckCardArtKeys: player2Deck.cardArtKeys,
           player1Name: "Player 1",
           player2Name: "Player 2"
         });
@@ -5788,7 +5792,9 @@ io.on("connection", async socket => {
         cardLimits: isTournamentLobby ? loadCardLimitMap() : undefined,
         tournamentMode: isTournamentLobby,
         player1DeckCardIds: player1Deck.cardIds,
+        player1DeckCardArtKeys: player1Deck.cardArtKeys,
         player2DeckCardIds: player2Deck.cardIds,
+        player2DeckCardArtKeys: player2Deck.cardArtKeys,
         player1Name: sortedPlayers[0].displayName,
         player2Name: sortedPlayers[1].displayName
       });

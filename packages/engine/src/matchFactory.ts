@@ -53,7 +53,9 @@ export function create1v1MatchFromDeckCardIds(options: {
   cardCatalog: Record<string, CardDefinition>;
   cardLimits?: DeckCardLimitMap;
   player1DeckCardIds: string[];
+  player1DeckCardArtKeys?: string[];
   player2DeckCardIds: string[];
+  player2DeckCardArtKeys?: string[];
   player1Name?: string;
   player2Name?: string;
   exactDeckSize?: number | null;
@@ -101,7 +103,8 @@ export function create1v1MatchFromDeckCardIds(options: {
     shuffleCards(createDeckFromCardIds(
       player1Id,
       options.player1DeckCardIds,
-      options.cardCatalog
+      options.cardCatalog,
+      options.player1DeckCardArtKeys
     ))
   );
 
@@ -111,7 +114,8 @@ export function create1v1MatchFromDeckCardIds(options: {
     shuffleCards(createDeckFromCardIds(
       player2Id,
       options.player2DeckCardIds,
-      options.cardCatalog
+      options.cardCatalog,
+      options.player2DeckCardArtKeys
     ))
   );
 

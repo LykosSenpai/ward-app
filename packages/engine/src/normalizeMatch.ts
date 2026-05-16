@@ -107,6 +107,14 @@ function normalizeActiveEffectInstance(instance: ActiveEffectInstance): ActiveEf
 }
 
 function normalizeCardInstance(card: CardInstance): CardInstance {
+  if (
+    card.artKey !== "holo" &&
+    card.artKey !== "zero-art" &&
+    card.artKey !== "zero-art-holo"
+  ) {
+    delete card.artKey;
+  }
+
   card.activeStatModifiers = asArray<ActiveStatModifier>(
     card.activeStatModifiers
   )
