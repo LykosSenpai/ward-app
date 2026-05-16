@@ -13,7 +13,7 @@ type MatchCardImageProps = {
   className?: string;
 };
 
-const IMAGE_EXTENSIONS = ["webp", "png", "jpg", "jpeg"];
+const IMAGE_EXTENSIONS = ["png", "webp", "jpg", "jpeg"];
 const ZERO_ART_SUFFIX_ALIASES = ["zero-art", "zero_art", "zeroart"];
 
 function uniqueValues(values: string[]): string[] {
@@ -62,9 +62,9 @@ export function MatchCardImage({ match, card, className }: MatchCardImageProps) 
   const holoEnabled = isHoloArtKey(artKey);
   const imageUrls = useMemo(() => getMatchCardImageUrls(match, card), [match, card]);
   const regularImageUrls = useMemo(() => getMatchCardImageUrls(match, card, "default"), [match, card]);
-  const imageUrl = imageUrls[candidateIndex];
+  const imageUrl = imageArtKey === "zero-art" ? undefined : imageUrls[candidateIndex];
   const regularImageUrl = regularImageUrls[zeroFallbackCandidateIndex];
-  const shouldGenerateZero = imageArtKey === "zero-art" && !imageUrl && Boolean(regularImageUrl);
+  const shouldGenerateZero = imageArtKey === "zero-art" && Boolean(regularImageUrl);
   const generatedZeroSrc = useZeroCardSrc(regularImageUrl, shouldGenerateZero);
   const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : imageUrl;
   const cardName = getCardName(match, card);
