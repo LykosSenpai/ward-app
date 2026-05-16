@@ -7653,8 +7653,9 @@ button.playmat-stack-zone:disabled {
 .login-page {
   align-items: center;
   background:
-    linear-gradient(90deg, rgba(11, 15, 22, 0.96), rgba(11, 15, 22, 0.7), rgba(11, 15, 22, 0.94)),
-    url("/card-images/gen1_001_blue_dragon.png") center / cover no-repeat,
+    radial-gradient(circle at 18% 18%, rgba(250, 204, 21, 0.2), transparent 24rem),
+    radial-gradient(circle at 76% 62%, rgba(34, 211, 238, 0.16), transparent 26rem),
+    linear-gradient(90deg, rgba(11, 15, 22, 0.97), rgba(11, 15, 22, 0.76), rgba(11, 15, 22, 0.96)),
     var(--ward-page-bg);
   min-height: 100svh;
   overflow: hidden;
@@ -7675,13 +7676,18 @@ button.playmat-stack-zone:disabled {
   align-content: center;
   display: grid;
   gap: clamp(18px, 3vw, 32px);
+  isolation: isolate;
   min-height: min(680px, calc(100svh - 84px));
+  overflow: hidden;
+  position: relative;
 }
 
 .login-showcase-copy {
   display: grid;
   gap: 0.85rem;
   max-width: 34rem;
+  position: relative;
+  z-index: 1;
 }
 
 .login-showcase-copy span {
@@ -7712,15 +7718,22 @@ button.playmat-stack-zone:disabled {
   display: grid;
   grid-template-columns: repeat(3, minmax(96px, 170px));
   min-height: 15rem;
+  position: relative;
+  z-index: 1;
 }
 
 .login-card-image {
   aspect-ratio: 5 / 7;
+  background: rgba(3, 7, 18, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 8px;
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.38);
-  object-fit: cover;
   width: 100%;
+}
+
+.login-card-image .holo-card-base-image,
+.login-background-card .holo-card-base-image {
+  object-fit: contain;
 }
 
 .login-card-image.card-1 {
@@ -7734,6 +7747,20 @@ button.playmat-stack-zone:disabled {
 
 .login-card-image.card-3 {
   transform: rotate(7deg) translateY(12px);
+}
+
+.login-background-card {
+  aspect-ratio: 5 / 7;
+  border-radius: 10px;
+  box-shadow: 0 34px 78px rgba(0, 0, 0, 0.46);
+  filter: saturate(1.1);
+  opacity: 0.28;
+  position: absolute;
+  right: clamp(1.5rem, 6vw, 5rem);
+  top: clamp(0.5rem, 5vh, 3rem);
+  transform: rotate(-8deg);
+  width: min(34vw, 390px);
+  z-index: 0;
 }
 
 .login-entry .login-panel {
@@ -7754,6 +7781,7 @@ button.playmat-stack-zone:disabled {
 
   .login-showcase {
     min-height: auto;
+    overflow: visible;
   }
 
   .login-showcase-copy h1 {
@@ -7763,6 +7791,15 @@ button.playmat-stack-zone:disabled {
   .login-card-stack {
     grid-template-columns: repeat(3, minmax(74px, 1fr));
     min-height: 10.5rem;
+  }
+
+  .login-background-card {
+    left: 50%;
+    opacity: 0.18;
+    right: auto;
+    top: -1.2rem;
+    transform: translateX(-50%) rotate(-6deg);
+    width: min(56vw, 230px);
   }
 }
 

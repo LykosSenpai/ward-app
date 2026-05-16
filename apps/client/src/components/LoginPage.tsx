@@ -1,6 +1,9 @@
-import { useState } from "react";
-import type { AuthUser } from "../clientTypes";
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import type { AuthUser, CardLibraryCardSummary } from "../clientTypes";
 import { API_BASE_URL } from "../config";
+import { getImageCandidates } from "./CardImagePreview";
+import { HolographicCardImage } from "./HolographicCardImage";
 
 type LoginPageProps = {
   onAuthenticated: (user: AuthUser) => void;
@@ -13,10 +16,54 @@ type AuthResponse = {
   message?: string;
 };
 
-const SHOWCASE_CARDS = [
-  "/card-images/gen1_001_blue_dragon.png",
-  "/card-images/gen1_018_wizard.png",
-  "/card-images/gen1_032_council_of_the_cosmos.png"
+type CardLibraryResponse = {
+  cards?: CardLibraryCardSummary[];
+};
+
+type LoginArtVariant = "default" | "holo";
+
+type LoginShowcaseSelection = {
+  artVariant: LoginArtVariant;
+  card: CardLibraryCardSummary;
+};
+
+const FALLBACK_SHOWCASE_CARDS: CardLibraryCardSummary[] = [
+  {
+    id: "gen1_001_blue_dragon",
+    name: "Blue Dragon",
+    packId: "ward-gen1",
+    cardType: "CREATURE",
+    generation: "1",
+    cardNumber: "001",
+    deckLimit: 3
+  },
+  {
+    id: "gen1_018_wizard",
+    name: "Wizard",
+    packId: "ward-gen1",
+    cardType: "CREATURE",
+    generation: "1",
+    cardNumber: "018",
+    deckLimit: 3
+  },
+  {
+    id: "gen1_032_council_of_the_cosmos",
+    name: "Council of the Cosmos",
+    packId: "ward-gen1",
+    cardType: "MAGIC",
+    generation: "1",
+    cardNumber: "032",
+    deckLimit: 3
+  },
+  {
+    id: "gen1_003_frost_giant",
+    name: "Frost Giant",
+    packId: "ward-gen1",
+    cardType: "CREATURE",
+    generation: "1",
+    cardNumber: "003",
+    deckLimit: 3
+  }
 ];
 
 export function LoginPage({ onAuthenticated }: LoginPageProps) {
@@ -28,8 +75,49 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [cardLibrary, setCardLibrary] = useState<CardLibraryCardSummary[]>(FALLBACK_SHOWCASE_CARDS);
 
-  async function submitAuth(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    let alive = true;
+
+    async function loadCardLibrary() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/cards/library`, {
+          credentials: "omit"
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load card library.");
+        }
+
+        const data = await response.json() as CardLibraryResponse;
+        const cards = Array.isArray(data.cards) ? data.cards.filter(isDisplayableCard) : [];
+
+        if (alive && cards.length >= 4) {
+          setCardLibrary(cards);
+        }
+      } catch {
+        if (alive) {
+          setCardLibrary(FALLBACK_SHOWCASE_CARDS);
+        }
+      }
+    }
+
+    void loadCardLibrary();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const showcaseSelections = useMemo(
+    () => buildLoginShowcaseSelections(cardLibrary),
+    [cardLibrary]
+  );
+  const backgroundSelection = showcaseSelections[0] ?? buildLoginShowcaseSelections(FALLBACK_SHOWCASE_CARDS)[0];
+  const displaySelections = showcaseSelections.slice(1, 4);
+
+  async function submitAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError("");
@@ -72,6 +160,13 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
     <main className="login-page">
       <section className="login-entry">
         <section className="login-showcase" aria-label="Ward Nexus card artwork">
+          {backgroundSelection && (
+            <LoginShowcaseCard
+              className="login-background-card"
+              selection={backgroundSelection}
+            />
+          )}
+
           <div className="login-showcase-copy">
             <span>Ward Nexus</span>
             <h1>Online Battler</h1>
@@ -79,12 +174,11 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
           </div>
 
           <div className="login-card-stack" aria-hidden="true">
-            {SHOWCASE_CARDS.map((src, index) => (
-              <img
-                alt=""
+            {displaySelections.map((selection, index) => (
+              <LoginShowcaseCard
                 className={`login-card-image card-${index + 1}`}
-                key={src}
-                src={src}
+                key={`${selection.card.id}:${selection.artVariant}:${index}`}
+                selection={selection}
               />
             ))}
           </div>
@@ -177,6 +271,68 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
       </section>
     </main>
   );
+}
+
+function LoginShowcaseCard({ className, selection }: { className: string; selection: LoginShowcaseSelection }) {
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const imageCandidates = useMemo(() => getImageCandidates(selection.card, "default"), [selection.card]);
+  const imageCandidate = imageCandidates[candidateIndex] ?? imageCandidates[0];
+
+  useEffect(() => {
+    setCandidateIndex(0);
+  }, [selection.card.id]);
+
+  if (!imageCandidate) {
+    return null;
+  }
+
+  return (
+    <HolographicCardImage
+      alt=""
+      className={className}
+      enabled={selection.artVariant === "holo"}
+      intensity={className.includes("login-background-card") ? 0.46 : 0.68}
+      key={`${selection.card.id}:${selection.artVariant}:${imageCandidate.url}`}
+      seed={`login:${selection.card.packId}:${selection.card.id}:${selection.artVariant}`}
+      src={imageCandidate.url}
+      onError={() => setCandidateIndex(current => current + 1)}
+    />
+  );
+}
+
+function buildLoginShowcaseSelections(cards: CardLibraryCardSummary[]): LoginShowcaseSelection[] {
+  const displayableCards = cards.filter(isDisplayableCard);
+  const selectedCards = shuffleCards(displayableCards).slice(0, 4);
+  const fallbackCards = FALLBACK_SHOWCASE_CARDS.filter(card => !selectedCards.some(selected => selected.id === card.id));
+  const completeCards = [...selectedCards, ...fallbackCards].slice(0, 4);
+  const selections = completeCards.map(card => ({
+    artVariant: Math.random() > 0.52 ? "holo" : "default",
+    card
+  })) satisfies LoginShowcaseSelection[];
+
+  const hasHolo = selections.some(selection => selection.artVariant === "holo");
+  const hasDefault = selections.some(selection => selection.artVariant === "default");
+
+  if (selections.length > 1 && !hasHolo) {
+    selections[Math.floor(Math.random() * selections.length)].artVariant = "holo";
+  }
+
+  if (selections.length > 1 && !hasDefault) {
+    selections[Math.floor(Math.random() * selections.length)].artVariant = "default";
+  }
+
+  return selections;
+}
+
+function shuffleCards(cards: CardLibraryCardSummary[]): CardLibraryCardSummary[] {
+  return cards
+    .map(card => ({ card, sort: Math.random() }))
+    .sort((left, right) => left.sort - right.sort)
+    .map(item => item.card);
+}
+
+function isDisplayableCard(card: CardLibraryCardSummary): boolean {
+  return Boolean(card.id && card.name && card.packId && card.cardType);
 }
 
 async function readAuthResponse(response: Response): Promise<AuthResponse> {

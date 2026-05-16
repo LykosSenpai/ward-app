@@ -373,6 +373,9 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: "20mb" }));
+app.get("/api/cards/library", (_req, res) => {
+  res.json({ cards: listDefaultCardLibrary() });
+});
 app.use(sessionMiddleware);
 
 const authRateLimit = rateLimit({
