@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { AuthUser, UserProfile } from "../clientTypes";
 import { API_BASE_URL } from "../config";
+import { PasswordInput } from "./ui/PasswordInput";
 
 type ProfilePageProps = {
   onUserUpdated: (user: AuthUser) => void;
@@ -422,30 +423,27 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
           <form className="profile-form" onSubmit={changePassword}>
             <label>
               Current Password
-              <input
+              <PasswordInput
                 value={currentPassword}
-                onChange={event => setCurrentPassword(event.target.value)}
-                type="password"
+                onChange={setCurrentPassword}
                 autoComplete="current-password"
               />
             </label>
 
             <label>
               New Password
-              <input
+              <PasswordInput
                 value={newPassword}
-                onChange={event => setNewPassword(event.target.value)}
-                type="password"
+                onChange={setNewPassword}
                 autoComplete="new-password"
               />
             </label>
 
             <label>
               Confirm New Password
-              <input
+              <PasswordInput
                 value={confirmPassword}
-                onChange={event => setConfirmPassword(event.target.value)}
-                type="password"
+                onChange={setConfirmPassword}
                 autoComplete="new-password"
               />
             </label>
@@ -499,11 +497,10 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
             <form className="profile-form" onSubmit={disableTwoFactor}>
               <label>
                 Current Password
-                <input
+                <PasswordInput
                   value={disableTwoFactorPassword}
-                  onChange={event => setDisableTwoFactorPassword(event.target.value)}
+                  onChange={setDisableTwoFactorPassword}
                   autoComplete="current-password"
-                  type="password"
                 />
               </label>
 

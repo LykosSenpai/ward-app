@@ -4,6 +4,7 @@ import type { AuthUser, CardLibraryCardSummary } from "../clientTypes";
 import { API_BASE_URL } from "../config";
 import { getImageCandidates } from "./CardImagePreview";
 import { HolographicCardImage } from "./HolographicCardImage";
+import { PasswordInput } from "./ui/PasswordInput";
 
 type LoginPageProps = {
   onAuthenticated: (user: AuthUser) => void;
@@ -98,6 +99,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmAccountPassword, setConfirmAccountPassword] = useState("");
   const [resetPassword, setResetPassword] = useState("");
   const [resetConfirmPassword, setResetConfirmPassword] = useState("");
   const [resetToken, setResetToken] = useState("");
@@ -188,9 +190,15 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
 
   async function submitAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
     setError("");
     setMessage("");
+
+    if (mode === "register" && password !== confirmAccountPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setBusy(true);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/${mode}`, {
@@ -452,21 +460,19 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
             <form className="login-form" onSubmit={confirmPasswordReset}>
               <label>
                 New Password
-                <input
+                <PasswordInput
                   value={resetPassword}
-                  onChange={event => setResetPassword(event.target.value)}
+                  onChange={setResetPassword}
                   autoComplete="new-password"
-                  type="password"
                 />
               </label>
 
               <label>
                 Confirm New Password
-                <input
+                <PasswordInput
                   value={resetConfirmPassword}
-                  onChange={event => setResetConfirmPassword(event.target.value)}
+                  onChange={setResetConfirmPassword}
                   autoComplete="new-password"
-                  type="password"
                 />
               </label>
 
@@ -520,13 +526,23 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
 
                 <label>
                   Password
-                  <input
+                  <PasswordInput
                     value={password}
-                    onChange={event => setPassword(event.target.value)}
+                    onChange={setPassword}
                     autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    type="password"
                   />
                 </label>
+
+                {mode === "register" && (
+                  <label>
+                    Confirm Password
+                    <PasswordInput
+                      value={confirmAccountPassword}
+                      onChange={setConfirmAccountPassword}
+                      autoComplete="new-password"
+                    />
+                  </label>
+                )}
 
                 <button disabled={busy} type="submit">
                   {busy ? "Working..." : mode === "login" ? "Login" : "Create Account"}
