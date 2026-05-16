@@ -21,6 +21,7 @@ type NormalizedRect = {
   h: number;
 };
 
+
 const MASKS = {
   outerFrame: { x: 0, y: 0, w: 1, h: 1 },
   topHeader: { x: 0.045, y: 0.032, w: 0.91, h: 0.112 },
@@ -120,6 +121,7 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
       if (preserveUi && isYellowGoldHue(h, s, l)) {
         data[idx] = clamp255(r * 1.03 + 5); data[idx + 1] = clamp255(g * 0.97 + 4); data[idx + 2] = clamp255(b * 0.7); continue;
       }
+
 
       if (inMainArt) {
         let tone = (baseLuma - 128) * options.contrast + 128;
