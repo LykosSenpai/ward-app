@@ -34,6 +34,7 @@ import {
   battleWithCreature,
   cancelManualBattleSession,
   callCemeteryHpLoss,
+  completeCemeteryHpLossIfNeeded,
   completeManualMagicEffect,
   concedeMatch,
   create1v1MatchFromDeckCardIds,
@@ -1938,24 +1939,27 @@ function sanitizeMatchForViewer(match: MatchState, viewerPlayerId?: string): Mat
 }
 
 function emitMatchState(match: MatchState): void {
-  saveMatchToDisk(match);
-  const roomSocketIds = io.sockets.adapter.rooms.get(match.matchId);
+  const matchToEmit = completeCemeteryHpLossIfNeeded(match);
+
+  activeMatches.set(matchToEmit.matchId, matchToEmit);
+  saveMatchToDisk(matchToEmit);
+  const roomSocketIds = io.sockets.adapter.rooms.get(matchToEmit.matchId);
 
   if (!roomSocketIds || roomSocketIds.size === 0) {
-    io.to(match.matchId).emit("match:state", match);
+    io.to(matchToEmit.matchId).emit("match:state", matchToEmit);
   } else {
     for (const socketId of roomSocketIds) {
       const socket = io.sockets.sockets.get(socketId);
       if (!socket) continue;
-      const viewerPlayerId = getSocketOwnedPlayerId(socket, match.matchId);
-      socket.emit("match:state", sanitizeMatchForViewer(match, viewerPlayerId));
+      const viewerPlayerId = getSocketOwnedPlayerId(socket, matchToEmit.matchId);
+      socket.emit("match:state", sanitizeMatchForViewer(matchToEmit, viewerPlayerId));
     }
   }
 
-  if ((match.status ?? "ACTIVE") === "COMPLETE") {
-    closeLobbyForMatch(match.matchId);
+  if ((matchToEmit.status ?? "ACTIVE") === "COMPLETE") {
+    closeLobbyForMatch(matchToEmit.matchId);
   } else {
-    touchLobbyActivityForMatch(match.matchId);
+    touchLobbyActivityForMatch(matchToEmit.matchId);
   }
 }
 
@@ -5719,7 +5723,11 @@ io.on("connection", async socket => {
       callingPlayerId: string;
     }) => {
       try {
-        const match = getPlayableMatchOrThrow(data.matchId);
+        const match = getPlayableMatchOrThrow(data.matchId, {
+          allowPendingBattle: true,
+          allowPendingEffectRoll: true,
+          allowPendingEffectTarget: true
+        });
         requireSocketCanControlPlayer(socket, data.matchId, data.callingPlayerId);
         const updatedMatch = callCemeteryHpLoss(
           match,

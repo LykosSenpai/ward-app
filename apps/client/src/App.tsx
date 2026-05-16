@@ -1502,6 +1502,15 @@ export default function App() {
     });
   }
 
+  function callCemeteryHpLoss(losingPlayerId: "player_1" | "player_2", callingPlayerId: "player_1" | "player_2") {
+    if (!match) return;
+    socket.emit("match:callCemeteryHpLoss", {
+      matchId: match.matchId,
+      losingPlayerId,
+      callingPlayerId
+    });
+  }
+
   function startManualBattle(attackerCreatureInstanceId: string, selectedDefenderCreatureInstanceId?: string) {
     if (!match) return;
 
@@ -2416,6 +2425,7 @@ export default function App() {
                       onDeckSlotClick={handleDeckClick}
                       onResolveEffectTarget={resolveEffectTarget}
                       onDiscardHandCardToCemetery={discardHandCardToCemetery}
+                      onCallCemeteryHpLoss={callCemeteryHpLoss}
                       onPlayHandCardToSlot={(cardInstanceId, slotId, sacrificeCardInstanceIds = []) => {
                         const slotOwnerId = slotId.startsWith("player_2-") ? "player_2" : "player_1";
                         const handOwner = match.players.find(player =>

@@ -371,6 +371,7 @@ type BoardPreview3DProps = {
   onPlayBattleResponse?: (battleSessionId: string, strikeId: string, playerId: BoardPlayerId, cardInstanceId: string) => void;
   onPassMagicChainPriority?: (playerId: BoardPlayerId) => void;
   onDiscardHandCardToCemetery?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
+  onCallCemeteryHpLoss?: (losingPlayerId: BoardPlayerId, callingPlayerId: BoardPlayerId) => void;
   onEndTurn?: () => void;
   onAttachEquipMagicToCreature?: (
     fieldOwnerPlayerId: BoardPlayerId,
@@ -567,6 +568,7 @@ export function BoardPreview3D({
   onPlayBattleResponse,
   onPassMagicChainPriority,
   onDiscardHandCardToCemetery,
+  onCallCemeteryHpLoss,
   onEndTurn,
   onAttachEquipMagicToCreature,
   onStartBattleFromPiece,
@@ -1957,6 +1959,12 @@ export function BoardPreview3D({
   const shouldShowAdvancePhaseButton = match.turn.phase !== "DRAW";
   const boardDeckActions = match.players.filter(player => player.id === focusedPlayerId).map(player => {
     const owner: BoardPlayerId = player.id === "player_1" ? "player_1" : "player_2";
+    const opponent = match.players.find(candidate => candidate.id !== player.id);
+    const opponentOwner: BoardPlayerId | null = opponent
+      ? opponent.id === "player_1" ? "player_1" : "player_2"
+      : null;
+    const opponentCemeteryHp = Number(opponent?.cemeteryCreatureHpTotal ?? 0);
+    const cemeteryHpLimit = Number(match.settings.cemeteryHpLimit ?? 300);
     const canControlThisPlayer = canControlPlayer(player.id);
     const isActivePlayer = match.turn.activePlayerId === player.id;
     const isForcedPrimaryReplacement = match.setup.primaryReplacementRequiredForPlayerId === player.id;
@@ -1978,11 +1986,26 @@ export function BoardPreview3D({
       canRequestNoCreatureRedraw ||
       isApprovingReveal ||
       isRequestingReveal;
+    const canCallCemeteryHpLoss =
+      match.status !== "COMPLETE" &&
+      canControlThisPlayer &&
+      Boolean(opponentOwner) &&
+      opponentCemeteryHp >= cemeteryHpLimit &&
+      Boolean(onCallCemeteryHpLoss);
+    const cemeteryHpLossTitle = opponent
+      ? opponentCemeteryHp >= cemeteryHpLimit
+        ? `Call cemetery HP loss against ${opponent.displayName}.`
+        : `${opponent.displayName} has ${opponentCemeteryHp}/${cemeteryHpLimit} cemetery HP.`
+      : "No opponent found.";
+
     return {
       player,
       owner,
+      opponentOwner,
       canControlThisPlayer,
       canUndo: canControlThisPlayer && Boolean(onUndoLastAction),
+      canCallCemeteryHpLoss,
+      cemeteryHpLossTitle,
       canRequestNoCreatureRedraw,
       isApprovingReveal,
       isRequestingReveal,
@@ -2446,6 +2469,18 @@ export function BoardPreview3D({
                       Report
                     </button>
                   ) : null}
+                  <button
+                    type="button"
+                    className={action.canCallCemeteryHpLoss ? "is-emphasis" : undefined}
+                    disabled={!action.canCallCemeteryHpLoss}
+                    onClick={() => {
+                      if (!action.opponentOwner) return;
+                      onCallCemeteryHpLoss?.(action.opponentOwner, action.owner);
+                    }}
+                    title={action.cemeteryHpLossTitle}
+                  >
+                    Call Cemetery Loss
+                  </button>
                   {action.shouldShowHandControls ? (
                     <>
                       <button
