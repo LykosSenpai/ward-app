@@ -227,13 +227,9 @@ async function loadCardTextureForCard(
 ): Promise<THREE.Texture | null> {
   const artKey = normalizeCardArtKey(card.artKey);
   const holoEnabled = artKey === "holo" || artKey === "zero-art-holo";
-  const texture = await loadCardTexture(getMatchCardImageUrls(match, card), loader, renderer);
-
-  const baseTexture = texture ?? (
-    getBaseArtKey(artKey) === "zero-art"
-      ? await loadGeneratedZeroCardTexture(getMatchCardImageUrls(match, card, "default"), loader, renderer)
-      : null
-  );
+  const baseTexture = getBaseArtKey(artKey) === "zero-art"
+    ? await loadGeneratedZeroCardTexture(getMatchCardImageUrls(match, card, "default"), loader, renderer)
+    : await loadCardTexture(getMatchCardImageUrls(match, card), loader, renderer);
 
   if (!baseTexture || !holoEnabled) {
     return baseTexture;

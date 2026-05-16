@@ -69,8 +69,26 @@ function isGoldUiRegion(nx: number, ny: number): boolean {
   return topHeader || attackBand || bottomTextBox;
 }
 
+function isSideGoldUiRegion(nx: number, ny: number): boolean {
+  const leftCreatureRail = nx > 0.032 && nx < 0.18 && ny > 0.132 && ny < 0.66;
+  const rightCombatRail = nx > 0.885 && nx < 0.966 && ny > 0.57 && ny < 0.815;
+
+  return leftCreatureRail || rightCombatRail;
+}
+
+function isTypeIconRegion(nx: number, ny: number): boolean {
+  const dx = (nx - 0.118) / 0.078;
+  const dy = (ny - 0.205) / 0.076;
+
+  return dx * dx + dy * dy <= 1;
+}
+
 function isOuterFrame(nx: number, ny: number): boolean {
   return nx < 0.047 || nx > 0.953 || ny < 0.025 || ny > 0.977;
+}
+
+function isFrameBand(nx: number, ny: number): boolean {
+  return nx < 0.072 || nx > 0.928 || ny < 0.075 || ny > 0.936;
 }
 
 function isYellowGoldHue(h: number, s: number, l: number): boolean {
@@ -78,7 +96,7 @@ function isYellowGoldHue(h: number, s: number, l: number): boolean {
 }
 
 function isRedAccentHue(h: number, s: number, l: number): boolean {
-  return (h < 18 || h > 345) && s > 0.35 && l > 0.18;
+  return (h < 18 || h > 345) && s > 0.28 && l > 0.08;
 }
 
 function hashNoise(x: number, y: number): number {
@@ -193,29 +211,41 @@ export function applyZeroCardFilter(
 
       const inArt = isArtRegion(nx, ny);
       const inGoldUi = isGoldUiRegion(nx, ny);
+      const inSideGoldUi = isSideGoldUiRegion(nx, ny);
+      const inTypeIcon = isTypeIconRegion(nx, ny);
+      const inFrameBand = isFrameBand(nx, ny);
       const inOuterFrame = isOuterFrame(nx, ny);
 
       const isRedAccent = isRedAccentHue(h, s, l);
       const isYellowGold = isYellowGoldHue(h, s, l);
 
-      // Red frame / regular-card red accents become black in the Zero variant.
-      // Do not do this inside the art area; red/orange art backgrounds should become grayscale, not solid black.
-      if (!inArt && (isRedAccent || (inOuterFrame && s > 0.25 && baseLuma > 40))) {
-        const frameTone = baseLuma > 75 ? 20 : baseLuma * 0.25;
-
-        data[index] = clamp255(frameTone);
-        data[index + 1] = clamp255(frameTone);
-        data[index + 2] = clamp255(frameTone);
+      if (inTypeIcon && s > 0.08 && baseLuma > 34) {
+        data[index] = r;
+        data[index + 1] = g;
+        data[index + 2] = b;
         data[index + 3] = a;
         continue;
       }
 
-      // Keep the yellow/gold card UI panels recognizable.
-      if (inGoldUi && isYellowGold) {
+      // Keep the yellow/gold card UI panels recognizable before frame replacement.
+      // These panels touch the top/bottom frame masks, so handle them first to avoid clipping their edges.
+      if ((inGoldUi || inSideGoldUi) && isYellowGold) {
         data[index] = clamp255(r * 1.02 + 4);
         data[index + 1] = clamp255(g * 0.96 + 5);
         data[index + 2] = clamp255(b * 0.72);
         data[index + 3] = a;
+        continue;
+      }
+
+      // Red frame / regular-card red accents become black in the Zero variant.
+      // Do not do this inside the art area; red/orange art backgrounds should become grayscale, not solid black.
+      if (!inArt && !inGoldUi && !inSideGoldUi && (isRedAccent || inOuterFrame || (inFrameBand && s > 0.16))) {
+        const frameTone = inOuterFrame ? 12 : baseLuma > 75 ? 20 : Math.max(12, baseLuma * 0.25);
+
+        data[index] = clamp255(frameTone);
+        data[index + 1] = clamp255(frameTone);
+        data[index + 2] = clamp255(frameTone);
+        data[index + 3] = inFrameBand ? Math.max(a, 245) : a;
         continue;
       }
 
