@@ -129,7 +129,7 @@ function composeArtKey(baseArtKey: "default" | "zero-art", holoEnabled: boolean)
   return holoEnabled ? "holo" : "default";
 }
 
-const IMAGE_EXTENSIONS = ["webp", "png", "jpg", "jpeg"];
+const IMAGE_EXTENSIONS = ["png", "webp", "jpg", "jpeg"];
 
 function uniqueValues(values: string[]): string[] {
   return Array.from(new Set(values.filter(value => value.trim() !== "")));
@@ -221,12 +221,12 @@ function ExpandedCardImage({
     () => getImageCandidates(card, imageArtKey),
     [card, imageArtKey]
   );
-  const imageCandidate = imageCandidates[expandedCandidateIndex];
+  const imageCandidate = imageArtKey === "zero-art" ? undefined : imageCandidates[expandedCandidateIndex];
   const defaultImageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
   const defaultImageCandidate = defaultImageCandidates[expandedZeroFallbackCandidateIndex];
   const selectedImageSrc = imageCandidate?.url;
   const regularImageSrc = defaultImageCandidate?.url;
-  const shouldGenerateZero = imageArtKey === "zero-art" && !selectedImageSrc && Boolean(regularImageSrc);
+  const shouldGenerateZero = imageArtKey === "zero-art" && Boolean(regularImageSrc);
   const generatedZeroSrc = useZeroCardSrc(regularImageSrc, shouldGenerateZero);
   const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : selectedImageSrc;
 
@@ -295,11 +295,11 @@ export function CardImageThumbnail({ card, className, artKey = "default", holoIn
   const holoEnabled = isHoloArtKey(artKey);
   const imageCandidates = useMemo(() => getImageCandidates(card, imageArtKey), [card, imageArtKey]);
   const defaultImageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
-  const imageCandidate = imageCandidates[candidateIndex];
+  const imageCandidate = imageArtKey === "zero-art" ? undefined : imageCandidates[candidateIndex];
   const defaultImageCandidate = defaultImageCandidates[zeroFallbackCandidateIndex];
   const selectedImageSrc = imageCandidate?.url;
   const regularImageSrc = defaultImageCandidate?.url;
-  const shouldGenerateZero = imageArtKey === "zero-art" && !selectedImageSrc && Boolean(regularImageSrc);
+  const shouldGenerateZero = imageArtKey === "zero-art" && Boolean(regularImageSrc);
   const generatedZeroSrc = useZeroCardSrc(regularImageSrc, shouldGenerateZero);
   const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : selectedImageSrc;
 
@@ -377,11 +377,11 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
     setInternalSelectedArtKey(nextArtKey);
   }
 
-  const imageCandidate = imageCandidates[candidateIndex];
+  const imageCandidate = baseArtKey === "zero-art" ? undefined : imageCandidates[candidateIndex];
   const defaultImageCandidate = defaultImageCandidates[zeroFallbackCandidateIndex];
   const selectedImageSrc = imageCandidate?.url;
   const regularImageSrc = defaultImageCandidate?.url;
-  const shouldGenerateZero = baseArtKey === "zero-art" && !selectedImageSrc && Boolean(regularImageSrc);
+  const shouldGenerateZero = baseArtKey === "zero-art" && Boolean(regularImageSrc);
   const generatedZeroSrc = useZeroCardSrc(regularImageSrc, shouldGenerateZero);
   const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : selectedImageSrc;
   const primaryExpectedFileName = imageCandidates[0]?.fileName ?? `${card.id}.webp`;
