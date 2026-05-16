@@ -194,6 +194,164 @@
   opacity: 0.58;
 }
 
+.admin-controls-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-controls-section {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.46);
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.85rem;
+}
+
+.admin-controls-section-header,
+.admin-ticket-toolbar,
+.admin-ticket-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: space-between;
+}
+
+.admin-controls-section-header h3,
+.admin-ticket-detail-header h3 {
+  margin: 0;
+}
+
+.admin-ticket-toolbar select,
+.admin-ticket-toolbar button,
+.admin-ticket-actions button {
+  min-height: 2.15rem;
+}
+
+.admin-ticket-layout {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(240px, 0.62fr) minmax(300px, 1fr);
+}
+
+.admin-ticket-list,
+.admin-feature-grid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.admin-ticket-row,
+.admin-feature-row,
+.admin-ticket-detail {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 7px;
+  background: rgba(8, 12, 20, 0.48);
+}
+
+.admin-ticket-row {
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 0.28rem;
+  justify-items: start;
+  padding: 0.65rem;
+  text-align: left;
+}
+
+.admin-ticket-row.is-selected {
+  border-color: rgba(92, 200, 255, 0.72);
+  background: rgba(14, 116, 144, 0.2);
+}
+
+.admin-ticket-row span,
+.admin-ticket-row small,
+.admin-ticket-detail-header p,
+.admin-ticket-meta span,
+.admin-feature-row div:nth-child(2) {
+  color: #94a3b8;
+}
+
+.admin-ticket-detail {
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.admin-ticket-detail-header {
+  align-items: start;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+}
+
+.admin-ticket-meta {
+  display: grid;
+  gap: 0.4rem 0.7rem;
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.admin-ticket-meta strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-ticket-description {
+  border-left: 3px solid rgba(92, 200, 255, 0.52);
+  margin: 0;
+  padding-left: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.admin-ticket-status {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 0.18rem 0.48rem;
+}
+
+.admin-ticket-status-open {
+  background: rgba(248, 113, 113, 0.16);
+  color: #fecaca;
+}
+
+.admin-ticket-status-triaged {
+  background: rgba(246, 196, 83, 0.15);
+  color: #fff2c1;
+}
+
+.admin-ticket-status-resolved {
+  background: rgba(93, 225, 154, 0.14);
+  color: #c8ffdd;
+}
+
+.admin-ticket-status-dismissed {
+  background: rgba(148, 163, 184, 0.16);
+  color: #dbe4ef;
+}
+
+.admin-ticket-json pre {
+  max-height: 420px;
+  overflow: auto;
+}
+
+.admin-feature-row {
+  color: inherit;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.65rem;
+}
+
+@media (max-width: 860px) {
+  .admin-ticket-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 720px) {
   .board-report-summary {
     grid-template-columns: 1fr;
@@ -226,6 +384,23 @@
 .account-pill button {
   min-height: 1.55rem;
   padding: 0.18rem 0.55rem;
+}
+
+.header-report-button {
+  border: 1px solid rgba(248, 113, 113, 0.42);
+  border-radius: 999px;
+  background: rgba(127, 29, 29, 0.26);
+  color: #fee2e2;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 900;
+  min-height: 1.9rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.header-report-button:hover {
+  border-color: rgba(248, 113, 113, 0.72);
+  background: rgba(127, 29, 29, 0.38);
 }
 
 .profile-page {

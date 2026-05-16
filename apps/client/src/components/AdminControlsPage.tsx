@@ -1,32 +1,263 @@
-import type { ServerFeatureFlag } from "../clientTypes";
+import { useEffect, useState } from "react";
+
+import type {
+  ServerFeatureFlag,
+  SupportTicketDetail,
+  SupportTicketStatus,
+  SupportTicketSummary
+} from "../clientTypes";
+import { API_BASE_URL } from "../config";
 
 type Props = {
   features: ServerFeatureFlag[];
   onToggleFeature: (key: ServerFeatureFlag["key"], enabledForPlayers: boolean) => Promise<void>;
 };
 
+const SUPPORT_TICKET_STATUSES: SupportTicketStatus[] = ["OPEN", "TRIAGED", "RESOLVED", "DISMISSED"];
+
+function formatDate(value: string): string {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toLocaleString() : value;
+}
+
+function formatReporter(ticket: SupportTicketSummary | SupportTicketDetail): string {
+  return ticket.reporterDisplayName || ticket.reporterUsername || ticket.reporterUserId || "Unknown";
+}
+
+function getTicketSummary(ticket: SupportTicketDetail | null): string {
+  if (!ticket) return "";
+  return JSON.stringify(
+    {
+      category: ticket.category,
+      matchId: ticket.matchId ?? null,
+      status: ticket.status,
+      severity: ticket.severity,
+      reporter: formatReporter(ticket),
+      createdAt: ticket.createdAt,
+      clientContext: ticket.clientContext
+    },
+    null,
+    2
+  );
+}
+
 export function AdminControlsPage({ features, onToggleFeature }: Props) {
+  const [tickets, setTickets] = useState<SupportTicketSummary[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicketDetail | null>(null);
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<SupportTicketStatus | "ALL">("OPEN");
+  const [ticketMessage, setTicketMessage] = useState("");
+  const [ticketError, setTicketError] = useState("");
+  const [ticketsBusy, setTicketsBusy] = useState(false);
+
+  useEffect(() => {
+    void loadTickets();
+  }, [ticketStatusFilter]);
+
+  async function loadTickets() {
+    setTicketsBusy(true);
+    setTicketError("");
+
+    try {
+      const params = new URLSearchParams();
+      if (ticketStatusFilter !== "ALL") params.set("status", ticketStatusFilter);
+
+      const response = await fetch(`${API_BASE_URL}/api/support-tickets${params.toString() ? `?${params}` : ""}`, {
+        credentials: "include"
+      });
+      const data = await response.json() as { tickets?: SupportTicketSummary[]; message?: string };
+
+      if (!response.ok || !data.tickets) {
+        throw new Error(data.message ?? "Unable to load support tickets.");
+      }
+
+      setTickets(data.tickets);
+      if (selectedTicket && !data.tickets.some(ticket => ticket.id === selectedTicket.id)) {
+        setSelectedTicket(null);
+      }
+    } catch (error) {
+      setTicketError(error instanceof Error ? error.message : "Unable to load support tickets.");
+    } finally {
+      setTicketsBusy(false);
+    }
+  }
+
+  async function loadTicketDetail(ticketId: string) {
+    setTicketsBusy(true);
+    setTicketError("");
+    setTicketMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/support-tickets/${encodeURIComponent(ticketId)}`, {
+        credentials: "include"
+      });
+      const data = await response.json() as { ticket?: SupportTicketDetail; message?: string };
+
+      if (!response.ok || !data.ticket) {
+        throw new Error(data.message ?? "Unable to load support ticket.");
+      }
+
+      setSelectedTicket(data.ticket);
+    } catch (error) {
+      setTicketError(error instanceof Error ? error.message : "Unable to load support ticket.");
+    } finally {
+      setTicketsBusy(false);
+    }
+  }
+
+  async function updateTicketStatus(ticketId: string, status: SupportTicketStatus) {
+    setTicketsBusy(true);
+    setTicketError("");
+    setTicketMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/support-tickets/${encodeURIComponent(ticketId)}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await response.json() as { ticket?: SupportTicketDetail; message?: string };
+
+      if (!response.ok || !data.ticket) {
+        throw new Error(data.message ?? "Unable to update support ticket.");
+      }
+
+      setSelectedTicket(data.ticket);
+      setTickets(current => current.map(ticket => ticket.id === data.ticket!.id ? data.ticket! : ticket));
+      setTicketMessage(`Ticket marked ${status}.`);
+    } catch (error) {
+      setTicketError(error instanceof Error ? error.message : "Unable to update support ticket.");
+    } finally {
+      setTicketsBusy(false);
+    }
+  }
+
   return (
-    <section className="panel">
+    <section className="panel admin-controls-page">
       <h2>Admin Controls</h2>
-      <p>Feature Rollout</p>
-      <div style={{ display: "grid", gap: 10 }}>
-        {features.map(feature => (
-          <label key={feature.key} style={{ border: "1px solid #2d3748", borderRadius: 8, padding: 10 }}>
-            <div><strong>{feature.label}</strong></div>
-            <div style={{ opacity: 0.8 }}>{feature.description}</div>
-            <div style={{ marginTop: 8 }}>
-              <input
-                type="checkbox"
-                checked={feature.enabledForPlayers}
-                disabled={feature.adminOnly}
-                onChange={event => { void onToggleFeature(feature.key, event.currentTarget.checked); }}
-              />
-              {" "}Enabled for players
-            </div>
-          </label>
-        ))}
-      </div>
+
+      <section className="admin-controls-section">
+        <div className="admin-controls-section-header">
+          <h3>Support Tickets</h3>
+          <div className="admin-ticket-toolbar">
+            <select
+              value={ticketStatusFilter}
+              onChange={event => setTicketStatusFilter(event.target.value as SupportTicketStatus | "ALL")}
+            >
+              <option value="OPEN">Open</option>
+              <option value="TRIAGED">Triaged</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="DISMISSED">Dismissed</option>
+              <option value="ALL">All</option>
+            </select>
+            <button type="button" onClick={() => void loadTickets()} disabled={ticketsBusy}>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {ticketError ? <p className="error-box">{ticketError}</p> : null}
+        {ticketMessage ? <p className="success-box">{ticketMessage}</p> : null}
+
+        <div className="admin-ticket-layout">
+          <div className="admin-ticket-list">
+            {tickets.length === 0 ? (
+              <p className="empty-zone">{ticketsBusy ? "Loading tickets..." : "No tickets found."}</p>
+            ) : tickets.map(ticket => (
+              <button
+                key={ticket.id}
+                type="button"
+                className={selectedTicket?.id === ticket.id ? "admin-ticket-row is-selected" : "admin-ticket-row"}
+                onClick={() => void loadTicketDetail(ticket.id)}
+              >
+                <span className={`admin-ticket-status admin-ticket-status-${ticket.status.toLowerCase()}`}>{ticket.status}</span>
+                <strong>{ticket.subject}</strong>
+                <span>{ticket.category === "SITE_REPORT" ? "Site" : "Board"} / {ticket.severity} / {formatReporter(ticket)}</span>
+                <small>{formatDate(ticket.createdAt)}</small>
+              </button>
+            ))}
+          </div>
+
+          <section className="admin-ticket-detail">
+            {selectedTicket ? (
+              <>
+                <div className="admin-ticket-detail-header">
+                  <div>
+                    <h3>{selectedTicket.subject}</h3>
+                    <p>{selectedTicket.id}</p>
+                  </div>
+                  <span className={`admin-ticket-status admin-ticket-status-${selectedTicket.status.toLowerCase()}`}>{selectedTicket.status}</span>
+                </div>
+
+                <div className="admin-ticket-meta">
+                  <span>Reporter</span>
+                  <strong>{formatReporter(selectedTicket)}</strong>
+                  <span>Category</span>
+                  <strong>{selectedTicket.category === "SITE_REPORT" ? "Site Report" : "Board Report"}</strong>
+                  <span>Match</span>
+                  <strong>{selectedTicket.matchId ?? "None"}</strong>
+                  <span>Severity</span>
+                  <strong>{selectedTicket.severity}</strong>
+                  <span>Created</span>
+                  <strong>{formatDate(selectedTicket.createdAt)}</strong>
+                </div>
+
+                <p className="admin-ticket-description">{selectedTicket.description}</p>
+
+                <div className="admin-ticket-actions">
+                  {SUPPORT_TICKET_STATUSES.map(status => (
+                    <button
+                      key={status}
+                      type="button"
+                      disabled={ticketsBusy || selectedTicket.status === status}
+                      onClick={() => void updateTicketStatus(selectedTicket.id, status)}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+
+                <details className="admin-ticket-json">
+                  <summary>Context</summary>
+                  <pre>{getTicketSummary(selectedTicket)}</pre>
+                </details>
+
+                <details className="admin-ticket-json">
+                  <summary>{selectedTicket.category === "SITE_REPORT" ? "Report Snapshot" : "Match Snapshot"}</summary>
+                  <pre>{JSON.stringify(selectedTicket.matchSnapshot, null, 2)}</pre>
+                </details>
+              </>
+            ) : (
+              <p className="empty-zone">Select a ticket.</p>
+            )}
+          </section>
+        </div>
+      </section>
+
+      <section className="admin-controls-section">
+        <div className="admin-controls-section-header">
+          <h3>Feature Rollout</h3>
+        </div>
+        <div className="admin-feature-grid">
+          {features.map(feature => (
+            <label className="admin-feature-row" key={feature.key}>
+              <div><strong>{feature.label}</strong></div>
+              <div>{feature.description}</div>
+              <div>
+                <input
+                  type="checkbox"
+                  checked={feature.enabledForPlayers}
+                  disabled={feature.adminOnly}
+                  onChange={event => { void onToggleFeature(feature.key, event.currentTarget.checked); }}
+                />
+                {" "}Enabled for players
+              </div>
+            </label>
+          ))}
+        </div>
+      </section>
     </section>
   );
 }

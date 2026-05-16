@@ -145,7 +145,7 @@ import { fail, ok } from "./marketplace/http.js";
 import { marketplaceCardsQuerySchema, marketplaceCatalogQuerySchema, marketplaceRecommendationsQuerySchema } from "./marketplace/schemas.js";
 import { marketplaceCardsListResponseSchema, marketplaceCatalogResponseSchema } from "./marketplace/responseSchemas.js";
 import { buildMatchId, scoreMarketplaceMatch } from "./marketplace/matching.js";
-import { createSupportTicket } from "./supportTickets/supportTicketStore.js";
+import { createSupportTicket, getSupportTicket, listSupportTickets, updateSupportTicketStatus } from "./supportTickets/supportTicketStore.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const __filename = fileURLToPath(import.meta.url);
@@ -225,6 +225,10 @@ function canSocketUseDevTools(socket: { request: unknown }): boolean {
 
 function canUserReviewTournamentDecks(user: AuthUser | null | undefined): boolean {
   return user?.role === "ADMIN" || user?.role === "HOST";
+}
+
+function canUserUseAdminTools(user: AuthUser | null | undefined): boolean {
+  return user?.role === "ADMIN";
 }
 
 function getDiscordOAuthConfigured(): boolean {
@@ -566,6 +570,23 @@ const boardReportRequestSchema = z.object({
   description: z.string().trim().min(1).max(2400),
   severity: z.enum(["LOW", "NORMAL", "HIGH", "BLOCKING"]).default("NORMAL"),
   clientContext: z.record(z.unknown()).optional().default({})
+});
+const siteReportRequestSchema = z.object({
+  matchId: z.string().trim().min(1).max(160).optional(),
+  currentPage: z.string().trim().min(1).max(80),
+  subject: z.string().trim().min(1).max(140),
+  description: z.string().trim().min(1).max(2400),
+  severity: z.enum(["LOW", "NORMAL", "HIGH", "BLOCKING"]).default("NORMAL"),
+  clientContext: z.record(z.unknown()).optional().default({})
+});
+const supportTicketStatusSchema = z.enum(["OPEN", "TRIAGED", "RESOLVED", "DISMISSED"]);
+const supportTicketListQuerySchema = z.object({
+  status: supportTicketStatusSchema.optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(50)
+});
+const supportTicketUpdateSchema = z.object({
+  status: supportTicketStatusSchema
 });
 
 function getSocketUser(socket: { request: unknown }): AuthUser | null {
@@ -1914,6 +1935,88 @@ app.post("/api/profile/discord/unlink", async (req, res) => {
   }
 });
 
+app.get("/api/support-tickets", async (req, res) => {
+  try {
+    if (!canUserUseAdminTools(req.session.user)) {
+      res.status(req.session.user ? 403 : 401).json({ message: req.session.user ? "Admin access required." : "Login required." });
+      return;
+    }
+
+    const parsed = supportTicketListQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid support ticket query." });
+      return;
+    }
+
+    const tickets = await listSupportTickets(parsed.data);
+    res.json({ tickets });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to list support tickets."
+    });
+  }
+});
+
+app.get("/api/support-tickets/:ticketId", async (req, res) => {
+  try {
+    if (!canUserUseAdminTools(req.session.user)) {
+      res.status(req.session.user ? 403 : 401).json({ message: req.session.user ? "Admin access required." : "Login required." });
+      return;
+    }
+
+    const ticketId = z.string().uuid().safeParse(req.params.ticketId);
+    if (!ticketId.success) {
+      res.status(400).json({ message: "Invalid support ticket ID." });
+      return;
+    }
+
+    const ticket = await getSupportTicket(ticketId.data);
+    if (!ticket) {
+      res.status(404).json({ message: "Support ticket not found." });
+      return;
+    }
+
+    res.json({ ticket });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to load support ticket."
+    });
+  }
+});
+
+app.patch("/api/support-tickets/:ticketId", async (req, res) => {
+  try {
+    if (!canUserUseAdminTools(req.session.user)) {
+      res.status(req.session.user ? 403 : 401).json({ message: req.session.user ? "Admin access required." : "Login required." });
+      return;
+    }
+
+    const ticketId = z.string().uuid().safeParse(req.params.ticketId);
+    if (!ticketId.success) {
+      res.status(400).json({ message: "Invalid support ticket ID." });
+      return;
+    }
+
+    const parsed = supportTicketUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid support ticket update." });
+      return;
+    }
+
+    const ticket = await updateSupportTicketStatus(ticketId.data, parsed.data.status);
+    if (!ticket) {
+      res.status(404).json({ message: "Support ticket not found." });
+      return;
+    }
+
+    res.json({ ticket });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to update support ticket."
+    });
+  }
+});
+
 app.post("/api/support-tickets/board-report", supportTicketRateLimit, async (req, res) => {
   try {
     const user = req.session.user;
@@ -1960,6 +2063,56 @@ app.post("/api/support-tickets/board-report", supportTicketRateLimit, async (req
         ...parsed.data.clientContext,
         reporterPlayerId: getUserOwnedPlayerId(user, parsed.data.matchId) ?? null,
         reporterRole: user.role,
+        submittedAt: new Date().toISOString()
+      }
+    });
+
+    res.status(201).json({ ticket });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to create support ticket."
+    });
+  }
+});
+
+app.post("/api/support-tickets/site-report", supportTicketRateLimit, async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const parsed = siteReportRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid report." });
+      return;
+    }
+
+    if (parsed.data.matchId) {
+      validateDataFileId(parsed.data.matchId);
+      if (!canUserReportMatch(user, parsed.data.matchId)) {
+        res.status(403).json({ message: "You can only attach matches you are part of." });
+        return;
+      }
+    }
+
+    const ticket = await createSupportTicket({
+      reporterUserId: user.id,
+      matchId: parsed.data.matchId ?? "site-report",
+      category: "SITE_REPORT",
+      subject: parsed.data.subject,
+      description: parsed.data.description,
+      severity: parsed.data.severity,
+      matchSnapshot: {
+        reportKind: "SITE_REPORT",
+        currentPage: parsed.data.currentPage,
+        attachedMatchId: parsed.data.matchId ?? null
+      },
+      clientContext: {
+        ...parsed.data.clientContext,
+        reporterRole: user.role,
+        currentPage: parsed.data.currentPage,
         submittedAt: new Date().toISOString()
       }
     });

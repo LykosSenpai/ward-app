@@ -36,6 +36,30 @@ export type AuthUser = {
   };
 };
 
+export type SupportTicketSeverity = "LOW" | "NORMAL" | "HIGH" | "BLOCKING";
+export type SupportTicketStatus = "OPEN" | "TRIAGED" | "RESOLVED" | "DISMISSED";
+export type SupportTicketCategory = "BOARD_REPORT" | "SITE_REPORT";
+
+export type SupportTicketSummary = {
+  id: string;
+  reporterUserId?: string;
+  reporterUsername?: string;
+  reporterDisplayName?: string;
+  matchId?: string;
+  subject: string;
+  description: string;
+  category: SupportTicketCategory;
+  severity: SupportTicketSeverity;
+  status: SupportTicketStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SupportTicketDetail = SupportTicketSummary & {
+  matchSnapshot: unknown;
+  clientContext: Record<string, unknown>;
+};
+
 export type UserProfile = AuthUser & {
   email: string;
   ownedUniqueCards: number;

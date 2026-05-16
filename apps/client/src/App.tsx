@@ -28,6 +28,7 @@ import type { BoardIntentCommand } from "./components/boardIntentCommands";
 import { ProfilePage } from "./components/ProfilePage";
 import { AdminControlsPage } from "./components/AdminControlsPage";
 import { SaveLoadPanel } from "./components/SaveLoadPanel";
+import { SiteReportPanel } from "./components/SiteReportPanel";
 import { TargetPromptCard } from "./components/TargetPromptCard";
 import { ModalPanel } from "./components/ui/ModalPanel";
 import type { CardArtKey } from "./components/CardImagePreview";
@@ -221,6 +222,7 @@ type DashboardModal =
   | "match-details"
   | "effect-debug"
   | "board-report"
+  | "site-report"
   | null;
 
 type OwnershipSaveStatus = "idle" | "saving" | "saved" | "error";
@@ -1971,6 +1973,10 @@ export default function App() {
           </div>
 
           <div className="app-header-actions">
+            <button type="button" className="header-report-button" onClick={() => setDashboardModal("site-report")}>
+              Report Issue
+            </button>
+
             <div className="account-pill">
               <span>{authUser.displayName}</span>
               <button onClick={logout}>Logout</button>
@@ -1982,6 +1988,16 @@ export default function App() {
             </div>
           </div>
         </header>}
+
+        {dashboardModal === "site-report" && (
+          <ModalPanel
+            title="Report Site Issue"
+            onClose={() => setDashboardModal(null)}
+            wide
+          >
+            <SiteReportPanel activePage={activePage} match={match} />
+          </ModalPanel>
+        )}
 
         {!embedModeEnabled && <nav className="app-page-nav" aria-label="App pages">
           {canSeePage("play") && <button
