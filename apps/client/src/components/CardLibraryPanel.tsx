@@ -52,8 +52,14 @@ type CardLibraryPanelProps = {
   getDeckBuilderCounts: () => Record<string, number>;
   getDeckBuilderCardCount: (cardId: string) => number;
   onDeckNameChange: (value: string) => void;
-  onDeckIdChange: (value: string) => void;
   onDeckFormatChange: (value: DeckFormat) => void;
+  onImportDeckCode: (payload: {
+    name?: string;
+    deckId?: string;
+    cardIds: string[];
+    cardArtKeys?: string[];
+    format?: DeckFormat;
+  }) => void;
   onRefreshCardLibrary: () => void;
   onClearDeckBuilder: () => void;
   onNewDeck: () => void;
@@ -132,8 +138,8 @@ export function CardLibraryPanel({
   normalizeId,
   getDeckBuilderCounts,
   onDeckNameChange,
-  onDeckIdChange,
   onDeckFormatChange,
+  onImportDeckCode,
   onRefreshCardLibrary,
   onClearDeckBuilder,
   onNewDeck,
@@ -408,6 +414,10 @@ export function CardLibraryPanel({
       entries
     };
   }, [cardLibrary, deckCounts, ownershipCounts, selectedArtKeysByCardId]);
+
+  useEffect(() => {
+    setMissingFocusCardIds(null);
+  }, [deckBuilderCardIds]);
 
   const filteredCards = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
@@ -695,7 +705,7 @@ export function CardLibraryPanel({
       cardIds: deckBuilderCardIds,
       cardArtKeys: deckBuilderCardArtKeys,
       format: deckBuilderFormat
-    });
+    }, { cardLibrary });
 
     setDeckShareString(value);
 
@@ -709,26 +719,17 @@ export function CardLibraryPanel({
 
   function importDeckStringIntoBuilder() {
     try {
-      const payload = decodeWardDeckString(deckImportString);
+      const payload = decodeWardDeckString(deckImportString, { cardLibrary });
       const unknownCards = payload.cardIds.filter(cardId => !cardLibrary.some(card => card.id === cardId));
-      const artKeys = payload.cardArtKeys ?? Array.from({ length: payload.cardIds.length }, () => "default");
 
-      if (payload.name) onDeckNameChange(payload.name);
-      if (payload.deckId) onDeckIdChange(normalizeId(payload.deckId));
-      onDeckFormatChange(payload.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY");
-      onClearDeckBuilder();
-
-      const counts = payload.cardIds.reduce<Record<string, { cardId: string; artKey: CardArtKey; count: number }>>((result, cardId, index) => {
-        const artKey = (artKeys[index] === "holo" || artKeys[index] === "zero-art" || artKeys[index] === "zero-art-holo" ? artKeys[index] : "default") as CardArtKey;
-        const key = `${cardId}__${artKey}`;
-        result[key] = result[key] ?? { cardId, artKey, count: 0 };
-        result[key].count += 1;
-        return result;
-      }, {});
-
-      for (const { cardId, artKey, count } of Object.values(counts)) {
-        onSetCardCopies(cardId, count, artKey);
-      }
+      onImportDeckCode({
+        name: payload.name,
+        deckId: payload.deckId,
+        cardIds: payload.cardIds,
+        cardArtKeys: payload.cardArtKeys,
+        format: payload.format
+      });
+      setMissingFocusCardIds(null);
 
       setDeckShareMessage(
         unknownCards.length > 0
@@ -752,7 +753,7 @@ export function CardLibraryPanel({
       cardIds: deckBuilderCardIds,
       cardArtKeys: deckBuilderCardArtKeys,
       format: deckBuilderFormat
-    });
+    }, { cardLibrary });
     const markdown = buildDeckNotesMarkdown({
       name: deckBuilderName || "Ward Nexus Deck",
       deckId: normalizeId(deckBuilderId),

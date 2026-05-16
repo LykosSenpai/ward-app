@@ -1010,7 +1010,7 @@ export function EffectDevToolPage({
       deckId: normalizeDeckId(ownerState.deckId || ownerState.deckName),
       cardIds: ownerState.cardIds,
       startingHandSize: ownerState.startingHandSize
-    });
+    }, { cardLibrary });
 
     setTestDeckShareStrings(current => ({ ...current, [owner]: value }));
 
@@ -1024,7 +1024,7 @@ export function EffectDevToolPage({
 
   function importTestDeckString(owner: TestDeckOwner) {
     try {
-      const payload = decodeWardDeckString(testDeckImportStrings[owner]);
+      const payload = decodeWardDeckString(testDeckImportStrings[owner], { cardLibrary });
       const ownerState = getOwnerDeckState(owner);
       ownerState.setDeckName(payload.name ?? ownerState.deckName);
       ownerState.setDeckId(normalizeDeckId(payload.deckId ?? payload.name ?? ownerState.deckId));
@@ -1050,7 +1050,7 @@ export function EffectDevToolPage({
       deckId,
       cardIds: ownerState.cardIds,
       startingHandSize: ownerState.startingHandSize
-    });
+    }, { cardLibrary });
     const markdown = buildDeckNotesMarkdown({
       name: ownerState.deckName,
       deckId,

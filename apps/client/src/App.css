@@ -2694,6 +2694,26 @@
   max-height: calc(100vh - 17.5rem);
 }
 
+.effect-coverage-load-more-row {
+  align-items: center;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 0.8rem;
+}
+
+.effect-coverage-load-more-row span {
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.effect-coverage-load-more-row button {
+  margin-bottom: 0;
+  width: auto;
+}
+
 .effect-coverage-option-a-table {
   min-width: 1120px;
   table-layout: fixed;

@@ -13,7 +13,30 @@ export type WardDeckSharePayload = {
   notes?: string;
 };
 
-export const WARD_DECK_STRING_PREFIX = "WARDDECK1:";
+type CompactDeckEntry = string | [string, number] | [string, number, string];
+
+type WardDeckSharePayloadV2 = {
+  v: 2;
+  k: "WD";
+  n?: string;
+  d?: string;
+  c: CompactDeckEntry[];
+  f?: "F" | "T";
+  h?: number;
+  m?: string;
+};
+
+type WardDeckSharePayloadV3 = Omit<WardDeckSharePayloadV2, "v"> & {
+  v: 3;
+};
+
+type DeckShareCodecOptions = {
+  cardLibrary?: CardLibraryCardSummary[];
+};
+
+export const WARD_DECK_STRING_V1_PREFIX = "WARDDECK1:";
+export const WARD_DECK_STRING_V2_PREFIX = "WARDDECK2:";
+export const WARD_DECK_STRING_PREFIX = "WARDDECK3:";
 
 function encodeUtf8Base64Url(value: string): string {
   const bytes = new TextEncoder().encode(value);
@@ -80,33 +103,273 @@ function normalizeImportedCardArtKeys(cardArtKeys: unknown, cardCount: number): 
   ];
 }
 
-export function encodeWardDeckString(payload: Omit<WardDeckSharePayload, "v" | "kind">): string {
-  const cardIds = normalizeImportedCardIds(payload.cardIds);
-  const normalizedPayload: WardDeckSharePayload = {
-    v: 1,
-    kind: "WARD_DECK",
-    name: payload.name?.trim() || undefined,
-    deckId: payload.deckId?.trim() || undefined,
-    cardIds,
-    cardArtKeys: normalizeImportedCardArtKeys(payload.cardArtKeys, cardIds.length),
-    format: payload.format === "TOURNAMENT" ? "TOURNAMENT" : payload.format === "FREE_PLAY" ? "FREE_PLAY" : undefined,
-    startingHandSize: Number.isFinite(payload.startingHandSize)
-      ? Math.max(0, Math.floor(payload.startingHandSize ?? 0))
-      : undefined,
-    notes: payload.notes?.trim() || undefined
-  };
-
-  return `${WARD_DECK_STRING_PREFIX}${encodeUtf8Base64Url(JSON.stringify(normalizedPayload))}`;
+function normalizeShareArtKey(artKey: unknown): string {
+  const value = String(artKey ?? "default").trim();
+  return value === "holo" || value === "zero-art" || value === "zero-art-holo" ? value : "default";
 }
 
-export function decodeWardDeckString(value: string): WardDeckSharePayload {
-  const trimmed = value.trim();
+function encodeCompactArtKey(artKey: string): string | undefined {
+  switch (normalizeShareArtKey(artKey)) {
+    case "holo": return "h";
+    case "zero-art": return "z";
+    case "zero-art-holo": return "zh";
+    default: return undefined;
+  }
+}
 
-  if (!trimmed.startsWith(WARD_DECK_STRING_PREFIX)) {
-    throw new Error(`Deck string must start with ${WARD_DECK_STRING_PREFIX}`);
+function decodeCompactArtKey(artKey: unknown): string {
+  switch (String(artKey ?? "").trim()) {
+    case "h": return "holo";
+    case "z": return "zero-art";
+    case "zh": return "zero-art-holo";
+    default: return "default";
+  }
+}
+
+function getCompactNumber(value: unknown): string | undefined {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return undefined;
+
+  const numeric = Number(normalized);
+  if (!Number.isFinite(numeric) || numeric < 0) return undefined;
+  return Math.floor(numeric).toString(36);
+}
+
+function getCompactCardRef(card: CardLibraryCardSummary): string | undefined {
+  const generation = getCompactNumber(card.generation);
+  const cardNumber = getCompactNumber(card.cardNumber);
+
+  if (!generation || !cardNumber) return undefined;
+  return `${generation}.${cardNumber}`;
+}
+
+function buildCompactCardCatalog(cardLibrary?: CardLibraryCardSummary[]): {
+  cardIdToRef: Map<string, string>;
+  refToCardId: Map<string, string>;
+} {
+  const cardIdToRef = new Map<string, string>();
+  const refToCardId = new Map<string, string>();
+  const duplicateRefs = new Set<string>();
+
+  for (const card of cardLibrary ?? []) {
+    const ref = getCompactCardRef(card);
+    if (!ref) continue;
+    if (duplicateRefs.has(ref)) continue;
+
+    if (refToCardId.has(ref) && refToCardId.get(ref) !== card.id) {
+      duplicateRefs.add(ref);
+      refToCardId.delete(ref);
+      continue;
+    }
+
+    refToCardId.set(ref, card.id);
+    cardIdToRef.set(card.id, ref);
   }
 
-  const jsonText = decodeUtf8Base64Url(trimmed.slice(WARD_DECK_STRING_PREFIX.length));
+  for (const [cardId, ref] of cardIdToRef) {
+    if (duplicateRefs.has(ref)) {
+      cardIdToRef.delete(cardId);
+    }
+  }
+
+  for (const ref of duplicateRefs) {
+    refToCardId.delete(ref);
+  }
+
+  return { cardIdToRef, refToCardId };
+}
+
+function buildCompactCardEntries(cardIds: string[], cardArtKeys?: string[]): CompactDeckEntry[] {
+  const groupedCards = new Map<string, { cardId: string; artKey: string; count: number }>();
+
+  cardIds.forEach((cardId, index) => {
+    const artKey = normalizeShareArtKey(cardArtKeys?.[index]);
+    const key = `${cardId}\u0000${artKey}`;
+    const existing = groupedCards.get(key);
+
+    if (existing) {
+      existing.count += 1;
+      return;
+    }
+
+    groupedCards.set(key, { cardId, artKey, count: 1 });
+  });
+
+  return Array.from(groupedCards.values()).map(entry => {
+    const compactArtKey = encodeCompactArtKey(entry.artKey);
+
+    if (entry.count === 1 && !compactArtKey) {
+      return entry.cardId;
+    }
+
+    if (!compactArtKey) {
+      return [entry.cardId, entry.count];
+    }
+
+    return [entry.cardId, entry.count, compactArtKey];
+  });
+}
+
+function buildCompactCardRefEntries(cardIds: string[], cardArtKeys: string[] | undefined, cardLibrary?: CardLibraryCardSummary[]): CompactDeckEntry[] | undefined {
+  const { cardIdToRef } = buildCompactCardCatalog(cardLibrary);
+  if (cardIdToRef.size === 0) return undefined;
+
+  const cardRefs = cardIds.map(cardId => cardIdToRef.get(cardId));
+  if (cardRefs.some(ref => !ref)) return undefined;
+
+  return buildCompactCardEntries(cardRefs as string[], cardArtKeys);
+}
+
+function expandCompactCardEntries(
+  cardEntries: unknown,
+  options: { cardLibrary?: CardLibraryCardSummary[]; usesCardRefs?: boolean } = {}
+): { cardIds: string[]; cardArtKeys?: string[] } {
+  if (!Array.isArray(cardEntries)) {
+    throw new Error("Deck string is missing a compact card list.");
+  }
+
+  const { refToCardId } = options.usesCardRefs
+    ? buildCompactCardCatalog(options.cardLibrary)
+    : { refToCardId: new Map<string, string>() };
+  const cardIds: string[] = [];
+  const cardArtKeys: string[] = [];
+  let hasNonDefaultArtKey = false;
+  let missingRefCount = 0;
+
+  for (const entry of cardEntries) {
+    const rawCardId = Array.isArray(entry) ? entry[0] : entry;
+    const rawCardIdText = String(rawCardId ?? "").trim();
+    const cardId = options.usesCardRefs ? refToCardId.get(rawCardIdText) ?? "" : rawCardIdText;
+    const rawCount = Array.isArray(entry) ? Number(entry[1] ?? 1) : 1;
+    const count = Math.max(1, Math.min(500, Math.floor(Number.isFinite(rawCount) ? rawCount : 1)));
+    const artKey = Array.isArray(entry) ? decodeCompactArtKey(entry[2]) : "default";
+
+    if (!cardId) {
+      if (options.usesCardRefs && rawCardIdText) {
+        missingRefCount += 1;
+      }
+      continue;
+    }
+
+    if (artKey !== "default") {
+      hasNonDefaultArtKey = true;
+    }
+
+    for (let index = 0; index < count; index += 1) {
+      cardIds.push(cardId);
+      cardArtKeys.push(artKey);
+    }
+  }
+
+  if (options.usesCardRefs && missingRefCount > 0) {
+    throw new Error("This shortened deck code needs the matching card library loaded before it can import.");
+  }
+
+  return {
+    cardIds: normalizeImportedCardIds(cardIds),
+    cardArtKeys: hasNonDefaultArtKey ? cardArtKeys : undefined
+  };
+}
+
+export function encodeWardDeckString(payload: Omit<WardDeckSharePayload, "v" | "kind">, options: DeckShareCodecOptions = {}): string {
+  const cardIds = normalizeImportedCardIds(payload.cardIds);
+  const cardArtKeys = normalizeImportedCardArtKeys(payload.cardArtKeys, cardIds.length);
+  const compactCardRefEntries = buildCompactCardRefEntries(cardIds, cardArtKeys, options.cardLibrary);
+
+  if (compactCardRefEntries) {
+    const normalizedPayload: WardDeckSharePayloadV3 = {
+      v: 3,
+      k: "WD",
+      n: payload.name?.trim() || undefined,
+      d: payload.deckId?.trim() || undefined,
+      c: compactCardRefEntries,
+      f: payload.format === "TOURNAMENT" ? "T" : payload.format === "FREE_PLAY" ? "F" : undefined,
+      h: Number.isFinite(payload.startingHandSize)
+        ? Math.max(0, Math.floor(payload.startingHandSize ?? 0))
+        : undefined,
+      m: payload.notes?.trim() || undefined
+    };
+
+    return `${WARD_DECK_STRING_PREFIX}${encodeUtf8Base64Url(JSON.stringify(normalizedPayload))}`;
+  }
+
+  const normalizedPayload: WardDeckSharePayloadV2 = {
+    v: 2,
+    k: "WD",
+    n: payload.name?.trim() || undefined,
+    d: payload.deckId?.trim() || undefined,
+    c: buildCompactCardEntries(cardIds, cardArtKeys),
+    f: payload.format === "TOURNAMENT" ? "T" : payload.format === "FREE_PLAY" ? "F" : undefined,
+    h: Number.isFinite(payload.startingHandSize)
+      ? Math.max(0, Math.floor(payload.startingHandSize ?? 0))
+      : undefined,
+    m: payload.notes?.trim() || undefined
+  };
+
+  return `${WARD_DECK_STRING_V2_PREFIX}${encodeUtf8Base64Url(JSON.stringify(normalizedPayload))}`;
+}
+
+export function decodeWardDeckString(value: string, options: DeckShareCodecOptions = {}): WardDeckSharePayload {
+  const trimmed = value.trim();
+
+  if (trimmed.startsWith(WARD_DECK_STRING_PREFIX)) {
+    const jsonText = decodeUtf8Base64Url(trimmed.slice(WARD_DECK_STRING_PREFIX.length));
+    const parsed = JSON.parse(jsonText) as Partial<WardDeckSharePayloadV3>;
+
+    if (parsed.v !== 3 || parsed.k !== "WD") {
+      throw new Error("Deck string is not a Ward Nexus deck string v3 payload.");
+    }
+
+    const expandedCards = expandCompactCardEntries(parsed.c, {
+      cardLibrary: options.cardLibrary,
+      usesCardRefs: true
+    });
+
+    return {
+      v: 1,
+      kind: "WARD_DECK",
+      name: parsed.n ? String(parsed.n) : undefined,
+      deckId: parsed.d ? String(parsed.d) : undefined,
+      cardIds: expandedCards.cardIds,
+      cardArtKeys: expandedCards.cardArtKeys,
+      format: parsed.f === "T" ? "TOURNAMENT" : parsed.f === "F" ? "FREE_PLAY" : undefined,
+      startingHandSize: Number.isFinite(parsed.h)
+        ? Math.max(0, Math.floor(parsed.h ?? 0))
+        : undefined,
+      notes: parsed.m ? String(parsed.m) : undefined
+    };
+  }
+
+  if (trimmed.startsWith(WARD_DECK_STRING_V2_PREFIX)) {
+    const jsonText = decodeUtf8Base64Url(trimmed.slice(WARD_DECK_STRING_V2_PREFIX.length));
+    const parsed = JSON.parse(jsonText) as Partial<WardDeckSharePayloadV2>;
+
+    if (parsed.v !== 2 || parsed.k !== "WD") {
+      throw new Error("Deck string is not a Ward Nexus deck string v2 payload.");
+    }
+
+    const expandedCards = expandCompactCardEntries(parsed.c);
+
+    return {
+      v: 1,
+      kind: "WARD_DECK",
+      name: parsed.n ? String(parsed.n) : undefined,
+      deckId: parsed.d ? String(parsed.d) : undefined,
+      cardIds: expandedCards.cardIds,
+      cardArtKeys: expandedCards.cardArtKeys,
+      format: parsed.f === "T" ? "TOURNAMENT" : parsed.f === "F" ? "FREE_PLAY" : undefined,
+      startingHandSize: Number.isFinite(parsed.h)
+        ? Math.max(0, Math.floor(parsed.h ?? 0))
+        : undefined,
+      notes: parsed.m ? String(parsed.m) : undefined
+    };
+  }
+
+  if (!trimmed.startsWith(WARD_DECK_STRING_V1_PREFIX)) {
+    throw new Error(`Deck string must start with ${WARD_DECK_STRING_PREFIX}, ${WARD_DECK_STRING_V2_PREFIX}, or ${WARD_DECK_STRING_V1_PREFIX}`);
+  }
+
+  const jsonText = decodeUtf8Base64Url(trimmed.slice(WARD_DECK_STRING_V1_PREFIX.length));
   const parsed = JSON.parse(jsonText) as Partial<WardDeckSharePayload>;
 
   if (parsed.v !== 1 || parsed.kind !== "WARD_DECK") {
@@ -205,7 +468,7 @@ export function buildDeckNotesMarkdown(args: {
       cardIds: args.cardIds,
       cardArtKeys: args.cardArtKeys,
       startingHandSize: args.startingHandSize
-    }),
+    }, { cardLibrary: args.cardLibrary }),
     "",
     "## Deck Checklist",
     ""

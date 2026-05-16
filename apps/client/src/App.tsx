@@ -929,6 +929,10 @@ export default function App() {
       return;
     }
 
+    if (activePage !== "effect-coverage" && activePage !== "llm-tests") {
+      return;
+    }
+
     const packIds = selectedPackIds.length > 0
       ? selectedPackIds
       : cardPacks.map(pack => pack.id);
@@ -939,7 +943,7 @@ export default function App() {
     }
 
     socket.emit("dev:listEffectCoverage", { packIds });
-  }, [canUseDevTools, cardPacks, selectedPackIds]);
+  }, [activePage, canUseDevTools, cardPacks, selectedPackIds]);
 
 
   function requestInitialData() {
@@ -2308,8 +2312,8 @@ export default function App() {
               setDeckBuilderName(value);
               setDeckBuilderId(normalizeId(value));
             }}
-            onDeckIdChange={value => setDeckBuilderId(normalizeId(value))}
             onDeckFormatChange={setDeckBuilderFormat}
+            onImportDeckCode={importDeckCodeIntoBuilder}
             onRefreshCardLibrary={refreshCardLibrary}
             onClearDeckBuilder={clearDeckBuilder}
             onNewDeck={startNewDeckBuilder}

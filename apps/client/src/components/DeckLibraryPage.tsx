@@ -164,7 +164,7 @@ export function DeckLibraryPage({
       cardIds: detail.cardIds,
       cardArtKeys: detail.cardArtKeys,
       format: getDeckFormat(detail)
-    });
+    }, { cardLibrary });
 
     try {
       await navigator.clipboard.writeText(value);
@@ -176,7 +176,7 @@ export function DeckLibraryPage({
 
   function importDeckCode() {
     try {
-      const payload = decodeWardDeckString(importCode);
+      const payload = decodeWardDeckString(importCode, { cardLibrary });
       const unknownCards = payload.cardIds.filter(cardId => !cardById.has(cardId));
 
       onImportDeckCode({

@@ -32,6 +32,8 @@ type EffectCoveragePageProps = {
 };
 
 const SUPPORT_ORDER: RuntimeSupportLevel[] = ["SUPPORTED", "PARTIAL", "MANUAL", "UNSUPPORTED"];
+const INITIAL_VISIBLE_ROW_COUNT = 120;
+const VISIBLE_ROW_INCREMENT = 120;
 
 const TEST_STATUSES: Array<{ value: EffectRuntimeTestStatus; label: string }> = [
   { value: "UNTESTED", label: "Untested" },
@@ -120,6 +122,7 @@ export function EffectCoveragePage({
   const [triggerFilter, setTriggerFilter] = useState("ALL");
   const [actionFilter, setActionFilter] = useState("ALL");
   const [drafts, setDrafts] = useState<Record<string, DraftStatus>>({});
+  const [visibleRowCount, setVisibleRowCount] = useState(INITIAL_VISIBLE_ROW_COUNT);
 
   const cardsByKey = useMemo(() => {
     const map = new Map<string, CardLibraryCardSummary>();
@@ -131,48 +134,70 @@ export function EffectCoveragePage({
     return map;
   }, [cardLibrary]);
 
+  const effectsByKey = useMemo(() => {
+    const map = new Map<string, NonNullable<CardLibraryCardSummary["effects"]>[number]>();
+
+    for (const card of cardLibrary) {
+      for (const effect of card.effects ?? []) {
+        map.set(`${card.packId}:${card.id}:${effect.id}`, effect);
+      }
+    }
+
+    return map;
+  }, [cardLibrary]);
+
   function getCardForRow(row: EffectCoverageRow): CardLibraryCardSummary | undefined {
     return cardsByKey.get(`${row.packId}:${row.cardId}`);
   }
 
   function getEffectForRow(row: EffectCoverageRow) {
-    return getCardForRow(row)?.effects?.find(effect => effect.id === row.effectId);
+    return effectsByKey.get(`${row.packId}:${row.cardId}:${row.effectId}`);
   }
 
   const triggers = useMemo(() => uniqueSorted(rows.map(row => row.trigger)), [rows]);
   const actionTypes = useMemo(() => uniqueSorted(rows.map(row => row.actionType)), [rows]);
 
-  const supportSummary = useMemo(() => {
-    return SUPPORT_ORDER.reduce<Record<RuntimeSupportLevel, number>>((result, level) => {
-      result[level] = rows.filter(row => row.supportLevel === level).length;
-      return result;
-    }, {
+  const { supportSummary, testSummary, brokenBehaviorSummary } = useMemo(() => {
+    const nextSupportSummary: Record<RuntimeSupportLevel, number> = {
       SUPPORTED: 0,
       PARTIAL: 0,
       MANUAL: 0,
       UNSUPPORTED: 0
-    });
-  }, [rows]);
-
-  const testSummary = useMemo(() => {
-    return TEST_STATUSES.reduce<Record<EffectRuntimeTestStatus, number>>((result, item) => {
-      result[item.value] = rows.filter(row => (row.engineStatus ?? row.testStatus ?? "UNTESTED") === item.value).length;
-      return result;
-    }, {
+    };
+    const nextTestSummary: Record<EffectRuntimeTestStatus, number> = {
       UNTESTED: 0,
       WORKING: 0,
       PARTIAL: 0,
       BROKEN: 0,
       BLOCKED: 0,
       MANUAL: 0
-    });
-  }, [rows]);
+    };
+    const nextBrokenBehaviorSummary: Record<BrokenBehaviorFilter, number> = {
+      ALL: rows.length,
+      ENGINE_BROKEN: 0,
+      AFFORDANCE_BROKEN: 0,
+      ANIMATION_BROKEN: 0
+    };
 
-  const brokenBehaviorSummary = useMemo(() => ({
-    ENGINE_BROKEN: rows.filter(row => (row.engineStatus ?? row.testStatus ?? "UNTESTED") === "BROKEN").length,
-    AFFORDANCE_BROKEN: rows.filter(row => (row.boardAffordanceStatus ?? "UNTESTED") === "BROKEN").length,
-    ANIMATION_BROKEN: rows.filter(row => (row.boardAnimationStatus ?? "UNTESTED") === "BROKEN").length
-  }), [rows]);
+    for (const row of rows) {
+      const rowEngineStatus = row.engineStatus ?? row.testStatus ?? "UNTESTED";
+      const rowBoardAffordanceStatus = row.boardAffordanceStatus ?? "UNTESTED";
+      const rowBoardAnimationStatus = row.boardAnimationStatus ?? "UNTESTED";
+
+      nextSupportSummary[row.supportLevel] += 1;
+      nextTestSummary[rowEngineStatus] += 1;
+
+      if (rowEngineStatus === "BROKEN") nextBrokenBehaviorSummary.ENGINE_BROKEN += 1;
+      if (rowBoardAffordanceStatus === "BROKEN") nextBrokenBehaviorSummary.AFFORDANCE_BROKEN += 1;
+      if (rowBoardAnimationStatus === "BROKEN") nextBrokenBehaviorSummary.ANIMATION_BROKEN += 1;
+    }
+
+    return {
+      supportSummary: nextSupportSummary,
+      testSummary: nextTestSummary,
+      brokenBehaviorSummary: nextBrokenBehaviorSummary
+    };
+  }, [rows]);
 
   const filteredRows = useMemo(() => {
     const search = searchText.trim().toLowerCase();
@@ -225,7 +250,14 @@ export function EffectCoveragePage({
         .toLowerCase()
         .includes(search);
     });
-  }, [actionFilter, brokenBehaviorFilter, cardsByKey, focusedCardKey, rows, searchText, supportFilter, testStatusFilter, triggerFilter]);
+  }, [actionFilter, brokenBehaviorFilter, cardsByKey, effectsByKey, focusedCardKey, rows, searchText, supportFilter, testStatusFilter, triggerFilter]);
+
+  const visibleRows = useMemo(() => filteredRows.slice(0, visibleRowCount), [filteredRows, visibleRowCount]);
+  const hiddenRowCount = Math.max(0, filteredRows.length - visibleRows.length);
+
+  function resetVisibleRows() {
+    setVisibleRowCount(INITIAL_VISIBLE_ROW_COUNT);
+  }
 
   function getDraft(row: EffectCoverageRow): DraftStatus {
     const key = getRowKey(row);
@@ -280,6 +312,7 @@ export function EffectCoveragePage({
     setTriggerFilter("ALL");
     setActionFilter("ALL");
     setSearchText("");
+    resetVisibleRows();
     onClearFocusedCard?.();
   }
 
@@ -293,7 +326,14 @@ export function EffectCoveragePage({
           </div>
 
           <div className="effect-coverage-toolbar-actions">
-            <button onClick={onRefreshCoverage}>Refresh Coverage</button>
+            <button
+              onClick={() => {
+                resetVisibleRows();
+                onRefreshCoverage();
+              }}
+            >
+              Refresh Coverage
+            </button>
             <button className="secondary-button" onClick={clearAllFilters} disabled={!anyFilterActive}>
               Clear Filters
             </button>
@@ -303,7 +343,7 @@ export function EffectCoveragePage({
         <div className="effect-coverage-toolbar-meta-row">
           <span className="effect-coverage-meta-chip">{selectedPackIds.length}/{cardPacks.length} packs</span>
           <span className="effect-coverage-meta-chip">{rows.length} effects</span>
-          <span className="effect-coverage-meta-chip">{filteredRows.length} showing</span>
+          <span className="effect-coverage-meta-chip">{visibleRows.length}/{filteredRows.length} showing</span>
           {focusedCardKey && <span className="effect-coverage-meta-chip active">Focused: {focusedCardKey}</span>}
         </div>
 
@@ -315,7 +355,10 @@ export function EffectCoveragePage({
                 <input
                   type="checkbox"
                   checked={selectedPackIds.includes(pack.id)}
-                  onChange={() => onToggleSelectedPack(pack.id)}
+                  onChange={() => {
+                    resetVisibleRows();
+                    onToggleSelectedPack(pack.id);
+                  }}
                 />
                 <span>{pack.name}</span>
                 <small>{pack.cardCount} cards</small>
@@ -331,14 +374,23 @@ export function EffectCoveragePage({
             Search
             <input
               value={searchText}
-              onChange={event => setSearchText(event.target.value)}
+              onChange={event => {
+                setSearchText(event.target.value);
+                resetVisibleRows();
+              }}
               placeholder="Card, action, trigger, route, notes..."
             />
           </label>
 
           <label>
             Trigger
-            <select value={triggerFilter} onChange={event => setTriggerFilter(event.target.value)}>
+            <select
+              value={triggerFilter}
+              onChange={event => {
+                setTriggerFilter(event.target.value);
+                resetVisibleRows();
+              }}
+            >
               <option value="ALL">All triggers</option>
               {triggers.map(trigger => (
                 <option key={trigger} value={trigger}>{trigger}</option>
@@ -348,7 +400,13 @@ export function EffectCoveragePage({
 
           <label>
             Action
-            <select value={actionFilter} onChange={event => setActionFilter(event.target.value)}>
+            <select
+              value={actionFilter}
+              onChange={event => {
+                setActionFilter(event.target.value);
+                resetVisibleRows();
+              }}
+            >
               <option value="ALL">All actions</option>
               {actionTypes.map(actionType => (
                 <option key={actionType} value={actionType}>{actionType}</option>
@@ -364,7 +422,10 @@ export function EffectCoveragePage({
               <button
                 key={level}
                 className={supportFilter === level ? "effect-coverage-count-chip active" : "effect-coverage-count-chip"}
-                onClick={() => setSupportFilter(current => current === level ? "ALL" : level)}
+                onClick={() => {
+                  setSupportFilter(current => current === level ? "ALL" : level);
+                  resetVisibleRows();
+                }}
               >
                 <span className={supportBadgeClass(level)}>{supportLabel(level)}</span>
                 <strong>{supportSummary[level]}</strong>
@@ -380,7 +441,10 @@ export function EffectCoveragePage({
               <button
                 key={item.value}
                 className={testStatusFilter === item.value ? "effect-coverage-count-chip active" : "effect-coverage-count-chip"}
-                onClick={() => setTestStatusFilter(current => current === item.value ? "ALL" : item.value)}
+                onClick={() => {
+                  setTestStatusFilter(current => current === item.value ? "ALL" : item.value);
+                  resetVisibleRows();
+                }}
               >
                 <span className={testStatusBadgeClass(item.value)}>{item.label}</span>
                 <strong>{testSummary[item.value]}</strong>
@@ -400,7 +464,10 @@ export function EffectCoveragePage({
               <button
                 key={item.value}
                 className={brokenBehaviorFilter === item.value ? "effect-coverage-count-chip active" : "effect-coverage-count-chip"}
-                onClick={() => setBrokenBehaviorFilter(current => current === item.value ? "ALL" : item.value)}
+                onClick={() => {
+                  setBrokenBehaviorFilter(current => current === item.value ? "ALL" : item.value);
+                  resetVisibleRows();
+                }}
               >
                 <span className="test-status-badge test-status-broken">{item.label}</span>
                 <strong>{item.count}</strong>
@@ -431,7 +498,7 @@ export function EffectCoveragePage({
                 </tr>
               </thead>
               <tbody>
-                {filteredRows.map(row => {
+                {visibleRows.map(row => {
                   const draft = getDraft(row);
                   const lastTested = row.lastTestedAt ? new Date(row.lastTestedAt).toLocaleString() : "Not tested";
                   const engineStatus = row.engineStatus ?? row.testStatus ?? "UNTESTED";
@@ -561,6 +628,17 @@ export function EffectCoveragePage({
                 })}
               </tbody>
             </table>
+            {hiddenRowCount > 0 && (
+              <div className="effect-coverage-load-more-row">
+                <span>{hiddenRowCount} more matching effects</span>
+                <button
+                  className="secondary-button"
+                  onClick={() => setVisibleRowCount(current => current + VISIBLE_ROW_INCREMENT)}
+                >
+                  Load More Rows
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>
