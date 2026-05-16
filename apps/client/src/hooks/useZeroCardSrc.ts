@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 
-import { createZeroCardVariantDataUrl } from "../utils/zeroCardFilter";
+import { ZERO_CARD_FILTER_VERSION, createZeroCardVariantDataUrl } from "../utils/zeroCardFilter";
 
 const zeroCardSrcCache = new Map<string, string>();
+
+function getCacheKey(src: string): string {
+  return `${ZERO_CARD_FILTER_VERSION}:${src}`;
+}
 
 export function useZeroCardSrc(
   regularSrc: string | undefined,
@@ -13,7 +17,7 @@ export function useZeroCardSrc(
       return regularSrc;
     }
 
-    return zeroCardSrcCache.get(regularSrc) ?? regularSrc;
+    return zeroCardSrcCache.get(getCacheKey(regularSrc)) ?? regularSrc;
   });
 
   useEffect(() => {
@@ -26,7 +30,8 @@ export function useZeroCardSrc(
       };
     }
 
-    const cached = zeroCardSrcCache.get(regularSrc);
+    const cacheKey = getCacheKey(regularSrc);
+    const cached = zeroCardSrcCache.get(cacheKey);
 
     if (cached) {
       setGeneratedSrc(cached);
@@ -39,7 +44,7 @@ export function useZeroCardSrc(
 
     createZeroCardVariantDataUrl(regularSrc)
       .then((nextSrc) => {
-        zeroCardSrcCache.set(regularSrc, nextSrc);
+        zeroCardSrcCache.set(cacheKey, nextSrc);
 
         if (!cancelled) {
           setGeneratedSrc(nextSrc);
