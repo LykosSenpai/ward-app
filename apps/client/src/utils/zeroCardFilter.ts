@@ -6,34 +6,46 @@ export type ZeroCardFilterOptions = {
   textureOpacity?: number;
 };
 
-export const ZERO_CARD_FILTER_VERSION = "v6-layer-pack-aligned";
+export const ZERO_CARD_FILTER_VERSION = "v2-region-aware";
 
 const DEFAULT_OPTIONS: Required<ZeroCardFilterOptions> = {
-  contrast: 1.28,
-  edgeStrength: 0.62,
-  noise: 4,
+  contrast: 1.48,
+  edgeStrength: 0.82,
+  noise: 8,
   posterize: true,
   textureOpacity: 0.08,
 };
 
-type NormalizedRect = { x: number; y: number; w: number; h: number };
+type NormalizedRect = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
 
-// Coordinates tuned to the 1060x1484 template, normalized for same-layout cards.
+
 const MASKS = {
-  protectedIconArea: { x: 0.025, y: 0.575, w: 0.14, h: 0.315 },
-  topHeader: { x: 0.04, y: 0.03, w: 0.92, h: 0.115 },
-  statBoxes: { x: 0.55, y: 0.04, w: 0.39, h: 0.1 },
-  mainArtWindow: { x: 0.073, y: 0.145, w: 0.858, h: 0.454 },
-  modifierCircle: { x: 0.845, y: 0.625, w: 0.12, h: 0.13 },
-  attackBand: { x: 0.06, y: 0.61, w: 0.88, h: 0.09 },
-  effectTextBox: { x: 0.08, y: 0.705, w: 0.86, h: 0.175 },
-  footer: { x: 0.04, y: 0.92, w: 0.92, h: 0.06 },
   outerFrame: { x: 0, y: 0, w: 1, h: 1 },
+  topHeader: { x: 0.045, y: 0.032, w: 0.91, h: 0.112 },
+  statBoxes: { x: 0.06, y: 0.058, w: 0.54, h: 0.08 },
+  spdBox: { x: 0.63, y: 0.058, w: 0.15, h: 0.08 },
+  mainArtWindow: { x: 0.06, y: 0.14, w: 0.89, h: 0.48 },
+  leftIconColumn: { x: 0.04, y: 0.61, w: 0.11, h: 0.26 },
+  rarityIcon: { x: 0.042, y: 0.71, w: 0.1, h: 0.12 },
+  creatureTypeIcon: { x: 0.045, y: 0.62, w: 0.1, h: 0.1 },
+  modifierCircle: { x: 0.84, y: 0.635, w: 0.125, h: 0.125 },
+  attackBand: { x: 0.035, y: 0.61, w: 0.93, h: 0.09 },
+  effectTextBox: { x: 0.16, y: 0.7, w: 0.79, h: 0.175 },
+  footer: { x: 0.035, y: 0.92, w: 0.93, h: 0.06 },
+  bottomFlavorOrEmptyBox: { x: 0.04, y: 0.88, w: 0.92, h: 0.04 },
 } as const satisfies Record<string, NormalizedRect>;
 
-const inRect = (nx: number, ny: number, r: NormalizedRect): boolean => nx >= r.x && nx <= r.x + r.w && ny >= r.y && ny <= r.y + r.h;
-const clamp255 = (v: number): number => Math.max(0, Math.min(255, Math.round(v)));
-const luminance = (r: number, g: number, b: number): number => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+function inRect(nx: number, ny: number, rect: NormalizedRect): boolean {
+  return nx >= rect.x && nx <= rect.x + rect.w && ny >= rect.y && ny <= rect.y + rect.h;
+}
+
+function clamp255(value: number): number { return Math.max(0, Math.min(255, Math.round(value))); }
+function luminance(r: number, g: number, b: number): number { return 0.2126 * r + 0.7152 * g + 0.0722 * b; }
 
 function rgbToHsl(rInput: number, gInput: number, bInput: number): { h: number; s: number; l: number } {
   const r = rInput / 255; const g = gInput / 255; const b = bInput / 255;
@@ -44,13 +56,13 @@ function rgbToHsl(rInput: number, gInput: number, bInput: number): { h: number; 
   return { h: h * 60, s, l };
 }
 
-const isYellowGoldHue = (h: number, s: number, l: number): boolean => h >= 30 && h <= 64 && s > 0.14 && l > 0.16;
-const isRedAccentHue = (h: number, s: number, l: number): boolean => (h <= 20 || h >= 342) && s > 0.3 && l > 0.1;
+const isYellowGoldHue = (h: number, s: number, l: number): boolean => h >= 30 && h <= 62 && s > 0.16 && l > 0.15;
+const isRedAccentHue = (h: number, s: number, l: number): boolean => (h < 18 || h > 345) && s > 0.34 && l > 0.14;
 const hashNoise = (x: number, y: number): number => ((((Math.imul(Math.imul(x, 374761393) ^ Math.imul(y, 668265263), 1274126177) >>> 0) & 0xffff) / 0xffff) - 0.5);
 
-function posterizeTone(v: number): number {
-  const palette = [22, 38, 56, 78, 104, 134, 168, 202, 232];
-  return palette.reduce((best, p) => Math.abs(p - v) < Math.abs(best - v) ? p : best, palette[0]);
+function posterizeTone(value: number): number {
+  const palette = [12, 28, 46, 68, 96, 130, 168, 208, 238];
+  return palette.reduce((best, t) => Math.abs(t - value) < Math.abs(best - value) ? t : best, palette[0]);
 }
 
 function sobelAt(luma: Float32Array, width: number, height: number, x: number, y: number): number {
@@ -76,6 +88,7 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
   const { width, height, data } = imageData;
   const original = new Uint8ClampedArray(data);
   const luma = new Float32Array(width * height);
+
   for (let i = 0; i < original.length; i += 4) luma[i / 4] = luminance(original[i] ?? 0, original[i + 1] ?? 0, original[i + 2] ?? 0);
 
   for (let y = 0; y < height; y += 1) {
@@ -85,94 +98,83 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
       const idx = (y * width + x) * 4;
       const r = original[idx] ?? 0; const g = original[idx + 1] ?? 0; const b = original[idx + 2] ?? 0; const a = original[idx + 3] ?? 255;
       if (a === 0) continue;
+      const { h, s, l } = rgbToHsl(r, g, b);
       const baseLuma = luma[y * width + x] ?? 0;
       const { h, s, l } = rgbToHsl(r, g, b);
 
-      const protectedIcon = inRect(nx, ny, MASKS.protectedIconArea);
       const inMainArt = inRect(nx, ny, MASKS.mainArtWindow);
-      const inModifier = inRect(nx, ny, MASKS.modifierCircle);
-      const preserveYellowUi = inRect(nx, ny, MASKS.topHeader) || inRect(nx, ny, MASKS.statBoxes) || inRect(nx, ny, MASKS.attackBand) || inRect(nx, ny, MASKS.effectTextBox) || inRect(nx, ny, MASKS.footer);
+      const inTopHeader = inRect(nx, ny, MASKS.topHeader);
+      const inStatBoxes = inRect(nx, ny, MASKS.statBoxes) || inRect(nx, ny, MASKS.spdBox);
+      const inAttackBand = inRect(nx, ny, MASKS.attackBand);
+      const inEffectTextBox = inRect(nx, ny, MASKS.effectTextBox);
+      const inFooter = inRect(nx, ny, MASKS.footer) || inRect(nx, ny, MASKS.bottomFlavorOrEmptyBox);
+      const inLeftIcons = inRect(nx, ny, MASKS.leftIconColumn) || inRect(nx, ny, MASKS.rarityIcon) || inRect(nx, ny, MASKS.creatureTypeIcon);
+      const inModifierCircle = inRect(nx, ny, MASKS.modifierCircle);
 
-      if (protectedIcon) continue;
+      const preserveUi = inTopHeader || inStatBoxes || inAttackBand || inEffectTextBox || inFooter;
 
-      if (inModifier && (isRedAccentHue(h, s, l) || (s > 0.18 && baseLuma < 175))) {
-        const t = clamp255(Math.min(48, baseLuma * 0.4));
-        data[idx] = t; data[idx + 1] = t; data[idx + 2] = t;
-        continue;
+      if (inModifierCircle && (isRedAccentHue(h, s, l) || (s > 0.2 && baseLuma < 150))) {
+        const t = clamp255(Math.min(38, baseLuma * 0.35)); data[idx] = t; data[idx + 1] = t; data[idx + 2] = t; continue;
       }
 
-      if (!preserveYellowUi && !inMainArt && isRedAccentHue(h, s, l)) {
-        const t = clamp255(Math.min(44, baseLuma * 0.38));
-        data[idx] = t; data[idx + 1] = t; data[idx + 2] = t;
-        continue;
+      if (!preserveUi && !inMainArt && !inLeftIcons && (isRedAccentHue(h, s, l) || (s > 0.26 && h <= 28 && l > 0.12))) {
+        const t = clamp255(Math.min(30, baseLuma * 0.28)); data[idx] = t; data[idx + 1] = t; data[idx + 2] = t; continue;
       }
 
-      if (preserveYellowUi && isYellowGoldHue(h, s, l)) {
-        data[idx] = clamp255(r * 1.04 + 3);
-        data[idx + 1] = clamp255(g * 1.01 + 2);
-        data[idx + 2] = clamp255(b * 0.78);
-        continue;
+      if (preserveUi && isYellowGoldHue(h, s, l)) {
+        data[idx] = clamp255(r * 1.03 + 5); data[idx + 1] = clamp255(g * 0.97 + 4); data[idx + 2] = clamp255(b * 0.7); continue;
       }
+
 
       if (inMainArt) {
         let tone = (baseLuma - 128) * options.contrast + 128;
-        tone -= Math.min(44, sobelAt(luma, width, height, x, y) * options.edgeStrength);
-        tone -= Math.max(0, Math.min(1, Math.sqrt(((nx - 0.5) / 0.52) ** 2 + ((ny - 0.39) / 0.54) ** 2))) * 8;
+        tone -= Math.min(78, sobelAt(luma, width, height, x, y) * options.edgeStrength);
+        tone -= Math.max(0, Math.min(1, Math.sqrt(((nx - 0.5) / 0.52) ** 2 + ((ny - 0.39) / 0.54) ** 2)) ) * 20;
         tone += hashNoise(x, y) * options.noise;
         if (options.posterize) tone = posterizeTone(tone);
-        const t = clamp255(tone);
-        data[idx] = t; data[idx + 1] = t; data[idx + 2] = t;
+        const finalTone = clamp255(tone);
+        data[idx] = finalTone; data[idx + 1] = finalTone; data[idx + 2] = finalTone; continue;
+      }
+
+      if (preserveUi) {
+        if (baseLuma < 145) {
+          const ink = clamp255(baseLuma * 0.5); data[idx] = ink; data[idx + 1] = ink; data[idx + 2] = ink;
+        }
+        continue;
+      }
+
+      if (!inLeftIcons && s > 0.25) {
+        const t = clamp255((baseLuma - 128) * 1.08 + 128); data[idx] = t; data[idx + 1] = t; data[idx + 2] = t;
       }
     }
   }
-
   return imageData;
 }
 
 function drawZeroLogoOverlay(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-  const x = width * 0.155;
-  const y = height * 0.165;
+  const x = width * 0.06; const y = height * 0.14; const w = width * 0.19; const h = height * 0.058;
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate((-7 * Math.PI) / 180);
-  ctx.font = `700 italic ${Math.floor(height * 0.039)}px Georgia, serif`;
-  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(8,8,8,0.86)";
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = "rgba(222, 189, 95, 0.9)";
+  ctx.lineWidth = Math.max(1, Math.floor(width * 0.003));
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = "#f0d27f";
+  ctx.font = `${Math.floor(height * 0.033)}px sans-serif`;
   ctx.textBaseline = "middle";
-  ctx.strokeStyle = "rgba(26, 26, 26, 0.9)";
-  ctx.lineWidth = Math.max(1, Math.floor(width * 0.002));
-  ctx.fillStyle = "rgba(229, 228, 220, 0.95)";
-  ctx.strokeText("Zero", 0, 0);
-  ctx.fillText("Zero", 0, 0);
-  ctx.restore();
-}
-
-function applyPrintTexture(ctx: CanvasRenderingContext2D, width: number, height: number, opacity: number): void {
-  ctx.save();
-  ctx.globalAlpha = opacity;
-  ctx.globalCompositeOperation = "multiply";
-  for (let i = 0; i < 260; i += 1) {
-    const x = (i * 73) % width;
-    const y = (i * 151) % height;
-    const w = 1 + ((i * 7) % 3);
-    const h = 1 + ((i * 11) % 2);
-    ctx.fillStyle = i % 3 === 0 ? "rgba(20,20,20,0.2)" : "rgba(240,240,240,0.15)";
-    ctx.fillRect(x, y, w, h);
-  }
+  ctx.fillText("ZERO", x + w * 0.14, y + h * 0.52);
   ctx.restore();
 }
 
 export async function createZeroCardVariantCanvas(src: string, options?: ZeroCardFilterOptions): Promise<HTMLCanvasElement> {
   const image = await loadImage(src);
   const canvas = document.createElement("canvas");
-  canvas.width = image.naturalWidth;
-  canvas.height = image.naturalHeight;
+  canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas 2D context is not available.");
   context.drawImage(image, 0, 0);
-  const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
-  const filtered = applyZeroCardFilter(context.getImageData(0, 0, canvas.width, canvas.height), mergedOptions);
+  const filtered = applyZeroCardFilter(context.getImageData(0, 0, canvas.width, canvas.height), options);
   context.putImageData(filtered, 0, 0);
-  applyPrintTexture(context, canvas.width, canvas.height, mergedOptions.textureOpacity);
   drawZeroLogoOverlay(context, canvas.width, canvas.height);
   return canvas;
 }
