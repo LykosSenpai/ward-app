@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MARKETPLACE_LISTING_VARIANT_LABELS, MARKETPLACE_STATUS_LABELS, formatCurrencyUsd, getMarketplaceVariantLabel, type MarketplaceListingKind, type MarketplacePostLineItem, type MarketplacePostStatus } from "../marketplaceHelpers";
 import type { CardLibraryCardSummary } from "../clientTypes";
-import { CardImageThumbnail } from "./CardImagePreview";
+import { CardImageThumbnail, normalizeCardArtKey } from "./CardImagePreview";
 import { ModalPanel } from "./ui/ModalPanel";
 
 export type MarketplacePost = {
@@ -99,7 +99,7 @@ function MarketplaceLineItem({ item, cardById, onContact }: { item: string | Mar
         <strong>{card?.name ?? item.name ?? item.cardId}</strong>
         <small>{getMarketplaceVariantLabel(item.variant)}</small>
       </span>
-      {card ? <CardImageThumbnail card={card} className="marketplace-line-thumb" /> : <span className="marketplace-line-thumb missing">{item.name?.slice(0, 1) ?? "?"}</span>}
+      {card ? <CardImageThumbnail card={card} artKey={normalizeCardArtKey(item.variant)} className="marketplace-line-thumb" /> : <span className="marketplace-line-thumb missing">{item.name?.slice(0, 1) ?? "?"}</span>}
       <div className="marketplace-item-bottom-row">
         <span className="marketplace-item-qty">x{item.quantity}</span>
         <span className="marketplace-item-mode">

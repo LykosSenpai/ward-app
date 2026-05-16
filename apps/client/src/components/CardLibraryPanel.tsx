@@ -1238,7 +1238,7 @@ export function CardLibraryPanel({
                 return (
                   <div className="builder-card-entry current-deck-entry library-option-a-current-deck-entry visual-deck-stack-entry" key={`${cardId}-${artKey}`}>
                     <div className="visual-deck-card-stack">
-                      {card ? <CardImageThumbnail card={card} className="visual-deck-card-image" /> : <span className="card-image-thumb missing visual-deck-card-image">{cardId.slice(0, 1)}</span>}
+                      {card ? <CardImageThumbnail card={card} artKey={artKey} className="visual-deck-card-image" /> : <span className="card-image-thumb missing visual-deck-card-image">{cardId.slice(0, 1)}</span>}
                       <span className="visual-deck-card-counter">{count}x</span>
                     </div>
 

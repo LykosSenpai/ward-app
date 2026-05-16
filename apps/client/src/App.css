@@ -7753,12 +7753,20 @@ button.playmat-stack-zone:disabled {
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 8px;
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.38);
+  height: auto;
   width: 100%;
+}
+
+.login-card-image.holo-card-wrap,
+.login-background-card.holo-card-wrap {
+  height: auto;
 }
 
 .login-card-image .holo-card-base-image,
 .login-background-card .holo-card-base-image {
+  height: auto;
   object-fit: contain;
+  width: 100%;
 }
 
 .login-holo-card .holo-card-base-image {

@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../../clientTypes";
+import { createZeroCardVariantDataUrl } from "../../utils/zeroCardFilter";
 import type { BoardObject } from "../boardPreview3dAdapter";
+import { getBaseArtKey, normalizeCardArtKey } from "../CardImagePreview";
 import { getMatchCardImageUrls } from "../MatchCardImage";
 
 type BoardPreview3DWebGLCardsProps = {
@@ -16,6 +18,14 @@ type BoardPreview3DWebGLCardsProps = {
 const CARD_WORLD_WIDTH = 128;
 const CARD_WORLD_HEIGHT = 179;
 const cardTextureCache = new Map<string, Promise<THREE.Texture | null>>();
+const HOLO_COLORS = [
+  "rgba(125, 249, 255, 0.42)",
+  "rgba(168, 85, 247, 0.36)",
+  "rgba(244, 114, 182, 0.34)",
+  "rgba(250, 204, 21, 0.3)",
+  "rgba(74, 222, 128, 0.3)",
+  "rgba(96, 165, 250, 0.34)"
+];
 
 type ViewMetrics = {
   height: number;
@@ -89,6 +99,157 @@ async function loadCardTexture(urls: string[], loader: THREE.TextureLoader, rend
   return null;
 }
 
+function hashSeed(seed: string): number {
+  let hash = 2166136261;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
+function createSeededRandom(seed: string): () => number {
+  let state = hashSeed(seed) || 1;
+
+  return () => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    return ((state >>> 0) % 10000) / 10000;
+  };
+}
+
+function createHolographicCardTexture(baseTexture: THREE.Texture, renderer: THREE.WebGLRenderer, seed: string): THREE.Texture {
+  const source = baseTexture.image as CanvasImageSource & {
+    naturalHeight?: number;
+    naturalWidth?: number;
+    height?: number;
+    width?: number;
+  };
+  const width = Math.max(1, Math.floor(source.naturalWidth ?? source.width ?? 512));
+  const height = Math.max(1, Math.floor(source.naturalHeight ?? source.height ?? 716));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return baseTexture;
+  }
+
+  const random = createSeededRandom(seed);
+  context.drawImage(source, 0, 0, width, height);
+
+  const sweep = context.createLinearGradient(0, height, width, 0);
+  sweep.addColorStop(0, "rgba(125, 249, 255, 0)");
+  sweep.addColorStop(0.22, "rgba(125, 249, 255, 0.28)");
+  sweep.addColorStop(0.42, "rgba(244, 114, 182, 0.22)");
+  sweep.addColorStop(0.62, "rgba(250, 204, 21, 0.2)");
+  sweep.addColorStop(0.82, "rgba(168, 85, 247, 0.26)");
+  sweep.addColorStop(1, "rgba(125, 249, 255, 0)");
+
+  context.globalCompositeOperation = "screen";
+  context.fillStyle = sweep;
+  context.fillRect(0, 0, width, height);
+
+  for (let index = 0; index < 44; index += 1) {
+    const x = random() * width;
+    const y = random() * height;
+    const radius = (0.04 + random() * 0.13) * Math.min(width, height);
+    const sides = 3 + Math.floor(random() * 3);
+    const angleOffset = random() * Math.PI * 2;
+
+    context.beginPath();
+    for (let pointIndex = 0; pointIndex < sides; pointIndex += 1) {
+      const angle = angleOffset + (pointIndex / sides) * Math.PI * 2;
+      const px = x + Math.cos(angle) * radius * (0.45 + random() * 0.55);
+      const py = y + Math.sin(angle) * radius * (0.45 + random() * 0.55);
+
+      if (pointIndex === 0) {
+        context.moveTo(px, py);
+      } else {
+        context.lineTo(px, py);
+      }
+    }
+    context.closePath();
+    context.fillStyle = HOLO_COLORS[index % HOLO_COLORS.length] ?? HOLO_COLORS[0];
+    context.globalAlpha = 0.32 + random() * 0.22;
+    context.fill();
+  }
+
+  context.globalAlpha = 1;
+  context.globalCompositeOperation = "lighter";
+  for (let index = 0; index < 90; index += 1) {
+    const x = random() * width;
+    const y = random() * height;
+    const size = 0.75 + random() * 2.25;
+
+    context.fillStyle = `rgba(255, 255, 255, ${0.12 + random() * 0.24})`;
+    context.fillRect(x, y, size, size);
+  }
+
+  context.globalCompositeOperation = "source-over";
+
+  return configureTexture(new THREE.CanvasTexture(canvas), renderer);
+}
+
+async function loadGeneratedZeroCardTexture(urls: string[], loader: THREE.TextureLoader, renderer: THREE.WebGLRenderer): Promise<THREE.Texture | null> {
+  for (const url of urls) {
+    try {
+      const cacheKey = `generated-zero:${url}`;
+      let cached = cardTextureCache.get(cacheKey);
+      if (!cached) {
+        cached = createZeroCardVariantDataUrl(url)
+          .then(dataUrl => loader.loadAsync(dataUrl))
+          .then(texture => configureTexture(texture, renderer))
+          .catch(() => null);
+        cardTextureCache.set(cacheKey, cached);
+      }
+
+      const texture = await cached;
+      if (texture) return texture;
+    } catch {
+      // Try the next regular-art candidate as the Zero generation source.
+    }
+  }
+
+  return null;
+}
+
+async function loadCardTextureForCard(
+  match: AppMatchState,
+  card: CardInstance,
+  loader: THREE.TextureLoader,
+  renderer: THREE.WebGLRenderer
+): Promise<THREE.Texture | null> {
+  const artKey = normalizeCardArtKey(card.artKey);
+  const holoEnabled = artKey === "holo" || artKey === "zero-art-holo";
+  const texture = await loadCardTexture(getMatchCardImageUrls(match, card), loader, renderer);
+
+  const baseTexture = texture ?? (
+    getBaseArtKey(artKey) === "zero-art"
+      ? await loadGeneratedZeroCardTexture(getMatchCardImageUrls(match, card, "default"), loader, renderer)
+      : null
+  );
+
+  if (!baseTexture || !holoEnabled) {
+    return baseTexture;
+  }
+
+  const cacheKey = `holo:${match.matchId}:${card.instanceId}:${artKey}`;
+  let cached = cardTextureCache.get(cacheKey);
+
+  if (!cached) {
+    cached = Promise.resolve(createHolographicCardTexture(baseTexture, renderer, cacheKey));
+    cardTextureCache.set(cacheKey, cached);
+  }
+
+  return cached;
+}
+
 function createPlane(texture: THREE.Texture, width: number, height: number): THREE.Mesh {
   const geometry = new THREE.PlaneGeometry(width, height);
   const material = new THREE.MeshBasicMaterial({
@@ -131,6 +292,7 @@ export function BoardPreview3DWebGLCards({
           object.slotId,
           object.lane,
           object.cardInstanceId ?? "back",
+          renderedCard?.artKey ?? "default",
           object.xPercent.toFixed(3),
           object.zPercent.toFixed(3),
           object.yDepth.toFixed(3),
@@ -230,7 +392,7 @@ export function BoardPreview3DWebGLCards({
         if (!shouldRender) return null;
 
         const texture = renderedCard
-          ? await loadCardTexture(getMatchCardImageUrls(latestMatch, renderedCard), loader, renderer)
+          ? await loadCardTextureForCard(latestMatch, renderedCard, loader, renderer)
           : backTexture;
         if (!texture || isDisposed) return null;
 

@@ -3,7 +3,7 @@ import type { CardLibraryCardSummary } from "../clientTypes";
 import type { MarketplacePostStatus, MarketplacePostLineItem } from "../marketplaceHelpers";
 import { getMarketplaceVariantLabel } from "../marketplaceHelpers";
 import type { CardArtKey } from "./CardImagePreview";
-import { CardImageThumbnail } from "./CardImagePreview";
+import { CardImageThumbnail, normalizeCardArtKey } from "./CardImagePreview";
 
 export type MarketplacePostDraft = {
   title: string;
@@ -92,7 +92,7 @@ function MarketplaceItemList({
                   <strong>{card?.name ?? item.name ?? item.cardId}</strong>
                   <small>{getMarketplaceVariantLabel(item.variant)} x{item.quantity}</small>
                 </span>
-                {card ? <CardImageThumbnail card={card} className="marketplace-line-thumb" /> : <span className="marketplace-line-thumb missing">{item.name?.slice(0, 1) ?? "?"}</span>}
+                {card ? <CardImageThumbnail card={card} artKey={normalizeCardArtKey(item.variant)} className="marketplace-line-thumb" /> : <span className="marketplace-line-thumb missing">{item.name?.slice(0, 1) ?? "?"}</span>}
                 <div className="marketplace-line-quantity-controls" aria-label={`${card?.name ?? item.cardId} quantity controls`}>
                   <button
                     type="button"

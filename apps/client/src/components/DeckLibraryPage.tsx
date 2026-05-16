@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import type { AuthUser, CardLibraryCardSummary, DeckDetail, DeckSummary } from "../clientTypes";
 import { decodeWardDeckString, encodeWardDeckString } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
-import { CardImageThumbnail } from "./CardImagePreview";
+import { CardImageThumbnail, getCardArtLabel, normalizeCardArtKey } from "./CardImagePreview";
+import type { CardArtKey } from "./CardImagePreview";
 import { ModalPanel } from "./ui/ModalPanel";
 import { API_BASE_URL } from "../config";
 
@@ -28,19 +29,25 @@ type DeckLibraryPageProps = {
 
 type DeckCardCount = {
   cardId: string;
+  artKey: CardArtKey;
   count: number;
   card?: CardLibraryCardSummary;
 };
 
 function getDeckCounts(deck: DeckDetail): DeckCardCount[] {
-  const counts = deck.cardIds.reduce<Record<string, number>>((result, cardId) => {
-    result[cardId] = (result[cardId] ?? 0) + 1;
+  const counts = deck.cardIds.reduce<Record<string, DeckCardCount>>((result, cardId, index) => {
+    const artKey = normalizeCardArtKey(deck.cardArtKeys?.[index]);
+    const key = `${cardId}__${artKey}`;
+    result[key] = result[key] ?? { cardId, artKey, count: 0 };
+    result[key].count += 1;
     return result;
   }, {});
 
-  return Object.entries(counts)
-    .map(([cardId, count]) => ({ cardId, count }))
-    .sort((a, b) => a.cardId.localeCompare(b.cardId, undefined, { numeric: true }));
+  return Object.values(counts)
+    .sort((a, b) =>
+      a.cardId.localeCompare(b.cardId, undefined, { numeric: true }) ||
+      getCardArtLabel(a.artKey).localeCompare(getCardArtLabel(b.artKey))
+    );
 }
 
 function getDeckStats(deck: DeckDetail | undefined, cardLibrary: CardLibraryCardSummary[]) {
@@ -274,7 +281,10 @@ export function DeckLibraryPage({
             const detail = deckDetailById.get(deck.id);
             const stats = getDeckStats(detail, cardLibrary);
             const previewCards = detail
-              ? getDeckCounts(detail).slice(0, 5).map(item => cardById.get(item.cardId)).filter((card): card is CardLibraryCardSummary => !!card)
+              ? getDeckCounts(detail)
+                  .slice(0, 5)
+                  .map(item => ({ ...item, card: cardById.get(item.cardId) }))
+                  .filter((item): item is DeckCardCount & { card: CardLibraryCardSummary } => !!item.card)
               : [];
 
             return (
@@ -311,7 +321,7 @@ export function DeckLibraryPage({
                   {previewCards.length === 0 ? (
                     <span className="event-meta">Deck details loading...</span>
                   ) : (
-                    previewCards.map(card => <CardImageThumbnail card={card} key={card.id} />)
+                    previewCards.map(({ cardId, artKey, card }) => <CardImageThumbnail card={card} artKey={artKey} key={`${cardId}:${artKey}`} />)
                   )}
                 </div>
 
@@ -486,11 +496,11 @@ export function DeckLibraryPage({
               <section>
                 <h3>Cards</h3>
                 <div className="deck-detail-card-list">
-                  {selectedDeckCards.map(({ cardId, count, card }) => (
-                    <div className="deck-detail-card-row" key={cardId}>
-                      {card ? <CardImageThumbnail card={card} /> : <span className="card-image-thumb missing">{cardId.slice(0, 1)}</span>}
+                  {selectedDeckCards.map(({ cardId, artKey, count, card }) => (
+                    <div className="deck-detail-card-row" key={`${cardId}:${artKey}`}>
+                      {card ? <CardImageThumbnail card={card} artKey={artKey} /> : <span className="card-image-thumb missing">{cardId.slice(0, 1)}</span>}
                       <div>
-                        <strong>{count}x {card?.name ?? cardId}</strong>
+                        <strong>{count}x {card?.name ?? cardId} {artKey !== "default" ? `(${getCardArtLabel(artKey)})` : ""}</strong>
                         <span>{formatCardLine(card, cardId)}</span>
                       </div>
                     </div>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { AuthUser, CardLibraryCardSummary } from "../clientTypes";
 import { MarketplacePostCard, type MarketplacePost, type MarketplacePostMatchLine, type MarketplacePostMatchSummary } from "./MarketplacePostCard";
 import { MarketplacePostEditor, type MarketplacePostDraft } from "./MarketplacePostEditor";
-import { CardImageThumbnail } from "./CardImagePreview";
+import { CardImageThumbnail, normalizeCardArtKey } from "./CardImagePreview";
 import { ModalPanel } from "./ui/ModalPanel";
 import { getMarketplaceVariantLabel, type MarketplacePostLineItem, type MarketplacePostStatus } from "../marketplaceHelpers";
 import { socket } from "../socket";
@@ -122,6 +122,24 @@ function getPostCards(post: MarketplacePost, cardById: Map<string, CardLibraryCa
     }
   }
   return cards;
+}
+
+function getPostCardEntries(post: MarketplacePost, cardById: Map<string, CardLibraryCardSummary>): Array<{ card: CardLibraryCardSummary; variant?: string }> {
+  const seen = new Set<string>();
+  const entries: Array<{ card: CardLibraryCardSummary; variant?: string }> = [];
+
+  for (const item of [...post.haveItems, ...post.needItems]) {
+    if (typeof item === "string") continue;
+    const card = cardById.get(item.cardId);
+    const key = `${item.cardId}:${item.variant ?? "default"}`;
+
+    if (card && !seen.has(key)) {
+      seen.add(key);
+      entries.push({ card, variant: item.variant });
+    }
+  }
+
+  return entries;
 }
 
 function getPostGeneration(post: MarketplacePost, cardById: Map<string, CardLibraryCardSummary>): number | undefined {
@@ -402,7 +420,7 @@ function MatchPanel({
               <div className="marketplace-match-thumbs">
                 {item.cards.slice(0, 4).map(line => {
                   const card = cardById.get(line.cardId);
-                  return card ? <CardImageThumbnail key={`${line.cardId}:${line.variant}`} card={card} className="marketplace-match-thumb" /> : <span key={`${line.cardId}:${line.variant}`} className="marketplace-match-thumb missing">?</span>;
+                  return card ? <CardImageThumbnail key={`${line.cardId}:${line.variant}`} card={card} artKey={normalizeCardArtKey(line.variant)} className="marketplace-match-thumb" /> : <span key={`${line.cardId}:${line.variant}`} className="marketplace-match-thumb missing">?</span>;
                 })}
               </div>
               <button type="button" className="marketplace-mini-action">{item.actionLabel}</button>
@@ -455,14 +473,14 @@ function MyPostedCardsTable({
             </thead>
             <tbody>
               {posts.map(post => {
-                const firstCard = getPostCards(post, cardById)[0];
+                const firstEntry = getPostCardEntries(post, cardById)[0];
                 const matchCount = matchesByPostId.get(post.id)?.length ?? 0;
                 const value = getPostReferencePrice(post);
                 return (
                   <tr key={post.id}>
                     <td>
                       <div className="marketplace-table-card-cell">
-                        {firstCard ? <CardImageThumbnail card={firstCard} className="marketplace-table-thumb" /> : <span className="marketplace-table-thumb missing">?</span>}
+                        {firstEntry ? <CardImageThumbnail card={firstEntry.card} artKey={normalizeCardArtKey(firstEntry.variant)} className="marketplace-table-thumb" /> : <span className="marketplace-table-thumb missing">?</span>}
                         <span>
                           <strong>{post.title}</strong>
                           <small>{getPostGenerationLabel(post, cardById)} - {getPostRarityLabel(post, cardById)}</small>

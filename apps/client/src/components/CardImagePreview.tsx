@@ -99,7 +99,19 @@ export const ACTIVE_CARD_ART_OPTIONS = CARD_ART_OPTIONS.filter(option =>
 );
 
 export function normalizeCardArtKey(value: string | undefined): CardArtKey {
-  return value === "holo" || value === "zero-art" || value === "zero-art-holo" ? value : "default";
+  switch (value?.trim()) {
+    case "holo":
+    case "HOLO":
+      return "holo";
+    case "zero-art":
+    case "ZERO":
+      return "zero-art";
+    case "zero-art-holo":
+    case "ZERO_HOLO":
+      return "zero-art-holo";
+    default:
+      return "default";
+  }
 }
 
 export function getBaseArtKey(artKey: CardArtKey): "default" | "zero-art" {
