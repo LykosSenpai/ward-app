@@ -5,7 +5,7 @@ export type ZeroCardFilterOptions = {
   posterize?: boolean;
 };
 
-export const ZERO_CARD_FILTER_VERSION = "v3-region-aware";
+export const ZERO_CARD_FILTER_VERSION = "v2-region-aware";
 
 const DEFAULT_OPTIONS: Required<ZeroCardFilterOptions> = {
   contrast: 1.48,
@@ -21,7 +21,9 @@ type NormalizedRect = {
   h: number;
 };
 
+
 const MASKS = {
+  outerFrame: { x: 0, y: 0, w: 1, h: 1 },
   topHeader: { x: 0.045, y: 0.032, w: 0.91, h: 0.112 },
   statBoxes: { x: 0.06, y: 0.058, w: 0.54, h: 0.08 },
   spdBox: { x: 0.63, y: 0.058, w: 0.15, h: 0.08 },
@@ -120,6 +122,7 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
         data[idx] = clamp255(r * 1.03 + 5); data[idx + 1] = clamp255(g * 0.97 + 4); data[idx + 2] = clamp255(b * 0.7); continue;
       }
 
+
       if (inMainArt) {
         let tone = (baseLuma - 128) * options.contrast + 128;
         tone -= Math.min(78, sobelAt(luma, width, height, x, y) * options.edgeStrength);
@@ -146,27 +149,17 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
 }
 
 function drawZeroLogoOverlay(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-  const x = width * 0.062;
-  const y = height * 0.108;
-  const w = width * 0.185;
-  const h = height * 0.052;
-
+  const x = width * 0.06; const y = height * 0.14; const w = width * 0.19; const h = height * 0.058;
   ctx.save();
-  ctx.translate(x + w * 0.5, y + h * 0.5);
-  ctx.rotate((-9 * Math.PI) / 180);
-
-  ctx.fillStyle = "rgba(10, 10, 10, 0.90)";
-  ctx.fillRect(-w * 0.5, -h * 0.5, w, h);
-
-  ctx.strokeStyle = "rgba(231, 196, 95, 0.94)";
-  ctx.lineWidth = Math.max(1, Math.floor(width * 0.0032));
-  ctx.strokeRect(-w * 0.5, -h * 0.5, w, h);
-
-  ctx.fillStyle = "#f5d889";
-  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(8,8,8,0.86)";
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = "rgba(222, 189, 95, 0.9)";
+  ctx.lineWidth = Math.max(1, Math.floor(width * 0.003));
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = "#f0d27f";
+  ctx.font = `${Math.floor(height * 0.033)}px sans-serif`;
   ctx.textBaseline = "middle";
-  ctx.font = `900 ${Math.floor(height * 0.031)}px system-ui, sans-serif`;
-  ctx.fillText("ZERO", 0, 0);
+  ctx.fillText("ZERO", x + w * 0.14, y + h * 0.52);
   ctx.restore();
 }
 
