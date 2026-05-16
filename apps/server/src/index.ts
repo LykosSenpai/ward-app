@@ -452,9 +452,23 @@ function sendLoginChallenge(res: express.Response, challenge: { challengeId: str
   });
 }
 
+function saveCurrentSession(req: express.Request): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session.save(error => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 async function finishLogin(req: express.Request, res: express.Response, user: AuthUser): Promise<void> {
   req.session.user = user;
   await trustDevice(user.id, req, res);
+  await saveCurrentSession(req);
   res.json({ user });
 }
 
@@ -1990,6 +2004,7 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
 
       const profile = await linkDiscordAccount(req.session.user.id, discordAccount);
       req.session.user = profile;
+      await saveCurrentSession(req);
       res.redirect(getDiscordCallbackRedirect("linked", oauthState.clientOrigin));
       return;
     }
@@ -2026,8 +2041,10 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
       return;
     }
 
-    req.session.user = user;
-    await trustDevice(user.id, req, res);
+    const profile = await getUserProfile(user.id);
+    req.session.user = profile;
+    await trustDevice(profile.id, req, res);
+    await saveCurrentSession(req);
     res.redirect(getDiscordCallbackRedirect("signed-in", oauthState.clientOrigin));
   } catch (error) {
     res.redirect(getDiscordCallbackRedirect("error", oauthState?.clientOrigin, error instanceof Error ? error.message : "Discord sign-in failed."));

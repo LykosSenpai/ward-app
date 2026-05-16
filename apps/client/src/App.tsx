@@ -239,6 +239,7 @@ export default function App() {
   const messagingOrigin = embedParentOrigin ?? referrerOrigin;
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [serverMessage, setServerMessage] = useState("Connecting...");
   const [match, setMatch] = useState<AppMatchState | null>(null);
   const [controlledPlayersByMatchId, setControlledPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
@@ -431,6 +432,48 @@ export default function App() {
       setAuthChecked(true);
     });
   }, [embedModeEnabled, embedParentOrigin, embedToken]);
+
+  useEffect(() => {
+    if (!authChecked || !authUser) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const verifyEmailToken = params.get("verifyEmailToken");
+    if (!verifyEmailToken) return;
+
+    params.delete("verifyEmailToken");
+    const nextSearch = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`);
+    setLocationSearch(window.location.search);
+
+    const verifyEmail = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/email/verify`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ token: verifyEmailToken })
+        });
+        const data = await response.json() as { user?: AuthUser; message?: string };
+
+        if (!response.ok) {
+          throw new Error(data.message ?? "Unable to verify email.");
+        }
+
+        if (data.user) {
+          setAuthUser(data.user);
+        }
+
+        setActivePage("profile");
+        setProfileRefreshKey(current => current + 1);
+      } catch (verificationError) {
+        setError(verificationError instanceof Error ? verificationError.message : "Unable to verify email.");
+      }
+    };
+
+    void verifyEmail();
+  }, [authChecked, authUser]);
 
   useEffect(() => {
     socket.on("server:welcome", (data: ServerWelcome) => {
@@ -2172,7 +2215,7 @@ export default function App() {
             onDeleteSelected={deleteSelectedSavedMatches}
           />
         ) : activePage === "profile" ? (
-          <ProfilePage onUserUpdated={user => {
+          <ProfilePage key={profileRefreshKey} onUserUpdated={user => {
             setAuthUser(user);
             socket.disconnect();
             socket.connect();
