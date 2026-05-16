@@ -312,6 +312,7 @@ export default function App() {
     () => Object.fromEntries(featureFlags.map(flag => [flag.key, flag])),
     [featureFlags]
   );
+  const discordAuthEnabled = featureFlagsByKey["discord-auth"]?.enabledForPlayers === true;
 
   function canSeePage(page: AppPage): boolean {
     if (page === "profile") return true;
@@ -1993,7 +1994,7 @@ export default function App() {
       socket.disconnect();
       socket.connect();
       requestInitialData();
-    }} />;
+    }} discordAuthEnabled={discordAuthEnabled} />;
   }
 
   const isBoardFocusMode = activePage === "play" && !!match && playViewMode === "board3d";
@@ -2219,7 +2220,7 @@ export default function App() {
             setAuthUser(user);
             socket.disconnect();
             socket.connect();
-          }} />
+          }} discordAuthEnabled={discordAuthEnabled} />
         ) : activePage === "marketplace" ? (
           <MarketplacePage authUser={authUser} cardLibrary={cardLibrary} />
         ) : activePage === "card-library" ? (

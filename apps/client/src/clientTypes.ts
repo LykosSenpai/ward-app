@@ -329,6 +329,7 @@ export type FeatureKey =
   | "play-table"
   | "match-lobby"
   | "online-gameplay"
+  | "discord-auth"
   | "effect-tools"
   | "admin-tools";
 

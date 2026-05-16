@@ -145,7 +145,8 @@ import {
 } from "./auth/securityStore.js";
 import { sendSecurityEmail } from "./email/brevoEmail.js";
 import { checkDbConnection } from "./db/pool.js";
-import { listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
+import { isFeatureEnabledForPlayers, listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
+import type { FeatureKey } from "./admin/adminFeatureFlags.js";
 import { createDisabledCommerceRouter } from "./marketplace/api/commerceDisabledRoutes.js";
 import { createMarketplaceListingsRouter } from "./marketplace/api/listingsRoutes.js";
 import { createWantsRouter } from "./marketplace/api/wantsRoutes.js";
@@ -321,14 +322,27 @@ async function fetchDiscordUser(code: string): Promise<DiscordUserResponse> {
   return userData;
 }
 
-function startDiscordOAuth(req: express.Request, res: express.Response, mode: DiscordOAuthMode): void {
+async function startDiscordOAuth(req: express.Request, res: express.Response, mode: DiscordOAuthMode): Promise<void> {
   if (!getDiscordOAuthConfigured()) {
     res.status(503).json({ message: "Discord OAuth is not configured." });
     return;
   }
 
+  if (!await isFeatureEnabledForPlayers("discord-auth")) {
+    res.redirect(getDiscordCallbackRedirect(
+      "error",
+      getOAuthClientOrigin(req),
+      "Discord login and linking are temporarily disabled."
+    ));
+    return;
+  }
+
   if (mode === "link" && !req.session.user) {
-    res.status(401).json({ message: "Login required." });
+    res.redirect(getDiscordCallbackRedirect(
+      "error",
+      getOAuthClientOrigin(req),
+      "Log in to Ward Nexus before connecting Discord."
+    ));
     return;
   }
 
@@ -1965,12 +1979,12 @@ app.get("/api/auth/me", async (req, res) => {
   }
 });
 
-app.get("/api/auth/discord/start", authRateLimit, (req, res) => {
-  startDiscordOAuth(req, res, req.session.user ? "link" : "login");
+app.get("/api/auth/discord/start", authRateLimit, async (req, res) => {
+  await startDiscordOAuth(req, res, req.session.user ? "link" : "login");
 });
 
-app.get("/api/auth/discord/link", authRateLimit, (req, res) => {
-  startDiscordOAuth(req, res, "link");
+app.get("/api/auth/discord/link", authRateLimit, async (req, res) => {
+  await startDiscordOAuth(req, res, "link");
 });
 
 app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
@@ -1987,6 +2001,10 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
 
     if (!code) {
       throw new Error("Discord did not return an authorization code.");
+    }
+
+    if (!await isFeatureEnabledForPlayers("discord-auth")) {
+      throw new Error("Discord login and linking are temporarily disabled.");
     }
 
     const discordUser = await fetchDiscordUser(code);
@@ -3220,7 +3238,7 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("admin:features:update", async (payload: { key: "card-library" | "deck-builder" | "marketplace" | "saved-matches" | "play-table" | "match-lobby" | "online-gameplay" | "effect-tools" | "admin-tools"; enabledForPlayers: boolean }, ack?: (response: { ok: boolean; error?: string }) => void) => {
+  socket.on("admin:features:update", async (payload: { key: FeatureKey; enabledForPlayers: boolean }, ack?: (response: { ok: boolean; error?: string }) => void) => {
     try {
       const user = requireSocketUser(socket);
       await updateFeatureFlagForPlayers(user, payload.key, !!payload.enabledForPlayers);

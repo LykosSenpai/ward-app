@@ -5,6 +5,7 @@ import { PasswordInput } from "./ui/PasswordInput";
 
 type ProfilePageProps = {
   onUserUpdated: (user: AuthUser) => void;
+  discordAuthEnabled: boolean;
 };
 
 type TwoFactorSetup = {
@@ -12,7 +13,7 @@ type TwoFactorSetup = {
   otpauthUrl: string;
 };
 
-export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
+export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -276,8 +277,26 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
     }
   }
 
-  function connectDiscord() {
-    window.location.href = `${API_BASE_URL}/api/auth/discord/link`;
+  async function connectDiscord() {
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        credentials: "include"
+      });
+      const data = await response.json() as { user?: AuthUser | null };
+
+      if (!response.ok || !data.user) {
+        throw new Error("Your login session is missing. Log in again, then connect Discord from your profile.");
+      }
+
+      window.location.href = `${API_BASE_URL}/api/auth/discord/link`;
+    } catch (discordError) {
+      setError(discordError instanceof Error ? discordError.message : "Unable to start Discord connection.");
+      setBusy(false);
+    }
   }
 
   async function unlinkDiscord() {
@@ -385,13 +404,15 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
                 </button>
               </div>
             </>
-          ) : (
+          ) : discordAuthEnabled ? (
             <>
               <p className="muted">Connect Discord to post in the marketplace and show verified contact info.</p>
-              <button type="button" onClick={connectDiscord} disabled={busy}>
+              <button type="button" onClick={() => void connectDiscord()} disabled={busy}>
                 Connect Discord
               </button>
             </>
+          ) : (
+            <p className="muted">Discord login and linking are temporarily disabled.</p>
           )}
         </section>
 

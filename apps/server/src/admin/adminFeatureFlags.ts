@@ -11,6 +11,7 @@ export type FeatureKey =
   | "play-table"
   | "match-lobby"
   | "online-gameplay"
+  | "discord-auth"
   | "effect-tools"
   | "admin-tools";
 
@@ -38,6 +39,7 @@ const DEFAULT_FLAGS: ServerFeatureFlag[] = [
   { key: "play-table", label: "Play Table", description: "Lobby and active play table.", enabledForPlayers: false, adminCanPreview: true, adminOnly: false, sortOrder: 50, updatedAt: new Date(0).toISOString() },
   { key: "match-lobby", label: "Match Lobby", description: "Multiplayer lobby flows.", enabledForPlayers: false, adminCanPreview: true, adminOnly: false, sortOrder: 60, updatedAt: new Date(0).toISOString() },
   { key: "online-gameplay", label: "Online Gameplay", description: "Online gameplay systems.", enabledForPlayers: false, adminCanPreview: true, adminOnly: false, sortOrder: 70, updatedAt: new Date(0).toISOString() },
+  { key: "discord-auth", label: "Discord Login & Linking", description: "Allow players to sign in with Discord or connect Discord from profile.", enabledForPlayers: false, adminCanPreview: true, adminOnly: false, sortOrder: 75, updatedAt: new Date(0).toISOString() },
   { key: "effect-tools", label: "Effect Tools", description: "Effect authoring and diagnostics.", enabledForPlayers: false, adminCanPreview: true, adminOnly: true, sortOrder: 80, updatedAt: new Date(0).toISOString() },
   { key: "admin-tools", label: "Admin Controls", description: "Admin controls and rollout toggles.", enabledForPlayers: false, adminCanPreview: true, adminOnly: true, sortOrder: 999, updatedAt: new Date(0).toISOString() }
 ];
@@ -88,4 +90,9 @@ export async function updateFeatureFlagForPlayers(user: Pick<AuthUser, "role"> |
   });
   await saveFeatureFlags(nextFlags);
   return nextFlags;
+}
+
+export async function isFeatureEnabledForPlayers(key: FeatureKey): Promise<boolean> {
+  const flags = await loadFeatureFlags();
+  return flags.some(flag => flag.key === key && flag.enabledForPlayers);
 }

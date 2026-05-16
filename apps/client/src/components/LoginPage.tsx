@@ -8,6 +8,7 @@ import { PasswordInput } from "./ui/PasswordInput";
 
 type LoginPageProps = {
   onAuthenticated: (user: AuthUser) => void;
+  discordAuthEnabled: boolean;
 };
 
 type AuthMode = "login" | "register" | "forgot" | "reset";
@@ -92,7 +93,7 @@ const FALLBACK_SHOWCASE_CARDS: CardLibraryCardSummary[] = [
   }
 ];
 
-export function LoginPage({ onAuthenticated }: LoginPageProps) {
+export function LoginPage({ discordAuthEnabled, onAuthenticated }: LoginPageProps) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [login, setLogin] = useState("");
   const [username, setUsername] = useState("");
@@ -549,9 +550,11 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
                 </button>
               </form>
 
-              <button className="login-mode-toggle" type="button" onClick={continueWithDiscord}>
-                Continue with Discord
-              </button>
+              {discordAuthEnabled && (
+                <button className="login-mode-toggle" type="button" onClick={continueWithDiscord}>
+                  Continue with Discord
+                </button>
+              )}
 
               {mode === "login" && (
                 <button
