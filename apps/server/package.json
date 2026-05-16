@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx --conditions=development watch src/index.ts",
+    "dev": "tsx watch --conditions=development src/index.ts",
     "build": "tsc",
     "db:check": "tsx src/db/check.ts",
     "db:migrate": "tsx src/db/migrate.ts",
