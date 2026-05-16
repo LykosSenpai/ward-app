@@ -76,27 +76,27 @@ import {
 import {
   deckFileExists,
   deleteDeckFromDisk,
-  deleteMatchFromDisk,
+  deleteMatchFromDisk as deleteMatchFromDiskFile,
   listCardLibraryForPacks,
   listDefaultCardLibrary,
   loadEffectRuntimeTestStatusMap,
   saveEffectRuntimeTestStatusRecord,
   saveEffectRuntimeTestStatusRecords,
   getUserDeckProofPhotoPath,
-  listSavedMatches,
+  listSavedMatches as listSavedMatchesFromDisk,
   listSetupOptions,
   loadCardCatalog,
   loadCardOwnershipCollection,
   loadCardLimitMap,
   loadDeckList,
-  loadMatchFromDisk,
+  loadMatchFromDisk as loadMatchFromDiskFile,
   saveDeckListToDisk,
   updateCardEffectsInPack,
   updateCardLimitRule,
   saveMatchToDisk,
   validateDataFileId
 } from "./dataStore.js";
-import type { SetupOptions } from "./dataStore.js";
+import type { SavedMatchSummary, SetupOptions } from "./dataStore.js";
 import {
   deleteUserDeck,
   listTournamentDeckSubmissions,
@@ -107,6 +107,12 @@ import {
   saveUserDeckProofPhoto,
   userDeckFileExists
 } from "./decks/userDeckStore.js";
+import {
+  deleteSavedMatchFromDb,
+  listSavedMatchesFromDb,
+  loadSavedMatchFromDb,
+  saveSavedMatch
+} from "./matches/savedMatchStore.js";
 
 import {
   generateEffectTestPlan,
@@ -1834,6 +1840,118 @@ function cloneMatchState(match: MatchState): MatchState {
   return JSON.parse(JSON.stringify(match)) as MatchState;
 }
 
+function logSavedMatchStoreError(action: string, error: unknown): void {
+  console.error(`[saved-match] ${action} failed`, error instanceof Error ? error.message : error);
+}
+
+function mergeSavedMatchSummaries(
+  primary: SavedMatchSummary[],
+  fallback: SavedMatchSummary[]
+): SavedMatchSummary[] {
+  const byMatchId = new Map<string, SavedMatchSummary>();
+
+  for (const summary of fallback) {
+    byMatchId.set(summary.matchId, summary);
+  }
+
+  for (const summary of primary) {
+    byMatchId.set(summary.matchId, summary);
+  }
+
+  return [...byMatchId.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+async function listSavedMatchesForServer(): Promise<SavedMatchSummary[]> {
+  let diskMatches: SavedMatchSummary[] = [];
+
+  try {
+    diskMatches = listSavedMatchesFromDisk();
+  } catch (error) {
+    logSavedMatchStoreError("list disk saved matches", error);
+  }
+
+  try {
+    const dbMatches = await listSavedMatchesFromDb();
+    const dbMatchIds = new Set(dbMatches.map(match => match.matchId));
+
+    for (const diskMatch of diskMatches) {
+      if (dbMatchIds.has(diskMatch.matchId)) continue;
+
+      try {
+        await saveSavedMatch(loadMatchFromDiskFile(diskMatch.matchId));
+      } catch (error) {
+        logSavedMatchStoreError(`backfill ${diskMatch.matchId}`, error);
+      }
+    }
+
+    return mergeSavedMatchSummaries(dbMatches, diskMatches);
+  } catch (error) {
+    logSavedMatchStoreError("list Postgres saved matches", error);
+    return diskMatches;
+  }
+}
+
+function saveMatchSnapshotEventually(match: MatchState): void {
+  saveMatchToDisk(match);
+  void saveSavedMatch(match).catch(error => {
+    logSavedMatchStoreError(`save ${match.matchId}`, error);
+  });
+}
+
+async function saveMatchSnapshotForServer(match: MatchState): Promise<"DATABASE" | "FILE_FALLBACK"> {
+  saveMatchToDisk(match);
+
+  try {
+    await saveSavedMatch(match);
+    return "DATABASE";
+  } catch (error) {
+    logSavedMatchStoreError(`save ${match.matchId}`, error);
+    if (process.env.DATABASE_URL?.trim()) {
+      throw error;
+    }
+    return "FILE_FALLBACK";
+  }
+}
+
+async function loadSavedMatchForServer(matchId: string): Promise<MatchState> {
+  try {
+    const dbMatch = await loadSavedMatchFromDb(matchId);
+    if (dbMatch) return dbMatch;
+  } catch (error) {
+    logSavedMatchStoreError(`load ${matchId}`, error);
+  }
+
+  return loadMatchFromDiskFile(matchId);
+}
+
+async function deleteSavedMatchForServer(matchId: string): Promise<void> {
+  let deletedFromDb = false;
+
+  try {
+    deletedFromDb = await deleteSavedMatchFromDb(matchId);
+  } catch (error) {
+    logSavedMatchStoreError(`delete ${matchId}`, error);
+  }
+
+  try {
+    deleteMatchFromDiskFile(matchId);
+  } catch (error) {
+    if (!deletedFromDb) {
+      throw error;
+    }
+  }
+}
+
+function emitSavedMatchesEventually(target: { emit: (event: string, data: SavedMatchSummary[]) => unknown }): void {
+  void listSavedMatchesForServer()
+    .then(savedMatches => {
+      target.emit("match:savedList", savedMatches);
+    })
+    .catch(error => {
+      logSavedMatchStoreError("emit saved match list", error);
+    });
+}
+
 function pushUndoSnapshot(match: MatchState): void {
   const history = matchUndoHistory.get(match.matchId) ?? [];
 
@@ -1942,7 +2060,7 @@ function emitMatchState(match: MatchState): void {
   const matchToEmit = completeCemeteryHpLossIfNeeded(match);
 
   activeMatches.set(matchToEmit.matchId, matchToEmit);
-  saveMatchToDisk(matchToEmit);
+  saveMatchSnapshotEventually(matchToEmit);
   const roomSocketIds = io.sockets.adapter.rooms.get(matchToEmit.matchId);
 
   if (!roomSocketIds || roomSocketIds.size === 0) {
@@ -2635,7 +2753,7 @@ app.post("/api/support-tickets/board-report", supportTicketRateLimit, async (req
     let match = activeMatches.get(parsed.data.matchId);
     if (!match) {
       try {
-        match = loadMatchFromDisk(parsed.data.matchId);
+        match = await loadSavedMatchForServer(parsed.data.matchId);
       } catch {
         match = undefined;
       }
@@ -3335,7 +3453,7 @@ io.on("connection", async socket => {
     socketId: socket.id
   });
 
-  socket.emit("match:savedList", listSavedMatches());
+  socket.emit("match:savedList", await listSavedMatchesForServer());
   socket.emit("setup:options", await getUserSetupOptions(connectedUser));
   socket.emit("cards:library", listDefaultCardLibrary());
   socket.emit("collection:ownership", await loadOwnershipForSocketUser(connectedUser));
@@ -3397,7 +3515,7 @@ io.on("connection", async socket => {
         socket.join(match.matchId);
         emitMatchState(match);
 
-        socket.emit("match:savedList", listSavedMatches());
+        emitSavedMatchesEventually(socket);
 
         console.log(`Created demo 1v1 match: ${match.matchId}`);
       } catch (error) {
@@ -3452,7 +3570,7 @@ io.on("connection", async socket => {
         socket.join(match.matchId);
         emitMatchState(match);
 
-        socket.emit("match:savedList", listSavedMatches());
+        emitSavedMatchesEventually(socket);
 
         console.log(
           `Created configured 1v1 match: ${match.matchId} | Packs: ${data.packIds.join(
@@ -5473,7 +5591,7 @@ io.on("connection", async socket => {
           activeMatches.set(match.matchId, match);
           matchUndoHistory.set(match.matchId, []);
           socket.join(match.matchId);
-          saveMatchToDisk(match);
+          saveMatchSnapshotEventually(match);
           results.push(result);
           socket.emit("llm:batchProgress", {
             stage: "chunk",
@@ -5580,9 +5698,9 @@ io.on("connection", async socket => {
     }
   );
 
-  socket.on("match:listSaved", () => {
+  socket.on("match:listSaved", async () => {
     try {
-      socket.emit("match:savedList", listSavedMatches());
+      socket.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5590,17 +5708,19 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("match:saveCurrent", (matchId: string) => {
+  socket.on("match:saveCurrent", async (matchId: string) => {
     try {
       const match = getMatchOrThrow(matchId);
-      saveMatchToDisk(match);
+      const saveTarget = await saveMatchSnapshotForServer(match);
 
       socket.emit("match:saved", {
-        message: `Match saved: ${matchId}`,
+        message: saveTarget === "DATABASE"
+          ? `Match saved: ${matchId}`
+          : `Match saved locally: ${matchId}`,
         matchId
       });
 
-      socket.emit("match:savedList", listSavedMatches());
+      socket.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5608,9 +5728,9 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("match:loadSaved", (matchId: string) => {
+  socket.on("match:loadSaved", async (matchId: string) => {
     try {
-      const match = loadMatchFromDisk(matchId);
+      const match = await loadSavedMatchForServer(matchId);
 
       activeMatches.set(match.matchId, match);
       matchUndoHistory.set(match.matchId, []);
@@ -5623,7 +5743,7 @@ io.on("connection", async socket => {
         matchId
       });
 
-      socket.emit("match:savedList", listSavedMatches());
+      socket.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5631,9 +5751,9 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("match:deleteSaved", (matchId: string) => {
+  socket.on("match:deleteSaved", async (matchId: string) => {
     try {
-      deleteMatchFromDisk(matchId);
+      await deleteSavedMatchForServer(matchId);
 
       activeMatches.delete(matchId);
       matchUndoHistory.delete(matchId);
@@ -5644,7 +5764,7 @@ io.on("connection", async socket => {
         matchId
       });
 
-      io.emit("match:savedList", listSavedMatches());
+      io.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5652,7 +5772,7 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("match:deleteSavedBulk", (data: { matchIds: string[] }) => {
+  socket.on("match:deleteSavedBulk", async (data: { matchIds: string[] }) => {
     try {
       const matchIds = [...new Set(data.matchIds ?? [])].filter(Boolean);
 
@@ -5665,7 +5785,7 @@ io.on("connection", async socket => {
 
       for (const matchId of matchIds) {
         try {
-          deleteMatchFromDisk(matchId);
+          await deleteSavedMatchForServer(matchId);
           activeMatches.delete(matchId);
           matchUndoHistory.delete(matchId);
           matchPlayerOwners.delete(matchId);
@@ -5688,7 +5808,7 @@ io.on("connection", async socket => {
         });
       }
 
-      io.emit("match:savedList", listSavedMatches());
+      io.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5706,7 +5826,7 @@ io.on("connection", async socket => {
 
         activeMatches.set(data.matchId, updatedMatch);
         emitMatchState(updatedMatch);
-        socket.emit("match:savedList", listSavedMatches());
+        emitSavedMatchesEventually(socket);
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -5737,7 +5857,7 @@ io.on("connection", async socket => {
 
         activeMatches.set(data.matchId, updatedMatch);
         emitMatchState(updatedMatch);
-        socket.emit("match:savedList", listSavedMatches());
+        emitSavedMatchesEventually(socket);
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -5771,7 +5891,7 @@ io.on("connection", async socket => {
       activeMatches.set(matchId, restoredMatch);
       matchUndoHistory.set(matchId, history);
 
-      saveMatchToDisk(restoredMatch);
+      saveMatchSnapshotEventually(restoredMatch);
 
       socket.join(matchId);
       io.to(matchId).emit("match:state", restoredMatch);
@@ -5782,7 +5902,7 @@ io.on("connection", async socket => {
         matchId
       });
 
-      socket.emit("match:savedList", listSavedMatches());
+      emitSavedMatchesEventually(socket);
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -6005,12 +6125,12 @@ io.on("connection", async socket => {
         [sortedPlayers[0].userId, "player_1"],
         [sortedPlayers[1].userId, "player_2"]
       ]));
-      saveMatchToDisk(match);
+      saveMatchSnapshotEventually(match);
 
       io.in(lobby.id).socketsJoin(match.matchId);
       io.to(lobby.id).emit("lobby:updated", getLobbySnapshot(lobby));
       io.to(lobby.id).emit("match:state", match);
-      io.to(lobby.id).emit("match:savedList", listSavedMatches());
+      emitSavedMatchesEventually(io.to(lobby.id));
       emitLobbyList();
     } catch (error) {
       socket.emit("match:error", {
