@@ -83,6 +83,14 @@ type BlockDragState =
   | { type: "CHAIN_BLOCK"; effectId: string; blockId: string }
   | { type: "TEMPLATE"; templateId: string };
 
+function getBrowserStorage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 function getCardKey(card: CardLibraryCardSummary): string {
   return `${card.packId}:${card.id}`;
 }
@@ -246,7 +254,7 @@ function normalizeDeckId(value: string): string {
 
 function readSavedEffectTestDecks(): SavedEffectTestDeck[] {
   try {
-    const raw = window.localStorage.getItem(EFFECT_TEST_DECKS_STORAGE_KEY);
+    const raw = getBrowserStorage()?.getItem(EFFECT_TEST_DECKS_STORAGE_KEY);
     if (!raw) return [];
 
     const parsed = JSON.parse(raw) as unknown;
@@ -269,7 +277,11 @@ function readSavedEffectTestDecks(): SavedEffectTestDeck[] {
 }
 
 function writeSavedEffectTestDecks(decks: SavedEffectTestDeck[]): void {
-  window.localStorage.setItem(EFFECT_TEST_DECKS_STORAGE_KEY, JSON.stringify(decks, null, 2));
+  try {
+    getBrowserStorage()?.setItem(EFFECT_TEST_DECKS_STORAGE_KEY, JSON.stringify(decks, null, 2));
+  } catch {
+    // Dev browsers can disable localStorage; the editor should still keep working.
+  }
 }
 function getNextEffectId(effects: WardEngineEffect[], baseEffectId: string): string {
   const prefixMatch = baseEffectId.match(/^(.*?-E)(\d+)$/);

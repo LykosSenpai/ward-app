@@ -485,6 +485,11 @@ export function CardLibraryPanel({
       return;
     }
 
+    if (typeof IntersectionObserver === "undefined") {
+      setVisibleCardCount(displayCards.length);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       entries => {
         if (!entries.some(entry => entry.isIntersecting)) {
@@ -503,13 +508,18 @@ export function CardLibraryPanel({
     observer.observe(sentinel);
 
     return () => observer.disconnect();
-  }, [filteredCards.length, hiddenBelowCardCount, visibleCardCount]);
+  }, [displayCards.length, filteredCards.length, hiddenBelowCardCount, visibleCardCount]);
 
   useEffect(() => {
     const sentinel = loadPreviousSentinelRef.current;
     const root = cardGridRef.current;
 
     if (!sentinel || !root || hiddenAboveCardCount === 0) {
+      return;
+    }
+
+    if (typeof IntersectionObserver === "undefined") {
+      setUnloadedCardCount(0);
       return;
     }
 
@@ -560,6 +570,11 @@ export function CardLibraryPanel({
     }
 
     updateGridMeasurements();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateGridMeasurements);
+      return () => window.removeEventListener("resize", updateGridMeasurements);
+    }
 
     const resizeObserver = new ResizeObserver(updateGridMeasurements);
     resizeObserver.observe(grid);

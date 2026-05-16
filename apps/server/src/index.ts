@@ -74,8 +74,6 @@ import {
 
 import {
   deckFileExists,
-  userDeckFileExists,
-  deleteUserDeckFromDisk,
   deleteDeckFromDisk,
   deleteMatchFromDisk,
   listCardLibraryForPacks,
@@ -86,25 +84,28 @@ import {
   getUserDeckProofPhotoPath,
   listSavedMatches,
   listSetupOptions,
-  listTournamentDeckSubmissions,
-  listUserDecks,
   loadCardCatalog,
   loadCardOwnershipCollection,
   loadCardLimitMap,
   loadDeckList,
-  loadUserDeckList,
   loadMatchFromDisk,
   saveDeckListToDisk,
-  saveUserDeckProofPhoto,
-  saveUserDeckListToDisk,
   updateCardEffectsInPack,
   updateCardLimitRule,
-  reviewTournamentDeckSubmission,
   saveMatchToDisk,
-  upsertCardOwnership,
   validateDataFileId
 } from "./dataStore.js";
 import type { SetupOptions } from "./dataStore.js";
+import {
+  deleteUserDeck,
+  listTournamentDeckSubmissions,
+  listUserDecks,
+  loadUserDeckList,
+  reviewTournamentDeckSubmission,
+  saveUserDeckList,
+  saveUserDeckProofPhoto,
+  userDeckFileExists
+} from "./decks/userDeckStore.js";
 
 import {
   generateEffectTestPlan,
@@ -209,6 +210,24 @@ type DiscordUserResponse = {
   avatar?: string | null;
   email?: string | null;
 };
+
+type SocketAckResponse = {
+  ok: boolean;
+  error?: string;
+  message?: string;
+};
+
+type SocketAck = (response: SocketAckResponse) => void;
+
+function sendSocketAckSuccess(ack?: SocketAck, message?: string): void {
+  ack?.({ ok: true, ...(message ? { message } : {}) });
+}
+
+function sendSocketAckError(ack: SocketAck | undefined, error: unknown, fallbackMessage: string): string {
+  const message = error instanceof Error ? error.message : fallbackMessage;
+  ack?.({ ok: false, error: message });
+  return message;
+}
 
 function isAllowedClientOrigin(origin?: string): boolean {
   if (!origin) return true;
@@ -1024,12 +1043,12 @@ function createId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function getUserSetupOptions(user: AuthUser | null): SetupOptions {
+async function getUserSetupOptions(user: AuthUser | null): Promise<SetupOptions> {
   const options = listSetupOptions();
 
   return {
     ...options,
-    decks: user ? listUserDecks(user.id) : []
+    decks: user ? await listUserDecks(user.id) : []
   };
 }
 
@@ -1037,30 +1056,34 @@ async function loadOwnershipForSocketUser(user: AuthUser | null) {
   return user ? await loadUserCardOwnershipMap(user.id) : loadCardOwnershipCollection();
 }
 
-function loadDeckForUser(userId: string, deckId: string): DeckListDefinition {
-  return loadUserDeckList(userId, deckId);
+async function loadDeckForUser(userId: string, deckId: string): Promise<DeckListDefinition> {
+  return await loadUserDeckList(userId, deckId);
 }
 
-function getFirstDeckForUser(userId: string): DeckListDefinition {
-  const [deck] = listUserDecks(userId);
+async function getFirstDeckForUser(userId: string): Promise<DeckListDefinition> {
+  const [deck] = await listUserDecks(userId);
 
   if (!deck) {
     throw new Error("Each player needs at least one saved deck before starting a match.");
   }
 
-  return loadDeckForUser(userId, deck.id);
+  return await loadDeckForUser(userId, deck.id);
 }
 
-function getDeckDetailsForUser(user: AuthUser | null) {
+async function getDeckDetailsForUser(user: AuthUser | null) {
   if (!user) {
     return [];
   }
 
-  return listUserDecks(user.id).map(deckSummary => {
-    const deck = loadUserDeckList(user.id, deckSummary.id);
+  const deckSummaries = await listUserDecks(user.id);
+  const details = [];
 
-    return serializeDeckDetail(deck, user.id, user.displayName);
-  });
+  for (const deckSummary of deckSummaries) {
+    const deck = await loadUserDeckList(user.id, deckSummary.id);
+    details.push(serializeDeckDetail(deck, user.id, user.displayName));
+  }
+
+  return details;
 }
 
 function serializeDeckDetail(deck: DeckListDefinition, ownerUserId: string, ownerDisplayName: string) {
@@ -2650,7 +2673,7 @@ app.post("/api/support-tickets/site-report", supportTicketRateLimit, async (req,
   }
 });
 
-app.post("/api/decks/:deckId/proof-photos", (req, res) => {
+app.post("/api/decks/:deckId/proof-photos", async (req, res) => {
   try {
     const user = req.session.user;
     if (!user) {
@@ -2674,7 +2697,7 @@ app.post("/api/decks/:deckId/proof-photos", (req, res) => {
     for (const rawPhoto of rawPhotos) {
       const decoded = decodeProofPhotoDataUrl(String(rawPhoto?.dataUrl ?? ""));
       const extension = PROOF_PHOTO_EXTENSION_BY_MIME_TYPE[decoded.mimeType] ?? "jpg";
-      deck = saveUserDeckProofPhoto({
+      deck = await saveUserDeckProofPhoto({
         userId: user.id,
         deckId,
         photo: {
@@ -2696,7 +2719,7 @@ app.post("/api/decks/:deckId/proof-photos", (req, res) => {
   }
 });
 
-app.get("/api/decks/:ownerUserId/:deckId/proof-photos/:photoId", (req, res) => {
+app.get("/api/decks/:ownerUserId/:deckId/proof-photos/:photoId", async (req, res) => {
   try {
     const user = req.session.user;
     if (!user) {
@@ -2716,7 +2739,7 @@ app.get("/api/decks/:ownerUserId/:deckId/proof-photos/:photoId", (req, res) => {
       return;
     }
 
-    const deck = loadUserDeckList(ownerUserId, deckId);
+    const deck = await loadUserDeckList(ownerUserId, deckId);
     const photo = deck.tournamentProofPhotos?.find(item => item.id === photoId);
     if (!photo) {
       res.status(404).json({ message: "Proof photo not found." });
@@ -3257,10 +3280,10 @@ io.on("connection", async socket => {
   });
 
   socket.emit("match:savedList", listSavedMatches());
-  socket.emit("setup:options", getUserSetupOptions(connectedUser));
+  socket.emit("setup:options", await getUserSetupOptions(connectedUser));
   socket.emit("cards:library", listDefaultCardLibrary());
   socket.emit("collection:ownership", await loadOwnershipForSocketUser(connectedUser));
-  socket.emit("deck:details", getDeckDetailsForUser(connectedUser));
+  socket.emit("deck:details", await getDeckDetailsForUser(connectedUser));
   socket.emit("lobby:list", listLobbySnapshots());
   socket.emit("features:list", { ok: true, features: await listFeatureFlagsForUser(connectedUser) });
 
@@ -3331,7 +3354,7 @@ io.on("connection", async socket => {
 
   socket.on(
     "match:create1v1WithSetup",
-    (data: {
+    async (data: {
       packIds: string[];
       player1DeckId: string;
       player2DeckId: string;
@@ -3353,8 +3376,8 @@ io.on("connection", async socket => {
 
         const cardCatalog = loadCardCatalog(data.packIds);
         const cardLimits = loadCardLimitMap();
-        const player1Deck = loadDeckForUser(user.id, data.player1DeckId);
-        const player2Deck = loadDeckForUser(user.id, data.player2DeckId);
+        const player1Deck = await loadDeckForUser(user.id, data.player1DeckId);
+        const player2Deck = await loadDeckForUser(user.id, data.player2DeckId);
 
         const match = create1v1MatchFromDeckCardIds({
           cardCatalog,
@@ -4461,10 +4484,10 @@ io.on("connection", async socket => {
   socket.on("setup:listOptions", async () => {
     try {
       const user = getSocketUser(socket);
-      socket.emit("setup:options", getUserSetupOptions(user));
+      socket.emit("setup:options", await getUserSetupOptions(user));
       socket.emit("cards:library", listDefaultCardLibrary());
       socket.emit("collection:ownership", await loadOwnershipForSocketUser(user));
-      socket.emit("deck:details", getDeckDetailsForUser(user));
+      socket.emit("deck:details", await getDeckDetailsForUser(user));
       socket.emit("lobby:list", listLobbySnapshots());
     } catch (error) {
       socket.emit("match:error", {
@@ -4473,19 +4496,19 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("deck:listDetails", () => {
+  socket.on("deck:listDetails", async () => {
     try {
       const user = getSocketUser(socket);
-      const deckDetails = getDeckDetailsForUser(user);
+      const deckDetails = await getDeckDetailsForUser(user);
 
       socket.emit("deck:details", deckDetails);
       if (canUserReviewTournamentDecks(user)) {
-        void listUsersForTournamentDeckReview().then(users => {
-          socket.emit(
-            "deck:tournamentSubmissions",
-            listTournamentDeckSubmissions(users).map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
-          );
-        });
+        const users = await listUsersForTournamentDeckReview();
+        const submissions = await listTournamentDeckSubmissions(users);
+        socket.emit(
+          "deck:tournamentSubmissions",
+          submissions.map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
+        );
       }
     } catch (error) {
       socket.emit("match:error", {
@@ -4502,9 +4525,10 @@ io.on("connection", async socket => {
       }
 
       const users = await listUsersForTournamentDeckReview();
+      const submissions = await listTournamentDeckSubmissions(users);
       socket.emit(
         "deck:tournamentSubmissions",
-        listTournamentDeckSubmissions(users).map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
+        submissions.map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
       );
     } catch (error) {
       socket.emit("match:error", {
@@ -4515,7 +4539,7 @@ io.on("connection", async socket => {
 
   socket.on(
     "deck:reviewTournamentSubmission",
-    (data: {
+    async (data: {
       ownerUserId: string;
       deckId: string;
       status: "VERIFIED" | "REJECTED";
@@ -4527,7 +4551,7 @@ io.on("connection", async socket => {
           throw new Error("Only hosts and admins can review tournament deck submissions.");
         }
 
-        reviewTournamentDeckSubmission({
+        await reviewTournamentDeckSubmission({
           ownerUserId: data.ownerUserId,
           deckId: data.deckId,
           reviewerUserId: user.id,
@@ -4541,12 +4565,12 @@ io.on("connection", async socket => {
           deckId: data.deckId
         });
 
-        void listUsersForTournamentDeckReview().then(users => {
-          io.emit(
-            "deck:tournamentSubmissions",
-            listTournamentDeckSubmissions(users).map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
-          );
-        });
+        const users = await listUsersForTournamentDeckReview();
+        const submissions = await listTournamentDeckSubmissions(users);
+        io.emit(
+          "deck:tournamentSubmissions",
+          submissions.map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
+        );
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -4568,7 +4592,7 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("collection:getOwnership", async () => {
+  const emitCollectionOwnership = async () => {
     try {
       socket.emit("collection:ownership", await loadOwnershipForSocketUser(getSocketUser(socket)));
     } catch (error) {
@@ -4576,7 +4600,10 @@ io.on("connection", async socket => {
         message: error instanceof Error ? error.message : "Unknown error"
       });
     }
-  });
+  };
+
+  socket.on("collection:getOwnership", emitCollectionOwnership);
+  socket.on("collection:listOwnership", emitCollectionOwnership);
 
   socket.on("marketplace:listNeeds", async () => {
     try {
@@ -4620,20 +4647,20 @@ io.on("connection", async socket => {
 
   socket.on(
     "collection:updateOwnership",
-    async (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }) => {
+    async (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }, ack?: SocketAck) => {
       try {
-        const user = getSocketUser(socket);
-        const ownershipMap = user
-          ? await setUserCardOwnershipCount({
+        const user = requireSocketUser(socket);
+        const ownershipMap = await setUserCardOwnershipCount({
             userId: user.id,
             ownershipKey: data.variant && data.variant !== "default" ? `${data.cardId}__art_${data.variant}` : data.cardId,
             ownedCount: data.ownedCount
-          })
-          : upsertCardOwnership(data);
+          });
         socket.emit("collection:ownership", ownershipMap);
+        sendSocketAckSuccess(ack);
       } catch (error) {
+        const message = sendSocketAckError(ack, error, "Unable to save card ownership.");
         socket.emit("collection:error", {
-          message: error instanceof Error ? error.message : "Unknown error"
+          message
         });
       }
     }
@@ -4641,28 +4668,26 @@ io.on("connection", async socket => {
 
   socket.on(
     "collection:bulkUpdateOwnership",
-    async (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }) => {
+    async (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }, ack?: SocketAck) => {
       try {
-        const user = getSocketUser(socket);
+        const user = requireSocketUser(socket);
         let ownershipMap = await loadOwnershipForSocketUser(user);
         for (const update of data.updates ?? []) {
-          ownershipMap = user
-            ? await setUserCardOwnershipCount({
+          ownershipMap = await setUserCardOwnershipCount({
               userId: user.id,
               ownershipKey: update.variant && update.variant !== "default" ? `${update.cardId}__art_${update.variant}` : update.cardId,
               ownedCount: update.ownedCount
-            })
-            : upsertCardOwnership(update);
+            });
         }
         socket.emit("collection:ownership", ownershipMap);
-        if (user) {
-          const ownership = await loadUserCardOwnershipMap(user.id);
-          const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
-          socket.emit("marketplace:needs", needs);
-        }
+        const ownership = await loadUserCardOwnershipMap(user.id);
+        const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
+        socket.emit("marketplace:needs", needs);
+        sendSocketAckSuccess(ack);
       } catch (error) {
+        const message = sendSocketAckError(ack, error, "Unable to save card ownership.");
         socket.emit("collection:error", {
-          message: error instanceof Error ? error.message : "Unknown error"
+          message
         });
       }
     }
@@ -5721,7 +5746,7 @@ io.on("connection", async socket => {
 
   socket.on(
     "lobby:create",
-    (data: { name?: string; format?: MatchLobbyFormat; selectedPackIds?: string[]; selectedDeckId?: string }) => {
+    async (data: { name?: string; format?: MatchLobbyFormat; selectedPackIds?: string[]; selectedDeckId?: string }) => {
       try {
         const user = requireSocketUser(socket);
         const selectedPackIds = (data.selectedPackIds?.length ? data.selectedPackIds : listSetupOptions().cardPacks.map(pack => pack.id))
@@ -5733,7 +5758,7 @@ io.on("connection", async socket => {
         }
 
         if (data.selectedDeckId) {
-          loadDeckForUser(user.id, data.selectedDeckId);
+          await loadDeckForUser(user.id, data.selectedDeckId);
         }
 
         const now = new Date().toISOString();
@@ -5830,14 +5855,14 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("lobby:selectDeck", (data: { lobbyId: string; deckId: string }) => {
+  socket.on("lobby:selectDeck", async (data: { lobbyId: string; deckId: string }) => {
     try {
       const user = requireSocketUser(socket);
       validateDataFileId(data.lobbyId);
       validateDataFileId(data.deckId);
       const lobby = getLobbyOrThrow(data.lobbyId);
       const player = getLobbyPlayerOrThrow(lobby, user.id);
-      loadDeckForUser(user.id, data.deckId);
+      await loadDeckForUser(user.id, data.deckId);
 
       player.selectedDeckId = data.deckId;
       player.ready = true;
@@ -5850,7 +5875,7 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("lobby:startMatch", (lobbyId: string) => {
+  socket.on("lobby:startMatch", async (lobbyId: string) => {
     try {
       const user = requireSocketUser(socket);
       validateDataFileId(lobbyId);
@@ -5869,8 +5894,8 @@ io.on("connection", async socket => {
         throw new Error("Both players must choose a deck before the match can start.");
       }
 
-      const player1Deck = loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId);
-      const player2Deck = loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId);
+      const player1Deck = await loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId);
+      const player2Deck = await loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId);
       const cardCatalog = loadCardCatalog(lobby.selectedPackIds);
       const isTournamentLobby = lobby.format === "TOURNAMENT";
       const match = create1v1MatchFromDeckCardIds({
@@ -5910,12 +5935,12 @@ io.on("connection", async socket => {
 
   socket.on(
     "deck:load",
-    (data: { deckId: string; mode?: "edit" | "clone" }) => {
+    async (data: { deckId: string; mode?: "edit" | "clone" }) => {
       try {
         const user = requireSocketUser(socket);
         validateDataFileId(data.deckId);
 
-        const deck = loadUserDeckList(user.id, data.deckId);
+        const deck = await loadUserDeckList(user.id, data.deckId);
 
         socket.emit("deck:loaded", {
           id: deck.id,
@@ -5934,7 +5959,7 @@ io.on("connection", async socket => {
   );
   socket.on(
     "deck:save",
-    (data: {
+    async (data: {
       deckId: string;
       name: string;
       packIds: string[];
@@ -5942,12 +5967,12 @@ io.on("connection", async socket => {
       cardArtKeys?: string[];
       format?: "FREE_PLAY" | "TOURNAMENT";
       overwrite?: boolean;
-    }) => {
+    }, ack?: SocketAck) => {
       try {
         const user = requireSocketUser(socket);
         validateDataFileId(data.deckId);
 
-        if (userDeckFileExists(user.id, data.deckId) && !data.overwrite) {
+        if (await userDeckFileExists(user.id, data.deckId) && !data.overwrite) {
             socket.emit("deck:overwriteRequired", {
               message: `Deck ID "${data.deckId}" already exists. Confirm overwrite to replace it.`,
               deckId: data.deckId,
@@ -5958,6 +5983,7 @@ io.on("connection", async socket => {
               format: normalizeDeckFormat(data.format)
             });
 
+            sendSocketAckSuccess(ack, "Deck overwrite confirmation required.");
             return;
           }
 
@@ -5987,8 +6013,9 @@ io.on("connection", async socket => {
           throw new Error(errors.join(" | "));
         }
 
-        const existingDeck = userDeckFileExists(user.id, data.deckId)
-          ? loadUserDeckList(user.id, data.deckId)
+        const deckExists = await userDeckFileExists(user.id, data.deckId);
+        const existingDeck = deckExists
+          ? await loadUserDeckList(user.id, data.deckId)
           : null;
         const normalizedCardArtKeys = normalizeDeckCardArtKeys(data.cardArtKeys, data.cardIds.length);
         const existingComparable = existingDeck
@@ -6022,25 +6049,27 @@ io.on("connection", async socket => {
             : undefined
         };
 
-        saveUserDeckListToDisk(user.id, deck);
+        await saveUserDeckList(user.id, deck);
 
         socket.emit("deck:saved", {
           message: `Deck saved: ${deck.name}`,
           deckId: deck.id
         });
+        sendSocketAckSuccess(ack, `Deck saved: ${deck.name}`);
 
-        socket.emit("setup:options", getUserSetupOptions(user));
+        socket.emit("setup:options", await getUserSetupOptions(user));
         socket.emit("cards:library", listDefaultCardLibrary());
-        socket.emit("deck:details", getDeckDetailsForUser(user));
+        socket.emit("deck:details", await getDeckDetailsForUser(user));
       } catch (error) {
+        const message = sendSocketAckError(ack, error, "Unable to save deck.");
         socket.emit("match:error", {
-          message: error instanceof Error ? error.message : "Unknown error"
+          message
         });
       }
     }
   );
 
-  socket.on("deck:delete", (deckId: string) => {
+  socket.on("deck:delete", async (deckId: string) => {
   try {
     const user = requireSocketUser(socket);
     validateDataFileId(deckId);
@@ -6049,16 +6078,16 @@ io.on("connection", async socket => {
       throw new Error("The default demo deck cannot be deleted.");
     }
 
-    deleteUserDeckFromDisk(user.id, deckId);
+    await deleteUserDeck(user.id, deckId);
 
     socket.emit("deck:deleted", {
       message: `Deleted deck: ${deckId}`,
       deckId
     });
 
-    socket.emit("setup:options", getUserSetupOptions(user));
+    socket.emit("setup:options", await getUserSetupOptions(user));
     socket.emit("cards:library", listDefaultCardLibrary());
-    socket.emit("deck:details", getDeckDetailsForUser(user));
+    socket.emit("deck:details", await getDeckDetailsForUser(user));
   } catch (error) {
     socket.emit("match:error", {
       message: error instanceof Error ? error.message : "Unknown error"

@@ -432,10 +432,12 @@ export function BoardPreview3DWebGLCards({
     const scheduleRender = () => {
       void renderCards();
     };
-    const resizeObserver = new ResizeObserver(() => {
-      scheduleRender();
-    });
-    resizeObserver.observe(parent);
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => {
+          scheduleRender();
+        })
+      : null;
+    resizeObserver?.observe(parent);
     window.addEventListener("resize", scheduleRender);
     document.addEventListener("fullscreenchange", scheduleRender);
     window.visualViewport?.addEventListener("resize", scheduleRender);
@@ -445,7 +447,7 @@ export function BoardPreview3DWebGLCards({
     return () => {
       isDisposed = true;
       renderRequestId += 1;
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", scheduleRender);
       document.removeEventListener("fullscreenchange", scheduleRender);
       window.visualViewport?.removeEventListener("resize", scheduleRender);

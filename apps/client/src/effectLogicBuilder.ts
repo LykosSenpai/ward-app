@@ -396,10 +396,10 @@ function classifySentence(card: CardLibraryCardSummary, sentence: string): Effec
 
     effects.push(createEffect("SUMMON_LIMITED_CREATURE", text, {
       effectGroup: "Limited Summon",
-      target: `Creature in your ${fromZone.toLowerCase().replaceAll("_", " ")}`,
+      target: `Creature in your ${fromZone.toLowerCase().split("_").join(" ")}`,
       value: text,
       params: {
-        target: `Creature in your ${fromZone.toLowerCase().replaceAll("_", " ")}`,
+        target: `Creature in your ${fromZone.toLowerCase().split("_").join(" ")}`,
         valueText: text,
         fromZone,
         summonKind: "LIMITED_SUMMON",

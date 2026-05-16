@@ -18,7 +18,8 @@ export function resolveBoardIntentCommand(intent: PointerGestureIntent, boardObj
     };
   }
   const piece = boardObjects.find(object => object.id === intent.pieceId);
-  const cardInstanceId = piece?.id.split("-").at(-1);
+  const pieceIdParts = piece?.id.split("-");
+  const cardInstanceId = pieceIdParts?.[pieceIdParts.length - 1];
   return {
     kind: "FOCUS_PIECE",
     pieceId: intent.pieceId,

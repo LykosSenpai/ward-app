@@ -64,6 +64,32 @@ const DEFAULT_VISIBLE_SLOT_LAYERS: VisibleSlotLayers = {
   hand: false
 };
 
+function getBrowserStorage(): Storage | null {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function setBrowserStorageItem(key: string, value: string): void {
+  try {
+    getBrowserStorage()?.setItem(key, value);
+  } catch {
+    // Browsers can expose localStorage but reject writes in privacy modes.
+  }
+}
+
+async function writeClipboardText(value: string): Promise<boolean> {
+  try {
+    if (!globalThis.navigator?.clipboard?.writeText) return false;
+    await globalThis.navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function sumDice(values: number[] | undefined): number {
   return (values ?? []).reduce((total, value) => total + value, 0);
 }
@@ -142,7 +168,7 @@ function getLatestDiceRollVisual(match: AppMatchState): { id: string; label: str
         values: currentStrike.hitRollDice
       };
     }
-    const latestSpeedTie = battle.speedTieRolls.at(-1);
+    const latestSpeedTie = battle.speedTieRolls[battle.speedTieRolls.length - 1];
     if (latestSpeedTie) {
       const values = [latestSpeedTie.attackingCreatureRoll, latestSpeedTie.defendingCreatureRoll];
       return {
@@ -698,7 +724,8 @@ export function BoardPreview3D({
   }, [animationQueue.activeEvent, runtimeMode]);
 
   useEffect(() => {
-    const saved = globalThis.localStorage?.getItem(storageKey);
+    const storage = getBrowserStorage();
+    const saved = storage?.getItem(storageKey);
     if (!saved) {
       setHydrated(true);
       return;
@@ -781,7 +808,7 @@ export function BoardPreview3D({
             ? { showAnchors: false, showZoneRects: false, visibleSlotLayers: DEFAULT_VISIBLE_SLOT_LAYERS }
             : {})
         };
-        globalThis.localStorage?.setItem(
+        setBrowserStorageItem(
           storageKey,
           JSON.stringify(migratedSettings)
         );
@@ -795,7 +822,7 @@ export function BoardPreview3D({
 
   useEffect(() => {
     if (!hydrated) return;
-    globalThis.localStorage?.setItem(
+    setBrowserStorageItem(
       storageKey,
       JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, cameraDefaultsVersion: BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, selectedZoneId, zoneAdjustments, nudgeStep, showAnchors, showZoneRects, visibleSlotLayers, ownerFilter, showDiagnostics, integrationMode, controlsDockPosition, actionDockPosition, actionDockCollapsed })
     );
@@ -863,7 +890,7 @@ export function BoardPreview3D({
     ? match.players.find(player => player.id === cemeteryViewerOwner) ?? null
     : null;
   const cemeteryCards = cemeteryViewerPlayer?.cemetery ?? [];
-  const inspectedCemeteryCardId = hoveredCemeteryCardId ?? selectedCemeteryCardId ?? cemeteryCards.at(-1)?.instanceId ?? null;
+  const inspectedCemeteryCardId = hoveredCemeteryCardId ?? selectedCemeteryCardId ?? cemeteryCards[cemeteryCards.length - 1]?.instanceId ?? null;
   const inspectedCemeteryCard = inspectedCemeteryCardId
     ? cemeteryCards.find(card => card.instanceId === inspectedCemeteryCardId) ?? null
     : null;
@@ -877,7 +904,7 @@ export function BoardPreview3D({
       setHoveredCemeteryCardId(null);
       return;
     }
-    setSelectedCemeteryCardId(current => current && player.cemetery.some(card => card.instanceId === current) ? current : player.cemetery.at(-1)?.instanceId ?? null);
+    setSelectedCemeteryCardId(current => current && player.cemetery.some(card => card.instanceId === current) ? current : player.cemetery[player.cemetery.length - 1]?.instanceId ?? null);
   }, [cemeteryViewerOwner, match.players]);
 
   useEffect(() => {
@@ -1288,7 +1315,7 @@ export function BoardPreview3D({
     }
 
     seenUnattachedEquipMagicIdsRef.current = currentUnattachedEquipMagicIds;
-    const nextEquipMagicCardId = newlySeenEquipMagicIds.at(-1);
+    const nextEquipMagicCardId = newlySeenEquipMagicIds[newlySeenEquipMagicIds.length - 1];
     if (!nextEquipMagicCardId || selectedEquipMagicCardId === nextEquipMagicCardId) return;
 
     setSelectedCreatureCardId(null);
@@ -1555,8 +1582,7 @@ export function BoardPreview3D({
     const snapshot = toLayoutSnapshot(slotOffsets);
     const payload = JSON.stringify(snapshot, null, 2);
     setLayoutDraft(payload);
-    if (globalThis.navigator?.clipboard?.writeText) {
-      await globalThis.navigator.clipboard.writeText(payload);
+    if (await writeClipboardText(payload)) {
       setLastCopiedLabel("Layout snapshot");
       setStatusMessage("Copied layout snapshot.");
       return;
@@ -1861,8 +1887,7 @@ export function BoardPreview3D({
     if (!slot) return;
     const resolved = resolveSlotPosition(slot.id, slotOffsets, slot.xPercent, slot.zPercent);
     const payload = JSON.stringify({ id: slot.id, xPercent: resolved.xPercent, zPercent: resolved.zPercent }, null, 2);
-    if (globalThis.navigator?.clipboard?.writeText) {
-      await globalThis.navigator.clipboard.writeText(payload);
+    if (await writeClipboardText(payload)) {
       setLastCopiedLabel("Selected slot");
       setStatusMessage("Copied selected slot JSON.");
       return;
@@ -2315,7 +2340,8 @@ export function BoardPreview3D({
             }}
             onCemeteryStackClick={(owner) => {
               setCemeteryViewerOwner(current => current === owner ? null : owner);
-              setSelectedCemeteryCardId(match.players.find(player => player.id === owner)?.cemetery.at(-1)?.instanceId ?? null);
+              const ownerCemetery = match.players.find(player => player.id === owner)?.cemetery ?? [];
+              setSelectedCemeteryCardId(ownerCemetery[ownerCemetery.length - 1]?.instanceId ?? null);
               setHoveredCemeteryCardId(null);
             }}
             sacrificeCandidateCardIds={discardRequiredForFocusedPlayer ? [] : [...sacrificeCandidateIds]}

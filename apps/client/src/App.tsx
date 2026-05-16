@@ -226,6 +226,8 @@ type DashboardModal =
   | null;
 
 type OwnershipSaveStatus = "idle" | "saving" | "saved" | "error";
+type SocketAckResponse = { ok: boolean; error?: string; message?: string };
+type AccountSaveEvent = "collection:updateOwnership" | "deck:save";
 
 export default function App() {
   const [locationSearch, setLocationSearch] = useState(() => window.location.search);
@@ -239,6 +241,7 @@ export default function App() {
   const messagingOrigin = embedParentOrigin ?? referrerOrigin;
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [socketAuthenticated, setSocketAuthenticated] = useState<boolean | null>(null);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [serverMessage, setServerMessage] = useState("Connecting...");
   const [match, setMatch] = useState<AppMatchState | null>(null);
@@ -350,6 +353,51 @@ export default function App() {
 
     setActivePage(page);
     updatePageUrl(page);
+  }
+
+  function showAccountSaveError(message: string, options: { ownership?: boolean } = {}): void {
+    setError(message);
+    setSaveMessage("");
+    if (options.ownership) {
+      setOwnershipSaveStatus("error");
+    }
+  }
+
+  function emitAccountSave(
+    event: AccountSaveEvent,
+    payload: unknown,
+    options: { ownership?: boolean; onQueued?: () => void } = {}
+  ): boolean {
+    if (!socket.connected) {
+      showAccountSaveError("The live server connection is offline. Refresh, log in again, then retry the save.", options);
+      return false;
+    }
+
+    if (authUser && socketAuthenticated === false) {
+      showAccountSaveError("Your page is logged in, but the live server connection is not using that login. Refresh, log in again, then retry the save.", options);
+      socket.disconnect();
+      socket.connect();
+      return false;
+    }
+
+    options.onQueued?.();
+
+    socket.timeout(8000).emit(
+      event,
+      payload,
+      (timeoutError: Error | null, response?: SocketAckResponse) => {
+        if (timeoutError) {
+          showAccountSaveError("The server did not confirm the save. Refresh and try again.", options);
+          return;
+        }
+
+        if (response?.ok === false) {
+          showAccountSaveError(response.error ?? "The server rejected the save.", options);
+        }
+      }
+    );
+
+    return true;
   }
 
   useEffect(() => {
@@ -479,6 +527,7 @@ export default function App() {
   useEffect(() => {
     socket.on("server:welcome", (data: ServerWelcome) => {
       setServerMessage(data.message);
+      setSocketAuthenticated(data.authenticated === true);
       if (!data.authenticated) {
         setError("Your browser connected to the server without your login session. Save buttons may not work. Log out and back in; in Brave, turn Shields off for Ward Nexus if this keeps happening.");
       } else {
@@ -487,6 +536,7 @@ export default function App() {
     });
 
     socket.on("connect", () => {
+      setSocketAuthenticated(null);
       requestInitialData();
     });
 
@@ -621,6 +671,12 @@ export default function App() {
       setOwnershipSaveStatus(current => current === "saving" ? "saved" : current);
     });
 
+    socket.on("collection:error", (data: { message: string }) => {
+      setError(data.message);
+      setOwnershipSaveStatus("error");
+      socket.emit("collection:listOwnership");
+    });
+
     socket.on("dev:effectCoverage", (data: EffectCoverageRow[]) => {
       setEffectCoverageRows(data);
     });
@@ -682,7 +738,7 @@ export default function App() {
           return;
         }
 
-        socket.emit("deck:save", {
+        emitAccountSave("deck:save", {
           deckId: data.deckId,
           name: data.name,
           packIds: data.packIds,
@@ -830,6 +886,7 @@ export default function App() {
       socket.off("features:visibilityChanged");
       socket.off("lobby:cleanupComplete");
       socket.off("collection:ownership");
+      socket.off("collection:error");
       socket.off("dev:effectCoverage");
       socket.off("dev:effectRuntimeTestStatusSaved");
       socket.off("deck:saved");
@@ -1179,13 +1236,16 @@ export default function App() {
           ownedCount: safeOwnedCount
         };
 
-    setOwnershipSaveStatus("saving");
-    setCardOwnershipCounts(current => ({
-      ...current,
-      [cardId]: safeOwnedCount
-    }));
-
-    socket.emit("collection:updateOwnership", ownershipPayload);
+    emitAccountSave("collection:updateOwnership", ownershipPayload, {
+      ownership: true,
+      onQueued: () => {
+        setOwnershipSaveStatus("saving");
+        setCardOwnershipCounts(current => ({
+          ...current,
+          [cardId]: safeOwnedCount
+        }));
+      }
+    });
   }
 
   function loadDeckIntoBuilder(deckId: string, mode: "edit" | "clone") {
@@ -1257,7 +1317,7 @@ export default function App() {
       return;
     }
 
-    socket.emit("deck:save", {
+    emitAccountSave("deck:save", {
       deckId: finalDeckId,
       name: deckBuilderName.trim(),
       packIds: selectedPackIds,
@@ -1932,6 +1992,7 @@ export default function App() {
     setDeckDetails([]);
     setCardOwnershipCounts({});
     setOwnershipSaveStatus("idle");
+    setSocketAuthenticated(false);
     socket.disconnect();
     socket.connect();
   }
@@ -1996,6 +2057,7 @@ export default function App() {
   if (!authUser) {
     return <LoginPage onAuthenticated={user => {
       setAuthUser(user);
+      setSocketAuthenticated(null);
       socket.disconnect();
       socket.connect();
       requestInitialData();
@@ -2223,6 +2285,7 @@ export default function App() {
         ) : activePage === "profile" ? (
           <ProfilePage key={profileRefreshKey} onUserUpdated={user => {
             setAuthUser(user);
+            setSocketAuthenticated(null);
             socket.disconnect();
             socket.connect();
           }} discordAuthEnabled={discordAuthEnabled} />

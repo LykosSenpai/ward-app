@@ -167,7 +167,7 @@ function cardMatchesQuery(
 
 function cardZoneLabel(zone: ZoneType): string {
   if (zone === "REMOVED_FROM_GAME") return "Removed";
-  return zone.charAt(0) + zone.slice(1).toLowerCase().replaceAll("_", " ");
+  return zone.charAt(0) + zone.slice(1).toLowerCase().split("_").join(" ");
 }
 
 function createCardZoneOption(

@@ -266,8 +266,15 @@ export function BoardPreview3DDiceLayer({
       renderFrame();
     };
 
-    const resizeObserver = new ResizeObserver(() => resizeActiveRollRef.current?.());
-    resizeObserver.observe(parent);
+    const resizeActiveRoll = () => resizeActiveRollRef.current?.();
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(resizeActiveRoll)
+      : null;
+    if (resizeObserver) {
+      resizeObserver.observe(parent);
+    } else {
+      window.addEventListener("resize", resizeActiveRoll);
+    }
 
     function animate(now: number) {
       if (isDisposed) return;
@@ -336,7 +343,8 @@ export function BoardPreview3DDiceLayer({
     disposeActiveRollRef.current = () => {
       isDisposed = true;
       cancelAnimationFrame(animationFrame);
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", resizeActiveRoll);
       for (const die of dice) {
         scene.remove(die.mesh);
         disposeMaterials(die.mesh.material);
