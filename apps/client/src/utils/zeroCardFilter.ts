@@ -3,6 +3,7 @@ export type ZeroCardFilterOptions = {
   edgeStrength?: number;
   noise?: number;
   posterize?: boolean;
+  textureOpacity?: number;
 };
 
 export const ZERO_CARD_FILTER_VERSION = "v2-region-aware";
@@ -12,6 +13,7 @@ const DEFAULT_OPTIONS: Required<ZeroCardFilterOptions> = {
   edgeStrength: 0.82,
   noise: 8,
   posterize: true,
+  textureOpacity: 0.08,
 };
 
 type NormalizedRect = {
@@ -98,6 +100,7 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
       if (a === 0) continue;
       const { h, s, l } = rgbToHsl(r, g, b);
       const baseLuma = luma[y * width + x] ?? 0;
+      const { h, s, l } = rgbToHsl(r, g, b);
 
       const inMainArt = inRect(nx, ny, MASKS.mainArtWindow);
       const inTopHeader = inRect(nx, ny, MASKS.topHeader);
