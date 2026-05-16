@@ -7761,31 +7761,70 @@ button.playmat-stack-zone:disabled {
   object-fit: contain;
 }
 
+.login-holo-card .holo-card-base-image {
+  position: relative;
+  z-index: 0;
+}
+
+.login-holo-card .holo-rainbow-layer,
+.login-holo-card .holo-shard-layer,
+.login-holo-card .holo-facet-shine-layer,
+.login-holo-card .holo-soft-band-layer,
+.login-holo-card .holo-speckle-layer {
+  z-index: 2;
+}
+
 .login-holo-card .holo-rainbow-layer {
   animation: login-holo-color-flow 7s linear infinite;
-  background-size: 180% 180%;
+  background:
+    linear-gradient(115deg, rgba(45, 212, 191, 0.34), transparent 22%, rgba(244, 114, 182, 0.38) 42%, transparent 60%, rgba(250, 204, 21, 0.34) 78%, rgba(96, 165, 250, 0.32)),
+    linear-gradient(38deg, rgba(255, 255, 255, 0.3), transparent 18%, rgba(74, 222, 128, 0.3) 36%, transparent 58%, rgba(168, 85, 247, 0.34) 82%);
+  background-size: 220% 220%;
+  mix-blend-mode: screen;
+  opacity: 0.44;
+}
+
+.login-holo-card .holo-shard-layer,
+.login-holo-card .holo-facet-shine-layer {
+  opacity: 0.72;
 }
 
 .login-holo-card .holo-soft-band-layer {
   animation: login-holo-band-drift 4.8s ease-in-out infinite;
   background-size: 160% 160%;
+  mix-blend-mode: screen;
+  opacity: 0.26;
 }
 
 .login-holo-card .holo-speckle-layer {
   animation: login-holo-sparkle 3.6s steps(6) infinite;
+  opacity: 0.32;
+}
+
+.login-holo-card::before {
+  animation: login-holo-prism-sweep 3.2s linear infinite;
+  background:
+    linear-gradient(105deg, transparent 15%, rgba(255, 255, 255, 0.2) 31%, rgba(125, 249, 255, 0.28) 37%, rgba(244, 114, 182, 0.24) 43%, rgba(250, 204, 21, 0.22) 49%, transparent 66%),
+    repeating-linear-gradient(82deg, transparent 0 11px, rgba(255, 255, 255, 0.18) 12px, transparent 15px);
+  border-radius: inherit;
+  content: "";
+  inset: 0;
+  opacity: 0.58;
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
 }
 
 .login-holo-card::after {
   animation: login-holo-glint 4.2s ease-in-out infinite;
-  background: linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, 0.34) 47%, rgba(125, 249, 255, 0.26) 50%, transparent 63%);
+  background: linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, 0.72) 47%, rgba(125, 249, 255, 0.52) 50%, transparent 63%);
   border-radius: inherit;
   content: "";
   inset: -28% -74%;
-  mix-blend-mode: screen;
-  opacity: 0.42;
   pointer-events: none;
   position: absolute;
   transform: translateX(-34%) rotate(8deg);
+  z-index: 4;
 }
 
 .login-card-image.card-1 {
@@ -7883,6 +7922,16 @@ button.playmat-stack-zone:disabled {
   }
 }
 
+@keyframes login-holo-prism-sweep {
+  0% {
+    background-position: -130% 0, 0 0;
+  }
+
+  100% {
+    background-position: 130% 0, 48px 24px;
+  }
+}
+
 @keyframes login-holo-glint {
   0%,
   18% {
@@ -7950,6 +7999,7 @@ button.playmat-stack-zone:disabled {
   .login-holo-card .holo-rainbow-layer,
   .login-holo-card .holo-soft-band-layer,
   .login-holo-card .holo-speckle-layer,
+  .login-holo-card::before,
   .login-holo-card::after {
     animation: none;
   }

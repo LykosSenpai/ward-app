@@ -650,12 +650,14 @@ function buildLoginShowcaseSelections(cards: CardLibraryCardSummary[]): LoginSho
 
   const displaySelections = selections.slice(3, 6);
 
-  if (displaySelections.length > 1 && !displaySelections.some(selection => selection.artVariant === "holo")) {
-    displaySelections[Math.floor(Math.random() * displaySelections.length)].artVariant = "holo";
+  if (displaySelections[1]) {
+    displaySelections[1].artVariant = "holo";
+  } else if (displaySelections[0]) {
+    displaySelections[0].artVariant = "holo";
   }
 
   if (displaySelections.length > 1 && !displaySelections.some(selection => selection.artVariant === "default")) {
-    displaySelections[Math.floor(Math.random() * displaySelections.length)].artVariant = "default";
+    displaySelections[0].artVariant = "default";
   }
 
   return selections;
