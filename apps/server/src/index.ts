@@ -568,6 +568,17 @@ app.use(cors({
   },
   credentials: true
 }));
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+
+  if (req.path.startsWith("/api/")) {
+    res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+  }
+
+  next();
+});
 app.use(express.json({ limit: "20mb" }));
 app.get("/api/cards/library", (_req, res) => {
   res.json({ cards: listDefaultCardLibrary() });
@@ -1932,6 +1943,38 @@ function getPlayableMatchOrThrow(
 
   return match;
 }
+
+app.get("/", (_req, res) => {
+  res.type("html").send(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ward Nexus API</title>
+  </head>
+  <body>
+    <main>
+      <h1>Ward Nexus API</h1>
+      <p>This subdomain provides the Ward Nexus application API and authentication callbacks.</p>
+      <p>Use the player app at <a href="${CLIENT_ORIGIN}">${CLIENT_ORIGIN}</a>.</p>
+    </main>
+  </body>
+</html>`);
+});
+
+app.get("/robots.txt", (_req, res) => {
+  res.type("text/plain").send("User-agent: *\nDisallow: /\n");
+});
+
+app.get("/.well-known/security.txt", (_req, res) => {
+  res.type("text/plain").send([
+    "Contact: mailto:no-reply@wardnexus.app",
+    "Preferred-Languages: en",
+    "Canonical: https://wardnexus.app/.well-known/security.txt",
+    ""
+  ].join("\n"));
+});
 
 app.get("/health", (_req, res) => {
   res.json({

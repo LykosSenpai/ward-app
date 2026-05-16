@@ -1,0 +1,4 @@
+Contact: mailto:no-reply@wardnexus.app
+Preferred-Languages: en
+Canonical: https://wardnexus.app/.well-known/security.txt
+
