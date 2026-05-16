@@ -41,6 +41,46 @@ function getTicketSummary(ticket: SupportTicketDetail | null): string {
   );
 }
 
+function sanitizeFilePart(value: string, fallback: string): string {
+  const sanitized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return sanitized || fallback;
+}
+
+function downloadJsonFile(fileName: string, contents: unknown): void {
+  const blob = new Blob([`${JSON.stringify(contents, null, 2)}\n`], {
+    type: "application/json;charset=utf-8"
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getTicketExportFileName(ticket: SupportTicketDetail): string {
+  const subject = sanitizeFilePart(ticket.subject, "support-ticket").slice(0, 56);
+  return `ward-support-ticket-${ticket.id}-${subject}.json`;
+}
+
+function buildTicketExport(ticket: SupportTicketDetail): Record<string, unknown> {
+  return {
+    exportVersion: 1,
+    exportedAt: new Date().toISOString(),
+    app: "Ward Nexus",
+    ticket
+  };
+}
+
 export function AdminControlsPage({ features, onToggleFeature }: Props) {
   const [tickets, setTickets] = useState<SupportTicketSummary[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicketDetail | null>(null);
@@ -134,6 +174,16 @@ export function AdminControlsPage({ features, onToggleFeature }: Props) {
     }
   }
 
+  function downloadSelectedTicket() {
+    if (!selectedTicket) return;
+
+    downloadJsonFile(
+      getTicketExportFileName(selectedTicket),
+      buildTicketExport(selectedTicket)
+    );
+    setTicketMessage("Downloaded support ticket JSON.");
+  }
+
   return (
     <section className="panel admin-controls-page">
       <h2>Admin Controls</h2>
@@ -207,6 +257,13 @@ export function AdminControlsPage({ features, onToggleFeature }: Props) {
                 <p className="admin-ticket-description">{selectedTicket.description}</p>
 
                 <div className="admin-ticket-actions">
+                  <button
+                    type="button"
+                    onClick={downloadSelectedTicket}
+                    disabled={ticketsBusy}
+                  >
+                    Download JSON
+                  </button>
                   {SUPPORT_TICKET_STATUSES.map(status => (
                     <button
                       key={status}
