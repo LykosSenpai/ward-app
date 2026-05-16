@@ -41,6 +41,7 @@ import {
 type CreatureDefinition = Extract<CardDefinition, { cardType: "CREATURE" }>;
 const HOGGAN_CARD_ID = "gen3_009_hoggan";
 const HOGGAN_BATTLE_INTERCEPT_ACTION = "HOGGAN_BATTLE_INTERCEPT";
+const CABAL_WARCHIEF_CARD_ID = "gen3_026_cabal_warchief";
 
 function handBoardZoneRef(playerId: string) {
   return { playerId, zone: "HAND" as const };
@@ -305,7 +306,7 @@ function markBattleSkippedForCreature(
   creature: BattleCreatureRef,
   reason: string
 ): void {
-  markCreatureBattleUsed(player, creature.card.instanceId);
+  markCreatureBattleUsed(player, creature.card.instanceId, getCreatureBattleUseLimit(creature.card));
 
   addEvent(state, "BATTLE_TURN_SKIPPED_BY_STATUS", player.id, {
     playerId: player.id,
@@ -356,6 +357,26 @@ function getCreatureDefinition(
 function ensureBattleUsedList(player: PlayerState): string[] {
   player.turnFlags.battleUsedCreatureInstanceIds ??= [];
   return player.turnFlags.battleUsedCreatureInstanceIds;
+}
+
+function isCabalWarchief(card: CardInstance): boolean {
+  return card.cardId === CABAL_WARCHIEF_CARD_ID;
+}
+
+function getCreatureBattleUseLimit(card: CardInstance): number {
+  return isCabalWarchief(card) ? 2 : 1;
+}
+
+function getCreatureBattleUseCount(player: PlayerState, creatureInstanceId: string): number {
+  return ensureBattleUsedList(player).filter(id => id === creatureInstanceId).length;
+}
+
+function canCreatureBattleThisCombat(player: PlayerState, creature: BattleCreatureRef): boolean {
+  return getCreatureBattleUseCount(player, creature.card.instanceId) < getCreatureBattleUseLimit(creature.card);
+}
+
+function shouldSuppressRetaliationForBattle(player: PlayerState, creature: BattleCreatureRef): boolean {
+  return isCabalWarchief(creature.card) && getCreatureBattleUseCount(player, creature.card.instanceId) >= 1;
 }
 
 function getPlayerBattleCreatures(player: PlayerState): BattleCreatureRef[] {
@@ -437,15 +458,37 @@ function tryFindBattleCreatureRef(
   );
 }
 
-function markCreatureBattleUsed(player: PlayerState, creatureInstanceId: string): void {
-  const usedIds = ensureBattleUsedList(player);
+function findCardInstanceInPlayerZones(player: PlayerState, creatureInstanceId: string): CardInstance | undefined {
+  return [
+    player.field.primaryCreature,
+    ...player.field.limitedSummons,
+    ...player.hand,
+    ...player.deck,
+    ...player.cemetery,
+    ...player.removedFromGame
+  ].find(card => card?.instanceId === creatureInstanceId);
+}
 
-  if (!usedIds.includes(creatureInstanceId)) {
+function markCreatureBattleUsed(
+  player: PlayerState,
+  creatureInstanceId: string,
+  battleUseLimit = getCreatureBattleUseLimit(findCardInstanceInPlayerZones(player, creatureInstanceId) ?? {
+    instanceId: creatureInstanceId,
+    cardId: "",
+    ownerPlayerId: player.id,
+    controllerPlayerId: player.id,
+    zone: "PRIMARY_CREATURE"
+  })
+): void {
+  const usedIds = ensureBattleUsedList(player);
+  const usedCount = getCreatureBattleUseCount(player, creatureInstanceId);
+
+  if (usedCount < battleUseLimit) {
     usedIds.push(creatureInstanceId);
   }
 
   const remainingAvailableCreature = getPlayerBattleCreatures(player).some(
-    creature => !usedIds.includes(creature.card.instanceId)
+    creature => getCreatureBattleUseCount(player, creature.card.instanceId) < getCreatureBattleUseLimit(creature.card)
   );
 
   player.turnFlags.hasBattledThisCombat = !remainingAvailableCreature;
@@ -882,10 +925,15 @@ function completeManualBattleSessionInPlace(
   message: string
 ): void {
   const attackingPlayer = getPlayer(state, session.attackingPlayerId);
+  const attackingCard = findCardInstanceInPlayerZones(
+    attackingPlayer,
+    session.declaredAttacker.creatureInstanceId
+  );
 
   markCreatureBattleUsed(
     attackingPlayer,
-    session.declaredAttacker.creatureInstanceId
+    session.declaredAttacker.creatureInstanceId,
+    attackingCard ? getCreatureBattleUseLimit(attackingCard) : 1
   );
 
   session.status = "COMPLETE";
@@ -991,7 +1039,7 @@ function advanceManualBattleAfterResolvedStrike(
       state,
       session,
       session.limitedSummonNoRetaliation
-        ? "Limited Summon battle resolved. The defending primary creature does not retaliate against Limited Summons."
+        ? "Battle resolved. The defending primary creature does not make a return attack."
         : "Manual battle resolved."
     );
     return;
@@ -1335,9 +1383,7 @@ export function startManualBattleSession(
     throw new Error("Only primary creatures can be targeted by battle right now.");
   }
 
-  const usedCreatureIds = ensureBattleUsedList(attackingPlayer);
-
-  if (usedCreatureIds.includes(attackingCreature.card.instanceId)) {
+  if (!canCreatureBattleThisCombat(attackingPlayer, attackingCreature)) {
     throw new Error("This creature has already battled during this Combat Phase.");
   }
 
@@ -1353,6 +1399,10 @@ export function startManualBattleSession(
 
   const now = new Date().toISOString();
 
+  const suppressesRetaliation =
+    attackingCreature.kind === "LIMITED_SUMMON" ||
+    shouldSuppressRetaliationForBattle(attackingPlayer, attackingCreature);
+
   nextState.pendingBattle = {
     id: uuidv4(),
     startedAt: now,
@@ -1362,7 +1412,7 @@ export function startManualBattleSession(
     defendingPlayerId: defendingPlayer.id,
     declaredAttacker: snapshotParticipant(nextState, attackingCreature),
     declaredDefender: snapshotParticipant(nextState, defendingCreature),
-    limitedSummonNoRetaliation: attackingCreature.kind === "LIMITED_SUMMON",
+    limitedSummonNoRetaliation: suppressesRetaliation,
     speedModifiers: normalizeSpeedModifiers(),
     suggestedEffects: [],
     speedTie: false,
@@ -1450,7 +1500,7 @@ export function runManualBattleSpeedCheck(
     addEvent
   });
 
-  if (attackingCreature.kind === "LIMITED_SUMMON") {
+  if (session.limitedSummonNoRetaliation) {
     const attackingStats = getEffectiveCreatureStats(nextState, attackingCreature.card);
     const defendingStats = getEffectiveCreatureStats(nextState, defendingCreature.card);
 
@@ -1464,7 +1514,9 @@ export function runManualBattleSpeedCheck(
     session.status = "AWAITING_HIT_ROLL";
     setSessionUpdated(
       session,
-      "Limited Summons perform a one-way battle into the opponent primary. Roll hit for the Limited Summon."
+      attackingCreature.kind === "LIMITED_SUMMON"
+        ? "Limited Summons perform a one-way battle into the opponent primary. Roll hit for the Limited Summon."
+        : "Cabal Warchief's extra battle does not allow a return attack. Roll hit for Cabal Warchief."
     );
     addEvent(nextState, "BATTLE_STRIKE_STARTED", attackingCreature.playerId, {
       battleSessionId: session.id,
@@ -2513,9 +2565,9 @@ export function battleWithCreature(
   );
   const defendingCreature = getPrimaryCreatureRef(defendingPlayer);
 
-  const usedCreatureIds = ensureBattleUsedList(attackingPlayer);
+  const suppressesRetaliation = shouldSuppressRetaliationForBattle(attackingPlayer, attackingCreature);
 
-  if (usedCreatureIds.includes(attackingCreature.card.instanceId)) {
+  if (!canCreatureBattleThisCombat(attackingPlayer, attackingCreature)) {
     throw new Error("This creature has already battled during this Combat Phase.");
   }
 
@@ -2533,9 +2585,13 @@ export function battleWithCreature(
     throw new Error("The defending player has no primary creature.");
   }
 
-  markCreatureBattleUsed(attackingPlayer, attackingCreature.card.instanceId);
+  markCreatureBattleUsed(
+    attackingPlayer,
+    attackingCreature.card.instanceId,
+    getCreatureBattleUseLimit(attackingCreature.card)
+  );
 
-  const order = attackingCreature.kind === "LIMITED_SUMMON"
+  const order = attackingCreature.kind === "LIMITED_SUMMON" || suppressesRetaliation
     ? {
         firstStrike: attackingCreature,
         secondStrike: undefined,
@@ -2603,8 +2659,8 @@ export function battleWithCreature(
       ? nextState.setup.primaryReplacementRequiredForPlayerId
         ? "A primary creature was killed. Combat Phase ended and replacement is required."
         : "A primary creature was killed. Combat Phase ended. A Limited Summon was promoted automatically if available."
-      : attackingCreature.kind === "LIMITED_SUMMON"
-        ? "Limited Summon battle resolved. The defending primary creature does not retaliate against Limited Summons."
+      : attackingCreature.kind === "LIMITED_SUMMON" || suppressesRetaliation
+        ? "Battle resolved. The defending primary creature does not make a return attack."
         : "Battle resolved."
   };
 

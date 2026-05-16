@@ -52,9 +52,11 @@ import {
   forceNextDevRolls,
   clearForcedDevRolls,
   createEffectTestScenarioMatch,
+  mulliganForcedAlSummonPrompt,
   getEffectRuntimeSupport,
   promoteLimitedSummonToPrimary,
   requestNoCreatureRedrawReveal,
+  resolveForcedAlSummonPrompt,
   rollOpeningTurnOrder,
   rollPendingEffectRoll,
   rollManualBattleDamage,
@@ -4237,6 +4239,49 @@ io.on("connection", async socket => {
         const updatedMatch = approveNoCreatureRedrawReveal(
           match,
           data.approvingPlayerId
+        );
+
+        activeMatches.set(data.matchId, updatedMatch);
+        emitMatchState(updatedMatch);
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "match:resolveForcedAlSummonPrompt",
+    (data: { matchId: string; playerId: string; cardInstanceId: string }) => {
+      try {
+        const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
+        const updatedMatch = resolveForcedAlSummonPrompt(
+          match,
+          data.playerId,
+          data.cardInstanceId
+        );
+
+        activeMatches.set(data.matchId, updatedMatch);
+        emitMatchState(updatedMatch);
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "match:mulliganForcedAlSummonPrompt",
+    (data: { matchId: string; playerId: string }) => {
+      try {
+        const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
+        const updatedMatch = mulliganForcedAlSummonPrompt(
+          match,
+          data.playerId
         );
 
         activeMatches.set(data.matchId, updatedMatch);

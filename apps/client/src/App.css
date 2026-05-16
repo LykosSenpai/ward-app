@@ -343,24 +343,64 @@
   display: grid;
   gap: 0.85rem;
   grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
-  max-height: min(68vh, 760px);
-  min-height: 360px;
+  height: clamp(420px, 68vh, 760px);
+  min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+.admin-ticket-pane {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 7px;
+  background: rgba(8, 12, 20, 0.48);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.admin-ticket-pane-header {
+  align-items: center;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.52);
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+}
+
+.admin-ticket-pane-header > div {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.admin-ticket-pane-header h4 {
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.admin-ticket-pane-header > div span,
+.admin-ticket-pane-header > strong {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 900;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .admin-ticket-list {
   align-content: start;
   display: grid;
   gap: 0.55rem;
-  max-height: 100%;
   min-height: 0;
   overflow: auto;
-  padding-right: 0.25rem;
+  padding: 0.65rem;
 }
 
-.admin-ticket-row,
-.admin-ticket-detail {
+.admin-ticket-row {
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 7px;
   background: rgba(8, 12, 20, 0.48);
@@ -400,7 +440,6 @@
   display: grid;
   gap: 0.8rem;
   grid-auto-rows: max-content;
-  max-height: 100%;
   min-height: 0;
   min-width: 0;
   overflow: auto;
@@ -530,8 +569,12 @@
 @media (max-width: 860px) {
   .admin-ticket-layout {
     grid-template-columns: 1fr;
-    max-height: none;
+    height: auto;
     overflow: visible;
+  }
+
+  .admin-ticket-pane {
+    min-height: 280px;
   }
 
   .admin-ticket-list,

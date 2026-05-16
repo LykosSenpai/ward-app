@@ -185,13 +185,16 @@ export function CompactMatchControlPanel({
           <div>
             <span className="label">Manual Battle Control</span>
             <p>
-              Choose the active creature to open the step-by-step battle resolver. Each creature can battle once per Combat Phase.
+              Choose the active creature to open the step-by-step battle resolver. Card effects can grant extra battles.
             </p>
           </div>
 
           <div className="battle-attacker-buttons">
             {battleOptions.map(option => {
               const disabled = !canControlActiveTurn || !!battleBlockReason || option.usedThisCombat;
+              const usageLabel = option.battleUseLimit > 1
+                ? ` ${Math.min(option.battleUseCount + 1, option.battleUseLimit)}/${option.battleUseLimit}`
+                : "";
               const title = option.usedThisCombat
                 ? "This creature already battled this Combat Phase."
                 : option.statusBattleSkipReason
@@ -206,7 +209,7 @@ export function CompactMatchControlPanel({
                   disabled={disabled}
                   title={title}
                 >
-                  {option.usedThisCombat ? "Used: " : option.statusBattleSkipReason ? "Skip: " : "Battle: "}
+                  {option.usedThisCombat ? "Used: " : option.statusBattleSkipReason ? "Skip: " : `Battle${usageLabel}: `}
                   {option.label}
                   <span>
                     {getCreatureStatsLine(match, option.card)}

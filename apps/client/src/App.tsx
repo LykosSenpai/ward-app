@@ -12,6 +12,7 @@ import { LibraryDecksPage } from "./components/LibraryDecksPage";
 import { LlmEffectTestLabPage } from "./components/LlmEffectTestLabPage";
 import { LoginPage } from "./components/LoginPage";
 import { HandRevealPromptCard } from "./components/HandRevealPromptCard";
+import { ForcedAlSummonPromptCard } from "./components/ForcedAlSummonPromptCard";
 import { MagicChainCard } from "./components/MagicChainCard";
 import { ManualEffectQueueCard } from "./components/ManualEffectQueueCard";
 import { MatchCompleteCard } from "./components/MatchCompleteCard";
@@ -211,6 +212,13 @@ function getPendingManualDrawEffectForPlayer(match: AppMatchState, playerId: str
     !effect.completed &&
     isManualDrawEffect(effect)
   );
+}
+
+function getPendingPromptControllerId(prompt: AppMatchState["pendingPrompt"]): string | undefined {
+  if (!prompt) return undefined;
+  return prompt.type === "NO_CREATURE_REDRAW_REVEAL"
+    ? prompt.approvingPlayerId
+    : prompt.controllerPlayerId;
 }
 
 type DashboardModal =
@@ -1960,7 +1968,7 @@ export default function App() {
   }
 
   function approveRevealRedraw() {
-    if (!match?.pendingPrompt) return;
+    if (!match?.pendingPrompt || match.pendingPrompt.type !== "NO_CREATURE_REDRAW_REVEAL") return;
 
     socket.emit("match:approveNoCreatureRedrawReveal", {
       matchId: match.matchId,
@@ -1973,6 +1981,23 @@ export default function App() {
     socket.emit("match:requestNoCreatureRedrawReveal", {
       matchId: match.matchId,
       playerId
+    });
+  }
+
+  function resolveForcedAlSummon(cardInstanceId: string) {
+    if (!match?.pendingPrompt || match.pendingPrompt.type !== "FORCED_AL_SUMMON") return;
+    socket.emit("match:resolveForcedAlSummonPrompt", {
+      matchId: match.matchId,
+      playerId: match.pendingPrompt.controllerPlayerId,
+      cardInstanceId
+    });
+  }
+
+  function mulliganForcedAlSummon() {
+    if (!match?.pendingPrompt || match.pendingPrompt.type !== "FORCED_AL_SUMMON") return;
+    socket.emit("match:mulliganForcedAlSummonPrompt", {
+      matchId: match.matchId,
+      playerId: match.pendingPrompt.controllerPlayerId
     });
   }
 
@@ -2050,7 +2075,7 @@ export default function App() {
   );
   const canViewPendingPrompt = Boolean(
     match?.pendingPrompt &&
-    (!controlledPlayerId || controlledPlayerId === match.pendingPrompt.approvingPlayerId)
+    (!controlledPlayerId || controlledPlayerId === getPendingPromptControllerId(match.pendingPrompt))
   );
   const show3dBoardView = playViewMode === "board3d";
 
@@ -2421,6 +2446,8 @@ export default function App() {
                       onRequestNoCreatureRedraw={requestNoCreatureRedraw}
                       onSetHandRevealed={setHandRevealed}
                       onApproveRevealRedraw={approveRevealRedraw}
+                      onResolveForcedAlSummon={resolveForcedAlSummon}
+                      onMulliganForcedAlSummon={mulliganForcedAlSummon}
                       onOpeningRoll={rollOpeningTurnOrder}
                       onDeckSlotClick={handleDeckClick}
                       onResolveEffectTarget={resolveEffectTarget}
@@ -2449,6 +2476,7 @@ export default function App() {
                         });
                       }}
                       onPlayBattleResponse={playBattleResponseFromHand}
+                      onResolveMagicChain={resolveMagicChain}
                       onPassMagicChainPriority={(playerId) => {
                         passMagicChainPriority(playerId);
                       }}
@@ -2557,11 +2585,20 @@ export default function App() {
 
             {canViewPendingPrompt && !show3dBoardView && (
               <ModalPanel title="Action Required" blocking>
-                <HandRevealPromptCard
-                  match={match}
-                  controlledPlayerId={controlledPlayerId}
-                  onApprove={approveRevealRedraw}
-                />
+                {match.pendingPrompt?.type === "NO_CREATURE_REDRAW_REVEAL" ? (
+                  <HandRevealPromptCard
+                    match={match}
+                    controlledPlayerId={controlledPlayerId}
+                    onApprove={approveRevealRedraw}
+                  />
+                ) : (
+                  <ForcedAlSummonPromptCard
+                    match={match}
+                    controlledPlayerId={controlledPlayerId}
+                    onSummon={resolveForcedAlSummon}
+                    onMulligan={mulliganForcedAlSummon}
+                  />
+                )}
               </ModalPanel>
             )}
 
@@ -2575,7 +2612,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingChain && canRespondToPendingChain && (
+            {match.pendingChain && canRespondToPendingChain && !show3dBoardView && (
               <ModalPanel title="Resolve Chain" blocking wide>
                 <MagicChainCard
                   match={match}
