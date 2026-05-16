@@ -2573,7 +2573,7 @@ io.on("connection", async socket => {
   });
 
   socket.emit("server:welcome", {
-    message: "Connected to WARD server",
+    message: "Connected to server",
     socketId: socket.id
   });
 

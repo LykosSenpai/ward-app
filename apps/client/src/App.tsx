@@ -75,6 +75,19 @@ import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
 
+const APP_PAGES = new Set<AppPage>([
+  "play",
+  "card-library",
+  "deck-library",
+  "marketplace",
+  "saved-matches",
+  "profile",
+  "effect-dev",
+  "effect-coverage",
+  "llm-tests",
+  "board-preview",
+  "admin-controls"
+]);
 const DEV_TOOL_PAGES = new Set<AppPage>(["effect-dev", "effect-coverage", "llm-tests", "board-preview"]);
 
 function isDevToolPage(page: AppPage): boolean {
@@ -125,7 +138,7 @@ function sortLobbiesByCreatedAt(lobbies: MatchLobby[]): MatchLobby[] {
 
 function parseRequestedPage(search: string): AppPage | null {
   const requestedPage = new URLSearchParams(search).get("page");
-  return requestedPage === "board-preview" ? "board-preview" : null;
+  return APP_PAGES.has(requestedPage as AppPage) ? requestedPage as AppPage : null;
 }
 
 function parseBoardWindowMode(search: string): boolean {
@@ -225,7 +238,6 @@ export default function App() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [serverMessage, setServerMessage] = useState("Connecting...");
-  const [socketId, setSocketId] = useState("");
   const [match, setMatch] = useState<AppMatchState | null>(null);
   const [controlledPlayersByMatchId, setControlledPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
   const [error, setError] = useState("");
@@ -301,21 +313,46 @@ export default function App() {
   function canSeePage(page: AppPage): boolean {
     if (page === "profile") return true;
     if (page === "admin-controls") return isAdminUser;
+    if (isDevToolPage(page)) return canUseDevTools;
     if (isAdminUser) return true;
     if (page === "play") return featureFlagsByKey["play-table"]?.enabledForPlayers === true;
     if (page === "card-library") return featureFlagsByKey["card-library"]?.enabledForPlayers === true;
     if (page === "deck-library") return featureFlagsByKey["deck-builder"]?.enabledForPlayers === true;
     if (page === "marketplace") return featureFlagsByKey.marketplace?.enabledForPlayers === true;
     if (page === "saved-matches") return featureFlagsByKey["saved-matches"]?.enabledForPlayers === true;
-    if (page === "board-preview") return canUseDevTools;
     return canUseDevTools;
+  }
+
+  function updatePageUrl(page: AppPage): void {
+    if (embedModeEnabled) return;
+
+    const params = new URLSearchParams(window.location.search);
+    params.set("page", page);
+    params.delete("discord");
+    params.delete("message");
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`;
+
+    window.history.replaceState({}, "", nextUrl);
+    setLocationSearch(window.location.search);
+  }
+
+  function navigateToPage(page: AppPage): void {
+    if (!canSeePage(page)) {
+      setActivePage("profile");
+      updatePageUrl("profile");
+      return;
+    }
+
+    setActivePage(page);
+    updatePageUrl(page);
   }
 
   useEffect(() => {
     if (!canSeePage(activePage)) {
-      setActivePage("profile");
+      navigateToPage("profile");
     }
-  }, [activePage, featureFlagsByKey, isAdminUser]);
+  }, [activePage, canUseDevTools, featureFlagsByKey, isAdminUser]);
 
   useEffect(() => {
     if (requestedView) {
@@ -334,13 +371,13 @@ export default function App() {
     playViewMode,
     canApplyEmbedPage,
     canApplyEmbedView,
-    onSetPage: (page: EmbedPage) => setActivePage(page),
+    onSetPage: (page: EmbedPage) => navigateToPage(canSeePage(page) ? page : "profile"),
     onSetView: (_view: EmbedView) => setPlayViewMode("board3d")
   });
 
   useEffect(() => {
     if (!canUseDevTools && isDevToolPage(activePage)) {
-      setActivePage("play");
+      navigateToPage("play");
     }
 
     if (!canUseDevTools && dashboardModal === "effect-debug") {
@@ -396,7 +433,6 @@ export default function App() {
   useEffect(() => {
     socket.on("server:welcome", (data: ServerWelcome) => {
       setServerMessage(data.message);
-      setSocketId(data.socketId);
     });
 
     socket.on("connect", () => {
@@ -467,7 +503,6 @@ export default function App() {
       const defaultPackIds = data.cardPacks.map(pack => pack.id);
       if (defaultPackIds.length > 0) {
         socket.emit("cards:listForPacks", { packIds: defaultPackIds });
-        socket.emit("dev:listEffectCoverage", { packIds: defaultPackIds });
       }
 
       setSelectedPackIds(current => {
@@ -781,6 +816,11 @@ export default function App() {
   }, [selectedPackIds]);
 
   useEffect(() => {
+    if (!canUseDevTools) {
+      setEffectCoverageRows([]);
+      return;
+    }
+
     const packIds = selectedPackIds.length > 0
       ? selectedPackIds
       : cardPacks.map(pack => pack.id);
@@ -791,7 +831,7 @@ export default function App() {
     }
 
     socket.emit("dev:listEffectCoverage", { packIds });
-  }, [cardPacks, selectedPackIds]);
+  }, [canUseDevTools, cardPacks, selectedPackIds]);
 
 
   function requestInitialData() {
@@ -810,6 +850,11 @@ export default function App() {
   function cancelMarketplaceTransaction(id: string) { socket.emit("marketplace:cancelTransaction", id); }
 
   function refreshEffectCoverage() {
+    if (!canUseDevTools) {
+      setEffectCoverageRows([]);
+      return;
+    }
+
     const packIds =
       selectedPackIds.length > 0
         ? selectedPackIds
@@ -1941,52 +1986,52 @@ export default function App() {
         {!embedModeEnabled && <nav className="app-page-nav" aria-label="App pages">
           {canSeePage("play") && <button
             className={activePage === "play" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("play")}
+            onClick={() => navigateToPage("play")}
           >
             Play Table
           </button>}
 
           {canSeePage("board-preview") && <button
             className={activePage === "board-preview" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("board-preview")}
+            onClick={() => navigateToPage("board-preview")}
           >
             Board Preview
           </button>}
 
           {canSeePage("card-library") && <button
             className={activePage === "card-library" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("card-library")}
+            onClick={() => navigateToPage("card-library")}
           >
             Card Library
           </button>}
           {canSeePage("deck-library") && <button
             className={activePage === "deck-library" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("deck-library")}
+            onClick={() => navigateToPage("deck-library")}
           >
             Deck Library
           </button>}
           {canSeePage("saved-matches") && <button
             className={activePage === "saved-matches" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("saved-matches")}
+            onClick={() => navigateToPage("saved-matches")}
           >
             Saved Matches
           </button>}
           {canSeePage("marketplace") && <button
             className={activePage === "marketplace" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("marketplace")}
+            onClick={() => navigateToPage("marketplace")}
           >
             Marketplace
           </button>}
           <button
             className={activePage === "profile" ? "app-page-nav-button active" : "app-page-nav-button"}
-            onClick={() => setActivePage("profile")}
+            onClick={() => navigateToPage("profile")}
           >
             Profile
           </button>
           {isAdminUser && (
             <button
               className={activePage === "admin-controls" ? "app-page-nav-button active" : "app-page-nav-button"}
-              onClick={() => setActivePage("admin-controls")}
+              onClick={() => navigateToPage("admin-controls")}
             >
               Admin Controls
             </button>
@@ -1995,33 +2040,27 @@ export default function App() {
             <>
               <button
                 className={activePage === "effect-dev" ? "app-page-nav-button active" : "app-page-nav-button"}
-                onClick={() => setActivePage("effect-dev")}
+                onClick={() => navigateToPage("effect-dev")}
               >
                 Effect Dev Tool
               </button>
 
               <button
                 className={activePage === "effect-coverage" ? "app-page-nav-button active" : "app-page-nav-button"}
-                onClick={() => setActivePage("effect-coverage")}
+                onClick={() => navigateToPage("effect-coverage")}
               >
                 Effect Coverage
               </button>
 
               <button
                 className={activePage === "llm-tests" ? "app-page-nav-button active" : "app-page-nav-button"}
-                onClick={() => setActivePage("llm-tests")}
+                onClick={() => navigateToPage("llm-tests")}
               >
                 LLM Test Lab
               </button>
             </>
           )}
         </nav>}
-
-        {!embedModeEnabled && socketId && activePage !== "card-library" && activePage !== "deck-library" && (
-          <p className="socket-id">
-            Socket ID: <span>{socketId}</span>
-          </p>
-        )}
 
         {error && <div className="error-box">{error}</div>}
         {saveMessage && <div className="success-box">{saveMessage}</div>}
