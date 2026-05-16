@@ -14,106 +14,13 @@ const DEFAULT_OPTIONS: Required<ZeroCardFilterOptions> = {
   posterize: true,
 };
 
-<<<<<<< ours
-function clamp255(value: number): number {
-  return Math.max(0, Math.min(255, Math.round(value)));
-}
-
-function luminance(r: number, g: number, b: number): number {
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function rgbToHsl(
-  rInput: number,
-  gInput: number,
-  bInput: number,
-): { h: number; s: number; l: number } {
-  const r = rInput / 255;
-  const g = gInput / 255;
-  const b = bInput / 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-
-  if (max === min) {
-    return { h: 0, s: 0, l };
-  }
-
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-  let h: number;
-
-  if (max === r) {
-    h = (g - b) / d + (g < b ? 6 : 0);
-  } else if (max === g) {
-    h = (b - r) / d + 2;
-  } else {
-    h = (r - g) / d + 4;
-  }
-
-  return {
-    h: h * 60,
-    s,
-    l,
-  };
-}
-
-function isArtRegion(nx: number, ny: number): boolean {
-  return nx > 0.055 && nx < 0.955 && ny > 0.132 && ny < 0.64;
-}
-
-function isGoldUiRegion(nx: number, ny: number): boolean {
-  const topHeader = ny > 0.035 && ny < 0.148 && nx > 0.04 && nx < 0.965;
-  const attackBand = ny > 0.608 && ny < 0.782 && nx > 0.035 && nx < 0.965;
-  const bottomTextBox = ny > 0.758 && ny < 0.965 && nx > 0.04 && nx < 0.955;
-
-  return topHeader || attackBand || bottomTextBox;
-}
-
-function isSideGoldUiRegion(nx: number, ny: number): boolean {
-  const leftCreatureRail = nx > 0.032 && nx < 0.18 && ny > 0.132 && ny < 0.66;
-  const rightCombatRail = nx > 0.885 && nx < 0.966 && ny > 0.57 && ny < 0.815;
-
-  return leftCreatureRail || rightCombatRail;
-}
-
-function isTypeIconRegion(nx: number, ny: number): boolean {
-  const dx = (nx - 0.118) / 0.078;
-  const dy = (ny - 0.205) / 0.076;
-
-  return dx * dx + dy * dy <= 1;
-}
-
-function isOuterFrame(nx: number, ny: number): boolean {
-  return nx < 0.047 || nx > 0.953 || ny < 0.025 || ny > 0.977;
-}
-
-function isFrameBand(nx: number, ny: number): boolean {
-  return nx < 0.072 || nx > 0.928 || ny < 0.075 || ny > 0.936;
-}
-
-function isYellowGoldHue(h: number, s: number, l: number): boolean {
-  return h >= 32 && h <= 58 && s > 0.18 && l > 0.18;
-}
-
-function isRedAccentHue(h: number, s: number, l: number): boolean {
-  return (h < 18 || h > 345) && s > 0.28 && l > 0.08;
-}
-
-function hashNoise(x: number, y: number): number {
-  let n = Math.imul(x, 374761393) ^ Math.imul(y, 668265263);
-  n = (n ^ (n >>> 13)) >>> 0;
-  n = Math.imul(n, 1274126177) >>> 0;
-=======
 type NormalizedRect = {
   x: number;
   y: number;
   w: number;
   h: number;
 };
->>>>>>> theirs
+
 
 const MASKS = {
   outerFrame: { x: 0, y: 0, w: 1, h: 1 },
@@ -192,57 +99,6 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
       const { h, s, l } = rgbToHsl(r, g, b);
       const baseLuma = luma[y * width + x] ?? 0;
 
-<<<<<<< ours
-      const inArt = isArtRegion(nx, ny);
-      const inGoldUi = isGoldUiRegion(nx, ny);
-      const inSideGoldUi = isSideGoldUiRegion(nx, ny);
-      const inTypeIcon = isTypeIconRegion(nx, ny);
-      const inFrameBand = isFrameBand(nx, ny);
-      const inOuterFrame = isOuterFrame(nx, ny);
-
-      const isRedAccent = isRedAccentHue(h, s, l);
-      const isYellowGold = isYellowGoldHue(h, s, l);
-
-      if (inTypeIcon && s > 0.08 && baseLuma > 34) {
-        data[index] = r;
-        data[index + 1] = g;
-        data[index + 2] = b;
-        data[index + 3] = a;
-        continue;
-      }
-
-      // Keep the yellow/gold card UI panels recognizable before frame replacement.
-      // These panels touch the top/bottom frame masks, so handle them first to avoid clipping their edges.
-      if ((inGoldUi || inSideGoldUi) && isYellowGold) {
-        data[index] = clamp255(r * 1.02 + 4);
-        data[index + 1] = clamp255(g * 0.96 + 5);
-        data[index + 2] = clamp255(b * 0.72);
-        data[index + 3] = a;
-        continue;
-      }
-
-      // Red frame / regular-card red accents become black in the Zero variant.
-      // Do not do this inside the art area; red/orange art backgrounds should become grayscale, not solid black.
-      if (!inArt && !inGoldUi && !inSideGoldUi && (isRedAccent || inOuterFrame || (inFrameBand && s > 0.16))) {
-        const frameTone = inOuterFrame ? 12 : baseLuma > 75 ? 20 : Math.max(12, baseLuma * 0.25);
-
-        data[index] = clamp255(frameTone);
-        data[index + 1] = clamp255(frameTone);
-        data[index + 2] = clamp255(frameTone);
-        data[index + 3] = inFrameBand ? Math.max(a, 245) : a;
-        continue;
-      }
-
-      let tone = (baseLuma - 128) * (inArt ? options.contrast : 1.12) + 128;
-
-      if (inArt) {
-        const edge = Math.min(68, sobelAt(luma, width, height, x, y) * options.edgeStrength);
-        tone -= edge;
-
-        const dx = (nx - 0.5) / 0.52;
-        const dy = (ny - 0.38) / 0.54;
-        const vignette = Math.max(0, Math.min(1, Math.sqrt(dx * dx + dy * dy)));
-=======
       const inMainArt = inRect(nx, ny, MASKS.mainArtWindow);
       const inTopHeader = inRect(nx, ny, MASKS.topHeader);
       const inStatBoxes = inRect(nx, ny, MASKS.statBoxes) || inRect(nx, ny, MASKS.spdBox);
@@ -265,7 +121,7 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
       if (preserveUi && isYellowGoldHue(h, s, l)) {
         data[idx] = clamp255(r * 1.03 + 5); data[idx + 1] = clamp255(g * 0.97 + 4); data[idx + 2] = clamp255(b * 0.7); continue;
       }
->>>>>>> theirs
+
 
       if (inMainArt) {
         let tone = (baseLuma - 128) * options.contrast + 128;
