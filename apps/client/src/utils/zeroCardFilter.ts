@@ -5,12 +5,12 @@ export type ZeroCardFilterOptions = {
   posterize?: boolean;
 };
 
-export const ZERO_CARD_FILTER_VERSION = "v4-physical-raptor-tune";
+export const ZERO_CARD_FILTER_VERSION = "v2-region-aware";
 
 const DEFAULT_OPTIONS: Required<ZeroCardFilterOptions> = {
-  contrast: 1.34,
-  edgeStrength: 0.68,
-  noise: 5,
+  contrast: 1.48,
+  edgeStrength: 0.82,
+  noise: 8,
   posterize: true,
 };
 
@@ -21,7 +21,9 @@ type NormalizedRect = {
   h: number;
 };
 
+
 const MASKS = {
+  outerFrame: { x: 0, y: 0, w: 1, h: 1 },
   topHeader: { x: 0.045, y: 0.032, w: 0.91, h: 0.112 },
   statBoxes: { x: 0.06, y: 0.058, w: 0.54, h: 0.08 },
   spdBox: { x: 0.63, y: 0.058, w: 0.15, h: 0.08 },
@@ -57,7 +59,7 @@ const isRedAccentHue = (h: number, s: number, l: number): boolean => (h < 18 || 
 const hashNoise = (x: number, y: number): number => ((((Math.imul(Math.imul(x, 374761393) ^ Math.imul(y, 668265263), 1274126177) >>> 0) & 0xffff) / 0xffff) - 0.5);
 
 function posterizeTone(value: number): number {
-  const palette = [18, 34, 54, 78, 106, 138, 172, 206, 234];
+  const palette = [12, 28, 46, 68, 96, 130, 168, 208, 238];
   return palette.reduce((best, t) => Math.abs(t - value) < Math.abs(best - value) ? t : best, palette[0]);
 }
 
@@ -109,21 +111,22 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
       const preserveUi = inTopHeader || inStatBoxes || inAttackBand || inEffectTextBox || inFooter;
 
       if (inModifierCircle && (isRedAccentHue(h, s, l) || (s > 0.2 && baseLuma < 150))) {
-        const t = clamp255(Math.min(56, baseLuma * 0.46)); data[idx] = t; data[idx + 1] = t; data[idx + 2] = t; continue;
+        const t = clamp255(Math.min(38, baseLuma * 0.35)); data[idx] = t; data[idx + 1] = t; data[idx + 2] = t; continue;
       }
 
       if (!preserveUi && !inMainArt && !inLeftIcons && (isRedAccentHue(h, s, l) || (s > 0.26 && h <= 28 && l > 0.12))) {
-        const t = clamp255(Math.min(52, baseLuma * 0.42)); data[idx] = t; data[idx + 1] = t; data[idx + 2] = t; continue;
+        const t = clamp255(Math.min(30, baseLuma * 0.28)); data[idx] = t; data[idx + 1] = t; data[idx + 2] = t; continue;
       }
 
       if (preserveUi && isYellowGoldHue(h, s, l)) {
-        data[idx] = clamp255(r * 0.98 + 2); data[idx + 1] = clamp255(g * 0.92 + 2); data[idx + 2] = clamp255(b * 0.72); continue;
+        data[idx] = clamp255(r * 1.03 + 5); data[idx + 1] = clamp255(g * 0.97 + 4); data[idx + 2] = clamp255(b * 0.7); continue;
       }
+
 
       if (inMainArt) {
         let tone = (baseLuma - 128) * options.contrast + 128;
-        tone -= Math.min(52, sobelAt(luma, width, height, x, y) * options.edgeStrength);
-        tone -= Math.max(0, Math.min(1, Math.sqrt(((nx - 0.5) / 0.52) ** 2 + ((ny - 0.39) / 0.54) ** 2)) ) * 10;
+        tone -= Math.min(78, sobelAt(luma, width, height, x, y) * options.edgeStrength);
+        tone -= Math.max(0, Math.min(1, Math.sqrt(((nx - 0.5) / 0.52) ** 2 + ((ny - 0.39) / 0.54) ** 2)) ) * 20;
         tone += hashNoise(x, y) * options.noise;
         if (options.posterize) tone = posterizeTone(tone);
         const finalTone = clamp255(tone);
@@ -146,19 +149,17 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
 }
 
 function drawZeroLogoOverlay(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-  const x = width * 0.112;
-  const y = height * 0.173;
-
+  const x = width * 0.06; const y = height * 0.14; const w = width * 0.19; const h = height * 0.058;
   ctx.save();
-  ctx.rotate((-8 * Math.PI) / 180);
-  ctx.fillStyle = "rgba(236, 230, 210, 0.86)";
-  ctx.strokeStyle = "rgba(24, 24, 24, 0.82)";
-  ctx.lineWidth = Math.max(1, Math.floor(width * 0.0024));
-  ctx.font = `700 italic ${Math.floor(height * 0.045)}px Georgia, serif`;
-  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(8,8,8,0.86)";
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = "rgba(222, 189, 95, 0.9)";
+  ctx.lineWidth = Math.max(1, Math.floor(width * 0.003));
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = "#f0d27f";
+  ctx.font = `${Math.floor(height * 0.033)}px sans-serif`;
   ctx.textBaseline = "middle";
-  ctx.strokeText("Zero", x, y);
-  ctx.fillText("Zero", x, y);
+  ctx.fillText("ZERO", x + w * 0.14, y + h * 0.52);
   ctx.restore();
 }
 
