@@ -362,6 +362,7 @@ type BoardPreview3DProps = {
   onRollEffectRoll?: (effectRollSessionId: string) => void;
   onApplyEffectRoll?: (effectRollSessionId: string) => void;
   onSkipEffectRoll?: (effectRollSessionId: string) => void;
+  onOpenBoardReport?: () => void;
   intentLabel?: string;
   commandLabel?: string;
   onSlotFocus?: (event: BoardSlotFocusEvent) => void;
@@ -551,6 +552,7 @@ export function BoardPreview3D({
   onRollEffectRoll,
   onApplyEffectRoll,
   onSkipEffectRoll,
+  onOpenBoardReport,
   intentLabel = "",
   commandLabel = "",
   onSlotFocus,
@@ -2413,6 +2415,11 @@ export function BoardPreview3D({
                   <button type="button" disabled={!action.canUndo} onClick={onUndoLastAction}>
                     Undo
                   </button>
+                  {onOpenBoardReport ? (
+                    <button type="button" className="is-report" onClick={onOpenBoardReport}>
+                      Report
+                    </button>
+                  ) : null}
                   {action.shouldShowHandControls ? (
                     <>
                       <button

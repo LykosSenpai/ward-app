@@ -108,6 +108,98 @@
   padding-top: 0.85rem;
 }
 
+.board-report-card {
+  display: grid;
+  gap: 1rem;
+  max-width: none;
+}
+
+.board-report-summary {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.board-report-summary div {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.5);
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.65rem;
+}
+
+.board-report-summary span {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.board-report-summary strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-report-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.board-report-form label {
+  color: #cbd5e1;
+  display: grid;
+  font-size: 0.8rem;
+  font-weight: 850;
+  gap: 0.35rem;
+}
+
+.board-report-form input,
+.board-report-form select,
+.board-report-form textarea {
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 7px;
+  background: rgba(8, 12, 20, 0.82);
+  color: #f8fafc;
+  font: inherit;
+  min-width: 0;
+  padding: 0.65rem;
+}
+
+.board-report-form textarea {
+  resize: vertical;
+}
+
+.board-report-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.board-report-actions button {
+  border: 1px solid rgba(125, 211, 252, 0.58);
+  border-radius: 7px;
+  background: rgba(14, 116, 144, 0.82);
+  color: #ecfeff;
+  cursor: pointer;
+  font-weight: 900;
+  min-height: 2.4rem;
+  padding: 0.55rem 0.9rem;
+}
+
+.board-report-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+@media (max-width: 720px) {
+  .board-report-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
 .app-header-actions {
   align-items: end;
   display: grid;

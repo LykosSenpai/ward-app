@@ -2859,6 +2859,12 @@
   color: #ecfeff;
 }
 
+.board-preview-3d__deck-actions button.is-report {
+  background: rgba(127, 29, 29, 0.88);
+  border-color: rgba(248, 113, 113, 0.72);
+  color: #fee2e2;
+}
+
 .board-preview-3d__deck-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.42;

@@ -22,6 +22,7 @@ import { MarketplaceTransactionPanel } from "./components/MarketplaceTransaction
 import { MarketplacePage } from "./components/MarketplacePage";
 import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { BoardPreview3D } from "./components/BoardPreview3D";
+import { BoardReportPanel } from "./components/BoardReportPanel";
 import type { PointerGestureIntent } from "./components/boardInteractionIntents";
 import type { BoardIntentCommand } from "./components/boardIntentCommands";
 import { ProfilePage } from "./components/ProfilePage";
@@ -206,6 +207,7 @@ type DashboardModal =
   | "event-log"
   | "match-details"
   | "effect-debug"
+  | "board-report"
   | null;
 
 type OwnershipSaveStatus = "idle" | "saving" | "saved" | "error";
@@ -2290,6 +2292,7 @@ export default function App() {
                       onRollEffectRoll={rollEffectRoll}
                       onApplyEffectRoll={applyEffectRoll}
                       onSkipEffectRoll={skipEffectRoll}
+                      onOpenBoardReport={() => setDashboardModal("board-report")}
                       intentLabel={lastBoardIntentLabel}
                       commandLabel={lastBoardCommandLabel}
                       onIntent={(intent: PointerGestureIntent) => {
@@ -2496,6 +2499,15 @@ export default function App() {
                 wide
               >
                 <EffectDebugPanel match={match} />
+              </ModalPanel>
+            )}
+            {dashboardModal === "board-report" && (
+              <ModalPanel
+                title="Report Board Issue"
+                onClose={() => setDashboardModal(null)}
+                wide
+              >
+                <BoardReportPanel match={match} />
               </ModalPanel>
             )}
             {dashboardModal === "match-details" && (

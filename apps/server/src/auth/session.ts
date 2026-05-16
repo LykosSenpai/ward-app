@@ -38,8 +38,25 @@ declare module "express-session" {
 
 const SESSION_SECRET = process.env.SESSION_SECRET ?? "";
 const PgSessionStore = connectPgSimple(session);
+const isProduction = process.env.NODE_ENV === "production";
 
-if (process.env.NODE_ENV === "production" && SESSION_SECRET.length < 32) {
+type SessionCookieSameSite = "lax" | "strict" | "none";
+
+function getSessionCookieSameSite(): SessionCookieSameSite {
+  const configuredValue = process.env.SESSION_COOKIE_SAMESITE?.trim().toLowerCase();
+
+  if (
+    configuredValue === "lax" ||
+    configuredValue === "strict" ||
+    configuredValue === "none"
+  ) {
+    return configuredValue;
+  }
+
+  return isProduction ? "none" : "lax";
+}
+
+if (isProduction && SESSION_SECRET.length < 32) {
   throw new Error("SESSION_SECRET must be set to at least 32 characters in production.");
 }
 
@@ -54,8 +71,8 @@ export const sessionMiddleware = session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: getSessionCookieSameSite(),
+    secure: isProduction,
     maxAge: 1000 * 60 * 60 * 24 * 14
   }
 });

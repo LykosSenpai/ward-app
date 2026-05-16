@@ -10,6 +10,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Server, type Socket } from "socket.io";
 import rateLimit from "express-rate-limit";
+import { z } from "zod";
 
 import type { CardDefinition, CardInstance, CannotInflictAttackDamageBattlePolicy, DeckListDefinition, DevRollKind, MatchState, TurnPhase, WardEngineEffect } from "@ward/shared";
 
@@ -144,6 +145,7 @@ import { fail, ok } from "./marketplace/http.js";
 import { marketplaceCardsQuerySchema, marketplaceCatalogQuerySchema, marketplaceRecommendationsQuerySchema } from "./marketplace/schemas.js";
 import { marketplaceCardsListResponseSchema, marketplaceCatalogResponseSchema } from "./marketplace/responseSchemas.js";
 import { buildMatchId, scoreMarketplaceMatch } from "./marketplace/matching.js";
+import { createSupportTicket } from "./supportTickets/supportTicketStore.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const __filename = fileURLToPath(import.meta.url);
@@ -398,6 +400,13 @@ const marketplaceMessageRateLimit = rateLimit({
   legacyHeaders: false,
   message: { message: "Too many message actions. Please slow down." }
 });
+const supportTicketRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  limit: isProduction ? 8 : 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many support reports. Please slow down." }
+});
 
 const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
@@ -550,6 +559,14 @@ type MatchLobbyRecord = {
   closedAt?: string;
   closeReason?: MatchLobbyCloseReason;
 };
+
+const boardReportRequestSchema = z.object({
+  matchId: z.string().trim().min(1).max(160),
+  subject: z.string().trim().min(1).max(140),
+  description: z.string().trim().min(1).max(2400),
+  severity: z.enum(["LOW", "NORMAL", "HIGH", "BLOCKING"]).default("NORMAL"),
+  clientContext: z.record(z.unknown()).optional().default({})
+});
 
 function getSocketUser(socket: { request: unknown }): AuthUser | null {
   const request = socket.request as { session?: { user?: AuthUser } };
@@ -992,6 +1009,19 @@ function getSocketOwnedPlayerId(socket: { request: unknown }, matchId: string): 
   }
 
   return matchPlayerOwners.get(matchId)?.get(user.id);
+}
+
+function getUserOwnedPlayerId(user: AuthUser, matchId: string): string | undefined {
+  return matchPlayerOwners.get(matchId)?.get(user.id);
+}
+
+function canUserReportMatch(user: AuthUser, matchId: string): boolean {
+  if (user.role === "ADMIN" || user.role === "HOST" || user.role === "DEVELOPER") {
+    return true;
+  }
+
+  const owners = matchPlayerOwners.get(matchId);
+  return !owners || owners.has(user.id);
 }
 
 function requireSocketCanControlPlayer(socket: { request: unknown }, matchId: string, playerId: string): void {
@@ -1880,6 +1910,64 @@ app.post("/api/profile/discord/unlink", async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: error instanceof Error ? error.message : "Unable to unlink Discord."
+    });
+  }
+});
+
+app.post("/api/support-tickets/board-report", supportTicketRateLimit, async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const parsed = boardReportRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid report." });
+      return;
+    }
+
+    validateDataFileId(parsed.data.matchId);
+
+    let match = activeMatches.get(parsed.data.matchId);
+    if (!match) {
+      try {
+        match = loadMatchFromDisk(parsed.data.matchId);
+      } catch {
+        match = undefined;
+      }
+    }
+
+    if (!match) {
+      res.status(404).json({ message: "Match not found." });
+      return;
+    }
+
+    if (!canUserReportMatch(user, parsed.data.matchId)) {
+      res.status(403).json({ message: "You can only report matches you are part of." });
+      return;
+    }
+
+    const ticket = await createSupportTicket({
+      reporterUserId: user.id,
+      matchId: parsed.data.matchId,
+      subject: parsed.data.subject,
+      description: parsed.data.description,
+      severity: parsed.data.severity,
+      matchSnapshot: cloneMatchState(match),
+      clientContext: {
+        ...parsed.data.clientContext,
+        reporterPlayerId: getUserOwnedPlayerId(user, parsed.data.matchId) ?? null,
+        reporterRole: user.role,
+        submittedAt: new Date().toISOString()
+      }
+    });
+
+    res.status(201).json({ ticket });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to create support ticket."
     });
   }
 });
