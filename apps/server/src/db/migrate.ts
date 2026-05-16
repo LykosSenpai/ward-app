@@ -8,7 +8,25 @@ import { closeDbPool, getDbPool } from "./pool.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const migrationsDir = path.resolve(__dirname, "migrations");
+
+async function findMigrationsDir(): Promise<string> {
+  const candidates = [
+    path.resolve(__dirname, "migrations"),
+    path.resolve(__dirname, "../../src/db/migrations"),
+    path.resolve(process.cwd(), "src/db/migrations")
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      const stats = await fs.stat(candidate);
+      if (stats.isDirectory()) return candidate;
+    } catch {
+      // Try the next location.
+    }
+  }
+
+  throw new Error(`Could not find db migrations directory. Tried: ${candidates.join(", ")}`);
+}
 
 async function ensureMigrationTable(): Promise<void> {
   await getDbPool().query(`
@@ -28,6 +46,7 @@ async function run(): Promise<void> {
   await ensureMigrationTable();
 
   const applied = await listAppliedMigrations();
+  const migrationsDir = await findMigrationsDir();
   const entries = await fs.readdir(migrationsDir);
   const migrationFiles = entries
     .filter(fileName => fileName.endsWith(".sql"))
