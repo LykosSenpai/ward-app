@@ -17,6 +17,7 @@ export type {
 
 export type ServerWelcome = {
   message: string;
+  authenticated?: boolean;
   socketId: string;
 };
 

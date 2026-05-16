@@ -53,7 +53,7 @@ function getSessionCookieSameSite(): SessionCookieSameSite {
     return configuredValue;
   }
 
-  return isProduction ? "none" : "lax";
+  return "lax";
 }
 
 if (isProduction && SESSION_SECRET.length < 32) {

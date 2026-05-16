@@ -3252,6 +3252,7 @@ io.on("connection", async socket => {
 
   socket.emit("server:welcome", {
     message: "Connected to server",
+    authenticated: Boolean(connectedUser),
     socketId: socket.id
   });
 

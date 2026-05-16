@@ -479,6 +479,11 @@ export default function App() {
   useEffect(() => {
     socket.on("server:welcome", (data: ServerWelcome) => {
       setServerMessage(data.message);
+      if (!data.authenticated) {
+        setError("Your browser connected to the server without your login session. Save buttons may not work. Log out and back in; in Brave, turn Shields off for Ward Nexus if this keeps happening.");
+      } else {
+        setError(current => current.startsWith("Your browser connected to the server without your login session.") ? "" : current);
+      }
     });
 
     socket.on("connect", () => {
