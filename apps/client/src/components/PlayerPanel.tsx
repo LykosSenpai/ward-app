@@ -419,6 +419,16 @@ export function PlayerPanel({
     !anyDiscardRequired;
 
   const currentBattleStrike = match.pendingBattle?.strikes[match.pendingBattle.currentStrikeIndex];
+  const isCurrentDefenderBattleResponseWindow =
+    currentBattleStrike?.defender.playerId === player.id &&
+    (match.pendingBattle?.status === "AWAITING_DAMAGE_ROLL" ||
+      match.pendingBattle?.status === "AWAITING_DAMAGE_APPLICATION") &&
+    (currentBattleStrike.status === "AWAITING_DAMAGE_ROLL" ||
+      currentBattleStrike.status === "AWAITING_DAMAGE_APPLICATION");
+  const isCurrentAttackerBattleResponseWindow =
+    currentBattleStrike?.attacker.playerId === player.id &&
+    match.pendingBattle?.status === "AWAITING_DAMAGE_ROLL" &&
+    currentBattleStrike.status === "AWAITING_DAMAGE_ROLL";
   const canPlayBattleResponse =
     !isMatchComplete &&
     canControlThisPlayer &&
@@ -426,11 +436,7 @@ export function PlayerPanel({
     !match.pendingChain &&
     !match.pendingPrompt &&
     !anyDiscardRequired &&
-    (match.pendingBattle.status === "AWAITING_DAMAGE_ROLL" ||
-      match.pendingBattle.status === "AWAITING_DAMAGE_APPLICATION") &&
-    currentBattleStrike?.defender.playerId === player.id &&
-    (currentBattleStrike.status === "AWAITING_DAMAGE_ROLL" ||
-      currentBattleStrike.status === "AWAITING_DAMAGE_APPLICATION");
+    (isCurrentDefenderBattleResponseWindow || isCurrentAttackerBattleResponseWindow);
 
   const hasSummonableCreature = playerHasSummonableCreatureInHand(match, player);
 

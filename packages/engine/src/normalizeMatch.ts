@@ -209,6 +209,9 @@ function normalizePlayer(player: PlayerState): PlayerState {
     hasBattledThisCombat: Boolean(player.turnFlags?.hasBattledThisCombat),
     battleUsedCreatureInstanceIds: asArray<string>(
       player.turnFlags?.battleUsedCreatureInstanceIds
+    ),
+    retaliationSavedCreatureInstanceIds: asArray<string>(
+      player.turnFlags?.retaliationSavedCreatureInstanceIds
     )
   };
 

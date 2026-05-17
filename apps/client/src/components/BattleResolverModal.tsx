@@ -95,20 +95,45 @@ function getParticipantSubLabel(participant: ManualBattleStrike["attacker"]): st
   return `${getCreatureKindLabel(participant.creatureKind)}  -  SPD ${participant.speed}  -  AL ${participant.armorLevel}  -  HP ${participant.currentHp}  -  ATK ${participant.attackDice}D6  -  MOD ${participant.modifier}`;
 }
 
-function isMinotaurBodyguardCard(match: AppMatchState, card: CardInstance): boolean {
+function isAutomatedBattleResponseCard(match: AppMatchState, card: CardInstance): boolean {
   const definition = match.cardCatalog[card.cardId];
-  const name = String(definition?.name ?? "").trim().toLowerCase();
-  const id = String(definition?.id ?? "").trim().toLowerCase();
-  const cardNumber = String(definition?.cardNumber ?? "").trim();
+  if (definition?.cardType !== "MAGIC") return false;
+  if (definition.magicType !== "BATTLE_LIGHTNING" && definition.magicType !== "LIGHTNING") return false;
 
-  return definition?.cardType === "MAGIC" &&
-    definition.magicType === "BATTLE_LIGHTNING" &&
-    (
-      name === "minotaur bodyguard" ||
-      id.includes("minotaur-bodyguard") ||
-      id.includes("minotaur_bodyguard") ||
-      (cardNumber === "016" && name.includes("minotaur") && name.includes("bodyguard"))
-    );
+  return Boolean(definition.effects?.some(effect => {
+    const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+    const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+    const isBattleTrigger = trigger === "DURING_BATTLE_FROM_HAND" ||
+      trigger === "ON_HIT_FROM_HAND" ||
+      trigger === "WHEN_OPPONENT_FINISHES_ATTACK" ||
+      trigger.includes("ATTACK_HITS");
+    const isSupportedAction = actionType === "NEGATE_ATTACK_DAMAGE" ||
+      actionType === "PREVENT_ATTACK_DAMAGE" ||
+      actionType === "NEGATE_ATTACK_OR_MAGIC" ||
+      actionType === "NEGATE_ATTACK" ||
+      actionType === "PREVENT_ATTACK" ||
+      actionType === "APPLY_DICE_MODIFIER" ||
+      actionType === "APPLY_STAT_MODIFIER" ||
+      actionType === "DEAL_INSTANT_DAMAGE" ||
+      actionType === "DAMAGE" ||
+      actionType === "DAMAGE_CREATURE";
+    return isBattleTrigger && isSupportedAction;
+  }));
+}
+
+function battleResponseOwnerForCard(match: AppMatchState, card: CardInstance, strike: ManualBattleStrike): string {
+  const definition = match.cardCatalog[card.cardId];
+  const effect = definition?.effects?.find(candidate => {
+    const trigger = String(candidate.trigger ?? "").trim().toUpperCase();
+    const actionType = String(candidate.actionType ?? "").trim().toUpperCase();
+    return trigger === "ON_HIT_FROM_HAND" &&
+      actionType !== "NEGATE_ATTACK_DAMAGE" &&
+      actionType !== "PREVENT_ATTACK_DAMAGE" &&
+      actionType !== "NEGATE_ATTACK_OR_MAGIC" &&
+      actionType !== "NEGATE_ATTACK" &&
+      actionType !== "PREVENT_ATTACK";
+  });
+  return effect ? strike.attacker.playerId : strike.defender.playerId;
 }
 
 function normalizeSpeedModifiers(
@@ -556,11 +581,15 @@ function StrikeDetail({
     cardInstanceId: string
   ) => void;
 }) {
-  const defender = match.players.find(player => player.id === strike.defender.playerId);
-  const battleResponseCards = defender?.hand.filter(card => isMinotaurBodyguardCard(match, card)) ?? [];
+  const battleResponseCards = match.players
+    .flatMap(player => player.hand.map(card => ({ player, card })))
+    .filter(({ card }) => isAutomatedBattleResponseCard(match, card))
+    .filter(({ player, card }) => battleResponseOwnerForCard(match, card, strike) === player.id);
   const canPlayBattleResponse =
     isCurrent &&
     battleResponseCards.length > 0 &&
+    (battle.status === "AWAITING_DAMAGE_ROLL" ||
+      battle.status === "AWAITING_DAMAGE_APPLICATION") &&
     (strike.status === "AWAITING_DAMAGE_ROLL" ||
       strike.status === "AWAITING_DAMAGE_APPLICATION");
 
@@ -601,11 +630,11 @@ function StrikeDetail({
           <div className="battle-modifier-card-header">
             <strong>Battle responses from hand</strong>
           </div>
-          {battleResponseCards.map(card => (
+          {battleResponseCards.map(({ player, card }) => (
             <button
               className="lightning-button"
               key={card.instanceId}
-              onClick={() => onPlayBattleResponse(battle.id, strike.id, strike.defender.playerId, card.instanceId)}
+              onClick={() => onPlayBattleResponse(battle.id, strike.id, player.id, card.instanceId)}
             >
               Play {match.cardCatalog[card.cardId]?.name ?? "Battle Response"}
             </button>

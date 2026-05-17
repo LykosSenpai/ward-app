@@ -167,6 +167,7 @@ function targetLocationsForEffect(
   triggerPlayerId: string
 ): CreatureLocation[] {
   const text = effectText(effect);
+  const actionType = normalize(effect.actionType);
   const controller = sourceController(state, source);
 
   if (text.includes("all creatures")) {
@@ -185,6 +186,12 @@ function targetLocationsForEffect(
   if (text.includes("equipped creature")) {
     const attached = sourceAttachedCreature(state, source);
     return attached ? [attached] : [];
+  }
+
+  if (actionType === "DEAL_DAMAGE_ON_DRAW") {
+    const drawingPlayer = getPlayer(state, triggerPlayerId);
+    const primary = primaryCreatureLocation(drawingPlayer, state);
+    return primary ? [primary] : [];
   }
 
   if (text.includes("opponent")) {

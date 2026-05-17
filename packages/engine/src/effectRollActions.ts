@@ -3,6 +3,7 @@ import type {
   ActiveCreatureStatus,
   CardDefinition,
   CardInstance,
+  EffectTargetOption,
   EffectRollSuccessRange,
   ManualBattleStrike,
   MatchState,
@@ -17,7 +18,8 @@ import { sumDice } from "./dice.js";
 import { getCardEngineEffects } from "./effectResolver.js";
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { getTurnCycleExpiration } from "./effectTiming.js";
-import { syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
+import { removeActiveEffectInstance, syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
+import { applyDamageToCreatureTarget } from "./cardMovement.js";
 
 type AddEventFn = (state: MatchState, type: string, playerId?: string, payload?: unknown) => void;
 
@@ -25,6 +27,7 @@ type FieldCreatureLocation = {
   player: PlayerState;
   card: CardInstance;
   definition: Extract<CardDefinition, { cardType: "CREATURE" }>;
+  targetKind: "PRIMARY_CREATURE" | "LIMITED_SUMMON";
 };
 
 type RollParams = {
@@ -72,18 +75,77 @@ function findFieldCreatureByInstanceId(
     if (primary?.instanceId === creatureInstanceId) {
       const definition = state.cardCatalog[primary.cardId];
       if (definition?.cardType !== "CREATURE") return undefined;
-      return { player, card: primary, definition };
+      return { player, card: primary, definition, targetKind: "PRIMARY_CREATURE" };
     }
 
     for (const limited of player.field.limitedSummons) {
       if (limited.instanceId !== creatureInstanceId) continue;
       const definition = state.cardCatalog[limited.cardId];
       if (definition?.cardType !== "CREATURE") return undefined;
-      return { player, card: limited, definition };
+      return { player, card: limited, definition, targetKind: "LIMITED_SUMMON" };
     }
   }
 
   return undefined;
+}
+
+function collectFieldCreatureLocations(state: MatchState): FieldCreatureLocation[] {
+  const locations: FieldCreatureLocation[] = [];
+
+  for (const player of state.players) {
+    const primary = player.field.primaryCreature;
+    if (primary) {
+      const definition = state.cardCatalog[primary.cardId];
+      if (definition?.cardType === "CREATURE") {
+        locations.push({ player, card: primary, definition, targetKind: "PRIMARY_CREATURE" });
+      }
+    }
+
+    for (const limited of player.field.limitedSummons) {
+      const definition = state.cardCatalog[limited.cardId];
+      if (definition?.cardType === "CREATURE") {
+        locations.push({ player, card: limited, definition, targetKind: "LIMITED_SUMMON" });
+      }
+    }
+  }
+
+  return locations;
+}
+
+function targetOptionFromFieldCreature(location: FieldCreatureLocation): EffectTargetOption {
+  return {
+    id: `${location.player.id}:${location.targetKind}:${location.card.instanceId}`,
+    label: `${location.player.displayName}: ${location.definition.name}`,
+    targetKind: location.targetKind,
+    playerId: location.player.id,
+    cardInstanceId: location.card.instanceId,
+    cardId: location.card.cardId,
+    cardName: location.definition.name,
+    zone: location.targetKind
+  };
+}
+
+function findCardInstanceById(state: MatchState, cardInstanceId?: string): CardInstance | undefined {
+  if (!cardInstanceId) return undefined;
+
+  for (const player of state.players) {
+    const fieldCards = [
+      player.field.primaryCreature,
+      ...player.field.limitedSummons,
+      ...player.field.magicSlots
+    ].filter((card): card is CardInstance => Boolean(card));
+    const allCards = [
+      ...fieldCards,
+      ...player.hand,
+      ...player.deck,
+      ...player.cemetery,
+      ...player.removedFromGame
+    ];
+    const found = allCards.find(card => card.instanceId === cardInstanceId);
+    if (found) return found;
+  }
+
+  return state.chainZone.find(card => card.instanceId === cardInstanceId);
 }
 
 function isRollForEffect(effect: WardEngineEffect): boolean {
@@ -179,6 +241,15 @@ function parseSuccessRanges(effect: WardEngineEffect): EffectRollSuccessRange[] 
   }
 
   return [{ min: 4, max: 6 }];
+}
+
+function firstPositiveNumber(effect: WardEngineEffect): number | undefined {
+  const explicit = Number(effect.params?.amount ?? effect.params?.damageAmount ?? effect.params?.healAmount);
+  if (Number.isFinite(explicit) && explicit > 0) return Math.trunc(explicit);
+
+  const match = effectText(effect).match(/(\d+)/);
+  const value = Number(match?.[1]);
+  return Number.isFinite(value) && value > 0 ? Math.trunc(value) : undefined;
 }
 
 function getOnSuccess(effect: WardEngineEffect): OnSuccessParams {
@@ -386,6 +457,119 @@ export function detectPendingEffectRollForStrike(args: {
   return session;
 }
 
+function findStatusTickEffect(
+  sourceDefinition: CardDefinition,
+  status: ActiveCreatureStatus
+): WardEngineEffect | undefined {
+  const statusName = normalize(status.status);
+  const label = status.label.toLowerCase();
+
+  return getCardEngineEffects(sourceDefinition).find(effect => {
+    const actionType = normalize(effect.actionType);
+    const trigger = normalize(effect.trigger);
+    const reusableFunction = normalize(effect.reusableFunction);
+    const text = effectText(effect).toLowerCase();
+
+    if (actionType !== "RESOLVE_STATUS_TICK") return false;
+
+    return trigger.includes(statusName) ||
+      reusableFunction.includes(statusName) ||
+      text.includes(statusName.toLowerCase()) ||
+      (label && text.includes(label));
+  });
+}
+
+function findDefinitionForStatusSource(
+  state: MatchState,
+  status: ActiveCreatureStatus
+): { card?: CardInstance; definition?: CardDefinition } {
+  const card = findCardInstanceById(state, status.sourceCardInstanceId);
+  const definition = card ? state.cardCatalog[card.cardId] : undefined;
+  if (definition) return { card, definition };
+
+  const sourceName = status.sourceCardName.trim().toLowerCase();
+  const byName = Object.values(state.cardCatalog).find(candidate => candidate.name.trim().toLowerCase() === sourceName);
+  return { card, definition: byName };
+}
+
+export function createPendingStatusTickEffectRollSession(
+  state: MatchState,
+  activePlayerId: string,
+  addEvent?: AddEventFn
+): PendingEffectRollSession | undefined {
+  if (state.pendingEffectRoll) return undefined;
+
+  for (const target of collectFieldCreatureLocations(state)) {
+    if (target.player.id !== activePlayerId) continue;
+
+    for (const status of target.card.activeStatuses ?? []) {
+      if (status.sourcePlayerId === activePlayerId) continue;
+
+      const source = findDefinitionForStatusSource(state, status);
+      if (!source.definition) continue;
+
+      const effect = findStatusTickEffect(source.definition, status);
+      if (!effect) continue;
+
+      const now = new Date().toISOString();
+      const successRanges = parseSuccessRanges(effect);
+      const damageAmount = firstPositiveNumber(effect) ?? 10;
+      const session: PendingEffectRollSession = {
+        id: uuidv4(),
+        status: "AWAITING_ROLL",
+        createdAt: now,
+        updatedAt: now,
+        sourcePlayerId: status.sourcePlayerId,
+        sourceCardInstanceId: status.sourceCardInstanceId,
+        sourceCardId: source.card?.cardId ?? source.definition.id,
+        sourceCardName: source.definition.name,
+        rollPlayerId: activePlayerId,
+        effectId: effect.id,
+        trigger: effect.trigger ?? "OPPONENT_TURN_WHILE_STATUS_ACTIVE",
+        actionType: effect.actionType,
+        actionText: effect.actionText ?? effect.value ?? effect.params?.valueText,
+        targetPlayerId: target.player.id,
+        targetCardInstanceId: target.card.instanceId,
+        targetCardName: target.definition.name,
+        diceKind: "EFFECT_ROLL",
+        diceCount: parseDiceCount(effect),
+        successRanges,
+        onSuccessActionType: "REMOVE_STATUS",
+        onSuccessStatus: status.status,
+        onSuccessLabel: status.label,
+        targetStatusId: status.id,
+        onFailureActionType: "DAMAGE",
+        onFailureDamageAmount: damageAmount,
+        duration: effect.duration,
+        message: `${target.definition.name} is ${status.label}. ${target.player.displayName} rolls ${parseDiceCount(effect)}D6; success on ${rangeLabel(successRanges)} frees it, otherwise it receives ${damageAmount} damage.`
+      };
+
+      state.pendingEffectRoll = session;
+      addEvent?.(state, "STATUS_TICK_EFFECT_ROLL_CREATED", activePlayerId, {
+        effectRollSessionId: session.id,
+        sourceCardInstanceId: session.sourceCardInstanceId,
+        sourceCardName: session.sourceCardName,
+        effectId: session.effectId,
+        actionType: session.actionType,
+        targetPlayerId: target.player.id,
+        targetCreatureInstanceId: target.card.instanceId,
+        targetCreatureName: target.definition.name,
+        statusId: status.id,
+        status: status.status,
+        label: status.label,
+        diceCount: session.diceCount,
+        successRanges: session.successRanges,
+        onFailureDamageAmount: damageAmount,
+        message: session.message
+      });
+
+      return session;
+    }
+  }
+
+  return undefined;
+}
+
 export function rollPendingEffectRollInPlace(
   state: MatchState,
   effectRollSessionId: string,
@@ -404,7 +588,7 @@ export function rollPendingEffectRollInPlace(
   const dice = rollD6WithDev(state, {
     kind: "EFFECT_ROLL",
     count: session.diceCount,
-    playerId: session.sourcePlayerId,
+    playerId: session.rollPlayerId ?? session.sourcePlayerId,
     label: `${session.sourceCardName} effect roll`,
     addEvent,
     context: {
@@ -435,6 +619,7 @@ export function rollPendingEffectRollInPlace(
     sourceCardName: session.sourceCardName,
     effectId: session.effectId,
     targetPlayerId: session.targetPlayerId,
+    rollPlayerId: session.rollPlayerId ?? session.sourcePlayerId,
     targetCreatureInstanceId: session.targetCardInstanceId,
     targetCreatureName: session.targetCardName,
     dice,
@@ -459,6 +644,114 @@ export function applyPendingEffectRollStatusInPlace(
 
   if (session.status !== "ROLLED") {
     throw new Error("Roll the effect dice before applying the effect.");
+  }
+
+  if (normalize(session.onSuccessActionType) === "REMOVE_STATUS") {
+    const target = session.targetCardInstanceId
+      ? findFieldCreatureByInstanceId(state, session.targetCardInstanceId)
+      : undefined;
+
+    if (!target) {
+      session.status = "APPLIED";
+      session.updatedAt = new Date().toISOString();
+      session.message = "Effect roll resolved, but the target creature is no longer on the field.";
+
+      addEvent?.(state, "STATUS_TICK_EFFECT_ROLL_TARGET_MISSING", session.rollPlayerId ?? session.sourcePlayerId, {
+        effectRollSessionId: session.id,
+        sourceCardInstanceId: session.sourceCardInstanceId,
+        targetCardInstanceId: session.targetCardInstanceId,
+        statusId: session.targetStatusId
+      });
+
+      state.pendingEffectRoll = undefined;
+      return session;
+    }
+
+    if (session.success) {
+      const removedStatuses = (target.card.activeStatuses ?? []).filter(status =>
+        status.id === session.targetStatusId ||
+        (session.onSuccessStatus && normalize(status.status) === normalize(session.onSuccessStatus))
+      );
+      target.card.activeStatuses = (target.card.activeStatuses ?? []).filter(status => !removedStatuses.includes(status));
+      for (const status of removedStatuses) {
+        removeActiveEffectInstance(target.card, status.id);
+      }
+
+      session.status = "APPLIED";
+      session.updatedAt = new Date().toISOString();
+      session.message = `${target.definition.name} was freed from ${session.onSuccessLabel ?? session.onSuccessStatus ?? "the status"}.`;
+
+      addEvent?.(state, "STATUS_TICK_EFFECT_ROLL_FREED", session.rollPlayerId ?? session.sourcePlayerId, {
+        effectRollSessionId: session.id,
+        sourceCardInstanceId: session.sourceCardInstanceId,
+        sourceCardName: session.sourceCardName,
+        effectId: session.effectId,
+        targetPlayerId: target.player.id,
+        targetCreatureInstanceId: target.card.instanceId,
+        targetCreatureName: target.definition.name,
+        statusId: session.targetStatusId,
+        status: session.onSuccessStatus,
+        label: session.onSuccessLabel,
+        rollTotal: session.rollTotal,
+        boardEvents: [
+          {
+            type: "STATUS_REMOVED",
+            playerId: target.player.id,
+            cardInstanceId: target.card.instanceId,
+            targetCardInstanceId: target.card.instanceId,
+            sourceCardInstanceId: session.sourceCardInstanceId,
+            sourceCardId: session.sourceCardId,
+            sourceEffectId: session.effectId,
+            actionType: session.actionType,
+            status: session.onSuccessStatus,
+            statusLabel: session.onSuccessLabel,
+            reason: "EFFECT_ROLL_SUCCESS"
+          }
+        ]
+      });
+    } else {
+      const damageAmount = session.onFailureDamageAmount ?? 10;
+      const result = applyDamageToCreatureTarget(state, targetOptionFromFieldCreature(target), damageAmount);
+
+      session.status = "APPLIED";
+      session.updatedAt = new Date().toISOString();
+      session.message = `${target.definition.name} failed to escape and received ${result.damageAmount} damage.`;
+
+      addEvent?.(state, "STATUS_TICK_EFFECT_ROLL_DAMAGE_APPLIED", session.rollPlayerId ?? session.sourcePlayerId, {
+        effectRollSessionId: session.id,
+        sourceCardInstanceId: session.sourceCardInstanceId,
+        sourceCardName: session.sourceCardName,
+        effectId: session.effectId,
+        targetPlayerId: result.playerId,
+        targetCreatureInstanceId: target.card.instanceId,
+        targetCreatureName: result.creatureName,
+        statusId: session.targetStatusId,
+        status: session.onSuccessStatus,
+        label: session.onSuccessLabel,
+        rollTotal: session.rollTotal,
+        damageAmount: result.damageAmount,
+        remainingHp: result.remainingHp,
+        killed: result.killed,
+        boardEvents: [
+          {
+            type: "CREATURE_DAMAGED",
+            playerId: result.playerId,
+            sourceCardInstanceId: session.sourceCardInstanceId,
+            sourceCardId: session.sourceCardId,
+            sourceEffectId: session.effectId,
+            actionType: session.actionType,
+            targetCardInstanceId: target.card.instanceId,
+            damageAmount: result.damageAmount,
+            remainingHp: result.remainingHp,
+            killed: result.killed,
+            reason: "EFFECT_ROLL_FAILURE"
+          }
+        ]
+      });
+    }
+
+    state.pendingEffectRoll = undefined;
+    return session;
   }
 
   if (!session.success) {

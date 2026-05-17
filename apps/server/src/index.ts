@@ -34,7 +34,6 @@ import {
   battleWithCreature,
   cancelManualBattleSession,
   callCemeteryHpLoss,
-  completeCemeteryHpLossIfNeeded,
   completeManualMagicEffect,
   concedeMatch,
   create1v1MatchFromDeckCardIds,
@@ -1521,6 +1520,7 @@ function prepareLlmBulkDeckPlayer(match: MatchState, playerId: string): void {
   player.turnFlags.killedOwnCreatureThisTurn = false;
   player.turnFlags.hasBattledThisCombat = false;
   player.turnFlags.battleUsedCreatureInstanceIds = [];
+  player.turnFlags.retaliationSavedCreatureInstanceIds = [];
   match.setup.firstTurnDrawsByPlayer[player.id] = true;
 }
 
@@ -2095,7 +2095,7 @@ function sanitizeMatchForViewer(match: MatchState, viewerPlayerId?: string): Mat
 }
 
 function emitMatchState(match: MatchState): void {
-  const matchToEmit = completeCemeteryHpLossIfNeeded(match);
+  const matchToEmit = match;
 
   activeMatches.set(matchToEmit.matchId, matchToEmit);
   saveMatchSnapshotEventually(matchToEmit);

@@ -367,6 +367,14 @@ function BoardMagicChainHud({
     ? match.players.find(player => player.id === priorityPlayerId)?.displayName ?? priorityPlayerId
     : "No priority";
   const latestLink = chain.links[chain.links.length - 1];
+  const latestLinkPlayerName = latestLink
+    ? match.players.find(player => player.id === latestLink.playerId)?.displayName ?? latestLink.playerId
+    : undefined;
+  const chainStatusText = latestLink && priorityPlayerId
+    ? `${latestLinkPlayerName} played ${latestLink.cardName}. Waiting for ${priorityPlayerName} to respond or pass.`
+    : priorityPlayerId
+      ? `Waiting for ${priorityPlayerName} to respond or pass.`
+      : "Waiting for the chain to resolve.";
   const canAct = !controlledPlayerId || !priorityPlayerId || controlledPlayerId === priorityPlayerId;
 
   return (
@@ -382,7 +390,8 @@ function BoardMagicChainHud({
       <div className="board-battle-hud__effect">
         <span>Latest Link</span>
         <strong>{latestLink?.cardName ?? "Pending chain"}</strong>
-        <small>{latestLink ? `${latestLink.status} by ${match.players.find(player => player.id === latestLink.playerId)?.displayName ?? latestLink.playerId}` : "Waiting"}</small>
+        <small>{latestLink ? `${latestLink.status} by ${latestLinkPlayerName}` : "Waiting"}</small>
+        <small>{chainStatusText}</small>
       </div>
 
       <div className="board-battle-hud__actions">
@@ -1530,6 +1539,21 @@ export function BoardPreview3D({
       };
     }
 
+    if (match.pendingEffectRoll?.status === "AWAITING_ROLL") {
+      const owner = (match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.targetPlayerId ?? match.pendingEffectRoll.sourcePlayerId ?? focusedPlayerId) as BoardPlayerId;
+      const rollPlayerLabel = match.players.find(player => player.id === owner)?.displayName ?? owner;
+      const canRoll = !controlledPlayerId || controlledPlayerId === owner;
+      return {
+        id: `effect-roll-${match.pendingEffectRoll.id}`,
+        label: "Roll Effect",
+        detail: `${match.pendingEffectRoll.sourceCardName} ${match.pendingEffectRoll.diceCount}D6`,
+        owner,
+        disabled: !canRoll || !onRollEffectRoll,
+        disabledLabel: `Waiting for ${rollPlayerLabel}`,
+        onClick: () => onRollEffectRoll?.(match.pendingEffectRoll!.id)
+      };
+    }
+
     if (!pendingBattle) return null;
 
     const controller = (battleStepControllerPlayerId ?? pendingBattle.attackingPlayerId) as BoardPlayerId;
@@ -1539,17 +1563,6 @@ export function BoardPreview3D({
       disabled: !canAdvanceBattleResolver,
       disabledLabel
     };
-
-    if (match.pendingEffectRoll?.status === "AWAITING_ROLL") {
-      return {
-        ...baseAction,
-        id: `effect-roll-${match.pendingEffectRoll.id}`,
-        label: "Roll Effect",
-        detail: `${match.pendingEffectRoll.sourceCardName} ${match.pendingEffectRoll.diceCount}D6`,
-        disabled: baseAction.disabled || !onRollEffectRoll,
-        onClick: () => onRollEffectRoll?.(match.pendingEffectRoll!.id)
-      };
-    }
 
     if (pendingBattle.status === "AWAITING_SPEED_CHECK") {
       return {

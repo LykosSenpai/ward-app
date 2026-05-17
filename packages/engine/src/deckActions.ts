@@ -127,6 +127,9 @@ export function drawForActivePlayer(state: MatchState): MatchState {
     throw new Error("Resolve the pending prompt before drawing.");
   }
 
+  if (state.pendingEffectRoll) {
+    throw new Error("Resolve the pending effect roll before drawing.");
+  }
 
   if (!state.setup.decksShuffled) {
     throw new Error("Shuffle both decks before drawing.");

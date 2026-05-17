@@ -44,7 +44,8 @@ function createPlayer(
   normalSummonUsed: false,
   killedOwnCreatureThisTurn: false,
   hasBattledThisCombat: false,
-  battleUsedCreatureInstanceIds: []
+  battleUsedCreatureInstanceIds: [],
+  retaliationSavedCreatureInstanceIds: []
     }
   };
 }

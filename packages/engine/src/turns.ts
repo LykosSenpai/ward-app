@@ -14,6 +14,7 @@ import {
   processTurnEndTriggeredEffects,
   processTurnStartTriggeredEffects
 } from "./turnTriggeredEffects.js";
+import { createPendingStatusTickEffectRollSession } from "./effectRollActions.js";
 
 const PHASE_ORDER: TurnPhase[] = [
   "DRAW",
@@ -87,6 +88,7 @@ function resetPerTurnFlags(player: PlayerState): void {
   player.turnFlags.killedOwnCreatureThisTurn = false;
   player.turnFlags.hasBattledThisCombat = false;
   player.turnFlags.battleUsedCreatureInstanceIds = [];
+  player.turnFlags.retaliationSavedCreatureInstanceIds = [];
 }
 
 function getSkipTurnReason(player: PlayerState): string | null {
@@ -221,6 +223,10 @@ export function processCombatPhaseEndInPlace(
 export function advancePhase(state: MatchState): MatchState {
   if (state.pendingBattle && state.pendingBattle.status !== "COMPLETE") {
     throw new Error("Finish the pending battle before advancing the turn.");
+  }
+
+  if (state.pendingEffectRoll) {
+    throw new Error("Resolve the pending effect roll before advancing the turn.");
   }
 
   if (state.pendingPrompt) {
@@ -372,6 +378,7 @@ export function advanceTurn(state: MatchState): MatchState {
       removeExpiredSilenceFromTheGraveEffects(nextState, nextPlayerId, addEvent);
       removeExpiredStatModifiersForPlayerTurnStart(nextState, nextPlayerId, addEvent);
       processBeginningOfTurnRuntimeEffects(nextState, addEvent);
+      createPendingStatusTickEffectRollSession(nextState, nextPlayerId, addEvent);
       processTurnStartTriggeredEffects(nextState, nextPlayerId, addEvent);
       return nextState;
     }

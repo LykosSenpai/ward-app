@@ -402,6 +402,7 @@ export type PlayerState = {
   killedOwnCreatureThisTurn: boolean;
   hasBattledThisCombat: boolean;
   battleUsedCreatureInstanceIds: string[];
+  retaliationSavedCreatureInstanceIds?: string[];
     };
 };
 
@@ -854,6 +855,7 @@ export type PendingEffectRollSession = {
   sourceCardInstanceId: string;
   sourceCardId: string;
   sourceCardName: string;
+  rollPlayerId?: string;
 
   effectId: string;
   trigger: string;
@@ -879,6 +881,9 @@ export type PendingEffectRollSession = {
   onSuccessStatus?: string;
   onSuccessLabel?: string;
   onSuccessFlags?: Partial<Record<ActiveCreatureStatusFlag, boolean>>;
+  targetStatusId?: string;
+  onFailureActionType?: string;
+  onFailureDamageAmount?: number;
   duration?: WardEffectDuration;
 
   message: string;

@@ -10,7 +10,6 @@ import {
   getMagicLine,
   getPrimarySummonSacrificeCandidates,
   getRequiredSacrificesForCard,
-  isBattleLightningMagic,
   isChainLightningMagic,
   isCreature,
   isMagic
@@ -34,18 +33,30 @@ function canPaySilenceFromTheGraveCost(match: AppMatchState, player: PlayerState
   return player.hand.some(candidate => candidate.instanceId !== card.instanceId && isMagic(match, candidate));
 }
 
-function isMinotaurBodyguardCard(match: AppMatchState, card: CardInstance): boolean {
+function isAutomatedBattleResponseCard(match: AppMatchState, card: CardInstance): boolean {
   const definition = match.cardCatalog[card.cardId];
-  const name = String(definition?.name ?? "").trim().toLowerCase();
-  const id = String(definition?.id ?? "").trim().toLowerCase();
-  const cardNumber = String(definition?.cardNumber ?? "").trim();
+  if (definition?.cardType !== "MAGIC") return false;
+  if (definition.magicType !== "BATTLE_LIGHTNING" && definition.magicType !== "LIGHTNING") return false;
 
-  return isBattleLightningMagic(match, card) && (
-    name === "minotaur bodyguard" ||
-    id.includes("minotaur-bodyguard") ||
-    id.includes("minotaur_bodyguard") ||
-    (cardNumber === "016" && name.includes("minotaur") && name.includes("bodyguard"))
-  );
+  return Boolean(definition.effects?.some(effect => {
+    const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+    const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+    const isBattleTrigger = trigger === "DURING_BATTLE_FROM_HAND" ||
+      trigger === "ON_HIT_FROM_HAND" ||
+      trigger === "WHEN_OPPONENT_FINISHES_ATTACK" ||
+      trigger.includes("ATTACK_HITS");
+    const isSupportedAction = actionType === "NEGATE_ATTACK_DAMAGE" ||
+      actionType === "PREVENT_ATTACK_DAMAGE" ||
+      actionType === "NEGATE_ATTACK_OR_MAGIC" ||
+      actionType === "NEGATE_ATTACK" ||
+      actionType === "PREVENT_ATTACK" ||
+      actionType === "APPLY_DICE_MODIFIER" ||
+      actionType === "APPLY_STAT_MODIFIER" ||
+      actionType === "DEAL_INSTANT_DAMAGE" ||
+      actionType === "DAMAGE" ||
+      actionType === "DAMAGE_CREATURE";
+    return isBattleTrigger && isSupportedAction;
+  }));
 }
 
 export function HandZone({
@@ -168,14 +179,14 @@ function HandCard({
     (!primarySacrificeRequired || selectedPrimarySacrifice) &&
     selectedSacrifices.length === requiredSacrifices;
   const isSilenceCard = isSilenceFromTheGraveCard(match, card);
-  const isMinotaurBodyguard = isMinotaurBodyguardCard(match, card);
+  const isBattleResponseCard = isAutomatedBattleResponseCard(match, card);
   const silenceCanPayCost = !isSilenceCard || canPaySilenceFromTheGraveCost(match, player, card);
   const canPerformCardClick =
     discardRequiredForThisPlayer ||
     isPlayableCreature ||
     (isMagic(match, card) && canPlayMagicNow && silenceCanPayCost) ||
     (isChainLightningMagic(match, card) && canPlayLightningResponse) ||
-    (isMinotaurBodyguard && canPlayBattleResponse);
+    (isBattleResponseCard && canPlayBattleResponse);
 
   function performCardClick() {
     if (discardRequiredForThisPlayer) {
@@ -198,7 +209,7 @@ function HandCard({
       return;
     }
 
-    if (isMinotaurBodyguard && canPlayBattleResponse) {
+    if (isBattleResponseCard && canPlayBattleResponse) {
       onPlayBattleResponse(card.instanceId);
     }
   }
@@ -331,8 +342,8 @@ function HandCard({
           <span className="hand-card-action-note lightning">Click to respond</span>
         )}
 
-        {isMinotaurBodyguard && canPlayBattleResponse && (
-          <span className="hand-card-action-note lightning">Click to guard</span>
+        {isBattleResponseCard && canPlayBattleResponse && (
+          <span className="hand-card-action-note lightning">Click for battle response</span>
         )}
       </div>
 

@@ -7,6 +7,7 @@ import {
   getCreatureStatsLine,
   getEffectiveCreatureStat,
   getMagicLine,
+  getPlayerName,
   isCreature,
   isMagic
 } from "../../gameViewHelpers";
@@ -181,6 +182,49 @@ function BoardCardAttachmentSection({
   return null;
 }
 
+function BoardCardRuntimeEffectsSection({
+  card,
+  match
+}: {
+  card: CardInstance;
+  match: AppMatchState;
+}) {
+  const statuses = card.activeStatuses ?? [];
+  const recurring = card.activeRecurringEffects ?? [];
+  const activeInstances = (card.activeEffectInstances ?? []).filter(instance =>
+    !statuses.some(status => status.id === instance.id) &&
+    !recurring.some(effect => effect.id === instance.id)
+  );
+
+  if (statuses.length === 0 && recurring.length === 0 && activeInstances.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="board-preview-3d__card-inspector-attachments" aria-label={`${getCardName(match, card)} active effects`}>
+      <span>Active effects</span>
+      {statuses.map(status => (
+        <button type="button" key={status.id} disabled>
+          <strong>{status.label || status.status}</strong>
+          <small>{status.sourceCardName}{status.expiresOnPlayerId ? ` - until ${getPlayerName(match, status.expiresOnPlayerId)} turn ${status.expiresAtPlayerTurnStartCount}` : ""}</small>
+        </button>
+      ))}
+      {recurring.map(effect => (
+        <button type="button" key={effect.id} disabled>
+          <strong>{effect.label || effect.effectType}</strong>
+          <small>{effect.amount} {effect.effectType === "HEAL_OVER_TIME" ? "heal" : "damage"} - {effect.remainingTicks} tick{effect.remainingTicks === 1 ? "" : "s"} left{effect.nextTickPlayerId ? ` - next ${getPlayerName(match, effect.nextTickPlayerId)}` : ""}</small>
+        </button>
+      ))}
+      {activeInstances.map(instance => (
+        <button type="button" key={instance.id} disabled>
+          <strong>{instance.label || instance.actionType}</strong>
+          <small>{instance.sourceCardName}{instance.ticksRemaining !== undefined ? ` - ${instance.ticksRemaining} tick${instance.ticksRemaining === 1 ? "" : "s"} left` : ""}</small>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function BoardCardInspector({
   ariaLabel,
   card,
@@ -224,6 +268,7 @@ export function BoardCardInspector({
       {canShowAttachments ? (
         <BoardCardAttachmentSection card={card} match={match} onRelatedCardFocus={onRelatedCardFocus} />
       ) : null}
+      <BoardCardRuntimeEffectsSection card={card} match={match} />
       {children}
       {canShowDetails && onToggleDetails ? (
         <button

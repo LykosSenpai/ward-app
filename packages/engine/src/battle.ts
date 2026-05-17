@@ -3,6 +3,7 @@ import { sumDice } from "./dice.js";
 import { rollD6WithDev } from "./devRolls.js";
 import { v4 as uuidv4 } from "uuid";
 import type {
+  ActiveRecurringCreatureEffect,
   BattleCreatureKind,
   BattleParticipantSnapshot,
   BattleResult,
@@ -16,9 +17,11 @@ import type {
   ManualBattleStrikeModifiers,
   MatchState,
   PendingBattleSession,
-  PlayerState
+  PlayerState,
+  WardEngineEffect
 } from "@ward/shared";
 import { moveFieldCreatureToCemetery } from "./fieldRemoval.js";
+import { applyDamageToCreatureTarget } from "./cardMovement.js";
 import { processCombatPhaseEndInPlace } from "./turns.js";
 import {
   collectBattleEffectSuggestions,
@@ -37,11 +40,18 @@ import {
   rollPendingEffectRollInPlace,
   skipPendingEffectRollInPlace
 } from "./effectRollActions.js";
+import { syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
+import {
+  getNextRecurringEffectTickSchedule,
+  getTurnCycleExpiration,
+  normalizeRecurringTickTiming
+} from "./effectTiming.js";
 
 type CreatureDefinition = Extract<CardDefinition, { cardType: "CREATURE" }>;
 const HOGGAN_CARD_ID = "gen3_009_hoggan";
 const HOGGAN_BATTLE_INTERCEPT_ACTION = "HOGGAN_BATTLE_INTERCEPT";
 const CABAL_WARCHIEF_CARD_ID = "gen3_026_cabal_warchief";
+const CABAL_RETALIATION_CHOICE_ACTION = "CABAL_RETALIATION_CHOICE";
 
 function handBoardZoneRef(playerId: string) {
   return { playerId, zone: "HAND" as const };
@@ -371,6 +381,11 @@ function getCreatureBattleUseCount(player: PlayerState, creatureInstanceId: stri
   return ensureBattleUsedList(player).filter(id => id === creatureInstanceId).length;
 }
 
+function ensureRetaliationSavedList(player: PlayerState): string[] {
+  player.turnFlags.retaliationSavedCreatureInstanceIds ??= [];
+  return player.turnFlags.retaliationSavedCreatureInstanceIds;
+}
+
 function canCreatureBattleThisCombat(player: PlayerState, creature: BattleCreatureRef): boolean {
   return getCreatureBattleUseCount(player, creature.card.instanceId) < getCreatureBattleUseLimit(creature.card);
 }
@@ -637,6 +652,83 @@ function getCurrentManualStrike(session: PendingBattleSession): ManualBattleStri
   return strike;
 }
 
+type AutomatedBattleResponseRole = "ATTACKER" | "DEFENDER";
+
+type AutomatedBattleResponse = {
+  effect: WardEngineEffect;
+  role: AutomatedBattleResponseRole;
+};
+
+function normalizeEffectToken(value: unknown): string {
+  return typeof value === "string" ? value.trim().toUpperCase() : "";
+}
+
+function battleResponseEffectText(effect: WardEngineEffect): string {
+  return [
+    effect.trigger,
+    effect.actionType,
+    effect.effectGroup,
+    effect.actionText,
+    effect.target,
+    effect.value,
+    effect.params?.target,
+    effect.params?.valueText,
+    effect.reusableFunction,
+    effect.notes
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function effectIsBattleResponseTrigger(effect: WardEngineEffect): boolean {
+  const trigger = normalizeEffectToken(effect.trigger);
+  return trigger === "DURING_BATTLE_FROM_HAND" ||
+    trigger === "ON_HIT_FROM_HAND" ||
+    trigger === "WHEN_OPPONENT_FINISHES_ATTACK" ||
+    trigger.includes("ATTACK_HITS");
+}
+
+function effectNegatesAttackDamage(effect: WardEngineEffect): boolean {
+  const actionType = normalizeEffectToken(effect.actionType);
+  return actionType === "NEGATE_ATTACK_DAMAGE" ||
+    actionType === "PREVENT_ATTACK_DAMAGE" ||
+    actionType === "NEGATE_ATTACK_OR_MAGIC" ||
+    actionType === "NEGATE_ATTACK" ||
+    actionType === "PREVENT_ATTACK";
+}
+
+function effectAppliesBattleDiceModifier(effect: WardEngineEffect): boolean {
+  const actionType = normalizeEffectToken(effect.actionType);
+  return actionType === "APPLY_DICE_MODIFIER" || actionType === "APPLY_STAT_MODIFIER";
+}
+
+function effectDealsDirectBattleDamage(effect: WardEngineEffect): boolean {
+  const actionType = normalizeEffectToken(effect.actionType);
+  return actionType === "DEAL_INSTANT_DAMAGE" ||
+    actionType === "DAMAGE" ||
+    actionType === "DAMAGE_CREATURE";
+}
+
+function getAutomatedBattleResponse(definition: CardDefinition): AutomatedBattleResponse | undefined {
+  if (definition.cardType !== "MAGIC") return undefined;
+  if (definition.magicType !== "BATTLE_LIGHTNING" && definition.magicType !== "LIGHTNING") return undefined;
+
+  const effect = definition.effects?.find(candidate => {
+    if (!effectIsBattleResponseTrigger(candidate)) return false;
+    return effectNegatesAttackDamage(candidate) ||
+      effectAppliesBattleDiceModifier(candidate) ||
+      effectDealsDirectBattleDamage(candidate);
+  });
+
+  if (!effect) return undefined;
+
+  const trigger = normalizeEffectToken(effect.trigger);
+  const role: AutomatedBattleResponseRole =
+    trigger === "ON_HIT_FROM_HAND" && !effectNegatesAttackDamage(effect)
+      ? "ATTACKER"
+      : "DEFENDER";
+
+  return { effect, role };
+}
+
 function isBattleAttackNegationResponseDefinition(definition: CardDefinition): boolean {
   return definition.cardType === "MAGIC" &&
     (definition.magicType === "BATTLE_LIGHTNING" || definition.magicType === "LIGHTNING") &&
@@ -645,18 +737,219 @@ function isBattleAttackNegationResponseDefinition(definition: CardDefinition): b
 
 function getBattleAttackNegationResponseEffect(definition: CardDefinition) {
   return definition.effects?.find(effect =>
-    (
-      String(effect.trigger ?? "").trim().toUpperCase() === "DURING_BATTLE_FROM_HAND" ||
-      String(effect.trigger ?? "").trim().toUpperCase().includes("ATTACK_HITS")
-    ) &&
-    (
-      String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK_DAMAGE" ||
-      String(effect.actionType ?? "").trim().toUpperCase() === "PREVENT_ATTACK_DAMAGE" ||
-      String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK_OR_MAGIC" ||
-      String(effect.actionType ?? "").trim().toUpperCase() === "NEGATE_ATTACK" ||
-      String(effect.actionType ?? "").trim().toUpperCase() === "PREVENT_ATTACK"
-    )
+    effectIsBattleResponseTrigger(effect) && effectNegatesAttackDamage(effect)
   );
+}
+
+function battleCreatureTargetOption(
+  state: MatchState,
+  target: BattleCreatureRef
+): EffectTargetOption {
+  const definition = getCreatureDefinition(state, target.card);
+  return {
+    id: `${target.playerId}:${target.kind}:${target.card.instanceId}`,
+    label: `${getPlayer(state, target.playerId).displayName}: ${definition.name}`,
+    targetKind: target.kind,
+    playerId: target.playerId,
+    cardInstanceId: target.card.instanceId,
+    cardId: target.card.cardId,
+    cardName: definition.name,
+    zone: target.kind
+  };
+}
+
+function firstPositiveEffectNumber(effect: WardEngineEffect): number | undefined {
+  const explicit = Number(effect.params?.amount ?? effect.params?.damageAmount ?? effect.params?.healAmount);
+  if (Number.isFinite(explicit) && explicit > 0) return Math.trunc(explicit);
+
+  const match = battleResponseEffectText(effect).match(/(\d+)/);
+  const value = Number(match?.[1]);
+  return Number.isFinite(value) && value > 0 ? Math.trunc(value) : undefined;
+}
+
+function responseCanPlayForStrike(
+  session: PendingBattleSession,
+  strike: ManualBattleStrike,
+  playerId: string,
+  response: AutomatedBattleResponse
+): string | null {
+  if (response.role === "ATTACKER") {
+    if (strike.attacker.playerId !== playerId) {
+      return "Only the attacking creature's controller can play this battle response.";
+    }
+    if (session.status !== "AWAITING_DAMAGE_ROLL" || strike.status !== "AWAITING_DAMAGE_ROLL") {
+      return "This battle response can only be played after your creature hits and before damage is rolled.";
+    }
+    return null;
+  }
+
+  if (strike.defender.playerId !== playerId) {
+    return "Only the defender of the current strike can play this battle response.";
+  }
+
+  const trigger = normalizeEffectToken(response.effect.trigger);
+  if (trigger === "WHEN_OPPONENT_FINISHES_ATTACK") {
+    if (session.status !== "AWAITING_DAMAGE_APPLICATION" || strike.status !== "AWAITING_DAMAGE_APPLICATION") {
+      return "This response can only be played after attack damage is rolled and before it is applied.";
+    }
+    return null;
+  }
+
+  if (
+    (session.status !== "AWAITING_DAMAGE_ROLL" && session.status !== "AWAITING_DAMAGE_APPLICATION") ||
+    (strike.status !== "AWAITING_DAMAGE_ROLL" && strike.status !== "AWAITING_DAMAGE_APPLICATION")
+  ) {
+    return "Battle responses can only be played after a hit and before damage is applied.";
+  }
+
+  return null;
+}
+
+function applyBattleResponseNegation(
+  definition: CardDefinition,
+  effect: WardEngineEffect,
+  strike: ManualBattleStrike
+): void {
+  const modifiers = normalizeStrikeModifiers(strike.modifiers);
+  modifiers.preventAttackDamage = true;
+  modifiers.note = [
+    modifiers.note,
+    `${definition.name} ${effect.id ?? ""}: incoming attack damage negated`.trim()
+  ].filter(Boolean).join("; ").slice(0, 500);
+  strike.modifiers = modifiers;
+
+  if (strike.status === "AWAITING_DAMAGE_APPLICATION") {
+    strike.damageDealt = 0;
+    strike.damagePreventedReason = `${definition.name} negated the Atk damage meant for this creature.`;
+  }
+}
+
+function applyBattleResponseDiceModifier(
+  definition: CardDefinition,
+  effect: WardEngineEffect,
+  strike: ManualBattleStrike
+): number {
+  const statChanges = Array.isArray(effect.params?.statChanges) ? effect.params?.statChanges : [];
+  let diceDelta = 0;
+
+  for (const change of statChanges) {
+    if (!change || typeof change !== "object") continue;
+    const data = change as { stat?: unknown; operation?: unknown; value?: unknown };
+    const stat = String(data.stat ?? "").trim().toUpperCase().replace(/[\s-]+/g, "_");
+    const operation = String(data.operation ?? "ADD").trim().toUpperCase();
+    const value = Number(data.value);
+    if (!Number.isFinite(value)) continue;
+    if (stat !== "ATK_DICE_ROLLS" && stat !== "ATTACK_DICE_ROLLS" && stat !== "ATK_DICE" && stat !== "ATTACK_DICE") continue;
+    diceDelta += operation === "SUBTRACT" ? -Math.trunc(value) : Math.trunc(value);
+  }
+
+  if (diceDelta === 0) {
+    diceDelta = firstPositiveEffectNumber(effect) ?? 0;
+  }
+
+  if (diceDelta === 0) return 0;
+
+  const modifiers = normalizeStrikeModifiers(strike.modifiers);
+  modifiers.damageDiceDelta += diceDelta;
+  modifiers.note = [
+    modifiers.note,
+    `${definition.name} ${effect.id ?? ""}: Atk Dice Rolls ${diceDelta > 0 ? "+" : ""}${diceDelta}`.trim()
+  ].filter(Boolean).join("; ").slice(0, 500);
+  strike.modifiers = modifiers;
+  return diceDelta;
+}
+
+function addRecurringEffectFromBattleResponse(
+  state: MatchState,
+  sourcePlayerId: string,
+  sourceCard: CardInstance,
+  sourceDefinition: CardDefinition,
+  target: BattleCreatureRef,
+  effect: WardEngineEffect
+): ActiveRecurringCreatureEffect | undefined {
+  const amount = firstPositiveEffectNumber(effect);
+  if (!amount) return undefined;
+
+  const effectType: ActiveRecurringCreatureEffect["effectType"] = normalizeEffectToken(effect.actionType).includes("HEAL")
+    ? "HEAL_OVER_TIME"
+    : "DAMAGE_OVER_TIME";
+  const stackRule = String(effect.params?.stackRule ?? effect.duration?.stackRule ?? "DO_NOT_STACK");
+  target.card.activeRecurringEffects ??= [];
+
+  if (stackRule === "DO_NOT_STACK" && target.card.activeRecurringEffects.some(item =>
+    item.effectType === effectType &&
+    item.sourceCardName === sourceDefinition.name
+  )) {
+    return undefined;
+  }
+
+  const totalTicksValue = Number(effect.params?.durationAmount ?? effect.params?.startingTicks ?? effect.duration?.amount ?? 1);
+  const totalTicks = Number.isFinite(totalTicksValue) && totalTicksValue > 0 ? Math.trunc(totalTicksValue) : 1;
+  const tickTiming = normalizeRecurringTickTiming(
+    typeof effect.params?.tickTiming === "string"
+      ? effect.params.tickTiming
+      : effect.duration?.tickTiming
+  );
+  const expiration = getTurnCycleExpiration({
+    state,
+    sourcePlayerId,
+    targetPlayerId: target.playerId,
+    effect,
+    fallbackDuration: totalTicks
+  });
+  const nextTick = getNextRecurringEffectTickSchedule(state, sourcePlayerId, tickTiming);
+
+  const recurring: ActiveRecurringCreatureEffect = {
+    id: uuidv4(),
+    sourceEffectId: effect.id,
+    sourceCardInstanceId: sourceCard.instanceId,
+    sourceCardName: sourceDefinition.name,
+    sourcePlayerId,
+    effectType,
+    amount,
+    label: effect.value ?? effect.actionText ?? effect.params?.valueText ?? `${amount}`,
+    tickTiming,
+    stackRule,
+    remainingTicks: totalTicks,
+    nextTickPlayerId: nextTick.nextTickPlayerId,
+    nextTickTurnStartCount: nextTick.nextTickTurnStartCount,
+    durationType: "TARGET_PLAYER_TURN_STARTS",
+    appliedTurnNumber: state.turn.turnNumber,
+    appliedTurnCycle: state.turn.turnCycleNumber,
+    appliedSequenceNumber: state.eventLog.length + 1,
+    expiresWhenSourceLeaves: true,
+    expiresOnPlayerId: expiration.expiresOnPlayerId,
+    expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
+  };
+
+  target.card.activeRecurringEffects.push(recurring);
+  syncRecurringActiveEffectInstance(target.card, recurring);
+  return recurring;
+}
+
+function moveBattleResponseToCemetery(player: PlayerState, handIndex: number, card: CardInstance): void {
+  player.hand.splice(handIndex, 1);
+  card.zone = "CEMETERY";
+  card.controllerPlayerId = player.id;
+  card.attachedToInstanceId = undefined;
+  player.cemetery.push(card);
+}
+
+function moveBattleResponseToMagicSlot(
+  player: PlayerState,
+  handIndex: number,
+  card: CardInstance,
+  attachedToInstanceId: string
+): void {
+  if (player.field.magicSlots.length >= 5) {
+    throw new Error(`${player.displayName} already has 5 Magic Slot cards.`);
+  }
+
+  player.hand.splice(handIndex, 1);
+  card.zone = "MAGIC_SLOT";
+  card.controllerPlayerId = player.id;
+  card.attachedToInstanceId = attachedToInstanceId;
+  player.field.magicSlots.push(card);
 }
 
 function createHogganBattleInterceptPrompt(
@@ -713,6 +1006,57 @@ function createHogganBattleInterceptPrompt(
     battleSessionId,
     optionCount: options.length,
     note: "Hoggan can be played from hand at the beginning of the opponent's battle."
+  });
+}
+
+function createCabalRetaliationChoicePrompt(
+  state: MatchState,
+  defendingPlayer: PlayerState,
+  attackingCreature: BattleCreatureRef,
+  battleSessionId: string
+): void {
+  if (state.pendingEffectTargetPrompt) return;
+  if (!isCabalWarchief(attackingCreature.card)) return;
+
+  const attackingPlayer = getPlayer(state, attackingCreature.playerId);
+  if (getCreatureBattleUseCount(attackingPlayer, attackingCreature.card.instanceId) > 0) return;
+  const attackingDefinition = getCreatureDefinition(state, attackingCreature.card);
+
+  state.pendingEffectTargetPrompt = {
+    id: uuidv4(),
+    sourceCardInstanceId: attackingCreature.card.instanceId,
+    sourceCardId: attackingCreature.card.cardId,
+    sourceCardName: attackingDefinition.name,
+    controllerPlayerId: defendingPlayer.id,
+    effectId: "CABAL-RETALIATION-CHOICE",
+    actionType: CABAL_RETALIATION_CHOICE_ACTION,
+    effectGroup: "Battle Retaliation",
+    actionText: "Choose whether to return attack now or save the single return attack.",
+    effectValue: "Cabal Warchief can battle twice, but the opponent only gets one return attack.",
+    promptText: "Cabal Warchief can battle twice this Combat Phase. Choose whether to return attack in this battle or save your return attack for its next battle.",
+    targetKind: "PLAYER",
+    options: [
+      {
+        id: "cabal-retaliate-now",
+        label: "Return attack in this battle",
+        targetKind: "PLAYER",
+        playerId: defendingPlayer.id,
+        zone: "PLAYER"
+      },
+      {
+        id: "cabal-save-retaliation",
+        label: "Save return attack for Cabal Warchief's next battle",
+        targetKind: "PLAYER",
+        playerId: defendingPlayer.id,
+        zone: "PLAYER"
+      }
+    ]
+  };
+
+  addEvent(state, "CABAL_RETALIATION_CHOICE_PROMPT_CREATED", defendingPlayer.id, {
+    battleSessionId,
+    cabalCreatureInstanceId: attackingCreature.card.instanceId,
+    note: "Defender chooses which Cabal Warchief battle gets the single return attack."
   });
 }
 
@@ -1399,9 +1743,21 @@ export function startManualBattleSession(
 
   const now = new Date().toISOString();
 
+  const savedRetaliationIds = ensureRetaliationSavedList(attackingPlayer);
+  const hasSavedRetaliation =
+    isCabalWarchief(attackingCreature.card) &&
+    getCreatureBattleUseCount(attackingPlayer, attackingCreature.card.instanceId) >= 1 &&
+    savedRetaliationIds.includes(attackingCreature.card.instanceId);
+
+  if (hasSavedRetaliation) {
+    attackingPlayer.turnFlags.retaliationSavedCreatureInstanceIds = savedRetaliationIds.filter(
+      id => id !== attackingCreature.card.instanceId
+    );
+  }
+
   const suppressesRetaliation =
     attackingCreature.kind === "LIMITED_SUMMON" ||
-    shouldSuppressRetaliationForBattle(attackingPlayer, attackingCreature);
+    (shouldSuppressRetaliationForBattle(attackingPlayer, attackingCreature) && !hasSavedRetaliation);
 
   nextState.pendingBattle = {
     id: uuidv4(),
@@ -1438,6 +1794,7 @@ export function startManualBattleSession(
   });
 
   createHogganBattleInterceptPrompt(nextState, defendingPlayer, nextState.pendingBattle.id);
+  createCabalRetaliationChoicePrompt(nextState, defendingPlayer, attackingCreature, nextState.pendingBattle.id);
 
   addEvent(nextState, "MANUAL_BATTLE_DECLARED", playerId, {
     battleSessionId: nextState.pendingBattle.id,
@@ -1655,24 +2012,12 @@ export function playBattleResponseFromHand(
     throw new Error("Pending battle session not found.");
   }
 
-  if (session.status !== "AWAITING_DAMAGE_ROLL" && session.status !== "AWAITING_DAMAGE_APPLICATION") {
-    throw new Error("Battle responses that prevent attack damage can only be played after a hit and before damage is applied.");
-  }
-
   const strike = args.strikeId
     ? session.strikes.find(candidate => candidate.id === args.strikeId)
     : getCurrentManualStrike(session);
 
   if (!strike) {
     throw new Error("Battle strike not found.");
-  }
-
-  if (strike.status !== "AWAITING_DAMAGE_ROLL" && strike.status !== "AWAITING_DAMAGE_APPLICATION") {
-    throw new Error("This strike is not waiting for attack damage prevention.");
-  }
-
-  if (strike.defender.playerId !== args.playerId) {
-    throw new Error("Battle attack negation can only protect your creature from incoming attack damage.");
   }
 
   const player = getPlayer(nextState, args.playerId);
@@ -1685,35 +2030,169 @@ export function playBattleResponseFromHand(
   const card = player.hand[handIndex];
   const definition = nextState.cardCatalog[card.cardId];
 
-  if (!definition || !isBattleAttackNegationResponseDefinition(definition)) {
-    throw new Error("This card cannot be played from hand during battle to negate incoming Atk damage.");
+  if (!definition) {
+    throw new Error("Card definition not found.");
   }
 
-  const effect = getBattleAttackNegationResponseEffect(definition);
+  const response = getAutomatedBattleResponse(definition);
 
-  if (!effect) {
-    throw new Error("Battle response card is missing its attack negation effect data.");
+  if (!response) {
+    throw new Error("This card does not have an automated battle response effect.");
   }
 
-  const modifiers = normalizeStrikeModifiers(strike.modifiers);
-  modifiers.preventAttackDamage = true;
-  modifiers.note = [
-    modifiers.note,
-    `${definition.name} ${effect.id ?? ""}: incoming attack damage negated`.trim()
-  ].filter(Boolean).join("; ").slice(0, 500);
-  strike.modifiers = modifiers;
+  const disabledReason = responseCanPlayForStrike(session, strike, args.playerId, response);
+  if (disabledReason) {
+    throw new Error(disabledReason);
+  }
 
-  if (strike.status === "AWAITING_DAMAGE_APPLICATION") {
+  const effect = response.effect;
+  const boardEvents: Record<string, unknown>[] = [];
+  let destination: "CEMETERY" | "MAGIC_SLOT" = "CEMETERY";
+  let directDamageResult: ReturnType<typeof applyDamageToCreatureTarget> | undefined;
+  let recurring: ActiveRecurringCreatureEffect | undefined;
+
+  if (effectNegatesAttackDamage(effect)) {
+    applyBattleResponseNegation(definition, effect, strike);
+  }
+
+  if (effectAppliesBattleDiceModifier(effect)) {
+    const diceDelta = applyBattleResponseDiceModifier(definition, effect, strike);
+    boardEvents.push({
+      type: "BATTLE_MODIFIER_APPLIED",
+      playerId: args.playerId,
+      sourceCardInstanceId: card.instanceId,
+      sourceCardId: card.cardId,
+      sourceEffectId: effect.id,
+      actionType: effect.actionType,
+      targetCardInstanceId: strike.attacker.creatureInstanceId,
+      battleId: session.id,
+      strikeId: strike.id,
+      metadata: { damageDiceDelta: diceDelta }
+    });
+  }
+
+  if (effectDealsDirectBattleDamage(effect)) {
+    const target = findBattleCreatureRef(nextState, strike.defender.playerId, strike.defender.creatureInstanceId);
+    const amount = firstPositiveEffectNumber(effect) ?? 0;
+    if (amount <= 0) {
+      throw new Error(`${definition.name} has no automated damage amount.`);
+    }
+    directDamageResult = applyDamageToCreatureTarget(nextState, battleCreatureTargetOption(nextState, target), amount);
+    strike.defenderRemainingHp = directDamageResult.remainingHp;
+    strike.defenderKilled = directDamageResult.killed;
+    boardEvents.push({
+      type: "CREATURE_DAMAGED",
+      playerId: directDamageResult.playerId,
+      sourceCardInstanceId: card.instanceId,
+      sourceCardId: card.cardId,
+      sourceEffectId: effect.id,
+      actionType: effect.actionType,
+      targetCardInstanceId: strike.defender.creatureInstanceId,
+      damageAmount: directDamageResult.damageAmount,
+      remainingHp: directDamageResult.remainingHp,
+      killed: directDamageResult.killed,
+      battleId: session.id,
+      strikeId: strike.id,
+      reason: "BATTLE_RESPONSE"
+    });
+  }
+
+  const shouldAttachToAttacker =
+    definition.cardType === "MAGIC" &&
+    definition.magicSubType === "EQUIP" &&
+    (Boolean((definition as { isEquip?: boolean }).isEquip) || Boolean(effect.params?.usesAnchoring) || battleResponseEffectText(effect).includes("equip"));
+
+  if (shouldAttachToAttacker) {
+    const attacker = findBattleCreatureRef(nextState, strike.attacker.playerId, strike.attacker.creatureInstanceId);
+    moveBattleResponseToMagicSlot(player, handIndex, card, attacker.card.instanceId);
+    destination = "MAGIC_SLOT";
+    const recurringEffect = definition.effects?.find(candidate => {
+      const actionType = normalizeEffectToken(candidate.actionType);
+      return actionType === "APPLY_DAMAGE_OVER_TIME" || actionType === "APPLY_HEAL_OVER_TIME";
+    });
+    if (recurringEffect) {
+      recurring = addRecurringEffectFromBattleResponse(
+        nextState,
+        args.playerId,
+        card,
+        definition,
+        attacker,
+        recurringEffect
+      );
+      if (recurring) {
+        boardEvents.push({
+          type: "STATUS_APPLIED",
+          playerId: attacker.playerId,
+          sourceCardInstanceId: card.instanceId,
+          sourceCardId: card.cardId,
+          sourceEffectId: recurringEffect.id,
+          actionType: recurringEffect.actionType,
+          targetCardInstanceId: attacker.card.instanceId,
+          status: recurring.effectType,
+          statusLabel: recurring.label,
+          amount: recurring.amount,
+          battleId: session.id,
+          strikeId: strike.id
+        });
+      }
+    }
+  } else {
+    moveBattleResponseToCemetery(player, handIndex, card);
+  }
+
+  boardEvents.unshift({
+    type: "CARD_MOVED",
+    playerId: args.playerId,
+    cardInstanceId: card.instanceId,
+    sourceCardInstanceId: card.instanceId,
+    sourceCardId: card.cardId,
+    sourceEffectId: effect.id,
+    actionType: effect.actionType,
+    reason: "BATTLE_RESPONSE",
+    fromZoneRef: handBoardZoneRef(args.playerId),
+    toZoneRef: destination === "MAGIC_SLOT"
+      ? { playerId: args.playerId, zone: "MAGIC_SLOT" }
+      : cemeteryBoardZoneRef(card.ownerPlayerId),
+    battleId: session.id,
+    strikeId: strike.id
+  });
+
+  if (effectNegatesAttackDamage(effect)) {
+    boardEvents.push({
+      type: "BATTLE_DAMAGE_PREVENTED",
+      playerId: args.playerId,
+      sourceCardInstanceId: card.instanceId,
+      sourceCardId: card.cardId,
+      sourceEffectId: effect.id,
+      actionType: effect.actionType,
+      reason: "BATTLE_RESPONSE",
+      targetCardInstanceId: strike.defender.creatureInstanceId,
+      battleId: session.id,
+      strikeId: strike.id,
+      metadata: {
+        protectedCreatureName: strike.defender.creatureName
+      }
+    });
+  }
+
+  if (directDamageResult?.killed) {
+    strike.damageTarget = "NONE";
     strike.damageDealt = 0;
-    strike.damagePreventedReason = `${definition.name} negated the Atk damage meant for this creature.`;
+    strike.status = "RESOLVED";
+    strike.message = `${definition.name} destroyed ${strike.defender.creatureName} before attack damage was rolled.`;
+    advanceManualBattleAfterResolvedStrike(nextState, session, strike);
   }
 
-  player.hand.splice(handIndex, 1);
-  card.zone = "CEMETERY";
-  card.controllerPlayerId = args.playerId;
-  player.cemetery.push(card);
-
-  setSessionUpdated(session, `${definition.name} was played from hand. This strike's attack damage is negated.`);
+  setSessionUpdated(
+    session,
+    directDamageResult?.killed
+      ? `${definition.name} was played from hand and destroyed ${strike.defender.creatureName}.`
+      : effectAppliesBattleDiceModifier(effect)
+        ? `${definition.name} was played from hand. This strike's attack damage dice were modified.`
+        : effectNegatesAttackDamage(effect)
+          ? `${definition.name} was played from hand. This strike's attack damage is negated.`
+          : `${definition.name} was played from hand.`
+  );
 
   addEvent(nextState, "BATTLE_RESPONSE_FROM_HAND_PLAYED", args.playerId, {
     battleSessionId: session.id,
@@ -1722,39 +2201,28 @@ export function playBattleResponseFromHand(
     sourceCardName: definition.name,
     effectId: effect.id,
     actionType: effect.actionType,
+    responseRole: response.role,
     protectedCreatureInstanceId: strike.defender.creatureInstanceId,
     protectedCreatureName: strike.defender.creatureName,
-    boardEvents: [
-      {
-        type: "CARD_MOVED",
-        playerId: args.playerId,
-        cardInstanceId: card.instanceId,
-        sourceCardInstanceId: card.instanceId,
-        sourceCardId: card.cardId,
-        sourceEffectId: effect.id,
-        actionType: effect.actionType,
-        reason: "BATTLE_RESPONSE",
-        fromZoneRef: handBoardZoneRef(args.playerId),
-        toZoneRef: cemeteryBoardZoneRef(card.ownerPlayerId),
-        battleId: session.id,
-        strikeId: strike.id
-      },
-      {
-        type: "BATTLE_DAMAGE_PREVENTED",
-        playerId: args.playerId,
-        sourceCardInstanceId: card.instanceId,
-        sourceCardId: card.cardId,
-        sourceEffectId: effect.id,
-        actionType: effect.actionType,
-        reason: "BATTLE_RESPONSE",
-        targetCardInstanceId: strike.defender.creatureInstanceId,
-        battleId: session.id,
-        strikeId: strike.id,
-        metadata: {
-          protectedCreatureName: strike.defender.creatureName
+    directDamage: directDamageResult
+      ? {
+          damageAmount: directDamageResult.damageAmount,
+          remainingHp: directDamageResult.remainingHp,
+          killed: directDamageResult.killed
         }
-      }
-    ]
+      : undefined,
+    recurringEffect: recurring
+      ? {
+          id: recurring.id,
+          effectType: recurring.effectType,
+          amount: recurring.amount,
+          remainingTicks: recurring.remainingTicks,
+          nextTickPlayerId: recurring.nextTickPlayerId,
+          nextTickTurnStartCount: recurring.nextTickTurnStartCount
+        }
+      : undefined,
+    destination,
+    boardEvents
   });
 
   return nextState;

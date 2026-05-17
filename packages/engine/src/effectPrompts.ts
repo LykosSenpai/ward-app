@@ -54,6 +54,7 @@ export { effectNeedsSingleMagicSlotTargetPrompt } from "./effectRegistry.js";
 
 const HOGGAN_CARD_ID = "gen3_009_hoggan";
 const HOGGAN_BATTLE_INTERCEPT_ACTION = "HOGGAN_BATTLE_INTERCEPT";
+const CABAL_RETALIATION_CHOICE_ACTION = "CABAL_RETALIATION_CHOICE";
 
 export type ChainLinkEffectSource = {
   cardInstanceId: string;
@@ -1064,6 +1065,62 @@ function resolveHogganBattleInterceptPrompt(
   return state;
 }
 
+function resolveCabalRetaliationChoicePrompt(
+  state: MatchState,
+  prompt: PendingEffectTargetPrompt,
+  selectedOption: EffectTargetOption,
+  promptId: string
+): MatchState {
+  if (prompt.actionType !== CABAL_RETALIATION_CHOICE_ACTION) return state;
+
+  const session = state.pendingBattle;
+  if (!session) {
+    throw new Error("Cabal Warchief retaliation choice requires a pending battle.");
+  }
+
+  if (session.status !== "AWAITING_SPEED_CHECK") {
+    throw new Error("Choose the Cabal Warchief retaliation timing before the speed check.");
+  }
+
+  if (session.defendingPlayerId !== prompt.controllerPlayerId) {
+    throw new Error("Only the defending player can choose Cabal Warchief retaliation timing.");
+  }
+
+  const attackingPlayer = getPlayer(state, session.attackingPlayerId);
+  const savedIds = attackingPlayer.turnFlags.retaliationSavedCreatureInstanceIds ?? [];
+
+  if (selectedOption.id === "cabal-save-retaliation") {
+    if (!savedIds.includes(prompt.sourceCardInstanceId)) {
+      savedIds.push(prompt.sourceCardInstanceId);
+    }
+    attackingPlayer.turnFlags.retaliationSavedCreatureInstanceIds = savedIds;
+    session.limitedSummonNoRetaliation = true;
+    session.message = "Defender saved their return attack for Cabal Warchief's next battle. Run the one-way battle speed check.";
+  } else if (selectedOption.id === "cabal-retaliate-now") {
+    attackingPlayer.turnFlags.retaliationSavedCreatureInstanceIds = savedIds.filter(
+      id => id !== prompt.sourceCardInstanceId
+    );
+    session.limitedSummonNoRetaliation = false;
+    session.message = "Defender chose to return attack in this Cabal Warchief battle. Run the speed check.";
+  } else {
+    throw new Error("Select a Cabal Warchief retaliation option.");
+  }
+
+  session.updatedAt = new Date().toISOString();
+  state.pendingEffectTargetPrompt = undefined;
+
+  addEvent(state, "CABAL_RETALIATION_CHOICE_RESOLVED", prompt.controllerPlayerId, {
+    promptId,
+    battleSessionId: session.id,
+    sourceCardInstanceId: prompt.sourceCardInstanceId,
+    sourceCardName: prompt.sourceCardName,
+    choice: selectedOption.id,
+    savedForLater: selectedOption.id === "cabal-save-retaliation"
+  });
+
+  return state;
+}
+
 function isLimitedSummonAndEquipPromptAction(actionType: string): boolean {
   return [
     "SUMMON_LIMITED_CREATURE_AND_EQUIP"
@@ -1500,6 +1557,10 @@ export function resolvePendingEffectTargetPrompt(
 
   if (prompt.actionType === HOGGAN_BATTLE_INTERCEPT_ACTION) {
     return resolveHogganBattleInterceptPrompt(nextState, prompt, selectedOption, promptId);
+  }
+
+  if (prompt.actionType === CABAL_RETALIATION_CHOICE_ACTION) {
+    return resolveCabalRetaliationChoicePrompt(nextState, prompt, selectedOption, promptId);
   }
 
   const sourceDefinition = nextState.cardCatalog[prompt.sourceCardId];

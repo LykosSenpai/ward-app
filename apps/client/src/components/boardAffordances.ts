@@ -360,28 +360,52 @@ function effectRequiresOpponentLightning(effect: WardEngineEffect): boolean {
   );
 }
 
-function effectIsBattleAttackDamageResponse(effect: WardEngineEffect): boolean {
-  const actionType = String(effect.actionType ?? "").trim().toUpperCase();
-  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+type BattleResponseRole = "ATTACKER" | "DEFENDER";
 
-  return (
-    (trigger === "DURING_BATTLE_FROM_HAND" || trigger.includes("ATTACK_HITS")) &&
-    (
-      actionType === "NEGATE_ATTACK_DAMAGE" ||
-      actionType === "PREVENT_ATTACK_DAMAGE" ||
-      actionType === "NEGATE_ATTACK_OR_MAGIC" ||
-      actionType === "NEGATE_ATTACK" ||
-      actionType === "PREVENT_ATTACK"
-    )
-  );
+function effectIsBattleResponseTrigger(effect: WardEngineEffect): boolean {
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+  return trigger === "DURING_BATTLE_FROM_HAND" ||
+    trigger === "ON_HIT_FROM_HAND" ||
+    trigger === "WHEN_OPPONENT_FINISHES_ATTACK" ||
+    trigger.includes("ATTACK_HITS");
 }
 
-function cardIsBattleAttackDamageResponse(definition: CardDefinition | undefined): boolean {
-  return Boolean(
-    definition?.cardType === "MAGIC" &&
-    (definition.magicType === "BATTLE_LIGHTNING" || definition.magicType === "LIGHTNING") &&
-    definition.effects?.some(effectIsBattleAttackDamageResponse)
+function effectNegatesBattleAttack(effect: WardEngineEffect): boolean {
+  const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+  return actionType === "NEGATE_ATTACK_DAMAGE" ||
+    actionType === "PREVENT_ATTACK_DAMAGE" ||
+    actionType === "NEGATE_ATTACK_OR_MAGIC" ||
+    actionType === "NEGATE_ATTACK" ||
+    actionType === "PREVENT_ATTACK";
+}
+
+function effectAppliesBattleDiceModifier(effect: WardEngineEffect): boolean {
+  const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+  return actionType === "APPLY_DICE_MODIFIER" || actionType === "APPLY_STAT_MODIFIER";
+}
+
+function effectDealsBattleDirectDamage(effect: WardEngineEffect): boolean {
+  const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+  return actionType === "DEAL_INSTANT_DAMAGE" ||
+    actionType === "DAMAGE" ||
+    actionType === "DAMAGE_CREATURE";
+}
+
+function getAutomatedBattleResponse(definition: CardDefinition | undefined): { effect: WardEngineEffect; role: BattleResponseRole } | undefined {
+  if (!definition || definition.cardType !== "MAGIC") return undefined;
+  if (definition.magicType !== "BATTLE_LIGHTNING" && definition.magicType !== "LIGHTNING") return undefined;
+
+  const effect = definition.effects?.find(candidate =>
+    effectIsBattleResponseTrigger(candidate) &&
+    (effectNegatesBattleAttack(candidate) || effectAppliesBattleDiceModifier(candidate) || effectDealsBattleDirectDamage(candidate))
   );
+  if (!effect) return undefined;
+
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+  return {
+    effect,
+    role: trigger === "ON_HIT_FROM_HAND" && !effectNegatesBattleAttack(effect) ? "ATTACKER" : "DEFENDER"
+  };
 }
 
 function getBattleResponseDisabledReason(
@@ -399,17 +423,38 @@ function getBattleResponseDisabledReason(
 
   const strike = battle.strikes[battle.currentStrikeIndex];
   if (!strike) return "No active battle strike is available.";
+  const response = getAutomatedBattleResponse(definition);
+  if (!response) {
+    return "This card is not an automated battle response.";
+  }
+
+  if (response.role === "ATTACKER") {
+    if (strike.attacker.playerId !== player.id) {
+      return "Only the attacking creature's controller can play this battle response.";
+    }
+    if (battle.status !== "AWAITING_DAMAGE_ROLL" || strike.status !== "AWAITING_DAMAGE_ROLL") {
+      return "This battle response can only be played after your creature hits and before damage is rolled.";
+    }
+    return null;
+  }
+
   if (strike.defender.playerId !== player.id) {
     return "Only the defender of the current strike can play this battle response.";
   }
+
+  const trigger = String(response.effect.trigger ?? "").trim().toUpperCase();
+  if (trigger === "WHEN_OPPONENT_FINISHES_ATTACK") {
+    if (battle.status !== "AWAITING_DAMAGE_APPLICATION" || strike.status !== "AWAITING_DAMAGE_APPLICATION") {
+      return "This response can only be played after attack damage is rolled and before it is applied.";
+    }
+    return null;
+  }
+
   if (battle.status !== "AWAITING_DAMAGE_ROLL" && battle.status !== "AWAITING_DAMAGE_APPLICATION") {
     return "Battle responses can only be played after a hit and before damage is applied.";
   }
   if (strike.status !== "AWAITING_DAMAGE_ROLL" && strike.status !== "AWAITING_DAMAGE_APPLICATION") {
     return "This strike is not waiting for attack damage prevention.";
-  }
-  if (!cardIsBattleAttackDamageResponse(definition)) {
-    return "This card is not a battle-only attack damage response.";
   }
 
   return null;
@@ -427,7 +472,8 @@ export function buildBattleAffordances(match: AppMatchState, controlledPlayerId?
       for (const card of player.hand) {
         const definition = match.cardCatalog[card.cardId] as CardDefinition | undefined;
         if (definition?.cardType !== "MAGIC" || (definition.magicType !== "BATTLE_LIGHTNING" && definition.magicType !== "LIGHTNING")) continue;
-        if (!cardIsBattleAttackDamageResponse(definition)) continue;
+        const response = getAutomatedBattleResponse(definition);
+        if (!response) continue;
 
         const disabledReason = getBattleResponseDisabledReason(match, player, card);
         const cardName = getCardName(match, card);
@@ -437,7 +483,7 @@ export function buildBattleAffordances(match: AppMatchState, controlledPlayerId?
           kind: disabledReason ? "DISABLED_ACTION" : "VALID_BATTLE_RESPONSE",
           playerId: player.id,
           sourceCardInstanceId: card.instanceId,
-          targetCardInstanceId: strike?.defender.creatureInstanceId,
+          targetCardInstanceId: response.role === "ATTACKER" ? strike?.attacker.creatureInstanceId : strike?.defender.creatureInstanceId,
           targetZoneRef: battleZoneRef(player.id),
           actionId: disabledReason ? undefined : "PLAY_BATTLE_RESPONSE",
           label: disabledReason ? `Cannot play ${cardName}` : `Battle response: ${cardName}`,
@@ -456,7 +502,7 @@ export function buildBattleAffordances(match: AppMatchState, controlledPlayerId?
 
     for (const card of player.hand) {
       const definition = match.cardCatalog[card.cardId] as CardDefinition | undefined;
-      if (!cardIsBattleAttackDamageResponse(definition)) continue;
+      if (!getAutomatedBattleResponse(definition)) continue;
 
       const cardName = getCardName(match, card);
       affordances.push({

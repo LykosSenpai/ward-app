@@ -635,7 +635,18 @@ function addStatusToCreature(
   addEvent?: AddEventFn
 ): void {
   const status = statusFromEffect(effect);
-  const expiration = expirationForRuntimeEffect(state, source, target, effect, 1);
+  const duration = effect.duration ?? effect.params?.duration;
+  const durationText = [
+    typeof duration === "object" && duration ? duration.text : undefined,
+    typeof duration === "object" && duration ? duration.type : undefined,
+    effect.value,
+    effect.params?.valueText,
+    effect.actionText
+  ].filter(Boolean).join(" ").toLowerCase();
+  const expiresOnlyByResolver = durationText.includes("until freed") || durationText.includes("until removed");
+  const expiration = expiresOnlyByResolver
+    ? undefined
+    : expirationForRuntimeEffect(state, source, target, effect, 1);
   target.card.activeStatuses ??= [];
 
   const activeStatus: ActiveCreatureStatus = {
@@ -650,8 +661,8 @@ function addStatusToCreature(
     durationType: "TARGET_PLAYER_TURN_STARTS",
     appliedTurnNumber: state.turn.turnNumber,
     appliedTurnCycle: state.turn.turnCycleNumber,
-    expiresOnPlayerId: expiration.expiresOnPlayerId,
-    expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
+    expiresOnPlayerId: expiration?.expiresOnPlayerId,
+    expiresAtPlayerTurnStartCount: expiration?.expiresAtPlayerTurnStartCount
   };
 
   target.card.activeStatuses.push(activeStatus);
