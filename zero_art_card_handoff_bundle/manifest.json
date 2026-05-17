@@ -1,0 +1,206 @@
+{
+  "package_name": "zero_art_card_handoff_bundle",
+  "created_utc": "2026-05-17T09:10:02.627648+00:00",
+  "goal": "Use mask layers plus regular target card PNGs to produce WARD Zero variant cards that preserve exact card layout while converting the illustration/art mood to monochrome Zero style.",
+  "canonical_output": {
+    "width": 1462,
+    "height": 2048,
+    "format": "PNG",
+    "note": "Use the target regular PNG canvas size for final card outputs unless a newer master template replaces it."
+  },
+  "primary_alignment_anchor": {
+    "feature": "AL box outer stroke corners",
+    "point_order": [
+      "top_left",
+      "top_right",
+      "bottom_right",
+      "bottom_left"
+    ],
+    "reason": "The AL box is the only stable non-resizing box across cards; use it for scale, rotation, skew, and perspective correction.",
+    "do_not_use_for_alignment": [
+      "outer card border",
+      "art window",
+      "HP box",
+      "SPD box",
+      "attack strip",
+      "text baselines",
+      "card center"
+    ],
+    "approximate_primary_target_quad_for_raptor": {
+      "file": "targets_regular/target_regular__gen1_125_raptor.png",
+      "note": "Approximate centerline/outer-stroke coordinates from visual inspection only; re-mark exact corners before production.",
+      "top_left": [
+        759,
+        66
+      ],
+      "top_right": [
+        1064,
+        66
+      ],
+      "bottom_right": [
+        1064,
+        183
+      ],
+      "bottom_left": [
+        759,
+        183
+      ]
+    }
+  },
+  "mask_processing": {
+    "current_state": "The provided mask layers are visual/reference masks and are not all the same pixel size as the target card PNGs.",
+    "important_dimensions": {
+      "most_masks": "1040x1512",
+      "zero_logo_mask": "1024x1536",
+      "target_regular_cards": "1462x2048"
+    },
+    "required_before_overlay": "Do not directly overlay masks by canvas position. First normalize/warp masks and target cards by the AL box corner anchor.",
+    "threshold_guidance": {
+      "feature_pixels": "Use bright white regions/lines as feature geometry. If converting to binary alpha, threshold luminance high enough to exclude dim gray registration guides.",
+      "registration_guides": "Gray dashed lines and crosshairs are alignment guides. Keep them only as invisible/low-alpha registration marks or ignore them in the final binary mask."
+    }
+  },
+  "masks": [
+    {
+      "file": "masks_original/00_footer_metadata_zones_mask.png",
+      "source_file": "4a8a7c38-48c5-48a4-95eb-2a6510bdbfe6.png",
+      "dimensions": {
+        "width": 1040,
+        "height": 1512,
+        "mode": "RGB"
+      },
+      "role": "Footer metadata strip zones: edition/copyright area, set-number box, illustrator field, plus guide lines.",
+      "notes": "Visual mask/reference layer. White feature areas are intended mask zones; gray dashed lines/crosshairs are registration guides and should not be included in final feature alpha."
+    },
+    {
+      "file": "masks_original/01_full_frame_art_rules_structure_mask.png",
+      "source_file": "5f78d321-81f8-4682-9576-7c7dc18952e1.png",
+      "dimensions": {
+        "width": 1040,
+        "height": 1512,
+        "mode": "RGB"
+      },
+      "role": "Full static card frame, art-window boundary, rules-panel boundary, distressed edge structure, top stat box outlines.",
+      "notes": "Visual mask/reference layer. White feature areas are intended mask zones; gray dashed lines/crosshairs are registration guides and should not be included in final feature alpha."
+    },
+    {
+      "file": "masks_original/02_top_info_panels_mask.png",
+      "source_file": "8f47960a-36b1-4be9-b624-ce0cf0f142b1.png",
+      "dimensions": {
+        "width": 1040,
+        "height": 1512,
+        "mode": "RGB"
+      },
+      "role": "Top creature-name bar plus AL, HP, and SPD panel masks. AL is the primary alignment anchor.",
+      "notes": "Visual mask/reference layer. White feature areas are intended mask zones; gray dashed lines/crosshairs are registration guides and should not be included in final feature alpha."
+    },
+    {
+      "file": "masks_original/03_zero_logo_mask.png",
+      "source_file": "601dfc7f-e30d-4ed9-aeff-6349b675e07a.png",
+      "dimensions": {
+        "width": 1024,
+        "height": 1536,
+        "mode": "RGB"
+      },
+      "role": "Zero logo placement/shape zone near the upper-left art/header area.",
+      "notes": "Visual mask/reference layer. White feature areas are intended mask zones; gray dashed lines/crosshairs are registration guides and should not be included in final feature alpha."
+    },
+    {
+      "file": "masks_original/04_rules_text_panel_mask.png",
+      "source_file": "636b090f-33fc-4ef3-9590-7ebc59374543.png",
+      "dimensions": {
+        "width": 1040,
+        "height": 1512,
+        "mode": "RGB"
+      },
+      "role": "Lower rules/effect text panel mask with torn/rough upper edge and lower border detail.",
+      "notes": "Visual mask/reference layer. White feature areas are intended mask zones; gray dashed lines/crosshairs are registration guides and should not be included in final feature alpha."
+    },
+    {
+      "file": "masks_original/05_main_art_window_frame_mask.png",
+      "source_file": "4327c840-1530-42ba-bdc8-367f09c7e7a4.png",
+      "dimensions": {
+        "width": 1040,
+        "height": 1512,
+        "mode": "RGB"
+      },
+      "role": "Main illustration/art window frame and static distressed inner-edge geometry.",
+      "notes": "Visual mask/reference layer. White feature areas are intended mask zones; gray dashed lines/crosshairs are registration guides and should not be included in final feature alpha."
+    },
+    {
+      "file": "masks_original/06_right_bonus_badge_mask.png",
+      "source_file": "00342864-0860-4110-9e32-998c97af311c.png",
+      "dimensions": {
+        "width": 1040,
+        "height": 1512,
+        "mode": "RGB"
+      },
+      "role": "Right-side circular bonus/modifier badge with brush-ring silhouette. Text is not part of the mask.",
+      "notes": "Visual mask/reference layer. White feature areas are intended mask zones; gray dashed lines/crosshairs are registration guides and should not be included in final feature alpha."
+    },
+    {
+      "file": "masks_original/07_attack_strip_dice_zone_mask.png",
+      "source_file": "a540b0c1-b35e-4656-bea8-8d46b697529b.png",
+      "dimensions": {
+        "width": 1040,
+        "height": 1512,
+        "mode": "RGB"
+      },
+      "role": "Attack strip, attack-name zone, attack-value zone, and die-icon zone.",
+      "notes": "Visual mask/reference layer. White feature areas are intended mask zones; gray dashed lines/crosshairs are registration guides and should not be included in final feature alpha."
+    },
+    {
+      "file": "masks_original/08_left_icon_cluster_zero_zone_mask.png",
+      "source_file": "c0832757-fe1f-4a0f-99fd-a5b20ff2c683.png",
+      "dimensions": {
+        "width": 1040,
+        "height": 1512,
+        "mode": "RGB"
+      },
+      "role": "Upper-left cluster: rarity pip, generation/rank label zone, faction medallion, and Zero-logo region.",
+      "notes": "Visual mask/reference layer. White feature areas are intended mask zones; gray dashed lines/crosshairs are registration guides and should not be included in final feature alpha."
+    }
+  ],
+  "template_reference": {
+    "file": "template_reference/master_zero_template_reference_not_a_mask.png",
+    "source_file": "4778e529-f006-4d16-b9cf-251457206260.png",
+    "dimensions": {
+      "width": 1040,
+      "height": 1512,
+      "mode": "RGBA"
+    },
+    "role": "Visual reference template only. Do not use as a binary mask layer."
+  },
+  "target_regular_cards": [
+    {
+      "file": "targets_regular/target_regular__gen1_125_raptor.png",
+      "source_file": "gen1_125_raptor.png",
+      "dimensions": {
+        "width": 1462,
+        "height": 2048,
+        "mode": "RGBA"
+      },
+      "role": "Primary full-color regular target card for testing Zero conversion."
+    },
+    {
+      "file": "targets_regular/target_regular__gen1_001_blue_dragon.png",
+      "source_file": "gen1_001_blue_dragon.png",
+      "dimensions": {
+        "width": 1462,
+        "height": 2048,
+        "mode": "RGBA"
+      },
+      "role": "Additional full-color regular target card."
+    },
+    {
+      "file": "targets_regular/target_regular__gen1_002_dire_wolf.png",
+      "source_file": "gen1_002_dire_wolf.png",
+      "dimensions": {
+        "width": 1462,
+        "height": 2048,
+        "mode": "RGBA"
+      },
+      "role": "Additional full-color regular target card."
+    }
+  ]
+}

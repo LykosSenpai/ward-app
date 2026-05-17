@@ -1,0 +1,9 @@
+You are receiving a Zero Art Card handoff bundle. Use the file HANDOFF_ZERO_ART_CARD_PIPELINE.md and manifest.json first.
+
+Goal: convert the regular target card PNGs into WARD Zero variant cards using the included mask/reference layers.
+
+Hard rule: use the AL box outer stroke corners as the only root alignment anchor. Point order is TL, TR, BR, BL. Do not align by card border, HP box, SPD box, art window, attack strip, or canvas edge.
+
+Final output should be 1462 x 2048 PNG. Preserve all gameplay layout, stat text, attack text, dice, bonus badge, icons, and footer details. Convert the main illustration/art region to the monochrome Zero style and place/preserve the Zero mark according to the masks.
+
+Start with target_regular__gen1_125_raptor.png as the test target. Use the included masks as visual/reference feature layers and normalize them by AL-box alignment before using them for compositing.
