@@ -7545,6 +7545,22 @@ strong {
   color: #ffd3d9;
 }
 
+.error-box {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.error-box > span {
+  flex: 1 1 280px;
+}
+
+.error-box button {
+  flex: 0 0 auto;
+}
+
 .issue-warning {
   background: rgba(246, 196, 83, 0.12);
   color: #fff2c1;
@@ -7654,6 +7670,7 @@ button:hover {
 
 .attention-button,
 .match-lobby-create-panel > button,
+.library-option-a-save-deck-button,
 .library-option-a-actions button:nth-child(3),
 .library-option-a-actions button:nth-child(5),
 .library-option-a-current-deck-actions button:last-child,
@@ -7672,6 +7689,7 @@ button:hover {
 
 .attention-button:hover,
 .match-lobby-create-panel > button:hover,
+.library-option-a-save-deck-button:hover,
 .library-option-a-actions button:nth-child(3):hover,
 .library-option-a-actions button:nth-child(5):hover,
 .library-option-a-current-deck-actions button:last-child:hover,

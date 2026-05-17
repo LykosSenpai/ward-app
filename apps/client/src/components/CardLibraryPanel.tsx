@@ -734,7 +734,16 @@ export function CardLibraryPanel({
     setDeckShareMessage(`Generated notes file: ${fileName}`);
   }
 
-  const saveDisabled = deckBuilderCardIds.length !== 30 || !deckBuilderName.trim() || !normalizeId(deckBuilderId);
+  const normalizedDeckId = normalizeId(deckBuilderId);
+  const saveDisabled = deckBuilderCardIds.length !== 30 || !deckBuilderName.trim() || !normalizedDeckId;
+  const saveDeckTitle = !deckBuilderName.trim()
+    ? "Name this deck before saving."
+    : !normalizedDeckId
+      ? "Use at least one letter or number in the deck name before saving."
+      : deckBuilderCardIds.length !== 30
+        ? `Deck must have exactly 30 cards before saving. Current deck: ${deckBuilderCardIds.length}/30.`
+        : "Save this 30-card deck to your deck library.";
+  const saveDeckLabel = saveDisabled ? `Save Deck (${deckBuilderCardIds.length}/30)` : "Save Current Deck";
 
   function applyMissingFocus() {
     if (missingCompletionSummary.entries.length === 0) {
@@ -797,7 +806,16 @@ export function CardLibraryPanel({
           <button onClick={clearFilters}>Clear Filters</button>
           <button onClick={onNewDeck}>New Deck</button>
           <button onClick={onClearDeckBuilder} disabled={deckBuilderCardIds.length === 0}>Clear Deck</button>
-          <button onClick={onSaveDeck} disabled={saveDisabled}>Save Deck</button>
+          <button
+            type="button"
+            className="library-option-a-save-deck-button"
+            onClick={onSaveDeck}
+            disabled={saveDisabled}
+            title={saveDeckTitle}
+            aria-label={saveDeckTitle}
+          >
+            {saveDeckLabel}
+          </button>
         </div>
       </div>
 
@@ -1166,7 +1184,16 @@ export function CardLibraryPanel({
                 <input value={deckBuilderName} onChange={event => onDeckNameChange(event.target.value)} />
               </label>
 
-              <button onClick={onSaveDeck} disabled={saveDisabled}>Save</button>
+              <button
+                type="button"
+                className="library-option-a-save-deck-button"
+                onClick={onSaveDeck}
+                disabled={saveDisabled}
+                title={saveDeckTitle}
+                aria-label={saveDeckTitle}
+              >
+                {saveDeckLabel}
+              </button>
             </div>
 
             <div className="current-deck-header-row library-option-a-current-deck-header">
