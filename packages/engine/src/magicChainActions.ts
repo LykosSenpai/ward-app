@@ -23,9 +23,22 @@ import { assertPlayerCanPlayMagicUnderActivePlayRestrictions } from "./silenceFr
 import { resolveBattleResponseChainLinkInPlace } from "./battle.js";
 import { removeActiveEffectInstancesFromSource } from "./activeEffectInstances.js";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
+import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
 
 const FOOLISH_TRICKS_CARD_ID = "gen1_086_foolish_tricks";
+const JUDGEMENT_CARD_ID = "gen1_113_judgement";
 const FOOLISH_TRICKS_MAX_ARMOR_LEVEL = 6;
+const FORCED_AL_SUMMON_MAX_ARMOR_LEVEL = 6;
+
+type ForcedAlSummonPrompt = Extract<NonNullable<MatchState["pendingPrompt"]>, { type: "FORCED_AL_SUMMON" }>;
+type ForcedAlPromptSource = ForcedAlSummonPrompt["promptSource"];
+type ForcedAlSourceLink = {
+  cardInstanceId: string;
+  cardId: string;
+  cardName: string;
+  playerId: string;
+  id?: string;
+};
 
 function getOpponentPlayerId(state: MatchState, playerId: string): string | undefined {
   return state.players.find(player => player.id !== playerId)?.id;
@@ -289,24 +302,37 @@ function moveHeldResolvedMagicToCemetery(
   });
 }
 
-function createFoolishTricksForcedSummonPrompt(
+function getForcedAlPromptSource(cardId: string): ForcedAlPromptSource {
+  if (cardId === FOOLISH_TRICKS_CARD_ID) return "FOOLISH_TRICKS";
+  if (cardId === JUDGEMENT_CARD_ID) return "JUDGEMENT";
+  return "CARD_EFFECT";
+}
+
+function promptSourceReason(promptSource: ForcedAlPromptSource): string {
+  if (promptSource === "FOOLISH_TRICKS") return "FOOLISH_TRICKS_FORCED_SUMMON";
+  if (promptSource === "JUDGEMENT") return "JUDGEMENT_FORCED_SUMMON";
+  return "CARD_EFFECT_FORCED_SUMMON";
+}
+
+function createForcedAlSummonPrompt(
   state: MatchState,
-  link: MagicChainLink | {
-    cardInstanceId: string;
-    cardId: string;
-    cardName: string;
-    playerId: string;
-    id?: string;
-  },
-  returnedCards: Array<{ card: CardInstance; cardName: string }>
+  link: MagicChainLink | ForcedAlSourceLink,
+  args: {
+    targetPlayerId: string;
+    pendingTargetPlayerIds?: string[];
+    returnedCardInstanceIds: string[];
+    returnedCardNames: string[];
+  }
 ): void {
-  const targetPlayer = getOpponentPlayer(state, link.playerId);
+  const targetPlayer = getPlayer(state, args.targetPlayerId);
+  const promptSource = getForcedAlPromptSource(link.cardId);
+  const reason = promptSourceReason(promptSource);
 
   state.pendingPrompt = {
     id: uuidv4(),
     type: "FORCED_AL_SUMMON",
-    promptSource: "FOOLISH_TRICKS",
-    message: `${targetPlayer.displayName} must summon an AL ${FOOLISH_TRICKS_MAX_ARMOR_LEVEL} or lower creature.`,
+    promptSource,
+    message: `${targetPlayer.displayName} must summon an AL ${FORCED_AL_SUMMON_MAX_ARMOR_LEVEL} or lower creature.`,
     sourcePlayerId: link.playerId,
     targetPlayerId: targetPlayer.id,
     controllerPlayerId: targetPlayer.id,
@@ -315,21 +341,24 @@ function createFoolishTricksForcedSummonPrompt(
     sourceCardId: link.cardId,
     sourceCardName: link.cardName,
     sourceChainLinkId: link.id,
-    maxArmorLevel: FOOLISH_TRICKS_MAX_ARMOR_LEVEL,
+    maxArmorLevel: FORCED_AL_SUMMON_MAX_ARMOR_LEVEL,
     redrawCount: targetPlayer.hand.length,
     mulliganCount: 0,
-    returnedCardInstanceIds: returnedCards.map(item => item.card.instanceId),
-    returnedCardNames: returnedCards.map(item => item.cardName),
+    pendingTargetPlayerIds: args.pendingTargetPlayerIds,
+    returnedCardInstanceIds: args.returnedCardInstanceIds,
+    returnedCardNames: args.returnedCardNames,
     createdAt: new Date().toISOString()
   };
 
-  addEvent(state, "FOOLISH_TRICKS_FORCED_SUMMON_PROMPT_CREATED", targetPlayer.id, {
+  addEvent(state, "FORCED_AL_SUMMON_PROMPT_CREATED", targetPlayer.id, {
     sourceCardInstanceId: link.cardInstanceId,
     sourceCardId: link.cardId,
     sourceCardName: link.cardName,
+    promptSource,
     targetPlayerId: targetPlayer.id,
-    maxArmorLevel: FOOLISH_TRICKS_MAX_ARMOR_LEVEL,
-    validHandOptionCount: getForcedAlSummonOptions(state, targetPlayer, FOOLISH_TRICKS_MAX_ARMOR_LEVEL).length,
+    maxArmorLevel: FORCED_AL_SUMMON_MAX_ARMOR_LEVEL,
+    pendingTargetPlayerIds: args.pendingTargetPlayerIds ?? [],
+    validHandOptionCount: getForcedAlSummonOptions(state, targetPlayer, FORCED_AL_SUMMON_MAX_ARMOR_LEVEL).length,
     canMulligan: targetPlayer.hand.length > 0,
     boardEvents: [
       {
@@ -338,7 +367,7 @@ function createFoolishTricksForcedSummonPrompt(
         sourceCardInstanceId: link.cardInstanceId,
         sourceCardId: link.cardId,
         actionType: "FORCE_SUMMON_FROM_HAND",
-        reason: "FOOLISH_TRICKS_FORCED_SUMMON",
+        reason,
         promptId: state.pendingPrompt.id,
         toZoneRef: { playerId: targetPlayer.id, zone: "PROMPT" as const }
       }
@@ -348,13 +377,7 @@ function createFoolishTricksForcedSummonPrompt(
 
 function tryResolveFoolishTricksEffects(
   state: MatchState,
-  link: MagicChainLink | {
-    cardInstanceId: string;
-    cardId: string;
-    cardName: string;
-    playerId: string;
-    id?: string;
-  }
+  link: MagicChainLink | ForcedAlSourceLink
 ): boolean {
   if (link.cardId !== FOOLISH_TRICKS_CARD_ID) {
     return false;
@@ -373,7 +396,113 @@ function tryResolveFoolishTricksEffects(
     return true;
   }
 
-  createFoolishTricksForcedSummonPrompt(state, link, returnedCards);
+  createForcedAlSummonPrompt(state, link, {
+    targetPlayerId: targetPlayer.id,
+    returnedCardInstanceIds: returnedCards.map(item => item.card.instanceId),
+    returnedCardNames: returnedCards.map(item => item.cardName)
+  });
+  return true;
+}
+
+function returnPrimaryCreaturesToOwnerHandsForJudgement(
+  state: MatchState,
+  link: MagicChainLink | ForcedAlSourceLink
+): Array<{ card: CardInstance; cardName: string; sourcePlayerId: string; destinationPlayerId: string }> {
+  const returned: Array<{ card: CardInstance; cardName: string; sourcePlayerId: string; destinationPlayerId: string }> = [];
+
+  for (const player of state.players) {
+    const primary = player.field.primaryCreature;
+    if (!primary) continue;
+
+    player.field.primaryCreature = undefined;
+    const definition = getCardDefinition(state, primary);
+    moveAttachedMagicCardsToCemeteryForCreature(state, primary.instanceId, addEvent);
+    const destination = returnCardToOwnerHand(state, primary);
+
+    returned.push({
+      card: primary,
+      cardName: definition.name,
+      sourcePlayerId: player.id,
+      destinationPlayerId: destination.id
+    });
+  }
+
+  state.setup.primaryReplacementRequiredForPlayerId = undefined;
+
+  addEvent(state, "JUDGEMENT_PRIMARY_CREATURES_RETURNED_TO_HAND", link.playerId, {
+    sourceCardInstanceId: link.cardInstanceId,
+    sourceCardId: link.cardId,
+    sourceCardName: link.cardName,
+    returnedCards: returned.map(item => ({
+      cardInstanceId: item.card.instanceId,
+      cardName: item.cardName,
+      sourcePlayerId: item.sourcePlayerId,
+      destinationPlayerId: item.destinationPlayerId
+    })),
+    boardEvents: returned.map(item => ({
+      type: "CARD_RETURNED_TO_HAND",
+      playerId: link.playerId,
+      cardInstanceId: item.card.instanceId,
+      sourceCardInstanceId: link.cardInstanceId,
+      sourceCardId: link.cardId,
+      actionType: "JUDGEMENT_RETURN_TO_HAND",
+      reason: "JUDGEMENT",
+      fromZoneRef: { playerId: item.sourcePlayerId, zone: "PRIMARY_CREATURE" },
+      toZoneRef: handBoardZoneRef(item.destinationPlayerId)
+    }))
+  });
+
+  return returned;
+}
+
+function orderedForcedSummonPlayerIds(state: MatchState): string[] {
+  const ordered = state.turn.currentTurnOrder.filter(playerId =>
+    state.players.some(player => player.id === playerId)
+  );
+  const missing = state.players
+    .map(player => player.id)
+    .filter(playerId => !ordered.includes(playerId));
+  return [...ordered, ...missing];
+}
+
+function tryResolveJudgementEffects(
+  state: MatchState,
+  link: MagicChainLink | ForcedAlSourceLink
+): boolean {
+  if (link.cardId !== JUDGEMENT_CARD_ID) {
+    return false;
+  }
+
+  const returnedCards = returnPrimaryCreaturesToOwnerHandsForJudgement(state, link);
+  const targetPlayerIds = orderedForcedSummonPlayerIds(state);
+
+  for (const targetPlayerId of targetPlayerIds) {
+    const targetPlayer = getPlayer(state, targetPlayerId);
+    if (hasAccessibleForcedAlCreature(state, targetPlayer, FORCED_AL_SUMMON_MAX_ARMOR_LEVEL)) {
+      continue;
+    }
+
+    completeForcedAlSummonLossInPlace(
+      state,
+      targetPlayer.id,
+      link.playerId,
+      `${targetPlayer.displayName} could not summon an AL ${FORCED_AL_SUMMON_MAX_ARMOR_LEVEL} or lower creature for ${link.cardName}.`
+    );
+    return true;
+  }
+
+  const [firstTargetPlayerId, ...pendingTargetPlayerIds] = targetPlayerIds;
+  if (!firstTargetPlayerId) {
+    return true;
+  }
+
+  createForcedAlSummonPrompt(state, link, {
+    targetPlayerId: firstTargetPlayerId,
+    pendingTargetPlayerIds,
+    returnedCardInstanceIds: returnedCards.map(item => item.card.instanceId),
+    returnedCardNames: returnedCards.map(item => item.cardName)
+  });
+
   return true;
 }
 
@@ -926,6 +1055,10 @@ export function resolveOrQueueResolvedMagicEffects(
     return;
   }
 
+  if (tryResolveJudgementEffects(state, link)) {
+    return;
+  }
+
   if (effects.length === 0) {
     state.manualEffectQueue.push(createManualEffectRequestFromChainLink(link));
 
@@ -1197,7 +1330,7 @@ export function resolveForcedAlSummonPrompt(
   const card = player.hand[handIndex];
 
   if (!isForcedAlCreature(nextState, card, prompt.maxArmorLevel)) {
-    throw new Error(`Foolish Tricks requires an AL ${prompt.maxArmorLevel} or lower creature.`);
+    throw new Error(`${prompt.sourceCardName} requires an AL ${prompt.maxArmorLevel} or lower creature.`);
   }
 
   if (player.field.primaryCreature) {
@@ -1228,15 +1361,17 @@ export function resolveForcedAlSummonPrompt(
   nextState.setup.primaryReplacementRequiredForPlayerId = undefined;
   nextState.pendingPrompt = undefined;
 
-  addEvent(nextState, "FOOLISH_TRICKS_FORCED_SUMMON_RESOLVED", player.id, {
+  addEvent(nextState, "FORCED_AL_SUMMON_RESOLVED", player.id, {
     promptId: prompt.id,
     sourceCardInstanceId: prompt.sourceCardInstanceId,
     sourceCardId: prompt.sourceCardId,
     sourceCardName: prompt.sourceCardName,
+    promptSource: prompt.promptSource,
     cardInstanceId: summonedCard.instanceId,
     cardName: definition.name,
     maxArmorLevel: prompt.maxArmorLevel,
     mulliganCount: prompt.mulliganCount,
+    pendingTargetPlayerIds: prompt.pendingTargetPlayerIds ?? [],
     boardEvents: [
       {
         type: "PROMPT_RESOLVED",
@@ -1244,7 +1379,7 @@ export function resolveForcedAlSummonPrompt(
         sourceCardInstanceId: prompt.sourceCardInstanceId,
         sourceCardId: prompt.sourceCardId,
         actionType: "FORCE_SUMMON_FROM_HAND",
-        reason: "FOOLISH_TRICKS_FORCED_SUMMON",
+        reason: promptSourceReason(prompt.promptSource),
         promptId: prompt.id
       },
       {
@@ -1254,12 +1389,42 @@ export function resolveForcedAlSummonPrompt(
         sourceCardInstanceId: prompt.sourceCardInstanceId,
         sourceCardId: prompt.sourceCardId,
         actionType: "FORCE_SUMMON_FROM_HAND",
-        reason: "FOOLISH_TRICKS_FORCED_SUMMON",
+        reason: promptSourceReason(prompt.promptSource),
         fromZoneRef: handBoardZoneRef(player.id),
         toZoneRef: { playerId: player.id, zone: "PRIMARY_CREATURE" as const }
       }
     ]
   });
+
+  const [nextTargetPlayerId, ...remainingTargetPlayerIds] = prompt.pendingTargetPlayerIds ?? [];
+  if (nextTargetPlayerId) {
+    const nextTargetPlayer = getPlayer(nextState, nextTargetPlayerId);
+
+    if (!hasAccessibleForcedAlCreature(nextState, nextTargetPlayer, prompt.maxArmorLevel)) {
+      moveHeldResolvedMagicToCemetery(nextState, prompt);
+      completeForcedAlSummonLossInPlace(
+        nextState,
+        nextTargetPlayer.id,
+        prompt.sourcePlayerId,
+        `${nextTargetPlayer.displayName} could not summon an AL ${prompt.maxArmorLevel} or lower creature for ${prompt.sourceCardName}.`
+      );
+      return nextState;
+    }
+
+    createForcedAlSummonPrompt(nextState, {
+      cardInstanceId: prompt.sourceCardInstanceId,
+      cardId: prompt.sourceCardId,
+      cardName: prompt.sourceCardName,
+      playerId: prompt.sourcePlayerId,
+      id: prompt.sourceChainLinkId
+    }, {
+      targetPlayerId: nextTargetPlayerId,
+      pendingTargetPlayerIds: remainingTargetPlayerIds,
+      returnedCardInstanceIds: prompt.returnedCardInstanceIds,
+      returnedCardNames: prompt.returnedCardNames
+    });
+    return nextState;
+  }
 
   moveHeldResolvedMagicToCemetery(nextState, prompt);
   return nextState;
@@ -1310,11 +1475,12 @@ export function mulliganForcedAlSummonPrompt(
   nextPrompt.mulliganCount += 1;
   nextPrompt.message = `${player.displayName} must summon an AL ${nextPrompt.maxArmorLevel} or lower creature.`;
 
-  addEvent(nextState, "FOOLISH_TRICKS_FORCED_SUMMON_MULLIGAN", player.id, {
+  addEvent(nextState, "FORCED_AL_SUMMON_MULLIGAN", player.id, {
     promptId: nextPrompt.id,
     sourceCardInstanceId: nextPrompt.sourceCardInstanceId,
     sourceCardId: nextPrompt.sourceCardId,
     sourceCardName: nextPrompt.sourceCardName,
+    promptSource: nextPrompt.promptSource,
     targetPlayerId: player.id,
     returnedCardCount: result.returnedCardCount,
     drawnCardCount: result.drawnCardCount,

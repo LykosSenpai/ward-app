@@ -6,7 +6,7 @@ export type ZeroCardFilterOptions = {
   textureOpacity?: number;
 };
 
-export const ZERO_CARD_FILTER_VERSION = "v6-layer-pack-aligned";
+export const ZERO_CARD_FILTER_VERSION = "v7-bounds-aware-scaling";
 
 const DEFAULT_OPTIONS: Required<ZeroCardFilterOptions> = {
   contrast: 1.28,
@@ -17,6 +17,54 @@ const DEFAULT_OPTIONS: Required<ZeroCardFilterOptions> = {
 };
 
 type NormalizedRect = { x: number; y: number; w: number; h: number };
+type CardBounds = { left: number; top: number; right: number; bottom: number };
+
+function detectCardBounds(original: Uint8ClampedArray, width: number, height: number): CardBounds {
+  const darkThreshold = 58;
+  const minDarkPerLine = Math.max(4, Math.floor(width * 0.03));
+
+  const rowDarkCount = (y: number): number => {
+    let dark = 0;
+    for (let x = 0; x < width; x += 1) {
+      const i = (y * width + x) * 4;
+      const red = original[i] ?? 0;
+      const green = original[i + 1] ?? 0;
+      const blue = original[i + 2] ?? 0;
+      if (red < darkThreshold && green < darkThreshold && blue < darkThreshold) dark += 1;
+    }
+    return dark;
+  };
+
+  const colDarkCount = (x: number): number => {
+    let dark = 0;
+    for (let y = 0; y < height; y += 1) {
+      const i = (y * width + x) * 4;
+      const red = original[i] ?? 0;
+      const green = original[i + 1] ?? 0;
+      const blue = original[i + 2] ?? 0;
+      if (red < darkThreshold && green < darkThreshold && blue < darkThreshold) dark += 1;
+    }
+    return dark;
+  };
+
+  let left = 0;
+  while (left < width * 0.16 && colDarkCount(left) > height * 0.65) left += 1;
+
+  let right = width - 1;
+  while (right > width * 0.84 && colDarkCount(right) > height * 0.65) right -= 1;
+
+  let top = 0;
+  while (top < height * 0.12 && rowDarkCount(top) > minDarkPerLine) top += 1;
+
+  let bottom = height - 1;
+  while (bottom > height * 0.88 && rowDarkCount(bottom) > minDarkPerLine) bottom -= 1;
+
+  if (right - left < width * 0.7 || bottom - top < height * 0.8) {
+    return { left: 0, top: 0, right: width - 1, bottom: height - 1 };
+  }
+
+  return { left, top, right, bottom };
+}
 
 // Coordinates tuned to the 1060x1484 template, normalized for same-layout cards.
 const MASKS = {
@@ -28,7 +76,6 @@ const MASKS = {
   attackBand: { x: 0.06, y: 0.61, w: 0.88, h: 0.09 },
   effectTextBox: { x: 0.08, y: 0.705, w: 0.86, h: 0.175 },
   footer: { x: 0.04, y: 0.92, w: 0.92, h: 0.06 },
-  outerFrame: { x: 0, y: 0, w: 1, h: 1 },
 } as const satisfies Record<string, NormalizedRect>;
 
 const inRect = (nx: number, ny: number, rect: NormalizedRect): boolean =>
@@ -108,11 +155,14 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
     luma[i / 4] = luminance(original[i] ?? 0, original[i + 1] ?? 0, original[i + 2] ?? 0);
   }
 
-  for (let y = 0; y < height; y += 1) {
-    const ny = height <= 1 ? 0 : y / (height - 1);
+  const bounds = detectCardBounds(original, width, height);
+  const boundsW = Math.max(1, bounds.right - bounds.left);
+  const boundsH = Math.max(1, bounds.bottom - bounds.top);
 
+  for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const nx = width <= 1 ? 0 : x / (width - 1);
+      const nx = Math.max(0, Math.min(1, (x - bounds.left) / boundsW));
+      const ny = Math.max(0, Math.min(1, (y - bounds.top) / boundsH));
       const idx = (y * width + x) * 4;
       const red = original[idx] ?? 0;
       const green = original[idx + 1] ?? 0;

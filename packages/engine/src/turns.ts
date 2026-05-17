@@ -10,6 +10,10 @@ import { v4 as uuidv4 } from "uuid";
 import type { MatchState, PlayerState, TurnPhase } from "@ward/shared";
 import { playerHasSummonableCreatureInHand } from "./summonRules.js";
 import { removeExpiredSilenceFromTheGraveEffects } from "./silenceFromTheGrave.js";
+import {
+  processTurnEndTriggeredEffects,
+  processTurnStartTriggeredEffects
+} from "./turnTriggeredEffects.js";
 
 const PHASE_ORDER: TurnPhase[] = [
   "DRAW",
@@ -345,6 +349,8 @@ export function advanceTurn(state: MatchState): MatchState {
 
   const currentPlayer = getPlayer(nextState, nextState.turn.activePlayerId);
 
+  processTurnEndTriggeredEffects(nextState, currentPlayer.id, addEvent);
+
   currentPlayer.turnFlags.hasTakenFirstTurn = true;
   refreshRecurringRuntimeEffectsAtEndOfTurn(nextState, currentPlayer.id, addEvent);
   refreshRegeneratingHealsAtEndOfTurn(nextState, currentPlayer.id, addEvent);
@@ -366,6 +372,7 @@ export function advanceTurn(state: MatchState): MatchState {
       removeExpiredSilenceFromTheGraveEffects(nextState, nextPlayerId, addEvent);
       removeExpiredStatModifiersForPlayerTurnStart(nextState, nextPlayerId, addEvent);
       processBeginningOfTurnRuntimeEffects(nextState, addEvent);
+      processTurnStartTriggeredEffects(nextState, nextPlayerId, addEvent);
       return nextState;
     }
 

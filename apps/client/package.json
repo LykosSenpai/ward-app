@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:embed-harness": "vite --open /embed-host-harness.html",
-    "build": "tsc -b && vite build",
+    "build": "pnpm check:zero-filter && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "check": "tsc -b --pretty false",
@@ -19,7 +19,8 @@
     "check:board-3d-multiplayer-smoke": "tsx scripts/board3dMultiplayerMatrixSmoke.ts",
     "check:board-3d-only-regression": "tsx scripts/board3dOnlyRegressionChecks.ts",
     "check:board-3d-target-prompt-smoke": "tsx scripts/board3dTargetPromptSmoke.ts",
-    "check:embed": "tsx scripts/embedProtocolChecks.ts"
+    "check:embed": "tsx scripts/embedProtocolChecks.ts",
+    "check:zero-filter": "tsc --pretty false --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",

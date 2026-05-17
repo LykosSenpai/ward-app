@@ -7,6 +7,7 @@ import {
 } from "./actionGuards.js";
 import { shuffleCards } from "./actionCards.js";
 import { hasCompletedOpeningRoll } from "./openingRollActions.js";
+import { processDrawTriggeredEffects } from "./turnTriggeredEffects.js";
 
 function getHandAnimationSlotId(playerId: string, handIndex: number): string {
   const normalizedPlayerId = playerId === "player_2" ? "player_2" : "player_1";
@@ -110,6 +111,12 @@ export function drawCards(
       fromZoneRef: { playerId, zone: "DECK" },
       toZoneRef: { playerId, zone: "HAND" }
     }))
+  });
+
+  processDrawTriggeredEffects(nextState, {
+    drawingPlayerId: playerId,
+    drawnCount: drawnCards.length,
+    addEvent
   });
 
   return nextState;

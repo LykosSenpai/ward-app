@@ -39,6 +39,7 @@ export function ForcedAlSummonPromptCard({
     return isCreature(match, card) && definition?.cardType === "CREATURE" && definition.armorLevel <= prompt.maxArmorLevel;
   });
   const title = `${getPlayerName(match, prompt.targetPlayerId)} must summon AL ${prompt.maxArmorLevel} or lower`;
+  const sourceLabel = prompt.sourceCardName || "Card Effect";
   const classes = compact
     ? "forced-summon-prompt forced-summon-prompt-compact"
     : "card prompt-card forced-summon-prompt";
@@ -47,7 +48,7 @@ export function ForcedAlSummonPromptCard({
     <section className={classes}>
       <div className="forced-summon-prompt-header">
         <div>
-          <span className="label">Foolish Tricks</span>
+          <span className="label">{sourceLabel}</span>
           <h2>{title}</h2>
         </div>
         {prompt.mulliganCount > 0 ? (

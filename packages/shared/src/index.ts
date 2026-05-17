@@ -582,7 +582,7 @@ export type PendingPrompt =
   | {
       id: string;
       type: "FORCED_AL_SUMMON";
-      promptSource: "FOOLISH_TRICKS";
+      promptSource: "FOOLISH_TRICKS" | "JUDGEMENT" | "CARD_EFFECT";
       message: string;
       sourcePlayerId: string;
       targetPlayerId: string;
@@ -595,6 +595,7 @@ export type PendingPrompt =
       maxArmorLevel: number;
       redrawCount: number;
       mulliganCount: number;
+      pendingTargetPlayerIds?: string[];
       returnedCardInstanceIds: string[];
       returnedCardNames: string[];
       createdAt: string;

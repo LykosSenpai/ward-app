@@ -150,7 +150,9 @@ function isSupportedCardEffect(effect: WardEngineEffect): boolean {
   }
 
   if (isActivatedRollEffect(effect)) {
-    return true;
+    return isStatusEscapeRollEffect(effect) ||
+      isAutomaticMagicEffectSupported(effect) ||
+      !!inferTargetQueryForEffect(effect);
   }
 
   return !!inferTargetQueryForEffect(effect);

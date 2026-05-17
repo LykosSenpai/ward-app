@@ -39,11 +39,17 @@ const BATTLE_TRIGGER_ALIASES: Record<string, string[]> = {
   ON_HIT: ["ON_HIT", "WHEN_OPPONENT_LANDS_HIT", "ON_OPPONENT_LANDS_HIT"],
   ON_HIT_FIRST: ["ON_HIT_FIRST"],
   ON_MISS: ["ON_MISS"],
-  BEFORE_HIT_ROLL: ["BEFORE_HIT_ROLL", "DURING_HIT_ROLL"],
+  BEFORE_HIT_ROLL: [
+    "BEFORE_HIT_ROLL",
+    "DURING_HIT_ROLL",
+    "PRIOR_TO_EACH_BATTLE",
+    "PRIOR_TO_EACH_BATTLE_WITH_THIS_CREATURE"
+  ],
   BEFORE_DAMAGE_ROLL: ["BEFORE_DAMAGE_ROLL"],
   DURING_DAMAGE_CALC: ["DURING_DAMAGE_CALC", "DURING_DAMAGE_CALC_OR_STATIC", "DAMAGE_CALC_ON_THIS_CARD"],
   AFTER_DAMAGE_APPLIED: ["AFTER_DAMAGE_APPLIED", "ON_EQUIPPED_CREATURE_DAMAGED", "ON_EQUIPPED_CREATURE_DAMAGED_IN_BATTLE"],
-  WHEN_CREATURE_KILLED_IN_BATTLE: ["WHEN_CREATURE_KILLED_IN_BATTLE", "WHEN_THIS_CREATURE_KILLED", "IF_KILLED_IN_BATTLE", "IF_EQUIPPED_CREATURE_KILLED"]
+  WHEN_CREATURE_KILLED_IN_BATTLE: ["WHEN_CREATURE_KILLED_IN_BATTLE", "WHEN_THIS_CREATURE_KILLED", "IF_KILLED_IN_BATTLE", "IF_EQUIPPED_CREATURE_KILLED"],
+  END_OF_COMBAT_PHASE: ["END_OF_COMBAT_PHASE", "AT_END_OF_BATTLE"]
 };
 
 type FieldCreatureLocation = {
@@ -1265,6 +1271,64 @@ function applyBattleDamagePrevention(
   });
 }
 
+function applyPreBattleRollDefense(
+  state: MatchState,
+  source: ActiveEffectSource,
+  effect: WardEngineEffect,
+  strike: ManualBattleStrike | undefined,
+  addEvent?: AddEventFn
+): void {
+  if (!strike) return;
+
+  const sourceIsDefender = source.card.instanceId === strike.defender.creatureInstanceId ||
+    source.card.attachedToInstanceId === strike.defender.creatureInstanceId;
+
+  if (!sourceIsDefender) {
+    addEvent?.(state, "BATTLE_PRE_ROLL_DEFENSE_SKIPPED", source.player.id, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      strikeId: strike.id,
+      reason: "This pre-battle defense only applies while the source is receiving attack damage."
+    });
+    return;
+  }
+
+  const rollPlayerId = strike.attacker.playerId;
+  const roll = rollD6WithDev(state, {
+    kind: "EFFECT_ROLL",
+    count: 1,
+    playerId: rollPlayerId,
+    label: `${source.definition.name} ${effect.id} pre-battle defense roll`,
+    addEvent,
+    context: {
+      timing: "BEFORE_HIT_ROLL",
+      effectId: effect.id,
+      actionType: effect.actionType,
+      strikeId: strike.id,
+      sourceCardInstanceId: source.card.instanceId
+    }
+  })[0];
+
+  const preventsDamage = roll <= 2;
+
+  addEvent?.(state, preventsDamage ? "BATTLE_PRE_ROLL_DEFENSE_SUCCEEDED" : "BATTLE_PRE_ROLL_DEFENSE_FAILED", source.player.id, {
+    sourceCardInstanceId: source.card.instanceId,
+    sourceCardName: source.definition.name,
+    effectId: effect.id,
+    actionType: effect.actionType,
+    strikeId: strike.id,
+    roll,
+    successValues: [1, 2],
+    preventsDamage
+  });
+
+  if (preventsDamage) {
+    applyBattleDamagePrevention(state, source, effect, strike, addEvent);
+  }
+}
+
 
 function applyPercentageDamage(
   state: MatchState,
@@ -1492,7 +1556,19 @@ function resolveEffectAction(
     return;
   }
 
-  if (actionType === "PREVENT_ATTACK_DAMAGE" || actionType === "NEGATE_ATTACK" || actionType === "NEGATE_ATTACK_DAMAGE" || actionType === "PREVENT_DAMAGE") {
+  if (actionType === "APPLY_PRE_BATTLE_ROLL_DEFENSE") {
+    applyPreBattleRollDefense(state, source, effect, strike, addEvent);
+    return;
+  }
+
+  if (
+    actionType === "PREVENT_ATTACK_DAMAGE" ||
+    actionType === "NEGATE_ATTACK" ||
+    actionType === "NEGATE_ATTACK_DAMAGE" ||
+    actionType === "PREVENT_DAMAGE" ||
+    actionType === "NEGATE_ATTACK_AND_HEAL" ||
+    actionType === "NEGATE_ATTACK_AND_REFLECT_DAMAGE"
+  ) {
     applyBattleDamagePrevention(state, source, effect, strike, addEvent);
     return;
   }

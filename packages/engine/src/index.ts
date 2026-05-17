@@ -38,6 +38,7 @@ export * from "./openingRollActions.js";
 export * from "./summonRules.js";
 export * from "./targets.js";
 export * from "./turns.js";
+export * from "./turnTriggeredEffects.js";
 export * from "./triggers.js";
 export * from "./activeEffectInstances.js";
 export * from "./devRolls.js";
