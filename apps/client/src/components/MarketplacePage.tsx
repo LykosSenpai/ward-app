@@ -576,6 +576,7 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
     socket.emit("marketplace:listPosts");
     socket.emit("marketplace:listMatches");
     return () => {
+      socket.emit("marketplace:unwatch");
       socket.off("marketplace:posts", onPosts);
       socket.off("marketplace:matches", onMatches);
     };

@@ -1,5 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
+import { filterCardImageCandidates, useCardImageManifest } from "../cardImageManifest";
+import type { CardImageCandidate } from "../cardImageManifest";
 import { HolographicCardImage } from "./HolographicCardImage";
 import { ModalPanel } from "./ui/ModalPanel";
 
@@ -37,11 +39,6 @@ type CardImageThumbnailProps = {
   className?: string;
   artKey?: CardArtKey;
   holoIntensity?: number;
-};
-
-type ImageCandidate = {
-  fileName: string;
-  url: string;
 };
 
 type ExpandedCardImageProps = {
@@ -202,7 +199,7 @@ function getStemAliases(card: CardLibraryCardSummary): string[] {
   return uniqueValues(aliases);
 }
 
-export function getImageCandidates(card: CardLibraryCardSummary, artKey: CardArtKey): ImageCandidate[] {
+export function getImageCandidates(card: CardLibraryCardSummary, artKey: CardArtKey): CardImageCandidate[] {
   const stems = getStemAliases(card).flatMap(stem => getArtStems(stem, artKey));
 
   return uniqueValues(stems).flatMap(stem =>
@@ -215,6 +212,13 @@ export function getImageCandidates(card: CardLibraryCardSummary, artKey: CardArt
       };
     })
   );
+}
+
+export function useTargetedCardImageCandidates(card: CardLibraryCardSummary, artKey: CardArtKey): CardImageCandidate[] {
+  const manifest = useCardImageManifest();
+  const candidates = useMemo(() => getImageCandidates(card, artKey), [card, artKey]);
+
+  return useMemo(() => filterCardImageCandidates(candidates, manifest), [candidates, manifest]);
 }
 
 export function getCardArtLabel(artKey: CardArtKey): string {
@@ -232,15 +236,12 @@ function ExpandedCardImage({
   const [expandedCandidateIndex, setExpandedCandidateIndex] = useState(0);
   const effectiveActiveArtKey = coerceCardArtKeyForCard(card, activeArtKey);
   const imageArtKey = getBaseArtKey(effectiveActiveArtKey);
-  const imageCandidates = useMemo(
-    () => getImageCandidates(card, imageArtKey),
-    [card, imageArtKey]
-  );
+  const imageCandidates = useTargetedCardImageCandidates(card, imageArtKey);
   const displayImageSrc = imageCandidates[expandedCandidateIndex]?.url;
 
   useEffect(() => {
     setExpandedCandidateIndex(0);
-  }, [card.id, imageArtKey]);
+  }, [card.id, imageArtKey, imageCandidates[0]?.url]);
 
   return (
     <div className="expanded-card-image-wrap">
@@ -295,12 +296,12 @@ export function CardImageThumbnail({ card, className, artKey = "default", holoIn
   const effectiveArtKey = coerceCardArtKeyForCard(card, artKey);
   const imageArtKey = getBaseArtKey(effectiveArtKey);
   const holoEnabled = isHoloArtKey(effectiveArtKey);
-  const imageCandidates = useMemo(() => getImageCandidates(card, imageArtKey), [card, imageArtKey]);
+  const imageCandidates = useTargetedCardImageCandidates(card, imageArtKey);
   const displayImageSrc = imageCandidates[candidateIndex]?.url;
 
   useEffect(() => {
     setCandidateIndex(0);
-  }, [card.id, imageArtKey]);
+  }, [card.id, imageArtKey, imageCandidates[0]?.url]);
 
   if (!displayImageSrc) {
     return (
@@ -339,14 +340,11 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
   const baseArtKey = getBaseArtKey(activeArtKey);
   const holoSeed = `${card.packId}:${card.id}:${card.name}`;
 
-  const imageCandidates = useMemo(
-    () => getImageCandidates(card, imageArtKey),
-    [card, imageArtKey]
-  );
+  const imageCandidates = useTargetedCardImageCandidates(card, imageArtKey);
 
   useEffect(() => {
     setCandidateIndex(0);
-  }, [card.id, imageArtKey]);
+  }, [card.id, imageArtKey, imageCandidates[0]?.url]);
 
   useEffect(() => {
     if (requestedArtKey === activeArtKey) return;

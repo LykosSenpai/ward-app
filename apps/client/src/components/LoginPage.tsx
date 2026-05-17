@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { AuthUser, CardLibraryCardSummary } from "../clientTypes";
 import { API_BASE_URL } from "../config";
-import { getImageCandidates } from "./CardImagePreview";
+import { useTargetedCardImageCandidates } from "./CardImagePreview";
 import { HolographicCardImage } from "./HolographicCardImage";
 import { PasswordInput } from "./ui/PasswordInput";
 
@@ -116,7 +116,7 @@ export function LoginPage({ discordAuthEnabled, onAuthenticated }: LoginPageProp
 
     async function loadCardLibrary() {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/cards/library`, {
+        const response = await fetch(`${API_BASE_URL}/api/cards/showcase`, {
           credentials: "omit"
         });
 
@@ -620,13 +620,13 @@ function getLoginTitle(mode: AuthMode, challenge: LoginChallenge | null): string
 
 function LoginShowcaseCard({ className, selection }: { className: string; selection: LoginShowcaseSelection }) {
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const imageCandidates = useMemo(() => getImageCandidates(selection.card, "default"), [selection.card]);
+  const imageCandidates = useTargetedCardImageCandidates(selection.card, "default");
   const imageCandidate = imageCandidates[candidateIndex] ?? imageCandidates[0];
   const holoEnabled = selection.artVariant === "holo";
 
   useEffect(() => {
     setCandidateIndex(0);
-  }, [selection.card.id]);
+  }, [selection.card.id, imageCandidates[0]?.url]);
 
   if (!imageCandidate) {
     return null;

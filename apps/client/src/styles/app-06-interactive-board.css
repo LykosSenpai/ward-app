@@ -2946,6 +2946,12 @@
   color: #fee2e2;
 }
 
+.board-preview-3d__deck-actions button.is-save-exit {
+  background: rgba(21, 94, 117, 0.95);
+  border-color: rgba(103, 232, 249, 0.76);
+  color: #ecfeff;
+}
+
 .board-preview-3d__deck-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.42;

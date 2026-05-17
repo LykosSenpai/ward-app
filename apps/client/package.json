@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:embed-harness": "vite --open /embed-host-harness.html",
+    "build:card-image-manifest": "node scripts/buildCardImageManifest.mjs",
     "build": "pnpm check && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

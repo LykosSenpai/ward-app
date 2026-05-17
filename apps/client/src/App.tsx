@@ -35,6 +35,7 @@ import { ModalPanel } from "./components/ui/ModalPanel";
 import type { CardArtKey } from "./components/CardImagePreview";
 import { socket } from "./socket";
 import { API_BASE_URL } from "./config";
+import { applyMatchDelta } from "./matchDelta";
 import {
   parseEmbedMode,
   parseEmbedParentOrigin,
@@ -63,6 +64,7 @@ import type {
   LlmPhase4ReportSummary,
   LlmRegressionScenarioSummary,
   LlmServiceStatus,
+  MatchDeltaPayload,
   MatchLobby,
   MarketplaceTransaction,
   ManualEffectDurationType,
@@ -295,6 +297,7 @@ export default function App() {
   const [llmDirectTestResults, setLlmDirectTestResults] = useState<Record<string, LlmDirectEffectSmokeTestResult>>({});
   const [llmBusy, setLlmBusy] = useState(false);
   const [featureFlags, setFeatureFlags] = useState<ServerFeatureFlag[]>([]);
+  const lastRequestedCardLibraryKeyRef = useMemo(() => ({ current: "" }), []);
   const canUseDevTools = !!authUser?.devToolsEnabled;
   const updateFeatureRollout = async (key: ServerFeatureFlag["key"], enabledForPlayers: boolean): Promise<void> => {
     await new Promise<void>((resolve, reject) => {
@@ -553,6 +556,23 @@ export default function App() {
       setError("");
     });
 
+    socket.on("match:delta", (data: MatchDeltaPayload) => {
+      setMatch(currentMatch => {
+        if (!currentMatch || currentMatch.matchId !== data.matchId) {
+          socket.emit("match:requestState", data.matchId);
+          return currentMatch;
+        }
+
+        try {
+          return applyMatchDelta(currentMatch, data);
+        } catch {
+          socket.emit("match:requestState", data.matchId);
+          return currentMatch;
+        }
+      });
+      setError("");
+    });
+
     socket.on("match:error", (data: { message: string }) => {
       setError(data.message);
       setLlmBusy(false);
@@ -565,6 +585,15 @@ export default function App() {
 
     socket.on("match:saved", (data: { message: string; matchId: string }) => {
       setSaveMessage(data.message);
+    });
+
+    socket.on("match:closed", (data: { message: string; matchId: string; saved?: boolean }) => {
+      setSaveMessage(data.message);
+      setDashboardModal(null);
+      setActiveLobby(undefined);
+      setMatch(currentMatch => currentMatch?.matchId === data.matchId ? null : currentMatch);
+      socket.emit("match:listSaved");
+      socket.emit("lobby:list");
     });
 
     socket.on("match:deleted", (data: { message: string; matchId: string }) => {
@@ -608,11 +637,6 @@ export default function App() {
     socket.on("setup:options", (data: SetupOptions) => {
       setCardPacks(data.cardPacks);
       setDecks(data.decks);
-
-      const defaultPackIds = data.cardPacks.map(pack => pack.id);
-      if (defaultPackIds.length > 0) {
-        socket.emit("cards:listForPacks", { packIds: defaultPackIds });
-      }
 
       setSelectedPackIds(current => {
         const validPackIds = data.cardPacks.map(pack => pack.id);
@@ -879,9 +903,11 @@ export default function App() {
       socket.off("server:welcome");
       socket.off("connect");
       socket.off("match:state");
+      socket.off("match:delta");
       socket.off("match:error");
       socket.off("match:savedList");
       socket.off("match:saved");
+      socket.off("match:closed");
       socket.off("match:deleted");
       socket.off("match:bulkDeleted");
       socket.off("setup:options");
@@ -923,13 +949,45 @@ export default function App() {
   useEffect(() => {
     if (selectedPackIds.length === 0) {
       setCardLibrary([]);
+      lastRequestedCardLibraryKeyRef.current = "";
       return;
     }
 
-    socket.emit("cards:listForPacks", {
-      packIds: selectedPackIds
-    });
-  }, [selectedPackIds]);
+    const needsCardLibrary = Boolean(match) ||
+      activePage === "card-library" ||
+      activePage === "deck-library" ||
+      activePage === "marketplace" ||
+      (canUseDevTools && (activePage === "effect-dev" || activePage === "effect-coverage" || activePage === "llm-tests" || activePage === "board-preview"));
+
+    if (!needsCardLibrary) {
+      return;
+    }
+
+    const requestKey = [...selectedPackIds].sort().join("|");
+    if (lastRequestedCardLibraryKeyRef.current === requestKey && cardLibrary.length > 0) {
+      return;
+    }
+
+    lastRequestedCardLibraryKeyRef.current = requestKey;
+    socket.emit("cards:listForPacks", { packIds: selectedPackIds });
+  }, [activePage, canUseDevTools, cardLibrary.length, match, selectedPackIds]);
+
+  useEffect(() => {
+    if (activePage === "deck-library") {
+      socket.emit("deck:listDetails");
+    }
+
+    if (activePage === "card-library") {
+      socket.emit("collection:listOwnership");
+    }
+
+    const watchSavedMatches = activePage === "saved-matches" || dashboardModal === "save-load";
+    if (watchSavedMatches) {
+      socket.emit("match:listSaved");
+    } else {
+      socket.emit("match:unwatchSaved");
+    }
+  }, [activePage, dashboardModal]);
 
   useEffect(() => {
     if (!canUseDevTools) {
@@ -955,11 +1013,8 @@ export default function App() {
 
 
   function requestInitialData() {
-    socket.emit("match:listSaved");
     socket.emit("setup:listOptions");
-    socket.emit("deck:listDetails");
     socket.emit("lobby:list");
-    socket.emit("collection:listOwnership");
     if (canUseDevTools) {
       socket.emit("llm:getStatus");
     }
@@ -1399,6 +1454,18 @@ export default function App() {
   function saveCurrentMatch() {
     if (!match) return;
     socket.emit("match:saveCurrent", match.matchId);
+  }
+
+  function saveAndQuitCurrentMatch() {
+    if (!match) return;
+
+    const confirmed = window.confirm("Save this match and quit the live board? You can reload it later from Saved Matches.");
+    if (!confirmed) return;
+
+    setDashboardModal(null);
+    setError("");
+    setSaveMessage("Saving match...");
+    socket.emit("match:saveAndQuit", match.matchId);
   }
 
   function undoLastAction() {
@@ -2502,6 +2569,7 @@ export default function App() {
                       onApplyEffectRoll={applyEffectRoll}
                       onSkipEffectRoll={skipEffectRoll}
                       onOpenBoardReport={() => setDashboardModal("board-report")}
+                      onSaveAndQuit={saveAndQuitCurrentMatch}
                       intentLabel={lastBoardIntentLabel}
                       commandLabel={lastBoardCommandLabel}
                       onIntent={(intent: PointerGestureIntent) => {
