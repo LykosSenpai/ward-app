@@ -795,6 +795,37 @@
   gap: 0.25rem;
 }
 
+.profile-two-factor-setup {
+  align-items: start;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.profile-two-factor-qr-frame {
+  aspect-ratio: 1;
+  background: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 7px;
+  display: grid;
+  max-width: 12rem;
+  padding: 0.55rem;
+  place-items: center;
+  width: min(100%, 12rem);
+}
+
+.profile-two-factor-qr {
+  display: block;
+  height: 100%;
+  image-rendering: pixelated;
+  width: 100%;
+}
+
+.profile-two-factor-setup span {
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
 .profile-readonly-grid {
   gap: 0.36rem 0.65rem;
   grid-template-columns: max-content minmax(0, 1fr);
