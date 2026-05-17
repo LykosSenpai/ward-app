@@ -12231,3 +12231,49 @@ button:disabled:hover {
     flex-direction: column;
   }
 }
+
+.marketplace-dashboard-page {
+  --marketplace-blue: #36a4ff;
+  --marketplace-purple: #9f63ff;
+  --marketplace-panel: rgba(5, 15, 34, 0.86);
+}
+
+.marketplace-dashboard-topnav {
+  backdrop-filter: blur(8px);
+}
+
+.marketplace-right-panel {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+}
+
+.marketplace-right-panel h4 {
+  margin: 0;
+}
+
+.marketplace-want-progress {
+  background: rgba(2, 6, 23, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  height: 0.6rem;
+  overflow: hidden;
+}
+
+.marketplace-want-progress-bar {
+  background: linear-gradient(90deg, #8b5cf6, #22d3ee);
+  height: 100%;
+}
+
+.marketplace-toggle-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  font-size: 0.85rem;
+  color: #dbeafe;
+}
+
+.marketplace-toggle-row input {
+  accent-color: #8b5cf6;
+}

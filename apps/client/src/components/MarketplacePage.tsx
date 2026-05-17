@@ -393,7 +393,7 @@ function MatchPanel({
 
   return (
     <aside className="marketplace-dashboard-side marketplace-card marketplace-match-panel">
-      <div className="marketplace-section-kicker">Match Discovery</div>
+      <div className="marketplace-section-kicker">Matches</div>
       <h3>People Who Have / Need Your Cards</h3>
       <div className="marketplace-match-tabs" role="tablist" aria-label="Marketplace match filters">
         {tabs.map(tab => (
@@ -428,6 +428,25 @@ function MatchPanel({
           ))}
         </div>
       )}
+      <section className="marketplace-right-panel marketplace-card">
+        <div className="marketplace-list-heading-row">
+          <h4>Your Want List Overview</h4>
+          <span>{items.length} cards</span>
+        </div>
+        <div className="marketplace-want-progress">
+          <div className="marketplace-want-progress-bar" style={{ width: `${Math.min(88, 28 + items.length * 5)}%` }} />
+        </div>
+        <p className="subtitle">Top priority wants are surfaced first in your match queue.</p>
+      </section>
+      <section className="marketplace-right-panel marketplace-card">
+        <h4>Trading Tools</h4>
+        <label className="marketplace-toggle-row"><span>Auto-Match Alerts</span><input type="checkbox" checked readOnly /></label>
+        <label className="marketplace-toggle-row"><span>Price Tracker</span><input type="checkbox" checked readOnly /></label>
+        <div className="marketplace-filter-note">
+          <strong>Payments & Shipping</strong>
+          <span>Disabled by feature flags in this release. Trading + messaging only.</span>
+        </div>
+      </section>
     </aside>
   );
 }
@@ -450,7 +469,7 @@ function MyPostedCardsTable({
       <div className="marketplace-list-heading-row">
         <div>
           <div className="marketplace-section-kicker">My Posted Cards</div>
-          <h3>Current User's Posted Cards</h3>
+          <h3>My Posted Cards</h3>
         </div>
         <span>{posts.length} post{posts.length === 1 ? "" : "s"}</span>
       </div>
@@ -761,7 +780,7 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
         <main className="marketplace-live-listings">
           <div className="marketplace-list-heading-row">
             <div>
-              <div className="marketplace-section-kicker">Public Posts</div>
+              <div className="marketplace-section-kicker">Active WARD Listings</div>
               <h3>Live Trade & Marketplace Listings</h3>
             </div>
             <span>{filteredOtherPosts.length === visibleOtherPosts.length ? visibleOtherPosts.length : `${filteredOtherPosts.length}/${visibleOtherPosts.length}`}</span>
