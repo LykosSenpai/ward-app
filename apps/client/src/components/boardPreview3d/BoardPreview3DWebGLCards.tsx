@@ -2,9 +2,8 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../../clientTypes";
-import { createZeroCardVariantDataUrl } from "../../utils/zeroCardFilter";
 import type { BoardObject } from "../boardPreview3dAdapter";
-import { getBaseArtKey, normalizeCardArtKey } from "../CardImagePreview";
+import { normalizeCardArtKey } from "../CardImagePreview";
 import { getMatchCardImageUrls } from "../MatchCardImage";
 
 type BoardPreview3DWebGLCardsProps = {
@@ -196,29 +195,6 @@ function createHolographicCardTexture(baseTexture: THREE.Texture, renderer: THRE
   return configureTexture(new THREE.CanvasTexture(canvas), renderer);
 }
 
-async function loadGeneratedZeroCardTexture(urls: string[], loader: THREE.TextureLoader, renderer: THREE.WebGLRenderer): Promise<THREE.Texture | null> {
-  for (const url of urls) {
-    try {
-      const cacheKey = `generated-zero:${url}`;
-      let cached = cardTextureCache.get(cacheKey);
-      if (!cached) {
-        cached = createZeroCardVariantDataUrl(url)
-          .then(dataUrl => loader.loadAsync(dataUrl))
-          .then(texture => configureTexture(texture, renderer))
-          .catch(() => null);
-        cardTextureCache.set(cacheKey, cached);
-      }
-
-      const texture = await cached;
-      if (texture) return texture;
-    } catch {
-      // Try the next regular-art candidate as the Zero generation source.
-    }
-  }
-
-  return null;
-}
-
 async function loadCardTextureForCard(
   match: AppMatchState,
   card: CardInstance,
@@ -227,9 +203,7 @@ async function loadCardTextureForCard(
 ): Promise<THREE.Texture | null> {
   const artKey = normalizeCardArtKey(card.artKey);
   const holoEnabled = artKey === "holo" || artKey === "zero-art-holo";
-  const baseTexture = getBaseArtKey(artKey) === "zero-art"
-    ? await loadGeneratedZeroCardTexture(getMatchCardImageUrls(match, card, "default"), loader, renderer)
-    : await loadCardTexture(getMatchCardImageUrls(match, card), loader, renderer);
+  const baseTexture = await loadCardTexture(getMatchCardImageUrls(match, card), loader, renderer);
 
   if (!baseTexture || !holoEnabled) {
     return baseTexture;

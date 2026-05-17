@@ -1,6 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
-import { useZeroCardSrc } from "../hooks/useZeroCardSrc";
 import { HolographicCardImage } from "./HolographicCardImage";
 import { ModalPanel } from "./ui/ModalPanel";
 
@@ -215,24 +214,15 @@ function ExpandedCardImage({
   onArtChange
 }: ExpandedCardImageProps) {
   const [expandedCandidateIndex, setExpandedCandidateIndex] = useState(0);
-  const [expandedZeroFallbackCandidateIndex, setExpandedZeroFallbackCandidateIndex] = useState(0);
   const imageArtKey = getBaseArtKey(activeArtKey);
   const imageCandidates = useMemo(
     () => getImageCandidates(card, imageArtKey),
     [card, imageArtKey]
   );
-  const imageCandidate = imageArtKey === "zero-art" ? undefined : imageCandidates[expandedCandidateIndex];
-  const defaultImageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
-  const defaultImageCandidate = defaultImageCandidates[expandedZeroFallbackCandidateIndex];
-  const selectedImageSrc = imageCandidate?.url;
-  const regularImageSrc = defaultImageCandidate?.url;
-  const shouldGenerateZero = imageArtKey === "zero-art" && Boolean(regularImageSrc);
-  const generatedZeroSrc = useZeroCardSrc(regularImageSrc, shouldGenerateZero);
-  const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : selectedImageSrc;
+  const displayImageSrc = imageCandidates[expandedCandidateIndex]?.url;
 
   useEffect(() => {
     setExpandedCandidateIndex(0);
-    setExpandedZeroFallbackCandidateIndex(0);
   }, [card.id, imageArtKey]);
 
   return (
@@ -247,11 +237,6 @@ function ExpandedCardImage({
           intensity={holoIntensity}
           className="expanded-card-holo-image"
           onError={() => {
-            if (shouldGenerateZero) {
-              setExpandedZeroFallbackCandidateIndex(current => current + 1);
-              return;
-            }
-
             setExpandedCandidateIndex(current => current + 1);
           }}
         />
@@ -290,22 +275,13 @@ function ExpandedCardImage({
 
 export function CardImageThumbnail({ card, className, artKey = "default", holoIntensity = 0.55 }: CardImageThumbnailProps) {
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const [zeroFallbackCandidateIndex, setZeroFallbackCandidateIndex] = useState(0);
   const imageArtKey = getBaseArtKey(artKey);
   const holoEnabled = isHoloArtKey(artKey);
   const imageCandidates = useMemo(() => getImageCandidates(card, imageArtKey), [card, imageArtKey]);
-  const defaultImageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
-  const imageCandidate = imageArtKey === "zero-art" ? undefined : imageCandidates[candidateIndex];
-  const defaultImageCandidate = defaultImageCandidates[zeroFallbackCandidateIndex];
-  const selectedImageSrc = imageCandidate?.url;
-  const regularImageSrc = defaultImageCandidate?.url;
-  const shouldGenerateZero = imageArtKey === "zero-art" && Boolean(regularImageSrc);
-  const generatedZeroSrc = useZeroCardSrc(regularImageSrc, shouldGenerateZero);
-  const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : selectedImageSrc;
+  const displayImageSrc = imageCandidates[candidateIndex]?.url;
 
   useEffect(() => {
     setCandidateIndex(0);
-    setZeroFallbackCandidateIndex(0);
   }, [card.id, imageArtKey]);
 
   if (!displayImageSrc) {
@@ -326,11 +302,6 @@ export function CardImageThumbnail({ card, className, artKey = "default", holoIn
         enabled={holoEnabled}
         intensity={holoIntensity}
         onError={() => {
-          if (shouldGenerateZero) {
-            setZeroFallbackCandidateIndex(current => current + 1);
-            return;
-          }
-
           setCandidateIndex(current => current + 1);
         }}
       />
@@ -341,7 +312,6 @@ export function CardImageThumbnail({ card, className, artKey = "default", holoIn
 export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, onSelectedArtKeyChange }: CardImagePreviewProps) {
   const [internalSelectedArtKey, setInternalSelectedArtKey] = useState<CardArtKey>("default");
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const [zeroFallbackCandidateIndex, setZeroFallbackCandidateIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const activeArtKey = selectedArtKey ?? internalSelectedArtKey;
@@ -354,11 +324,9 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
     () => getImageCandidates(card, imageArtKey),
     [card, imageArtKey]
   );
-  const defaultImageCandidates = useMemo(() => getImageCandidates(card, "default"), [card]);
 
   useEffect(() => {
     setCandidateIndex(0);
-    setZeroFallbackCandidateIndex(0);
   }, [card.id, imageArtKey]);
 
   useEffect(() => {
@@ -367,7 +335,6 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
 
   function handleArtChange(nextArtKey: CardArtKey) {
     setCandidateIndex(0);
-    setZeroFallbackCandidateIndex(0);
 
     if (onSelectedArtKeyChange) {
       onSelectedArtKeyChange(nextArtKey);
@@ -377,13 +344,7 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
     setInternalSelectedArtKey(nextArtKey);
   }
 
-  const imageCandidate = baseArtKey === "zero-art" ? undefined : imageCandidates[candidateIndex];
-  const defaultImageCandidate = defaultImageCandidates[zeroFallbackCandidateIndex];
-  const selectedImageSrc = imageCandidate?.url;
-  const regularImageSrc = defaultImageCandidate?.url;
-  const shouldGenerateZero = baseArtKey === "zero-art" && Boolean(regularImageSrc);
-  const generatedZeroSrc = useZeroCardSrc(regularImageSrc, shouldGenerateZero);
-  const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : selectedImageSrc;
+  const displayImageSrc = imageCandidates[candidateIndex]?.url;
   const primaryExpectedFileName = imageCandidates[0]?.fileName ?? `${card.id}.webp`;
   const selectedArtLabel = getCardArtLabel(activeArtKey);
 
@@ -404,11 +365,6 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
               enabled={holoEnabled}
               intensity={holoIntensity}
               onError={() => {
-                if (shouldGenerateZero) {
-                  setZeroFallbackCandidateIndex(current => current + 1);
-                  return;
-                }
-
                 setCandidateIndex(current => current + 1);
               }}
             />

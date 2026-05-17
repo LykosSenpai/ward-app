@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import { getCardName } from "../gameViewHelpers";
-import { useZeroCardSrc } from "../hooks/useZeroCardSrc";
 import type { CardArtKey } from "./CardImagePreview";
 import { getBaseArtKey, isHoloArtKey, normalizeCardArtKey } from "./CardImagePreview";
 import { HolographicCardImage } from "./HolographicCardImage";
@@ -56,24 +55,16 @@ export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance, 
 
 export function MatchCardImage({ match, card, className }: MatchCardImageProps) {
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const [zeroFallbackCandidateIndex, setZeroFallbackCandidateIndex] = useState(0);
   const artKey = normalizeCardArtKey(card.artKey);
-  const imageArtKey = getBaseArtKey(artKey);
   const holoEnabled = isHoloArtKey(artKey);
   const imageUrls = useMemo(() => getMatchCardImageUrls(match, card), [match, card]);
-  const regularImageUrls = useMemo(() => getMatchCardImageUrls(match, card, "default"), [match, card]);
-  const imageUrl = imageArtKey === "zero-art" ? undefined : imageUrls[candidateIndex];
-  const regularImageUrl = regularImageUrls[zeroFallbackCandidateIndex];
-  const shouldGenerateZero = imageArtKey === "zero-art" && Boolean(regularImageUrl);
-  const generatedZeroSrc = useZeroCardSrc(regularImageUrl, shouldGenerateZero);
-  const displayImageSrc = shouldGenerateZero ? generatedZeroSrc : imageUrl;
+  const displayImageSrc = imageUrls[candidateIndex];
   const cardName = getCardName(match, card);
   const classNames = ["match-card-art", className].filter(Boolean).join(" ");
 
   useEffect(() => {
     setCandidateIndex(0);
-    setZeroFallbackCandidateIndex(0);
-  }, [card.cardId, card.instanceId, imageArtKey]);
+  }, [card.cardId, card.instanceId, artKey]);
 
   if (!displayImageSrc) {
     return (
@@ -94,11 +85,6 @@ export function MatchCardImage({ match, card, className }: MatchCardImageProps) 
         enabled={holoEnabled}
         intensity={0.55}
         onError={() => {
-          if (shouldGenerateZero) {
-            setZeroFallbackCandidateIndex(current => current + 1);
-            return;
-          }
-
           setCandidateIndex(current => current + 1);
         }}
       />

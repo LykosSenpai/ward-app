@@ -16,8 +16,8 @@ gen3_150_example_card.webp
 The client checks these extensions in order:
 
 ```text
-.webp
 .png
+.webp
 .jpg
 .jpeg
 ```
@@ -57,3 +57,21 @@ gen1_001 blue dragon__alt-1.png
 ```
 
 The Card Library art selector currently exposes Default plus Alt 1 through Alt 4.
+
+## Zero card image naming
+
+Zero cards are loaded as raw card image files. Use the same base stem as the default card image plus `__zero-art`:
+
+```text
+gen1_001_blue_dragon__zero-art.png
+gen2_140_green_dragon__zero-art.png
+gen3_057_steam_angel__zero-art.png
+```
+
+The client also accepts these Zero suffix aliases:
+
+```text
+__zero-art
+__zero_art
+__zeroart
+```
