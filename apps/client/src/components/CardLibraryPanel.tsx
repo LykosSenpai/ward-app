@@ -40,7 +40,7 @@ const FIXED_HOLO_INTENSITY = 10;
 const INITIAL_VISIBLE_CARD_COUNT = 72;
 const VISIBLE_CARD_INCREMENT = 72;
 const FLOATING_CONTROLS_MARGIN = 8;
-const FLOATING_CONTROLS_DEFAULT_WIDTH = 276;
+const FLOATING_CONTROLS_DEFAULT_WIDTH = 320;
 const FLOATING_CONTROLS_DEFAULT_HEIGHT = 184;
 
 type FloatingControlsPosition = {
@@ -890,31 +890,35 @@ export function CardLibraryPanel({
     const tournamentLimitStatus = getTournamentLimitStatus(card);
 
     return (
-      <>
-        <div className="library-option-a-variant-controls" aria-label={`${card.name} art variant controls`}>
-          <label className="library-option-a-art-control">
-            Art
-            <select
-              value={getBaseArtKey(selectedArtKey)}
-              onChange={event => setSelectedArtKey(card.id, composeArtKey(event.target.value as "default" | "zero-art", selectedIsHolo))}
-            >
-              {getBaseArtOptionsForCard(card).map(option => (
-                <option value={option.key} key={option.key}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-          <label className="library-option-a-holo-toggle">
-            <input
-              type="checkbox"
-              checked={selectedIsHolo}
-              onChange={event => setSelectedArtKey(card.id, composeArtKey(getBaseArtKey(selectedArtKey), event.target.checked))}
-            />
-            <span>Holo</span>
-          </label>
+      <div className="library-option-a-expanded-controls-grid">
+        <div className="library-option-a-expanded-cell library-option-a-expanded-cell-art">
+          <div className="library-option-a-variant-controls" aria-label={`${card.name} art variant controls`}>
+            <div className="library-option-a-art-control">
+              <span className="library-option-a-art-control-title">Art</span>
+              <div className="library-option-a-art-control-row">
+                <select
+                  value={getBaseArtKey(selectedArtKey)}
+                  onChange={event => setSelectedArtKey(card.id, composeArtKey(event.target.value as "default" | "zero-art", selectedIsHolo))}
+                  aria-label={`${card.name} art style`}
+                >
+                  {getBaseArtOptionsForCard(card).map(option => (
+                    <option value={option.key} key={option.key}>{option.label}</option>
+                  ))}
+                </select>
+                <label className="library-option-a-holo-toggle">
+                  <input
+                    type="checkbox"
+                    checked={selectedIsHolo}
+                    onChange={event => setSelectedArtKey(card.id, composeArtKey(getBaseArtKey(selectedArtKey), event.target.checked))}
+                  />
+                  <span>Holo</span>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="library-option-a-limit-add-row">
-          <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
+        <div className="library-option-a-expanded-cell library-option-a-expanded-cell-status">
           {canUseDevTools && onSaveCardLimit ? (
             <label className="library-option-a-limit-editor" title={card.deckLimitReason ?? "Tournament limit status"}>
               <span>Tournament</span>
@@ -928,6 +932,11 @@ export function CardLibraryPanel({
               </select>
             </label>
           ) : null}
+          <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
+        </div>
+
+        <div className="library-option-a-expanded-cell library-option-a-expanded-cell-marketplace">
+          <span className="library-option-a-expanded-cell-label">Trade</span>
           <button
             type="button"
             className="library-option-a-marketplace-action"
@@ -946,6 +955,9 @@ export function CardLibraryPanel({
           >
             Have
           </button>
+        </div>
+
+        <div className="library-option-a-expanded-cell library-option-a-expanded-cell-deck">
           <button
             type="button"
             className="library-option-a-mini-deck-add"
@@ -954,51 +966,53 @@ export function CardLibraryPanel({
             title="Add 1 copy to the current deck. You can also drag this card."
             aria-label={`Add one ${getCardArtLabel(selectedArtKey)} copy of ${card.name} to the current deck`}
           >
-            Add
+            ADD TO DECK
           </button>
+          {onOpenMarketplaceOverride ? (
+            <button
+              type="button"
+              className="library-option-a-mini-deck-add library-option-a-override-action"
+              onClick={() => onOpenMarketplaceOverride(card.id)}
+              title="Open marketplace override settings for this card"
+            >
+              Override
+            </button>
+          ) : null}
         </div>
 
-        <div className="library-option-a-ownership-grid" aria-label={`${card.name} selected variant ownership controls`}>
-          <div className="copy-stepper labeled-stepper art-owned-stepper">
-            <span title={`Player-owned ${selectedOwnershipLabel} copies`}>
-              Owned {selectedOwnershipLabel}
-            </span>
-            <button
-              type="button"
-              onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, Math.max(0, selectedOwnedCount - 1))}
-              disabled={selectedOwnedCount === 0}
-              aria-label={`Remove one player-owned ${selectedOwnershipLabel} copy of ${card.name}`}
-              title={`Remove one player-owned ${selectedOwnershipLabel} copy`}
-            >
-              -
-            </button>
-            <input
-              value={selectedOwnedCount}
-              onChange={event => setArtOwnedCopiesFromInput(card.id, effectivePreviewVariant, event.target.value)}
-              aria-label={`${card.name} player-owned ${selectedOwnershipLabel} copies`}
-              title={`Player-owned ${selectedOwnershipLabel} copies`}
-            />
-            <button
-              type="button"
-              onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, selectedOwnedCount + 1)}
-              aria-label={`Add one player-owned ${selectedOwnershipLabel} copy of ${card.name}`}
-              title={`Add one player-owned ${selectedOwnershipLabel} copy`}
-            >
-              +
-            </button>
+        <div className="library-option-a-expanded-cell library-option-a-expanded-owned-row">
+          <div className="library-option-a-ownership-grid" aria-label={`${card.name} selected variant ownership controls`}>
+            <div className="copy-stepper labeled-stepper art-owned-stepper">
+              <span title={`Player-owned ${selectedOwnershipLabel} copies`}>
+                Owned {selectedOwnershipLabel}
+              </span>
+              <button
+                type="button"
+                onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, Math.max(0, selectedOwnedCount - 1))}
+                disabled={selectedOwnedCount === 0}
+                aria-label={`Remove one player-owned ${selectedOwnershipLabel} copy of ${card.name}`}
+                title={`Remove one player-owned ${selectedOwnershipLabel} copy`}
+              >
+                -
+              </button>
+              <input
+                value={selectedOwnedCount}
+                onChange={event => setArtOwnedCopiesFromInput(card.id, effectivePreviewVariant, event.target.value)}
+                aria-label={`${card.name} player-owned ${selectedOwnershipLabel} copies`}
+                title={`Player-owned ${selectedOwnershipLabel} copies`}
+              />
+              <button
+                type="button"
+                onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, selectedOwnedCount + 1)}
+                aria-label={`Add one player-owned ${selectedOwnershipLabel} copy of ${card.name}`}
+                title={`Add one player-owned ${selectedOwnershipLabel} copy`}
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
-        {onOpenMarketplaceOverride ? (
-          <button
-            type="button"
-            className="library-option-a-mini-deck-add library-option-a-override-action"
-            onClick={() => onOpenMarketplaceOverride(card.id)}
-            title="Open marketplace override settings for this card"
-          >
-            Override
-          </button>
-        ) : null}
-      </>
+      </div>
     );
   }
 
