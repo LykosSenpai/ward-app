@@ -50,6 +50,7 @@ type Props = {
   onPlayHandCardToSlot?: (slotId: string) => void;
   onDropHandCardToSlot?: (slotId: string, cardInstanceId: string) => void;
   onSelectPiece?: (pieceId: string) => void;
+  onInspectRelatedCard?: (cardInstanceId: string) => void;
   onDeckStackContextMenu?: (owner: "player_1" | "player_2") => void;
   onSelectHandCard?: (cardInstanceId: string) => void;
   onHandCardDragStart?: (cardInstanceId: string) => void;
@@ -280,7 +281,7 @@ function AttackStreamCanvas({
   return <canvas ref={canvasRef} className="board-preview-3d__attack-fx-canvas" aria-hidden="true" />;
 }
 
-export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onDropBattleAttackerToPiece, onDropEquipMagicToPiece, onDropEffectSourceToPiece, onDropEffectSourceToSlot, onCemeteryStackClick, draggableHandCardIds, draggableBattleAttackerCardIds, draggableEquipMagicCardIds, validBattleTargetPieceIds, validEquipTargetPieceIds, validEffectTargetPieceIds, validEffectTargetSlotIds, effectSourcePieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, equipAttachSourcePieceIds, battleSpeedBadges, diceRollVisual, attackAnimation, activeEventType, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
+export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onInspectRelatedCard, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onDropBattleAttackerToPiece, onDropEquipMagicToPiece, onDropEffectSourceToPiece, onDropEffectSourceToSlot, onCemeteryStackClick, draggableHandCardIds, draggableBattleAttackerCardIds, draggableEquipMagicCardIds, validBattleTargetPieceIds, validEquipTargetPieceIds, validEffectTargetPieceIds, validEffectTargetSlotIds, effectSourcePieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, equipAttachSourcePieceIds, battleSpeedBadges, diceRollVisual, attackAnimation, activeEventType, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
   const highlightedSet = new Set(highlightedSlotIds ?? []);
   const highlightedPieceSet = new Set(highlightedPieceIds ?? []);
   const draggableHandCardSet = new Set(draggableHandCardIds ?? []);
@@ -320,6 +321,11 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
     Array.from(types).includes("application/x-ward-board-effect-source");
   const inspectedFieldCardId = pinnedFieldCardId ?? hoveredFieldCardId;
   const inspectedFieldCard = inspectedFieldCardId ? cardByInstanceId.get(inspectedFieldCardId) ?? null : null;
+  const focusRelatedCard = (cardInstanceId: string) => {
+    setPinnedFieldCardId(cardInstanceId);
+    setHoveredFieldCardId(null);
+    onInspectRelatedCard?.(cardInstanceId);
+  };
   const visibleSlots = BOARD_SLOTS.filter(slot => {
     if (highlightedSet.has(slot.id)) return true;
     if (slot.id.includes("-primary")) return visibleSlotLayers.primary;
@@ -672,6 +678,7 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
           detailsExpanded={inspectorDetailsExpanded}
           match={match}
           onClose={pinnedFieldCardId ? () => setPinnedFieldCardId(null) : undefined}
+          onRelatedCardFocus={focusRelatedCard}
           onToggleDetails={() => setInspectorDetailsExpanded(current => !current)}
           pinned={Boolean(pinnedFieldCardId)}
         />

@@ -3992,6 +3992,69 @@
   width: 100%;
 }
 
+.board-preview-3d__card-inspector-attachments {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(125, 211, 252, 0.26);
+  border-radius: 7px;
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+}
+
+.board-preview-3d__card-inspector-attachments > span {
+  color: #fef3c7;
+  font-size: 0.64rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.board-preview-3d__card-inspector-attachments button {
+  background: rgba(2, 6, 23, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 6px;
+  color: #e2e8f0;
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  min-height: 34px;
+  min-width: 0;
+  padding: 6px 7px;
+  text-align: left;
+}
+
+.board-preview-3d__card-inspector-attachments button:not(:disabled):hover,
+.board-preview-3d__card-inspector-attachments button:not(:disabled):focus-visible {
+  background: rgba(14, 116, 144, 0.28);
+  border-color: rgba(125, 211, 252, 0.68);
+}
+
+.board-preview-3d__card-inspector-attachments strong,
+.board-preview-3d__card-inspector-attachments small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.board-preview-3d__card-inspector-attachments strong {
+  color: #f8fafc;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.board-preview-3d__card-inspector-attachments small {
+  color: #bae6fd;
+  font-size: 0.64rem;
+  font-weight: 850;
+}
+
+.board-preview-3d__card-inspector-attachments > small {
+  color: #cbd5e1;
+  font-size: 0.74rem;
+  line-height: 1.2;
+}
+
 .board-preview-3d__card-inspector-stat-wall {
   display: grid;
   gap: 5px;

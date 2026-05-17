@@ -1387,6 +1387,42 @@ function requireSocketCanControlManualBattleStep(socket: { request: unknown }, m
   requireSocketCanControlPlayer(socket, match.matchId, getManualBattleStepControllerPlayerId(match));
 }
 
+function getManualBattleParticipantPlayerIds(match: MatchState): Set<string> {
+  const battle = match.pendingBattle;
+  if (!battle) {
+    return new Set([match.turn.activePlayerId]);
+  }
+
+  return new Set([
+    battle.attackingPlayerId,
+    battle.defendingPlayerId,
+    battle.declaredAttacker.playerId,
+    battle.declaredDefender.playerId,
+    ...battle.strikes.flatMap(strike => [
+      strike.attacker.playerId,
+      strike.defender.playerId
+    ])
+  ].filter((playerId): playerId is string => Boolean(playerId)));
+}
+
+function requireSocketCanFinishManualBattle(socket: { request: unknown }, match: MatchState): void {
+  if (match.pendingBattle?.status !== "COMPLETE") {
+    requireSocketCanControlActivePlayer(socket, match);
+    return;
+  }
+
+  const owners = matchPlayerOwners.get(match.matchId);
+  if (!owners) {
+    return;
+  }
+
+  const ownedPlayerId = getSocketOwnedPlayerId(socket, match.matchId);
+
+  if (!ownedPlayerId || !getManualBattleParticipantPlayerIds(match).has(ownedPlayerId)) {
+    throw new Error("Only a battle participant can finish this completed battle.");
+  }
+}
+
 function requireSocketCanControlEffectRollStep(socket: { request: unknown }, match: MatchState): void {
   const effectRoll = match.pendingEffectRoll;
   if (
@@ -4135,7 +4171,7 @@ io.on("connection", async socket => {
     (data: { matchId: string; battleSessionId: string }) => {
       try {
         const match = getMatchOrThrow(data.matchId);
-        requireSocketCanControlActivePlayer(socket, match);
+        requireSocketCanFinishManualBattle(socket, match);
         pushUndoSnapshot(match);
         const updatedMatch = finishManualBattleSession(match, data.battleSessionId);
 

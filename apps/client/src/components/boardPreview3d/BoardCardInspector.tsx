@@ -62,11 +62,124 @@ type BoardCardInspectorProps = {
   extraHeader?: ReactNode;
   match: AppMatchState;
   onClose?: () => void;
+  onRelatedCardFocus?: (cardInstanceId: string) => void;
   onToggleDetails?: () => void;
   pinned?: boolean;
   showDetails?: boolean;
   children?: ReactNode;
 };
+
+type FieldCardReference = {
+  card: CardInstance;
+  playerId: string;
+  playerName: string;
+  zone: "PRIMARY_CREATURE" | "LIMITED_SUMMON" | "MAGIC_SLOT";
+};
+
+function getFieldCardReferences(match: AppMatchState): FieldCardReference[] {
+  return match.players.flatMap(player => {
+    const references: FieldCardReference[] = [];
+
+    if (player.field.primaryCreature) {
+      references.push({
+        card: player.field.primaryCreature,
+        playerId: player.id,
+        playerName: player.displayName,
+        zone: "PRIMARY_CREATURE"
+      });
+    }
+
+    for (const card of player.field.limitedSummons) {
+      references.push({
+        card,
+        playerId: player.id,
+        playerName: player.displayName,
+        zone: "LIMITED_SUMMON"
+      });
+    }
+
+    for (const card of player.field.magicSlots) {
+      references.push({
+        card,
+        playerId: player.id,
+        playerName: player.displayName,
+        zone: "MAGIC_SLOT"
+      });
+    }
+
+    return references;
+  });
+}
+
+function findFieldCardReference(
+  match: AppMatchState,
+  cardInstanceId?: string
+): FieldCardReference | undefined {
+  if (!cardInstanceId) return undefined;
+  return getFieldCardReferences(match).find(reference => reference.card.instanceId === cardInstanceId);
+}
+
+function BoardCardAttachmentSection({
+  card,
+  match,
+  onRelatedCardFocus
+}: {
+  card: CardInstance;
+  match: AppMatchState;
+  onRelatedCardFocus?: (cardInstanceId: string) => void;
+}) {
+  if (isCreature(match, card)) {
+    const equipment = getFieldCardReferences(match)
+      .filter(reference =>
+        reference.zone === "MAGIC_SLOT" &&
+        reference.card.attachedToInstanceId === card.instanceId
+      );
+
+    return (
+      <div className="board-preview-3d__card-inspector-attachments" aria-label={`${getCardName(match, card)} equipment`}>
+        <span>Equipped cards</span>
+        {equipment.length > 0 ? (
+          equipment.map(reference => (
+            <button
+              type="button"
+              key={reference.card.instanceId}
+              onClick={() => onRelatedCardFocus?.(reference.card.instanceId)}
+              disabled={!onRelatedCardFocus}
+            >
+              <strong>{getCardName(match, reference.card)}</strong>
+              <small>{reference.playerName}</small>
+            </button>
+          ))
+        ) : (
+          <small>No equipped cards</small>
+        )}
+      </div>
+    );
+  }
+
+  if (isMagic(match, card) && card.attachedToInstanceId) {
+    const attachedTarget = findFieldCardReference(match, card.attachedToInstanceId);
+
+    return (
+      <div className="board-preview-3d__card-inspector-attachments" aria-label={`${getCardName(match, card)} attachment`}>
+        <span>Attachment</span>
+        {attachedTarget ? (
+          <button
+            type="button"
+            onClick={() => onRelatedCardFocus?.(attachedTarget.card.instanceId)}
+            disabled={!onRelatedCardFocus}
+          >
+            <strong>Attached to {attachedTarget.playerName}'s {getCardName(match, attachedTarget.card)}</strong>
+          </button>
+        ) : (
+          <small>Attached target not found</small>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
 
 export function BoardCardInspector({
   ariaLabel,
@@ -76,6 +189,7 @@ export function BoardCardInspector({
   extraHeader,
   match,
   onClose,
+  onRelatedCardFocus,
   onToggleDetails,
   pinned = false,
   showDetails = true,
@@ -84,6 +198,7 @@ export function BoardCardInspector({
   const creatureStats = getCreatureOverlayStats(match, card);
   const cardText = getCardText(match, card);
   const canShowDetails = showDetails && Boolean(creatureStats || isMagic(match, card) || cardText);
+  const canShowAttachments = Boolean(onRelatedCardFocus);
   const classes = [
     "board-preview-3d__card-inspector",
     pinned ? "is-pinned" : "",
@@ -106,6 +221,9 @@ export function BoardCardInspector({
       <div className="board-preview-3d__card-inspector-art-wrap">
         <MatchCardImage match={match} card={card} className="board-preview-3d__card-inspector-art" />
       </div>
+      {canShowAttachments ? (
+        <BoardCardAttachmentSection card={card} match={match} onRelatedCardFocus={onRelatedCardFocus} />
+      ) : null}
       {children}
       {canShowDetails && onToggleDetails ? (
         <button

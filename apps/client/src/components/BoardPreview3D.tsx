@@ -1476,19 +1476,38 @@ export function BoardPreview3D({
     }
     return badges;
   }, [boardObjects, pendingBattle]);
+  const completedBattleParticipantPlayerIds = useMemo(() => {
+    if (!pendingBattle || pendingBattle.status !== "COMPLETE") return new Set<string>();
+
+    return new Set([
+      pendingBattle.attackingPlayerId,
+      pendingBattle.defendingPlayerId,
+      pendingBattle.declaredAttacker.playerId,
+      pendingBattle.declaredDefender.playerId,
+      ...pendingBattle.strikes.flatMap(strike => [
+        strike.attacker.playerId,
+        strike.defender.playerId
+      ])
+    ].filter((playerId): playerId is string => Boolean(playerId)));
+  }, [pendingBattle]);
   const battleStepControllerPlayerId = pendingBattle
     ? match.pendingEffectTargetPrompt?.controllerPlayerId ??
       (pendingBattle.status === "AWAITING_SPEED_CHECK" || pendingBattle.status === "COMPLETE"
       ? pendingBattle.attackingPlayerId
       : pendingBattleStrike?.attacker.playerId ?? pendingBattle.attackingPlayerId)
     : null;
-  const canAdvanceBattleResolver = Boolean(
-    battleStepControllerPlayerId &&
-    !match.pendingEffectTargetPrompt &&
-    (!controlledPlayerId || controlledPlayerId === battleStepControllerPlayerId)
-  );
+  const canAdvanceBattleResolver = pendingBattle?.status === "COMPLETE"
+    ? !match.pendingEffectTargetPrompt &&
+      (!controlledPlayerId || completedBattleParticipantPlayerIds.has(controlledPlayerId))
+    : Boolean(
+      battleStepControllerPlayerId &&
+      !match.pendingEffectTargetPrompt &&
+      (!controlledPlayerId || controlledPlayerId === battleStepControllerPlayerId)
+    );
   const battleStepControllerLabel = battleStepControllerPlayerId
-    ? match.players.find(player => player.id === battleStepControllerPlayerId)?.displayName ?? battleStepControllerPlayerId
+    ? pendingBattle?.status === "COMPLETE"
+      ? "either battle participant"
+      : match.players.find(player => player.id === battleStepControllerPlayerId)?.displayName ?? battleStepControllerPlayerId
     : "the current player";
   const diceRollVisual = useMemo(() => getLatestDiceRollVisual(match), [match]);
   const boardDiceRollAction = useMemo<BoardDiceRollAction | null>(() => {
@@ -1869,6 +1888,32 @@ export function BoardPreview3D({
     }
     onPieceFocus?.({ pieceId, source });
   };
+
+  const focusRelatedBoardCard = useCallback((cardInstanceId: string) => {
+    const object = boardObjects.find(item => item.cardInstanceId === cardInstanceId);
+    const card = cardByInstanceId.get(cardInstanceId);
+
+    if (!card) return;
+
+    if (object) {
+      setSelectedSlotId(object.slotId);
+      onPieceFocus?.({ pieceId: object.id, source: "table" });
+    }
+
+    if (object?.lane === "primary" || object?.lane === "limited") {
+      setSelectedCreatureCardId(card.instanceId);
+      setStatusMessage(`Showing ${getCardName(match, card)} and equipped cards.`);
+      return;
+    }
+
+    if (object?.lane === "magic" && card.attachedToInstanceId) {
+      setSelectedCreatureCardId(card.attachedToInstanceId);
+      setStatusMessage(`Showing ${getCardName(match, card)} and attached creature.`);
+      return;
+    }
+
+    setStatusMessage(`Showing ${getCardName(match, card)}.`);
+  }, [boardObjects, cardByInstanceId, match, onPieceFocus]);
 
   const activeEvent = animationQueue.activeEvent;
   useEffect(() => {
@@ -2384,6 +2429,7 @@ export function BoardPreview3D({
               }
             }}
             onSelectPiece={(pieceId) => selectPiece(pieceId, "table")}
+            onInspectRelatedCard={focusRelatedBoardCard}
             onSelectHandCard={(cardInstanceId) => setSelectedHandCardId(current => current === cardInstanceId ? null : cardInstanceId)}
             onHandCardDragStart={(cardInstanceId) => setSelectedHandCardId(cardInstanceId)}
             onToggleSacrificeCard={toggleSacrificeSelection}
