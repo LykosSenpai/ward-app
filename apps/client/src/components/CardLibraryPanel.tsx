@@ -293,42 +293,6 @@ export function CardLibraryPanel({
       );
   }, [cardLibrary, deckBuilderCardArtKeys, deckBuilderCardIds]);
 
-
-  const missingDeckVariants = useMemo(() => {
-    return deckCards
-      .map(({ cardId, artKey, count, card }) => {
-        const ownedCount = ownershipCounts[getCardArtOwnershipKey(cardId, artKey)] ?? 0;
-        const missingCount = Math.max(0, count - ownedCount);
-
-        return {
-          cardId,
-          artKey,
-          requiredCount: count,
-          ownedCount,
-          missingCount,
-          card
-        };
-      })
-      .filter(entry => entry.missingCount > 0)
-      .sort((a, b) => {
-        const generationA = Number.parseInt(`${a.card?.generation ?? ""}`, 10);
-        const generationB = Number.parseInt(`${b.card?.generation ?? ""}`, 10);
-        const normalizedGenerationA = Number.isFinite(generationA) ? generationA : Number.MAX_SAFE_INTEGER;
-        const normalizedGenerationB = Number.isFinite(generationB) ? generationB : Number.MAX_SAFE_INTEGER;
-        if (normalizedGenerationA !== normalizedGenerationB) return normalizedGenerationA - normalizedGenerationB;
-
-        const numberA = `${a.card?.cardNumber ?? ""}`;
-        const numberB = `${b.card?.cardNumber ?? ""}`;
-        const byNumber = numberA.localeCompare(numberB, undefined, { numeric: true });
-        if (byNumber !== 0) return byNumber;
-
-        const byId = a.cardId.localeCompare(b.cardId, undefined, { numeric: true });
-        if (byId !== 0) return byId;
-
-        return getCardArtLabel(a.artKey).localeCompare(getCardArtLabel(b.artKey));
-      });
-  }, [deckCards, ownershipCounts]);
-
   const deckStats = useMemo(() => {
     const creatureCards = deckBuilderCardIds
       .map(cardId => cardLibrary.find(card => card.id === cardId))
@@ -1187,29 +1151,6 @@ export function CardLibraryPanel({
 
             {deckShareMessage && <p className="event-meta">{deckShareMessage}</p>}
           </div>
-
-
-          <div className="library-option-a-details-drawer deck-share-tools-card library-option-a-code-tools library-option-a-deck-rail-codes">
-            <div className="current-deck-header-row library-option-a-current-deck-header">
-              <h4>Missing for Completion</h4>
-              <span>{missingDeckVariants.length} variant{missingDeckVariants.length === 1 ? "" : "s"}</span>
-            </div>
-            {missingDeckVariants.length === 0 ? (
-              <p className="event-meta">All current deck card variants meet required quantity.</p>
-            ) : (
-              <div className="builder-card-list current-deck-list unified-current-deck-list library-option-a-current-deck-list">
-                {missingDeckVariants.map(entry => (
-                  <div className="builder-card-entry current-deck-entry library-option-a-current-deck-entry" key={`missing-${entry.cardId}-${entry.artKey}`}>
-                    <div className="visual-deck-card-copy">
-                      <strong>{entry.card?.cardNumber ?? "?"} · {entry.card?.name ?? entry.cardId} · Gen {entry.card?.generation ?? "?"} · {getCardArtLabel(entry.artKey)}</strong>
-                      <div className="event-meta">Owned: {entry.ownedCount} | Required: {entry.requiredCount} | Missing: {entry.missingCount}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
 
           <div
             className={`current-deck-panel unified-current-deck-panel library-option-a-current-deck-panel ${deckDropActive ? "drag-over" : ""}`}
