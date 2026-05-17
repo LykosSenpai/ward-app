@@ -1194,7 +1194,7 @@ export function EffectDevToolPage({
               value={importString}
               onChange={event => setTestDeckImportStrings(current => ({ ...current, [owner]: event.target.value }))}
               rows={3}
-              placeholder="Paste WARDDECK4SYM:, WARDDECK4:, or WARDDECK3:..."
+              placeholder="Paste WARDDECK4: or WARDDECK3:..."
             />
           </label>
 

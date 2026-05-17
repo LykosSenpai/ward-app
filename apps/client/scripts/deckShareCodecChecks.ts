@@ -18,7 +18,7 @@ function buildDeck(uniqueIds: string[], copiesPerCard: number): string[] {
   return uniqueIds.flatMap(cardId => Array.from({ length: copiesPerCard }, () => cardId));
 }
 
-const symbolicLibrary = [
+const packedLibrary = [
   buildCard("gen1-001", 1, 1),
   buildCard("gen1-002", 1, 2),
   buildCard("gen1-003", 1, 3),
@@ -29,31 +29,6 @@ const symbolicLibrary = [
   buildCard("gen2-008", 2, 8),
   buildCard("gen3-009", 3, 9),
   buildCard("gen3-010", 3, 10)
-];
-
-const symbolicCardIds = buildDeck(symbolicLibrary.map(card => card.id), 3);
-const symbolicCode = encodeWardDeckString({
-  name: "Thirty Card Symbolic Deck",
-  deckId: "thirty-card-symbolic-deck",
-  cardIds: symbolicCardIds
-}, { cardLibrary: symbolicLibrary });
-const symbolicDecoded = decodeWardDeckString(symbolicCode, { cardLibrary: symbolicLibrary });
-
-assert.equal(symbolicCode.startsWith("WARDDECK4SYM:"), true);
-assert.equal(symbolicDecoded.cardIds.length, 30);
-assert.deepEqual(symbolicDecoded.cardIds.toSorted(), symbolicCardIds.toSorted());
-
-const packedLibrary = [
-  buildCard("gen9-001", 9, 1),
-  buildCard("gen9-002", 9, 2),
-  buildCard("gen9-003", 9, 3),
-  buildCard("gen9-004", 9, 4),
-  buildCard("gen9-005", 9, 5),
-  buildCard("gen9-006", 9, 6),
-  buildCard("gen9-007", 9, 7),
-  buildCard("gen9-008", 9, 8),
-  buildCard("gen9-009", 9, 9),
-  buildCard("gen9-010", 9, 10)
 ];
 
 const packedCardIds = buildDeck(packedLibrary.map(card => card.id), 3);
@@ -67,5 +42,35 @@ const packedDecoded = decodeWardDeckString(packedCode, { cardLibrary: packedLibr
 assert.equal(packedCode.startsWith("WARDDECK4:"), true);
 assert.equal(packedDecoded.cardIds.length, 30);
 assert.deepEqual(packedDecoded.cardIds.toSorted(), packedCardIds.toSorted());
+
+const highGenerationPackedLibrary = [
+  buildCard("gen9-001", 9, 1),
+  buildCard("gen9-002", 9, 2),
+  buildCard("gen9-003", 9, 3),
+  buildCard("gen9-004", 9, 4),
+  buildCard("gen9-005", 9, 5),
+  buildCard("gen9-006", 9, 6),
+  buildCard("gen9-007", 9, 7),
+  buildCard("gen9-008", 9, 8),
+  buildCard("gen9-009", 9, 9),
+  buildCard("gen9-010", 9, 10)
+];
+
+const highGenerationPackedCardIds = buildDeck(highGenerationPackedLibrary.map(card => card.id), 3);
+const highGenerationPackedCode = encodeWardDeckString({
+  name: "Thirty Card High Generation Packed Deck",
+  deckId: "thirty-card-high-generation-packed-deck",
+  cardIds: highGenerationPackedCardIds
+}, { cardLibrary: highGenerationPackedLibrary });
+const highGenerationPackedDecoded = decodeWardDeckString(highGenerationPackedCode, { cardLibrary: highGenerationPackedLibrary });
+
+assert.equal(highGenerationPackedCode.startsWith("WARDDECK4:"), true);
+assert.equal(highGenerationPackedDecoded.cardIds.length, 30);
+assert.deepEqual(highGenerationPackedDecoded.cardIds.toSorted(), highGenerationPackedCardIds.toSorted());
+
+assert.throws(
+  () => decodeWardDeckString("WARDDECK4SYM:!ae*Tl!@6De@#PQ#", { cardLibrary: packedLibrary }),
+  /Deck code must start with WARDDECK4:/
+);
 
 console.log("deck share codec checks passed");

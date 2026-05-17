@@ -37,13 +37,11 @@ type DeckShareCodecOptions = {
 export const WARD_DECK_STRING_V1_PREFIX = "WARDDECK1:";
 export const WARD_DECK_STRING_V2_PREFIX = "WARDDECK2:";
 export const WARD_DECK_STRING_PREFIX = "WARDDECK3:";
-export const WARD_DECK_STRING_V4_SYMBOLIC_PREFIX = "WARDDECK4SYM:";
 export const WARD_DECK_STRING_V4_PREFIX = "WARDDECK4:";
 
-export type WardDeckStringFormat = "WARDDECK4SYM" | "WARDDECK4" | "WARDDECK3" | "WARDDECK2" | "WARDDECK1";
+export type WardDeckStringFormat = "WARDDECK4" | "WARDDECK3" | "WARDDECK2" | "WARDDECK1";
 
 const WARD_DECK_STRING_FORMAT_LABELS: Record<WardDeckStringFormat, string> = {
-  WARDDECK4SYM: "WARDDECK4SYM symbolic",
   WARDDECK4: "WARDDECK4 packed",
   WARDDECK3: "WARDDECK3 JSON",
   WARDDECK2: "WARDDECK2 legacy",
@@ -53,7 +51,6 @@ const WARD_DECK_STRING_FORMAT_LABELS: Record<WardDeckStringFormat, string> = {
 export function getWardDeckStringFormat(value: string): WardDeckStringFormat | undefined {
   const trimmed = value.trim();
 
-  if (trimmed.startsWith(WARD_DECK_STRING_V4_SYMBOLIC_PREFIX)) return "WARDDECK4SYM";
   if (trimmed.startsWith(WARD_DECK_STRING_V4_PREFIX)) return "WARDDECK4";
   if (trimmed.startsWith(WARD_DECK_STRING_PREFIX)) return "WARDDECK3";
   if (trimmed.startsWith(WARD_DECK_STRING_V2_PREFIX)) return "WARDDECK2";
@@ -68,7 +65,6 @@ export function getWardDeckStringFormatLabel(value: string): string | undefined 
 
 export function getWardDeckStringAcceptedPrefixesLabel(): string {
   return [
-    WARD_DECK_STRING_V4_SYMBOLIC_PREFIX,
     WARD_DECK_STRING_V4_PREFIX,
     WARD_DECK_STRING_PREFIX,
     WARD_DECK_STRING_V2_PREFIX,
@@ -163,112 +159,6 @@ function decodeCompactArtKey(artKey: unknown): string {
     default: return "default";
   }
 }
-
-
-
-const V4_SYMBOLS_151 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.$*";
-const V4_GEN_CAPTURE_BY_VALUE: Record<number, [string, string]> = {
-  1: ["!", "!"],
-  2: ["@", "@"],
-  3: ["#", "#"],
-  4: ["$", "$"],
-  5: ["%", "%"],
-  6: ["^", "^"],
-  7: ["&", "&"],
-  8: ["(", ")"]
-};
-const V4_GEN_CAPTURE_TO_VALUE = new Map<string, number>(Object.entries(V4_GEN_CAPTURE_BY_VALUE).map(([k, v]) => [v[0], Number(k)]));
-
-function encodeV4SymbolCardNumber(cardNumber: number): string {
-  const normalized = Math.floor(cardNumber);
-  if (!Number.isFinite(normalized) || normalized < 1 || normalized > 151) {
-    throw new Error(`Card number is out of V4 symbolic range: ${cardNumber}`);
-  }
-  return V4_SYMBOLS_151[normalized - 1] ?? "";
-}
-
-function decodeV4SymbolCardNumber(symbol: string): number {
-  const index = V4_SYMBOLS_151.indexOf(symbol);
-  if (index < 0) throw new Error(`Unknown V4 symbolic card token: ${symbol}`);
-  return index + 1;
-}
-
-function buildV4SymbolicFromRefs(cardRefs: string[], cardArtKeys?: string[]): string {
-  const grouped = new Map<number, { n: number; a: string }[]>();
-  for (let i = 0; i < cardRefs.length; i += 1) {
-    const [g36, n36] = String(cardRefs[i] ?? "").split(".");
-    const gen = parseInt(g36 ?? "", 36);
-    const cardNumber = parseInt(n36 ?? "", 36);
-    if (!Number.isInteger(gen) || !Number.isInteger(cardNumber) || cardNumber < 1 || cardNumber > 151 || gen < 1 || gen > 8) {
-      throw new Error("Unable to encode symbolic WARDDECK4 for one or more cards.");
-    }
-    const list = grouped.get(gen) ?? [];
-    list.push({ n: cardNumber, a: encodeCompactArtKey(normalizeShareArtKey(cardArtKeys?.[i])) ?? "" });
-    grouped.set(gen, list);
-  }
-
-  const segments: string[] = [];
-  for (const gen of Array.from(grouped.keys()).sort((a, b) => a - b)) {
-    const capture = V4_GEN_CAPTURE_BY_VALUE[gen];
-    if (!capture) continue;
-    const [open, close] = capture;
-    const cards = grouped.get(gen) ?? [];
-    const defaults: string[] = [];
-    const zeros: string[] = [];
-    const holos: string[] = [];
-    const zeroHolos: string[] = [];
-    for (const card of cards) {
-      const symbol = encodeV4SymbolCardNumber(card.n);
-      if (card.a === "z") zeros.push(symbol);
-      else if (card.a === "h") holos.push(symbol);
-      else if (card.a === "zh") zeroHolos.push(symbol);
-      else defaults.push(symbol);
-    }
-    const body = [
-      defaults.join(""),
-      zeros.length ? `[${zeros.join("")}]` : "",
-      holos.length ? `{${holos.join("")}}` : "",
-      zeroHolos.length ? `<${zeroHolos.join("")}>` : ""
-    ].join("");
-    segments.push(`${open}${body}${close}`);
-  }
-
-  if (segments.length === 0) throw new Error("Unable to encode symbolic WARDDECK4 for this deck.");
-  return `${WARD_DECK_STRING_V4_SYMBOLIC_PREFIX}${segments.join("")}`;
-}
-
-function decodeV4SymbolicToRefs(input: string): { cardRefs: string[]; cardArtKeys?: string[] } {
-  const text = input.trim();
-  const body = text.slice(WARD_DECK_STRING_V4_SYMBOLIC_PREFIX.length);
-  const refs: string[] = [];
-  const arts: string[] = [];
-  let i = 0;
-  while (i < body.length) {
-    const open = body[i];
-    const gen = V4_GEN_CAPTURE_TO_VALUE.get(open);
-    if (!gen) throw new Error("Invalid symbolic WARDDECK4 generation capture.");
-    const close = V4_GEN_CAPTURE_BY_VALUE[gen]?.[1] ?? open;
-    i += 1;
-    let mode: "" | "z" | "h" | "zh" = "";
-    while (i < body.length && body[i] !== close) {
-      const ch = body[i];
-      if (ch === "[") { mode = "z"; i += 1; continue; }
-      if (ch === "{") { mode = "h"; i += 1; continue; }
-      if (ch === "<") { mode = "zh"; i += 1; continue; }
-      if ((mode === "z" && ch === "]") || (mode === "h" && ch === "}") || (mode === "zh" && ch === ">")) { mode = ""; i += 1; continue; }
-      const n = decodeV4SymbolCardNumber(ch);
-      refs.push(`${gen.toString(36)}.${(n).toString(36)}`);
-      arts.push(decodeCompactArtKey(mode));
-      i += 1;
-    }
-    if (body[i] !== close) throw new Error("Unclosed symbolic WARDDECK4 generation capture.");
-    i += 1;
-  }
-  const hasNonDefault = arts.some(a => a !== "default");
-  return { cardRefs: refs, cardArtKeys: hasNonDefault ? arts : undefined };
-}
-
-
 
 function encodeV4PackedFromRefs(cardRefs: string[], cardArtKeys?: string[]): string {
   const cards = cardRefs.map((ref, index) => {
@@ -544,12 +434,6 @@ export function encodeWardDeckString(payload: Omit<WardDeckSharePayload, "v" | "
     const expandedCompactCards = expandCompactCardEntries(compactCardRefEntries, { usesCardRefs: false });
 
     try {
-      return buildV4SymbolicFromRefs(expandedCompactCards.cardIds, expandedCompactCards.cardArtKeys);
-    } catch {
-      // Fall through to packed V4 format when symbolic encoding is not possible.
-    }
-
-    try {
       return encodeV4PackedFromRefs(expandedCompactCards.cardIds, expandedCompactCards.cardArtKeys);
     } catch {
       // Fall through to v3 payload format when packed v4 encoding is not possible.
@@ -589,21 +473,6 @@ export function encodeWardDeckString(payload: Omit<WardDeckSharePayload, "v" | "
 
 export function decodeWardDeckString(value: string, options: DeckShareCodecOptions = {}): WardDeckSharePayload {
   const trimmed = value.trim();
-
-  if (trimmed.startsWith(WARD_DECK_STRING_V4_SYMBOLIC_PREFIX)) {
-    const symbolic = decodeV4SymbolicToRefs(trimmed);
-    const expandedCards = expandCompactCardEntries(symbolic.cardRefs, {
-      cardLibrary: options.cardLibrary,
-      usesCardRefs: true
-    });
-
-    return {
-      v: 1,
-      kind: "WARD_DECK",
-      cardIds: expandedCards.cardIds,
-      cardArtKeys: symbolic.cardArtKeys ?? expandedCards.cardArtKeys
-    };
-  }
 
   if (trimmed.startsWith(WARD_DECK_STRING_V4_PREFIX)) {
     const packed = decodeV4PackedToRefs(trimmed);

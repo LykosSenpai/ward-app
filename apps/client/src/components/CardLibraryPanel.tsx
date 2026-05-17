@@ -1161,7 +1161,7 @@ export function CardLibraryPanel({
 
               <label>
                 {deckImportFormatLabel ? `Import Code (${deckImportFormatLabel})` : "Import Code"}
-                <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={2} placeholder="Paste WARDDECK4SYM:, WARDDECK4:, or WARDDECK3:..." />
+                <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={2} placeholder="Paste WARDDECK4: or WARDDECK3:..." />
               </label>
             </div>
 

@@ -259,13 +259,13 @@ export function DeckLibraryPage({
       <div className="deck-library-import-panel">
         <div>
           <strong>{importFormatLabel ? `Import Deck Code (${importFormatLabel})` : "Import Deck Code"}</strong>
-          <span>Paste a WARDDECK4SYM, WARDDECK4, or legacy WARDDECK3 code to open it in the Card Library deck editor.</span>
+          <span>Paste a WARDDECK4 packed code, or a legacy WARDDECK3 code, to open it in the Card Library deck editor.</span>
         </div>
         <textarea
           value={importCode}
           onChange={event => setImportCode(event.target.value)}
           rows={2}
-          placeholder="WARDDECK4SYM:... or WARDDECK4:..."
+          placeholder="WARDDECK4:..."
         />
         <button onClick={importDeckCode} disabled={!importCode.trim()}>Import</button>
       </div>
