@@ -13,7 +13,13 @@ gen2_001_example_card.webp
 gen3_150_example_card.webp
 ```
 
-The client checks these extensions in order:
+Run this after adding or removing image files so the client can target existing files directly:
+
+```text
+pnpm --filter @ward/client build:card-image-manifest
+```
+
+The client checks these extensions in order before the manifest has loaded:
 
 ```text
 .png

@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import type { Request, Response } from "express";
 
 import { getDbPool } from "../db/pool.js";
+import { createQrCodeDataUrl } from "./qrCode.js";
 
 export type LoginChallengeType = "TOTP" | "NEW_DEVICE_EMAIL";
 export type SecurityTokenPurpose = "PASSWORD_RESET" | "EMAIL_VERIFY";
@@ -23,7 +24,7 @@ export type LoginChallenge = {
 
 export type TotpSetup = {
   secret: string;
-  otpauthUrl: string;
+  qrCodeDataUrl: string;
 };
 
 const TRUSTED_DEVICE_COOKIE_NAME = "ward.device";
@@ -32,6 +33,7 @@ const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const TOKEN_BYTES = 32;
 const TOTP_PERIOD_SECONDS = 30;
 const TOTP_DIGITS = 6;
+const TOTP_LABEL_USERNAME_MAX_LENGTH = 64;
 
 type LoginChallengeRow = {
   id: string;
@@ -180,10 +182,18 @@ export async function beginTotpSetup(userId: string, username: string): Promise<
     [userId, encryptSecret(secret)]
   );
 
-  const label = `Ward Nexus:${username}`;
-  const otpauthUrl = `otpauth://totp/${encodeURIComponent(label)}?secret=${secret}&issuer=${encodeURIComponent("Ward Nexus")}&algorithm=SHA1&digits=${TOTP_DIGITS}&period=${TOTP_PERIOD_SECONDS}`;
+  const label = `Ward Nexus:${formatTotpLabelUsername(username)}`;
+  const authenticatorUri = `otpauth://totp/${encodeURIComponent(label)}?secret=${secret}&issuer=${encodeURIComponent("Ward Nexus")}&algorithm=SHA1&digits=${TOTP_DIGITS}&period=${TOTP_PERIOD_SECONDS}`;
+  const qrCodeDataUrl = createQrCodeDataUrl(authenticatorUri);
 
-  return { secret, otpauthUrl };
+  return { secret, qrCodeDataUrl };
+}
+
+function formatTotpLabelUsername(username: string): string {
+  const value = username.trim() || "account";
+  return value.length > TOTP_LABEL_USERNAME_MAX_LENGTH
+    ? `${value.slice(0, TOTP_LABEL_USERNAME_MAX_LENGTH - 3)}...`
+    : value;
 }
 
 export async function enableTotp(userId: string, code: string): Promise<string[]> {

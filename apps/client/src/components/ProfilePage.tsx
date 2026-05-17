@@ -10,7 +10,7 @@ type ProfilePageProps = {
 
 type TwoFactorSetup = {
   secret: string;
-  otpauthUrl: string;
+  qrCodeDataUrl: string;
 };
 
 export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePageProps) {
@@ -427,14 +427,20 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
                   </button>
                 ) : (
                   <form className="profile-form" onSubmit={enableTwoFactor}>
-                    <label>
-                      Setup Key
-                      <input value={twoFactorSetup.secret} readOnly />
-                    </label>
+                    <div className="profile-two-factor-setup">
+                      <div className="profile-two-factor-qr-frame">
+                        <img
+                          src={twoFactorSetup.qrCodeDataUrl}
+                          alt="Authenticator app setup QR code"
+                          className="profile-two-factor-qr"
+                        />
+                      </div>
+                      <span>Scan with your authenticator app, then enter the six-digit code.</span>
+                    </div>
 
                     <label>
-                      Authenticator URI
-                      <input value={twoFactorSetup.otpauthUrl} readOnly />
+                      Setup Key
+                      <input value={twoFactorSetup.secret} readOnly spellCheck={false} />
                     </label>
 
                     <label>

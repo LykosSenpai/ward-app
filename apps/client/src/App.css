@@ -183,6 +183,32 @@
   padding-top: 0.85rem;
 }
 
+.email-verification-panel {
+  max-width: 440px;
+}
+
+.email-verification-copy {
+  color: #cbd5e1;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.email-verification-copy strong {
+  color: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+.email-verification-actions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.email-verification-logout {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #cbd5e1;
+}
+
 .board-report-card {
   display: grid;
   gap: 1rem;
@@ -793,6 +819,37 @@
   font-size: 0.78rem;
   font-weight: 850;
   gap: 0.25rem;
+}
+
+.profile-two-factor-setup {
+  align-items: start;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.profile-two-factor-qr-frame {
+  aspect-ratio: 1;
+  background: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 7px;
+  display: grid;
+  max-width: 12rem;
+  padding: 0.55rem;
+  place-items: center;
+  width: min(100%, 12rem);
+}
+
+.profile-two-factor-qr {
+  display: block;
+  height: 100%;
+  image-rendering: pixelated;
+  width: 100%;
+}
+
+.profile-two-factor-setup span {
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .profile-readonly-grid {
@@ -7514,6 +7571,22 @@ strong {
   color: #ffd3d9;
 }
 
+.error-box {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.error-box > span {
+  flex: 1 1 280px;
+}
+
+.error-box button {
+  flex: 0 0 auto;
+}
+
 .issue-warning {
   background: rgba(246, 196, 83, 0.12);
   color: #fff2c1;
@@ -7623,6 +7696,7 @@ button:hover {
 
 .attention-button,
 .match-lobby-create-panel > button,
+.library-option-a-save-deck-button,
 .library-option-a-actions button:nth-child(3),
 .library-option-a-actions button:nth-child(5),
 .library-option-a-current-deck-actions button:last-child,
@@ -7641,6 +7715,7 @@ button:hover {
 
 .attention-button:hover,
 .match-lobby-create-panel > button:hover,
+.library-option-a-save-deck-button:hover,
 .library-option-a-actions button:nth-child(3):hover,
 .library-option-a-actions button:nth-child(5):hover,
 .library-option-a-current-deck-actions button:last-child:hover,

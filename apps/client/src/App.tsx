@@ -1,10 +1,12 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { BattleResolverModal } from "./components/BattleResolverModal";
+import { useRef } from "react";
 import { BattleResultCard } from "./components/BattleResultCard";
 import { DiceRollerPanel } from "./components/DiceRollerPanel";
 import { EffectCoveragePage } from "./components/EffectCoveragePage";
 import { EffectDebugPanel } from "./components/EffectDebugPanel";
 import { EffectDevToolPage } from "./components/EffectDevToolPage";
+import { EmailVerificationGate } from "./components/EmailVerificationGate";
 import { DeckLibraryPage } from "./components/DeckLibraryPage";
 import { EventLogCard } from "./components/EventLogCard";
 import { EffectRollModal } from "./components/EffectRollModal";
@@ -35,6 +37,8 @@ import { ModalPanel } from "./components/ui/ModalPanel";
 import type { CardArtKey } from "./components/CardImagePreview";
 import { socket } from "./socket";
 import { API_BASE_URL } from "./config";
+import { hasCompletedEmailVerification, needsEmailVerification } from "./authVerification";
+import { applyMatchDelta } from "./matchDelta";
 import {
   parseEmbedMode,
   parseEmbedParentOrigin,
@@ -63,6 +67,7 @@ import type {
   LlmPhase4ReportSummary,
   LlmRegressionScenarioSummary,
   LlmServiceStatus,
+  MatchDeltaPayload,
   MatchLobby,
   MarketplaceTransaction,
   ManualEffectDurationType,
@@ -76,6 +81,8 @@ import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
+const DEFAULT_APP_PAGE: AppPage = "card-library";
+const SOCKET_SESSION_ERROR_PREFIX = "The live server connection did not receive your login session.";
 
 const APP_PAGES = new Set<AppPage>([
   "play",
@@ -139,7 +146,11 @@ function sortLobbiesByCreatedAt(lobbies: MatchLobby[]): MatchLobby[] {
 }
 
 function parseRequestedPage(search: string): AppPage | null {
-  const requestedPage = new URLSearchParams(search).get("page");
+  const params = new URLSearchParams(search);
+  const requestedPage = params.get("page");
+  if (requestedPage === "profile" && !params.has("discord") && !params.has("message")) {
+    return null;
+  }
   return APP_PAGES.has(requestedPage as AppPage) ? requestedPage as AppPage : null;
 }
 
@@ -250,6 +261,7 @@ export default function App() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [socketAuthenticated, setSocketAuthenticated] = useState<boolean | null>(null);
+  const [featureFlagsLoaded, setFeatureFlagsLoaded] = useState(false);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [serverMessage, setServerMessage] = useState("Connecting...");
   const [match, setMatch] = useState<AppMatchState | null>(null);
@@ -281,7 +293,7 @@ export default function App() {
     Record<string, ManualEffectDurationType>
   >({});
   const [dashboardModal, setDashboardModal] = useState<DashboardModal>(null);
-  const [activePage, setActivePage] = useState<AppPage>(() => parseRequestedPage(window.location.search) ?? "play");
+  const [activePage, setActivePage] = useState<AppPage>(() => parseRequestedPage(window.location.search) ?? DEFAULT_APP_PAGE);
   const [playViewMode, setPlayViewMode] = useState<PlayViewMode>("board3d");
   const [lastBoardIntentLabel, setLastBoardIntentLabel] = useState("");
   const [lastBoardCommandLabel, setLastBoardCommandLabel] = useState("");
@@ -295,6 +307,11 @@ export default function App() {
   const [llmDirectTestResults, setLlmDirectTestResults] = useState<Record<string, LlmDirectEffectSmokeTestResult>>({});
   const [llmBusy, setLlmBusy] = useState(false);
   const [featureFlags, setFeatureFlags] = useState<ServerFeatureFlag[]>([]);
+  const lastRequestedCardLibraryKeyRef = useMemo(() => ({ current: "" }), []);
+  const socketAuthRefreshAttemptedRef = useRef(false);
+  const socketAuthRefreshInFlightRef = useRef(false);
+  const canLoadAppDataRef = useRef(false);
+  const socketAuthUserIdRef = useRef<string | null>(null);
   const canUseDevTools = !!authUser?.devToolsEnabled;
   const updateFeatureRollout = async (key: ServerFeatureFlag["key"], enabledForPlayers: boolean): Promise<void> => {
     await new Promise<void>((resolve, reject) => {
@@ -382,9 +399,8 @@ export default function App() {
     }
 
     if (authUser && socketAuthenticated === false) {
-      showAccountSaveError("Your page is logged in, but the live server connection is not using that login. Refresh, log in again, then retry the save.", options);
-      socket.disconnect();
-      socket.connect();
+      showAccountSaveError("Your page is logged in, but the live server connection needs to refresh before saving. I am checking your session now; retry the save once it reconnects.", options);
+      void refreshLoginSessionForSocket({ manual: true });
       return false;
     }
 
@@ -408,11 +424,59 @@ export default function App() {
     return true;
   }
 
-  useEffect(() => {
-    if (!canSeePage(activePage)) {
-      navigateToPage("profile");
+  async function refreshLoginSessionForSocket(options: { manual?: boolean } = {}): Promise<boolean> {
+    if (socketAuthRefreshInFlightRef.current) return false;
+
+    socketAuthRefreshInFlightRef.current = true;
+    if (options.manual) {
+      setSaveMessage("Checking login session...");
     }
-  }, [activePage, canUseDevTools, featureFlagsByKey, isAdminUser]);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        credentials: "include"
+      });
+      const data = await response.json().catch(() => ({})) as { user?: AuthUser | null };
+
+      if (response.ok && data.user) {
+        setAuthUser(data.user);
+        setSocketAuthenticated(null);
+        setError(current => current.startsWith(SOCKET_SESSION_ERROR_PREFIX) ? "" : current);
+        setSaveMessage(options.manual ? "Login session refreshed. Reconnecting live server..." : "");
+        if (hasCompletedEmailVerification(data.user)) {
+          socket.disconnect();
+          window.setTimeout(() => socket.connect(), 50);
+        } else {
+          socket.disconnect();
+        }
+        return true;
+      }
+
+      setSocketAuthenticated(false);
+      setError(`${SOCKET_SESSION_ERROR_PREFIX} Your page can stay open, but saves need a logged-in live connection. Use Reconnect Login Session or log in again if your session expired.`);
+      if (options.manual) {
+        setSaveMessage("");
+      }
+      return false;
+    } catch {
+      setSocketAuthenticated(false);
+      setError(`${SOCKET_SESSION_ERROR_PREFIX} I could not re-check your login session. Use Reconnect Login Session, then retry the save.`);
+      if (options.manual) {
+        setSaveMessage("");
+      }
+      return false;
+    } finally {
+      socketAuthRefreshInFlightRef.current = false;
+    }
+  }
+
+  useEffect(() => {
+    if (!featureFlagsLoaded) return;
+
+    if (!canSeePage(activePage)) {
+      navigateToPage(canSeePage(DEFAULT_APP_PAGE) ? DEFAULT_APP_PAGE : "profile");
+    }
+  }, [activePage, canUseDevTools, featureFlagsByKey, featureFlagsLoaded, isAdminUser]);
 
   useEffect(() => {
     if (requestedView) {
@@ -437,7 +501,7 @@ export default function App() {
 
   useEffect(() => {
     if (!canUseDevTools && isDevToolPage(activePage)) {
-      navigateToPage("play");
+      navigateToPage(DEFAULT_APP_PAGE);
     }
 
     if (!canUseDevTools && dashboardModal === "effect-debug") {
@@ -522,7 +586,7 @@ export default function App() {
           setAuthUser(data.user);
         }
 
-        setActivePage("profile");
+        setActivePage(DEFAULT_APP_PAGE);
         setProfileRefreshKey(current => current + 1);
       } catch (verificationError) {
         setError(verificationError instanceof Error ? verificationError.message : "Unable to verify email.");
@@ -533,13 +597,50 @@ export default function App() {
   }, [authChecked, authUser]);
 
   useEffect(() => {
+    const canLoadAppData = Boolean(authUser && hasCompletedEmailVerification(authUser));
+    canLoadAppDataRef.current = canLoadAppData;
+
+    if (!authChecked) return;
+
+    if (!authUser) {
+      socketAuthUserIdRef.current = null;
+      return;
+    }
+
+    if (canLoadAppData) {
+      const needsFreshSocketSession = socketAuthUserIdRef.current !== authUser.id;
+      socketAuthUserIdRef.current = authUser.id;
+
+      if (needsFreshSocketSession || !socket.connected) {
+        socket.disconnect();
+        socket.connect();
+      } else {
+        requestInitialData();
+      }
+      return;
+    }
+
+    socketAuthUserIdRef.current = null;
+    if (socket.connected) {
+      socket.disconnect();
+    }
+  }, [authChecked, authUser?.email, authUser?.emailVerifiedAt, authUser?.id]);
+
+  useEffect(() => {
     socket.on("server:welcome", (data: ServerWelcome) => {
       setServerMessage(data.message);
       setSocketAuthenticated(data.authenticated === true);
       if (!data.authenticated) {
-        setError("Your browser connected to the server without your login session. Save buttons may not work. Log out and back in; in Brave, turn Shields off for Ward Nexus if this keeps happening.");
+        if (!socketAuthRefreshAttemptedRef.current) {
+          socketAuthRefreshAttemptedRef.current = true;
+          setError(`${SOCKET_SESSION_ERROR_PREFIX} Checking your login session now...`);
+          void refreshLoginSessionForSocket();
+        } else {
+          setError(`${SOCKET_SESSION_ERROR_PREFIX} Your page can stay open, but saves need a logged-in live connection. Use Reconnect Login Session or log in again if your session expired.`);
+        }
       } else {
-        setError(current => current.startsWith("Your browser connected to the server without your login session.") ? "" : current);
+        socketAuthRefreshAttemptedRef.current = false;
+        setError(current => current.startsWith(SOCKET_SESSION_ERROR_PREFIX) ? "" : current);
       }
     });
 
@@ -550,6 +651,23 @@ export default function App() {
 
     socket.on("match:state", (data: AppMatchState) => {
       setMatch(data);
+      setError("");
+    });
+
+    socket.on("match:delta", (data: MatchDeltaPayload) => {
+      setMatch(currentMatch => {
+        if (!currentMatch || currentMatch.matchId !== data.matchId) {
+          socket.emit("match:requestState", data.matchId);
+          return currentMatch;
+        }
+
+        try {
+          return applyMatchDelta(currentMatch, data);
+        } catch {
+          socket.emit("match:requestState", data.matchId);
+          return currentMatch;
+        }
+      });
       setError("");
     });
 
@@ -565,6 +683,15 @@ export default function App() {
 
     socket.on("match:saved", (data: { message: string; matchId: string }) => {
       setSaveMessage(data.message);
+    });
+
+    socket.on("match:closed", (data: { message: string; matchId: string; saved?: boolean }) => {
+      setSaveMessage(data.message);
+      setDashboardModal(null);
+      setActiveLobby(undefined);
+      setMatch(currentMatch => currentMatch?.matchId === data.matchId ? null : currentMatch);
+      socket.emit("match:listSaved");
+      socket.emit("lobby:list");
     });
 
     socket.on("match:deleted", (data: { message: string; matchId: string }) => {
@@ -609,11 +736,6 @@ export default function App() {
       setCardPacks(data.cardPacks);
       setDecks(data.decks);
 
-      const defaultPackIds = data.cardPacks.map(pack => pack.id);
-      if (defaultPackIds.length > 0) {
-        socket.emit("cards:listForPacks", { packIds: defaultPackIds });
-      }
-
       setSelectedPackIds(current => {
         const validPackIds = data.cardPacks.map(pack => pack.id);
         const stillValidCurrent = current.filter(packId =>
@@ -652,11 +774,17 @@ export default function App() {
       });
     });
     socket.on("features:list", (data: { ok?: boolean; features?: ServerFeatureFlag[] }) => {
-      if (data.ok && data.features) setFeatureFlags(data.features);
+      if (data.ok && data.features) {
+        setFeatureFlags(data.features);
+        setFeatureFlagsLoaded(true);
+      }
     });
     socket.on("features:visibilityChanged", () => {
       socket.emit("features:list", (response: { ok: boolean; features?: ServerFeatureFlag[] }) => {
-        if (response.ok && response.features) setFeatureFlags(response.features);
+        if (response.ok && response.features) {
+          setFeatureFlags(response.features);
+          setFeatureFlagsLoaded(true);
+        }
       });
     });
 
@@ -879,9 +1007,11 @@ export default function App() {
       socket.off("server:welcome");
       socket.off("connect");
       socket.off("match:state");
+      socket.off("match:delta");
       socket.off("match:error");
       socket.off("match:savedList");
       socket.off("match:saved");
+      socket.off("match:closed");
       socket.off("match:deleted");
       socket.off("match:bulkDeleted");
       socket.off("setup:options");
@@ -923,13 +1053,45 @@ export default function App() {
   useEffect(() => {
     if (selectedPackIds.length === 0) {
       setCardLibrary([]);
+      lastRequestedCardLibraryKeyRef.current = "";
       return;
     }
 
-    socket.emit("cards:listForPacks", {
-      packIds: selectedPackIds
-    });
-  }, [selectedPackIds]);
+    const needsCardLibrary = Boolean(match) ||
+      activePage === "card-library" ||
+      activePage === "deck-library" ||
+      activePage === "marketplace" ||
+      (canUseDevTools && (activePage === "effect-dev" || activePage === "effect-coverage" || activePage === "llm-tests" || activePage === "board-preview"));
+
+    if (!needsCardLibrary) {
+      return;
+    }
+
+    const requestKey = [...selectedPackIds].sort().join("|");
+    if (lastRequestedCardLibraryKeyRef.current === requestKey && cardLibrary.length > 0) {
+      return;
+    }
+
+    lastRequestedCardLibraryKeyRef.current = requestKey;
+    socket.emit("cards:listForPacks", { packIds: selectedPackIds });
+  }, [activePage, canUseDevTools, cardLibrary.length, match, selectedPackIds]);
+
+  useEffect(() => {
+    if (activePage === "deck-library") {
+      socket.emit("deck:listDetails");
+    }
+
+    if (activePage === "card-library") {
+      socket.emit("collection:listOwnership");
+    }
+
+    const watchSavedMatches = activePage === "saved-matches" || dashboardModal === "save-load";
+    if (watchSavedMatches) {
+      socket.emit("match:listSaved");
+    } else {
+      socket.emit("match:unwatchSaved");
+    }
+  }, [activePage, dashboardModal]);
 
   useEffect(() => {
     if (!canUseDevTools) {
@@ -955,11 +1117,12 @@ export default function App() {
 
 
   function requestInitialData() {
-    socket.emit("match:listSaved");
+    if (!canLoadAppDataRef.current) {
+      return;
+    }
+
     socket.emit("setup:listOptions");
-    socket.emit("deck:listDetails");
     socket.emit("lobby:list");
-    socket.emit("collection:listOwnership");
     if (canUseDevTools) {
       socket.emit("llm:getStatus");
     }
@@ -1399,6 +1562,18 @@ export default function App() {
   function saveCurrentMatch() {
     if (!match) return;
     socket.emit("match:saveCurrent", match.matchId);
+  }
+
+  function saveAndQuitCurrentMatch() {
+    if (!match) return;
+
+    const confirmed = window.confirm("Save this match and quit the live board? You can reload it later from Saved Matches.");
+    if (!confirmed) return;
+
+    setDashboardModal(null);
+    setError("");
+    setSaveMessage("Saving match...");
+    socket.emit("match:saveAndQuit", match.matchId);
   }
 
   function undoLastAction() {
@@ -2032,7 +2207,6 @@ export default function App() {
     setOwnershipSaveStatus("idle");
     setSocketAuthenticated(false);
     socket.disconnect();
-    socket.connect();
   }
 
   const advanceBlockReason = match ? getAdvanceBlockReason(match) : "";
@@ -2096,10 +2270,21 @@ export default function App() {
     return <LoginPage onAuthenticated={user => {
       setAuthUser(user);
       setSocketAuthenticated(null);
-      socket.disconnect();
-      socket.connect();
-      requestInitialData();
     }} discordAuthEnabled={discordAuthEnabled} />;
+  }
+
+  if (needsEmailVerification(authUser)) {
+    return (
+      <EmailVerificationGate
+        user={authUser}
+        onVerified={user => {
+          setAuthUser(user);
+          setSocketAuthenticated(null);
+          setActivePage(DEFAULT_APP_PAGE);
+        }}
+        onLogout={() => void logout()}
+      />
+    );
   }
 
   const isBoardFocusMode = activePage === "play" && !!match && playViewMode === "board3d";
@@ -2227,7 +2412,16 @@ export default function App() {
           )}
         </nav>}
 
-        {error && <div className="error-box">{error}</div>}
+        {error && (
+          <div className="error-box">
+            <span>{error}</span>
+            {authUser && socketAuthenticated === false ? (
+              <button type="button" onClick={() => void refreshLoginSessionForSocket({ manual: true })}>
+                Reconnect Login Session
+              </button>
+            ) : null}
+          </div>
+        )}
         {saveMessage && <div className="success-box">{saveMessage}</div>}
         {activePage === "card-library" && ownershipSaveStatus !== "idle" && (
           <div className={`ownership-save-status ${ownershipSaveStatus}`}>
@@ -2324,8 +2518,12 @@ export default function App() {
           <ProfilePage key={profileRefreshKey} onUserUpdated={user => {
             setAuthUser(user);
             setSocketAuthenticated(null);
-            socket.disconnect();
-            socket.connect();
+            if (hasCompletedEmailVerification(user)) {
+              socket.disconnect();
+              socket.connect();
+            } else {
+              socket.disconnect();
+            }
           }} discordAuthEnabled={discordAuthEnabled} />
         ) : activePage === "marketplace" ? (
           <MarketplacePage authUser={authUser} cardLibrary={cardLibrary} />
@@ -2502,6 +2700,7 @@ export default function App() {
                       onApplyEffectRoll={applyEffectRoll}
                       onSkipEffectRoll={skipEffectRoll}
                       onOpenBoardReport={() => setDashboardModal("board-report")}
+                      onSaveAndQuit={saveAndQuitCurrentMatch}
                       intentLabel={lastBoardIntentLabel}
                       commandLabel={lastBoardCommandLabel}
                       onIntent={(intent: PointerGestureIntent) => {

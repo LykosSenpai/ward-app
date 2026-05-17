@@ -2,7 +2,7 @@
 import type { DragEvent } from "react";
 import type { WardEngineEffect } from "@ward/shared";
 import type { CardLibraryCardSummary, CardPackSummary } from "../clientTypes";
-import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, sanitizeDownloadFileName } from "../deckShare";
+import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, getWardDeckStringFormatLabel, sanitizeDownloadFileName } from "../deckShare";
 import { buildWardEffectsFromText } from "../effectLogicBuilder";
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { CardImageThumbnail } from "./CardImagePreview";
@@ -1001,7 +1001,7 @@ export function EffectDevToolPage({
     const ownerState = getOwnerDeckState(owner);
 
     if (ownerState.cardIds.length === 0) {
-      setTestDeckMessage("Add cards before generating a test deck string.");
+      setTestDeckMessage("Add cards before generating a test deck code.");
       return;
     }
 
@@ -1013,26 +1013,29 @@ export function EffectDevToolPage({
     }, { cardLibrary });
 
     setTestDeckShareStrings(current => ({ ...current, [owner]: value }));
+    const formatLabel = getWardDeckStringFormatLabel(value) ?? "WARDDECK";
 
     try {
       await navigator.clipboard.writeText(value);
-      setTestDeckMessage("Copied test deck string to clipboard.");
+      setTestDeckMessage(`Copied ${formatLabel} test deck code to clipboard.`);
     } catch {
-      setTestDeckMessage("Test deck string generated. Clipboard copy was blocked by the browser.");
+      setTestDeckMessage(`${formatLabel} test deck code generated. Clipboard copy was blocked by the browser.`);
     }
   }
 
   function importTestDeckString(owner: TestDeckOwner) {
     try {
-      const payload = decodeWardDeckString(testDeckImportStrings[owner], { cardLibrary });
+      const importString = testDeckImportStrings[owner];
+      const formatLabel = getWardDeckStringFormatLabel(importString) ?? "deck";
+      const payload = decodeWardDeckString(importString, { cardLibrary });
       const ownerState = getOwnerDeckState(owner);
       ownerState.setDeckName(payload.name ?? ownerState.deckName);
       ownerState.setDeckId(normalizeDeckId(payload.deckId ?? payload.name ?? ownerState.deckId));
       ownerState.setCardIds(payload.cardIds);
       if (payload.startingHandSize !== undefined) ownerState.setStartingHandSize(payload.startingHandSize);
-      setTestDeckMessage(`Imported ${payload.cardIds.length} card test deck string.`);
+      setTestDeckMessage(`Imported ${payload.cardIds.length} cards from ${formatLabel} test deck code.`);
     } catch (error) {
-      setTestDeckMessage(error instanceof Error ? error.message : "Could not import test deck string.");
+      setTestDeckMessage(error instanceof Error ? error.message : "Could not import test deck code.");
     }
   }
 
@@ -1064,7 +1067,7 @@ export function EffectDevToolPage({
 
     downloadTextFile(fileName, markdown);
     setTestDeckShareStrings(current => ({ ...current, [owner]: deckString }));
-    setTestDeckMessage(`Generated notes file: ${fileName}`);
+    setTestDeckMessage(`Generated notes file with ${getWardDeckStringFormatLabel(deckString) ?? "WARDDECK"} test deck code: ${fileName}`);
   }
 
   function addSelectedToBoth() {
@@ -1115,6 +1118,8 @@ export function EffectDevToolPage({
     const selectedSavedDeckId = selectedSavedTestDeckIds[owner];
     const shareString = testDeckShareStrings[owner];
     const importString = testDeckImportStrings[owner];
+    const shareFormatLabel = getWardDeckStringFormatLabel(shareString);
+    const importFormatLabel = getWardDeckStringFormatLabel(importString);
 
     return (
       <section
@@ -1176,26 +1181,26 @@ export function EffectDevToolPage({
         </div>
 
         <details className="library-option-a-details-drawer deck-share-tools-card effect-dev-test-deck-tools">
-          <summary>String / Notes</summary>
+          <summary>Code / Notes</summary>
 
           <label>
-            Export String
-            <textarea value={shareString} readOnly rows={3} placeholder="Click Copy String to generate WARDDECK3 output." />
+            {shareFormatLabel ? `Export Code (${shareFormatLabel})` : "Export Code"}
+            <textarea value={shareString} readOnly rows={3} placeholder="Click Copy Code to generate the best available WARDDECK code." />
           </label>
 
           <label>
-            Import String
+            {importFormatLabel ? `Import Code (${importFormatLabel})` : "Import Code"}
             <textarea
               value={importString}
               onChange={event => setTestDeckImportStrings(current => ({ ...current, [owner]: event.target.value }))}
               rows={3}
-              placeholder="Paste WARDDECK3:... here."
+              placeholder="Paste WARDDECK4SYM:, WARDDECK4:, or WARDDECK3:..."
             />
           </label>
 
           <div className="actions small-actions deck-share-actions">
-            <button onClick={() => copyTestDeckString(owner)} disabled={cardIds.length === 0}>Copy String</button>
-            <button onClick={() => importTestDeckString(owner)} disabled={!importString.trim()}>Import String</button>
+            <button onClick={() => copyTestDeckString(owner)} disabled={cardIds.length === 0}>Copy Code</button>
+            <button onClick={() => importTestDeckString(owner)} disabled={!importString.trim()}>Import Code</button>
             <button onClick={() => downloadTestDeckNotes(owner)} disabled={cardIds.length === 0}>Notes File</button>
           </div>
         </details>

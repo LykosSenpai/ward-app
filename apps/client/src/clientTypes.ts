@@ -24,6 +24,8 @@ export type ServerWelcome = {
 export type AuthUser = {
   id: string;
   username: string;
+  email?: string;
+  emailVerifiedAt?: string;
   displayName: string;
   role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   canAccessDevTools: boolean;
@@ -78,6 +80,15 @@ export type SavedMatchSummary = {
   activePlayerId: string;
   phase: string;
   updatedAt: string;
+};
+
+export type MatchDeltaOperation =
+  | { op: "add" | "replace"; path: string; value: unknown }
+  | { op: "remove"; path: string };
+
+export type MatchDeltaPayload = {
+  matchId: string;
+  operations: MatchDeltaOperation[];
 };
 
 export type CardPackSummary = {
@@ -149,7 +160,7 @@ export type MatchLobby = {
   updatedAt: string;
   lastActivityAt: string;
   closedAt?: string;
-  closeReason?: "EMPTY" | "MATCH_COMPLETE" | "IDLE_TIMEOUT";
+  closeReason?: "EMPTY" | "MATCH_COMPLETE" | "IDLE_TIMEOUT" | "SAVED_AND_EXITED";
   ageMs?: number;
   idleMs?: number;
   staleAfterMs?: number;

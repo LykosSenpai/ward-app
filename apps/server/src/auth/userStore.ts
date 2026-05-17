@@ -134,6 +134,7 @@ export async function createUserFromDiscord(args: {
   discordGlobalName?: string | null;
   discordAvatar?: string | null;
   email?: string | null;
+  emailVerified?: boolean;
 }): Promise<AuthUser> {
   const baseUsername = normalizeDiscordUsername(args.discordGlobalName ?? args.discordUsername);
   const username = await getAvailableUsername(baseUsername);
@@ -146,9 +147,9 @@ export async function createUserFromDiscord(args: {
       `
         insert into users (
           username, email, password_hash, display_name,
-          discord_user_id, discord_username, discord_global_name, discord_avatar, discord_linked_at
+          discord_user_id, discord_username, discord_global_name, discord_avatar, discord_linked_at, email_verified_at
         )
-        values ($1, $2, $3, $4, $5, $6, $7, $8, now())
+        values ($1, $2, $3, $4, $5, $6, $7, $8, now(), case when $9 then now() else null end)
         returning id, username, email, display_name, password_hash, role, dev_tools_enabled, email_verified_at,
           discord_user_id, discord_username, discord_global_name, discord_avatar, discord_linked_at
       `,
@@ -160,7 +161,8 @@ export async function createUserFromDiscord(args: {
         args.discordUserId,
         args.discordUsername,
         args.discordGlobalName ?? null,
-        args.discordAvatar ?? null
+        args.discordAvatar ?? null,
+        Boolean(args.emailVerified)
       ]
     );
 
@@ -534,6 +536,8 @@ function toAuthUser(row: UserRow): AuthUser {
   return {
     id: row.id,
     username: row.username,
+    email: row.email,
+    emailVerifiedAt: row.email_verified_at ?? undefined,
     displayName: row.display_name,
     role: row.role,
     canAccessDevTools,

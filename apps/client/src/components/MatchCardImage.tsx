@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
+import { filterCardImageCandidates, useCardImageManifest } from "../cardImageManifest";
+import type { CardImageCandidate } from "../cardImageManifest";
 import { getCardName } from "../gameViewHelpers";
 import type { CardArtKey } from "./CardImagePreview";
 import { getBaseArtKey, isHoloArtKey, normalizeCardArtKey } from "./CardImagePreview";
@@ -37,7 +39,7 @@ function getArtStems(stem: string, artKey: CardArtKey): string[] {
   return ZERO_ART_SUFFIX_ALIASES.map(suffix => `${stem}__${suffix}`);
 }
 
-export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
+function getMatchCardImageCandidates(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): CardImageCandidate[] {
   const definition = match.cardCatalog[card.cardId];
   const stems = [card.cardId];
   const artKey = artKeyOverride ?? normalizeCardArtKey(card.artKey);
@@ -49,22 +51,37 @@ export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance, 
   const artStems = uniqueValues(stems).flatMap(stem => getArtStems(stem, artKey));
 
   return uniqueValues(artStems).flatMap(stem =>
-    IMAGE_EXTENSIONS.map(extension => `/card-images/${encodeURIComponent(`${stem}.${extension}`)}`)
+    IMAGE_EXTENSIONS.map(extension => {
+      const fileName = `${stem}.${extension}`;
+
+      return {
+        fileName,
+        url: `/card-images/${encodeURIComponent(fileName)}`
+      };
+    })
   );
+}
+
+export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
+  return getMatchCardImageCandidates(match, card, artKeyOverride).map(candidate => candidate.url);
 }
 
 export function MatchCardImage({ match, card, className }: MatchCardImageProps) {
   const [candidateIndex, setCandidateIndex] = useState(0);
   const artKey = normalizeCardArtKey(card.artKey);
   const holoEnabled = isHoloArtKey(artKey);
-  const imageUrls = useMemo(() => getMatchCardImageUrls(match, card), [match, card]);
-  const displayImageSrc = imageUrls[candidateIndex];
+  const manifest = useCardImageManifest();
+  const imageCandidates = useMemo(
+    () => filterCardImageCandidates(getMatchCardImageCandidates(match, card), manifest),
+    [match, card, manifest]
+  );
+  const displayImageSrc = imageCandidates[candidateIndex]?.url;
   const cardName = getCardName(match, card);
   const classNames = ["match-card-art", className].filter(Boolean).join(" ");
 
   useEffect(() => {
     setCandidateIndex(0);
-  }, [card.cardId, card.instanceId, artKey]);
+  }, [card.cardId, card.instanceId, artKey, imageCandidates[0]?.url]);
 
   if (!displayImageSrc) {
     return (

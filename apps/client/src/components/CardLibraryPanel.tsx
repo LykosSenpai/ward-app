@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
-import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, sanitizeDownloadFileName } from "../deckShare";
+import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, getWardDeckStringFormatLabel, sanitizeDownloadFileName } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, coerceCardArtKeyForCard, getCardArtLabel } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
@@ -292,42 +292,6 @@ export function CardLibraryPanel({
         getCardArtLabel(a.artKey).localeCompare(getCardArtLabel(b.artKey))
       );
   }, [cardLibrary, deckBuilderCardArtKeys, deckBuilderCardIds]);
-
-
-  const missingDeckVariants = useMemo(() => {
-    return deckCards
-      .map(({ cardId, artKey, count, card }) => {
-        const ownedCount = ownershipCounts[getCardArtOwnershipKey(cardId, artKey)] ?? 0;
-        const missingCount = Math.max(0, count - ownedCount);
-
-        return {
-          cardId,
-          artKey,
-          requiredCount: count,
-          ownedCount,
-          missingCount,
-          card
-        };
-      })
-      .filter(entry => entry.missingCount > 0)
-      .sort((a, b) => {
-        const generationA = Number.parseInt(`${a.card?.generation ?? ""}`, 10);
-        const generationB = Number.parseInt(`${b.card?.generation ?? ""}`, 10);
-        const normalizedGenerationA = Number.isFinite(generationA) ? generationA : Number.MAX_SAFE_INTEGER;
-        const normalizedGenerationB = Number.isFinite(generationB) ? generationB : Number.MAX_SAFE_INTEGER;
-        if (normalizedGenerationA !== normalizedGenerationB) return normalizedGenerationA - normalizedGenerationB;
-
-        const numberA = `${a.card?.cardNumber ?? ""}`;
-        const numberB = `${b.card?.cardNumber ?? ""}`;
-        const byNumber = numberA.localeCompare(numberB, undefined, { numeric: true });
-        if (byNumber !== 0) return byNumber;
-
-        const byId = a.cardId.localeCompare(b.cardId, undefined, { numeric: true });
-        if (byId !== 0) return byId;
-
-        return getCardArtLabel(a.artKey).localeCompare(getCardArtLabel(b.artKey));
-      });
-  }, [deckCards, ownershipCounts]);
 
   const deckStats = useMemo(() => {
     const creatureCards = deckBuilderCardIds
@@ -695,7 +659,7 @@ export function CardLibraryPanel({
 
   async function copyCurrentDeckString() {
     if (deckBuilderCardIds.length === 0) {
-      setDeckShareMessage("Add cards before generating a deck string.");
+      setDeckShareMessage("Add cards before generating an export code.");
       return;
     }
 
@@ -708,17 +672,19 @@ export function CardLibraryPanel({
     }, { cardLibrary });
 
     setDeckShareString(value);
+    const formatLabel = getWardDeckStringFormatLabel(value) ?? "WARDDECK";
 
     try {
       await navigator.clipboard.writeText(value);
-      setDeckShareMessage("Copied deck string to clipboard.");
+      setDeckShareMessage(`Copied ${formatLabel} export code to clipboard.`);
     } catch {
-      setDeckShareMessage("Deck string generated. Clipboard copy was blocked by the browser.");
+      setDeckShareMessage(`${formatLabel} export code generated. Clipboard copy was blocked by the browser.`);
     }
   }
 
   function importDeckStringIntoBuilder() {
     try {
+      const formatLabel = getWardDeckStringFormatLabel(deckImportString) ?? "deck";
       const payload = decodeWardDeckString(deckImportString, { cardLibrary });
       const unknownCards = payload.cardIds.filter(cardId => !cardLibrary.some(card => card.id === cardId));
 
@@ -733,11 +699,11 @@ export function CardLibraryPanel({
 
       setDeckShareMessage(
         unknownCards.length > 0
-          ? `Imported ${payload.cardIds.length} cards. ${unknownCards.length} card ID(s) are not in the currently loaded packs.`
-          : `Imported ${payload.cardIds.length} cards from deck string.`
+          ? `Imported ${payload.cardIds.length} cards from ${formatLabel} import code. ${unknownCards.length} card ID(s) are not in the currently loaded packs.`
+          : `Imported ${payload.cardIds.length} cards from ${formatLabel} import code.`
       );
     } catch (error) {
-      setDeckShareMessage(error instanceof Error ? error.message : "Could not import deck string.");
+      setDeckShareMessage(error instanceof Error ? error.message : "Could not import deck code.");
     }
   }
 
@@ -767,10 +733,21 @@ export function CardLibraryPanel({
 
     downloadTextFile(fileName, markdown);
     setDeckShareString(deckString);
-    setDeckShareMessage(`Generated notes file: ${fileName}`);
+    setDeckShareMessage(`Generated notes file with ${getWardDeckStringFormatLabel(deckString) ?? "WARDDECK"} export code: ${fileName}`);
   }
 
-  const saveDisabled = deckBuilderCardIds.length !== 30 || !deckBuilderName.trim() || !normalizeId(deckBuilderId);
+  const normalizedDeckId = normalizeId(deckBuilderId);
+  const deckShareFormatLabel = getWardDeckStringFormatLabel(deckShareString);
+  const deckImportFormatLabel = getWardDeckStringFormatLabel(deckImportString);
+  const saveDisabled = deckBuilderCardIds.length !== 30 || !deckBuilderName.trim() || !normalizedDeckId;
+  const saveDeckTitle = !deckBuilderName.trim()
+    ? "Name this deck before saving."
+    : !normalizedDeckId
+      ? "Use at least one letter or number in the deck name before saving."
+      : deckBuilderCardIds.length !== 30
+        ? `Deck must have exactly 30 cards before saving. Current deck: ${deckBuilderCardIds.length}/30.`
+        : "Save this 30-card deck to your deck library.";
+  const saveDeckLabel = saveDisabled ? `Save Deck (${deckBuilderCardIds.length}/30)` : "Save Current Deck";
 
   function applyMissingFocus() {
     if (missingCompletionSummary.entries.length === 0) {
@@ -833,7 +810,16 @@ export function CardLibraryPanel({
           <button onClick={clearFilters}>Clear Filters</button>
           <button onClick={onNewDeck}>New Deck</button>
           <button onClick={onClearDeckBuilder} disabled={deckBuilderCardIds.length === 0}>Clear Deck</button>
-          <button onClick={onSaveDeck} disabled={saveDisabled}>Save Deck</button>
+          <button
+            type="button"
+            className="library-option-a-save-deck-button"
+            onClick={onSaveDeck}
+            disabled={saveDisabled}
+            title={saveDeckTitle}
+            aria-label={saveDeckTitle}
+          >
+            {saveDeckLabel}
+          </button>
         </div>
       </div>
 
@@ -1169,47 +1155,24 @@ export function CardLibraryPanel({
           <div className="library-option-a-details-drawer deck-share-tools-card library-option-a-code-tools library-option-a-deck-rail-codes">
             <div className="deck-share-tools-grid">
               <label>
-                Export Code
-                <textarea value={deckShareString} readOnly rows={2} placeholder="Click Copy Export Code." />
+                {deckShareFormatLabel ? `Export Code (${deckShareFormatLabel})` : "Export Code"}
+                <textarea value={deckShareString} readOnly rows={2} placeholder="Click Copy Export to generate the best available WARDDECK code." />
               </label>
 
               <label>
-                Import Code
-                <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={2} placeholder="Paste WARDDECK3:... here." />
+                {deckImportFormatLabel ? `Import Code (${deckImportFormatLabel})` : "Import Code"}
+                <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={2} placeholder="Paste WARDDECK4SYM:, WARDDECK4:, or WARDDECK3:..." />
               </label>
             </div>
 
             <div className="actions small-actions deck-share-actions">
-              <button onClick={copyCurrentDeckString} disabled={deckBuilderCardIds.length === 0}>Copy Export</button>
+              <button onClick={copyCurrentDeckString} disabled={deckBuilderCardIds.length === 0}>Copy Export Code</button>
               <button onClick={importDeckStringIntoBuilder} disabled={!deckImportString.trim()}>Import Code</button>
               <button onClick={downloadCurrentDeckNotes} disabled={deckBuilderCardIds.length === 0}>Notes</button>
             </div>
 
             {deckShareMessage && <p className="event-meta">{deckShareMessage}</p>}
           </div>
-
-
-          <div className="library-option-a-details-drawer deck-share-tools-card library-option-a-code-tools library-option-a-deck-rail-codes">
-            <div className="current-deck-header-row library-option-a-current-deck-header">
-              <h4>Missing for Completion</h4>
-              <span>{missingDeckVariants.length} variant{missingDeckVariants.length === 1 ? "" : "s"}</span>
-            </div>
-            {missingDeckVariants.length === 0 ? (
-              <p className="event-meta">All current deck card variants meet required quantity.</p>
-            ) : (
-              <div className="builder-card-list current-deck-list unified-current-deck-list library-option-a-current-deck-list">
-                {missingDeckVariants.map(entry => (
-                  <div className="builder-card-entry current-deck-entry library-option-a-current-deck-entry" key={`missing-${entry.cardId}-${entry.artKey}`}>
-                    <div className="visual-deck-card-copy">
-                      <strong>{entry.card?.cardNumber ?? "?"} · {entry.card?.name ?? entry.cardId} · Gen {entry.card?.generation ?? "?"} · {getCardArtLabel(entry.artKey)}</strong>
-                      <div className="event-meta">Owned: {entry.ownedCount} | Required: {entry.requiredCount} | Missing: {entry.missingCount}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
 
           <div
             className={`current-deck-panel unified-current-deck-panel library-option-a-current-deck-panel ${deckDropActive ? "drag-over" : ""}`}
@@ -1225,7 +1188,16 @@ export function CardLibraryPanel({
                 <input value={deckBuilderName} onChange={event => onDeckNameChange(event.target.value)} />
               </label>
 
-              <button onClick={onSaveDeck} disabled={saveDisabled}>Save</button>
+              <button
+                type="button"
+                className="library-option-a-save-deck-button"
+                onClick={onSaveDeck}
+                disabled={saveDisabled}
+                title={saveDeckTitle}
+                aria-label={saveDeckTitle}
+              >
+                {saveDeckLabel}
+              </button>
             </div>
 
             <div className="current-deck-header-row library-option-a-current-deck-header">

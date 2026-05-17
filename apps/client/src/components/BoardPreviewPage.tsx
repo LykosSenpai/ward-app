@@ -344,10 +344,12 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
 
     socket.on("match:error", handleMatchError);
     socket.on("match:state", handleMatchState);
+    socket.on("match:delta", handleMatchState);
 
     return () => {
       socket.off("match:error", handleMatchError);
       socket.off("match:state", handleMatchState);
+      socket.off("match:delta", handleMatchState);
       Object.values(pendingTimeoutsRef.current).forEach((timeout) => clearTimeout(timeout));
       pendingTimeoutsRef.current = {};
     };
