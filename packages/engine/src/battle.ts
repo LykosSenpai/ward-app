@@ -21,7 +21,7 @@ import type {
   WardEngineEffect
 } from "@ward/shared";
 import { moveFieldCreatureToCemetery } from "./fieldRemoval.js";
-import { applyDamageToCreatureTarget } from "./cardMovement.js";
+import { applyDamageToCreatureTarget, moveMagicSlotCardToCemetery } from "./cardMovement.js";
 import { processCombatPhaseEndInPlace } from "./turns.js";
 import {
   collectBattleEffectSuggestions,
@@ -317,6 +317,7 @@ function markBattleSkippedForCreature(
   reason: string
 ): void {
   markCreatureBattleUsed(player, creature.card.instanceId, getCreatureBattleUseLimit(creature.card));
+  expireConsumedTemporaryBattleEquip(state, player, creature.card.instanceId);
 
   addEvent(state, "BATTLE_TURN_SKIPPED_BY_STATUS", player.id, {
     playerId: player.id,
@@ -364,6 +365,10 @@ function getCreatureDefinition(
   return definition;
 }
 
+function getCardName(state: MatchState, card: CardInstance): string {
+  return state.cardCatalog[card.cardId]?.name ?? card.cardId;
+}
+
 function ensureBattleUsedList(player: PlayerState): string[] {
   player.turnFlags.battleUsedCreatureInstanceIds ??= [];
   return player.turnFlags.battleUsedCreatureInstanceIds;
@@ -374,7 +379,44 @@ function isCabalWarchief(card: CardInstance): boolean {
 }
 
 function getCreatureBattleUseLimit(card: CardInstance): number {
-  return isCabalWarchief(card) ? 2 : 1;
+  const activeExtraBattles = (card.activeEffectInstances ?? [])
+    .filter(instance => String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_BATTLE_REQUIREMENT")
+    .reduce((total, instance) => {
+      const explicit = Number(instance.extraInitiatedBattles);
+      if (Number.isFinite(explicit) && explicit > 0) return total + Math.trunc(explicit);
+
+      const text = [
+        instance.label,
+        instance.durationText,
+        ...(instance.debug ?? [])
+      ].filter(Boolean).join(" ").toLowerCase();
+      return total + (text.includes("battle twice") || text.includes("initiate battle twice") ? 1 : 0);
+    }, 0);
+
+  return 1 + Math.max(activeExtraBattles, isCabalWarchief(card) ? 1 : 0);
+}
+
+function getReturnAttackLimit(card: CardInstance): number | undefined {
+  const activeLimits = (card.activeEffectInstances ?? [])
+    .filter(instance => String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_BATTLE_REQUIREMENT")
+    .flatMap(instance => {
+      const explicit = Number(instance.maxReturnAttacksAgainstThisEffect);
+      if (Number.isFinite(explicit) && explicit >= 0) return [Math.trunc(explicit)];
+
+      const text = [
+        instance.label,
+        instance.durationText,
+        ...(instance.debug ?? [])
+      ].filter(Boolean).join(" ").toLowerCase();
+      return text.includes("only return attack for 1") || text.includes("only return attack for one") ? [1] : [];
+    });
+
+  if (isCabalWarchief(card)) activeLimits.push(1);
+  return activeLimits.length > 0 ? Math.min(...activeLimits) : undefined;
+}
+
+function limitsReturnAttacksAcrossExtraBattles(card: CardInstance): boolean {
+  return getCreatureBattleUseLimit(card) > 1 && getReturnAttackLimit(card) === 1;
 }
 
 function getCreatureBattleUseCount(player: PlayerState, creatureInstanceId: string): number {
@@ -391,7 +433,8 @@ function canCreatureBattleThisCombat(player: PlayerState, creature: BattleCreatu
 }
 
 function shouldSuppressRetaliationForBattle(player: PlayerState, creature: BattleCreatureRef): boolean {
-  return isCabalWarchief(creature.card) && getCreatureBattleUseCount(player, creature.card.instanceId) >= 1;
+  return limitsReturnAttacksAcrossExtraBattles(creature.card) &&
+    getCreatureBattleUseCount(player, creature.card.instanceId) >= 1;
 }
 
 function getPlayerBattleCreatures(player: PlayerState): BattleCreatureRef[] {
@@ -507,6 +550,60 @@ function markCreatureBattleUsed(
   );
 
   player.turnFlags.hasBattledThisCombat = !remainingAvailableCreature;
+}
+
+function expireConsumedTemporaryBattleEquip(
+  state: MatchState,
+  player: PlayerState,
+  creatureInstanceId: string
+): void {
+  const creature = findCardInstanceInPlayerZones(player, creatureInstanceId);
+  if (!creature) return;
+
+  const battleUseLimit = getCreatureBattleUseLimit(creature);
+  if (battleUseLimit <= 1 || getCreatureBattleUseCount(player, creatureInstanceId) < battleUseLimit) return;
+
+  const consumedSourceIds = new Set(
+    (creature.activeEffectInstances ?? [])
+      .filter(instance =>
+        String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_BATTLE_REQUIREMENT" &&
+        instance.sourcePlacement === "TEMP_EQUIP"
+      )
+      .map(instance => instance.sourceCardInstanceId)
+  );
+
+  for (const sourceCardInstanceId of consumedSourceIds) {
+    const fieldOwner = state.players.find(candidate =>
+      candidate.field.magicSlots.some(card =>
+        card.instanceId === sourceCardInstanceId &&
+        card.attachedToInstanceId === creatureInstanceId
+      )
+    );
+    const sourceMagic = fieldOwner?.field.magicSlots.find(card => card.instanceId === sourceCardInstanceId);
+    const sourceDefinition = sourceMagic ? state.cardCatalog[sourceMagic.cardId] : undefined;
+
+    if (!fieldOwner || !sourceMagic || sourceDefinition?.cardType !== "MAGIC" || sourceDefinition.magicType !== "STANDARD") {
+      continue;
+    }
+
+    moveMagicSlotCardToCemetery(
+      state,
+      fieldOwner.id,
+      sourceCardInstanceId,
+      addEvent,
+      "TEMP_EQUIP_BATTLE_REQUIREMENT_CONSUMED"
+    );
+
+    addEvent(state, "TEMP_EQUIP_BATTLE_REQUIREMENT_CONSUMED", sourceMagic.controllerPlayerId, {
+      sourceCardInstanceId,
+      sourceCardName: sourceDefinition.name,
+      targetCreatureInstanceId: creatureInstanceId,
+      targetCreatureName: getCardName(state, creature),
+      battleUseCount: getCreatureBattleUseCount(player, creatureInstanceId),
+      battleUseLimit,
+      note: "Temporary Equip Magic was sent to the cemetery after its extra initiated battle was consumed."
+    });
+  }
 }
 
 function applyDamageToPrimaryCreature(
@@ -1016,7 +1113,7 @@ function createCabalRetaliationChoicePrompt(
   battleSessionId: string
 ): void {
   if (state.pendingEffectTargetPrompt) return;
-  if (!isCabalWarchief(attackingCreature.card)) return;
+  if (!limitsReturnAttacksAcrossExtraBattles(attackingCreature.card)) return;
 
   const attackingPlayer = getPlayer(state, attackingCreature.playerId);
   if (getCreatureBattleUseCount(attackingPlayer, attackingCreature.card.instanceId) > 0) return;
@@ -1032,8 +1129,8 @@ function createCabalRetaliationChoicePrompt(
     actionType: CABAL_RETALIATION_CHOICE_ACTION,
     effectGroup: "Battle Retaliation",
     actionText: "Choose whether to return attack now or save the single return attack.",
-    effectValue: "Cabal Warchief can battle twice, but the opponent only gets one return attack.",
-    promptText: "Cabal Warchief can battle twice this Combat Phase. Choose whether to return attack in this battle or save your return attack for its next battle.",
+    effectValue: `${attackingDefinition.name} can battle more than once, but the opponent only gets one return attack.`,
+    promptText: `${attackingDefinition.name} can battle more than once this Combat Phase. Choose whether to return attack in this battle or save your return attack for its next battle.`,
     targetKind: "PLAYER",
     options: [
       {
@@ -1056,7 +1153,8 @@ function createCabalRetaliationChoicePrompt(
   addEvent(state, "CABAL_RETALIATION_CHOICE_PROMPT_CREATED", defendingPlayer.id, {
     battleSessionId,
     cabalCreatureInstanceId: attackingCreature.card.instanceId,
-    note: "Defender chooses which Cabal Warchief battle gets the single return attack."
+    sourceCardName: attackingDefinition.name,
+    note: "Defender chooses which extra-battle window gets the single return attack."
   });
 }
 
@@ -1279,6 +1377,7 @@ function completeManualBattleSessionInPlace(
     session.declaredAttacker.creatureInstanceId,
     attackingCard ? getCreatureBattleUseLimit(attackingCard) : 1
   );
+  expireConsumedTemporaryBattleEquip(state, attackingPlayer, session.declaredAttacker.creatureInstanceId);
 
   session.status = "COMPLETE";
   setSessionUpdated(session, message);
@@ -1745,7 +1844,7 @@ export function startManualBattleSession(
 
   const savedRetaliationIds = ensureRetaliationSavedList(attackingPlayer);
   const hasSavedRetaliation =
-    isCabalWarchief(attackingCreature.card) &&
+    limitsReturnAttacksAcrossExtraBattles(attackingCreature.card) &&
     getCreatureBattleUseCount(attackingPlayer, attackingCreature.card.instanceId) >= 1 &&
     savedRetaliationIds.includes(attackingCreature.card.instanceId);
 
@@ -1873,7 +1972,7 @@ export function runManualBattleSpeedCheck(
       session,
       attackingCreature.kind === "LIMITED_SUMMON"
         ? "Limited Summons perform a one-way battle into the opponent primary. Roll hit for the Limited Summon."
-        : "Cabal Warchief's extra battle does not allow a return attack. Roll hit for Cabal Warchief."
+        : `${attackingStats.name}'s extra battle does not allow a return attack. Roll hit.`
     );
     addEvent(nextState, "BATTLE_STRIKE_STARTED", attackingCreature.playerId, {
       battleSessionId: session.id,
@@ -3135,6 +3234,7 @@ export function battleWithCreature(
   nextState.lastBattle = result;
 
   addEvent(nextState, "CREATURE_BATTLE_RESOLVED", playerId, result);
+  expireConsumedTemporaryBattleEquip(nextState, attackingPlayer, attackingCreature.card.instanceId);
 
   return nextState;
 }

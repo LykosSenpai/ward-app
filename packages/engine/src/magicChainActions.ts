@@ -1971,18 +1971,26 @@ export function resolveMagicChain(state: MatchState): MatchState {
 
     nextState.chainZone.splice(chainCardIndex, 1);
 
-    if (link.magicType === "INFINITE" && !link.isLightningResponse) {
+    const resolvesToMagicSlot =
+      !link.isLightningResponse &&
+      (link.magicType === "INFINITE" || (link.magicType === "STANDARD" && link.magicSubType === "EQUIP"));
+
+    if (resolvesToMagicSlot) {
       const fieldOwner = getPlayer(nextState, link.playerId);
+      const reason = link.magicType === "INFINITE" ? "INFINITE_MAGIC_TO_FIELD" : "TEMP_EQUIP_MAGIC_TO_FIELD";
+      const slotFullReason = link.magicType === "INFINITE" ? "INFINITE_MAGIC_SLOT_FULL" : "TEMP_EQUIP_MAGIC_SLOT_FULL";
 
       if (fieldOwner.field.magicSlots.length >= 5) {
         chainCard.zone = "CEMETERY";
         ownerPlayer.cemetery.push(chainCard);
 
-        addEvent(nextState, "INFINITE_MAGIC_FAILED_SLOT_FULL", link.playerId, {
+        addEvent(nextState, link.magicType === "INFINITE" ? "INFINITE_MAGIC_FAILED_SLOT_FULL" : "TEMP_EQUIP_MAGIC_FAILED_SLOT_FULL", link.playerId, {
           chainId: chain.id,
           chainLinkId: link.id,
           cardInstanceId: link.cardInstanceId,
           cardName: link.cardName,
+          magicType: link.magicType,
+          magicSubType: link.magicSubType,
           boardEvents: [
             {
               type: "CHAIN_LINK_RESOLVED",
@@ -1991,7 +1999,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
               sourceCardInstanceId: link.cardInstanceId,
               sourceCardId: link.cardId,
               actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-              reason: "INFINITE_MAGIC_SLOT_FULL",
+              reason: slotFullReason,
               fromZoneRef: chainBoardZoneRef(link.playerId),
               toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
               chainLinkId: link.id
@@ -2003,7 +2011,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
               sourceCardInstanceId: link.cardInstanceId,
               sourceCardId: link.cardId,
               actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-              reason: "INFINITE_MAGIC_SLOT_FULL",
+              reason: slotFullReason,
               fromZoneRef: chainBoardZoneRef(link.playerId),
               toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
               chainLinkId: link.id
@@ -2014,11 +2022,13 @@ export function resolveMagicChain(state: MatchState): MatchState {
         chainCard.zone = "MAGIC_SLOT";
         fieldOwner.field.magicSlots.push(chainCard);
 
-        addEvent(nextState, "INFINITE_MAGIC_RESOLVED_TO_FIELD", link.playerId, {
+        addEvent(nextState, link.magicType === "INFINITE" ? "INFINITE_MAGIC_RESOLVED_TO_FIELD" : "TEMP_EQUIP_MAGIC_RESOLVED_TO_FIELD", link.playerId, {
           chainId: chain.id,
           chainLinkId: link.id,
           cardInstanceId: link.cardInstanceId,
           cardName: link.cardName,
+          magicType: link.magicType,
+          magicSubType: link.magicSubType,
           boardEvents: [
             {
               type: "CHAIN_LINK_RESOLVED",
@@ -2027,7 +2037,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
               sourceCardInstanceId: link.cardInstanceId,
               sourceCardId: link.cardId,
               actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-              reason: "INFINITE_MAGIC_TO_FIELD",
+              reason,
               fromZoneRef: chainBoardZoneRef(link.playerId),
               toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
               chainLinkId: link.id
@@ -2039,7 +2049,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
               sourceCardInstanceId: link.cardInstanceId,
               sourceCardId: link.cardId,
               actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-              reason: "INFINITE_MAGIC_TO_FIELD",
+              reason,
               fromZoneRef: chainBoardZoneRef(link.playerId),
               toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
               chainLinkId: link.id

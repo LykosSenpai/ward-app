@@ -535,7 +535,7 @@ export function buildBattleAffordances(match: AppMatchState, controlledPlayerId?
       playerId: activePlayer.id,
       sourceCardInstanceId: option.card.instanceId,
       actionId: "DECLARE_BATTLE_ATTACKER",
-      label: `Battle with ${getCardName(match, option.card)}`,
+      label: `Battle with ${getCardName(match, option.card)}${option.battleUseLimit > 1 ? ` (${option.battleUseCount}/${option.battleUseLimit})` : ""}`,
       highlightStyle: "VALID"
     });
 

@@ -5,6 +5,7 @@ import {
   applyOnEquipPercentageDamageEffects,
   applyOnEquipRecurringEffects,
   applyOnEquipRegeneratingHealEffects,
+  applyWhileEquippedBattleRequirementEffects,
   applyWhileEquippedStatModifiers
 } from "./effectResolver.js";
 import { moveMagicSlotCardToCemetery } from "./cardMovement.js";
@@ -132,12 +133,12 @@ export function attachEquipMagicToCreature(
     throw new Error("Selected card is not Magic.");
   }
 
-  if (definition.magicType !== "INFINITE") {
-    throw new Error("Only Infinite Magic can remain attached.");
-  }
-
   if (definition.magicSubType !== "EQUIP") {
     throw new Error("Only Equip Magic can be attached to a creature.");
+  }
+
+  if (definition.magicType !== "INFINITE" && definition.magicType !== "STANDARD") {
+    throw new Error("Only Infinite or temporary Standard Equip Magic can remain attached.");
   }
 
   if (magicCard.attachedToInstanceId) {
@@ -147,6 +148,15 @@ export function attachEquipMagicToCreature(
   magicCard.attachedToInstanceId = targetCreature.instanceId;
 
   const automaticEquipModifierCount = applyWhileEquippedStatModifiers(
+    nextState,
+    {
+      sourceMagicCard: magicCard,
+      targetCreature,
+      addEvent
+    }
+  );
+
+  const automaticBattleRequirementCount = applyWhileEquippedBattleRequirementEffects(
     nextState,
     {
       sourceMagicCard: magicCard,
@@ -208,6 +218,7 @@ export function attachEquipMagicToCreature(
     targetCreatureInstanceId: targetCreature.instanceId,
     targetCreatureName: getCardDefinition(nextState, targetCreature).name,
     automaticEquipModifierCount,
+    automaticBattleRequirementCount,
     automaticOnEquipEffectCount,
     automaticOnEquipPercentageDamageCount,
     automaticGlobalCreatureEffectNegationCount,

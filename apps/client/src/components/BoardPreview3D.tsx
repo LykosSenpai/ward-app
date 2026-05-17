@@ -348,6 +348,54 @@ function BoardBattleResolverHud({
   );
 }
 
+function BoardEffectRollHud({
+  effectRoll,
+  canAdvanceStep,
+  controllerLabel,
+  onApplyEffect,
+  onSkipEffect
+}: {
+  effectRoll: PendingEffectRollSession;
+  canAdvanceStep: boolean;
+  controllerLabel: string;
+  onApplyEffect?: (effectRollSessionId: string) => void;
+  onSkipEffect?: (effectRollSessionId: string) => void;
+}) {
+  const total = effectRoll.rollTotal ?? sumDice(effectRoll.rolledDice);
+
+  return (
+    <aside className="board-battle-hud board-battle-hud--effect" aria-label="3D effect roll resolver">
+      <div className="board-battle-hud__header">
+        <span>Effect Roll</span>
+        <strong>{effectRoll.sourceCardName}</strong>
+      </div>
+      <div className="board-battle-hud__effect">
+        <span>{effectRoll.targetCardName ?? "Effect target"}</span>
+        <strong>{effectRoll.status === "ROLLED" ? `${total} ${effectRoll.success ? "success" : "fail"}` : `${effectRoll.diceCount}D6`}</strong>
+        {effectRoll.message ? <small>{effectRoll.message}</small> : null}
+      </div>
+      {!canAdvanceStep ? (
+        <div className="board-battle-hud__locked">
+          Waiting for {controllerLabel}
+        </div>
+      ) : null}
+      {effectRoll.status === "AWAITING_ROLL" ? (
+        <div className="board-battle-hud__dice-note">
+          Use the board dice beside the deck.
+        </div>
+      ) : null}
+      <div className="board-battle-hud__actions">
+        {effectRoll.status === "ROLLED" ? (
+          <button type="button" disabled={!canAdvanceStep || !onApplyEffect} onClick={() => onApplyEffect?.(effectRoll.id)}>
+            {effectRoll.success ? "Apply Effect" : "Close Roll"}
+          </button>
+        ) : null}
+        <button type="button" className="ghost" disabled={!canAdvanceStep || !onSkipEffect} onClick={() => onSkipEffect?.(effectRoll.id)}>Skip</button>
+      </div>
+    </aside>
+  );
+}
+
 function BoardMagicChainHud({
   match,
   controlledPlayerId,
@@ -1507,6 +1555,9 @@ export function BoardPreview3D({
       ? pendingBattle.attackingPlayerId
       : pendingBattleStrike?.attacker.playerId ?? pendingBattle.attackingPlayerId)
     : null;
+  const standaloneEffectRollControllerPlayerId = !pendingBattle && match.pendingEffectRoll
+    ? (match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.targetPlayerId ?? match.pendingEffectRoll.sourcePlayerId)
+    : null;
   const canAdvanceBattleResolver = pendingBattle?.status === "COMPLETE"
     ? !match.pendingEffectTargetPrompt &&
       (!controlledPlayerId || completedBattleParticipantPlayerIds.has(controlledPlayerId))
@@ -1515,10 +1566,17 @@ export function BoardPreview3D({
       !match.pendingEffectTargetPrompt &&
       (!controlledPlayerId || controlledPlayerId === battleStepControllerPlayerId)
     );
+  const canAdvanceStandaloneEffectRoll = Boolean(
+    standaloneEffectRollControllerPlayerId &&
+    !match.pendingEffectTargetPrompt &&
+    (!controlledPlayerId || controlledPlayerId === standaloneEffectRollControllerPlayerId)
+  );
   const battleStepControllerLabel = battleStepControllerPlayerId
     ? pendingBattle?.status === "COMPLETE"
       ? "either battle participant"
       : match.players.find(player => player.id === battleStepControllerPlayerId)?.displayName ?? battleStepControllerPlayerId
+    : standaloneEffectRollControllerPlayerId
+      ? match.players.find(player => player.id === standaloneEffectRollControllerPlayerId)?.displayName ?? standaloneEffectRollControllerPlayerId
     : "the current player";
   const diceRollVisual = useMemo(() => getLatestDiceRollVisual(match), [match]);
   const boardDiceRollAction = useMemo<BoardDiceRollAction | null>(() => {
@@ -1553,6 +1611,21 @@ export function BoardPreview3D({
         disabled: !canRoll || !onRollEffectRoll,
         disabledLabel: `Waiting for ${rollPlayerLabel}`,
         onClick: () => onRollEffectRoll?.(match.pendingEffectRoll!.id)
+      };
+    }
+
+    if (!pendingBattle && match.pendingEffectRoll?.status === "ROLLED") {
+      const owner = (match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.targetPlayerId ?? match.pendingEffectRoll.sourcePlayerId ?? focusedPlayerId) as BoardPlayerId;
+      const rollPlayerLabel = match.players.find(player => player.id === owner)?.displayName ?? owner;
+      const canApply = !controlledPlayerId || controlledPlayerId === owner;
+      return {
+        id: `effect-apply-${match.pendingEffectRoll.id}`,
+        label: match.pendingEffectRoll.success ? "Apply Effect" : "Close Roll",
+        detail: `${match.pendingEffectRoll.sourceCardName} ${match.pendingEffectRoll.rollTotal ?? sumDice(match.pendingEffectRoll.rolledDice)}`,
+        owner,
+        disabled: !canApply || !onApplyEffectRoll,
+        disabledLabel: `Waiting for ${rollPlayerLabel}`,
+        onClick: () => onApplyEffectRoll?.(match.pendingEffectRoll!.id)
       };
     }
 
@@ -1615,6 +1688,7 @@ export function BoardPreview3D({
     controlledPlayerId,
     focusedPlayerId,
     match,
+    onApplyEffectRoll,
     onOpeningRoll,
     onOpenDiceRoller,
     onRollBattleDamage,
@@ -2448,6 +2522,14 @@ export function BoardPreview3D({
             onSelectHandCard={(cardInstanceId) => setSelectedHandCardId(current => current === cardInstanceId ? null : cardInstanceId)}
             onHandCardDragStart={(cardInstanceId) => setSelectedHandCardId(cardInstanceId)}
             onToggleSacrificeCard={toggleSacrificeSelection}
+            onSelectBattleTargetPiece={(targetPieceId) => {
+              if (!selectedBattleAttacker?.cardInstanceId || !battleDefender || battleDefender.object.id !== targetPieceId) {
+                setStatusMessage("That creature cannot attack that target right now.");
+                return;
+              }
+              onStartBattleFromPiece?.(selectedBattleAttacker.cardInstanceId, battleDefender.card.instanceId);
+              setSelectedBattleAttackerId(null);
+            }}
             onDropBattleAttackerToPiece={(targetPieceId, attackerCreatureInstanceId) => {
               if (!battleDefender || battleDefender.object.id !== targetPieceId || !legalBattleAttackerIds.has(attackerCreatureInstanceId)) {
                 setStatusMessage("That creature cannot attack that target right now.");
@@ -2916,6 +2998,15 @@ export function BoardPreview3D({
               controllerLabel={battleStepControllerLabel}
               onApplyDamage={onApplyBattleDamage}
               onFinish={onFinishBattle}
+              onApplyEffect={onApplyEffectRoll}
+              onSkipEffect={onSkipEffectRoll}
+            />
+          ) : null}
+          {!match.pendingBattle && match.pendingEffectRoll ? (
+            <BoardEffectRollHud
+              effectRoll={match.pendingEffectRoll}
+              canAdvanceStep={canAdvanceStandaloneEffectRoll}
+              controllerLabel={battleStepControllerLabel}
               onApplyEffect={onApplyEffectRoll}
               onSkipEffect={onSkipEffectRoll}
             />

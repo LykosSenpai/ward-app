@@ -1095,13 +1095,13 @@ function resolveCabalRetaliationChoicePrompt(
     }
     attackingPlayer.turnFlags.retaliationSavedCreatureInstanceIds = savedIds;
     session.limitedSummonNoRetaliation = true;
-    session.message = "Defender saved their return attack for Cabal Warchief's next battle. Run the one-way battle speed check.";
+    session.message = `Defender saved their return attack for ${prompt.sourceCardName}'s next battle. Run the one-way battle speed check.`;
   } else if (selectedOption.id === "cabal-retaliate-now") {
     attackingPlayer.turnFlags.retaliationSavedCreatureInstanceIds = savedIds.filter(
       id => id !== prompt.sourceCardInstanceId
     );
     session.limitedSummonNoRetaliation = false;
-    session.message = "Defender chose to return attack in this Cabal Warchief battle. Run the speed check.";
+    session.message = `Defender chose to return attack in this ${prompt.sourceCardName} battle. Run the speed check.`;
   } else {
     throw new Error("Select a Cabal Warchief retaliation option.");
   }
@@ -1115,7 +1115,8 @@ function resolveCabalRetaliationChoicePrompt(
     sourceCardInstanceId: prompt.sourceCardInstanceId,
     sourceCardName: prompt.sourceCardName,
     choice: selectedOption.id,
-    savedForLater: selectedOption.id === "cabal-save-retaliation"
+    savedForLater: selectedOption.id === "cabal-save-retaliation",
+    note: "Extra-battle return attack choice resolved."
   });
 
   return state;

@@ -55,6 +55,7 @@ type Props = {
   onSelectHandCard?: (cardInstanceId: string) => void;
   onHandCardDragStart?: (cardInstanceId: string) => void;
   onToggleSacrificeCard?: (cardInstanceId: string) => void;
+  onSelectBattleTargetPiece?: (targetPieceId: string) => void;
   onDropBattleAttackerToPiece?: (targetPieceId: string, attackerCreatureInstanceId: string) => void;
   onDropEquipMagicToPiece?: (targetPieceId: string, magicCardInstanceId: string) => void;
   onDropEffectSourceToPiece?: (targetPieceId: string) => void;
@@ -90,18 +91,18 @@ function getCreatureOverlayStats(match: AppMatchState, card: CardInstance) {
   const currentHp = Number(card.currentHp ?? baseHp);
   const hpPercent = baseHp > 0 ? Math.max(0, Math.min(100, (currentHp / baseHp) * 100)) : 0;
   const hpTone = hpPercent <= 30 ? "danger" : hpPercent <= 60 ? "warn" : "healthy";
-  const attackDice = getEffectiveCreatureStat(card, "attackDice", definition.attackDice);
-  const modifier = getEffectiveCreatureStat(card, "modifier", definition.modifier);
+  const attackDice = getEffectiveCreatureStat(card, "attackDice", definition.attackDice, match);
+  const modifier = getEffectiveCreatureStat(card, "modifier", definition.modifier, match);
 
   return {
-    armorLevel: getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel),
+    armorLevel: getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel, match),
     attackDice,
     baseHp,
     currentHp,
     hpPercent,
     hpTone,
     modifier,
-    speed: getEffectiveCreatureStat(card, "speed", definition.speed)
+    speed: getEffectiveCreatureStat(card, "speed", definition.speed, match)
   };
 }
 
@@ -281,7 +282,7 @@ function AttackStreamCanvas({
   return <canvas ref={canvasRef} className="board-preview-3d__attack-fx-canvas" aria-hidden="true" />;
 }
 
-export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onInspectRelatedCard, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onDropBattleAttackerToPiece, onDropEquipMagicToPiece, onDropEffectSourceToPiece, onDropEffectSourceToSlot, onCemeteryStackClick, draggableHandCardIds, draggableBattleAttackerCardIds, draggableEquipMagicCardIds, validBattleTargetPieceIds, validEquipTargetPieceIds, validEffectTargetPieceIds, validEffectTargetSlotIds, effectSourcePieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, equipAttachSourcePieceIds, battleSpeedBadges, diceRollVisual, attackAnimation, activeEventType, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
+export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onInspectRelatedCard, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onSelectBattleTargetPiece, onDropBattleAttackerToPiece, onDropEquipMagicToPiece, onDropEffectSourceToPiece, onDropEffectSourceToSlot, onCemeteryStackClick, draggableHandCardIds, draggableBattleAttackerCardIds, draggableEquipMagicCardIds, validBattleTargetPieceIds, validEquipTargetPieceIds, validEffectTargetPieceIds, validEffectTargetSlotIds, effectSourcePieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, equipAttachSourcePieceIds, battleSpeedBadges, diceRollVisual, attackAnimation, activeEventType, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
   const highlightedSet = new Set(highlightedSlotIds ?? []);
   const highlightedPieceSet = new Set(highlightedPieceIds ?? []);
   const draggableHandCardSet = new Set(draggableHandCardIds ?? []);
@@ -524,6 +525,7 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
           const isSacrificeCandidate = Boolean(object.cardInstanceId && sacrificeCandidateSet.has(object.cardInstanceId));
           const isSelectedSacrifice = Boolean(object.cardInstanceId && selectedSacrificeSet.has(object.cardInstanceId));
           const isBattleAttacker = Boolean(object.cardInstanceId && draggableBattleAttackerSet.has(object.cardInstanceId));
+          const isBattleTarget = validBattleTargetPieceSet.has(object.id);
           const isEquipMagicSource = Boolean(object.cardInstanceId && draggableEquipMagicSet.has(object.cardInstanceId));
           const isEquipAttachTarget = validEquipTargetPieceSet.has(object.id);
           const isEffectSource = effectSourcePieceSet.has(object.id);
@@ -536,7 +538,7 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
             <article
               key={object.id}
               draggable={Boolean(draggableHandCardId || isSacrificeCandidate || isBattleAttacker || isEquipMagicSource || isEffectSource)}
-              className={`board-preview-3d__piece board-preview-3d__piece--${object.owner} board-preview-3d__piece--${object.lane}${draggableHandCardId ? " is-draggable-hand-card" : ""}${isBattleAttacker ? " is-draggable-battle-attacker" : ""}${isEquipMagicSource ? " is-draggable-equip-magic" : ""}${isEffectSource ? " is-effect-source" : ""}${isEffectTarget ? " is-effect-target" : ""}${equipAttachSourcePieceSet.has(object.id) ? " is-equip-attach-source" : ""}${isEquipAttachTarget ? " is-equip-attach-target" : ""}${isSacrificeCandidate ? " is-sacrifice-candidate" : ""}${isSelectedSacrifice ? " is-selected-sacrifice" : ""}${highlightedPieceSet.has(object.id) ? " is-highlighted" : ""}${isCardBack ? " is-card-back" : ""}`}
+              className={`board-preview-3d__piece board-preview-3d__piece--${object.owner} board-preview-3d__piece--${object.lane}${draggableHandCardId ? " is-draggable-hand-card" : ""}${isBattleAttacker ? " is-draggable-battle-attacker" : ""}${isBattleTarget ? " is-battle-target" : ""}${isEquipMagicSource ? " is-draggable-equip-magic" : ""}${isEffectSource ? " is-effect-source" : ""}${isEffectTarget ? " is-effect-target" : ""}${equipAttachSourcePieceSet.has(object.id) ? " is-equip-attach-source" : ""}${isEquipAttachTarget ? " is-equip-attach-target" : ""}${isSacrificeCandidate ? " is-sacrifice-candidate" : ""}${isSelectedSacrifice ? " is-selected-sacrifice" : ""}${highlightedPieceSet.has(object.id) ? " is-highlighted" : ""}${isCardBack ? " is-card-back" : ""}`}
             style={{
               left: `${resolveSlotPosition(object.slotId, object.xPercent, object.zPercent).xPercent}%`,
               top: `${resolveSlotPosition(object.slotId, object.xPercent, object.zPercent).zPercent}%`,
@@ -635,6 +637,10 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
               }
               if (isSacrificeCandidate && object.cardInstanceId) {
                 onToggleSacrificeCard?.(object.cardInstanceId);
+                return;
+              }
+              if (isBattleTarget) {
+                onSelectBattleTargetPiece?.(object.id);
                 return;
               }
               if (object.lane === "deck") {

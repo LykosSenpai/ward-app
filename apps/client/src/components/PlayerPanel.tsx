@@ -5,6 +5,7 @@ import { socket } from "../socket";
 import {
   getCardName,
   getBattleBlockReason,
+  getPlayerBattleCreatureOptions,
   getCreatureStatsLine,
   getEffectiveCreatureStat,
   getAttachedCreatureLabel,
@@ -105,10 +106,10 @@ function PlaymatCard({
     : getCreatureStatsLine(match, card);
   const statChips = isCreatureCard
     ? [
-      ["AL", getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel)],
-      ["SPD", getEffectiveCreatureStat(card, "speed", definition.speed)],
-      ["ATK", `${getEffectiveCreatureStat(card, "attackDice", definition.attackDice)}D6`],
-      ["MOD", getEffectiveCreatureStat(card, "modifier", definition.modifier)]
+      ["AL", getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel, match)],
+      ["SPD", getEffectiveCreatureStat(card, "speed", definition.speed, match)],
+      ["ATK", `${getEffectiveCreatureStat(card, "attackDice", definition.attackDice, match)}D6`],
+      ["MOD", getEffectiveCreatureStat(card, "modifier", definition.modifier, match)]
     ]
     : [];
   const attachmentLabel = isMagicCard ? getAttachedCreatureLabel(match, card.attachedToInstanceId) : "";
@@ -247,14 +248,18 @@ function PlayerPlaymat({
   const deckCount = player.deck.length;
   const cemeteryCount = player.cemetery.length;
   const battleBlockReason = getBattleBlockReason(match);
-  const usedBattleCreatureIds = player.turnFlags.battleUsedCreatureInstanceIds ?? [];
+  const battleCreatureOptions = getPlayerBattleCreatureOptions(match, player);
   const canBattleWithCard = (card?: CardInstance) =>
     !!card &&
     !!onStartBattle &&
     canControlThisPlayer &&
     isActivePlayer &&
     !battleBlockReason &&
-    !usedBattleCreatureIds.includes(card.instanceId);
+    battleCreatureOptions.some(option =>
+      option.card.instanceId === card.instanceId &&
+      !option.usedThisCombat &&
+      !option.statusBattleSkipReason
+    );
   const dragClass = (zone: "primary" | "magic" | "cemetery") => dragOverZone === zone ? " drag-over" : "";
 
   return (

@@ -315,6 +315,8 @@ export type ActiveEffectInstance = {
   rollKind?: "HIT_ROLL" | "ATTACK_DAMAGE_ROLL" | string;
   diceLimitMode?: "MAX" | "SET" | string;
   diceLimitValue?: number;
+  extraInitiatedBattles?: number;
+  maxReturnAttacksAgainstThisEffect?: number;
 
   sourceLinked?: boolean;
   expiresWhenSourceLeaves?: boolean;

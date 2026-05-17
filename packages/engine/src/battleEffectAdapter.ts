@@ -204,6 +204,15 @@ function getCreatureLocation(state: MatchState, creatureInstanceId: string) {
   return undefined;
 }
 
+function getBattleCreatureCard(state: MatchState, creature: BattleCreatureRef): CardInstance | undefined {
+  return state.players
+    .flatMap(player => [
+      player.field.primaryCreature,
+      ...player.field.limitedSummons
+    ])
+    .find(card => card?.instanceId === creature.creatureInstanceId);
+}
+
 function isPositiveStrikeModifierSuppressed(state: MatchState, suggestion: BattleEffectSuggestion): boolean {
   if (suggestion.kind !== "STRIKE" || !suggestion.strikeModifiers) return false;
   if (!suggestion.appliesToCreatureInstanceId) return false;
@@ -345,6 +354,7 @@ function mergeStrikeModifier(
 }
 
 function suggestionFromStatChange(
+  state: MatchState,
   source: ActiveBattleSource,
   effect: WardEngineEffect,
   creature: BattleCreatureRef,
@@ -357,6 +367,16 @@ function suggestionFromStatChange(
   const multiplier = stat === "hitRollMultiplier" ? Number(change.value) : undefined;
   if (!stat || (stat !== "hitRollMultiplier" && (delta === undefined || delta === 0))) return undefined;
   if (stat === "hitRollMultiplier" && (!Number.isFinite(multiplier) || multiplier === 1)) return undefined;
+
+  const creatureCard = getBattleCreatureCard(state, creature);
+  const isBaseCreatureStat = stat === "armorLevel" || stat === "speed" || stat === "attackDice" || stat === "modifier";
+  const alreadyMaterializedOnTarget = isBaseCreatureStat && (creatureCard?.activeStatModifiers ?? []).some(modifier =>
+    modifier.sourceCardInstanceId === source.card.instanceId &&
+    modifier.sourceEffectId === effect.id &&
+    modifier.stat === stat
+  );
+
+  if (alreadyMaterializedOnTarget) return undefined;
 
   const base = {
     id: `${source.card.instanceId}:${effect.id}:stat:${index}:${creature.creatureInstanceId}`,
@@ -515,7 +535,7 @@ function suggestionFromEffect(
   const statChanges = getRuntimeBlockStatChanges(effect);
 
   const statChangeSuggestions = statChanges
-    .map((change, statIndex) => suggestionFromStatChange(source, effect, creature, change, statIndex))
+    .map((change, statIndex) => suggestionFromStatChange(state, source, effect, creature, change, statIndex))
     .filter((suggestion): suggestion is BattleEffectSuggestion => Boolean(suggestion));
 
   if (statChangeSuggestions.length === 1) return statChangeSuggestions[0];
@@ -773,32 +793,6 @@ export function collectBattleEffectSuggestions(
       }
     }
 
-    for (const modifier of source.card.activeStatModifiers ?? []) {
-      const creature = battleCreatures.find(candidate => candidate.creatureInstanceId === source.card.instanceId);
-      if (!creature) continue;
-
-      const statChange: WardEffectStatChange = {
-        stat: modifier.stat,
-        operation: modifier.delta >= 0 ? "ADD" : "SUBTRACT",
-        value: Math.abs(modifier.delta)
-      };
-
-      const suggestion = suggestionFromStatChange(source, {
-        id: modifier.sourceEffectId,
-        trigger: "ACTIVE_STAT_MODIFIER",
-        actionType: "APPLY_STAT_MODIFIER",
-        actionText: `${modifier.sourceCardName} active ${modifier.stat} modifier`,
-        value: `${modifier.stat} ${modifier.delta > 0 ? "+" : ""}${modifier.delta}`,
-        params: { statChanges: [statChange] }
-      }, creature, statChange, 0);
-
-      if (suggestion) suggestions.push({
-        ...suggestion,
-        sourceCardInstanceId: modifier.sourceCardInstanceId,
-        sourceCardName: modifier.sourceCardName,
-        label: `${modifier.sourceCardName}: ${modifier.stat} ${modifier.delta > 0 ? "+" : ""}${modifier.delta}`
-      });
-    }
   }
 
   const unsuppressed = suggestions.filter(suggestion => !isPositiveStrikeModifierSuppressed(state, suggestion));

@@ -5,6 +5,7 @@ import type {
   EffectTargetOption,
   MatchState,
   PlayerState,
+  StatModifierKey,
   WardEngineEffect
 } from "@ward/shared";
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
@@ -135,6 +136,25 @@ function sourceController(state: MatchState, source: ActiveTurnEffectSource): Pl
 
 function opponentOf(state: MatchState, playerId: string): PlayerState | undefined {
   return state.players.find(player => player.id !== playerId);
+}
+
+function normalizeStatKey(rawStat: string): StatModifierKey | undefined {
+  const stat = rawStat.trim().toUpperCase().replace(/[\s-]+/g, "_");
+  if (stat === "AL" || stat === "ARMOR" || stat === "ARMOR_LEVEL") return "armorLevel";
+  if (stat === "SPD" || stat === "SPEED") return "speed";
+  if (stat === "ATK_DICE" || stat === "ATK_DICE_ROLLS" || stat === "ATTACK_DICE" || stat === "ATTACK_DICE_ROLLS") return "attackDice";
+  if (stat === "MOD" || stat === "MODIFIER") return "modifier";
+  return undefined;
+}
+
+function statDeltaFromChange(change: { operation?: string; value?: number }): number | undefined {
+  const value = Number(change.value);
+  if (!Number.isFinite(value)) return undefined;
+
+  const operation = String(change.operation ?? "ADD").trim().toUpperCase();
+  if (operation === "ADD") return value;
+  if (operation === "SUBTRACT") return -value;
+  return undefined;
 }
 
 function sourceAttachedCreature(state: MatchState, source: ActiveTurnEffectSource): CreatureLocation | undefined {
@@ -597,6 +617,76 @@ function sendAttachedCreatureAndSourceToCemetery(
   return true;
 }
 
+function applyNoBattleNextTurnModifiers(
+  state: MatchState,
+  source: ActiveTurnEffectSource,
+  effect: WardEngineEffect,
+  endingPlayerId: string,
+  addEvent: AddEventFn
+): boolean {
+  if (source.card.controllerPlayerId !== endingPlayerId) return false;
+
+  const usedCreatureIds = source.player.turnFlags.battleUsedCreatureInstanceIds ?? [];
+  if (usedCreatureIds.includes(source.card.instanceId)) {
+    addEvent(state, "NO_BATTLE_DELAYED_MODIFIER_NOT_APPLIED", endingPlayerId, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      sourceEffectId: effect.id,
+      actionType: effect.actionType,
+      reason: "Source creature battled this turn."
+    });
+    return true;
+  }
+
+  const statChanges = effect.params?.statChanges ?? [];
+  if (statChanges.length === 0) return false;
+
+  const expiresAtPlayerTurnStartCount = (state.turn.turnStartCountsByPlayer[endingPlayerId] ?? 0) + 2;
+  source.card.activeStatModifiers ??= [];
+  source.card.activeStatModifiers = source.card.activeStatModifiers.filter(modifier =>
+    !(modifier.sourceCardInstanceId === source.card.instanceId && modifier.sourceEffectId === effect.id)
+  );
+
+  let appliedCount = 0;
+  const applied = [];
+  for (const change of statChanges) {
+    const stat = normalizeStatKey(change.stat);
+    const delta = statDeltaFromChange(change);
+    if (!stat || delta === undefined) continue;
+
+    const modifierId = uuidv4();
+    source.card.activeStatModifiers.push({
+      id: modifierId,
+      sourceEffectId: effect.id,
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      stat,
+      delta,
+      durationType: "TARGET_PLAYER_TURN_STARTS",
+      appliedTurnNumber: state.turn.turnNumber,
+      appliedTurnCycle: state.turn.turnCycleNumber,
+      expiresOnPlayerId: endingPlayerId,
+      expiresAtPlayerTurnStartCount
+    });
+    appliedCount++;
+    applied.push({ modifierId, stat, delta });
+  }
+
+  addEvent(state, "NO_BATTLE_DELAYED_MODIFIER_APPLIED", endingPlayerId, {
+    sourceCardInstanceId: source.card.instanceId,
+    sourceCardName: source.definition.name,
+    sourceEffectId: effect.id,
+    actionType: effect.actionType,
+    appliedCount,
+    expiresOnPlayerId: endingPlayerId,
+    expiresAtPlayerTurnStartCount,
+    applied,
+    note: "Creature did not battle this turn; next-turn dice/stat modifier is now visible in effective stats."
+  });
+
+  return appliedCount > 0;
+}
+
 function resolveTurnEffect(
   state: MatchState,
   source: ActiveTurnEffectSource,
@@ -748,8 +838,14 @@ export function processTurnEndTriggeredEffects(
       if (
         trigger !== "END_OF_YOUR_TURN" &&
         trigger !== "AT_END_OF_YOUR_TURN" &&
-        trigger !== "AT_END_OF_YOUR_TURN_FIELD"
+        trigger !== "AT_END_OF_YOUR_TURN_FIELD" &&
+        trigger !== "IF_NO_BATTLE_DURING_YOUR_TURN"
       ) {
+        continue;
+      }
+
+      if (trigger === "IF_NO_BATTLE_DURING_YOUR_TURN") {
+        applyNoBattleNextTurnModifiers(state, source, effect, endingPlayerId, addEvent);
         continue;
       }
 

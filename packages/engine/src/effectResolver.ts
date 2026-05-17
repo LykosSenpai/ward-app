@@ -907,6 +907,107 @@ export function applyWhileEquippedStatModifiers(
   return appliedCount;
 }
 
+export function applyWhileEquippedBattleRequirementEffects(
+  state: MatchState,
+  args: {
+    sourceMagicCard: CardInstance;
+    targetCreature: CardInstance;
+    addEvent: AddEventFn;
+  }
+): number {
+  const { sourceMagicCard, targetCreature, addEvent } = args;
+  const definition = state.cardCatalog[sourceMagicCard.cardId];
+  if (!definition || definition.cardType !== "MAGIC") return 0;
+
+  const effects = getCardEngineEffects(definition).filter(effect => {
+    const actionType = getRuntimeBlockActionType(effect).trim().toUpperCase();
+    const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+    const durationType = String(effect.duration?.type ?? effect.params?.duration?.type ?? "").trim().toUpperCase();
+    const targetText = (getRuntimeBlockTargetText(effect) ?? "").toLowerCase();
+    return actionType === "APPLY_BATTLE_REQUIREMENT" &&
+      (trigger === "WHILE_EQUIPPED" || durationType === "WHILE_EQUIPPED") &&
+      targetText.includes("equipped creature");
+  });
+
+  if (effects.length === 0) return 0;
+
+  targetCreature.activeEffectInstances ??= [];
+  targetCreature.activeEffectInstances = targetCreature.activeEffectInstances.filter(instance =>
+    !(instance.sourceCardInstanceId === sourceMagicCard.instanceId &&
+      effects.some(effect => effect.id === instance.sourceEffectId))
+  );
+
+  let appliedCount = 0;
+  const sourcePlacement = definition.magicType === "STANDARD" ? "TEMP_EQUIP" : "MAGIC_SLOT";
+
+  for (const effect of effects) {
+    const text = [
+      getRuntimeBlockText(effect),
+      effect.value,
+      effect.params?.valueText,
+      effect.notes
+    ].filter(Boolean).join(" ").toLowerCase();
+    const extraInitiatedBattles = Number.isFinite(Number(effect.params?.extraInitiatedBattles))
+      ? Math.max(0, Math.trunc(Number(effect.params?.extraInitiatedBattles)))
+      : text.includes("battle twice") || text.includes("initiate battle twice")
+        ? 1
+        : undefined;
+    const maxReturnAttacksAgainstThisEffect = Number.isFinite(Number(effect.params?.maxReturnAttacksAgainstThisEffect))
+      ? Math.max(0, Math.trunc(Number(effect.params?.maxReturnAttacksAgainstThisEffect)))
+      : text.includes("only return attack for 1") || text.includes("only return attack for one")
+        ? 1
+        : undefined;
+
+    targetCreature.activeEffectInstances.push({
+      id: uuidv4(),
+      kind: "STATIC_MODIFIER",
+      sourceEffectId: effect.id,
+      sourceCardInstanceId: sourceMagicCard.instanceId,
+      sourceCardName: getCardName(state, sourceMagicCard),
+      sourcePlayerId: sourceMagicCard.controllerPlayerId,
+      targetPlayerId: targetCreature.controllerPlayerId,
+      targetCardInstanceId: targetCreature.instanceId,
+      targetCardName: getCardName(state, targetCreature),
+      actionType: "APPLY_BATTLE_REQUIREMENT",
+      label: effect.value ?? effect.actionText ?? "Battle requirement",
+      durationType: "WHILE_EQUIPPED",
+      durationText: effect.duration?.text ?? effect.params?.duration?.text ?? "While equipped",
+      sourcePlacement,
+      sourceLinked: true,
+      expiresWhenSourceLeaves: true,
+      extraInitiatedBattles,
+      maxReturnAttacksAgainstThisEffect,
+      appliedTurnNumber: state.turn.turnNumber,
+      appliedTurnCycle: state.turn.turnCycleNumber,
+      debug: [
+        `${getCardName(state, sourceMagicCard)} is attached as ${sourcePlacement === "TEMP_EQUIP" ? "a temporary Equip Magic" : "an Equip Magic"}.`,
+        extraInitiatedBattles
+          ? `Equipped creature gains ${extraInitiatedBattles} extra initiated battle(s).`
+          : "No extra battle count was parsed.",
+        maxReturnAttacksAgainstThisEffect !== undefined
+          ? `Opponent return attacks against this effect are capped at ${maxReturnAttacksAgainstThisEffect}.`
+          : "No return-attack cap was parsed."
+      ]
+    });
+    appliedCount++;
+
+    addEvent(state, "AUTO_EQUIP_BATTLE_REQUIREMENT_ACTIVE", sourceMagicCard.controllerPlayerId, {
+      sourceCardName: getCardName(state, sourceMagicCard),
+      sourceCardInstanceId: sourceMagicCard.instanceId,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      targetCreatureInstanceId: targetCreature.instanceId,
+      targetCreatureName: getCardName(state, targetCreature),
+      sourcePlacement,
+      extraInitiatedBattles,
+      maxReturnAttacksAgainstThisEffect,
+      note: "Battle permission and return-attack limits remain active while this Equip Magic stays attached."
+    });
+  }
+
+  return appliedCount;
+}
+
 function parseFirstPositiveNumberFromEffect(effect: WardEngineEffect): number | undefined {
   const text = [effect.value, effect.params?.valueText, effect.actionText]
     .filter(Boolean)

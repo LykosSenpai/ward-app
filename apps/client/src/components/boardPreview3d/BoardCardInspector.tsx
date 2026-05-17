@@ -23,13 +23,13 @@ function getCreatureOverlayStats(match: AppMatchState, card: CardInstance) {
   const hpTone = hpPercent <= 30 ? "danger" : hpPercent <= 60 ? "warn" : "healthy";
 
   return {
-    armorLevel: getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel),
-    attackDice: getEffectiveCreatureStat(card, "attackDice", definition.attackDice),
+    armorLevel: getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel, match),
+    attackDice: getEffectiveCreatureStat(card, "attackDice", definition.attackDice, match),
     baseHp,
     currentHp,
     hpTone,
-    modifier: getEffectiveCreatureStat(card, "modifier", definition.modifier),
-    speed: getEffectiveCreatureStat(card, "speed", definition.speed)
+    modifier: getEffectiveCreatureStat(card, "modifier", definition.modifier, match),
+    speed: getEffectiveCreatureStat(card, "speed", definition.speed, match)
   };
 }
 
@@ -212,13 +212,13 @@ function BoardCardRuntimeEffectsSection({
       {recurring.map(effect => (
         <button type="button" key={effect.id} disabled>
           <strong>{effect.label || effect.effectType}</strong>
-          <small>{effect.amount} {effect.effectType === "HEAL_OVER_TIME" ? "heal" : "damage"} - {effect.remainingTicks} tick{effect.remainingTicks === 1 ? "" : "s"} left{effect.nextTickPlayerId ? ` - next ${getPlayerName(match, effect.nextTickPlayerId)}` : ""}</small>
+          <small>{effect.amount} {effect.effectType === "HEAL_OVER_TIME" ? "heal" : "damage"} - {effect.remainingTicks} tick{effect.remainingTicks === 1 ? "" : "s"} left{effect.nextTickPlayerId ? ` - next ${getPlayerName(match, effect.nextTickPlayerId)} ${String(effect.tickTiming ?? "").replace(/_/g, " ").toLowerCase()}` : ""}{effect.nextTickTurnStartCount !== undefined ? ` #${effect.nextTickTurnStartCount}` : ""}</small>
         </button>
       ))}
       {activeInstances.map(instance => (
         <button type="button" key={instance.id} disabled>
           <strong>{instance.label || instance.actionType}</strong>
-          <small>{instance.sourceCardName}{instance.ticksRemaining !== undefined ? ` - ${instance.ticksRemaining} tick${instance.ticksRemaining === 1 ? "" : "s"} left` : ""}</small>
+          <small>{instance.sourceCardName}{instance.extraInitiatedBattles ? ` - +${instance.extraInitiatedBattles} attack` : ""}{instance.maxReturnAttacksAgainstThisEffect !== undefined ? ` - return attacks ${instance.maxReturnAttacksAgainstThisEffect}` : ""}{instance.ticksRemaining !== undefined ? ` - ${instance.ticksRemaining} tick${instance.ticksRemaining === 1 ? "" : "s"} left` : ""}</small>
         </button>
       ))}
     </div>

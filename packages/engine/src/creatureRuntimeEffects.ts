@@ -276,6 +276,42 @@ function sourceControlsStrikeDefender(source: ActiveEffectSource, strike: Manual
     source.card.attachedToInstanceId === strike.defender.creatureInstanceId;
 }
 
+function sourceWasDamagedByStrike(source: ActiveEffectSource, strike: ManualBattleStrike): boolean {
+  if (strike.damageTarget === "DEFENDER") {
+    return sourceControlsStrikeDefender(source, strike) && Number(strike.damageDealt ?? 0) > 0;
+  }
+
+  if (strike.damageTarget === "ATTACKER") {
+    return sourceControlsStrikeAttacker(source, strike) && Number(strike.selfDamageDealt ?? strike.damageDealt ?? 0) > 0;
+  }
+
+  return false;
+}
+
+function isDamageReceivedReactionEffect(effect: WardEngineEffect): boolean {
+  const trigger = normalize(effect.trigger);
+  const text = textForEffect(effect);
+
+  return (
+    trigger === "AFTER_DAMAGE_APPLIED" ||
+    trigger === "STATIC_WHILE_ON_FIELD" ||
+    trigger === "WHILE_ON_FIELD"
+  ) && (
+    text.includes("whenever this creature is damaged") ||
+    text.includes("when this creature is damaged") ||
+    text.includes("if this creature is damaged") ||
+    text.includes("whenever equipped creature is damaged") ||
+    text.includes("when equipped creature is damaged")
+  );
+}
+
+function effectForcesOpponentSelfDamageDice(effect: WardEngineEffect): boolean {
+  const text = textForEffect(effect);
+  return text.includes("roll") &&
+    text.includes("dice") &&
+    (text.includes("against themselves") || text.includes("against themself"));
+}
+
 function isOpponentLightningDamageBoostEffect(effect: WardEngineEffect): boolean {
   const trigger = normalize(effect.trigger);
   const actionType = normalize(getRuntimeBlockActionType(effect));
@@ -350,9 +386,16 @@ function sourceCanResolveForTiming(source: ActiveEffectSource, effect: WardEngin
     "HEAL_BY_DAMAGE_DEALT",
     "HEAL_BY_SENT_CREATURE_HP"
   ].includes(actionType);
+  const damageReceivedReaction = timing === "AFTER_DAMAGE_APPLIED" &&
+    isDamageReceivedReactionEffect(effect) &&
+    sourceWasDamagedByStrike(source, strike);
 
-  if (!aliases.includes(trigger) && !aliases.includes(actionType) && !staticBattleAction && !opponentLightningDamageBoost && !afterDamageAction) {
+  if (!aliases.includes(trigger) && !aliases.includes(actionType) && !staticBattleAction && !opponentLightningDamageBoost && !afterDamageAction && !damageReceivedReaction) {
     return false;
+  }
+
+  if (damageReceivedReaction) {
+    return true;
   }
 
   if (staticBattleAction) {
@@ -975,6 +1018,10 @@ function targetForBattleEffect(
 
   if (actionType === "SEND_NAMED_CARD_TO_CEMETERY") {
     return attacker ?? defender;
+  }
+
+  if (effectForcesOpponentSelfDamageDice(effect)) {
+    return opposingStrikeParticipantForSource(state, source, strike);
   }
 
   const parsedTargetMeansBattleOpponent =
@@ -1619,6 +1666,11 @@ function resolveEffectAction(
   }
 
   if (actionType === "ROLL_DAMAGE_DICE") {
+    applyForcedDamageDice(state, source, target, effect, addEvent);
+    return;
+  }
+
+  if (effectForcesOpponentSelfDamageDice(effect) && (actionType === "DAMAGE" || actionType === "DEAL_INSTANT_DAMAGE" || actionType === "DAMAGE_CREATURE")) {
     applyForcedDamageDice(state, source, target, effect, addEvent);
     return;
   }

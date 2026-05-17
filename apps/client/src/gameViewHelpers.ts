@@ -66,7 +66,7 @@ export function isEquipMagic(match: AppMatchState, card: CardInstance): boolean 
 
   return (
     definition?.cardType === "MAGIC" &&
-    definition.magicType === "INFINITE" &&
+    (definition.magicType === "INFINITE" || definition.magicType === "STANDARD") &&
     definition.magicSubType === "EQUIP"
   );
 }
@@ -208,11 +208,54 @@ export function playerHasSummonableCreatureInHand(
 export function getEffectiveCreatureStat(
   card: CardInstance,
   stat: "armorLevel" | "speed" | "attackDice" | "modifier",
-  baseValue: number
+  baseValue: number,
+  match?: AppMatchState
 ): number {
-  const totalDelta = (card.activeStatModifiers ?? [])
+  const activeDelta = (card.activeStatModifiers ?? [])
     .filter(modifier => modifier.stat === stat)
     .reduce((total, modifier) => total + modifier.delta, 0);
+  const attachedStaticDelta = match
+    ? match.players
+      .flatMap(player => player.field.magicSlots)
+      .filter(magic => magic.attachedToInstanceId === card.instanceId)
+      .flatMap(magic => (match.cardCatalog[magic.cardId]?.effects ?? []).map(effect => ({ magic, effect })))
+      .flatMap(({ magic, effect }) => {
+        const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+        const durationType = String(effect.duration?.type ?? effect.params?.duration?.type ?? "").trim().toUpperCase();
+        const targetText = [
+          effect.target,
+          effect.params?.target,
+          effect.value,
+          effect.params?.valueText,
+          effect.actionText
+        ].filter(Boolean).join(" ").toLowerCase();
+        if (trigger !== "WHILE_EQUIPPED" && durationType !== "WHILE_EQUIPPED") return [];
+        if (!targetText.includes("equipped creature")) return [];
+        if ((card.activeStatModifiers ?? []).some(modifier =>
+          modifier.sourceCardInstanceId === magic.instanceId &&
+          modifier.sourceEffectId === effect.id &&
+          modifier.stat === stat
+        )) return [];
+        return effect.params?.statChanges ?? [];
+      })
+      .reduce((total, change) => {
+        const rawStat = String(change.stat ?? "").trim().toUpperCase().replace(/[\s-]+/g, "_");
+        const normalized =
+          rawStat === "AL" || rawStat === "ARMOR" || rawStat === "ARMOR_LEVEL" ? "armorLevel" :
+          rawStat === "SPD" || rawStat === "SPEED" ? "speed" :
+          rawStat === "ATK_DICE" || rawStat === "ATK_DICE_ROLLS" || rawStat === "ATTACK_DICE" || rawStat === "ATTACK_DICE_ROLLS" ? "attackDice" :
+          rawStat === "MOD" || rawStat === "MODIFIER" ? "modifier" :
+          undefined;
+        if (normalized !== stat) return total;
+        const value = Number(change.value);
+        if (!Number.isFinite(value)) return total;
+        const operation = String(change.operation ?? "ADD").trim().toUpperCase();
+        if (operation === "ADD") return total + value;
+        if (operation === "SUBTRACT") return total - value;
+        return total;
+      }, 0)
+    : 0;
+  const totalDelta = activeDelta + attachedStaticDelta;
 
   if (stat === "armorLevel") {
     return Math.min(12, Math.max(1, baseValue + totalDelta));
@@ -236,10 +279,10 @@ export function getCreatureStatsLine(match: AppMatchState, card: CardInstance): 
     return "";
   }
 
-  const effectiveAl = getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel);
-  const effectiveSpeed = getEffectiveCreatureStat(card, "speed", definition.speed);
-  const effectiveAttackDice = getEffectiveCreatureStat(card, "attackDice", definition.attackDice);
-  const effectiveModifier = getEffectiveCreatureStat(card, "modifier", definition.modifier);
+  const effectiveAl = getEffectiveCreatureStat(card, "armorLevel", definition.armorLevel, match);
+  const effectiveSpeed = getEffectiveCreatureStat(card, "speed", definition.speed, match);
+  const effectiveAttackDice = getEffectiveCreatureStat(card, "attackDice", definition.attackDice, match);
+  const effectiveModifier = getEffectiveCreatureStat(card, "modifier", definition.modifier, match);
 
   return `AL ${effectiveAl} | SPD ${effectiveSpeed} | ATK ${effectiveAttackDice}D6 | MOD ${effectiveModifier} | HP ${definition.hp}`;
 }
@@ -366,7 +409,21 @@ export type BattleCreatureOption = {
 const CABAL_WARCHIEF_CARD_ID = "gen3_026_cabal_warchief";
 
 function getCreatureBattleUseLimit(card: CardInstance): number {
-  return card.cardId === CABAL_WARCHIEF_CARD_ID ? 2 : 1;
+  const activeExtraBattles = (card.activeEffectInstances ?? [])
+    .filter(instance => String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_BATTLE_REQUIREMENT")
+    .reduce((total, instance) => {
+      const explicit = Number(instance.extraInitiatedBattles);
+      if (Number.isFinite(explicit) && explicit > 0) return total + Math.trunc(explicit);
+
+      const text = [
+        instance.label,
+        instance.durationText,
+        ...(instance.debug ?? [])
+      ].filter(Boolean).join(" ").toLowerCase();
+      return total + (text.includes("battle twice") || text.includes("initiate battle twice") ? 1 : 0);
+    }, 0);
+
+  return 1 + Math.max(activeExtraBattles, card.cardId === CABAL_WARCHIEF_CARD_ID ? 1 : 0);
 }
 
 function getCreatureBattleUseCount(usedCreatureIds: string[], creatureInstanceId: string): number {
