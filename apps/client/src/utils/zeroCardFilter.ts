@@ -6,7 +6,7 @@ export type ZeroCardFilterOptions = {
   textureOpacity?: number;
 };
 
-export const ZERO_CARD_FILTER_VERSION = "v7-bounds-aware-scaling";
+export const ZERO_CARD_FILTER_VERSION = "v6-layer-pack-aligned";
 
 const DEFAULT_OPTIONS: Required<ZeroCardFilterOptions> = {
   contrast: 1.28,
@@ -17,48 +17,6 @@ const DEFAULT_OPTIONS: Required<ZeroCardFilterOptions> = {
 };
 
 type NormalizedRect = { x: number; y: number; w: number; h: number };
-
-type CardBounds = { left: number; top: number; right: number; bottom: number };
-
-function detectCardBounds(original: Uint8ClampedArray, width: number, height: number): CardBounds {
-  const darkThreshold = 58;
-  const minDarkPerLine = Math.max(4, Math.floor(width * 0.03));
-
-  const rowDarkCount = (y: number): number => {
-    let dark = 0;
-    for (let x = 0; x < width; x += 1) {
-      const i = (y * width + x) * 4;
-      const r = original[i] ?? 0; const g = original[i + 1] ?? 0; const b = original[i + 2] ?? 0;
-      if (r < darkThreshold && g < darkThreshold && b < darkThreshold) dark += 1;
-    }
-    return dark;
-  };
-
-  const colDarkCount = (x: number): number => {
-    let dark = 0;
-    for (let y = 0; y < height; y += 1) {
-      const i = (y * width + x) * 4;
-      const r = original[i] ?? 0; const g = original[i + 1] ?? 0; const b = original[i + 2] ?? 0;
-      if (r < darkThreshold && g < darkThreshold && b < darkThreshold) dark += 1;
-    }
-    return dark;
-  };
-
-  let left = 0;
-  while (left < width * 0.16 && colDarkCount(left) > height * 0.65) left += 1;
-  let right = width - 1;
-  while (right > width * 0.84 && colDarkCount(right) > height * 0.65) right -= 1;
-  let top = 0;
-  while (top < height * 0.12 && rowDarkCount(top) > minDarkPerLine) top += 1;
-  let bottom = height - 1;
-  while (bottom > height * 0.88 && rowDarkCount(bottom) > minDarkPerLine) bottom -= 1;
-
-  if (right - left < width * 0.7 || bottom - top < height * 0.8) {
-    return { left: 0, top: 0, right: width - 1, bottom: height - 1 };
-  }
-  return { left, top, right, bottom };
-}
-
 
 // Coordinates tuned to the 1060x1484 template, normalized for same-layout cards.
 const MASKS = {
@@ -73,33 +31,60 @@ const MASKS = {
   outerFrame: { x: 0, y: 0, w: 1, h: 1 },
 } as const satisfies Record<string, NormalizedRect>;
 
-const inRect = (nx: number, ny: number, r: NormalizedRect): boolean => nx >= r.x && nx <= r.x + r.w && ny >= r.y && ny <= r.y + r.h;
-const clamp255 = (v: number): number => Math.max(0, Math.min(255, Math.round(v)));
-const luminance = (r: number, g: number, b: number): number => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+const inRect = (nx: number, ny: number, rect: NormalizedRect): boolean =>
+  nx >= rect.x && nx <= rect.x + rect.w && ny >= rect.y && ny <= rect.y + rect.h;
+const clamp255 = (value: number): number => Math.max(0, Math.min(255, Math.round(value)));
+const luminance = (red: number, green: number, blue: number): number => 0.2126 * red + 0.7152 * green + 0.0722 * blue;
 
-function rgbToHsl(rInput: number, gInput: number, bInput: number): { h: number; s: number; l: number } {
-  const r = rInput / 255; const g = gInput / 255; const b = bInput / 255;
-  const max = Math.max(r, g, b); const min = Math.min(r, g, b); const l = (max + min) / 2;
-  if (max === min) return { h: 0, s: 0, l };
-  const d = max - min; const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  const h = max === r ? ((g - b) / d + (g < b ? 6 : 0)) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
-  return { h: h * 60, s, l };
+function rgbToHsl(redInput: number, greenInput: number, blueInput: number): { h: number; s: number; l: number } {
+  const red = redInput / 255;
+  const green = greenInput / 255;
+  const blue = blueInput / 255;
+  const max = Math.max(red, green, blue);
+  const min = Math.min(red, green, blue);
+  const lightness = (max + min) / 2;
+
+  if (max === min) return { h: 0, s: 0, l: lightness };
+
+  const delta = max - min;
+  const saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+  const hue =
+    max === red
+      ? (green - blue) / delta + (green < blue ? 6 : 0)
+      : max === green
+        ? (blue - red) / delta + 2
+        : (red - green) / delta + 4;
+
+  return { h: hue * 60, s: saturation, l: lightness };
 }
 
-const isYellowGoldHue = (h: number, s: number, l: number): boolean => h >= 30 && h <= 64 && s > 0.14 && l > 0.16;
-const isRedAccentHue = (h: number, s: number, l: number): boolean => (h <= 20 || h >= 342) && s > 0.3 && l > 0.1;
-const hashNoise = (x: number, y: number): number => ((((Math.imul(Math.imul(x, 374761393) ^ Math.imul(y, 668265263), 1274126177) >>> 0) & 0xffff) / 0xffff) - 0.5);
+const isYellowGoldHue = (hue: number, saturation: number, lightness: number): boolean =>
+  hue >= 30 && hue <= 64 && saturation > 0.14 && lightness > 0.16;
+const isRedAccentHue = (hue: number, saturation: number, lightness: number): boolean =>
+  (hue <= 20 || hue >= 342) && saturation > 0.3 && lightness > 0.1;
+const hashNoise = (x: number, y: number): number =>
+  ((((Math.imul(Math.imul(x, 374761393) ^ Math.imul(y, 668265263), 1274126177) >>> 0) & 0xffff) / 0xffff) - 0.5);
 
-function posterizeTone(v: number): number {
+function posterizeTone(value: number): number {
   const palette = [22, 38, 56, 78, 104, 134, 168, 202, 232];
-  return palette.reduce((best, p) => Math.abs(p - v) < Math.abs(best - v) ? p : best, palette[0]);
+  return palette.reduce((best, tone) => Math.abs(tone - value) < Math.abs(best - value) ? tone : best, palette[0]);
 }
 
 function sobelAt(luma: Float32Array, width: number, height: number, x: number, y: number): number {
   if (x <= 0 || y <= 0 || x >= width - 1 || y >= height - 1) return 0;
-  const s = (sx: number, sy: number): number => luma[sy * width + sx] ?? 0;
-  const tl = s(x - 1, y - 1), t = s(x, y - 1), tr = s(x + 1, y - 1), l = s(x - 1, y), r = s(x + 1, y), bl = s(x - 1, y + 1), b = s(x, y + 1), br = s(x + 1, y + 1);
-  const gx = -tl + tr - 2 * l + 2 * r - bl + br; const gy = -tl - 2 * t - tr + bl + 2 * b + br;
+
+  const sample = (sx: number, sy: number): number => luma[sy * width + sx] ?? 0;
+  const topLeft = sample(x - 1, y - 1);
+  const top = sample(x, y - 1);
+  const topRight = sample(x + 1, y - 1);
+  const left = sample(x - 1, y);
+  const right = sample(x + 1, y);
+  const bottomLeft = sample(x - 1, y + 1);
+  const bottom = sample(x, y + 1);
+  const bottomRight = sample(x + 1, y + 1);
+  const gx = -topLeft + topRight - 2 * left + 2 * right - bottomLeft + bottomRight;
+  const gy = -topLeft - 2 * top - topRight + bottomLeft + 2 * bottom + bottomRight;
+
   return Math.sqrt(gx * gx + gy * gy) / 8;
 }
 
@@ -120,43 +105,56 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
   const luma = new Float32Array(width * height);
   for (let i = 0; i < original.length; i += 4) luma[i / 4] = luminance(original[i] ?? 0, original[i + 1] ?? 0, original[i + 2] ?? 0);
 
-  const bounds = detectCardBounds(original, width, height);
-  const boundsW = Math.max(1, bounds.right - bounds.left);
-  const boundsH = Math.max(1, bounds.bottom - bounds.top);
+  for (let i = 0; i < original.length; i += 4) {
+    luma[i / 4] = luminance(original[i] ?? 0, original[i + 1] ?? 0, original[i + 2] ?? 0);
+  }
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const nx = Math.max(0, Math.min(1, (x - bounds.left) / boundsW));
-      const ny = Math.max(0, Math.min(1, (y - bounds.top) / boundsH));
+      const nx = width <= 1 ? 0 : x / (width - 1);
       const idx = (y * width + x) * 4;
-      const r = original[idx] ?? 0; const g = original[idx + 1] ?? 0; const b = original[idx + 2] ?? 0; const a = original[idx + 3] ?? 255;
-      if (a === 0) continue;
+      const red = original[idx] ?? 0;
+      const green = original[idx + 1] ?? 0;
+      const blue = original[idx + 2] ?? 0;
+      const alpha = original[idx + 3] ?? 255;
+
+      if (alpha === 0) continue;
+
       const baseLuma = luma[y * width + x] ?? 0;
-      const { h: hue, s: saturation, l: lightness } = rgbToHsl(r, g, b);
+      const { h: hue, s: saturation, l: lightness } = rgbToHsl(red, green, blue);
 
       const protectedIcon = inRect(nx, ny, MASKS.protectedIconArea);
       const inMainArt = inRect(nx, ny, MASKS.mainArtWindow);
       const inModifier = inRect(nx, ny, MASKS.modifierCircle);
-      const preserveYellowUi = inRect(nx, ny, MASKS.topHeader) || inRect(nx, ny, MASKS.statBoxes) || inRect(nx, ny, MASKS.attackBand) || inRect(nx, ny, MASKS.effectTextBox) || inRect(nx, ny, MASKS.footer);
+      const preserveYellowUi =
+        inRect(nx, ny, MASKS.topHeader) ||
+        inRect(nx, ny, MASKS.statBoxes) ||
+        inRect(nx, ny, MASKS.attackBand) ||
+        inRect(nx, ny, MASKS.effectTextBox) ||
+        inRect(nx, ny, MASKS.footer);
 
       if (protectedIcon) continue;
 
       if (inModifier && (isRedAccentHue(hue, saturation, lightness) || (saturation > 0.18 && baseLuma < 175))) {
-        const t = clamp255(Math.min(48, baseLuma * 0.4));
-        data[idx] = t; data[idx + 1] = t; data[idx + 2] = t;
+        const tone = clamp255(Math.min(48, baseLuma * 0.4));
+        data[idx] = tone;
+        data[idx + 1] = tone;
+        data[idx + 2] = tone;
         continue;
       }
 
       if (!preserveYellowUi && !inMainArt && isRedAccentHue(hue, saturation, lightness)) {
-        const t = clamp255(Math.min(44, baseLuma * 0.38));
-        data[idx] = t; data[idx + 1] = t; data[idx + 2] = t;
+        const tone = clamp255(Math.min(44, baseLuma * 0.38));
+        data[idx] = tone;
+        data[idx + 1] = tone;
+        data[idx + 2] = tone;
         continue;
       }
 
       if (preserveYellowUi && isYellowGoldHue(hue, saturation, lightness)) {
-        data[idx] = clamp255(r * 1.04 + 3);
-        data[idx + 1] = clamp255(g * 1.01 + 2);
-        data[idx + 2] = clamp255(b * 0.78);
+        data[idx] = clamp255(red * 1.04 + 3);
+        data[idx + 1] = clamp255(green * 1.01 + 2);
+        data[idx + 2] = clamp255(blue * 0.78);
         continue;
       }
 
@@ -165,9 +163,13 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
         tone -= Math.min(44, sobelAt(luma, width, height, x, y) * options.edgeStrength);
         tone -= Math.max(0, Math.min(1, Math.sqrt(((nx - 0.5) / 0.52) ** 2 + ((ny - 0.39) / 0.54) ** 2))) * 8;
         tone += hashNoise(x, y) * options.noise;
+
         if (options.posterize) tone = posterizeTone(tone);
-        const t = clamp255(tone);
-        data[idx] = t; data[idx + 1] = t; data[idx + 2] = t;
+
+        const finalTone = clamp255(tone);
+        data[idx] = finalTone;
+        data[idx + 1] = finalTone;
+        data[idx + 2] = finalTone;
       }
     }
   }
@@ -178,6 +180,7 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
 function drawZeroLogoOverlay(ctx: CanvasRenderingContext2D, width: number, height: number): void {
   const x = width * 0.155;
   const y = height * 0.165;
+
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate((-7 * Math.PI) / 180);
@@ -196,6 +199,7 @@ function applyPrintTexture(ctx: CanvasRenderingContext2D, width: number, height:
   ctx.save();
   ctx.globalAlpha = opacity;
   ctx.globalCompositeOperation = "multiply";
+
   for (let i = 0; i < 260; i += 1) {
     const x = (i * 73) % width;
     const y = (i * 151) % height;
@@ -204,6 +208,7 @@ function applyPrintTexture(ctx: CanvasRenderingContext2D, width: number, height:
     ctx.fillStyle = i % 3 === 0 ? "rgba(20,20,20,0.2)" : "rgba(240,240,240,0.15)";
     ctx.fillRect(x, y, w, texH);
   }
+
   ctx.restore();
 }
 
@@ -214,12 +219,15 @@ export async function createZeroCardVariantCanvas(src: string, options?: ZeroCar
   canvas.height = image.naturalHeight;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas 2D context is not available.");
+
   context.drawImage(image, 0, 0);
+
   const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
   const filtered = applyZeroCardFilter(context.getImageData(0, 0, canvas.width, canvas.height), mergedOptions);
   context.putImageData(filtered, 0, 0);
   applyPrintTexture(context, canvas.width, canvas.height, mergedOptions.textureOpacity);
   drawZeroLogoOverlay(context, canvas.width, canvas.height);
+
   return canvas;
 }
 

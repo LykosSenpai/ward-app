@@ -164,7 +164,7 @@ export function DeckLibraryPage({
       cardIds: detail.cardIds,
       cardArtKeys: detail.cardArtKeys,
       format: getDeckFormat(detail)
-    });
+    }, { cardLibrary });
 
     try {
       await navigator.clipboard.writeText(value);
@@ -176,7 +176,7 @@ export function DeckLibraryPage({
 
   function importDeckCode() {
     try {
-      const payload = decodeWardDeckString(importCode);
+      const payload = decodeWardDeckString(importCode, { cardLibrary });
       const unknownCards = payload.cardIds.filter(cardId => !cardById.has(cardId));
 
       onImportDeckCode({
@@ -257,13 +257,13 @@ export function DeckLibraryPage({
       <div className="deck-library-import-panel">
         <div>
           <strong>Import Deck Code</strong>
-          <span>Paste a WARDDECK1 code to open it in the Card Library deck editor.</span>
+          <span>Paste a WARDDECK3 code to open it in the Card Library deck editor.</span>
         </div>
         <textarea
           value={importCode}
           onChange={event => setImportCode(event.target.value)}
           rows={2}
-          placeholder="WARDDECK1:..."
+          placeholder="WARDDECK3:..."
         />
         <button onClick={importDeckCode} disabled={!importCode.trim()}>Import</button>
       </div>

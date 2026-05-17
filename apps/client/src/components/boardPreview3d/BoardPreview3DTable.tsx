@@ -206,10 +206,17 @@ function AttackStreamCanvas({
     };
 
     let metrics = resize();
-    const resizeObserver = new ResizeObserver(() => {
+    const resizeAttackCanvas = () => {
       metrics = resize();
-    });
-    resizeObserver.observe(parent);
+    };
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(resizeAttackCanvas)
+      : null;
+    if (resizeObserver) {
+      resizeObserver.observe(parent);
+    } else {
+      window.addEventListener("resize", resizeAttackCanvas);
+    }
 
     const render = (now: number) => {
       if (disposed) return;
@@ -264,7 +271,8 @@ function AttackStreamCanvas({
     return () => {
       disposed = true;
       cancelAnimationFrame(animationFrame);
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", resizeAttackCanvas);
       ctx.clearRect(0, 0, metrics.width, metrics.height);
     };
   }, [animationId, streams, theme]);

@@ -107,7 +107,7 @@ export function EffectRollModal({
         </div>
 
         <div className="battle-wizard-status-pill">
-          {effectRoll.status.replaceAll("_", " ")}
+          {effectRoll.status.split("_").join(" ")}
         </div>
       </div>
 

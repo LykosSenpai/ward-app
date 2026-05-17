@@ -12,7 +12,7 @@ type HandRevealPromptCardProps = {
 };
 
 export function HandRevealPromptCard({ match, controlledPlayerId, onApprove }: HandRevealPromptCardProps) {
-  if (!match.pendingPrompt) {
+  if (!match.pendingPrompt || match.pendingPrompt.type !== "NO_CREATURE_REDRAW_REVEAL") {
     return null;
   }
 

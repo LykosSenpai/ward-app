@@ -578,6 +578,26 @@ export type PendingPrompt =
       approvingPlayerId: string;
       revealedCards: RevealedCardInfo[];
       redrawCount: number;
+    }
+  | {
+      id: string;
+      type: "FORCED_AL_SUMMON";
+      promptSource: "FOOLISH_TRICKS";
+      message: string;
+      sourcePlayerId: string;
+      targetPlayerId: string;
+      controllerPlayerId: string;
+      approvingPlayerId: string;
+      sourceCardInstanceId: string;
+      sourceCardId: string;
+      sourceCardName: string;
+      sourceChainLinkId?: string;
+      maxArmorLevel: number;
+      redrawCount: number;
+      mulliganCount: number;
+      returnedCardInstanceIds: string[];
+      returnedCardNames: string[];
+      createdAt: string;
     };
 
 export type BattleStrikeResult = {

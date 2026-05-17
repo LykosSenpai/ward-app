@@ -267,7 +267,7 @@ function BattleEffectSuggestionPanel({
       <div className="battle-effect-suggestion-list">
         {suggestions.map(suggestion => (
           <div className="battle-effect-suggestion" key={suggestion.id}>
-            <span className="label">{suggestion.kind.replaceAll("_", " ")}</span>
+            <span className="label">{suggestion.kind.split("_").join(" ")}</span>
             <strong>{suggestion.label}</strong>
             <small>
               {suggestion.sourceCardName}
@@ -313,7 +313,7 @@ function SpeedModifierEditor({
           {typeof battle.effectiveDefendingSpeed === "number" ? ` = ${battle.effectiveDefendingSpeed}` : ""}
         </span>
         {speedModifiers.override !== "AUTO" && (
-          <span>Manual speed override: {speedModifiers.override.replaceAll("_", " ")}</span>
+          <span>Manual speed override: {speedModifiers.override.split("_").join(" ")}</span>
         )}
         {speedModifiers.note && <small>Note: {speedModifiers.note}</small>}
       </div>
@@ -565,7 +565,7 @@ function StrikeDetail({
       strike.status === "AWAITING_DAMAGE_APPLICATION");
 
   return (
-    <article className={`battle-wizard-strike ${strike.status.toLowerCase().replaceAll("_", "-")}`}>
+    <article className={`battle-wizard-strike ${strike.status.toLowerCase().split("_").join("-")}`}>
       <div className="battle-strike-heading-row">
         <h4>{getStrikeTitle(match, strike, index)}</h4>
         {isCurrent && <span className="battle-current-pill">Current strike</span>}
@@ -589,7 +589,7 @@ function StrikeDetail({
         <span>Defender AL {strike.defenderArmorLevel ?? strike.defender.armorLevel}</span>
         {strike.hitDiceCount && <span>Hit dice {strike.hitDiceCount}D6</span>}
         {strike.damageDiceCount && <span>Damage dice {strike.damageDiceCount}D6</span>}
-        <span>Status: {strike.status.replaceAll("_", " ")}</span>
+        <span>Status: {strike.status.split("_").join(" ")}</span>
       </div>
 
       {isCurrent && (
@@ -706,7 +706,7 @@ export function BattleResolverModal({
         </div>
 
         <div className="battle-wizard-status-pill">
-          {battle.status.replaceAll("_", " ")}
+          {battle.status.split("_").join(" ")}
         </div>
       </div>
 

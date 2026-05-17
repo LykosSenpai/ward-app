@@ -267,7 +267,7 @@ export function AvailableEffectsPanel({
               <div className="available-effect-copy">
                 <strong>{source.sourceName}</strong>
                 <span>
-                  {source.sourceZone.replaceAll("_", " ")} | {effect.trigger ?? "Effect"} | {effect.actionType}
+                  {source.sourceZone.split("_").join(" ")} | {effect.trigger ?? "Effect"} | {effect.actionType}
                 </span>
                 {(effect.actionText || effect.value) && (
                   <small>{effect.actionText ?? effect.value}</small>

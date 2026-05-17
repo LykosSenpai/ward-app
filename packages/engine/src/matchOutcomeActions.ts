@@ -1,4 +1,5 @@
 import type { MatchState } from "@ward/shared";
+import { calculateCemeteryCreatureHp } from "./cemetery.js";
 import { addEvent, cloneState, getOpponentPlayer, getPlayer } from "./engineRuntime.js";
 
 function completeMatch(
@@ -58,14 +59,15 @@ export function callCemeteryHpLoss(
 ): MatchState {
   const losingPlayer = getPlayer(state, losingPlayerId);
   const callingPlayer = getPlayer(state, callingPlayerId);
+  const losingCemeteryHp = calculateCemeteryCreatureHp(losingPlayer);
 
   if (callingPlayer.id === losingPlayer.id) {
     throw new Error("A player cannot call cemetery HP loss against themselves.");
   }
 
-  if (losingPlayer.cemeteryCreatureHpTotal < state.settings.cemeteryHpLimit) {
+  if (losingCemeteryHp < state.settings.cemeteryHpLimit) {
     throw new Error(
-      `${losingPlayer.displayName} has ${losingPlayer.cemeteryCreatureHpTotal} cemetery HP. The loss threshold is ${state.settings.cemeteryHpLimit}.`
+      `${losingPlayer.displayName} has ${losingCemeteryHp} cemetery HP. The loss threshold is ${state.settings.cemeteryHpLimit}.`
     );
   }
 
@@ -74,5 +76,32 @@ export function callCemeteryHpLoss(
     callingPlayer.id,
     losingPlayer.id,
     `${callingPlayer.displayName} called cemetery HP loss against ${losingPlayer.displayName}.`
+  );
+}
+
+export function completeCemeteryHpLossIfNeeded(state: MatchState): MatchState {
+  if ((state.status ?? "ACTIVE") === "COMPLETE") {
+    return state;
+  }
+
+  const playersAtLimit = state.players
+    .map(player => ({
+      player,
+      cemeteryHp: calculateCemeteryCreatureHp(player)
+    }))
+    .filter(item => item.cemeteryHp >= state.settings.cemeteryHpLimit);
+
+  if (playersAtLimit.length !== 1) {
+    return state;
+  }
+
+  const losingPlayer = playersAtLimit[0]!.player;
+  const winner = getOpponentPlayer(state, losingPlayer.id);
+
+  return completeMatch(
+    state,
+    winner.id,
+    losingPlayer.id,
+    `${losingPlayer.displayName} reached ${playersAtLimit[0]!.cemeteryHp} cemetery HP.`
   );
 }

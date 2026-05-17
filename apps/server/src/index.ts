@@ -34,6 +34,7 @@ import {
   battleWithCreature,
   cancelManualBattleSession,
   callCemeteryHpLoss,
+  completeCemeteryHpLossIfNeeded,
   completeManualMagicEffect,
   concedeMatch,
   create1v1MatchFromDeckCardIds,
@@ -51,9 +52,11 @@ import {
   forceNextDevRolls,
   clearForcedDevRolls,
   createEffectTestScenarioMatch,
+  mulliganForcedAlSummonPrompt,
   getEffectRuntimeSupport,
   promoteLimitedSummonToPrimary,
   requestNoCreatureRedrawReveal,
+  resolveForcedAlSummonPrompt,
   rollOpeningTurnOrder,
   rollPendingEffectRoll,
   rollManualBattleDamage,
@@ -74,37 +77,44 @@ import {
 
 import {
   deckFileExists,
-  userDeckFileExists,
-  deleteUserDeckFromDisk,
   deleteDeckFromDisk,
-  deleteMatchFromDisk,
+  deleteMatchFromDisk as deleteMatchFromDiskFile,
   listCardLibraryForPacks,
   listDefaultCardLibrary,
   loadEffectRuntimeTestStatusMap,
   saveEffectRuntimeTestStatusRecord,
   saveEffectRuntimeTestStatusRecords,
   getUserDeckProofPhotoPath,
-  listSavedMatches,
+  listSavedMatches as listSavedMatchesFromDisk,
   listSetupOptions,
-  listTournamentDeckSubmissions,
-  listUserDecks,
   loadCardCatalog,
   loadCardOwnershipCollection,
   loadCardLimitMap,
   loadDeckList,
-  loadUserDeckList,
-  loadMatchFromDisk,
+  loadMatchFromDisk as loadMatchFromDiskFile,
   saveDeckListToDisk,
-  saveUserDeckProofPhoto,
-  saveUserDeckListToDisk,
   updateCardEffectsInPack,
   updateCardLimitRule,
-  reviewTournamentDeckSubmission,
   saveMatchToDisk,
-  upsertCardOwnership,
   validateDataFileId
 } from "./dataStore.js";
-import type { SetupOptions } from "./dataStore.js";
+import type { SavedMatchSummary, SetupOptions } from "./dataStore.js";
+import {
+  deleteUserDeck,
+  listTournamentDeckSubmissions,
+  listUserDecks,
+  loadUserDeckList,
+  reviewTournamentDeckSubmission,
+  saveUserDeckList,
+  saveUserDeckProofPhoto,
+  userDeckFileExists
+} from "./decks/userDeckStore.js";
+import {
+  deleteSavedMatchFromDb,
+  listSavedMatchesFromDb,
+  loadSavedMatchFromDb,
+  saveSavedMatch
+} from "./matches/savedMatchStore.js";
 
 import {
   generateEffectTestPlan,
@@ -145,7 +155,8 @@ import {
 } from "./auth/securityStore.js";
 import { sendSecurityEmail } from "./email/brevoEmail.js";
 import { checkDbConnection } from "./db/pool.js";
-import { listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
+import { isFeatureEnabledForPlayers, listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
+import type { FeatureKey } from "./admin/adminFeatureFlags.js";
 import { createDisabledCommerceRouter } from "./marketplace/api/commerceDisabledRoutes.js";
 import { createMarketplaceListingsRouter } from "./marketplace/api/listingsRoutes.js";
 import { createWantsRouter } from "./marketplace/api/wantsRoutes.js";
@@ -165,6 +176,17 @@ import { fail, ok } from "./marketplace/http.js";
 import { marketplaceCardsQuerySchema, marketplaceCatalogQuerySchema, marketplaceRecommendationsQuerySchema } from "./marketplace/schemas.js";
 import { marketplaceCardsListResponseSchema, marketplaceCatalogResponseSchema } from "./marketplace/responseSchemas.js";
 import { buildMatchId, scoreMarketplaceMatch } from "./marketplace/matching.js";
+import {
+  listLegacyMarketplacePosts,
+  listLegacyMarketplaceTransactions,
+  upsertLegacyMarketplacePost,
+  upsertLegacyMarketplaceTransaction,
+  type MarketplaceMatchType,
+  type MarketplacePost,
+  type MarketplacePostItem,
+  type MarketplaceTradeLine,
+  type MarketplaceTransaction
+} from "./marketplace/legacySocketStore.js";
 import { createSupportTicket, getSupportTicket, listSupportTickets, updateSupportTicketStatus } from "./supportTickets/supportTicketStore.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -208,6 +230,24 @@ type DiscordUserResponse = {
   avatar?: string | null;
   email?: string | null;
 };
+
+type SocketAckResponse = {
+  ok: boolean;
+  error?: string;
+  message?: string;
+};
+
+type SocketAck = (response: SocketAckResponse) => void;
+
+function sendSocketAckSuccess(ack?: SocketAck, message?: string): void {
+  ack?.({ ok: true, ...(message ? { message } : {}) });
+}
+
+function sendSocketAckError(ack: SocketAck | undefined, error: unknown, fallbackMessage: string): string {
+  const message = error instanceof Error ? error.message : fallbackMessage;
+  ack?.({ ok: false, error: message });
+  return message;
+}
 
 function isAllowedClientOrigin(origin?: string): boolean {
   if (!origin) return true;
@@ -321,14 +361,27 @@ async function fetchDiscordUser(code: string): Promise<DiscordUserResponse> {
   return userData;
 }
 
-function startDiscordOAuth(req: express.Request, res: express.Response, mode: DiscordOAuthMode): void {
+async function startDiscordOAuth(req: express.Request, res: express.Response, mode: DiscordOAuthMode): Promise<void> {
   if (!getDiscordOAuthConfigured()) {
     res.status(503).json({ message: "Discord OAuth is not configured." });
     return;
   }
 
+  if (!await isFeatureEnabledForPlayers("discord-auth")) {
+    res.redirect(getDiscordCallbackRedirect(
+      "error",
+      getOAuthClientOrigin(req),
+      "Discord login and linking are temporarily disabled."
+    ));
+    return;
+  }
+
   if (mode === "link" && !req.session.user) {
-    res.status(401).json({ message: "Login required." });
+    res.redirect(getDiscordCallbackRedirect(
+      "error",
+      getOAuthClientOrigin(req),
+      "Log in to Ward Nexus before connecting Discord."
+    ));
     return;
   }
 
@@ -452,9 +505,23 @@ function sendLoginChallenge(res: express.Response, challenge: { challengeId: str
   });
 }
 
+function saveCurrentSession(req: express.Request): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session.save(error => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 async function finishLogin(req: express.Request, res: express.Response, user: AuthUser): Promise<void> {
   req.session.user = user;
   await trustDevice(user.id, req, res);
+  await saveCurrentSession(req);
   res.json({ user });
 }
 
@@ -492,13 +559,37 @@ async function continueLoginAfterTotp(req: express.Request, res: express.Respons
   });
 }
 
-function returnExpiredItemsToPool(nowMs = Date.now()): boolean {
+async function hydrateMarketplaceSocketStore(): Promise<void> {
+  if (marketplaceSocketStoreHydrated) return;
+
+  const [posts, transactions] = await Promise.all([
+    listLegacyMarketplacePosts(),
+    listLegacyMarketplaceTransactions()
+  ]);
+
+  marketplacePosts.clear();
+  for (const post of posts) {
+    if (!post.userId) continue;
+    marketplacePosts.set(post.userId, [...(marketplacePosts.get(post.userId) ?? []), post]);
+  }
+
+  marketplaceTransactions.clear();
+  for (const transaction of transactions) {
+    marketplaceTransactions.set(transaction.id, transaction);
+  }
+
+  marketplaceSocketStoreHydrated = true;
+}
+
+async function returnExpiredItemsToPool(nowMs = Date.now()): Promise<boolean> {
+  await hydrateMarketplaceSocketStore();
   let changed = false;
   for (const transaction of marketplaceTransactions.values()) {
     if ((transaction.status === "PENDING_CONFIRMATION" || transaction.status === "CONFIRMED_BY_ONE_PARTY") && Date.parse(transaction.expiresAt) <= nowMs) {
       transaction.status = "EXPIRED";
       transaction.updatedAt = new Date(nowMs).toISOString();
       transaction.confirmedByUserIds = [];
+      await upsertLegacyMarketplaceTransaction(transaction);
       changed = true;
     }
   }
@@ -540,6 +631,17 @@ app.use(cors({
   },
   credentials: true
 }));
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+
+  if (req.path.startsWith("/api/")) {
+    res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+  }
+
+  next();
+});
 app.use(express.json({ limit: "20mb" }));
 app.get("/api/cards/library", (_req, res) => {
   res.json({ cards: listDefaultCardLibrary() });
@@ -600,29 +702,13 @@ const LOBBY_CLEANUP_INTERVAL_MS = 60 * 1000;
 const MARKETPLACE_MATCH_REFRESH_INTERVAL_MS = 30 * 1000;
 
 
-type MarketplaceMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
-type MarketplacePostItem = { cardId: string; variant?: string; quantity: number; pendingReservedQuantity?: number; trade?: boolean; sale?: boolean };
-type MarketplacePost = { id?: string; userId?: string; displayName?: string; discordHandle?: string; discord?: AuthUser["discord"]; linkedPostId?: string; status?: "OPEN" | "PENDING" | "CLOSED"; haveItems?: MarketplacePostItem[]; needItems?: MarketplacePostItem[]; gameId?: string; cardId?: string; quantity?: number; updatedAt?: string };
 type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
 type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; reciprocalMatchedItems?: MarketplaceMatchItem[]; linkedPostId?: string };
 type MarketplaceMatchGroup = { postId: string; matches: MarketplaceMatch[] };
-type MarketplaceTradeLine = { cardId: string; quantity: number };
-type MarketplaceTransactionStatus = "PENDING_CONFIRMATION" | "CONFIRMED_BY_ONE_PARTY" | "COMPLETED" | "DENIED" | "CANCELED" | "EXPIRED";
-type MarketplaceTransaction = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  expiresAt: string;
-  status: MarketplaceTransactionStatus;
-  requesterUserId: string;
-  responderUserId: string;
-  offered: MarketplaceTradeLine[];
-  requested: MarketplaceTradeLine[];
-  confirmedByUserIds: string[];
-};
 
 const marketplaceTransactions = new Map<string, MarketplaceTransaction>();
 const marketplacePosts = new Map<string, MarketplacePost[]>();
+let marketplaceSocketStoreHydrated = false;
 
 function normalizeMarketplaceVariant(value?: string): string {
   return (value ?? "default").trim().toLowerCase().replace(/_/g, "-");
@@ -834,6 +920,17 @@ type EffectCoverageRow = {
   testedBy?: string;
 };
 
+const EFFECT_COVERAGE_CACHE_TTL_MS = 30_000;
+const effectCoverageRowsCache = new Map<string, { createdAt: number; rows: EffectCoverageRow[] }>();
+
+function getEffectCoverageCacheKey(packIds: string[]): string {
+  return Array.from(new Set(packIds)).sort((a, b) => a.localeCompare(b)).join("|");
+}
+
+function clearEffectCoverageCache(): void {
+  effectCoverageRowsCache.clear();
+}
+
 function buildEffectCoverageRows(packIds: string[]): EffectCoverageRow[] {
   const cards = listCardLibraryForPacks(packIds, loadCardLimitMap());
   const testStatusMap = loadEffectRuntimeTestStatusMap();
@@ -882,6 +979,20 @@ function buildEffectCoverageRows(packIds: string[]): EffectCoverageRow[] {
     a.cardName.localeCompare(b.cardName) ||
     a.effectId.localeCompare(b.effectId)
   );
+}
+
+function listEffectCoverageRows(packIds: string[]): EffectCoverageRow[] {
+  const cacheKey = getEffectCoverageCacheKey(packIds);
+  const cached = effectCoverageRowsCache.get(cacheKey);
+  const now = Date.now();
+
+  if (cached && now - cached.createdAt < EFFECT_COVERAGE_CACHE_TTL_MS) {
+    return cached.rows;
+  }
+
+  const rows = buildEffectCoverageRows(packIds);
+  effectCoverageRowsCache.set(cacheKey, { createdAt: now, rows });
+  return rows;
 }
 
 
@@ -985,12 +1096,12 @@ function createId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function getUserSetupOptions(user: AuthUser | null): SetupOptions {
+async function getUserSetupOptions(user: AuthUser | null): Promise<SetupOptions> {
   const options = listSetupOptions();
 
   return {
     ...options,
-    decks: user ? listUserDecks(user.id) : []
+    decks: user ? await listUserDecks(user.id) : []
   };
 }
 
@@ -998,30 +1109,34 @@ async function loadOwnershipForSocketUser(user: AuthUser | null) {
   return user ? await loadUserCardOwnershipMap(user.id) : loadCardOwnershipCollection();
 }
 
-function loadDeckForUser(userId: string, deckId: string): DeckListDefinition {
-  return loadUserDeckList(userId, deckId);
+async function loadDeckForUser(userId: string, deckId: string): Promise<DeckListDefinition> {
+  return await loadUserDeckList(userId, deckId);
 }
 
-function getFirstDeckForUser(userId: string): DeckListDefinition {
-  const [deck] = listUserDecks(userId);
+async function getFirstDeckForUser(userId: string): Promise<DeckListDefinition> {
+  const [deck] = await listUserDecks(userId);
 
   if (!deck) {
     throw new Error("Each player needs at least one saved deck before starting a match.");
   }
 
-  return loadDeckForUser(userId, deck.id);
+  return await loadDeckForUser(userId, deck.id);
 }
 
-function getDeckDetailsForUser(user: AuthUser | null) {
+async function getDeckDetailsForUser(user: AuthUser | null) {
   if (!user) {
     return [];
   }
 
-  return listUserDecks(user.id).map(deckSummary => {
-    const deck = loadUserDeckList(user.id, deckSummary.id);
+  const deckSummaries = await listUserDecks(user.id);
+  const details = [];
 
-    return serializeDeckDetail(deck, user.id, user.displayName);
-  });
+  for (const deckSummary of deckSummaries) {
+    const deck = await loadUserDeckList(user.id, deckSummary.id);
+    details.push(serializeDeckDetail(deck, user.id, user.displayName));
+  }
+
+  return details;
 }
 
 function serializeDeckDetail(deck: DeckListDefinition, ownerUserId: string, ownerDisplayName: string) {
@@ -1142,18 +1257,21 @@ function listMarketplaceMatchesForUser(userId: string): MarketplaceMatchGroup[] 
   return groups.filter(group => group.matches.length > 0);
 }
 
-function emitMarketplaceMatches(socket: Socket): void {
+async function emitMarketplaceMatches(socket: Socket): Promise<void> {
+  await hydrateMarketplaceSocketStore();
   const user = getSocketUser(socket);
   socket.emit("marketplace:matches", user ? listMarketplaceMatchesForUser(user.id) : []);
 }
 
-function emitMarketplaceMatchesToAll(): void {
-  io.sockets.sockets.forEach(socket => emitMarketplaceMatches(socket));
+async function emitMarketplaceMatchesToAll(): Promise<void> {
+  await hydrateMarketplaceSocketStore();
+  await Promise.all(Array.from(io.sockets.sockets.values()).map(socket => emitMarketplaceMatches(socket)));
 }
 
-function emitMarketplacePosts(): void {
+async function emitMarketplacePosts(): Promise<void> {
+  await hydrateMarketplaceSocketStore();
   io.emit("marketplace:posts", listMarketplacePosts());
-  emitMarketplaceMatchesToAll();
+  await emitMarketplaceMatchesToAll();
 }
 
 function emitMarketplaceSettings(): void {
@@ -1724,6 +1842,118 @@ function cloneMatchState(match: MatchState): MatchState {
   return JSON.parse(JSON.stringify(match)) as MatchState;
 }
 
+function logSavedMatchStoreError(action: string, error: unknown): void {
+  console.error(`[saved-match] ${action} failed`, error instanceof Error ? error.message : error);
+}
+
+function mergeSavedMatchSummaries(
+  primary: SavedMatchSummary[],
+  fallback: SavedMatchSummary[]
+): SavedMatchSummary[] {
+  const byMatchId = new Map<string, SavedMatchSummary>();
+
+  for (const summary of fallback) {
+    byMatchId.set(summary.matchId, summary);
+  }
+
+  for (const summary of primary) {
+    byMatchId.set(summary.matchId, summary);
+  }
+
+  return [...byMatchId.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+async function listSavedMatchesForServer(): Promise<SavedMatchSummary[]> {
+  let diskMatches: SavedMatchSummary[] = [];
+
+  try {
+    diskMatches = listSavedMatchesFromDisk();
+  } catch (error) {
+    logSavedMatchStoreError("list disk saved matches", error);
+  }
+
+  try {
+    const dbMatches = await listSavedMatchesFromDb();
+    const dbMatchIds = new Set(dbMatches.map(match => match.matchId));
+
+    for (const diskMatch of diskMatches) {
+      if (dbMatchIds.has(diskMatch.matchId)) continue;
+
+      try {
+        await saveSavedMatch(loadMatchFromDiskFile(diskMatch.matchId));
+      } catch (error) {
+        logSavedMatchStoreError(`backfill ${diskMatch.matchId}`, error);
+      }
+    }
+
+    return mergeSavedMatchSummaries(dbMatches, diskMatches);
+  } catch (error) {
+    logSavedMatchStoreError("list Postgres saved matches", error);
+    return diskMatches;
+  }
+}
+
+function saveMatchSnapshotEventually(match: MatchState): void {
+  saveMatchToDisk(match);
+  void saveSavedMatch(match).catch(error => {
+    logSavedMatchStoreError(`save ${match.matchId}`, error);
+  });
+}
+
+async function saveMatchSnapshotForServer(match: MatchState): Promise<"DATABASE" | "FILE_FALLBACK"> {
+  saveMatchToDisk(match);
+
+  try {
+    await saveSavedMatch(match);
+    return "DATABASE";
+  } catch (error) {
+    logSavedMatchStoreError(`save ${match.matchId}`, error);
+    if (process.env.DATABASE_URL?.trim()) {
+      throw error;
+    }
+    return "FILE_FALLBACK";
+  }
+}
+
+async function loadSavedMatchForServer(matchId: string): Promise<MatchState> {
+  try {
+    const dbMatch = await loadSavedMatchFromDb(matchId);
+    if (dbMatch) return dbMatch;
+  } catch (error) {
+    logSavedMatchStoreError(`load ${matchId}`, error);
+  }
+
+  return loadMatchFromDiskFile(matchId);
+}
+
+async function deleteSavedMatchForServer(matchId: string): Promise<void> {
+  let deletedFromDb = false;
+
+  try {
+    deletedFromDb = await deleteSavedMatchFromDb(matchId);
+  } catch (error) {
+    logSavedMatchStoreError(`delete ${matchId}`, error);
+  }
+
+  try {
+    deleteMatchFromDiskFile(matchId);
+  } catch (error) {
+    if (!deletedFromDb) {
+      throw error;
+    }
+  }
+}
+
+function emitSavedMatchesEventually(target: { emit: (event: string, data: SavedMatchSummary[]) => unknown }): void {
+  void listSavedMatchesForServer()
+    .then(savedMatches => {
+      target.emit("match:savedList", savedMatches);
+    })
+    .catch(error => {
+      logSavedMatchStoreError("emit saved match list", error);
+    });
+}
+
 function pushUndoSnapshot(match: MatchState): void {
   const history = matchUndoHistory.get(match.matchId) ?? [];
 
@@ -1829,24 +2059,27 @@ function sanitizeMatchForViewer(match: MatchState, viewerPlayerId?: string): Mat
 }
 
 function emitMatchState(match: MatchState): void {
-  saveMatchToDisk(match);
-  const roomSocketIds = io.sockets.adapter.rooms.get(match.matchId);
+  const matchToEmit = completeCemeteryHpLossIfNeeded(match);
+
+  activeMatches.set(matchToEmit.matchId, matchToEmit);
+  saveMatchSnapshotEventually(matchToEmit);
+  const roomSocketIds = io.sockets.adapter.rooms.get(matchToEmit.matchId);
 
   if (!roomSocketIds || roomSocketIds.size === 0) {
-    io.to(match.matchId).emit("match:state", match);
+    io.to(matchToEmit.matchId).emit("match:state", matchToEmit);
   } else {
     for (const socketId of roomSocketIds) {
       const socket = io.sockets.sockets.get(socketId);
       if (!socket) continue;
-      const viewerPlayerId = getSocketOwnedPlayerId(socket, match.matchId);
-      socket.emit("match:state", sanitizeMatchForViewer(match, viewerPlayerId));
+      const viewerPlayerId = getSocketOwnedPlayerId(socket, matchToEmit.matchId);
+      socket.emit("match:state", sanitizeMatchForViewer(matchToEmit, viewerPlayerId));
     }
   }
 
-  if ((match.status ?? "ACTIVE") === "COMPLETE") {
-    closeLobbyForMatch(match.matchId);
+  if ((matchToEmit.status ?? "ACTIVE") === "COMPLETE") {
+    closeLobbyForMatch(matchToEmit.matchId);
   } else {
-    touchLobbyActivityForMatch(match.matchId);
+    touchLobbyActivityForMatch(matchToEmit.matchId);
   }
 }
 
@@ -1905,6 +2138,38 @@ function getPlayableMatchOrThrow(
   return match;
 }
 
+app.get("/", (_req, res) => {
+  res.type("html").send(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ward Nexus API</title>
+  </head>
+  <body>
+    <main>
+      <h1>Ward Nexus API</h1>
+      <p>This subdomain provides the Ward Nexus application API and authentication callbacks.</p>
+      <p>Use the player app at <a href="${CLIENT_ORIGIN}">${CLIENT_ORIGIN}</a>.</p>
+    </main>
+  </body>
+</html>`);
+});
+
+app.get("/robots.txt", (_req, res) => {
+  res.type("text/plain").send("User-agent: *\nDisallow: /\n");
+});
+
+app.get("/.well-known/security.txt", (_req, res) => {
+  res.type("text/plain").send([
+    "Contact: mailto:no-reply@wardnexus.app",
+    "Preferred-Languages: en",
+    "Canonical: https://wardnexus.app/.well-known/security.txt",
+    ""
+  ].join("\n"));
+});
+
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
@@ -1951,12 +2216,12 @@ app.get("/api/auth/me", async (req, res) => {
   }
 });
 
-app.get("/api/auth/discord/start", authRateLimit, (req, res) => {
-  startDiscordOAuth(req, res, req.session.user ? "link" : "login");
+app.get("/api/auth/discord/start", authRateLimit, async (req, res) => {
+  await startDiscordOAuth(req, res, req.session.user ? "link" : "login");
 });
 
-app.get("/api/auth/discord/link", authRateLimit, (req, res) => {
-  startDiscordOAuth(req, res, "link");
+app.get("/api/auth/discord/link", authRateLimit, async (req, res) => {
+  await startDiscordOAuth(req, res, "link");
 });
 
 app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
@@ -1975,6 +2240,10 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
       throw new Error("Discord did not return an authorization code.");
     }
 
+    if (!await isFeatureEnabledForPlayers("discord-auth")) {
+      throw new Error("Discord login and linking are temporarily disabled.");
+    }
+
     const discordUser = await fetchDiscordUser(code);
     const discordAccount = {
       discordUserId: discordUser.id,
@@ -1990,6 +2259,7 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
 
       const profile = await linkDiscordAccount(req.session.user.id, discordAccount);
       req.session.user = profile;
+      await saveCurrentSession(req);
       res.redirect(getDiscordCallbackRedirect("linked", oauthState.clientOrigin));
       return;
     }
@@ -2026,8 +2296,10 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
       return;
     }
 
-    req.session.user = user;
-    await trustDevice(user.id, req, res);
+    const profile = await getUserProfile(user.id);
+    req.session.user = profile;
+    await trustDevice(profile.id, req, res);
+    await saveCurrentSession(req);
     res.redirect(getDiscordCallbackRedirect("signed-in", oauthState.clientOrigin));
   } catch (error) {
     res.redirect(getDiscordCallbackRedirect("error", oauthState?.clientOrigin, error instanceof Error ? error.message : "Discord sign-in failed."));
@@ -2483,7 +2755,7 @@ app.post("/api/support-tickets/board-report", supportTicketRateLimit, async (req
     let match = activeMatches.get(parsed.data.matchId);
     if (!match) {
       try {
-        match = loadMatchFromDisk(parsed.data.matchId);
+        match = await loadSavedMatchForServer(parsed.data.matchId);
       } catch {
         match = undefined;
       }
@@ -2572,7 +2844,7 @@ app.post("/api/support-tickets/site-report", supportTicketRateLimit, async (req,
   }
 });
 
-app.post("/api/decks/:deckId/proof-photos", (req, res) => {
+app.post("/api/decks/:deckId/proof-photos", async (req, res) => {
   try {
     const user = req.session.user;
     if (!user) {
@@ -2596,7 +2868,7 @@ app.post("/api/decks/:deckId/proof-photos", (req, res) => {
     for (const rawPhoto of rawPhotos) {
       const decoded = decodeProofPhotoDataUrl(String(rawPhoto?.dataUrl ?? ""));
       const extension = PROOF_PHOTO_EXTENSION_BY_MIME_TYPE[decoded.mimeType] ?? "jpg";
-      deck = saveUserDeckProofPhoto({
+      deck = await saveUserDeckProofPhoto({
         userId: user.id,
         deckId,
         photo: {
@@ -2618,7 +2890,7 @@ app.post("/api/decks/:deckId/proof-photos", (req, res) => {
   }
 });
 
-app.get("/api/decks/:ownerUserId/:deckId/proof-photos/:photoId", (req, res) => {
+app.get("/api/decks/:ownerUserId/:deckId/proof-photos/:photoId", async (req, res) => {
   try {
     const user = req.session.user;
     if (!user) {
@@ -2638,7 +2910,7 @@ app.get("/api/decks/:ownerUserId/:deckId/proof-photos/:photoId", (req, res) => {
       return;
     }
 
-    const deck = loadUserDeckList(ownerUserId, deckId);
+    const deck = await loadUserDeckList(ownerUserId, deckId);
     const photo = deck.tournamentProofPhotos?.find(item => item.id === photoId);
     if (!photo) {
       res.status(404).json({ message: "Proof photo not found." });
@@ -2961,6 +3233,7 @@ app.use(
   "/api",
   createMatchesRouter({
     listForUser: async (userId: string, type?: string) => {
+      await hydrateMarketplaceSocketStore();
       const persistedStatuses = await getMarketplaceMatchStatusesForUser(userId);
       const groups = listMarketplaceMatchesForUser(userId);
       const flat = groups.flatMap(group =>
@@ -3134,10 +3407,14 @@ setInterval(() => {
 }, LOBBY_CLEANUP_INTERVAL_MS).unref();
 
 setInterval(() => {
-  emitMarketplaceMatchesToAll();
+  void emitMarketplaceMatchesToAll().catch(error => {
+    console.error("Marketplace match refresh failed:", error instanceof Error ? error.message : error);
+  });
 }, MARKETPLACE_MATCH_REFRESH_INTERVAL_MS).unref();
 
-returnExpiredItemsToPool();
+void returnExpiredItemsToPool().catch(error => {
+  console.error("Marketplace transaction expiry check failed:", error instanceof Error ? error.message : error);
+});
 
 io.on("connection", async socket => {
   console.log(`Client connected: ${socket.id}`);
@@ -3174,14 +3451,15 @@ io.on("connection", async socket => {
 
   socket.emit("server:welcome", {
     message: "Connected to server",
+    authenticated: Boolean(connectedUser),
     socketId: socket.id
   });
 
-  socket.emit("match:savedList", listSavedMatches());
-  socket.emit("setup:options", getUserSetupOptions(connectedUser));
+  socket.emit("match:savedList", await listSavedMatchesForServer());
+  socket.emit("setup:options", await getUserSetupOptions(connectedUser));
   socket.emit("cards:library", listDefaultCardLibrary());
   socket.emit("collection:ownership", await loadOwnershipForSocketUser(connectedUser));
-  socket.emit("deck:details", getDeckDetailsForUser(connectedUser));
+  socket.emit("deck:details", await getDeckDetailsForUser(connectedUser));
   socket.emit("lobby:list", listLobbySnapshots());
   socket.emit("features:list", { ok: true, features: await listFeatureFlagsForUser(connectedUser) });
 
@@ -3203,7 +3481,7 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("admin:features:update", async (payload: { key: "card-library" | "deck-builder" | "marketplace" | "saved-matches" | "play-table" | "match-lobby" | "online-gameplay" | "effect-tools" | "admin-tools"; enabledForPlayers: boolean }, ack?: (response: { ok: boolean; error?: string }) => void) => {
+  socket.on("admin:features:update", async (payload: { key: FeatureKey; enabledForPlayers: boolean }, ack?: (response: { ok: boolean; error?: string }) => void) => {
     try {
       const user = requireSocketUser(socket);
       await updateFeatureFlagForPlayers(user, payload.key, !!payload.enabledForPlayers);
@@ -3239,7 +3517,7 @@ io.on("connection", async socket => {
         socket.join(match.matchId);
         emitMatchState(match);
 
-        socket.emit("match:savedList", listSavedMatches());
+        emitSavedMatchesEventually(socket);
 
         console.log(`Created demo 1v1 match: ${match.matchId}`);
       } catch (error) {
@@ -3252,7 +3530,7 @@ io.on("connection", async socket => {
 
   socket.on(
     "match:create1v1WithSetup",
-    (data: {
+    async (data: {
       packIds: string[];
       player1DeckId: string;
       player2DeckId: string;
@@ -3274,8 +3552,8 @@ io.on("connection", async socket => {
 
         const cardCatalog = loadCardCatalog(data.packIds);
         const cardLimits = loadCardLimitMap();
-        const player1Deck = loadDeckForUser(user.id, data.player1DeckId);
-        const player2Deck = loadDeckForUser(user.id, data.player2DeckId);
+        const player1Deck = await loadDeckForUser(user.id, data.player1DeckId);
+        const player2Deck = await loadDeckForUser(user.id, data.player2DeckId);
 
         const match = create1v1MatchFromDeckCardIds({
           cardCatalog,
@@ -3294,7 +3572,7 @@ io.on("connection", async socket => {
         socket.join(match.matchId);
         emitMatchState(match);
 
-        socket.emit("match:savedList", listSavedMatches());
+        emitSavedMatchesEventually(socket);
 
         console.log(
           `Created configured 1v1 match: ${match.matchId} | Packs: ${data.packIds.join(
@@ -3974,6 +4252,49 @@ io.on("connection", async socket => {
   );
 
   socket.on(
+    "match:resolveForcedAlSummonPrompt",
+    (data: { matchId: string; playerId: string; cardInstanceId: string }) => {
+      try {
+        const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
+        const updatedMatch = resolveForcedAlSummonPrompt(
+          match,
+          data.playerId,
+          data.cardInstanceId
+        );
+
+        activeMatches.set(data.matchId, updatedMatch);
+        emitMatchState(updatedMatch);
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "match:mulliganForcedAlSummonPrompt",
+    (data: { matchId: string; playerId: string }) => {
+      try {
+        const match = getPlayableMatchOrThrow(data.matchId);
+        requireSocketCanControlPlayer(socket, data.matchId, data.playerId);
+        const updatedMatch = mulliganForcedAlSummonPrompt(
+          match,
+          data.playerId
+        );
+
+        activeMatches.set(data.matchId, updatedMatch);
+        emitMatchState(updatedMatch);
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
     "match:discardFromHand",
     (data: { matchId: string; playerId: string; cardInstanceId: string }) => {
       try {
@@ -4382,10 +4703,10 @@ io.on("connection", async socket => {
   socket.on("setup:listOptions", async () => {
     try {
       const user = getSocketUser(socket);
-      socket.emit("setup:options", getUserSetupOptions(user));
+      socket.emit("setup:options", await getUserSetupOptions(user));
       socket.emit("cards:library", listDefaultCardLibrary());
       socket.emit("collection:ownership", await loadOwnershipForSocketUser(user));
-      socket.emit("deck:details", getDeckDetailsForUser(user));
+      socket.emit("deck:details", await getDeckDetailsForUser(user));
       socket.emit("lobby:list", listLobbySnapshots());
     } catch (error) {
       socket.emit("match:error", {
@@ -4394,19 +4715,19 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("deck:listDetails", () => {
+  socket.on("deck:listDetails", async () => {
     try {
       const user = getSocketUser(socket);
-      const deckDetails = getDeckDetailsForUser(user);
+      const deckDetails = await getDeckDetailsForUser(user);
 
       socket.emit("deck:details", deckDetails);
       if (canUserReviewTournamentDecks(user)) {
-        void listUsersForTournamentDeckReview().then(users => {
-          socket.emit(
-            "deck:tournamentSubmissions",
-            listTournamentDeckSubmissions(users).map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
-          );
-        });
+        const users = await listUsersForTournamentDeckReview();
+        const submissions = await listTournamentDeckSubmissions(users);
+        socket.emit(
+          "deck:tournamentSubmissions",
+          submissions.map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
+        );
       }
     } catch (error) {
       socket.emit("match:error", {
@@ -4423,9 +4744,10 @@ io.on("connection", async socket => {
       }
 
       const users = await listUsersForTournamentDeckReview();
+      const submissions = await listTournamentDeckSubmissions(users);
       socket.emit(
         "deck:tournamentSubmissions",
-        listTournamentDeckSubmissions(users).map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
+        submissions.map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
       );
     } catch (error) {
       socket.emit("match:error", {
@@ -4436,7 +4758,7 @@ io.on("connection", async socket => {
 
   socket.on(
     "deck:reviewTournamentSubmission",
-    (data: {
+    async (data: {
       ownerUserId: string;
       deckId: string;
       status: "VERIFIED" | "REJECTED";
@@ -4448,7 +4770,7 @@ io.on("connection", async socket => {
           throw new Error("Only hosts and admins can review tournament deck submissions.");
         }
 
-        reviewTournamentDeckSubmission({
+        await reviewTournamentDeckSubmission({
           ownerUserId: data.ownerUserId,
           deckId: data.deckId,
           reviewerUserId: user.id,
@@ -4462,12 +4784,12 @@ io.on("connection", async socket => {
           deckId: data.deckId
         });
 
-        void listUsersForTournamentDeckReview().then(users => {
-          io.emit(
-            "deck:tournamentSubmissions",
-            listTournamentDeckSubmissions(users).map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
-          );
-        });
+        const users = await listUsersForTournamentDeckReview();
+        const submissions = await listTournamentDeckSubmissions(users);
+        io.emit(
+          "deck:tournamentSubmissions",
+          submissions.map(deck => serializeDeckDetail(deck, deck.ownerUserId, deck.ownerDisplayName))
+        );
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -4489,7 +4811,7 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("collection:getOwnership", async () => {
+  const emitCollectionOwnership = async () => {
     try {
       socket.emit("collection:ownership", await loadOwnershipForSocketUser(getSocketUser(socket)));
     } catch (error) {
@@ -4497,7 +4819,10 @@ io.on("connection", async socket => {
         message: error instanceof Error ? error.message : "Unknown error"
       });
     }
-  });
+  };
+
+  socket.on("collection:getOwnership", emitCollectionOwnership);
+  socket.on("collection:listOwnership", emitCollectionOwnership);
 
   socket.on("marketplace:listNeeds", async () => {
     try {
@@ -4541,20 +4866,20 @@ io.on("connection", async socket => {
 
   socket.on(
     "collection:updateOwnership",
-    async (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }) => {
+    async (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }, ack?: SocketAck) => {
       try {
-        const user = getSocketUser(socket);
-        const ownershipMap = user
-          ? await setUserCardOwnershipCount({
+        const user = requireSocketUser(socket);
+        const ownershipMap = await setUserCardOwnershipCount({
             userId: user.id,
             ownershipKey: data.variant && data.variant !== "default" ? `${data.cardId}__art_${data.variant}` : data.cardId,
             ownedCount: data.ownedCount
-          })
-          : upsertCardOwnership(data);
+          });
         socket.emit("collection:ownership", ownershipMap);
+        sendSocketAckSuccess(ack);
       } catch (error) {
+        const message = sendSocketAckError(ack, error, "Unable to save card ownership.");
         socket.emit("collection:error", {
-          message: error instanceof Error ? error.message : "Unknown error"
+          message
         });
       }
     }
@@ -4562,86 +4887,87 @@ io.on("connection", async socket => {
 
   socket.on(
     "collection:bulkUpdateOwnership",
-    async (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }) => {
+    async (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }, ack?: SocketAck) => {
       try {
-        const user = getSocketUser(socket);
+        const user = requireSocketUser(socket);
         let ownershipMap = await loadOwnershipForSocketUser(user);
         for (const update of data.updates ?? []) {
-          ownershipMap = user
-            ? await setUserCardOwnershipCount({
+          ownershipMap = await setUserCardOwnershipCount({
               userId: user.id,
               ownershipKey: update.variant && update.variant !== "default" ? `${update.cardId}__art_${update.variant}` : update.cardId,
               ownedCount: update.ownedCount
-            })
-            : upsertCardOwnership(update);
+            });
         }
         socket.emit("collection:ownership", ownershipMap);
-        if (user) {
-          const ownership = await loadUserCardOwnershipMap(user.id);
-          const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
-          socket.emit("marketplace:needs", needs);
-        }
+        const ownership = await loadUserCardOwnershipMap(user.id);
+        const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
+        socket.emit("marketplace:needs", needs);
+        sendSocketAckSuccess(ack);
       } catch (error) {
+        const message = sendSocketAckError(ack, error, "Unable to save card ownership.");
         socket.emit("collection:error", {
-          message: error instanceof Error ? error.message : "Unknown error"
+          message
         });
       }
     }
   );
 
-  socket.on("marketplace:returnExpiredItemsToPool", () => {
+  socket.on("marketplace:returnExpiredItemsToPool", async () => {
     try {
-      returnExpiredItemsToPool();
+      await returnExpiredItemsToPool();
       socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
   });
 
-  socket.on("marketplace:listPosts", () => {
+  socket.on("marketplace:listPosts", async () => {
     try {
+      await hydrateMarketplaceSocketStore();
       socket.emit("marketplace:posts", listMarketplacePosts());
-      emitMarketplaceMatches(socket);
+      await emitMarketplaceMatches(socket);
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
   });
 
-  socket.on("marketplace:listMatches", () => {
+  socket.on("marketplace:listMatches", async () => {
     try {
-      emitMarketplaceMatches(socket);
+      await emitMarketplaceMatches(socket);
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
   });
 
-  socket.on("marketplace:createPost", (post: MarketplacePost) => {
+  socket.on("marketplace:createPost", async (post: MarketplacePost) => {
     try {
+      await hydrateMarketplaceSocketStore();
       const user = getSocketUser(socket);
       if (!user) throw new Error("Authentication required.");
       if (!user.discord?.userId) throw new Error("Connect Discord from your profile before posting in the marketplace.");
       const currentPosts = marketplacePosts.get(user.id) ?? [];
       const createdAt = new Date().toISOString();
-      marketplacePosts.set(user.id, [
-        {
-          ...post,
-          id: post.id ?? randomUUID(),
-          userId: user.id,
-          displayName: user.displayName,
-          discord: user.discord,
-          discordHandle: getDiscordDisplayName(user.discord),
-          updatedAt: createdAt
-        },
-        ...currentPosts
-      ]);
-      emitMarketplacePosts();
+      const nextPost: MarketplacePost = {
+        ...post,
+        id: post.id ?? randomUUID(),
+        userId: user.id,
+        displayName: user.displayName,
+        discord: user.discord,
+        discordHandle: getDiscordDisplayName(user.discord),
+        status: post.status ?? "OPEN",
+        updatedAt: createdAt
+      };
+      marketplacePosts.set(user.id, [nextPost, ...currentPosts]);
+      await upsertLegacyMarketplacePost(nextPost);
+      await emitMarketplacePosts();
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
   });
 
-  socket.on("marketplace:updatePost", (post: MarketplacePost) => {
+  socket.on("marketplace:updatePost", async (post: MarketplacePost) => {
     try {
+      await hydrateMarketplaceSocketStore();
       const user = getSocketUser(socket);
       if (!user) throw new Error("Authentication required.");
       if (!user.discord?.userId) throw new Error("Connect Discord from your profile before updating marketplace posts.");
@@ -4650,7 +4976,7 @@ io.on("connection", async socket => {
       const existing = currentPosts.find(item => item.id === post.id);
       if (!existing) throw new Error("Marketplace post not found.");
       const updatedAt = new Date().toISOString();
-      marketplacePosts.set(user.id, currentPosts.map(item => item.id === post.id ? {
+      const nextPost: MarketplacePost = {
         ...existing,
         ...post,
         id: existing.id,
@@ -4659,8 +4985,10 @@ io.on("connection", async socket => {
         discord: user.discord,
         discordHandle: getDiscordDisplayName(user.discord),
         updatedAt
-      } : item));
-      emitMarketplacePosts();
+      };
+      marketplacePosts.set(user.id, currentPosts.map(item => item.id === post.id ? nextPost : item));
+      await upsertLegacyMarketplacePost(nextPost);
+      await emitMarketplacePosts();
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
@@ -4670,7 +4998,7 @@ io.on("connection", async socket => {
     try {
       const user = getSocketUser(socket);
       if (!user) throw new Error("Authentication required.");
-      returnExpiredItemsToPool();
+      await returnExpiredItemsToPool();
       const ownership = await loadUserCardOwnershipMap(user.id);
       const currentPosts = marketplacePosts.get(user.id) ?? [];
       for (const line of data.offered) {
@@ -4695,47 +5023,65 @@ io.on("connection", async socket => {
       };
       marketplaceTransactions.set(transaction.id, transaction);
       marketplacePosts.set(user.id, [...currentPosts, ...data.offered.map(line => ({ userId: user.id, cardId: line.cardId, quantity: line.quantity }))]);
+      await upsertLegacyMarketplaceTransaction(transaction);
       socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
   });
 
-  socket.on("marketplace:confirmTransaction", (transactionId: string) => {
+  socket.on("marketplace:confirmTransaction", async (transactionId: string) => {
     try {
       const user = getSocketUser(socket);
       if (!user) throw new Error("Authentication required.");
-      returnExpiredItemsToPool();
+      await returnExpiredItemsToPool();
       const transaction = marketplaceTransactions.get(transactionId);
       if (!transaction) throw new Error("Transaction not found.");
       if (transaction.status !== "PENDING_CONFIRMATION" && transaction.status !== "CONFIRMED_BY_ONE_PARTY") throw new Error("Transaction is not confirmable.");
       if (!transaction.confirmedByUserIds.includes(user.id)) transaction.confirmedByUserIds.push(user.id);
       transaction.status = transaction.confirmedByUserIds.length >= 2 ? "COMPLETED" : "CONFIRMED_BY_ONE_PARTY";
       transaction.updatedAt = new Date().toISOString();
+      await upsertLegacyMarketplaceTransaction(transaction);
       socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
   });
-  socket.on("marketplace:denyTransaction", (transactionId: string) => {
-    const transaction = marketplaceTransactions.get(transactionId);
-    if (transaction) {
-      transaction.status = "DENIED";
-      transaction.updatedAt = new Date().toISOString();
+  socket.on("marketplace:denyTransaction", async (transactionId: string) => {
+    try {
+      await hydrateMarketplaceSocketStore();
+      const transaction = marketplaceTransactions.get(transactionId);
+      if (transaction) {
+        transaction.status = "DENIED";
+        transaction.updatedAt = new Date().toISOString();
+        await upsertLegacyMarketplaceTransaction(transaction);
+      }
+      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
     }
-    socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
   });
-  socket.on("marketplace:cancelTransaction", (transactionId: string) => {
-    const transaction = marketplaceTransactions.get(transactionId);
-    if (transaction) {
-      transaction.status = "CANCELED";
-      transaction.updatedAt = new Date().toISOString();
+  socket.on("marketplace:cancelTransaction", async (transactionId: string) => {
+    try {
+      await hydrateMarketplaceSocketStore();
+      const transaction = marketplaceTransactions.get(transactionId);
+      if (transaction) {
+        transaction.status = "CANCELED";
+        transaction.updatedAt = new Date().toISOString();
+        await upsertLegacyMarketplaceTransaction(transaction);
+      }
+      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
     }
-    socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
   });
-  socket.on("marketplace:listTransactions", () => {
-    returnExpiredItemsToPool();
-    socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+  socket.on("marketplace:listTransactions", async () => {
+    try {
+      await returnExpiredItemsToPool();
+      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+    } catch (error) {
+      socket.emit("error", { message: (error as Error).message });
+    }
   });
 
 
@@ -4747,7 +5093,7 @@ io.on("connection", async socket => {
           ? data.packIds
           : listSetupOptions().cardPacks.map(pack => pack.id);
 
-        socket.emit("dev:effectCoverage", buildEffectCoverageRows(requestedPackIds));
+        socket.emit("dev:effectCoverage", listEffectCoverageRows(requestedPackIds));
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -4787,12 +5133,13 @@ io.on("connection", async socket => {
     }) => {
       try {
         const statusMap = saveEffectRuntimeTestStatusRecord(data.record);
+        clearEffectCoverageCache();
         const requestedPackIds = data.packIds?.length
           ? data.packIds
           : listSetupOptions().cardPacks.map(pack => pack.id);
 
         socket.emit("dev:effectRuntimeTestStatus", statusMap);
-        socket.emit("dev:effectCoverage", buildEffectCoverageRows(requestedPackIds));
+        socket.emit("dev:effectCoverage", listEffectCoverageRows(requestedPackIds));
         socket.emit("dev:effectRuntimeTestStatusSaved", {
           message: `Saved test status for ${data.record.cardName} ${data.record.effectId}.`
         });
@@ -4826,12 +5173,13 @@ io.on("connection", async socket => {
     }) => {
       try {
         const statusMap = saveEffectRuntimeTestStatusRecords(data.records);
+        clearEffectCoverageCache();
         const requestedPackIds = data.packIds?.length
           ? data.packIds
           : listSetupOptions().cardPacks.map(pack => pack.id);
 
         socket.emit("dev:effectRuntimeTestStatus", statusMap);
-        socket.emit("dev:effectCoverage", buildEffectCoverageRows(requestedPackIds));
+        socket.emit("dev:effectCoverage", listEffectCoverageRows(requestedPackIds));
         socket.emit("dev:effectRuntimeTestStatusSaved", {
           message: `Saved ${data.records.length} effect test status record(s).`
         });
@@ -4870,6 +5218,7 @@ io.on("connection", async socket => {
           effects: data.effects,
           metadata: data.metadata
         });
+        clearEffectCoverageCache();
 
         socket.emit("dev:cardEffectsSaved", {
           message: `Saved ${updatedCard.name} effects to ${data.packId}.json`,
@@ -5287,7 +5636,7 @@ io.on("connection", async socket => {
           activeMatches.set(match.matchId, match);
           matchUndoHistory.set(match.matchId, []);
           socket.join(match.matchId);
-          saveMatchToDisk(match);
+          saveMatchSnapshotEventually(match);
           results.push(result);
           socket.emit("llm:batchProgress", {
             stage: "chunk",
@@ -5394,9 +5743,9 @@ io.on("connection", async socket => {
     }
   );
 
-  socket.on("match:listSaved", () => {
+  socket.on("match:listSaved", async () => {
     try {
-      socket.emit("match:savedList", listSavedMatches());
+      socket.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5404,17 +5753,19 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("match:saveCurrent", (matchId: string) => {
+  socket.on("match:saveCurrent", async (matchId: string) => {
     try {
       const match = getMatchOrThrow(matchId);
-      saveMatchToDisk(match);
+      const saveTarget = await saveMatchSnapshotForServer(match);
 
       socket.emit("match:saved", {
-        message: `Match saved: ${matchId}`,
+        message: saveTarget === "DATABASE"
+          ? `Match saved: ${matchId}`
+          : `Match saved locally: ${matchId}`,
         matchId
       });
 
-      socket.emit("match:savedList", listSavedMatches());
+      socket.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5422,9 +5773,9 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("match:loadSaved", (matchId: string) => {
+  socket.on("match:loadSaved", async (matchId: string) => {
     try {
-      const match = loadMatchFromDisk(matchId);
+      const match = await loadSavedMatchForServer(matchId);
 
       activeMatches.set(match.matchId, match);
       matchUndoHistory.set(match.matchId, []);
@@ -5437,7 +5788,7 @@ io.on("connection", async socket => {
         matchId
       });
 
-      socket.emit("match:savedList", listSavedMatches());
+      socket.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5445,9 +5796,9 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("match:deleteSaved", (matchId: string) => {
+  socket.on("match:deleteSaved", async (matchId: string) => {
     try {
-      deleteMatchFromDisk(matchId);
+      await deleteSavedMatchForServer(matchId);
 
       activeMatches.delete(matchId);
       matchUndoHistory.delete(matchId);
@@ -5458,7 +5809,7 @@ io.on("connection", async socket => {
         matchId
       });
 
-      io.emit("match:savedList", listSavedMatches());
+      io.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5466,7 +5817,7 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("match:deleteSavedBulk", (data: { matchIds: string[] }) => {
+  socket.on("match:deleteSavedBulk", async (data: { matchIds: string[] }) => {
     try {
       const matchIds = [...new Set(data.matchIds ?? [])].filter(Boolean);
 
@@ -5479,7 +5830,7 @@ io.on("connection", async socket => {
 
       for (const matchId of matchIds) {
         try {
-          deleteMatchFromDisk(matchId);
+          await deleteSavedMatchForServer(matchId);
           activeMatches.delete(matchId);
           matchUndoHistory.delete(matchId);
           matchPlayerOwners.delete(matchId);
@@ -5502,7 +5853,7 @@ io.on("connection", async socket => {
         });
       }
 
-      io.emit("match:savedList", listSavedMatches());
+      io.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5520,7 +5871,7 @@ io.on("connection", async socket => {
 
         activeMatches.set(data.matchId, updatedMatch);
         emitMatchState(updatedMatch);
-        socket.emit("match:savedList", listSavedMatches());
+        emitSavedMatchesEventually(socket);
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -5537,7 +5888,11 @@ io.on("connection", async socket => {
       callingPlayerId: string;
     }) => {
       try {
-        const match = getPlayableMatchOrThrow(data.matchId);
+        const match = getPlayableMatchOrThrow(data.matchId, {
+          allowPendingBattle: true,
+          allowPendingEffectRoll: true,
+          allowPendingEffectTarget: true
+        });
         requireSocketCanControlPlayer(socket, data.matchId, data.callingPlayerId);
         const updatedMatch = callCemeteryHpLoss(
           match,
@@ -5547,7 +5902,7 @@ io.on("connection", async socket => {
 
         activeMatches.set(data.matchId, updatedMatch);
         emitMatchState(updatedMatch);
-        socket.emit("match:savedList", listSavedMatches());
+        emitSavedMatchesEventually(socket);
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
@@ -5581,7 +5936,7 @@ io.on("connection", async socket => {
       activeMatches.set(matchId, restoredMatch);
       matchUndoHistory.set(matchId, history);
 
-      saveMatchToDisk(restoredMatch);
+      saveMatchSnapshotEventually(restoredMatch);
 
       socket.join(matchId);
       io.to(matchId).emit("match:state", restoredMatch);
@@ -5592,7 +5947,7 @@ io.on("connection", async socket => {
         matchId
       });
 
-      socket.emit("match:savedList", listSavedMatches());
+      emitSavedMatchesEventually(socket);
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5642,7 +5997,7 @@ io.on("connection", async socket => {
 
   socket.on(
     "lobby:create",
-    (data: { name?: string; format?: MatchLobbyFormat; selectedPackIds?: string[]; selectedDeckId?: string }) => {
+    async (data: { name?: string; format?: MatchLobbyFormat; selectedPackIds?: string[]; selectedDeckId?: string }) => {
       try {
         const user = requireSocketUser(socket);
         const selectedPackIds = (data.selectedPackIds?.length ? data.selectedPackIds : listSetupOptions().cardPacks.map(pack => pack.id))
@@ -5654,7 +6009,7 @@ io.on("connection", async socket => {
         }
 
         if (data.selectedDeckId) {
-          loadDeckForUser(user.id, data.selectedDeckId);
+          await loadDeckForUser(user.id, data.selectedDeckId);
         }
 
         const now = new Date().toISOString();
@@ -5751,14 +6106,14 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("lobby:selectDeck", (data: { lobbyId: string; deckId: string }) => {
+  socket.on("lobby:selectDeck", async (data: { lobbyId: string; deckId: string }) => {
     try {
       const user = requireSocketUser(socket);
       validateDataFileId(data.lobbyId);
       validateDataFileId(data.deckId);
       const lobby = getLobbyOrThrow(data.lobbyId);
       const player = getLobbyPlayerOrThrow(lobby, user.id);
-      loadDeckForUser(user.id, data.deckId);
+      await loadDeckForUser(user.id, data.deckId);
 
       player.selectedDeckId = data.deckId;
       player.ready = true;
@@ -5771,7 +6126,7 @@ io.on("connection", async socket => {
     }
   });
 
-  socket.on("lobby:startMatch", (lobbyId: string) => {
+  socket.on("lobby:startMatch", async (lobbyId: string) => {
     try {
       const user = requireSocketUser(socket);
       validateDataFileId(lobbyId);
@@ -5790,8 +6145,8 @@ io.on("connection", async socket => {
         throw new Error("Both players must choose a deck before the match can start.");
       }
 
-      const player1Deck = loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId);
-      const player2Deck = loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId);
+      const player1Deck = await loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId);
+      const player2Deck = await loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId);
       const cardCatalog = loadCardCatalog(lobby.selectedPackIds);
       const isTournamentLobby = lobby.format === "TOURNAMENT";
       const match = create1v1MatchFromDeckCardIds({
@@ -5815,12 +6170,12 @@ io.on("connection", async socket => {
         [sortedPlayers[0].userId, "player_1"],
         [sortedPlayers[1].userId, "player_2"]
       ]));
-      saveMatchToDisk(match);
+      saveMatchSnapshotEventually(match);
 
       io.in(lobby.id).socketsJoin(match.matchId);
       io.to(lobby.id).emit("lobby:updated", getLobbySnapshot(lobby));
       io.to(lobby.id).emit("match:state", match);
-      io.to(lobby.id).emit("match:savedList", listSavedMatches());
+      emitSavedMatchesEventually(io.to(lobby.id));
       emitLobbyList();
     } catch (error) {
       socket.emit("match:error", {
@@ -5831,12 +6186,12 @@ io.on("connection", async socket => {
 
   socket.on(
     "deck:load",
-    (data: { deckId: string; mode?: "edit" | "clone" }) => {
+    async (data: { deckId: string; mode?: "edit" | "clone" }) => {
       try {
         const user = requireSocketUser(socket);
         validateDataFileId(data.deckId);
 
-        const deck = loadUserDeckList(user.id, data.deckId);
+        const deck = await loadUserDeckList(user.id, data.deckId);
 
         socket.emit("deck:loaded", {
           id: deck.id,
@@ -5855,7 +6210,7 @@ io.on("connection", async socket => {
   );
   socket.on(
     "deck:save",
-    (data: {
+    async (data: {
       deckId: string;
       name: string;
       packIds: string[];
@@ -5863,12 +6218,12 @@ io.on("connection", async socket => {
       cardArtKeys?: string[];
       format?: "FREE_PLAY" | "TOURNAMENT";
       overwrite?: boolean;
-    }) => {
+    }, ack?: SocketAck) => {
       try {
         const user = requireSocketUser(socket);
         validateDataFileId(data.deckId);
 
-        if (userDeckFileExists(user.id, data.deckId) && !data.overwrite) {
+        if (await userDeckFileExists(user.id, data.deckId) && !data.overwrite) {
             socket.emit("deck:overwriteRequired", {
               message: `Deck ID "${data.deckId}" already exists. Confirm overwrite to replace it.`,
               deckId: data.deckId,
@@ -5879,6 +6234,7 @@ io.on("connection", async socket => {
               format: normalizeDeckFormat(data.format)
             });
 
+            sendSocketAckSuccess(ack, "Deck overwrite confirmation required.");
             return;
           }
 
@@ -5908,8 +6264,9 @@ io.on("connection", async socket => {
           throw new Error(errors.join(" | "));
         }
 
-        const existingDeck = userDeckFileExists(user.id, data.deckId)
-          ? loadUserDeckList(user.id, data.deckId)
+        const deckExists = await userDeckFileExists(user.id, data.deckId);
+        const existingDeck = deckExists
+          ? await loadUserDeckList(user.id, data.deckId)
           : null;
         const normalizedCardArtKeys = normalizeDeckCardArtKeys(data.cardArtKeys, data.cardIds.length);
         const existingComparable = existingDeck
@@ -5943,25 +6300,27 @@ io.on("connection", async socket => {
             : undefined
         };
 
-        saveUserDeckListToDisk(user.id, deck);
+        await saveUserDeckList(user.id, deck);
 
         socket.emit("deck:saved", {
           message: `Deck saved: ${deck.name}`,
           deckId: deck.id
         });
+        sendSocketAckSuccess(ack, `Deck saved: ${deck.name}`);
 
-        socket.emit("setup:options", getUserSetupOptions(user));
+        socket.emit("setup:options", await getUserSetupOptions(user));
         socket.emit("cards:library", listDefaultCardLibrary());
-        socket.emit("deck:details", getDeckDetailsForUser(user));
+        socket.emit("deck:details", await getDeckDetailsForUser(user));
       } catch (error) {
+        const message = sendSocketAckError(ack, error, "Unable to save deck.");
         socket.emit("match:error", {
-          message: error instanceof Error ? error.message : "Unknown error"
+          message
         });
       }
     }
   );
 
-  socket.on("deck:delete", (deckId: string) => {
+  socket.on("deck:delete", async (deckId: string) => {
   try {
     const user = requireSocketUser(socket);
     validateDataFileId(deckId);
@@ -5970,16 +6329,16 @@ io.on("connection", async socket => {
       throw new Error("The default demo deck cannot be deleted.");
     }
 
-    deleteUserDeckFromDisk(user.id, deckId);
+    await deleteUserDeck(user.id, deckId);
 
     socket.emit("deck:deleted", {
       message: `Deleted deck: ${deckId}`,
       deckId
     });
 
-    socket.emit("setup:options", getUserSetupOptions(user));
+    socket.emit("setup:options", await getUserSetupOptions(user));
     socket.emit("cards:library", listDefaultCardLibrary());
-    socket.emit("deck:details", getDeckDetailsForUser(user));
+    socket.emit("deck:details", await getDeckDetailsForUser(user));
   } catch (error) {
     socket.emit("match:error", {
       message: error instanceof Error ? error.message : "Unknown error"

@@ -8,6 +8,7 @@ import { BoardPreview3DMiniMap } from "./boardPreview3d/BoardPreview3DMiniMap";
 import { BoardPreview3DTable, type BoardAttackAnimation } from "./boardPreview3d/BoardPreview3DTable";
 import { BoardCardInspector } from "./boardPreview3d/BoardCardInspector";
 import { MatchCardImage } from "./MatchCardImage";
+import { ForcedAlSummonPromptCard } from "./ForcedAlSummonPromptCard";
 import { parseLayoutSnapshotJson, resolveSlotPosition, toLayoutSnapshot } from "./boardPreview3dAdapter";
 import { buildEffectTargetBoardOptions, slotIdFromTargetZoneRef } from "./boardTargetPromptMapping";
 import { buildBoardInteractionContext, buildBoardRenderModel, translateGameEventsToBoardRenderEvents } from "./boardRenderAdapter";
@@ -63,6 +64,32 @@ const DEFAULT_VISIBLE_SLOT_LAYERS: VisibleSlotLayers = {
   stacks: false,
   hand: false
 };
+
+function getBrowserStorage(): Storage | null {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function setBrowserStorageItem(key: string, value: string): void {
+  try {
+    getBrowserStorage()?.setItem(key, value);
+  } catch {
+    // Browsers can expose localStorage but reject writes in privacy modes.
+  }
+}
+
+async function writeClipboardText(value: string): Promise<boolean> {
+  try {
+    if (!globalThis.navigator?.clipboard?.writeText) return false;
+    await globalThis.navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function sumDice(values: number[] | undefined): number {
   return (values ?? []).reduce((total, value) => total + value, 0);
@@ -142,7 +169,7 @@ function getLatestDiceRollVisual(match: AppMatchState): { id: string; label: str
         values: currentStrike.hitRollDice
       };
     }
-    const latestSpeedTie = battle.speedTieRolls.at(-1);
+    const latestSpeedTie = battle.speedTieRolls[battle.speedTieRolls.length - 1];
     if (latestSpeedTie) {
       const values = [latestSpeedTie.attackingCreatureRoll, latestSpeedTie.defendingCreatureRoll];
       return {
@@ -321,6 +348,57 @@ function BoardBattleResolverHud({
   );
 }
 
+function BoardMagicChainHud({
+  match,
+  controlledPlayerId,
+  onPassPriority,
+  onResolve
+}: {
+  match: AppMatchState;
+  controlledPlayerId?: string | null;
+  onPassPriority?: (playerId: BoardPlayerId) => void;
+  onResolve?: () => void;
+}) {
+  const chain = match.pendingChain;
+  if (!chain) return null;
+
+  const priorityPlayerId = chain.priorityPlayerId as BoardPlayerId | undefined;
+  const priorityPlayerName = priorityPlayerId
+    ? match.players.find(player => player.id === priorityPlayerId)?.displayName ?? priorityPlayerId
+    : "No priority";
+  const latestLink = chain.links[chain.links.length - 1];
+  const canAct = !controlledPlayerId || !priorityPlayerId || controlledPlayerId === priorityPlayerId;
+
+  return (
+    <aside className="board-battle-hud board-battle-hud--prompt" aria-label="Magic chain prompt">
+      <div className="board-battle-hud__header">
+        <div>
+          <span>Magic Chain</span>
+          <strong>{priorityPlayerName}</strong>
+        </div>
+        <small>{chain.links.length} link{chain.links.length === 1 ? "" : "s"}</small>
+      </div>
+
+      <div className="board-battle-hud__effect">
+        <span>Latest Link</span>
+        <strong>{latestLink?.cardName ?? "Pending chain"}</strong>
+        <small>{latestLink ? `${latestLink.status} by ${match.players.find(player => player.id === latestLink.playerId)?.displayName ?? latestLink.playerId}` : "Waiting"}</small>
+      </div>
+
+      <div className="board-battle-hud__actions">
+        {priorityPlayerId ? (
+          <button type="button" disabled={!canAct || !onPassPriority} onClick={() => onPassPriority?.(priorityPlayerId)}>
+            Pass Priority
+          </button>
+        ) : null}
+        <button type="button" disabled={!canAct || !onResolve} onClick={() => onResolve?.()}>
+          Resolve Chain
+        </button>
+      </div>
+    </aside>
+  );
+}
+
 function clampNumber(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -338,13 +416,17 @@ type BoardPreview3DProps = {
   onRequestNoCreatureRedraw?: (playerId: "player_1" | "player_2") => void;
   onSetHandRevealed?: (playerId: "player_1" | "player_2", revealed: boolean) => void;
   onApproveRevealRedraw?: () => void;
+  onResolveForcedAlSummon?: (cardInstanceId: string) => void;
+  onMulliganForcedAlSummon?: () => void;
   onOpeningRoll?: (playerId: "player_1" | "player_2") => void;
   onOpenDiceRoller?: () => void;
   onPlayHandCardToSlot?: (cardInstanceId: string, slotId: string, sacrificeCardInstanceIds?: string[]) => void;
   onPlayLightningResponse?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
   onPlayBattleResponse?: (battleSessionId: string, strikeId: string, playerId: BoardPlayerId, cardInstanceId: string) => void;
+  onResolveMagicChain?: () => void;
   onPassMagicChainPriority?: (playerId: BoardPlayerId) => void;
   onDiscardHandCardToCemetery?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
+  onCallCemeteryHpLoss?: (losingPlayerId: BoardPlayerId, callingPlayerId: BoardPlayerId) => void;
   onEndTurn?: () => void;
   onAttachEquipMagicToCreature?: (
     fieldOwnerPlayerId: BoardPlayerId,
@@ -534,13 +616,17 @@ export function BoardPreview3D({
   onRequestNoCreatureRedraw,
   onSetHandRevealed,
   onApproveRevealRedraw,
+  onResolveForcedAlSummon,
+  onMulliganForcedAlSummon,
   onOpeningRoll,
   onOpenDiceRoller,
   onPlayHandCardToSlot,
   onPlayLightningResponse,
   onPlayBattleResponse,
+  onResolveMagicChain,
   onPassMagicChainPriority,
   onDiscardHandCardToCemetery,
+  onCallCemeteryHpLoss,
   onEndTurn,
   onAttachEquipMagicToCreature,
   onStartBattleFromPiece,
@@ -622,6 +708,7 @@ export function BoardPreview3D({
   const [selectedOpponentRevealCardId, setSelectedOpponentRevealCardId] = useState<string | null>(null);
   const [hoveredOpponentRevealCardId, setHoveredOpponentRevealCardId] = useState<string | null>(null);
   const [handInspectorDetailsExpanded, setHandInspectorDetailsExpanded] = useState(false);
+  const [opponentRevealInspectorDetailsExpanded, setOpponentRevealInspectorDetailsExpanded] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [controlsCollapsed, setControlsCollapsed] = useState(true);
   const [controlsDockPosition, setControlsDockPosition] = useState<FloatingDockPosition>("top-right");
@@ -698,7 +785,8 @@ export function BoardPreview3D({
   }, [animationQueue.activeEvent, runtimeMode]);
 
   useEffect(() => {
-    const saved = globalThis.localStorage?.getItem(storageKey);
+    const storage = getBrowserStorage();
+    const saved = storage?.getItem(storageKey);
     if (!saved) {
       setHydrated(true);
       return;
@@ -781,7 +869,7 @@ export function BoardPreview3D({
             ? { showAnchors: false, showZoneRects: false, visibleSlotLayers: DEFAULT_VISIBLE_SLOT_LAYERS }
             : {})
         };
-        globalThis.localStorage?.setItem(
+        setBrowserStorageItem(
           storageKey,
           JSON.stringify(migratedSettings)
         );
@@ -795,7 +883,7 @@ export function BoardPreview3D({
 
   useEffect(() => {
     if (!hydrated) return;
-    globalThis.localStorage?.setItem(
+    setBrowserStorageItem(
       storageKey,
       JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, cameraDefaultsVersion: BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, selectedZoneId, zoneAdjustments, nudgeStep, showAnchors, showZoneRects, visibleSlotLayers, ownerFilter, showDiagnostics, integrationMode, controlsDockPosition, actionDockPosition, actionDockCollapsed })
     );
@@ -842,12 +930,15 @@ export function BoardPreview3D({
   const opponentHandIsRevealed = opponentPlayerId
     ? Boolean(locallyRevealedHands[opponentPlayerId]) || revealedHandPlayerIds.includes(opponentPlayerId)
     : false;
+  const noCreatureRevealPrompt = match.pendingPrompt?.type === "NO_CREATURE_REDRAW_REVEAL"
+    ? match.pendingPrompt
+    : undefined;
   const canApprovePendingReveal = Boolean(
-    match.pendingPrompt &&
-    (!controlledPlayerId || controlledPlayerId === match.pendingPrompt.approvingPlayerId)
+    noCreatureRevealPrompt &&
+    (!controlledPlayerId || controlledPlayerId === noCreatureRevealPrompt.approvingPlayerId)
   );
-  const opponentPromptRevealCards = opponentPlayer && canApprovePendingReveal && match.pendingPrompt?.requestingPlayerId === opponentPlayer.id
-    ? match.pendingPrompt.revealedCards.map(card => ({
+  const opponentPromptRevealCards = opponentPlayer && canApprovePendingReveal && noCreatureRevealPrompt?.requestingPlayerId === opponentPlayer.id
+    ? noCreatureRevealPrompt.revealedCards.map(card => ({
       instanceId: card.cardInstanceId,
       cardId: card.cardId,
       ownerPlayerId: opponentPlayer.id,
@@ -859,11 +950,12 @@ export function BoardPreview3D({
   useEffect(() => {
     setHandInspectorDetailsExpanded(false);
   }, [inspectedHandCardId]);
+
   const cemeteryViewerPlayer = cemeteryViewerOwner
     ? match.players.find(player => player.id === cemeteryViewerOwner) ?? null
     : null;
   const cemeteryCards = cemeteryViewerPlayer?.cemetery ?? [];
-  const inspectedCemeteryCardId = hoveredCemeteryCardId ?? selectedCemeteryCardId ?? cemeteryCards.at(-1)?.instanceId ?? null;
+  const inspectedCemeteryCardId = hoveredCemeteryCardId ?? selectedCemeteryCardId ?? cemeteryCards[cemeteryCards.length - 1]?.instanceId ?? null;
   const inspectedCemeteryCard = inspectedCemeteryCardId
     ? cemeteryCards.find(card => card.instanceId === inspectedCemeteryCardId) ?? null
     : null;
@@ -877,7 +969,7 @@ export function BoardPreview3D({
       setHoveredCemeteryCardId(null);
       return;
     }
-    setSelectedCemeteryCardId(current => current && player.cemetery.some(card => card.instanceId === current) ? current : player.cemetery.at(-1)?.instanceId ?? null);
+    setSelectedCemeteryCardId(current => current && player.cemetery.some(card => card.instanceId === current) ? current : player.cemetery[player.cemetery.length - 1]?.instanceId ?? null);
   }, [cemeteryViewerOwner, match.players]);
 
   useEffect(() => {
@@ -889,16 +981,23 @@ export function BoardPreview3D({
     : opponentHandIsRevealed
       ? opponentPlayer?.hand ?? []
       : [];
-  const opponentHandHasPrompt = Boolean(match.pendingPrompt && canApprovePendingReveal && opponentPromptRevealCards.length > 0);
+  const opponentHandHasPrompt = Boolean(noCreatureRevealPrompt && canApprovePendingReveal && opponentPromptRevealCards.length > 0);
+  const canInspectOpponentHand = visibleOpponentHandCards.length > 0;
   const inspectedOpponentRevealCardId = opponentHandHasPrompt
     ? hoveredOpponentRevealCardId ?? selectedOpponentRevealCardId
+    : canInspectOpponentHand
+      ? hoveredOpponentRevealCardId ?? selectedOpponentRevealCardId
     : null;
   const inspectedOpponentRevealCard = inspectedOpponentRevealCardId
     ? visibleOpponentHandCards.find(card => card.instanceId === inspectedOpponentRevealCardId) ?? null
     : null;
 
   useEffect(() => {
-    if (!opponentHandHasPrompt) {
+    setOpponentRevealInspectorDetailsExpanded(false);
+  }, [inspectedOpponentRevealCardId]);
+
+  useEffect(() => {
+    if (!canInspectOpponentHand) {
       setSelectedOpponentRevealCardId(null);
       setHoveredOpponentRevealCardId(null);
       return;
@@ -906,7 +1005,7 @@ export function BoardPreview3D({
     setSelectedOpponentRevealCardId(current =>
       current && visibleOpponentHandCards.some(card => card.instanceId === current) ? current : null
     );
-  }, [opponentHandHasPrompt, visibleOpponentHandCards]);
+  }, [canInspectOpponentHand, visibleOpponentHandCards]);
   const occupiedSlotIds = useMemo(
     () => new Set<string>(boardObjects.filter((object) => object.lane !== "hand").map((object) => object.slotId)),
     [boardObjects]
@@ -1288,7 +1387,7 @@ export function BoardPreview3D({
     }
 
     seenUnattachedEquipMagicIdsRef.current = currentUnattachedEquipMagicIds;
-    const nextEquipMagicCardId = newlySeenEquipMagicIds.at(-1);
+    const nextEquipMagicCardId = newlySeenEquipMagicIds[newlySeenEquipMagicIds.length - 1];
     if (!nextEquipMagicCardId || selectedEquipMagicCardId === nextEquipMagicCardId) return;
 
     setSelectedCreatureCardId(null);
@@ -1379,7 +1478,7 @@ export function BoardPreview3D({
   }, [boardObjects, pendingBattle]);
   const battleStepControllerPlayerId = pendingBattle
     ? match.pendingEffectTargetPrompt?.controllerPlayerId ??
-      (pendingBattle.status === "AWAITING_SPEED_CHECK"
+      (pendingBattle.status === "AWAITING_SPEED_CHECK" || pendingBattle.status === "COMPLETE"
       ? pendingBattle.attackingPlayerId
       : pendingBattleStrike?.attacker.playerId ?? pendingBattle.attackingPlayerId)
     : null;
@@ -1555,8 +1654,7 @@ export function BoardPreview3D({
     const snapshot = toLayoutSnapshot(slotOffsets);
     const payload = JSON.stringify(snapshot, null, 2);
     setLayoutDraft(payload);
-    if (globalThis.navigator?.clipboard?.writeText) {
-      await globalThis.navigator.clipboard.writeText(payload);
+    if (await writeClipboardText(payload)) {
       setLastCopiedLabel("Layout snapshot");
       setStatusMessage("Copied layout snapshot.");
       return;
@@ -1861,8 +1959,7 @@ export function BoardPreview3D({
     if (!slot) return;
     const resolved = resolveSlotPosition(slot.id, slotOffsets, slot.xPercent, slot.zPercent);
     const payload = JSON.stringify({ id: slot.id, xPercent: resolved.xPercent, zPercent: resolved.zPercent }, null, 2);
-    if (globalThis.navigator?.clipboard?.writeText) {
-      await globalThis.navigator.clipboard.writeText(payload);
+    if (await writeClipboardText(payload)) {
       setLastCopiedLabel("Selected slot");
       setStatusMessage("Copied selected slot JSON.");
       return;
@@ -1916,7 +2013,7 @@ export function BoardPreview3D({
       .filter(object => object.lane !== "hand"),
     [boardObjects, effectiveOwnerFilter]
   );
-  const pendingRevealPrompt = match.pendingPrompt;
+  const pendingRevealPrompt = noCreatureRevealPrompt;
   const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
   const advanceBlockReason = getAdvanceBlockReason(match);
   const canControlActivePlayer = canControlPlayer(match.turn.activePlayerId);
@@ -1932,6 +2029,12 @@ export function BoardPreview3D({
   const shouldShowAdvancePhaseButton = match.turn.phase !== "DRAW";
   const boardDeckActions = match.players.filter(player => player.id === focusedPlayerId).map(player => {
     const owner: BoardPlayerId = player.id === "player_1" ? "player_1" : "player_2";
+    const opponent = match.players.find(candidate => candidate.id !== player.id);
+    const opponentOwner: BoardPlayerId | null = opponent
+      ? opponent.id === "player_1" ? "player_1" : "player_2"
+      : null;
+    const opponentCemeteryHp = Number(opponent?.cemeteryCreatureHpTotal ?? 0);
+    const cemeteryHpLimit = Number(match.settings.cemeteryHpLimit ?? 300);
     const canControlThisPlayer = canControlPlayer(player.id);
     const isActivePlayer = match.turn.activePlayerId === player.id;
     const isForcedPrimaryReplacement = match.setup.primaryReplacementRequiredForPlayerId === player.id;
@@ -1953,11 +2056,26 @@ export function BoardPreview3D({
       canRequestNoCreatureRedraw ||
       isApprovingReveal ||
       isRequestingReveal;
+    const canCallCemeteryHpLoss =
+      match.status !== "COMPLETE" &&
+      canControlThisPlayer &&
+      Boolean(opponentOwner) &&
+      opponentCemeteryHp >= cemeteryHpLimit &&
+      Boolean(onCallCemeteryHpLoss);
+    const cemeteryHpLossTitle = opponent
+      ? opponentCemeteryHp >= cemeteryHpLimit
+        ? `Call cemetery HP loss against ${opponent.displayName}.`
+        : `${opponent.displayName} has ${opponentCemeteryHp}/${cemeteryHpLimit} cemetery HP.`
+      : "No opponent found.";
+
     return {
       player,
       owner,
+      opponentOwner,
       canControlThisPlayer,
       canUndo: canControlThisPlayer && Boolean(onUndoLastAction),
+      canCallCemeteryHpLoss,
+      cemeteryHpLossTitle,
       canRequestNoCreatureRedraw,
       isApprovingReveal,
       isRequestingReveal,
@@ -2315,7 +2433,8 @@ export function BoardPreview3D({
             }}
             onCemeteryStackClick={(owner) => {
               setCemeteryViewerOwner(current => current === owner ? null : owner);
-              setSelectedCemeteryCardId(match.players.find(player => player.id === owner)?.cemetery.at(-1)?.instanceId ?? null);
+              const ownerCemetery = match.players.find(player => player.id === owner)?.cemetery ?? [];
+              setSelectedCemeteryCardId(ownerCemetery[ownerCemetery.length - 1]?.instanceId ?? null);
               setHoveredCemeteryCardId(null);
             }}
             sacrificeCandidateCardIds={discardRequiredForFocusedPlayer ? [] : [...sacrificeCandidateIds]}
@@ -2420,6 +2539,18 @@ export function BoardPreview3D({
                       Report
                     </button>
                   ) : null}
+                  <button
+                    type="button"
+                    className={action.canCallCemeteryHpLoss ? "is-emphasis" : undefined}
+                    disabled={!action.canCallCemeteryHpLoss}
+                    onClick={() => {
+                      if (!action.opponentOwner) return;
+                      onCallCemeteryHpLoss?.(action.opponentOwner, action.owner);
+                    }}
+                    title={action.cemeteryHpLossTitle}
+                  >
+                    Call Cemetery Loss
+                  </button>
                   {action.shouldShowHandControls ? (
                     <>
                       <button
@@ -2599,8 +2730,9 @@ export function BoardPreview3D({
               ariaLabel="Revealed hand card preview"
               card={inspectedOpponentRevealCard}
               className="board-preview-3d__card-inspector--hand"
+              detailsExpanded={opponentRevealInspectorDetailsExpanded}
               match={match}
-              showDetails={false}
+              onToggleDetails={() => setOpponentRevealInspectorDetailsExpanded(current => !current)}
             />
           ) : null}
           {inspectedHandCard ? (
@@ -2654,14 +2786,14 @@ export function BoardPreview3D({
               <div className="board-preview-3d__hand-rail-tab">
                 {opponentHandHasPrompt ? "Action Required" : `Opponent Hand ${opponentPlayer.hand.length}${visibleOpponentHandCards.length > 0 ? " Revealed" : ""}`}
               </div>
-              {opponentHandHasPrompt && match.pendingPrompt ? (
+              {opponentHandHasPrompt && noCreatureRevealPrompt ? (
                 <div className="board-preview-3d__hand-prompt">
                   <div>
                     <strong>{opponentPlayer.displayName} requests a no-creature redraw.</strong>
                     <span>Review the revealed hand, then accept the redraw.</span>
                   </div>
                   <button type="button" onClick={onApproveRevealRedraw} disabled={!onApproveRevealRedraw}>
-                    Accept Redraw {match.pendingPrompt.redrawCount}
+                    Accept Redraw {noCreatureRevealPrompt.redrawCount}
                   </button>
                 </div>
               ) : null}
@@ -2702,6 +2834,14 @@ export function BoardPreview3D({
               <small>Target: {battleDefender?.object.label ?? "No valid defender"}</small>
             </section>
           ) : null}
+          {match.pendingChain ? (
+            <BoardMagicChainHud
+              match={match}
+              controlledPlayerId={controlledPlayerId}
+              onPassPriority={onPassMagicChainPriority}
+              onResolve={onResolveMagicChain}
+            />
+          ) : null}
           {match.pendingBattle ? (
             <BoardBattleResolverHud
               battle={match.pendingBattle}
@@ -2713,6 +2853,17 @@ export function BoardPreview3D({
               onApplyEffect={onApplyEffectRoll}
               onSkipEffect={onSkipEffectRoll}
             />
+          ) : null}
+          {match.pendingPrompt?.type === "FORCED_AL_SUMMON" ? (
+            <aside className="board-battle-hud board-battle-hud--prompt" aria-label="Forced summon prompt">
+              <ForcedAlSummonPromptCard
+                match={match}
+                controlledPlayerId={controlledPlayerId ?? undefined}
+                compact
+                onSummon={onResolveForcedAlSummon}
+                onMulligan={onMulliganForcedAlSummon}
+              />
+            </aside>
           ) : null}
         </section>
         {showDebugPanel ? (

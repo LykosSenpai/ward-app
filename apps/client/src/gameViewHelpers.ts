@@ -358,8 +358,20 @@ export type BattleCreatureOption = {
   card: CardInstance;
   label: string;
   usedThisCombat: boolean;
+  battleUseCount: number;
+  battleUseLimit: number;
   statusBattleSkipReason?: string;
 };
+
+const CABAL_WARCHIEF_CARD_ID = "gen3_026_cabal_warchief";
+
+function getCreatureBattleUseLimit(card: CardInstance): number {
+  return card.cardId === CABAL_WARCHIEF_CARD_ID ? 2 : 1;
+}
+
+function getCreatureBattleUseCount(usedCreatureIds: string[], creatureInstanceId: string): number {
+  return usedCreatureIds.filter(id => id === creatureInstanceId).length;
+}
 
 export function getPlayerBattleCreatureOptions(
   match: AppMatchState,
@@ -369,25 +381,33 @@ export function getPlayerBattleCreatureOptions(
   const options: BattleCreatureOption[] = [];
 
   if (player.field.primaryCreature) {
+    const battleUseLimit = getCreatureBattleUseLimit(player.field.primaryCreature);
+    const battleUseCount = getCreatureBattleUseCount(usedCreatureIds, player.field.primaryCreature.instanceId);
     options.push({
       id: player.field.primaryCreature.instanceId,
       kind: "PRIMARY_CREATURE",
       playerId: player.id,
       card: player.field.primaryCreature,
       label: `Primary: ${getCardName(match, player.field.primaryCreature)}`,
-      usedThisCombat: usedCreatureIds.includes(player.field.primaryCreature.instanceId),
+      usedThisCombat: battleUseCount >= battleUseLimit,
+      battleUseCount,
+      battleUseLimit,
       statusBattleSkipReason: getStatusBattleSkipReason(match, player.field.primaryCreature)
     });
   }
 
   for (const limitedSummon of player.field.limitedSummons) {
+    const battleUseLimit = getCreatureBattleUseLimit(limitedSummon);
+    const battleUseCount = getCreatureBattleUseCount(usedCreatureIds, limitedSummon.instanceId);
     options.push({
       id: limitedSummon.instanceId,
       kind: "LIMITED_SUMMON",
       playerId: player.id,
       card: limitedSummon,
       label: `Limited: ${getCardName(match, limitedSummon)}`,
-      usedThisCombat: usedCreatureIds.includes(limitedSummon.instanceId),
+      usedThisCombat: battleUseCount >= battleUseLimit,
+      battleUseCount,
+      battleUseLimit,
       statusBattleSkipReason: getStatusBattleSkipReason(match, limitedSummon)
     });
   }

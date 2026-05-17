@@ -426,7 +426,7 @@ type BuildBoardRenderModelOptions = {
 };
 
 export function buildBoardRenderModel(match: AppMatchState, options: BuildBoardRenderModelOptions = {}): BoardRenderModel {
-  const lastEvent = match.eventLog.at(-1);
+  const lastEvent = match.eventLog[match.eventLog.length - 1];
   return {
     matchId: match.matchId,
     sequenceNumber: lastEvent?.sequenceNumber ?? 0,

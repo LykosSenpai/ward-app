@@ -41,6 +41,46 @@ function getTicketSummary(ticket: SupportTicketDetail | null): string {
   );
 }
 
+function sanitizeFilePart(value: string, fallback: string): string {
+  const sanitized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return sanitized || fallback;
+}
+
+function downloadJsonFile(fileName: string, contents: unknown): void {
+  const blob = new Blob([`${JSON.stringify(contents, null, 2)}\n`], {
+    type: "application/json;charset=utf-8"
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getTicketExportFileName(ticket: SupportTicketDetail): string {
+  const subject = sanitizeFilePart(ticket.subject, "support-ticket").slice(0, 56);
+  return `ward-support-ticket-${ticket.id}-${subject}.json`;
+}
+
+function buildTicketExport(ticket: SupportTicketDetail): Record<string, unknown> {
+  return {
+    exportVersion: 1,
+    exportedAt: new Date().toISOString(),
+    app: "Ward Nexus",
+    ticket
+  };
+}
+
 export function AdminControlsPage({ features, onToggleFeature }: Props) {
   const [tickets, setTickets] = useState<SupportTicketSummary[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicketDetail | null>(null);
@@ -48,6 +88,7 @@ export function AdminControlsPage({ features, onToggleFeature }: Props) {
   const [ticketMessage, setTicketMessage] = useState("");
   const [ticketError, setTicketError] = useState("");
   const [ticketsBusy, setTicketsBusy] = useState(false);
+  const [supportTicketsCollapsed, setSupportTicketsCollapsed] = useState(false);
 
   useEffect(() => {
     void loadTickets();
@@ -134,13 +175,26 @@ export function AdminControlsPage({ features, onToggleFeature }: Props) {
     }
   }
 
+  function downloadSelectedTicket() {
+    if (!selectedTicket) return;
+
+    downloadJsonFile(
+      getTicketExportFileName(selectedTicket),
+      buildTicketExport(selectedTicket)
+    );
+    setTicketMessage("Downloaded support ticket JSON.");
+  }
+
   return (
     <section className="panel admin-controls-page">
       <h2>Admin Controls</h2>
 
-      <section className="admin-controls-section">
+      <section className={supportTicketsCollapsed ? "admin-controls-section admin-support-section is-collapsed" : "admin-controls-section admin-support-section"}>
         <div className="admin-controls-section-header">
-          <h3>Support Tickets</h3>
+          <div className="admin-controls-section-title">
+            <h3>Support Tickets</h3>
+            <span>{tickets.length} shown</span>
+          </div>
           <div className="admin-ticket-toolbar">
             <select
               value={ticketStatusFilter}
@@ -155,85 +209,125 @@ export function AdminControlsPage({ features, onToggleFeature }: Props) {
             <button type="button" onClick={() => void loadTickets()} disabled={ticketsBusy}>
               Refresh
             </button>
+            <button
+              type="button"
+              aria-expanded={!supportTicketsCollapsed}
+              aria-controls="admin-support-ticket-panel"
+              onClick={() => setSupportTicketsCollapsed(collapsed => !collapsed)}
+            >
+              {supportTicketsCollapsed ? "Open" : "Collapse"}
+            </button>
           </div>
         </div>
 
-        {ticketError ? <p className="error-box">{ticketError}</p> : null}
-        {ticketMessage ? <p className="success-box">{ticketMessage}</p> : null}
+        {supportTicketsCollapsed ? null : (
+          <div id="admin-support-ticket-panel" className="admin-support-ticket-panel">
+            {ticketError ? <p className="error-box">{ticketError}</p> : null}
+            {ticketMessage ? <p className="success-box">{ticketMessage}</p> : null}
 
-        <div className="admin-ticket-layout">
-          <div className="admin-ticket-list">
-            {tickets.length === 0 ? (
-              <p className="empty-zone">{ticketsBusy ? "Loading tickets..." : "No tickets found."}</p>
-            ) : tickets.map(ticket => (
-              <button
-                key={ticket.id}
-                type="button"
-                className={selectedTicket?.id === ticket.id ? "admin-ticket-row is-selected" : "admin-ticket-row"}
-                onClick={() => void loadTicketDetail(ticket.id)}
-              >
-                <span className={`admin-ticket-status admin-ticket-status-${ticket.status.toLowerCase()}`}>{ticket.status}</span>
-                <strong>{ticket.subject}</strong>
-                <span>{ticket.category === "SITE_REPORT" ? "Site" : "Board"} / {ticket.severity} / {formatReporter(ticket)}</span>
-                <small>{formatDate(ticket.createdAt)}</small>
-              </button>
-            ))}
-          </div>
-
-          <section className="admin-ticket-detail">
-            {selectedTicket ? (
-              <>
-                <div className="admin-ticket-detail-header">
+            <div className="admin-ticket-layout">
+              <section className="admin-ticket-pane admin-ticket-list-pane" aria-label="Support ticket list">
+                <div className="admin-ticket-pane-header">
                   <div>
-                    <h3>{selectedTicket.subject}</h3>
-                    <p>{selectedTicket.id}</p>
+                    <h4>Ticket Queue</h4>
+                    <span>{ticketStatusFilter === "ALL" ? "All statuses" : ticketStatusFilter}</span>
                   </div>
-                  <span className={`admin-ticket-status admin-ticket-status-${selectedTicket.status.toLowerCase()}`}>{selectedTicket.status}</span>
+                  <strong>{tickets.length}</strong>
                 </div>
 
-                <div className="admin-ticket-meta">
-                  <span>Reporter</span>
-                  <strong>{formatReporter(selectedTicket)}</strong>
-                  <span>Category</span>
-                  <strong>{selectedTicket.category === "SITE_REPORT" ? "Site Report" : "Board Report"}</strong>
-                  <span>Match</span>
-                  <strong>{selectedTicket.matchId ?? "None"}</strong>
-                  <span>Severity</span>
-                  <strong>{selectedTicket.severity}</strong>
-                  <span>Created</span>
-                  <strong>{formatDate(selectedTicket.createdAt)}</strong>
-                </div>
-
-                <p className="admin-ticket-description">{selectedTicket.description}</p>
-
-                <div className="admin-ticket-actions">
-                  {SUPPORT_TICKET_STATUSES.map(status => (
+                <div className="admin-ticket-list">
+                  {tickets.length === 0 ? (
+                    <p className="empty-zone">{ticketsBusy ? "Loading tickets..." : "No tickets found."}</p>
+                  ) : tickets.map(ticket => (
                     <button
-                      key={status}
+                      key={ticket.id}
                       type="button"
-                      disabled={ticketsBusy || selectedTicket.status === status}
-                      onClick={() => void updateTicketStatus(selectedTicket.id, status)}
+                      className={selectedTicket?.id === ticket.id ? "admin-ticket-row is-selected" : "admin-ticket-row"}
+                      onClick={() => void loadTicketDetail(ticket.id)}
                     >
-                      {status}
+                      <span className={`admin-ticket-status admin-ticket-status-${ticket.status.toLowerCase()}`}>{ticket.status}</span>
+                      <strong>{ticket.subject}</strong>
+                      <span>{ticket.category === "SITE_REPORT" ? "Site" : "Board"} / {ticket.severity} / {formatReporter(ticket)}</span>
+                      <small>{formatDate(ticket.createdAt)}</small>
                     </button>
                   ))}
                 </div>
+              </section>
 
-                <details className="admin-ticket-json">
-                  <summary>Context</summary>
-                  <pre>{getTicketSummary(selectedTicket)}</pre>
-                </details>
+              <section className="admin-ticket-pane admin-ticket-info-pane" aria-label="Selected support ticket">
+                <div className="admin-ticket-pane-header">
+                  <div>
+                    <h4>Ticket Info</h4>
+                    <span>{selectedTicket?.id ?? "Select a ticket"}</span>
+                  </div>
+                  {selectedTicket ? (
+                    <span className={`admin-ticket-status admin-ticket-status-${selectedTicket.status.toLowerCase()}`}>{selectedTicket.status}</span>
+                  ) : null}
+                </div>
 
-                <details className="admin-ticket-json">
-                  <summary>{selectedTicket.category === "SITE_REPORT" ? "Report Snapshot" : "Match Snapshot"}</summary>
-                  <pre>{JSON.stringify(selectedTicket.matchSnapshot, null, 2)}</pre>
-                </details>
-              </>
-            ) : (
-              <p className="empty-zone">Select a ticket.</p>
-            )}
-          </section>
-        </div>
+                <div className="admin-ticket-detail">
+                  {selectedTicket ? (
+                    <>
+                      <div className="admin-ticket-detail-header">
+                        <div>
+                          <h3>{selectedTicket.subject}</h3>
+                          <p>{selectedTicket.id}</p>
+                        </div>
+                      </div>
+
+                      <div className="admin-ticket-meta">
+                        <span>Reporter</span>
+                        <strong>{formatReporter(selectedTicket)}</strong>
+                        <span>Category</span>
+                        <strong>{selectedTicket.category === "SITE_REPORT" ? "Site Report" : "Board Report"}</strong>
+                        <span>Match</span>
+                        <strong>{selectedTicket.matchId ?? "None"}</strong>
+                        <span>Severity</span>
+                        <strong>{selectedTicket.severity}</strong>
+                        <span>Created</span>
+                        <strong>{formatDate(selectedTicket.createdAt)}</strong>
+                      </div>
+
+                      <p className="admin-ticket-description">{selectedTicket.description}</p>
+
+                      <div className="admin-ticket-actions">
+                        <button
+                          type="button"
+                          onClick={downloadSelectedTicket}
+                          disabled={ticketsBusy}
+                        >
+                          Download JSON
+                        </button>
+                        {SUPPORT_TICKET_STATUSES.map(status => (
+                          <button
+                            key={status}
+                            type="button"
+                            disabled={ticketsBusy || selectedTicket.status === status}
+                            onClick={() => void updateTicketStatus(selectedTicket.id, status)}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+
+                      <details className="admin-ticket-json">
+                        <summary>Context</summary>
+                        <pre>{getTicketSummary(selectedTicket)}</pre>
+                      </details>
+
+                      <details className="admin-ticket-json">
+                        <summary>{selectedTicket.category === "SITE_REPORT" ? "Report Snapshot" : "Match Snapshot"}</summary>
+                        <pre>{JSON.stringify(selectedTicket.matchSnapshot, null, 2)}</pre>
+                      </details>
+                    </>
+                  ) : (
+                    <p className="empty-zone">Select a ticket.</p>
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="admin-controls-section">
@@ -242,18 +336,18 @@ export function AdminControlsPage({ features, onToggleFeature }: Props) {
         </div>
         <div className="admin-feature-grid">
           {features.map(feature => (
-            <label className="admin-feature-row" key={feature.key}>
-              <div><strong>{feature.label}</strong></div>
-              <div>{feature.description}</div>
-              <div>
-                <input
-                  type="checkbox"
-                  checked={feature.enabledForPlayers}
-                  disabled={feature.adminOnly}
-                  onChange={event => { void onToggleFeature(feature.key, event.currentTarget.checked); }}
-                />
-                {" "}Enabled for players
-              </div>
+            <label
+              className={`admin-feature-chip${feature.enabledForPlayers ? " is-enabled" : ""}${feature.adminOnly ? " is-locked" : ""}`}
+              key={feature.key}
+              title={feature.description}
+            >
+              <input
+                type="checkbox"
+                checked={feature.enabledForPlayers}
+                disabled={feature.adminOnly}
+                onChange={event => { void onToggleFeature(feature.key, event.currentTarget.checked); }}
+              />
+              <span>{feature.label}</span>
             </label>
           ))}
         </div>

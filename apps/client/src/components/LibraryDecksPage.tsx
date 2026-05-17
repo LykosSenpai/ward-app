@@ -15,8 +15,14 @@ type LibraryDecksPageProps = {
   getDeckBuilderCounts: () => Record<string, number>;
   getDeckBuilderCardCount: (cardId: string) => number;
   onDeckNameChange: (value: string) => void;
-  onDeckIdChange: (value: string) => void;
   onDeckFormatChange: (value: "FREE_PLAY" | "TOURNAMENT") => void;
+  onImportDeckCode: (payload: {
+    name?: string;
+    deckId?: string;
+    cardIds: string[];
+    cardArtKeys?: string[];
+    format?: "FREE_PLAY" | "TOURNAMENT";
+  }) => void;
   onRefreshCardLibrary: () => void;
   onClearDeckBuilder: () => void;
   onNewDeck: () => void;
@@ -44,8 +50,8 @@ export function LibraryDecksPage({
   getDeckBuilderCounts,
   getDeckBuilderCardCount,
   onDeckNameChange,
-  onDeckIdChange,
   onDeckFormatChange,
+  onImportDeckCode,
   onRefreshCardLibrary,
   onClearDeckBuilder,
   onNewDeck,
@@ -74,8 +80,8 @@ export function LibraryDecksPage({
         getDeckBuilderCounts={getDeckBuilderCounts}
         getDeckBuilderCardCount={getDeckBuilderCardCount}
         onDeckNameChange={onDeckNameChange}
-        onDeckIdChange={onDeckIdChange}
         onDeckFormatChange={onDeckFormatChange}
+        onImportDeckCode={onImportDeckCode}
         onRefreshCardLibrary={onRefreshCardLibrary}
         onClearDeckBuilder={onClearDeckBuilder}
         onNewDeck={onNewDeck}

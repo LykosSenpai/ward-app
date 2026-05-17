@@ -12,6 +12,7 @@ import { LibraryDecksPage } from "./components/LibraryDecksPage";
 import { LlmEffectTestLabPage } from "./components/LlmEffectTestLabPage";
 import { LoginPage } from "./components/LoginPage";
 import { HandRevealPromptCard } from "./components/HandRevealPromptCard";
+import { ForcedAlSummonPromptCard } from "./components/ForcedAlSummonPromptCard";
 import { MagicChainCard } from "./components/MagicChainCard";
 import { ManualEffectQueueCard } from "./components/ManualEffectQueueCard";
 import { MatchCompleteCard } from "./components/MatchCompleteCard";
@@ -213,6 +214,13 @@ function getPendingManualDrawEffectForPlayer(match: AppMatchState, playerId: str
   );
 }
 
+function getPendingPromptControllerId(prompt: AppMatchState["pendingPrompt"]): string | undefined {
+  if (!prompt) return undefined;
+  return prompt.type === "NO_CREATURE_REDRAW_REVEAL"
+    ? prompt.approvingPlayerId
+    : prompt.controllerPlayerId;
+}
+
 type DashboardModal =
   | "save-load"
   | "manual-effects"
@@ -226,6 +234,8 @@ type DashboardModal =
   | null;
 
 type OwnershipSaveStatus = "idle" | "saving" | "saved" | "error";
+type SocketAckResponse = { ok: boolean; error?: string; message?: string };
+type AccountSaveEvent = "collection:updateOwnership" | "deck:save";
 
 export default function App() {
   const [locationSearch, setLocationSearch] = useState(() => window.location.search);
@@ -239,6 +249,8 @@ export default function App() {
   const messagingOrigin = embedParentOrigin ?? referrerOrigin;
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [socketAuthenticated, setSocketAuthenticated] = useState<boolean | null>(null);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [serverMessage, setServerMessage] = useState("Connecting...");
   const [match, setMatch] = useState<AppMatchState | null>(null);
   const [controlledPlayersByMatchId, setControlledPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
@@ -311,6 +323,7 @@ export default function App() {
     () => Object.fromEntries(featureFlags.map(flag => [flag.key, flag])),
     [featureFlags]
   );
+  const discordAuthEnabled = featureFlagsByKey["discord-auth"]?.enabledForPlayers === true;
 
   function canSeePage(page: AppPage): boolean {
     if (page === "profile") return true;
@@ -348,6 +361,51 @@ export default function App() {
 
     setActivePage(page);
     updatePageUrl(page);
+  }
+
+  function showAccountSaveError(message: string, options: { ownership?: boolean } = {}): void {
+    setError(message);
+    setSaveMessage("");
+    if (options.ownership) {
+      setOwnershipSaveStatus("error");
+    }
+  }
+
+  function emitAccountSave(
+    event: AccountSaveEvent,
+    payload: unknown,
+    options: { ownership?: boolean; onQueued?: () => void } = {}
+  ): boolean {
+    if (!socket.connected) {
+      showAccountSaveError("The live server connection is offline. Refresh, log in again, then retry the save.", options);
+      return false;
+    }
+
+    if (authUser && socketAuthenticated === false) {
+      showAccountSaveError("Your page is logged in, but the live server connection is not using that login. Refresh, log in again, then retry the save.", options);
+      socket.disconnect();
+      socket.connect();
+      return false;
+    }
+
+    options.onQueued?.();
+
+    socket.timeout(8000).emit(
+      event,
+      payload,
+      (timeoutError: Error | null, response?: SocketAckResponse) => {
+        if (timeoutError) {
+          showAccountSaveError("The server did not confirm the save. Refresh and try again.", options);
+          return;
+        }
+
+        if (response?.ok === false) {
+          showAccountSaveError(response.error ?? "The server rejected the save.", options);
+        }
+      }
+    );
+
+    return true;
   }
 
   useEffect(() => {
@@ -433,11 +491,60 @@ export default function App() {
   }, [embedModeEnabled, embedParentOrigin, embedToken]);
 
   useEffect(() => {
+    if (!authChecked || !authUser) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const verifyEmailToken = params.get("verifyEmailToken");
+    if (!verifyEmailToken) return;
+
+    params.delete("verifyEmailToken");
+    const nextSearch = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`);
+    setLocationSearch(window.location.search);
+
+    const verifyEmail = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/email/verify`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ token: verifyEmailToken })
+        });
+        const data = await response.json() as { user?: AuthUser; message?: string };
+
+        if (!response.ok) {
+          throw new Error(data.message ?? "Unable to verify email.");
+        }
+
+        if (data.user) {
+          setAuthUser(data.user);
+        }
+
+        setActivePage("profile");
+        setProfileRefreshKey(current => current + 1);
+      } catch (verificationError) {
+        setError(verificationError instanceof Error ? verificationError.message : "Unable to verify email.");
+      }
+    };
+
+    void verifyEmail();
+  }, [authChecked, authUser]);
+
+  useEffect(() => {
     socket.on("server:welcome", (data: ServerWelcome) => {
       setServerMessage(data.message);
+      setSocketAuthenticated(data.authenticated === true);
+      if (!data.authenticated) {
+        setError("Your browser connected to the server without your login session. Save buttons may not work. Log out and back in; in Brave, turn Shields off for Ward Nexus if this keeps happening.");
+      } else {
+        setError(current => current.startsWith("Your browser connected to the server without your login session.") ? "" : current);
+      }
     });
 
     socket.on("connect", () => {
+      setSocketAuthenticated(null);
       requestInitialData();
     });
 
@@ -572,6 +679,12 @@ export default function App() {
       setOwnershipSaveStatus(current => current === "saving" ? "saved" : current);
     });
 
+    socket.on("collection:error", (data: { message: string }) => {
+      setError(data.message);
+      setOwnershipSaveStatus("error");
+      socket.emit("collection:listOwnership");
+    });
+
     socket.on("dev:effectCoverage", (data: EffectCoverageRow[]) => {
       setEffectCoverageRows(data);
     });
@@ -633,7 +746,7 @@ export default function App() {
           return;
         }
 
-        socket.emit("deck:save", {
+        emitAccountSave("deck:save", {
           deckId: data.deckId,
           name: data.name,
           packIds: data.packIds,
@@ -781,6 +894,7 @@ export default function App() {
       socket.off("features:visibilityChanged");
       socket.off("lobby:cleanupComplete");
       socket.off("collection:ownership");
+      socket.off("collection:error");
       socket.off("dev:effectCoverage");
       socket.off("dev:effectRuntimeTestStatusSaved");
       socket.off("deck:saved");
@@ -823,6 +937,10 @@ export default function App() {
       return;
     }
 
+    if (activePage !== "effect-coverage" && activePage !== "llm-tests") {
+      return;
+    }
+
     const packIds = selectedPackIds.length > 0
       ? selectedPackIds
       : cardPacks.map(pack => pack.id);
@@ -833,7 +951,7 @@ export default function App() {
     }
 
     socket.emit("dev:listEffectCoverage", { packIds });
-  }, [canUseDevTools, cardPacks, selectedPackIds]);
+  }, [activePage, canUseDevTools, cardPacks, selectedPackIds]);
 
 
   function requestInitialData() {
@@ -1130,13 +1248,16 @@ export default function App() {
           ownedCount: safeOwnedCount
         };
 
-    setOwnershipSaveStatus("saving");
-    setCardOwnershipCounts(current => ({
-      ...current,
-      [cardId]: safeOwnedCount
-    }));
-
-    socket.emit("collection:updateOwnership", ownershipPayload);
+    emitAccountSave("collection:updateOwnership", ownershipPayload, {
+      ownership: true,
+      onQueued: () => {
+        setOwnershipSaveStatus("saving");
+        setCardOwnershipCounts(current => ({
+          ...current,
+          [cardId]: safeOwnedCount
+        }));
+      }
+    });
   }
 
   function loadDeckIntoBuilder(deckId: string, mode: "edit" | "clone") {
@@ -1208,7 +1329,7 @@ export default function App() {
       return;
     }
 
-    socket.emit("deck:save", {
+    emitAccountSave("deck:save", {
       deckId: finalDeckId,
       name: deckBuilderName.trim(),
       packIds: selectedPackIds,
@@ -1386,6 +1507,15 @@ export default function App() {
       matchId: match.matchId,
       playerId,
       cardInstanceId
+    });
+  }
+
+  function callCemeteryHpLoss(losingPlayerId: "player_1" | "player_2", callingPlayerId: "player_1" | "player_2") {
+    if (!match) return;
+    socket.emit("match:callCemeteryHpLoss", {
+      matchId: match.matchId,
+      losingPlayerId,
+      callingPlayerId
     });
   }
 
@@ -1838,7 +1968,7 @@ export default function App() {
   }
 
   function approveRevealRedraw() {
-    if (!match?.pendingPrompt) return;
+    if (!match?.pendingPrompt || match.pendingPrompt.type !== "NO_CREATURE_REDRAW_REVEAL") return;
 
     socket.emit("match:approveNoCreatureRedrawReveal", {
       matchId: match.matchId,
@@ -1851,6 +1981,23 @@ export default function App() {
     socket.emit("match:requestNoCreatureRedrawReveal", {
       matchId: match.matchId,
       playerId
+    });
+  }
+
+  function resolveForcedAlSummon(cardInstanceId: string) {
+    if (!match?.pendingPrompt || match.pendingPrompt.type !== "FORCED_AL_SUMMON") return;
+    socket.emit("match:resolveForcedAlSummonPrompt", {
+      matchId: match.matchId,
+      playerId: match.pendingPrompt.controllerPlayerId,
+      cardInstanceId
+    });
+  }
+
+  function mulliganForcedAlSummon() {
+    if (!match?.pendingPrompt || match.pendingPrompt.type !== "FORCED_AL_SUMMON") return;
+    socket.emit("match:mulliganForcedAlSummonPrompt", {
+      matchId: match.matchId,
+      playerId: match.pendingPrompt.controllerPlayerId
     });
   }
 
@@ -1883,6 +2030,7 @@ export default function App() {
     setDeckDetails([]);
     setCardOwnershipCounts({});
     setOwnershipSaveStatus("idle");
+    setSocketAuthenticated(false);
     socket.disconnect();
     socket.connect();
   }
@@ -1927,7 +2075,7 @@ export default function App() {
   );
   const canViewPendingPrompt = Boolean(
     match?.pendingPrompt &&
-    (!controlledPlayerId || controlledPlayerId === match.pendingPrompt.approvingPlayerId)
+    (!controlledPlayerId || controlledPlayerId === getPendingPromptControllerId(match.pendingPrompt))
   );
   const show3dBoardView = playViewMode === "board3d";
 
@@ -1947,10 +2095,11 @@ export default function App() {
   if (!authUser) {
     return <LoginPage onAuthenticated={user => {
       setAuthUser(user);
+      setSocketAuthenticated(null);
       socket.disconnect();
       socket.connect();
       requestInitialData();
-    }} />;
+    }} discordAuthEnabled={discordAuthEnabled} />;
   }
 
   const isBoardFocusMode = activePage === "play" && !!match && playViewMode === "board3d";
@@ -2172,11 +2321,12 @@ export default function App() {
             onDeleteSelected={deleteSelectedSavedMatches}
           />
         ) : activePage === "profile" ? (
-          <ProfilePage onUserUpdated={user => {
+          <ProfilePage key={profileRefreshKey} onUserUpdated={user => {
             setAuthUser(user);
+            setSocketAuthenticated(null);
             socket.disconnect();
             socket.connect();
-          }} />
+          }} discordAuthEnabled={discordAuthEnabled} />
         ) : activePage === "marketplace" ? (
           <MarketplacePage authUser={authUser} cardLibrary={cardLibrary} />
         ) : activePage === "card-library" ? (
@@ -2196,8 +2346,8 @@ export default function App() {
               setDeckBuilderName(value);
               setDeckBuilderId(normalizeId(value));
             }}
-            onDeckIdChange={value => setDeckBuilderId(normalizeId(value))}
             onDeckFormatChange={setDeckBuilderFormat}
+            onImportDeckCode={importDeckCodeIntoBuilder}
             onRefreshCardLibrary={refreshCardLibrary}
             onClearDeckBuilder={clearDeckBuilder}
             onNewDeck={startNewDeckBuilder}
@@ -2296,10 +2446,13 @@ export default function App() {
                       onRequestNoCreatureRedraw={requestNoCreatureRedraw}
                       onSetHandRevealed={setHandRevealed}
                       onApproveRevealRedraw={approveRevealRedraw}
+                      onResolveForcedAlSummon={resolveForcedAlSummon}
+                      onMulliganForcedAlSummon={mulliganForcedAlSummon}
                       onOpeningRoll={rollOpeningTurnOrder}
                       onDeckSlotClick={handleDeckClick}
                       onResolveEffectTarget={resolveEffectTarget}
                       onDiscardHandCardToCemetery={discardHandCardToCemetery}
+                      onCallCemeteryHpLoss={callCemeteryHpLoss}
                       onPlayHandCardToSlot={(cardInstanceId, slotId, sacrificeCardInstanceIds = []) => {
                         const slotOwnerId = slotId.startsWith("player_2-") ? "player_2" : "player_1";
                         const handOwner = match.players.find(player =>
@@ -2323,6 +2476,7 @@ export default function App() {
                         });
                       }}
                       onPlayBattleResponse={playBattleResponseFromHand}
+                      onResolveMagicChain={resolveMagicChain}
                       onPassMagicChainPriority={(playerId) => {
                         passMagicChainPriority(playerId);
                       }}
@@ -2431,11 +2585,20 @@ export default function App() {
 
             {canViewPendingPrompt && !show3dBoardView && (
               <ModalPanel title="Action Required" blocking>
-                <HandRevealPromptCard
-                  match={match}
-                  controlledPlayerId={controlledPlayerId}
-                  onApprove={approveRevealRedraw}
-                />
+                {match.pendingPrompt?.type === "NO_CREATURE_REDRAW_REVEAL" ? (
+                  <HandRevealPromptCard
+                    match={match}
+                    controlledPlayerId={controlledPlayerId}
+                    onApprove={approveRevealRedraw}
+                  />
+                ) : (
+                  <ForcedAlSummonPromptCard
+                    match={match}
+                    controlledPlayerId={controlledPlayerId}
+                    onSummon={resolveForcedAlSummon}
+                    onMulligan={mulliganForcedAlSummon}
+                  />
+                )}
               </ModalPanel>
             )}
 
@@ -2449,7 +2612,7 @@ export default function App() {
               </ModalPanel>
             )}
 
-            {match.pendingChain && canRespondToPendingChain && (
+            {match.pendingChain && canRespondToPendingChain && !show3dBoardView && (
               <ModalPanel title="Resolve Chain" blocking wide>
                 <MagicChainCard
                   match={match}

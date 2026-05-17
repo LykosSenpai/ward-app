@@ -2391,6 +2391,87 @@
   z-index: 31;
 }
 
+.board-battle-hud--prompt {
+  max-width: min(420px, calc(100% - 24px));
+  width: 380px;
+}
+
+.forced-summon-prompt {
+  display: grid;
+  gap: 12px;
+}
+
+.forced-summon-prompt-compact {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+}
+
+.forced-summon-prompt-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.forced-summon-prompt-header h2 {
+  font-size: 0.98rem;
+  line-height: 1.2;
+  margin: 2px 0 0;
+}
+
+.forced-summon-options {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.forced-summon-option {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 8px;
+  color: #f8fafc;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px minmax(0, 1fr);
+  padding: 7px;
+  text-align: left;
+}
+
+.forced-summon-option img {
+  border-radius: 4px;
+  width: 42px;
+}
+
+.forced-summon-option span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.forced-summon-option strong,
+.forced-summon-option small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forced-summon-option small,
+.forced-summon-empty {
+  color: #cbd5e1;
+  font-size: 0.78rem;
+}
+
+.forced-summon-empty {
+  display: grid;
+  gap: 8px;
+}
+
 .board-battle-hud__header,
 .board-battle-hud__combatants,
 .board-battle-hud__actions {

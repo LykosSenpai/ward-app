@@ -117,7 +117,7 @@ export function buildBoardObjects(match: AppMatchState, options: BuildBoardObjec
       slotId: deckSlotId
     }];
 
-    const cemeteryTopCard = cemeteryCards.at(-1);
+    const cemeteryTopCard = cemeteryCards[cemeteryCards.length - 1];
     const cemeterySlotId = `${owner}-cemetery` as BoardSlotId;
     const cemeteryPoint = getSlotPoint(cemeterySlotId, owner === "player_1" ? 6 : 94, owner === "player_1" ? 88 : 12);
     const cemetery: BoardObject[] = [{

@@ -302,7 +302,7 @@ export async function trustDevice(userId: string, req: Request, res: Response): 
 
   res.cookie(TRUSTED_DEVICE_COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     maxAge: TRUSTED_DEVICE_MAX_AGE_MS
   });

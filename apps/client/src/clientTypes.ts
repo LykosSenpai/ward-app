@@ -17,6 +17,7 @@ export type {
 
 export type ServerWelcome = {
   message: string;
+  authenticated?: boolean;
   socketId: string;
 };
 
@@ -329,6 +330,7 @@ export type FeatureKey =
   | "play-table"
   | "match-lobby"
   | "online-gameplay"
+  | "discord-auth"
   | "effect-tools"
   | "admin-tools";
 

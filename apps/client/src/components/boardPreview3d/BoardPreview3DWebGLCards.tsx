@@ -227,13 +227,9 @@ async function loadCardTextureForCard(
 ): Promise<THREE.Texture | null> {
   const artKey = normalizeCardArtKey(card.artKey);
   const holoEnabled = artKey === "holo" || artKey === "zero-art-holo";
-  const texture = await loadCardTexture(getMatchCardImageUrls(match, card), loader, renderer);
-
-  const baseTexture = texture ?? (
-    getBaseArtKey(artKey) === "zero-art"
-      ? await loadGeneratedZeroCardTexture(getMatchCardImageUrls(match, card, "default"), loader, renderer)
-      : null
-  );
+  const baseTexture = getBaseArtKey(artKey) === "zero-art"
+    ? await loadGeneratedZeroCardTexture(getMatchCardImageUrls(match, card, "default"), loader, renderer)
+    : await loadCardTexture(getMatchCardImageUrls(match, card), loader, renderer);
 
   if (!baseTexture || !holoEnabled) {
     return baseTexture;
@@ -436,10 +432,12 @@ export function BoardPreview3DWebGLCards({
     const scheduleRender = () => {
       void renderCards();
     };
-    const resizeObserver = new ResizeObserver(() => {
-      scheduleRender();
-    });
-    resizeObserver.observe(parent);
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => {
+          scheduleRender();
+        })
+      : null;
+    resizeObserver?.observe(parent);
     window.addEventListener("resize", scheduleRender);
     document.addEventListener("fullscreenchange", scheduleRender);
     window.visualViewport?.addEventListener("resize", scheduleRender);
@@ -449,7 +447,7 @@ export function BoardPreview3DWebGLCards({
     return () => {
       isDisposed = true;
       renderRequestId += 1;
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", scheduleRender);
       document.removeEventListener("fullscreenchange", scheduleRender);
       window.visualViewport?.removeEventListener("resize", scheduleRender);

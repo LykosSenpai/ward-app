@@ -563,7 +563,7 @@ function getLightningChainResponseDisabledReason(
   }
 
   const chain = match.pendingChain;
-  const previousLink = chain.links.at(-1);
+  const previousLink = chain.links[chain.links.length - 1];
   if (!previousLink) return "Magic Chain has no link to respond to.";
   if (chain.priorityPlayerId && chain.priorityPlayerId !== player.id) {
     return "Only the current Magic Chain priority player can respond.";

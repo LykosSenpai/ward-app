@@ -83,6 +83,14 @@ type BlockDragState =
   | { type: "CHAIN_BLOCK"; effectId: string; blockId: string }
   | { type: "TEMPLATE"; templateId: string };
 
+function getBrowserStorage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 function getCardKey(card: CardLibraryCardSummary): string {
   return `${card.packId}:${card.id}`;
 }
@@ -246,7 +254,7 @@ function normalizeDeckId(value: string): string {
 
 function readSavedEffectTestDecks(): SavedEffectTestDeck[] {
   try {
-    const raw = window.localStorage.getItem(EFFECT_TEST_DECKS_STORAGE_KEY);
+    const raw = getBrowserStorage()?.getItem(EFFECT_TEST_DECKS_STORAGE_KEY);
     if (!raw) return [];
 
     const parsed = JSON.parse(raw) as unknown;
@@ -269,7 +277,11 @@ function readSavedEffectTestDecks(): SavedEffectTestDeck[] {
 }
 
 function writeSavedEffectTestDecks(decks: SavedEffectTestDeck[]): void {
-  window.localStorage.setItem(EFFECT_TEST_DECKS_STORAGE_KEY, JSON.stringify(decks, null, 2));
+  try {
+    getBrowserStorage()?.setItem(EFFECT_TEST_DECKS_STORAGE_KEY, JSON.stringify(decks, null, 2));
+  } catch {
+    // Dev browsers can disable localStorage; the editor should still keep working.
+  }
 }
 function getNextEffectId(effects: WardEngineEffect[], baseEffectId: string): string {
   const prefixMatch = baseEffectId.match(/^(.*?-E)(\d+)$/);
@@ -998,7 +1010,7 @@ export function EffectDevToolPage({
       deckId: normalizeDeckId(ownerState.deckId || ownerState.deckName),
       cardIds: ownerState.cardIds,
       startingHandSize: ownerState.startingHandSize
-    });
+    }, { cardLibrary });
 
     setTestDeckShareStrings(current => ({ ...current, [owner]: value }));
 
@@ -1012,7 +1024,7 @@ export function EffectDevToolPage({
 
   function importTestDeckString(owner: TestDeckOwner) {
     try {
-      const payload = decodeWardDeckString(testDeckImportStrings[owner]);
+      const payload = decodeWardDeckString(testDeckImportStrings[owner], { cardLibrary });
       const ownerState = getOwnerDeckState(owner);
       ownerState.setDeckName(payload.name ?? ownerState.deckName);
       ownerState.setDeckId(normalizeDeckId(payload.deckId ?? payload.name ?? ownerState.deckId));
@@ -1038,7 +1050,7 @@ export function EffectDevToolPage({
       deckId,
       cardIds: ownerState.cardIds,
       startingHandSize: ownerState.startingHandSize
-    });
+    }, { cardLibrary });
     const markdown = buildDeckNotesMarkdown({
       name: ownerState.deckName,
       deckId,
@@ -1168,7 +1180,7 @@ export function EffectDevToolPage({
 
           <label>
             Export String
-            <textarea value={shareString} readOnly rows={3} placeholder="Click Copy String to generate WARDDECK1 output." />
+            <textarea value={shareString} readOnly rows={3} placeholder="Click Copy String to generate WARDDECK3 output." />
           </label>
 
           <label>
@@ -1177,7 +1189,7 @@ export function EffectDevToolPage({
               value={importString}
               onChange={event => setTestDeckImportStrings(current => ({ ...current, [owner]: event.target.value }))}
               rows={3}
-              placeholder="Paste WARDDECK1:... here."
+              placeholder="Paste WARDDECK3:... here."
             />
           </label>
 
