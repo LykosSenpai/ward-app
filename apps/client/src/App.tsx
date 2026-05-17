@@ -1968,6 +1968,26 @@ export default function App() {
     });
   }
 
+  function activateCardEffect(sourceInstanceId: string, effectId: string) {
+    if (!match) return;
+
+    const source = match.players.flatMap(player => [
+      player.field.primaryCreature ? { playerId: player.id, card: player.field.primaryCreature } : null,
+      ...player.field.limitedSummons.map(card => ({ playerId: player.id, card })),
+      ...player.field.magicSlots.flatMap(card => card ? [{ playerId: player.id, card }] : [])
+    ]).find(entry => entry?.card.instanceId === sourceInstanceId);
+    const playerId = source?.card.controllerPlayerId ?? source?.playerId ?? controlledPlayerId;
+    if (!playerId) return;
+    if (controlledPlayerId && controlledPlayerId !== playerId) return;
+
+    socket.emit("match:activateCardEffect", {
+      matchId: match.matchId,
+      playerId,
+      sourceInstanceId,
+      effectId
+    });
+  }
+
   function finishManualBattle(battleSessionId: string) {
     if (!match) return;
 
@@ -2819,6 +2839,7 @@ export default function App() {
                       onRollEffectRoll={rollEffectRoll}
                       onApplyEffectRoll={applyEffectRoll}
                       onSkipEffectRoll={skipEffectRoll}
+                      onActivateCardEffect={activateCardEffect}
                       onOpenBoardReport={() => setDashboardModal("board-report")}
                       onSaveAndQuit={saveAndQuitCurrentMatch}
                       intentLabel={lastBoardIntentLabel}

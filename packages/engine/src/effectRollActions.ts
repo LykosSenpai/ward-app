@@ -899,6 +899,10 @@ export function skipPendingEffectRollInPlace(
     throw new Error("Pending effect roll session not found.");
   }
 
+  if (isPendingEffectRollPhaseBlocking(session)) {
+    throw new Error("Triggered effect rolls must be resolved and cannot be skipped.");
+  }
+
   session.status = "SKIPPED";
   session.updatedAt = new Date().toISOString();
   session.message = "Effect roll skipped.";
@@ -917,4 +921,78 @@ export function skipPendingEffectRollInPlace(
 
   state.pendingEffectRoll = undefined;
   return session;
+}
+
+const OPTIONAL_ACTIVATED_ROLL_TRIGGERS = new Set([
+  "ACTIVATED",
+  "DURING_YOUR_TURN",
+  "DURING_YOUR_TURN_ACTIVATED",
+  "ONCE_PER_TURN_ACTIVATED",
+  "REQUEST_BASED"
+]);
+
+function tokenLooksCombatOrTriggered(value: string): boolean {
+  return value.includes("BATTLE") ||
+    value.includes("COMBAT") ||
+    value.includes("HIT") ||
+    value.includes("DAMAGE") ||
+    value.includes("STATUS_TICK");
+}
+
+export function isPendingEffectRollPhaseBlocking(session?: PendingEffectRollSession): boolean {
+  if (!session) return false;
+
+  if (session.linkedBattleSessionId || session.linkedStrikeId) {
+    return true;
+  }
+
+  const trigger = normalize(session.trigger);
+  const actionType = normalize(session.actionType);
+  const onSuccessActionType = normalize(session.onSuccessActionType);
+
+  if (
+    session.targetStatusId ||
+    actionType === "RESOLVE_STATUS_TICK" ||
+    onSuccessActionType === "REMOVE_STATUS" ||
+    session.onFailureActionType
+  ) {
+    return true;
+  }
+
+  if (OPTIONAL_ACTIVATED_ROLL_TRIGGERS.has(trigger)) {
+    return false;
+  }
+
+  if (tokenLooksCombatOrTriggered(trigger) || tokenLooksCombatOrTriggered(actionType)) {
+    return true;
+  }
+
+  // Unknown effect-roll sessions stay conservative and block until resolved.
+  return true;
+}
+
+export function clearNonBlockingPendingEffectRollForPhaseAdvanceInPlace(
+  state: MatchState,
+  addEvent?: AddEventFn
+): boolean {
+  const session = state.pendingEffectRoll;
+  if (!session || isPendingEffectRollPhaseBlocking(session)) return false;
+
+  state.pendingEffectRoll = undefined;
+
+  addEvent?.(state, "OPTIONAL_EFFECT_ROLL_SKIPPED_FOR_PHASE_ADVANCE", session.sourcePlayerId, {
+    effectRollSessionId: session.id,
+    sourceCardInstanceId: session.sourceCardInstanceId,
+    sourceCardId: session.sourceCardId,
+    sourceCardName: session.sourceCardName,
+    effectId: session.effectId,
+    trigger: session.trigger,
+    actionType: session.actionType,
+    status: session.status,
+    rollTotal: session.rollTotal,
+    success: session.success,
+    reason: "Optional activated effect rolls do not block phase advance."
+  });
+
+  return true;
 }

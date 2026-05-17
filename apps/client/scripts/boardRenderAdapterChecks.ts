@@ -9,7 +9,8 @@ import { decideBoardReconciliation } from "../src/components/boardRenderReconcil
 import { resolveBoardRuntimeMode } from "../src/components/boardRuntimeHealth";
 import { mapPointerGestureToIntent } from "../src/components/boardInteractionIntents";
 import { resolveBoardIntentCommand } from "../src/components/boardIntentCommands";
-import { buildHandPlacementAffordances, buildPendingEffectTargetAffordances } from "../src/components/boardAffordances";
+import { buildCardEffectAffordances, buildHandPlacementAffordances, buildPendingEffectTargetAffordances } from "../src/components/boardAffordances";
+import { getAdvanceBlockReason, isPendingEffectRollPhaseBlocking } from "../src/gameViewHelpers";
 
 const mockMatch = {
   matchId: "m1",
@@ -514,7 +515,118 @@ assert.equal(blockedPlacementAffordances.some(affordance =>
   affordance.disabledReason === "Resolve the pending Magic Chain before playing cards."
 ), true);
 
-console.log("board render adapter checks passed");
+const demonKingCard = {
+  instanceId: "demon-king-1",
+  cardId: "gen1_037_demon_king",
+  ownerPlayerId: "player_1",
+  controllerPlayerId: "player_1",
+  currentHp: 100
+};
+const activatedEffectMatch = {
+  ...placementMatch,
+  turn: { ...placementMatch.turn, activePlayerId: "player_1", phase: "SUMMON_MAGIC" },
+  players: [
+    {
+      ...placementMatch.players[0],
+      field: {
+        primaryCreature: demonKingCard,
+        limitedSummons: [],
+        magicSlots: [null, null, null, null, null]
+      }
+    },
+    {
+      ...placementMatch.players[1],
+      field: {
+        primaryCreature: null,
+        limitedSummons: [],
+        magicSlots: [{
+          instanceId: "opponent-magic-1",
+          cardId: "magic-standard",
+          ownerPlayerId: "player_2",
+          controllerPlayerId: "player_2"
+        }, null, null, null, null]
+      }
+    }
+  ],
+  cardCatalog: {
+    ...placementMatch.cardCatalog,
+    gen1_037_demon_king: {
+      id: "gen1_037_demon_king",
+      name: "Demon King",
+      cardType: "CREATURE",
+      armorLevel: 12,
+      speed: 8,
+      attackDice: 3,
+      modifier: 4,
+      hp: 100,
+      effects: [{
+        id: "037-E01",
+        trigger: "DURING_YOUR_TURN_ACTIVATED",
+        actionType: "DESTROY_MAGIC_CARDS",
+        actionText: "Destroy all opponent magic cards"
+      }]
+    }
+  }
+} as unknown as AppMatchState;
+
+const cardEffectAffordances = buildCardEffectAffordances(activatedEffectMatch, "player_1");
+assert.equal(cardEffectAffordances.some(affordance =>
+  affordance.kind === "VALID_CARD_EFFECT" &&
+  affordance.sourceCardInstanceId === "demon-king-1" &&
+  affordance.actionId === "ACTIVATE_CARD_EFFECT:037-E01"
+), true);
+
+const optionalActivatedEffectRollMatch = {
+  ...activatedEffectMatch,
+  pendingEffectRoll: {
+    id: "roll-demon-king",
+    status: "AWAITING_ROLL",
+    sourcePlayerId: "player_1",
+    sourceCardInstanceId: "demon-king-1",
+    sourceCardId: "gen1_037_demon_king",
+    sourceCardName: "Demon King",
+    effectId: "037-E01",
+    trigger: "DURING_YOUR_TURN_ACTIVATED",
+    actionType: "DESTROY_MAGIC_CARDS",
+    diceCount: 1,
+    successRanges: [{ min: 1, max: 3 }],
+    rolledDice: []
+  }
+} as unknown as AppMatchState;
+assert.equal(isPendingEffectRollPhaseBlocking(optionalActivatedEffectRollMatch.pendingEffectRoll), false);
+assert.equal(getAdvanceBlockReason(optionalActivatedEffectRollMatch), "");
+
+const optionalActivatedDamageRollMatch = {
+  ...optionalActivatedEffectRollMatch,
+  pendingEffectRoll: {
+    ...optionalActivatedEffectRollMatch.pendingEffectRoll!,
+    id: "roll-activated-damage",
+    actionType: "DAMAGE"
+  }
+} as unknown as AppMatchState;
+assert.equal(isPendingEffectRollPhaseBlocking(optionalActivatedDamageRollMatch.pendingEffectRoll), false);
+assert.equal(getAdvanceBlockReason(optionalActivatedDamageRollMatch), "");
+
+const triggeredStatusEffectRollMatch = {
+  ...activatedEffectMatch,
+  pendingEffectRoll: {
+    id: "roll-kraken-wrap",
+    status: "AWAITING_ROLL",
+    sourcePlayerId: "player_1",
+    sourceCardInstanceId: "kraken-1",
+    sourceCardId: "gen1_068_kraken",
+    sourceCardName: "Kraken",
+    effectId: "068-E02",
+    trigger: "OPPONENT_TURN_WHILE_WRAPPED",
+    actionType: "RESOLVE_STATUS_TICK",
+    targetStatusId: "wrapped-1",
+    diceCount: 1,
+    successRanges: [{ min: 3, max: 5 }],
+    rolledDice: []
+  }
+} as unknown as AppMatchState;
+assert.equal(isPendingEffectRollPhaseBlocking(triggeredStatusEffectRollMatch.pendingEffectRoll), true);
+assert.equal(getAdvanceBlockReason(triggeredStatusEffectRollMatch), "Roll the pending effect dice before advancing.");
 
 
 function eventTemplate(sequenceNumber: number, type: string, payload: Record<string, unknown>) {
@@ -579,3 +691,5 @@ const battlePriorityEvents = translatedCoverage.filter(e => e.type === "BATTLE_D
 let priorityState = createBoardAnimationQueueState();
 priorityState = enqueueBoardRenderEvents(priorityState, battlePriorityEvents);
 assert.equal(priorityState.queue[0].type, "BATTLE_DAMAGE_APPLIED");
+
+console.log("board render adapter checks passed");

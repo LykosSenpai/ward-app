@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import type { PendingEffectRollSession } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
+import { isPendingEffectRollPhaseBlocking } from "../gameViewHelpers";
 
 type EffectRollModalProps = {
   match: AppMatchState;
@@ -96,6 +97,7 @@ export function EffectRollModal({
   const hasRolled = effectRoll.status === "ROLLED" || effectRoll.rolledDice?.length;
   const canRoll = effectRoll.status === "AWAITING_ROLL";
   const canApply = effectRoll.status === "ROLLED";
+  const canSkip = !isPendingEffectRollPhaseBlocking(effectRoll);
 
   return (
     <section className="card battle-wizard-card effect-roll-card">
@@ -168,9 +170,11 @@ export function EffectRollModal({
           </button>
         )}
 
-        <button className="secondary-button" onClick={() => onSkip(effectRoll.id)}>
-          Skip Effect Roll
-        </button>
+        {canSkip ? (
+          <button className="secondary-button" onClick={() => onSkip(effectRoll.id)}>
+            Skip Effect Roll
+          </button>
+        ) : null}
       </div>
     </section>
   );

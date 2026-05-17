@@ -6,6 +6,7 @@ import {
   getBattleBlockReason,
   getPlayerBattleCreatureOptions,
   getRequiredSacrificesForCard,
+  isPendingEffectRollPhaseBlocking,
   isCreature,
   isMagic
 } from "../gameViewHelpers";
@@ -250,6 +251,89 @@ export function buildPlayerGlobalAffordances(match: AppMatchState, controlledPla
         label: `${player.displayName} cemetery HP ${cemeteryHpAdjustment > 0 ? "+" : ""}${cemeteryHpAdjustment}`,
         highlightStyle: "WARNING"
       });
+    }
+  }
+
+  return affordances;
+}
+
+const ACTIVATED_CARD_EFFECT_TRIGGERS = new Set([
+  "ACTIVATED",
+  "DURING_YOUR_TURN",
+  "DURING_YOUR_TURN_ACTIVATED",
+  "ONCE_PER_TURN_ACTIVATED",
+  "REQUEST_BASED"
+]);
+
+function isActivatedCardEffect(effect: WardEngineEffect): boolean {
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+  const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+
+  return ACTIVATED_CARD_EFFECT_TRIGGERS.has(trigger) ||
+    actionType === "RESOLVE_STATUS_ESCAPE_ROLL";
+}
+
+function cardEffectLabel(effect: WardEngineEffect): string {
+  return effect.actionText ?? effect.value ?? effect.actionType;
+}
+
+function cardEffectDisabledReason(
+  match: AppMatchState,
+  player: PlayerState,
+  card: CardInstance,
+  zone: "PRIMARY_CREATURE" | "MAGIC_SLOT",
+  effect: WardEngineEffect
+): string | null {
+  if (match.status === "COMPLETE") return "Match is complete.";
+  if (card.controllerPlayerId !== player.id) return "You do not control this card.";
+  if (zone === "PRIMARY_CREATURE" && card.effectsSuppressed) return "This creature's effects are suppressed.";
+  if (match.pendingPrompt) return "Resolve the pending prompt before using this effect.";
+  if (match.pendingEffectTargetPrompt) return "Choose the pending effect target before using this effect.";
+  if (match.pendingChain) return "Resolve the Magic Chain before using this effect.";
+  if (match.pendingBattle && match.pendingBattle.status !== "COMPLETE") return "Finish the pending battle before using this effect.";
+  if (match.pendingEffectRoll && isPendingEffectRollPhaseBlocking(match.pendingEffectRoll)) return "Resolve the pending effect roll before using this effect.";
+  if (match.setup.handDiscardRequiredForPlayerId) return "Resolve the hand discard before using this effect.";
+  if (match.setup.primaryReplacementRequiredForPlayerId) return "Resolve the primary creature replacement before using this effect.";
+
+  if (isActivatedCardEffect(effect) && match.turn.activePlayerId !== player.id) {
+    return "This activated effect can only be used during your turn.";
+  }
+
+  return null;
+}
+
+export function buildCardEffectAffordances(match: AppMatchState, controlledPlayerId?: string | null): BoardAffordance[] {
+  const affordances: BoardAffordance[] = [];
+
+  for (const player of match.players) {
+    if (controlledPlayerId && controlledPlayerId !== player.id) continue;
+
+    const sources: Array<{ card: CardInstance; zone: "PRIMARY_CREATURE" | "MAGIC_SLOT" }> = [
+      ...(player.field.primaryCreature ? [{ card: player.field.primaryCreature, zone: "PRIMARY_CREATURE" as const }] : []),
+      ...player.field.magicSlots.flatMap(card => card ? [{ card, zone: "MAGIC_SLOT" as const }] : [])
+    ];
+
+    for (const source of sources) {
+      const definition = match.cardCatalog[source.card.cardId] as CardDefinition | undefined;
+      const effects = definition?.effects?.filter(isActivatedCardEffect) ?? [];
+      if (!definition || effects.length === 0) continue;
+
+      for (const effect of effects) {
+        const disabledReason = cardEffectDisabledReason(match, player, source.card, source.zone, effect);
+        const label = `${definition.name}: ${cardEffectLabel(effect)}`;
+
+        affordances.push({
+          id: `card-effect:${player.id}:${source.card.instanceId}:${effect.id}:${disabledReason ? "disabled" : "active"}`,
+          kind: disabledReason ? "DISABLED_ACTION" : "VALID_CARD_EFFECT",
+          playerId: player.id,
+          sourceCardInstanceId: source.card.instanceId,
+          targetZoneRef: { playerId: player.id, zone: source.zone },
+          actionId: disabledReason ? undefined : `ACTIVATE_CARD_EFFECT:${effect.id}`,
+          label: disabledReason ? `Cannot use ${label}` : `Use effect: ${label}`,
+          highlightStyle: disabledReason ? "LOCKED" : "VALID",
+          disabledReason: disabledReason ?? undefined
+        });
+      }
     }
   }
 

@@ -16,13 +16,13 @@ import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAni
 import { getBoardAnimationProfile } from "./boardAnimationProfiles";
 import { decideBoardReconciliation } from "./boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "./boardRuntimeHealth";
-import { getAdvanceBlockReason, getBattleBlockReason, getCardName, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
+import { getAdvanceBlockReason, getBattleBlockReason, getCardName, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, isPendingEffectRollPhaseBlocking, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
 import { mapPointerGestureToIntent } from "./boardInteractionIntents";
 import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
 import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
-import { buildBattleAffordances, buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances, buildPlayerGlobalAffordances } from "./boardAffordances";
+import { buildBattleAffordances, buildCardEffectAffordances, buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances, buildPlayerGlobalAffordances } from "./boardAffordances";
 import type { BoardAffordance } from "@ward/shared";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
@@ -262,6 +262,7 @@ function BoardBattleResolverHud({
   const actionLabel = getBattleStepLabel(battle, effectRoll);
   const hitTotal = currentStrike?.hitRollTotal ?? sumDice(currentStrike?.hitRollDice);
   const damageTotal = currentStrike?.damageDealt ?? sumDice(currentStrike?.damageRollDice);
+  const canSkipEffectRoll = effectRoll ? !isPendingEffectRollPhaseBlocking(effectRoll) : false;
 
   return (
     <aside className="board-battle-hud" aria-label="3D battle resolver">
@@ -334,7 +335,7 @@ function BoardBattleResolverHud({
         {effectRoll?.status === "ROLLED" ? (
           <button type="button" disabled={!canAdvanceStep} onClick={() => onApplyEffect?.(effectRoll.id)}>{effectRoll.success ? "Apply Effect" : "Close Roll"}</button>
         ) : null}
-        {effectRoll ? (
+        {effectRoll && canSkipEffectRoll ? (
           <button type="button" className="ghost" disabled={!canAdvanceStep} onClick={() => onSkipEffect?.(effectRoll.id)}>Skip</button>
         ) : null}
         {battle.status === "AWAITING_DAMAGE_APPLICATION" && !effectRoll ? (
@@ -362,6 +363,7 @@ function BoardEffectRollHud({
   onSkipEffect?: (effectRollSessionId: string) => void;
 }) {
   const total = effectRoll.rollTotal ?? sumDice(effectRoll.rolledDice);
+  const canSkipEffectRoll = !isPendingEffectRollPhaseBlocking(effectRoll);
 
   return (
     <aside className="board-battle-hud board-battle-hud--effect" aria-label="3D effect roll resolver">
@@ -390,7 +392,9 @@ function BoardEffectRollHud({
             {effectRoll.success ? "Apply Effect" : "Close Roll"}
           </button>
         ) : null}
-        <button type="button" className="ghost" disabled={!canAdvanceStep || !onSkipEffect} onClick={() => onSkipEffect?.(effectRoll.id)}>Skip</button>
+        {canSkipEffectRoll ? (
+          <button type="button" className="ghost" disabled={!canAdvanceStep || !onSkipEffect} onClick={() => onSkipEffect?.(effectRoll.id)}>Skip</button>
+        ) : null}
       </div>
     </aside>
   );
@@ -501,6 +505,7 @@ type BoardPreview3DProps = {
   onRollEffectRoll?: (effectRollSessionId: string) => void;
   onApplyEffectRoll?: (effectRollSessionId: string) => void;
   onSkipEffectRoll?: (effectRollSessionId: string) => void;
+  onActivateCardEffect?: (sourceInstanceId: string, effectId: string) => void;
   onOpenBoardReport?: () => void;
   onSaveAndQuit?: () => void;
   intentLabel?: string;
@@ -696,6 +701,7 @@ export function BoardPreview3D({
   onRollEffectRoll,
   onApplyEffectRoll,
   onSkipEffectRoll,
+  onActivateCardEffect,
   onOpenBoardReport,
   onSaveAndQuit,
   intentLabel = "",
@@ -1128,6 +1134,10 @@ export function BoardPreview3D({
     () => buildBattleAffordances(match, controlledPlayerId),
     [controlledPlayerId, match]
   );
+  const cardEffectAffordances = useMemo(
+    () => buildCardEffectAffordances(match, controlledPlayerId),
+    [controlledPlayerId, match]
+  );
   const playerGlobalAffordances = useMemo(
     () => buildPlayerGlobalAffordances(match, controlledPlayerId),
     [controlledPlayerId, match]
@@ -1314,6 +1324,33 @@ export function BoardPreview3D({
     const sourceObject = boardObjects.find(object => object.cardInstanceId === prompt.sourceCardInstanceId);
     return sourceObject ? [sourceObject.id] : [];
   }, [boardObjects, match.pendingEffectTargetPrompt]);
+  const validCardEffectAffordances = useMemo(
+    () => cardEffectAffordances.filter(affordance =>
+      affordance.kind === "VALID_CARD_EFFECT" &&
+      affordance.actionId?.startsWith("ACTIVATE_CARD_EFFECT:") &&
+      affordance.sourceCardInstanceId
+    ),
+    [cardEffectAffordances]
+  );
+  const cardEffectSourcePieceIds = useMemo(() => {
+    const sourceIds = new Set(validCardEffectAffordances.map(affordance => affordance.sourceCardInstanceId));
+    if (sourceIds.size === 0) return [] as string[];
+    return boardObjects
+      .filter(object => object.cardInstanceId && sourceIds.has(object.cardInstanceId))
+      .map(object => object.id);
+  }, [boardObjects, validCardEffectAffordances]);
+  const selectedCardEffectAffordance = useMemo(() => {
+    if (selectedCreatureCardId) {
+      const selected = validCardEffectAffordances.find(affordance =>
+        affordance.sourceCardInstanceId === selectedCreatureCardId
+      );
+      if (selected) return selected;
+    }
+
+    return validCardEffectAffordances.find(affordance => affordance.playerId === focusedPlayerId) ??
+      validCardEffectAffordances[0] ??
+      null;
+  }, [focusedPlayerId, selectedCreatureCardId, validCardEffectAffordances]);
   const effectTargetOptionByCardId = useMemo(() => {
     const prompt = match.pendingEffectTargetPrompt;
     const options = new Map<string, string>();
@@ -1629,7 +1666,38 @@ export function BoardPreview3D({
       };
     }
 
-    if (!pendingBattle) return null;
+    if (!pendingBattle && selectedCardEffectAffordance?.sourceCardInstanceId && selectedCardEffectAffordance.actionId) {
+      const effectId = selectedCardEffectAffordance.actionId.slice("ACTIVATE_CARD_EFFECT:".length);
+      const owner = selectedCardEffectAffordance.playerId as BoardPlayerId;
+      const canActivate = !controlledPlayerId || controlledPlayerId === owner;
+      const sourceCard = cardByInstanceId.get(selectedCardEffectAffordance.sourceCardInstanceId);
+
+      return {
+        id: selectedCardEffectAffordance.id,
+        label: "Use Effect",
+        detail: selectedCardEffectAffordance.label.replace(/^Use effect:\s*/, ""),
+        owner,
+        disabled: !canActivate || !onActivateCardEffect,
+        disabledLabel: !canActivate
+          ? `Waiting for ${match.players.find(player => player.id === owner)?.displayName ?? owner}`
+          : sourceCard
+            ? `${getCardName(match, sourceCard)} effect unavailable`
+            : "Effect unavailable",
+        onClick: () => onActivateCardEffect?.(selectedCardEffectAffordance.sourceCardInstanceId!, effectId)
+      };
+    }
+
+    if (!pendingBattle) {
+      if (match.status === "COMPLETE" || !onOpenDiceRoller) return null;
+
+      return {
+        id: `manual-dice-${focusedPlayerId}`,
+        label: "Dice Roller",
+        detail: "Open manual dice tray",
+        owner: focusedPlayerId,
+        onClick: onOpenDiceRoller
+      };
+    }
 
     const controller = (battleStepControllerPlayerId ?? pendingBattle.attackingPlayerId) as BoardPlayerId;
     const disabledLabel = `Waiting for ${battleStepControllerLabel}`;
@@ -1686,8 +1754,10 @@ export function BoardPreview3D({
     battleStepControllerPlayerId,
     canAdvanceBattleResolver,
     controlledPlayerId,
+    cardByInstanceId,
     focusedPlayerId,
     match,
+    onActivateCardEffect,
     onApplyEffectRoll,
     onOpeningRoll,
     onOpenDiceRoller,
@@ -1695,7 +1765,8 @@ export function BoardPreview3D({
     onRollBattleHit,
     onRollEffectRoll,
     onRunBattleSpeedCheck,
-    pendingBattle
+    pendingBattle,
+    selectedCardEffectAffordance
   ]);
 
   useEffect(() => {
@@ -2594,9 +2665,9 @@ export function BoardPreview3D({
             validEquipTargetPieceIds={equipAttachTargetPieceIds}
             validEffectTargetPieceIds={effectTargetPieceIds}
             validEffectTargetSlotIds={effectTargetSlotIds}
-            effectSourcePieceIds={effectSourcePieceIds}
+            effectSourcePieceIds={[...effectSourcePieceIds, ...cardEffectSourcePieceIds]}
             highlightedSlotIds={[...animationHighlights.slotIds, ...visualTargetSlotIds, ...playerGlobalSlotIds, ...sacrificeTargetSlotIds, ...(discardRequiredForFocusedPlayer ? [`${focusedPlayerId}-cemetery`] : []), ...battleTargetSlotIds, ...effectTargetSlotIds]}
-            highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...selectedCreatureEquipmentFocusPieceIds, ...effectTargetPieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
+            highlightedPieceIds={[...animationHighlights.pieceIds, ...sacrificeCandidatePieceIds, ...selectedCreatureEquipmentFocusPieceIds, ...effectTargetPieceIds, ...cardEffectSourcePieceIds, ...battleAttackerPieceIds, ...battleTargetPieceIds, ...pendingBattlePieceIds]}
             equipAttachSourcePieceIds={equipAttachSourcePieceIds}
             battleSpeedBadges={battleSpeedBadges}
             diceRollVisual={diceRollVisual}

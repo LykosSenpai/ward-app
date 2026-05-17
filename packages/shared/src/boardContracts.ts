@@ -56,6 +56,7 @@ export type BoardAffordanceKind =
   | "VALID_COST_CARD"
   | "VALID_CHAIN_RESPONSE"
   | "VALID_BATTLE_RESPONSE"
+  | "VALID_CARD_EFFECT"
   | "VALID_DROP_ZONE"
   | "DISABLED_ACTION";
 

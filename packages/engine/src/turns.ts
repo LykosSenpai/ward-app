@@ -14,7 +14,11 @@ import {
   processTurnEndTriggeredEffects,
   processTurnStartTriggeredEffects
 } from "./turnTriggeredEffects.js";
-import { createPendingStatusTickEffectRollSession } from "./effectRollActions.js";
+import {
+  clearNonBlockingPendingEffectRollForPhaseAdvanceInPlace,
+  createPendingStatusTickEffectRollSession,
+  isPendingEffectRollPhaseBlocking
+} from "./effectRollActions.js";
 
 const PHASE_ORDER: TurnPhase[] = [
   "DRAW",
@@ -225,7 +229,7 @@ export function advancePhase(state: MatchState): MatchState {
     throw new Error("Finish the pending battle before advancing the turn.");
   }
 
-  if (state.pendingEffectRoll) {
+  if (state.pendingEffectRoll && isPendingEffectRollPhaseBlocking(state.pendingEffectRoll)) {
     throw new Error("Resolve the pending effect roll before advancing the turn.");
   }
 
@@ -292,9 +296,11 @@ export function advancePhase(state: MatchState): MatchState {
   }
 
   const nextPhase = getNextPhase(state.turn.phase);
+  const nextStateBase = cloneState(state);
+  clearNonBlockingPendingEffectRollForPhaseAdvanceInPlace(nextStateBase, addEvent);
 
   if (nextPhase) {
-    const nextState = cloneState(state);
+    const nextState = nextStateBase;
     let phaseToEnter = nextPhase;
     nextState.setup.summonResponseWindow = undefined;
 
@@ -332,7 +338,7 @@ export function advancePhase(state: MatchState): MatchState {
     return nextState;
   }
 
-  return advanceTurn(state);
+  return advanceTurn(nextStateBase);
 }
 
 export function endTurn(state: MatchState): MatchState {

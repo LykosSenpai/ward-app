@@ -304,12 +304,63 @@ export function getCreatureStatsLine(match: AppMatchState, card: CardInstance): 
   return `AL ${effectiveAl} | SPD ${effectiveSpeed} | ATK ${effectiveAttackDice}D6 | MOD ${effectiveModifier} | HP ${definition.hp}`;
 }
 
+const OPTIONAL_ACTIVATED_ROLL_TRIGGERS = new Set([
+  "ACTIVATED",
+  "DURING_YOUR_TURN",
+  "DURING_YOUR_TURN_ACTIVATED",
+  "ONCE_PER_TURN_ACTIVATED",
+  "REQUEST_BASED"
+]);
+
+function effectRollToken(value: unknown): string {
+  return typeof value === "string" ? value.trim().toUpperCase() : "";
+}
+
+function effectRollTokenLooksCombatOrTriggered(value: string): boolean {
+  return value.includes("BATTLE") ||
+    value.includes("COMBAT") ||
+    value.includes("HIT") ||
+    value.includes("DAMAGE") ||
+    value.includes("STATUS_TICK");
+}
+
+export function isPendingEffectRollPhaseBlocking(effectRoll?: AppMatchState["pendingEffectRoll"]): boolean {
+  if (!effectRoll) return false;
+
+  if (effectRoll.linkedBattleSessionId || effectRoll.linkedStrikeId) {
+    return true;
+  }
+
+  const trigger = effectRollToken(effectRoll.trigger);
+  const actionType = effectRollToken(effectRoll.actionType);
+  const onSuccessActionType = effectRollToken(effectRoll.onSuccessActionType);
+
+  if (
+    effectRoll.targetStatusId ||
+    actionType === "RESOLVE_STATUS_TICK" ||
+    onSuccessActionType === "REMOVE_STATUS" ||
+    effectRoll.onFailureActionType
+  ) {
+    return true;
+  }
+
+  if (OPTIONAL_ACTIVATED_ROLL_TRIGGERS.has(trigger)) {
+    return false;
+  }
+
+  if (effectRollTokenLooksCombatOrTriggered(trigger) || effectRollTokenLooksCombatOrTriggered(actionType)) {
+    return true;
+  }
+
+  return true;
+}
+
 export function getAdvanceBlockReason(match: AppMatchState): string {
   if (match.pendingBattle && match.pendingBattle.status !== "COMPLETE") {
     return "Finish the pending battle before advancing.";
   }
 
-  if (match.pendingEffectRoll) {
+  if (match.pendingEffectRoll && isPendingEffectRollPhaseBlocking(match.pendingEffectRoll)) {
     return match.pendingEffectRoll.status === "AWAITING_ROLL"
       ? "Roll the pending effect dice before advancing."
       : "Resolve the pending effect roll before advancing.";
