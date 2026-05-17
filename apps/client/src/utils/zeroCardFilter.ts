@@ -103,14 +103,13 @@ export function applyZeroCardFilter(imageData: ImageData, optionsInput: ZeroCard
   const { width, height, data } = imageData;
   const original = new Uint8ClampedArray(data);
   const luma = new Float32Array(width * height);
+  for (let i = 0; i < original.length; i += 4) luma[i / 4] = luminance(original[i] ?? 0, original[i + 1] ?? 0, original[i + 2] ?? 0);
 
   for (let i = 0; i < original.length; i += 4) {
     luma[i / 4] = luminance(original[i] ?? 0, original[i + 1] ?? 0, original[i + 2] ?? 0);
   }
 
   for (let y = 0; y < height; y += 1) {
-    const ny = height <= 1 ? 0 : y / (height - 1);
-
     for (let x = 0; x < width; x += 1) {
       const nx = width <= 1 ? 0 : x / (width - 1);
       const idx = (y * width + x) * 4;
@@ -218,7 +217,6 @@ export async function createZeroCardVariantCanvas(src: string, options?: ZeroCar
   const canvas = document.createElement("canvas");
   canvas.width = image.naturalWidth;
   canvas.height = image.naturalHeight;
-
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas 2D context is not available.");
 
@@ -239,7 +237,6 @@ export async function createZeroCardVariantDataUrl(src: string, options?: ZeroCa
 
 export async function createZeroCardVariantBlob(src: string, options?: ZeroCardFilterOptions): Promise<Blob> {
   const canvas = await createZeroCardVariantCanvas(src, options);
-
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Failed to export generated Zero card image.")), "image/png");
   });
