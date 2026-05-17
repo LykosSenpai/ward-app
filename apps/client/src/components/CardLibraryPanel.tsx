@@ -3,7 +3,7 @@ import type { DragEvent } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, sanitizeDownloadFileName } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
-import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, getCardArtLabel } from "./CardImagePreview";
+import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, coerceCardArtKeyForCard, getCardArtLabel } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
 import { AddCardToMarketplaceModal } from "./AddCardToMarketplaceModal";
 
@@ -1043,7 +1043,7 @@ export function CardLibraryPanel({
                 </div>
               )}
               {visibleCards.map(card => {
-                const selectedArtKey = getSelectedArtKey(card.id);
+                const selectedArtKey = coerceCardArtKeyForCard(card, getSelectedArtKey(card.id));
                 const selectedArtworkMode = selectedArtKey === "zero-art" || selectedArtKey === "zero-art-holo" ? "ZERO" : "DEFAULT";
                 const selectedIsHolo = selectedArtKey === "holo" || selectedArtKey === "zero-art-holo";
                 const effectivePreviewVariant = getOwnershipVariantFromArtworkAndHolo(selectedArtworkMode, selectedIsHolo);

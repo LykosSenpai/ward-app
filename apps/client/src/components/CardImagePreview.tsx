@@ -49,7 +49,6 @@ type ExpandedCardImageProps = {
   activeArtKey: CardArtKey;
   selectedArtLabel: string;
   holoSeed: string;
-  holoEnabled: boolean;
   holoIntensity: number;
   onArtChange: (artKey: CardArtKey) => void;
 };
@@ -96,6 +95,24 @@ export const CARD_ART_OPTIONS: CardArtOption[] = [
 export const ACTIVE_CARD_ART_OPTIONS = CARD_ART_OPTIONS.filter(option =>
   option.key === "default" || option.key === "holo" || option.key === "zero-art" || option.key === "zero-art-holo"
 );
+
+export function cardSupportsZeroArt(card: Pick<CardLibraryCardSummary, "cardType">): boolean {
+  return card.cardType === "CREATURE";
+}
+
+export function coerceCardArtKeyForCard(card: Pick<CardLibraryCardSummary, "cardType">, artKey: CardArtKey): CardArtKey {
+  if (cardSupportsZeroArt(card) || getBaseArtKey(artKey) !== "zero-art") {
+    return artKey;
+  }
+
+  return isHoloArtKey(artKey) ? "holo" : "default";
+}
+
+function getBaseArtOptionsForCard(card: Pick<CardLibraryCardSummary, "cardType">): CardArtOption[] {
+  return ACTIVE_CARD_ART_OPTIONS.filter(option =>
+    option.key === "default" || (option.key === "zero-art" && cardSupportsZeroArt(card))
+  );
+}
 
 export function normalizeCardArtKey(value: string | undefined): CardArtKey {
   switch (value?.trim()) {
@@ -209,12 +226,12 @@ function ExpandedCardImage({
   activeArtKey,
   selectedArtLabel,
   holoSeed,
-  holoEnabled,
   holoIntensity,
   onArtChange
 }: ExpandedCardImageProps) {
   const [expandedCandidateIndex, setExpandedCandidateIndex] = useState(0);
-  const imageArtKey = getBaseArtKey(activeArtKey);
+  const effectiveActiveArtKey = coerceCardArtKeyForCard(card, activeArtKey);
+  const imageArtKey = getBaseArtKey(effectiveActiveArtKey);
   const imageCandidates = useMemo(
     () => getImageCandidates(card, imageArtKey),
     [card, imageArtKey]
@@ -229,11 +246,11 @@ function ExpandedCardImage({
     <div className="expanded-card-image-wrap">
       {displayImageSrc ? (
         <HolographicCardImage
-          key={`${card.id}:${activeArtKey}:${displayImageSrc}:expanded`}
+          key={`${card.id}:${effectiveActiveArtKey}:${displayImageSrc}:expanded`}
           src={displayImageSrc}
           alt={`${card.name} expanded ${selectedArtLabel} card`}
           seed={holoSeed}
-          enabled={holoEnabled}
+          enabled={isHoloArtKey(effectiveActiveArtKey)}
           intensity={holoIntensity}
           className="expanded-card-holo-image"
           onError={() => {
@@ -251,10 +268,10 @@ function ExpandedCardImage({
       <label className="card-art-select-label expanded-card-art-select-label">
         Art / Card Type
         <select
-          value={getBaseArtKey(activeArtKey)}
-          onChange={event => onArtChange(composeArtKey(event.target.value as "default" | "zero-art", isHoloArtKey(activeArtKey)))}
+          value={getBaseArtKey(effectiveActiveArtKey)}
+          onChange={event => onArtChange(composeArtKey(event.target.value as "default" | "zero-art", isHoloArtKey(effectiveActiveArtKey)))}
         >
-          {ACTIVE_CARD_ART_OPTIONS.filter(option => option.key === "default" || option.key === "zero-art").map(option => (
+          {getBaseArtOptionsForCard(card).map(option => (
             <option value={option.key} key={option.key}>{option.label}</option>
           ))}
         </select>
@@ -263,8 +280,8 @@ function ExpandedCardImage({
       <label className="card-art-select-label expanded-card-art-select-label">
         <input
           type="checkbox"
-          checked={isHoloArtKey(activeArtKey)}
-          onChange={event => onArtChange(composeArtKey(getBaseArtKey(activeArtKey), event.target.checked))}
+          checked={isHoloArtKey(effectiveActiveArtKey)}
+          onChange={event => onArtChange(composeArtKey(getBaseArtKey(effectiveActiveArtKey), event.target.checked))}
         />
         {" "}Holo Finish
       </label>
@@ -275,8 +292,9 @@ function ExpandedCardImage({
 
 export function CardImageThumbnail({ card, className, artKey = "default", holoIntensity = 0.55 }: CardImageThumbnailProps) {
   const [candidateIndex, setCandidateIndex] = useState(0);
-  const imageArtKey = getBaseArtKey(artKey);
-  const holoEnabled = isHoloArtKey(artKey);
+  const effectiveArtKey = coerceCardArtKeyForCard(card, artKey);
+  const imageArtKey = getBaseArtKey(effectiveArtKey);
+  const holoEnabled = isHoloArtKey(effectiveArtKey);
   const imageCandidates = useMemo(() => getImageCandidates(card, imageArtKey), [card, imageArtKey]);
   const displayImageSrc = imageCandidates[candidateIndex]?.url;
 
@@ -295,7 +313,7 @@ export function CardImageThumbnail({ card, className, artKey = "default", holoIn
   return (
     <span className={className ? `card-image-thumb ${className}` : "card-image-thumb"} aria-hidden="true">
       <HolographicCardImage
-        key={`${card.id}:${artKey}:${displayImageSrc}:thumb`}
+        key={`${card.id}:${effectiveArtKey}:${displayImageSrc}:thumb`}
         src={displayImageSrc}
         alt=""
         seed={`thumbnail:${card.packId}:${card.id}:${artKey}`}
@@ -314,7 +332,8 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const activeArtKey = selectedArtKey ?? internalSelectedArtKey;
+  const requestedArtKey = selectedArtKey ?? internalSelectedArtKey;
+  const activeArtKey = coerceCardArtKeyForCard(card, requestedArtKey);
   const imageArtKey = getBaseArtKey(activeArtKey);
   const holoEnabled = isHoloArtKey(activeArtKey);
   const baseArtKey = getBaseArtKey(activeArtKey);
@@ -330,18 +349,30 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
   }, [card.id, imageArtKey]);
 
   useEffect(() => {
+    if (requestedArtKey === activeArtKey) return;
+
+    if (onSelectedArtKeyChange) {
+      onSelectedArtKeyChange(activeArtKey);
+      return;
+    }
+
+    setInternalSelectedArtKey(activeArtKey);
+  }, [activeArtKey, onSelectedArtKeyChange, requestedArtKey]);
+
+  useEffect(() => {
     setPreviewOpen(false);
   }, [card.id]);
 
   function handleArtChange(nextArtKey: CardArtKey) {
+    const allowedArtKey = coerceCardArtKeyForCard(card, nextArtKey);
     setCandidateIndex(0);
 
     if (onSelectedArtKeyChange) {
-      onSelectedArtKeyChange(nextArtKey);
+      onSelectedArtKeyChange(allowedArtKey);
       return;
     }
 
-    setInternalSelectedArtKey(nextArtKey);
+    setInternalSelectedArtKey(allowedArtKey);
   }
 
   const displayImageSrc = imageCandidates[candidateIndex]?.url;
@@ -384,7 +415,7 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
           value={baseArtKey}
           onChange={event => handleArtChange(composeArtKey(event.target.value as "default" | "zero-art", holoEnabled))}
         >
-          {ACTIVE_CARD_ART_OPTIONS.filter(option => option.key === "default" || option.key === "zero-art").map(option => (
+          {getBaseArtOptionsForCard(card).map(option => (
             <option value={option.key} key={option.key}>{option.label}</option>
           ))}
         </select>
@@ -408,7 +439,6 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
               activeArtKey={activeArtKey}
               selectedArtLabel={selectedArtLabel}
               holoSeed={holoSeed}
-              holoEnabled={holoEnabled}
               holoIntensity={holoIntensity}
               onArtChange={handleArtChange}
             />
