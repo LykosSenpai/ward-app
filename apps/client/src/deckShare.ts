@@ -541,20 +541,16 @@ export function encodeWardDeckString(payload: Omit<WardDeckSharePayload, "v" | "
   const compactCardRefEntries = buildCompactCardRefEntries(cardIds, cardArtKeys, options.cardLibrary);
 
   if (compactCardRefEntries) {
+    const expandedCompactCards = expandCompactCardEntries(compactCardRefEntries, { usesCardRefs: false });
+
     try {
-      return buildV4SymbolicFromRefs(compactCardRefEntries.map(entry => Array.isArray(entry) ? String(entry[0]) : String(entry)), (() => {
-        const expanded = expandCompactCardEntries(compactCardRefEntries, { usesCardRefs: false });
-        return expanded.cardArtKeys;
-      })());
+      return buildV4SymbolicFromRefs(expandedCompactCards.cardIds, expandedCompactCards.cardArtKeys);
     } catch {
       // Fall through to packed V4 format when symbolic encoding is not possible.
     }
 
     try {
-      return encodeV4PackedFromRefs(compactCardRefEntries.map(entry => Array.isArray(entry) ? String(entry[0]) : String(entry)), (() => {
-        const expanded = expandCompactCardEntries(compactCardRefEntries, { usesCardRefs: false });
-        return expanded.cardArtKeys;
-      })());
+      return encodeV4PackedFromRefs(expandedCompactCards.cardIds, expandedCompactCards.cardArtKeys);
     } catch {
       // Fall through to v3 payload format when packed v4 encoding is not possible.
     }
