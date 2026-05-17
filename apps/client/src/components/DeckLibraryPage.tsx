@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { AuthUser, CardLibraryCardSummary, DeckDetail, DeckSummary } from "../clientTypes";
-import { decodeWardDeckString, encodeWardDeckString } from "../deckShare";
+import { decodeWardDeckString, encodeWardDeckString, getWardDeckStringFormatLabel } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { CardImageThumbnail, getCardArtLabel, normalizeCardArtKey } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
@@ -140,6 +140,7 @@ export function DeckLibraryPage({
     : [];
   const selectedStats = getDeckStats(selectedDeck, cardLibrary);
   const canReviewTournamentDecks = currentUser?.role === "ADMIN" || currentUser?.role === "HOST";
+  const importFormatLabel = getWardDeckStringFormatLabel(importCode);
   const libraryStats = useMemo(() => {
     const loadedDecks = decks.filter(deck => deckDetailById.has(deck.id)).length;
     const totalCards = deckDetails.reduce((total, deck) => total + deck.cardIds.length, 0);
@@ -168,14 +169,15 @@ export function DeckLibraryPage({
 
     try {
       await navigator.clipboard.writeText(value);
-      setDeckMessage(`Copied export code for ${deck.name}.`);
+      setDeckMessage(`Copied ${getWardDeckStringFormatLabel(value) ?? "WARDDECK"} export code for ${deck.name}.`);
     } catch {
-      setDeckMessage(`Export code for ${deck.name}: ${value}`);
+      setDeckMessage(`${getWardDeckStringFormatLabel(value) ?? "WARDDECK"} export code for ${deck.name}: ${value}`);
     }
   }
 
   function importDeckCode() {
     try {
+      const formatLabel = getWardDeckStringFormatLabel(importCode) ?? "deck";
       const payload = decodeWardDeckString(importCode, { cardLibrary });
       const unknownCards = payload.cardIds.filter(cardId => !cardById.has(cardId));
 
@@ -189,8 +191,8 @@ export function DeckLibraryPage({
       setImportCode("");
       setDeckMessage(
         unknownCards.length > 0
-          ? `Imported ${payload.cardIds.length} cards. ${unknownCards.length} card ID(s) are not in the loaded packs.`
-          : `Imported ${payload.cardIds.length} cards into the Card Library editor.`
+          ? `Imported ${payload.cardIds.length} cards from ${formatLabel} import code. ${unknownCards.length} card ID(s) are not in the loaded packs.`
+          : `Imported ${payload.cardIds.length} cards from ${formatLabel} import code into the Card Library editor.`
       );
     } catch (error) {
       setDeckMessage(error instanceof Error ? error.message : "Could not import deck code.");
@@ -256,14 +258,14 @@ export function DeckLibraryPage({
 
       <div className="deck-library-import-panel">
         <div>
-          <strong>Import Deck Code</strong>
-          <span>Paste a WARDDECK3 code to open it in the Card Library deck editor.</span>
+          <strong>{importFormatLabel ? `Import Deck Code (${importFormatLabel})` : "Import Deck Code"}</strong>
+          <span>Paste a WARDDECK4SYM, WARDDECK4, or legacy WARDDECK3 code to open it in the Card Library deck editor.</span>
         </div>
         <textarea
           value={importCode}
           onChange={event => setImportCode(event.target.value)}
           rows={2}
-          placeholder="WARDDECK3:..."
+          placeholder="WARDDECK4SYM:... or WARDDECK4:..."
         />
         <button onClick={importDeckCode} disabled={!importCode.trim()}>Import</button>
       </div>

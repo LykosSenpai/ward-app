@@ -40,6 +40,42 @@ export const WARD_DECK_STRING_PREFIX = "WARDDECK3:";
 export const WARD_DECK_STRING_V4_SYMBOLIC_PREFIX = "WARDDECK4SYM:";
 export const WARD_DECK_STRING_V4_PREFIX = "WARDDECK4:";
 
+export type WardDeckStringFormat = "WARDDECK4SYM" | "WARDDECK4" | "WARDDECK3" | "WARDDECK2" | "WARDDECK1";
+
+const WARD_DECK_STRING_FORMAT_LABELS: Record<WardDeckStringFormat, string> = {
+  WARDDECK4SYM: "WARDDECK4SYM symbolic",
+  WARDDECK4: "WARDDECK4 packed",
+  WARDDECK3: "WARDDECK3 JSON",
+  WARDDECK2: "WARDDECK2 legacy",
+  WARDDECK1: "WARDDECK1 legacy"
+};
+
+export function getWardDeckStringFormat(value: string): WardDeckStringFormat | undefined {
+  const trimmed = value.trim();
+
+  if (trimmed.startsWith(WARD_DECK_STRING_V4_SYMBOLIC_PREFIX)) return "WARDDECK4SYM";
+  if (trimmed.startsWith(WARD_DECK_STRING_V4_PREFIX)) return "WARDDECK4";
+  if (trimmed.startsWith(WARD_DECK_STRING_PREFIX)) return "WARDDECK3";
+  if (trimmed.startsWith(WARD_DECK_STRING_V2_PREFIX)) return "WARDDECK2";
+  if (trimmed.startsWith(WARD_DECK_STRING_V1_PREFIX)) return "WARDDECK1";
+  return undefined;
+}
+
+export function getWardDeckStringFormatLabel(value: string): string | undefined {
+  const format = getWardDeckStringFormat(value);
+  return format ? WARD_DECK_STRING_FORMAT_LABELS[format] : undefined;
+}
+
+export function getWardDeckStringAcceptedPrefixesLabel(): string {
+  return [
+    WARD_DECK_STRING_V4_SYMBOLIC_PREFIX,
+    WARD_DECK_STRING_V4_PREFIX,
+    WARD_DECK_STRING_PREFIX,
+    WARD_DECK_STRING_V2_PREFIX,
+    WARD_DECK_STRING_V1_PREFIX
+  ].join(", ");
+}
+
 function encodeUtf8Base64Url(value: string): string {
   const bytes = new TextEncoder().encode(value);
   let binary = "";
@@ -72,7 +108,7 @@ function decodeUtf8Base64Url(value: string): string {
 
 function normalizeImportedCardIds(cardIds: unknown): string[] {
   if (!Array.isArray(cardIds)) {
-    throw new Error("Deck string is missing a cardIds array.");
+    throw new Error("Deck code is missing a cardIds array.");
   }
 
   const result = cardIds
@@ -80,7 +116,7 @@ function normalizeImportedCardIds(cardIds: unknown): string[] {
     .filter(Boolean);
 
   if (result.length === 0) {
-    throw new Error("Deck string does not contain any cards.");
+    throw new Error("Deck code does not contain any cards.");
   }
 
   return result;
@@ -453,7 +489,7 @@ function expandCompactCardEntries(
   options: { cardLibrary?: CardLibraryCardSummary[]; usesCardRefs?: boolean } = {}
 ): { cardIds: string[]; cardArtKeys?: string[] } {
   if (!Array.isArray(cardEntries)) {
-    throw new Error("Deck string is missing a compact card list.");
+    throw new Error("Deck code is missing a compact card list.");
   }
 
   const { refToCardId } = options.usesCardRefs
@@ -593,7 +629,7 @@ export function decodeWardDeckString(value: string, options: DeckShareCodecOptio
     const parsed = JSON.parse(jsonText) as Partial<WardDeckSharePayloadV3>;
 
     if (parsed.v !== 3 || parsed.k !== "WD") {
-      throw new Error("Deck string is not a Ward Nexus deck string v3 payload.");
+      throw new Error("Deck code is not a Ward Nexus WARDDECK3 payload.");
     }
 
     const expandedCards = expandCompactCardEntries(parsed.c, {
@@ -621,7 +657,7 @@ export function decodeWardDeckString(value: string, options: DeckShareCodecOptio
     const parsed = JSON.parse(jsonText) as Partial<WardDeckSharePayloadV2>;
 
     if (parsed.v !== 2 || parsed.k !== "WD") {
-      throw new Error("Deck string is not a Ward Nexus deck string v2 payload.");
+      throw new Error("Deck code is not a Ward Nexus WARDDECK2 payload.");
     }
 
     const expandedCards = expandCompactCardEntries(parsed.c);
@@ -642,14 +678,14 @@ export function decodeWardDeckString(value: string, options: DeckShareCodecOptio
   }
 
   if (!trimmed.startsWith(WARD_DECK_STRING_V1_PREFIX)) {
-    throw new Error(`Deck string must start with ${WARD_DECK_STRING_V4_SYMBOLIC_PREFIX}, ${WARD_DECK_STRING_V4_PREFIX}, ${WARD_DECK_STRING_PREFIX}, ${WARD_DECK_STRING_V2_PREFIX}, or ${WARD_DECK_STRING_V1_PREFIX}`);
+    throw new Error(`Deck code must start with ${getWardDeckStringAcceptedPrefixesLabel()}.`);
   }
 
   const jsonText = decodeUtf8Base64Url(trimmed.slice(WARD_DECK_STRING_V1_PREFIX.length));
   const parsed = JSON.parse(jsonText) as Partial<WardDeckSharePayload>;
 
   if (parsed.v !== 1 || parsed.kind !== "WARD_DECK") {
-    throw new Error("Deck string is not a Ward Nexus deck string v1 payload.");
+    throw new Error("Deck code is not a Ward Nexus WARDDECK1 payload.");
   }
 
   const cardIds = normalizeImportedCardIds(parsed.cardIds);
@@ -723,6 +759,14 @@ export function buildDeckNotesMarkdown(args: {
   const creatureCount = args.cardIds.filter(cardId => args.cardLibrary.find(card => card.id === cardId)?.cardType === "CREATURE").length;
   const magicCount = args.cardIds.filter(cardId => args.cardLibrary.find(card => card.id === cardId)?.cardType === "MAGIC").length;
   const generatedAt = new Date().toISOString();
+  const deckString = args.deckString ?? encodeWardDeckString({
+    name: args.name,
+    deckId: args.deckId,
+    cardIds: args.cardIds,
+    cardArtKeys: args.cardArtKeys,
+    startingHandSize: args.startingHandSize
+  }, { cardLibrary: args.cardLibrary });
+  const deckStringFormatLabel = getWardDeckStringFormatLabel(deckString) ?? "WARDDECK";
 
   const lines: string[] = [
     `# ${args.name || "Ward Nexus Deck"} - Test Notes`,
@@ -736,15 +780,9 @@ export function buildDeckNotesMarkdown(args: {
     `Magic: ${magicCount}`,
     args.startingHandSize !== undefined ? `Starting Hand Size: ${args.startingHandSize}` : "",
     "",
-    "## Share String",
+    `## Share Code (${deckStringFormatLabel})`,
     "",
-    args.deckString ?? encodeWardDeckString({
-      name: args.name,
-      deckId: args.deckId,
-      cardIds: args.cardIds,
-      cardArtKeys: args.cardArtKeys,
-      startingHandSize: args.startingHandSize
-    }, { cardLibrary: args.cardLibrary }),
+    deckString,
     "",
     "## Deck Checklist",
     ""

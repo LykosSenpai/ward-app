@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
-import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, sanitizeDownloadFileName } from "../deckShare";
+import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, getWardDeckStringFormatLabel, sanitizeDownloadFileName } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
 import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, coerceCardArtKeyForCard, getCardArtLabel } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
@@ -659,7 +659,7 @@ export function CardLibraryPanel({
 
   async function copyCurrentDeckString() {
     if (deckBuilderCardIds.length === 0) {
-      setDeckShareMessage("Add cards before generating a deck string.");
+      setDeckShareMessage("Add cards before generating an export code.");
       return;
     }
 
@@ -672,17 +672,19 @@ export function CardLibraryPanel({
     }, { cardLibrary });
 
     setDeckShareString(value);
+    const formatLabel = getWardDeckStringFormatLabel(value) ?? "WARDDECK";
 
     try {
       await navigator.clipboard.writeText(value);
-      setDeckShareMessage("Copied deck string to clipboard.");
+      setDeckShareMessage(`Copied ${formatLabel} export code to clipboard.`);
     } catch {
-      setDeckShareMessage("Deck string generated. Clipboard copy was blocked by the browser.");
+      setDeckShareMessage(`${formatLabel} export code generated. Clipboard copy was blocked by the browser.`);
     }
   }
 
   function importDeckStringIntoBuilder() {
     try {
+      const formatLabel = getWardDeckStringFormatLabel(deckImportString) ?? "deck";
       const payload = decodeWardDeckString(deckImportString, { cardLibrary });
       const unknownCards = payload.cardIds.filter(cardId => !cardLibrary.some(card => card.id === cardId));
 
@@ -697,11 +699,11 @@ export function CardLibraryPanel({
 
       setDeckShareMessage(
         unknownCards.length > 0
-          ? `Imported ${payload.cardIds.length} cards. ${unknownCards.length} card ID(s) are not in the currently loaded packs.`
-          : `Imported ${payload.cardIds.length} cards from deck string.`
+          ? `Imported ${payload.cardIds.length} cards from ${formatLabel} import code. ${unknownCards.length} card ID(s) are not in the currently loaded packs.`
+          : `Imported ${payload.cardIds.length} cards from ${formatLabel} import code.`
       );
     } catch (error) {
-      setDeckShareMessage(error instanceof Error ? error.message : "Could not import deck string.");
+      setDeckShareMessage(error instanceof Error ? error.message : "Could not import deck code.");
     }
   }
 
@@ -731,10 +733,12 @@ export function CardLibraryPanel({
 
     downloadTextFile(fileName, markdown);
     setDeckShareString(deckString);
-    setDeckShareMessage(`Generated notes file: ${fileName}`);
+    setDeckShareMessage(`Generated notes file with ${getWardDeckStringFormatLabel(deckString) ?? "WARDDECK"} export code: ${fileName}`);
   }
 
   const normalizedDeckId = normalizeId(deckBuilderId);
+  const deckShareFormatLabel = getWardDeckStringFormatLabel(deckShareString);
+  const deckImportFormatLabel = getWardDeckStringFormatLabel(deckImportString);
   const saveDisabled = deckBuilderCardIds.length !== 30 || !deckBuilderName.trim() || !normalizedDeckId;
   const saveDeckTitle = !deckBuilderName.trim()
     ? "Name this deck before saving."
@@ -1151,18 +1155,18 @@ export function CardLibraryPanel({
           <div className="library-option-a-details-drawer deck-share-tools-card library-option-a-code-tools library-option-a-deck-rail-codes">
             <div className="deck-share-tools-grid">
               <label>
-                Export Code
-                <textarea value={deckShareString} readOnly rows={2} placeholder="Click Copy Export Code." />
+                {deckShareFormatLabel ? `Export Code (${deckShareFormatLabel})` : "Export Code"}
+                <textarea value={deckShareString} readOnly rows={2} placeholder="Click Copy Export to generate the best available WARDDECK code." />
               </label>
 
               <label>
-                Import Code
-                <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={2} placeholder="Paste WARDDECK3:... here." />
+                {deckImportFormatLabel ? `Import Code (${deckImportFormatLabel})` : "Import Code"}
+                <textarea value={deckImportString} onChange={event => setDeckImportString(event.target.value)} rows={2} placeholder="Paste WARDDECK4SYM:, WARDDECK4:, or WARDDECK3:..." />
               </label>
             </div>
 
             <div className="actions small-actions deck-share-actions">
-              <button onClick={copyCurrentDeckString} disabled={deckBuilderCardIds.length === 0}>Copy Export</button>
+              <button onClick={copyCurrentDeckString} disabled={deckBuilderCardIds.length === 0}>Copy Export Code</button>
               <button onClick={importDeckStringIntoBuilder} disabled={!deckImportString.trim()}>Import Code</button>
               <button onClick={downloadCurrentDeckNotes} disabled={deckBuilderCardIds.length === 0}>Notes</button>
             </div>
