@@ -33,8 +33,6 @@ const packedLibrary = [
 
 const packedCardIds = buildDeck(packedLibrary.map(card => card.id), 3);
 const packedCode = encodeWardDeckString({
-  name: "Thirty Card Packed Deck",
-  deckId: "thirty-card-packed-deck",
   cardIds: packedCardIds
 }, { cardLibrary: packedLibrary });
 const packedDecoded = decodeWardDeckString(packedCode, { cardLibrary: packedLibrary });
@@ -42,6 +40,19 @@ const packedDecoded = decodeWardDeckString(packedCode, { cardLibrary: packedLibr
 assert.equal(packedCode.startsWith("WARDDECK4:"), true);
 assert.equal(packedDecoded.cardIds.length, 30);
 assert.deepEqual(packedDecoded.cardIds.toSorted(), packedCardIds.toSorted());
+
+const namedPackedCode = encodeWardDeckString({
+  name: "Thirty Card Packed Deck",
+  deckId: "thirty-card-packed-deck",
+  cardIds: packedCardIds
+}, { cardLibrary: packedLibrary });
+const namedPackedDecoded = decodeWardDeckString(namedPackedCode, { cardLibrary: packedLibrary });
+
+assert.equal(namedPackedCode.startsWith("WARDDECK3:"), true);
+assert.equal(namedPackedDecoded.name, "Thirty Card Packed Deck");
+assert.equal(namedPackedDecoded.deckId, "thirty-card-packed-deck");
+assert.equal(namedPackedDecoded.cardIds.length, 30);
+assert.deepEqual(namedPackedDecoded.cardIds.toSorted(), packedCardIds.toSorted());
 
 const highGenerationPackedLibrary = [
   buildCard("gen9-001", 9, 1),
@@ -58,8 +69,6 @@ const highGenerationPackedLibrary = [
 
 const highGenerationPackedCardIds = buildDeck(highGenerationPackedLibrary.map(card => card.id), 3);
 const highGenerationPackedCode = encodeWardDeckString({
-  name: "Thirty Card High Generation Packed Deck",
-  deckId: "thirty-card-high-generation-packed-deck",
   cardIds: highGenerationPackedCardIds
 }, { cardLibrary: highGenerationPackedLibrary });
 const highGenerationPackedDecoded = decodeWardDeckString(highGenerationPackedCode, { cardLibrary: highGenerationPackedLibrary });

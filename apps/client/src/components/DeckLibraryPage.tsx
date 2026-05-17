@@ -95,6 +95,28 @@ function makeUniqueDeckImportId(value: string, usedDeckIds: Set<string>, fallbac
   return candidate;
 }
 
+function normalizeDeckImportName(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function getDeckImportNameKey(value: string): string {
+  return normalizeDeckImportName(value).toLowerCase();
+}
+
+function makeUniqueDeckImportName(value: string, usedDeckNames: Set<string>, fallbackIndex: number): string {
+  const baseName = normalizeDeckImportName(value) || `Imported Deck ${fallbackIndex + 1}`;
+  let candidate = baseName;
+  let suffix = 2;
+
+  while (usedDeckNames.has(getDeckImportNameKey(candidate))) {
+    candidate = `${baseName} (${suffix})`;
+    suffix += 1;
+  }
+
+  usedDeckNames.add(getDeckImportNameKey(candidate));
+  return candidate;
+}
+
 function formatImportFailureSummary(failures: Array<{ name: string; message: string }>): string {
   if (failures.length === 0) return "";
 
@@ -287,6 +309,7 @@ export function DeckLibraryPage({
     }
 
     const usedDeckIds = new Set(decks.map(deck => deck.id));
+    const usedDeckNames = new Set(decks.map(deck => getDeckImportNameKey(deck.name)).filter(Boolean));
     const requests: DeckLibraryImportSaveRequest[] = [];
     const localFailures: Array<{ name: string; message: string }> = [];
 
@@ -297,8 +320,7 @@ export function DeckLibraryPage({
 
       try {
         const payload = decodeWardDeckString(entry.code, { cardLibrary });
-        const name = (entry.label || payload.name || fallbackName).trim();
-        const deckId = makeUniqueDeckImportId(payload.deckId || name, usedDeckIds, index);
+        const requestedName = entry.label || payload.name || fallbackName;
         const missingCardIds = Array.from(new Set(payload.cardIds.filter(cardId => !cardById.has(cardId))));
         const packIds = Array.from(new Set(payload.cardIds.map(cardId => cardById.get(cardId)?.packId).filter((packId): packId is string => !!packId)));
 
@@ -313,6 +335,9 @@ export function DeckLibraryPage({
         if (packIds.length === 0) {
           throw new Error("No matching card packs are loaded for this deck.");
         }
+
+        const name = makeUniqueDeckImportName(requestedName, usedDeckNames, index);
+        const deckId = makeUniqueDeckImportId(payload.deckId || name, usedDeckIds, index);
 
         requests.push({
           deckId,

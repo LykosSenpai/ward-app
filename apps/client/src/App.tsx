@@ -1248,6 +1248,42 @@ export default function App() {
       .replace(/^-|-$/g, "");
   }
 
+  function normalizeDeckImportName(value: string): string {
+    return value.trim().replace(/\s+/g, " ");
+  }
+
+  function getDeckImportNameKey(value: string): string {
+    return normalizeDeckImportName(value).toLowerCase();
+  }
+
+  function makeUniqueDeckImportName(value: string, usedDeckNames: Set<string>, fallbackName: string): string {
+    const baseName = normalizeDeckImportName(value) || fallbackName;
+    let candidate = baseName;
+    let suffix = 2;
+
+    while (usedDeckNames.has(getDeckImportNameKey(candidate))) {
+      candidate = `${baseName} (${suffix})`;
+      suffix += 1;
+    }
+
+    usedDeckNames.add(getDeckImportNameKey(candidate));
+    return candidate;
+  }
+
+  function makeUniqueDeckImportId(value: string, usedDeckIds: Set<string>, fallbackId: string): string {
+    const baseId = normalizeId(value) || fallbackId;
+    let candidate = baseId;
+    let suffix = 2;
+
+    while (usedDeckIds.has(candidate)) {
+      candidate = `${baseId}-${suffix}`;
+      suffix += 1;
+    }
+
+    usedDeckIds.add(candidate);
+    return candidate;
+  }
+
   function normalizeDeckArtKey(value: string | undefined): CardArtKey {
     return value === "holo" || value === "zero-art" || value === "zero-art-holo" ? value : "default";
   }
@@ -1441,8 +1477,10 @@ export default function App() {
     cardArtKeys?: string[];
     format?: DeckFormat;
   }) {
-    const importedName = payload.name?.trim() || "Imported Deck";
-    const importedDeckId = normalizeId(payload.deckId || importedName) || "imported-deck";
+    const usedDeckNames = new Set(decks.map(deck => getDeckImportNameKey(deck.name)).filter(Boolean));
+    const usedDeckIds = new Set(decks.map(deck => deck.id));
+    const importedName = makeUniqueDeckImportName(payload.name ?? "Imported Deck", usedDeckNames, "Imported Deck");
+    const importedDeckId = makeUniqueDeckImportId(payload.deckId || importedName, usedDeckIds, "imported-deck");
 
     setError("");
     setDeckBuilderName(importedName);

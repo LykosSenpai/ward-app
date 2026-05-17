@@ -102,6 +102,16 @@ function decodeUtf8Base64Url(value: string): string {
   return new TextDecoder().decode(bytes);
 }
 
+function hasShareMetadata(payload: Omit<WardDeckSharePayload, "v" | "kind">): boolean {
+  return Boolean(
+    payload.name?.trim() ||
+    payload.deckId?.trim() ||
+    payload.format ||
+    Number.isFinite(payload.startingHandSize) ||
+    payload.notes?.trim()
+  );
+}
+
 function normalizeImportedCardIds(cardIds: unknown): string[] {
   if (!Array.isArray(cardIds)) {
     throw new Error("Deck code is missing a cardIds array.");
@@ -429,14 +439,17 @@ export function encodeWardDeckString(payload: Omit<WardDeckSharePayload, "v" | "
   const cardIds = normalizeImportedCardIds(payload.cardIds);
   const cardArtKeys = normalizeImportedCardArtKeys(payload.cardArtKeys, cardIds.length);
   const compactCardRefEntries = buildCompactCardRefEntries(cardIds, cardArtKeys, options.cardLibrary);
+  const payloadHasMetadata = hasShareMetadata(payload);
 
   if (compactCardRefEntries) {
     const expandedCompactCards = expandCompactCardEntries(compactCardRefEntries, { usesCardRefs: false });
 
-    try {
-      return encodeV4PackedFromRefs(expandedCompactCards.cardIds, expandedCompactCards.cardArtKeys);
-    } catch {
-      // Fall through to v3 payload format when packed v4 encoding is not possible.
+    if (!payloadHasMetadata) {
+      try {
+        return encodeV4PackedFromRefs(expandedCompactCards.cardIds, expandedCompactCards.cardArtKeys);
+      } catch {
+        // Fall through to v3 payload format when packed v4 encoding is not possible.
+      }
     }
 
     const normalizedPayload: WardDeckSharePayloadV3 = {
