@@ -7,7 +7,7 @@ import { EffectCoveragePage } from "./components/EffectCoveragePage";
 import { EffectDebugPanel } from "./components/EffectDebugPanel";
 import { EffectDevToolPage } from "./components/EffectDevToolPage";
 import { EmailVerificationGate } from "./components/EmailVerificationGate";
-import { DeckLibraryPage } from "./components/DeckLibraryPage";
+import { DeckLibraryPage, type DeckLibraryImportSaveRequest, type DeckLibraryImportSaveResult } from "./components/DeckLibraryPage";
 import { EventLogCard } from "./components/EventLogCard";
 import { EffectRollModal } from "./components/EffectRollModal";
 import { LibraryDecksPage } from "./components/LibraryDecksPage";
@@ -1454,6 +1454,87 @@ export default function App() {
     setActivePage("card-library");
   }
 
+  async function saveImportedDecksToLibrary(
+    importedDecks: DeckLibraryImportSaveRequest[]
+  ): Promise<DeckLibraryImportSaveResult> {
+    setError("");
+    setSaveMessage("");
+
+    const failAll = (message: string): DeckLibraryImportSaveResult => ({
+      saved: [],
+      failed: importedDecks.map(deck => ({
+        deckId: deck.deckId,
+        name: deck.name,
+        message
+      }))
+    });
+
+    if (!socket.connected) {
+      const message = "The live server connection is offline. Refresh, log in again, then retry the save.";
+      showAccountSaveError(message);
+      return failAll(message);
+    }
+
+    if (authUser && socketAuthenticated === false) {
+      const message = "Your live server connection needs to refresh before saving. Retry once it reconnects.";
+      showAccountSaveError(message);
+      void refreshLoginSessionForSocket({ manual: true });
+      return failAll(message);
+    }
+
+    setSaveMessage(`Saving ${importedDecks.length} imported deck${importedDecks.length === 1 ? "" : "s"}...`);
+
+    const saved: string[] = [];
+    const failed: DeckLibraryImportSaveResult["failed"] = [];
+
+    for (const deck of importedDecks) {
+      const response = await new Promise<SocketAckResponse>(resolve => {
+        socket.timeout(8000).emit(
+          "deck:save",
+          {
+            deckId: deck.deckId,
+            name: deck.name,
+            packIds: deck.packIds,
+            cardIds: deck.cardIds,
+            cardArtKeys: deck.cardArtKeys,
+            format: deck.format,
+            overwrite: false
+          },
+          (timeoutError: Error | null, ackResponse?: SocketAckResponse) => {
+            if (timeoutError) {
+              resolve({ ok: false, error: "The server did not confirm the save. Refresh and try again." });
+              return;
+            }
+
+            resolve(ackResponse ?? { ok: true });
+          }
+        );
+      });
+
+      if (response.ok === false || response.message === "Deck overwrite confirmation required.") {
+        failed.push({
+          deckId: deck.deckId,
+          name: deck.name,
+          message: response.error ?? "Deck ID already exists."
+        });
+        continue;
+      }
+
+      saved.push(deck.name);
+    }
+
+    socket.emit("setup:listOptions");
+    socket.emit("deck:listDetails");
+
+    setSaveMessage(
+      failed.length === 0
+        ? `Imported ${saved.length} deck${saved.length === 1 ? "" : "s"} to the Deck Library.`
+        : `Imported ${saved.length} deck${saved.length === 1 ? "" : "s"}; ${failed.length} failed.`
+    );
+
+    return { saved, failed };
+  }
+
   function saveBuiltDeck() {
     setError("");
     setSaveMessage("");
@@ -2492,6 +2573,7 @@ export default function App() {
             onCloneDeck={deckId => loadDeckIntoBuilderAndOpenCardLibrary(deckId, "clone")}
             onDeleteDeck={deleteDeck}
             onImportDeckCode={importDeckCodeIntoBuilder}
+            onImportDecksToLibrary={saveImportedDecksToLibrary}
             onRefreshDeckDetails={() => socket.emit("deck:listDetails")}
             onReviewTournamentDeck={(ownerUserId, deckId, status, notes) => {
               socket.emit("deck:reviewTournamentSubmission", { ownerUserId, deckId, status, notes });

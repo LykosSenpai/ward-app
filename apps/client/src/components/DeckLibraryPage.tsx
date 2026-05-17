@@ -7,6 +7,20 @@ import type { CardArtKey } from "./CardImagePreview";
 import { ModalPanel } from "./ui/ModalPanel";
 import { API_BASE_URL } from "../config";
 
+export type DeckLibraryImportSaveRequest = {
+  deckId: string;
+  name: string;
+  packIds: string[];
+  cardIds: string[];
+  cardArtKeys?: string[];
+  format?: "FREE_PLAY" | "TOURNAMENT";
+};
+
+export type DeckLibraryImportSaveResult = {
+  saved: string[];
+  failed: Array<{ deckId: string; name: string; message: string }>;
+};
+
 type DeckLibraryPageProps = {
   decks: DeckSummary[];
   deckDetails: DeckDetail[];
@@ -23,6 +37,7 @@ type DeckLibraryPageProps = {
     cardArtKeys?: string[];
     format?: "FREE_PLAY" | "TOURNAMENT";
   }) => void;
+  onImportDecksToLibrary: (decks: DeckLibraryImportSaveRequest[]) => Promise<DeckLibraryImportSaveResult>;
   onRefreshDeckDetails: () => void;
   onReviewTournamentDeck: (ownerUserId: string, deckId: string, status: "VERIFIED" | "REJECTED", notes?: string) => void;
 };
@@ -33,6 +48,63 @@ type DeckCardCount = {
   count: number;
   card?: CardLibraryCardSummary;
 };
+
+type ParsedDeckCodeEntry = {
+  code: string;
+  label?: string;
+};
+
+const DECK_CODE_PREFIX_PATTERN = /WARDDECK(?:4|3|2|1):/g;
+
+function parseDeckCodeEntries(value: string): ParsedDeckCodeEntry[] {
+  const matches = Array.from(value.matchAll(DECK_CODE_PREFIX_PATTERN));
+
+  return matches
+    .map((match, index): ParsedDeckCodeEntry | undefined => {
+      const start = match.index ?? 0;
+      const end = index + 1 < matches.length ? matches[index + 1].index ?? value.length : value.length;
+      const segment = value.slice(start, end).trim();
+      const [code = "", ...labelParts] = segment.split(/\s+/);
+      const label = labelParts.join(" ").trim();
+
+      return code ? { code, label: label || undefined } : undefined;
+    })
+    .filter((entry): entry is ParsedDeckCodeEntry => !!entry);
+}
+
+function normalizeDeckImportId(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function makeUniqueDeckImportId(value: string, usedDeckIds: Set<string>, fallbackIndex: number): string {
+  const baseId = normalizeDeckImportId(value) || `imported-deck-${fallbackIndex + 1}`;
+  let candidate = baseId;
+  let suffix = 2;
+
+  while (usedDeckIds.has(candidate)) {
+    candidate = `${baseId}-${suffix}`;
+    suffix += 1;
+  }
+
+  usedDeckIds.add(candidate);
+  return candidate;
+}
+
+function formatImportFailureSummary(failures: Array<{ name: string; message: string }>): string {
+  if (failures.length === 0) return "";
+
+  const preview = failures
+    .slice(0, 2)
+    .map(failure => `${failure.name}: ${failure.message}`)
+    .join(" ");
+
+  return `${failures.length} failed. ${preview}${failures.length > 2 ? " ..." : ""}`;
+}
 
 function getDeckCounts(deck: DeckDetail): DeckCardCount[] {
   const counts = deck.cardIds.reduce<Record<string, DeckCardCount>>((result, cardId, index) => {
@@ -123,6 +195,7 @@ export function DeckLibraryPage({
   onCloneDeck,
   onDeleteDeck,
   onImportDeckCode,
+  onImportDecksToLibrary,
   onRefreshDeckDetails,
   onReviewTournamentDeck
 }: DeckLibraryPageProps) {
@@ -140,7 +213,12 @@ export function DeckLibraryPage({
     : [];
   const selectedStats = getDeckStats(selectedDeck, cardLibrary);
   const canReviewTournamentDecks = currentUser?.role === "ADMIN" || currentUser?.role === "HOST";
-  const importFormatLabel = getWardDeckStringFormatLabel(importCode);
+  const parsedImportCodes = useMemo(() => parseDeckCodeEntries(importCode), [importCode]);
+  const importFormatLabel = parsedImportCodes.length > 1
+    ? `${parsedImportCodes.length} deck codes`
+    : parsedImportCodes[0]
+      ? getWardDeckStringFormatLabel(parsedImportCodes[0].code)
+      : getWardDeckStringFormatLabel(importCode);
   const libraryStats = useMemo(() => {
     const loadedDecks = decks.filter(deck => deckDetailById.has(deck.id)).length;
     const totalCards = deckDetails.reduce((total, deck) => total + deck.cardIds.length, 0);
@@ -175,15 +253,16 @@ export function DeckLibraryPage({
     }
   }
 
-  function importDeckCode() {
+  function openFirstDeckCodeInEditor() {
     try {
-      const formatLabel = getWardDeckStringFormatLabel(importCode) ?? "deck";
-      const payload = decodeWardDeckString(importCode, { cardLibrary });
+      const entry = parsedImportCodes[0] ?? { code: importCode };
+      const formatLabel = getWardDeckStringFormatLabel(entry.code) ?? "deck";
+      const payload = decodeWardDeckString(entry.code, { cardLibrary });
       const unknownCards = payload.cardIds.filter(cardId => !cardById.has(cardId));
 
       onImportDeckCode({
-        name: payload.name,
-        deckId: payload.deckId,
+        name: entry.label ?? payload.name,
+        deckId: payload.deckId ?? entry.label,
         cardIds: payload.cardIds,
         cardArtKeys: payload.cardArtKeys,
         format: payload.format
@@ -197,6 +276,80 @@ export function DeckLibraryPage({
     } catch (error) {
       setDeckMessage(error instanceof Error ? error.message : "Could not import deck code.");
     }
+  }
+
+  async function importDeckCodesToLibrary() {
+    const entries = parsedImportCodes;
+
+    if (entries.length === 0) {
+      setDeckMessage("Paste at least one WARDDECK4 or WARDDECK3 code.");
+      return;
+    }
+
+    const usedDeckIds = new Set(decks.map(deck => deck.id));
+    const requests: DeckLibraryImportSaveRequest[] = [];
+    const localFailures: Array<{ name: string; message: string }> = [];
+
+    entries.forEach((entry, index) => {
+      const fallbackName = entries.length === 1 ? "Imported Deck" : `Imported Deck ${index + 1}`;
+      const formatLabel = getWardDeckStringFormatLabel(entry.code) ?? "deck";
+      const displayName = entry.label || fallbackName;
+
+      try {
+        const payload = decodeWardDeckString(entry.code, { cardLibrary });
+        const name = (entry.label || payload.name || fallbackName).trim();
+        const deckId = makeUniqueDeckImportId(payload.deckId || name, usedDeckIds, index);
+        const missingCardIds = Array.from(new Set(payload.cardIds.filter(cardId => !cardById.has(cardId))));
+        const packIds = Array.from(new Set(payload.cardIds.map(cardId => cardById.get(cardId)?.packId).filter((packId): packId is string => !!packId)));
+
+        if (missingCardIds.length > 0) {
+          throw new Error(`${missingCardIds.length} card ID(s) are not in the loaded packs.`);
+        }
+
+        if (payload.cardIds.length !== 30) {
+          throw new Error(`Deck must contain exactly 30 cards. Current size: ${payload.cardIds.length}.`);
+        }
+
+        if (packIds.length === 0) {
+          throw new Error("No matching card packs are loaded for this deck.");
+        }
+
+        requests.push({
+          deckId,
+          name,
+          packIds,
+          cardIds: payload.cardIds,
+          cardArtKeys: payload.cardArtKeys,
+          format: payload.format === "TOURNAMENT" ? "TOURNAMENT" : "FREE_PLAY"
+        });
+      } catch (error) {
+        localFailures.push({
+          name: displayName,
+          message: error instanceof Error ? error.message : `Could not decode ${formatLabel} code.`
+        });
+      }
+    });
+
+    if (requests.length === 0) {
+      setDeckMessage(formatImportFailureSummary(localFailures) || "No deck codes could be imported.");
+      return;
+    }
+
+    setDeckMessage(`Saving ${requests.length} imported deck${requests.length === 1 ? "" : "s"} to the library...`);
+
+    const result = await onImportDecksToLibrary(requests);
+    const serverFailures = result.failed.map(failure => ({ name: failure.name, message: failure.message }));
+    const allFailures = [...localFailures, ...serverFailures];
+
+    if (allFailures.length === 0) {
+      setImportCode("");
+      setDeckMessage(`Imported ${result.saved.length} deck${result.saved.length === 1 ? "" : "s"} directly to the Deck Library.`);
+      return;
+    }
+
+    setDeckMessage(
+      `Imported ${result.saved.length} deck${result.saved.length === 1 ? "" : "s"} to the Deck Library. ${formatImportFailureSummary(allFailures)}`
+    );
   }
 
   async function uploadProofPhotos(deckId: string, files: FileList | null) {
@@ -259,15 +412,18 @@ export function DeckLibraryPage({
       <div className="deck-library-import-panel">
         <div>
           <strong>{importFormatLabel ? `Import Deck Code (${importFormatLabel})` : "Import Deck Code"}</strong>
-          <span>Paste a WARDDECK4 packed code, or a legacy WARDDECK3 code, to open it in the Card Library deck editor.</span>
+          <span>Paste one or more WARDDECK4 or WARDDECK3 codes to save them directly to this library.</span>
         </div>
         <textarea
           value={importCode}
           onChange={event => setImportCode(event.target.value)}
-          rows={2}
-          placeholder="WARDDECK4:..."
+          rows={4}
+          placeholder={"WARDDECK4:...\nOptional Deck Name\nWARDDECK4:..."}
         />
-        <button onClick={importDeckCode} disabled={!importCode.trim()}>Import</button>
+        <div className="actions small-actions deck-share-actions">
+          <button onClick={() => void importDeckCodesToLibrary()} disabled={!importCode.trim()}>Import to Library</button>
+          <button onClick={openFirstDeckCodeInEditor} disabled={!importCode.trim()}>Open First in Editor</button>
+        </div>
       </div>
 
       {deckMessage && <p className="deck-library-message">{deckMessage}</p>}
