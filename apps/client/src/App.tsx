@@ -2144,7 +2144,7 @@ export default function App() {
             onClose={() => setDashboardModal(null)}
             wide
           >
-            <SiteReportPanel activePage={activePage} match={match} />
+            <SiteReportPanel activePage={activePage} match={match} onSubmitted={() => setDashboardModal(null)} />
           </ModalPanel>
         )}
 
@@ -2725,7 +2725,7 @@ export default function App() {
                 onClose={() => setDashboardModal(null)}
                 wide
               >
-                <BoardReportPanel match={match} />
+                <BoardReportPanel match={match} onSubmitted={() => setDashboardModal(null)} />
               </ModalPanel>
             )}
             {dashboardModal === "match-details" && (

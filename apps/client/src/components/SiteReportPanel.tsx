@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AppMatchState } from "../clientTypes";
 import { API_BASE_URL } from "../config";
@@ -8,6 +8,7 @@ type SiteReportSeverity = "LOW" | "NORMAL" | "HIGH" | "BLOCKING";
 type SiteReportPanelProps = {
   activePage: string;
   match?: AppMatchState | null;
+  onSubmitted?: () => void;
 };
 
 type SiteReportResponse = {
@@ -32,19 +33,29 @@ function getViewportContext(): Record<string, unknown> {
   };
 }
 
-export function SiteReportPanel({ activePage, match }: SiteReportPanelProps) {
+export function SiteReportPanel({ activePage, match, onSubmitted }: SiteReportPanelProps) {
   const defaultSubject = useMemo(
     () => `Site report: ${activePage}`,
     [activePage]
   );
+  const closeTimerRef = useRef<number | null>(null);
   const [subject, setSubject] = useState(defaultSubject);
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<SiteReportSeverity>("NORMAL");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitError, setSubmitError] = useState("");
 
+  useEffect(() => () => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+  }, []);
+
   async function submitReport() {
+    if (isSubmitting || isSubmitted) return;
+
     const trimmedSubject = subject.trim();
     const trimmedDescription = description.trim();
 
@@ -54,6 +65,7 @@ export function SiteReportPanel({ activePage, match }: SiteReportPanelProps) {
     }
 
     setIsSubmitting(true);
+    setIsSubmitted(false);
     setSubmitError("");
     setSubmitMessage("");
 
@@ -81,6 +93,11 @@ export function SiteReportPanel({ activePage, match }: SiteReportPanelProps) {
 
       setSubmitMessage(payload.ticket?.id ? `Report sent: ${payload.ticket.id}` : "Report sent.");
       setDescription("");
+      setIsSubmitted(true);
+
+      closeTimerRef.current = window.setTimeout(() => {
+        onSubmitted?.();
+      }, 2000);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to send report.");
     } finally {
@@ -145,8 +162,8 @@ export function SiteReportPanel({ activePage, match }: SiteReportPanelProps) {
         {submitMessage ? <p className="success-box">{submitMessage}</p> : null}
 
         <div className="board-report-actions">
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Sending..." : "Send Report"}
+          <button type="submit" disabled={isSubmitting || isSubmitted}>
+            {isSubmitting ? "Sending..." : isSubmitted ? "Sent" : "Send Report"}
           </button>
         </div>
       </form>

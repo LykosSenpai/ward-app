@@ -265,8 +265,10 @@
 }
 
 .board-report-actions button:disabled {
+  border-color: rgba(100, 116, 139, 0.48);
+  background: rgba(71, 85, 105, 0.64);
+  color: rgba(226, 232, 240, 0.72);
   cursor: not-allowed;
-  opacity: 0.58;
 }
 
 .admin-controls-page {
@@ -339,14 +341,9 @@
 }
 
 .admin-ticket-layout {
-  align-items: stretch;
   display: grid;
-  gap: 0.85rem;
-  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
-  height: clamp(420px, 68vh, 760px);
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
 }
 
 .admin-ticket-pane {
@@ -395,9 +392,14 @@
   align-content: start;
   display: grid;
   gap: 0.55rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   min-height: 0;
   overflow: auto;
   padding: 0.65rem;
+}
+
+.admin-ticket-list-pane {
+  max-height: clamp(320px, 58vh, 680px);
 }
 
 .admin-ticket-row {
@@ -412,8 +414,11 @@
   display: grid;
   gap: 0.28rem;
   justify-items: start;
+  min-width: 0;
+  overflow: hidden;
   padding: 0.65rem;
   text-align: left;
+  width: 100%;
 }
 
 .admin-ticket-row strong,
@@ -421,6 +426,22 @@
 .admin-ticket-row small {
   max-width: 100%;
   overflow-wrap: anywhere;
+}
+
+.admin-ticket-row strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.admin-ticket-row > span:not(.admin-ticket-status),
+.admin-ticket-row small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
 }
 
 .admin-ticket-row.is-selected {
@@ -445,6 +466,11 @@
   overflow: auto;
   overflow-x: hidden;
   padding: 0.75rem;
+}
+
+.admin-ticket-detail-window {
+  max-height: min(72vh, 720px);
+  padding: 0;
 }
 
 .admin-ticket-detail-header {
@@ -568,17 +594,14 @@
 
 @media (max-width: 860px) {
   .admin-ticket-layout {
-    grid-template-columns: 1fr;
-    height: auto;
-    overflow: visible;
+    min-height: 0;
   }
 
   .admin-ticket-pane {
     min-height: 280px;
   }
 
-  .admin-ticket-list,
-  .admin-ticket-detail {
+  .admin-ticket-list {
     max-height: min(58vh, 520px);
   }
 }

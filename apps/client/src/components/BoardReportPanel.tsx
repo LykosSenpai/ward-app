@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AppMatchState } from "../clientTypes";
 import { API_BASE_URL } from "../config";
@@ -7,6 +7,7 @@ type BoardReportSeverity = "LOW" | "NORMAL" | "HIGH" | "BLOCKING";
 
 type BoardReportPanelProps = {
   match: AppMatchState;
+  onSubmitted?: () => void;
 };
 
 type BoardReportResponse = {
@@ -35,19 +36,29 @@ function getViewportContext(): Record<string, unknown> {
   };
 }
 
-export function BoardReportPanel({ match }: BoardReportPanelProps) {
+export function BoardReportPanel({ match, onSubmitted }: BoardReportPanelProps) {
   const defaultSubject = useMemo(
     () => `3D board report: turn ${match.turn.turnNumber} ${match.turn.phase}`,
     [match.turn.phase, match.turn.turnNumber]
   );
+  const closeTimerRef = useRef<number | null>(null);
   const [subject, setSubject] = useState(defaultSubject);
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<BoardReportSeverity>("NORMAL");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitError, setSubmitError] = useState("");
 
+  useEffect(() => () => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+  }, []);
+
   async function submitReport() {
+    if (isSubmitting || isSubmitted) return;
+
     const trimmedSubject = subject.trim();
     const trimmedDescription = description.trim();
 
@@ -57,6 +68,7 @@ export function BoardReportPanel({ match }: BoardReportPanelProps) {
     }
 
     setIsSubmitting(true);
+    setIsSubmitted(false);
     setSubmitError("");
     setSubmitMessage("");
 
@@ -83,6 +95,11 @@ export function BoardReportPanel({ match }: BoardReportPanelProps) {
 
       setSubmitMessage(payload.ticket?.id ? `Report sent: ${payload.ticket.id}` : "Report sent.");
       setDescription("");
+      setIsSubmitted(true);
+
+      closeTimerRef.current = window.setTimeout(() => {
+        onSubmitted?.();
+      }, 2000);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to send report.");
     } finally {
@@ -147,8 +164,8 @@ export function BoardReportPanel({ match }: BoardReportPanelProps) {
         {submitMessage ? <p className="success-box">{submitMessage}</p> : null}
 
         <div className="board-report-actions">
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Sending..." : "Send Report"}
+          <button type="submit" disabled={isSubmitting || isSubmitted}>
+            {isSubmitting ? "Sending..." : isSubmitted ? "Sent" : "Send Report"}
           </button>
         </div>
       </form>
