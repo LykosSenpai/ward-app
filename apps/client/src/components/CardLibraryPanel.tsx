@@ -1,9 +1,10 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
-import type { DragEvent } from "react";
+import type { CSSProperties, DragEvent, FocusEvent } from "react";
+import { createPortal } from "react-dom";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, getWardDeckStringFormatLabel, sanitizeDownloadFileName } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
-import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, coerceCardArtKeyForCard, getCardArtLabel } from "./CardImagePreview";
+import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, coerceCardArtKeyForCard, composeArtKey, getBaseArtKey, getBaseArtOptionsForCard, getCardArtLabel } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
 import { AddCardToMarketplaceModal } from "./AddCardToMarketplaceModal";
 
@@ -38,6 +39,16 @@ type MissingCollectionItem = {
 const FIXED_HOLO_INTENSITY = 10;
 const INITIAL_VISIBLE_CARD_COUNT = 72;
 const VISIBLE_CARD_INCREMENT = 72;
+const FLOATING_CONTROLS_MARGIN = 8;
+const FLOATING_CONTROLS_DEFAULT_WIDTH = 276;
+const FLOATING_CONTROLS_DEFAULT_HEIGHT = 184;
+
+type FloatingControlsPosition = {
+  left: number;
+  top: number;
+  width: number;
+  placement: "above" | "below";
+};
 
 type CardLibraryPanelProps = {
   cardLibrary: CardLibraryCardSummary[];
@@ -126,6 +137,10 @@ function sanitizeCopies(value: string): number {
   return Math.max(0, Math.floor(parsed));
 }
 
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), Math.max(min, max));
+}
+
 export function CardLibraryPanel({
   cardLibrary,
   selectedPackCount,
@@ -175,6 +190,8 @@ export function CardLibraryPanel({
   const [missingFocusCardIds, setMissingFocusCardIds] = useState<string[] | null>(null);
   const [gridColumnCount, setGridColumnCount] = useState(1);
   const [activeMarketplaceAction, setActiveMarketplaceAction] = useState<null | { cardId: string; mode: "need" | "have" }>(null);
+  const [activeFloatingCardId, setActiveFloatingCardId] = useState<string | null>(null);
+  const [floatingControlsPosition, setFloatingControlsPosition] = useState<FloatingControlsPosition | null>(null);
 
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
   const [completionGeneration, setCompletionGeneration] = useState("ALL");
@@ -183,6 +200,9 @@ export function CardLibraryPanel({
   const cardGridRef = useRef<HTMLDivElement | null>(null);
   const loadPreviousSentinelRef = useRef<HTMLDivElement | null>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
+  const floatingAnchorRef = useRef<HTMLElement | null>(null);
+  const floatingControlsRef = useRef<HTMLDivElement | null>(null);
+  const closeFloatingControlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const deckCounts = useMemo(() => getDeckBuilderCounts(), [deckBuilderCardIds, getDeckBuilderCounts]);
 
@@ -556,6 +576,29 @@ export function CardLibraryPanel({
     return () => resizeObserver.disconnect();
   }, [visibleCards.length]);
 
+  useEffect(() => {
+    return () => {
+      clearFloatingControlsCloseTimer();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeFloatingCardId) return;
+
+    updateFloatingControlsPosition();
+    const animationFrame = window.requestAnimationFrame(updateFloatingControlsPosition);
+    const handleViewportChange = () => updateFloatingControlsPosition();
+
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("scroll", handleViewportChange, true);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("scroll", handleViewportChange, true);
+    };
+  }, [activeFloatingCardId, deckBuilderCardIds.length, deckBuilderFormat, ownershipCounts, selectedArtKeysByCardId]);
+
   function clearFilters() {
     setSearchText("");
     setTypeFilter("ALL");
@@ -568,6 +611,76 @@ export function CardLibraryPanel({
     setOwnershipFilter("ALL");
     setSortMode("number");
     setMissingFocusCardIds(null);
+  }
+
+  function clearFloatingControlsCloseTimer() {
+    if (!closeFloatingControlsTimerRef.current) return;
+    clearTimeout(closeFloatingControlsTimerRef.current);
+    closeFloatingControlsTimerRef.current = null;
+  }
+
+  function updateFloatingControlsPosition() {
+    const anchor = floatingAnchorRef.current;
+    if (!anchor) return;
+    if (!anchor.isConnected) {
+      closeFloatingControls();
+      return;
+    }
+
+    const anchorRect = anchor.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const panelWidth = Math.min(FLOATING_CONTROLS_DEFAULT_WIDTH, viewportWidth - FLOATING_CONTROLS_MARGIN * 2);
+    const panelHeight = floatingControlsRef.current?.offsetHeight || FLOATING_CONTROLS_DEFAULT_HEIGHT;
+    const spaceBelow = viewportHeight - anchorRect.bottom;
+    const placement = spaceBelow < panelHeight + FLOATING_CONTROLS_MARGIN && anchorRect.top > spaceBelow ? "above" : "below";
+    const top = placement === "above"
+      ? clampNumber(anchorRect.top - panelHeight - FLOATING_CONTROLS_MARGIN, FLOATING_CONTROLS_MARGIN, viewportHeight - panelHeight - FLOATING_CONTROLS_MARGIN)
+      : clampNumber(anchorRect.bottom + FLOATING_CONTROLS_MARGIN, FLOATING_CONTROLS_MARGIN, viewportHeight - panelHeight - FLOATING_CONTROLS_MARGIN);
+    const left = clampNumber(
+      anchorRect.left + anchorRect.width / 2 - panelWidth / 2,
+      FLOATING_CONTROLS_MARGIN,
+      viewportWidth - panelWidth - FLOATING_CONTROLS_MARGIN
+    );
+
+    setFloatingControlsPosition(current => {
+      if (
+        current &&
+        Math.abs(current.left - left) < 0.5 &&
+        Math.abs(current.top - top) < 0.5 &&
+        Math.abs(current.width - panelWidth) < 0.5 &&
+        current.placement === placement
+      ) {
+        return current;
+      }
+
+      return { left, top, width: panelWidth, placement };
+    });
+  }
+
+  function openFloatingControls(cardId: string, anchor: HTMLElement) {
+    clearFloatingControlsCloseTimer();
+    floatingAnchorRef.current = anchor;
+    setActiveFloatingCardId(cardId);
+    window.requestAnimationFrame(updateFloatingControlsPosition);
+  }
+
+  function closeFloatingControls() {
+    clearFloatingControlsCloseTimer();
+    floatingAnchorRef.current = null;
+    setActiveFloatingCardId(null);
+    setFloatingControlsPosition(null);
+  }
+
+  function scheduleFloatingControlsClose(delay = 120) {
+    clearFloatingControlsCloseTimer();
+    closeFloatingControlsTimerRef.current = setTimeout(closeFloatingControls, delay);
+  }
+
+  function handleFloatingControlsBlur(event: FocusEvent<HTMLDivElement>) {
+    const nextTarget = event.relatedTarget as Node | null;
+    if (nextTarget && (event.currentTarget.contains(nextTarget) || floatingAnchorRef.current?.contains(nextTarget))) return;
+    scheduleFloatingControlsClose(80);
   }
 
   function setDeckCopiesFromInput(cardId: string, value: string, artKey: CardArtKey = "default") {
@@ -761,6 +874,149 @@ export function CardLibraryPanel({
   function clearMissingFocus() {
     setMissingFocusCardIds(null);
   }
+
+  function renderCardFloatingControlsContent(card: CardLibraryCardSummary) {
+    const selectedArtKey = coerceCardArtKeyForCard(card, getSelectedArtKey(card.id));
+    const selectedArtworkMode = selectedArtKey === "zero-art" || selectedArtKey === "zero-art-holo" ? "ZERO" : "DEFAULT";
+    const selectedIsHolo = selectedArtKey === "holo" || selectedArtKey === "zero-art-holo";
+    const effectivePreviewVariant = getOwnershipVariantFromArtworkAndHolo(selectedArtworkMode, selectedIsHolo);
+    const selectedOwnershipLabel = getCardArtLabel(effectivePreviewVariant);
+    const selectedOwnedCount = getOwnedCopiesForArt(card.id, effectivePreviewVariant);
+    const deckLimit = getEffectiveDeckLimit(card, deckBuilderFormat);
+    const canAdd = getCanAddCardToDeck(card.id);
+    const deckLimitLabel = deckBuilderFormat === "TOURNAMENT"
+      ? deckLimit === 0 ? "BANNED" : deckLimit < 3 ? `LIMIT ${deckLimit}` : "LEGAL"
+      : "FREE PLAY";
+    const tournamentLimitStatus = getTournamentLimitStatus(card);
+
+    return (
+      <>
+        <div className="library-option-a-variant-controls" aria-label={`${card.name} art variant controls`}>
+          <label className="library-option-a-art-control">
+            Art
+            <select
+              value={getBaseArtKey(selectedArtKey)}
+              onChange={event => setSelectedArtKey(card.id, composeArtKey(event.target.value as "default" | "zero-art", selectedIsHolo))}
+            >
+              {getBaseArtOptionsForCard(card).map(option => (
+                <option value={option.key} key={option.key}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="library-option-a-holo-toggle">
+            <input
+              type="checkbox"
+              checked={selectedIsHolo}
+              onChange={event => setSelectedArtKey(card.id, composeArtKey(getBaseArtKey(selectedArtKey), event.target.checked))}
+            />
+            <span>Holo</span>
+          </label>
+        </div>
+
+        <div className="library-option-a-limit-add-row">
+          <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
+          {canUseDevTools && onSaveCardLimit ? (
+            <label className="library-option-a-limit-editor" title={card.deckLimitReason ?? "Tournament limit status"}>
+              <span>Tournament</span>
+              <select
+                value={tournamentLimitStatus}
+                onChange={event => onSaveCardLimit(card.id, event.target.value as TournamentLimitStatus)}
+              >
+                <option value="LEGAL">Legal</option>
+                <option value="LIMITED">Limited</option>
+                <option value="BANNED">Banned</option>
+              </select>
+            </label>
+          ) : null}
+          <button
+            type="button"
+            className="library-option-a-marketplace-action"
+            onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "need" })}
+            aria-label={`Add ${card.name} to marketplace needs`}
+            title="Add to marketplace needs"
+          >
+            Need
+          </button>
+          <button
+            type="button"
+            className="library-option-a-marketplace-action"
+            onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "have" })}
+            aria-label={`Add ${card.name} to marketplace haves`}
+            title="Add to marketplace haves"
+          >
+            Have
+          </button>
+          <button
+            type="button"
+            className="library-option-a-mini-deck-add"
+            onClick={() => onAddCard(card.id, selectedArtKey)}
+            disabled={!canAdd}
+            title="Add 1 copy to the current deck. You can also drag this card."
+            aria-label={`Add one ${getCardArtLabel(selectedArtKey)} copy of ${card.name} to the current deck`}
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="library-option-a-ownership-grid" aria-label={`${card.name} selected variant ownership controls`}>
+          <div className="copy-stepper labeled-stepper art-owned-stepper">
+            <span title={`Player-owned ${selectedOwnershipLabel} copies`}>
+              Owned {selectedOwnershipLabel}
+            </span>
+            <button
+              type="button"
+              onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, Math.max(0, selectedOwnedCount - 1))}
+              disabled={selectedOwnedCount === 0}
+              aria-label={`Remove one player-owned ${selectedOwnershipLabel} copy of ${card.name}`}
+              title={`Remove one player-owned ${selectedOwnershipLabel} copy`}
+            >
+              -
+            </button>
+            <input
+              value={selectedOwnedCount}
+              onChange={event => setArtOwnedCopiesFromInput(card.id, effectivePreviewVariant, event.target.value)}
+              aria-label={`${card.name} player-owned ${selectedOwnershipLabel} copies`}
+              title={`Player-owned ${selectedOwnershipLabel} copies`}
+            />
+            <button
+              type="button"
+              onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, selectedOwnedCount + 1)}
+              aria-label={`Add one player-owned ${selectedOwnershipLabel} copy of ${card.name}`}
+              title={`Add one player-owned ${selectedOwnershipLabel} copy`}
+            >
+              +
+            </button>
+          </div>
+        </div>
+        {onOpenMarketplaceOverride ? (
+          <button
+            type="button"
+            className="library-option-a-mini-deck-add library-option-a-override-action"
+            onClick={() => onOpenMarketplaceOverride(card.id)}
+            title="Open marketplace override settings for this card"
+          >
+            Override
+          </button>
+        ) : null}
+      </>
+    );
+  }
+
+  const activeFloatingCard = activeFloatingCardId
+    ? visibleCards.find(card => card.id === activeFloatingCardId) ?? cardLibrary.find(card => card.id === activeFloatingCardId)
+    : undefined;
+  const floatingControlsStyle: CSSProperties = floatingControlsPosition
+    ? {
+        left: floatingControlsPosition.left,
+        top: floatingControlsPosition.top,
+        width: floatingControlsPosition.width
+      }
+    : {
+        left: 0,
+        top: 0,
+        visibility: "hidden",
+        width: FLOATING_CONTROLS_DEFAULT_WIDTH
+      };
 
   return (
     <section className="setup-section library-option-a-section">
@@ -1003,7 +1259,7 @@ export function CardLibraryPanel({
           <div className="library-option-a-panel-header">
             <div>
               <h4>Cards</h4>
-              <span>Drag, double-click, or use + Deck</span>
+              <span>Drag cards or use Add to Deck</span>
             </div>
           </div>
 
@@ -1040,20 +1296,26 @@ export function CardLibraryPanel({
                 const deckLimitLabel = deckBuilderFormat === "TOURNAMENT"
                   ? deckLimit === 0 ? "BANNED" : deckLimit < 3 ? `LIMIT ${deckLimit}` : "LEGAL"
                   : "FREE PLAY";
-                const tournamentLimitStatus = getTournamentLimitStatus(card);
 
                 return (
                   <article
                     className={`library-card-entry unified-library-card-entry library-option-a-card-entry ${!canAdd ? "cannot-add" : ""}`}
                     draggable={canAdd}
                     key={`${card.packId}-${card.id}`}
-                    onDoubleClick={() => { if (canAdd) onAddCard(card.id, selectedArtKey); }}
+                    onBlur={event => {
+                      const nextTarget = event.relatedTarget as Node | null;
+                      if (nextTarget && (event.currentTarget.contains(nextTarget) || floatingControlsRef.current?.contains(nextTarget))) return;
+                      scheduleFloatingControlsClose();
+                    }}
                     onDragEnd={() => {
                       setDraggedCard(null);
                       setDeckDropActive(false);
                     }}
                     onDragStart={event => handleCardDragStart(event, card.id, selectedArtKey)}
-                    title={canAdd ? "Drag to Current Deck or double-click to add 1 copy." : "Deck limit, ban, or 30-card cap prevents adding this card."}
+                    onFocus={event => openFloatingControls(card.id, event.currentTarget)}
+                    onMouseEnter={event => openFloatingControls(card.id, event.currentTarget)}
+                    onMouseLeave={() => scheduleFloatingControlsClose()}
+                    title={canAdd ? "Drag to Current Deck or use Add to Deck for 1 copy." : "Deck limit, ban, or 30-card cap prevents adding this card."}
                   >
                     <div className="library-card-content-grid library-option-a-card-content">
                       <div className="library-option-a-image-stack">
@@ -1061,77 +1323,18 @@ export function CardLibraryPanel({
                           card={card}
                           selectedArtKey={selectedArtKey}
                           holoIntensity={FIXED_HOLO_INTENSITY}
+                          hideInlineControls
                           onSelectedArtKeyChange={artKey => setSelectedArtKey(card.id, artKey)}
                         />
                       </div>
                     </div>
 
-                    <div className="unified-card-actions-row library-option-a-card-actions-row compact-art-ownership-row">
-                      <div className="library-option-a-limit-add-row">
-                        <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
-                        {canUseDevTools && onSaveCardLimit ? (
-                          <label className="library-option-a-limit-editor" title={card.deckLimitReason ?? "Tournament limit status"}>
-                            <span>Tournament</span>
-                            <select
-                              value={tournamentLimitStatus}
-                              onChange={event => onSaveCardLimit(card.id, event.target.value as TournamentLimitStatus)}
-                            >
-                              <option value="LEGAL">Legal</option>
-                              <option value="LIMITED">Limited</option>
-                              <option value="BANNED">Banned</option>
-                            </select>
-                          </label>
-                        ) : null}
-                        <button type="button" className="library-option-a-marketplace-action" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "need" })}>Market Need</button>
-                        <button type="button" className="library-option-a-marketplace-action" onClick={() => setActiveMarketplaceAction({ cardId: card.id, mode: "have" })}>Market Have</button>
-                        <button
-                          className="library-option-a-mini-deck-add"
-                          onClick={() => onAddCard(card.id, selectedArtKey)}
-                          disabled={!canAdd}
-                          title="Add 1 copy to the current deck. You can also drag or double-click this card."
-                        >
-                          Add to Deck
-                        </button>
-                      </div>
+                    <div className="library-option-a-card-compact-strip" title={`${deckLimitLabel} - Player-owned ${selectedOwnershipLabel}: ${selectedOwnedCount}`}>
+                      <span>Player-owned: {selectedOwnedCount} {selectedOwnershipLabel}</span>
+                    </div>
 
-                      <div className="library-option-a-ownership-grid" aria-label={`${card.name} selected variant ownership controls`}>
-                        <div className="copy-stepper labeled-stepper art-owned-stepper">
-                          <span title={`Owned ${selectedOwnershipLabel}`}>
-                            Own {selectedOwnershipLabel}
-                          </span>
-                          <button
-                            onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, Math.max(0, selectedOwnedCount - 1))}
-                            disabled={selectedOwnedCount === 0}
-                            aria-label={`Remove one owned ${selectedOwnershipLabel} copy of ${card.name}`}
-                            title={`Remove one owned ${selectedOwnershipLabel} copy`}
-                          >
-                            -
-                          </button>
-                          <input
-                            value={selectedOwnedCount}
-                            onChange={event => setArtOwnedCopiesFromInput(card.id, effectivePreviewVariant, event.target.value)}
-                            aria-label={`${card.name} ${selectedOwnershipLabel} owned copies`}
-                            title={`${selectedOwnershipLabel} copies you own`}
-                          />
-                          <button
-                            onClick={() => setArtOwnedCopies(card.id, effectivePreviewVariant, selectedOwnedCount + 1)}
-                            aria-label={`Add one owned ${selectedOwnershipLabel} copy of ${card.name}`}
-                            title={`Add one owned ${selectedOwnershipLabel} copy`}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                      {onOpenMarketplaceOverride ? (
-                        <button
-                          type="button"
-                          className="library-option-a-mini-deck-add"
-                          onClick={() => onOpenMarketplaceOverride(card.id)}
-                          title="Open marketplace override settings for this card"
-                        >
-                          Override Auto-List
-                        </button>
-                      ) : null}
+                    <div className="unified-card-actions-row library-option-a-card-actions-row compact-art-ownership-row library-option-a-inline-card-controls">
+                      {renderCardFloatingControlsContent(card)}
                     </div>
                   </article>
                 );
@@ -1273,6 +1476,20 @@ export function CardLibraryPanel({
             setActiveMarketplaceAction(null);
           }}
         />
+      ) : null}
+      {activeFloatingCard && typeof document !== "undefined" ? createPortal(
+        <div
+          className={`unified-card-actions-row library-option-a-card-actions-row compact-art-ownership-row library-option-a-floating-card-controls ${floatingControlsPosition?.placement === "above" ? "is-above" : "is-below"}`}
+          ref={floatingControlsRef}
+          style={floatingControlsStyle}
+          onBlur={handleFloatingControlsBlur}
+          onFocus={clearFloatingControlsCloseTimer}
+          onMouseEnter={clearFloatingControlsCloseTimer}
+          onMouseLeave={() => scheduleFloatingControlsClose()}
+        >
+          {renderCardFloatingControlsContent(activeFloatingCard)}
+        </div>,
+        document.body
       ) : null}
       </div>
     </section>

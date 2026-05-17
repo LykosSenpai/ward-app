@@ -39,10 +39,13 @@ DATABASE_URL=postgres://ward_app:ward_app_dev@localhost:5432/ward_app
 CLIENT_ORIGIN=http://localhost:5173
 SESSION_SECRET=ward-local-dev-session-secret-change-before-hosting
 ENABLE_DEV_TOOLS=true
+SKIP_LOCAL_EMAIL_VERIFICATION=true
+SKIP_LOCAL_EMAIL_LOGIN_CODE=true
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 DISCORD_REDIRECT_URI=http://localhost:3001/api/auth/discord/callback
 VITE_API_BASE_URL=http://localhost:3001
+VITE_SKIP_LOCAL_EMAIL_VERIFICATION=true
 VITE_ENABLE_DEV_TOOLS=true
 ```
 

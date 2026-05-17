@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { hasCompletedEmailVerification } from "../authVerification";
 import type { AuthUser, UserProfile } from "../clientTypes";
 import { API_BASE_URL } from "../config";
 import { PasswordInput } from "./ui/PasswordInput";
@@ -325,7 +326,8 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
     }
   }
 
-  const emailStatus = profile?.emailVerifiedAt ? "Verified" : "Not verified";
+  const hasVerifiedEmail = hasCompletedEmailVerification(profile);
+  const emailStatus = hasVerifiedEmail ? "Verified" : "Not verified";
   const twoFactorStatus = profile?.twoFactorEnabled ? "Enabled" : "Off";
   const discordStatus = profile?.discord ? "Connected" : discordAuthEnabled ? "Not connected" : "Disabled";
   const collectionStatus = `${profile?.ownedUniqueCards ?? 0} unique / ${profile?.ownedTotalCopies ?? 0} total`;
@@ -348,7 +350,7 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
           <span>Account</span>
           <strong>{profile?.username ?? "Loading..."}</strong>
         </div>
-        <div className={profile?.emailVerifiedAt ? "profile-summary-chip is-good" : "profile-summary-chip is-warning"}>
+        <div className={hasVerifiedEmail ? "profile-summary-chip is-good" : "profile-summary-chip is-warning"}>
           <span>Email</span>
           <strong>{emailStatus}</strong>
         </div>
@@ -371,7 +373,7 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
           <section className="profile-card profile-card-account">
             <div className="profile-card-header">
               <h3>Account</h3>
-              <span className={profile?.emailVerifiedAt ? "profile-status-pill is-good" : "profile-status-pill is-warning"}>
+              <span className={hasVerifiedEmail ? "profile-status-pill is-good" : "profile-status-pill is-warning"}>
                 {emailStatus}
               </span>
             </div>
@@ -396,7 +398,7 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
 
               <div className="profile-action-row profile-action-row-stretch">
                 <button disabled={busy}>{busy ? "Saving..." : "Save Profile"}</button>
-                {!profile?.emailVerifiedAt && (
+                {!hasVerifiedEmail && (
                   <button type="button" onClick={() => void sendEmailVerification()} disabled={busy || !profile}>
                     {busy ? "Sending..." : "Send Verification Email"}
                   </button>

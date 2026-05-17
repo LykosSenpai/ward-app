@@ -31,6 +31,7 @@ type CardImagePreviewProps = {
   card: CardLibraryCardSummary;
   selectedArtKey?: CardArtKey;
   holoIntensity?: number;
+  hideInlineControls?: boolean;
   onSelectedArtKeyChange?: (artKey: CardArtKey) => void;
 };
 
@@ -105,7 +106,7 @@ export function coerceCardArtKeyForCard(card: Pick<CardLibraryCardSummary, "card
   return isHoloArtKey(artKey) ? "holo" : "default";
 }
 
-function getBaseArtOptionsForCard(card: Pick<CardLibraryCardSummary, "cardType">): CardArtOption[] {
+export function getBaseArtOptionsForCard(card: Pick<CardLibraryCardSummary, "cardType">): CardArtOption[] {
   return ACTIVE_CARD_ART_OPTIONS.filter(option =>
     option.key === "default" || (option.key === "zero-art" && cardSupportsZeroArt(card))
   );
@@ -135,7 +136,7 @@ export function isHoloArtKey(artKey: CardArtKey): boolean {
   return artKey === "holo" || artKey === "zero-art-holo";
 }
 
-function composeArtKey(baseArtKey: "default" | "zero-art", holoEnabled: boolean): CardArtKey {
+export function composeArtKey(baseArtKey: "default" | "zero-art", holoEnabled: boolean): CardArtKey {
   if (baseArtKey === "zero-art") {
     return holoEnabled ? "zero-art-holo" : "zero-art";
   }
@@ -266,26 +267,28 @@ function ExpandedCardImage({
         </div>
       )}
 
-      <label className="card-art-select-label expanded-card-art-select-label">
-        Art / Card Type
-        <select
-          value={getBaseArtKey(effectiveActiveArtKey)}
-          onChange={event => onArtChange(composeArtKey(event.target.value as "default" | "zero-art", isHoloArtKey(effectiveActiveArtKey)))}
-        >
-          {getBaseArtOptionsForCard(card).map(option => (
-            <option value={option.key} key={option.key}>{option.label}</option>
-          ))}
-        </select>
-      </label>
+      <div className="expanded-card-art-controls" aria-label="Expanded card art controls">
+        <label className="card-art-select-label expanded-card-art-select-label">
+          Art / Card Type
+          <select
+            value={getBaseArtKey(effectiveActiveArtKey)}
+            onChange={event => onArtChange(composeArtKey(event.target.value as "default" | "zero-art", isHoloArtKey(effectiveActiveArtKey)))}
+          >
+            {getBaseArtOptionsForCard(card).map(option => (
+              <option value={option.key} key={option.key}>{option.label}</option>
+            ))}
+          </select>
+        </label>
 
-      <label className="card-art-select-label expanded-card-art-select-label">
-        <input
-          type="checkbox"
-          checked={isHoloArtKey(effectiveActiveArtKey)}
-          onChange={event => onArtChange(composeArtKey(getBaseArtKey(effectiveActiveArtKey), event.target.checked))}
-        />
-        {" "}Holo Finish
-      </label>
+        <label className="expanded-card-holo-toggle">
+          <input
+            type="checkbox"
+            checked={isHoloArtKey(effectiveActiveArtKey)}
+            onChange={event => onArtChange(composeArtKey(getBaseArtKey(effectiveActiveArtKey), event.target.checked))}
+          />
+          <span>Holo Finish</span>
+        </label>
+      </div>
       <small className="card-art-select-label expanded-card-art-select-label">Variant: {getCardArtLabel(activeArtKey)}</small>
     </div>
   );
@@ -328,7 +331,7 @@ export function CardImageThumbnail({ card, className, artKey = "default", holoIn
   );
 }
 
-export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, onSelectedArtKeyChange }: CardImagePreviewProps) {
+export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, hideInlineControls = false, onSelectedArtKeyChange }: CardImagePreviewProps) {
   const [internalSelectedArtKey, setInternalSelectedArtKey] = useState<CardArtKey>("default");
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -407,27 +410,31 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, o
         )}
       </div>
 
-      <label className="card-art-select-label">
-        Art / Card Type
-        <select
-          value={baseArtKey}
-          onChange={event => handleArtChange(composeArtKey(event.target.value as "default" | "zero-art", holoEnabled))}
-        >
-          {getBaseArtOptionsForCard(card).map(option => (
-            <option value={option.key} key={option.key}>{option.label}</option>
-          ))}
-        </select>
-      </label>
+      {!hideInlineControls ? (
+        <>
+          <label className="card-art-select-label">
+            Art / Card Type
+            <select
+              value={baseArtKey}
+              onChange={event => handleArtChange(composeArtKey(event.target.value as "default" | "zero-art", holoEnabled))}
+            >
+              {getBaseArtOptionsForCard(card).map(option => (
+                <option value={option.key} key={option.key}>{option.label}</option>
+              ))}
+            </select>
+          </label>
 
-      <label className="card-art-select-label card-art-holo-label">
-        <input
-          type="checkbox"
-          checked={holoEnabled}
-          onChange={event => handleArtChange(composeArtKey(baseArtKey, event.target.checked))}
-        />
-        {" "}Holo Finish
-      </label>
-      <small className="card-art-select-label">Variant: {selectedArtLabel}</small>
+          <label className="card-art-select-label card-art-holo-label">
+            <input
+              type="checkbox"
+              checked={holoEnabled}
+              onChange={event => handleArtChange(composeArtKey(baseArtKey, event.target.checked))}
+            />
+            {" "}Holo Finish
+          </label>
+          <small className="card-art-select-label">Variant: {selectedArtLabel}</small>
+        </>
+      ) : null}
 
       {previewOpen && displayImageSrc && (
         <ModalPanel title={`${card.name}  -  ${selectedArtLabel}`} onClose={() => setPreviewOpen(false)}>

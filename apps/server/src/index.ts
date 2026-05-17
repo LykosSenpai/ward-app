@@ -196,6 +196,7 @@ const CLIENT_DIST_DIR = path.join(ROOT_DIR, "apps", "client", "dist");
 const CLIENT_CARD_IMAGES_DIR = path.join(CLIENT_DIST_DIR, "card-images");
 const isProduction = process.env.NODE_ENV === "production";
 const ENABLE_DEV_TOOLS = process.env.ENABLE_DEV_TOOLS === "true" || (!isProduction && process.env.ENABLE_DEV_TOOLS !== "false");
+const SKIP_LOCAL_EMAIL_VERIFICATION = !isProduction && !isDisabledEnvFlag(process.env.SKIP_LOCAL_EMAIL_VERIFICATION);
 const SKIP_LOCAL_EMAIL_LOGIN_CODE = !isProduction &&
   (process.env.SKIP_LOCAL_EMAIL_LOGIN_CODE === "true" || process.env.SKIP_LOCAL_EMAIL_LOGIN_CODE === "1");
 const DEV_SOCKET_EVENTS = new Set([
@@ -300,7 +301,12 @@ function canUserUseAdminTools(user: AuthUser | null | undefined): boolean {
 
 function hasCompletedEmailVerification(user: AuthUser | null | undefined): boolean {
   if (!user) return false;
-  return Boolean(user.emailVerifiedAt) || isSyntheticDiscordEmail(user.email);
+  return SKIP_LOCAL_EMAIL_VERIFICATION || Boolean(user.emailVerifiedAt) || isSyntheticDiscordEmail(user.email);
+}
+
+function isDisabledEnvFlag(value: unknown): boolean {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized === "false" || normalized === "0";
 }
 
 function isSyntheticDiscordEmail(email: string | undefined): boolean {
@@ -457,6 +463,13 @@ async function sendEmailVerificationMessage(userId: string, email: string, displ
       "This link expires in 24 hours."
     ].join("\n")
   });
+}
+
+function queueEmailVerificationMessage(userId: string, email: string | undefined, displayName: string): void {
+  if (SKIP_LOCAL_EMAIL_VERIFICATION || !email) return;
+
+  void sendEmailVerificationMessage(userId, email, displayName)
+    .catch(error => console.error(error instanceof Error ? error.message : error));
 }
 
 async function sendPasswordResetMessage(userId: string, email: string, displayName: string): Promise<void> {
@@ -2615,8 +2628,7 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
 
     const profile = await getUserProfile(user.id);
     if (!existingUser && !hasCompletedEmailVerification(profile)) {
-      void sendEmailVerificationMessage(profile.id, profile.email, profile.displayName)
-        .catch(error => console.error(error instanceof Error ? error.message : error));
+      queueEmailVerificationMessage(profile.id, profile.email, profile.displayName);
     }
 
     req.session.user = profile;
@@ -2640,8 +2652,7 @@ app.post("/api/auth/register", authRateLimit, async (req, res) => {
     const profile = await getUserProfile(user.id);
     req.session.user = profile;
     await trustDevice(profile.id, req, res);
-    void sendEmailVerificationMessage(profile.id, profile.email, profile.displayName)
-      .catch(error => console.error(error instanceof Error ? error.message : error));
+    queueEmailVerificationMessage(profile.id, profile.email, profile.displayName);
     res.status(201).json({ user: req.session.user });
   } catch (error) {
     res.status(400).json({
@@ -2832,8 +2843,7 @@ app.patch("/api/profile", async (req, res) => {
     req.session.user = profile;
 
     if (currentProfile.email !== profile.email) {
-      void sendEmailVerificationMessage(profile.id, profile.email, profile.displayName)
-        .catch(error => console.error(error instanceof Error ? error.message : error));
+      queueEmailVerificationMessage(profile.id, profile.email, profile.displayName);
     }
 
     res.json({ profile, user: req.session.user });
@@ -2872,6 +2882,12 @@ app.post("/api/profile/email-verification/send", passwordRateLimit, async (req, 
     }
 
     const profile = await getUserProfile(req.session.user.id);
+    if (hasCompletedEmailVerification(profile)) {
+      req.session.user = profile;
+      res.json({ ok: true });
+      return;
+    }
+
     await sendEmailVerificationMessage(profile.id, profile.email, profile.displayName);
     res.json({ ok: true });
   } catch (error) {
