@@ -1299,7 +1299,7 @@ export function CardLibraryPanel({
 
                 return (
                   <article
-                    className={`library-card-entry unified-library-card-entry library-option-a-card-entry ${!canAdd ? "cannot-add" : ""}`}
+                    className={`library-card-entry unified-library-card-entry library-option-a-card-entry ${!canAdd ? "cannot-add" : ""} ${activeFloatingCardId === card.id ? "is-floating-active" : ""}`}
                     draggable={canAdd}
                     key={`${card.packId}-${card.id}`}
                     onBlur={event => {

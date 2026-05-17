@@ -6128,7 +6128,8 @@
 }
 
 .library-option-a-card-entry:hover,
-.library-option-a-card-entry:focus-within {
+.library-option-a-card-entry:focus-within,
+.library-option-a-card-entry.is-floating-active {
   z-index: 60;
 }
 
@@ -7446,6 +7447,12 @@ code,
   --ward-green: #5de19a;
   --ward-red: #ff6b7a;
   --ward-purple: #b894ff;
+  --ward-card-hover-border: rgba(216, 180, 254, 0.78);
+  --ward-card-hover-surface: rgba(44, 21, 78, 0.9);
+  --ward-card-hover-glow: rgba(168, 85, 247, 0.36);
+  --ward-card-hover-soft: rgba(192, 132, 252, 0.18);
+  --ward-card-menu-text: #f5edff;
+  --ward-card-menu-muted: #dec9ff;
   --ward-radius: 8px;
   --ward-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
   --ward-shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.18);
@@ -7766,6 +7773,118 @@ textarea {
 .pack-chip:hover,
 .available-effect-row:hover {
   border-color: var(--ward-border-strong);
+}
+
+.library-option-a-card-entry:hover,
+.library-option-a-card-entry:focus-within,
+.library-option-a-card-entry.is-floating-active {
+  border-color: var(--ward-card-hover-border);
+  background:
+    radial-gradient(circle at 50% 0%, var(--ward-card-hover-soft), transparent 70%),
+    linear-gradient(180deg, rgba(50, 25, 88, 0.46), rgba(17, 13, 30, 0.9));
+  box-shadow:
+    0 0 0 1px rgba(216, 180, 254, 0.34),
+    0 0 28px var(--ward-card-hover-glow),
+    0 16px 34px rgba(0, 0, 0, 0.34);
+  transform: translateY(-2px);
+}
+
+.library-option-a-card-entry:hover .library-option-a-card-compact-strip,
+.library-option-a-card-entry:focus-within .library-option-a-card-compact-strip,
+.library-option-a-card-entry.is-floating-active .library-option-a-card-compact-strip {
+  background: rgba(70, 30, 118, 0.72);
+  border-color: rgba(216, 180, 254, 0.62);
+  color: var(--ward-card-menu-text);
+  opacity: 0.96;
+}
+
+.library-option-a-card-entry:hover .library-option-a-card-compact-strip span:last-child,
+.library-option-a-card-entry:focus-within .library-option-a-card-compact-strip span:last-child,
+.library-option-a-card-entry.is-floating-active .library-option-a-card-compact-strip span:last-child {
+  color: var(--ward-card-menu-text);
+}
+
+.library-option-a-floating-card-controls {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(216, 180, 254, 0.16), transparent 58%),
+    linear-gradient(180deg, rgba(48, 25, 82, 0.98), rgba(18, 13, 31, 0.98));
+  border-color: var(--ward-card-hover-border);
+  box-shadow:
+    0 0 0 1px rgba(216, 180, 254, 0.24),
+    0 0 34px var(--ward-card-hover-glow),
+    0 18px 42px rgba(0, 0, 0, 0.52);
+  color: var(--ward-card-menu-text);
+}
+
+.library-option-a-card-entry .library-option-a-inline-card-controls {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(216, 180, 254, 0.14), transparent 58%),
+    linear-gradient(180deg, rgba(48, 25, 82, 0.96), rgba(18, 13, 31, 0.96));
+  border-color: rgba(216, 180, 254, 0.56);
+  color: var(--ward-card-menu-text);
+}
+
+.library-option-a-floating-card-controls .library-option-a-art-control,
+.library-option-a-floating-card-controls .library-option-a-holo-toggle,
+.library-option-a-floating-card-controls .library-option-a-limit-editor span,
+.library-option-a-card-entry .library-option-a-inline-card-controls .library-option-a-art-control,
+.library-option-a-card-entry .library-option-a-inline-card-controls .library-option-a-holo-toggle,
+.library-option-a-card-entry .library-option-a-inline-card-controls .library-option-a-limit-editor span,
+.library-option-a-floating-card-controls.library-option-a-card-actions-row .art-owned-stepper span,
+.library-option-a-card-entry .library-option-a-inline-card-controls .art-owned-stepper span {
+  color: var(--ward-card-menu-muted);
+}
+
+.library-option-a-floating-card-controls .library-option-a-holo-toggle,
+.library-option-a-card-entry .library-option-a-inline-card-controls .library-option-a-holo-toggle,
+.library-option-a-floating-card-controls .art-owned-stepper,
+.library-option-a-card-entry .library-option-a-inline-card-controls .art-owned-stepper {
+  background: rgba(109, 40, 217, 0.22);
+  border: 1px solid rgba(216, 180, 254, 0.42);
+}
+
+.library-option-a-floating-card-controls select,
+.library-option-a-floating-card-controls input:not([type="checkbox"]),
+.library-option-a-card-entry .library-option-a-inline-card-controls select,
+.library-option-a-card-entry .library-option-a-inline-card-controls input:not([type="checkbox"]) {
+  background: rgba(18, 13, 31, 0.94);
+  border-color: rgba(216, 180, 254, 0.42);
+  color: var(--ward-card-menu-text);
+}
+
+.library-option-a-floating-card-controls select:focus,
+.library-option-a-floating-card-controls input:not([type="checkbox"]):focus,
+.library-option-a-card-entry .library-option-a-inline-card-controls select:focus,
+.library-option-a-card-entry .library-option-a-inline-card-controls input:not([type="checkbox"]):focus {
+  border-color: rgba(216, 180, 254, 0.82);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.24);
+}
+
+.library-option-a-floating-card-controls input[type="checkbox"],
+.library-option-a-card-entry .library-option-a-inline-card-controls input[type="checkbox"] {
+  accent-color: #a855f7;
+}
+
+.library-option-a-floating-card-controls .limit-badge,
+.library-option-a-card-entry .library-option-a-inline-card-controls .limit-badge {
+  background: rgba(109, 40, 217, 0.24);
+  border-color: rgba(216, 180, 254, 0.5);
+  color: var(--ward-card-menu-text);
+}
+
+.library-option-a-floating-card-controls button:not(:disabled),
+.library-option-a-card-entry .library-option-a-inline-card-controls button:not(:disabled) {
+  background: linear-gradient(135deg, #c084fc, #8b5cf6);
+  border-color: rgba(233, 213, 255, 0.7);
+  box-shadow: 0 8px 18px rgba(88, 28, 135, 0.34);
+  color: #fffaff;
+}
+
+.library-option-a-floating-card-controls button:not(:disabled):hover,
+.library-option-a-card-entry .library-option-a-inline-card-controls button:not(:disabled):hover {
+  background: linear-gradient(135deg, #d8b4fe, #a855f7);
+  border-color: rgba(245, 208, 254, 0.9);
+  box-shadow: 0 10px 24px rgba(168, 85, 247, 0.36);
 }
 
 .card,
