@@ -328,7 +328,23 @@ export function getEffectiveCreatureStats(
     modifier: 0
   };
 
+  const countedPermanentModifiers = new Set<string>();
+
   for (const modifier of modifiers) {
+    if (modifier.durationType === "PERMANENT_UNTIL_SOURCE_REMOVED") {
+      const key = [
+        modifier.sourceCardInstanceId,
+        modifier.sourceEffectId,
+        modifier.stat
+      ].join(":");
+
+      if (countedPermanentModifiers.has(key)) {
+        continue;
+      }
+
+      countedPermanentModifiers.add(key);
+    }
+
     totals[modifier.stat] += modifier.delta;
   }
 

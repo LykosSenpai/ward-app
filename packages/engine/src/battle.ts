@@ -226,6 +226,16 @@ function modifiersAreEqual(
     (left.note ?? "") === (right.note ?? "");
 }
 
+function speedModifiersAreEqual(
+  left: ManualBattleSpeedModifiers,
+  right: ManualBattleSpeedModifiers
+): boolean {
+  return left.attackingSpeedDelta === right.attackingSpeedDelta &&
+    left.defendingSpeedDelta === right.defendingSpeedDelta &&
+    left.override === right.override &&
+    (left.note ?? "") === (right.note ?? "");
+}
+
 function cloneState(state: MatchState): MatchState {
   return JSON.parse(JSON.stringify(state)) as MatchState;
 }
@@ -1948,6 +1958,12 @@ export function runManualBattleSpeedCheck(
     session.declaredDefender.creatureInstanceId
   );
 
+  const previousSuggestedEffects = session.suggestedEffects ?? [];
+  const previousAutoSpeedModifiers = normalizeSpeedModifiers(
+    getSuggestedSpeedModifiers(previousSuggestedEffects)
+  );
+  const currentSpeedModifiers = normalizeSpeedModifiers(session.speedModifiers);
+
   session.suggestedEffects = collectBattleEffectSuggestions(nextState, session);
 
   runBattleTimingTriggers(nextState, {
@@ -1996,7 +2012,12 @@ export function runManualBattleSpeedCheck(
 
   const attackingStats = getEffectiveCreatureStats(nextState, attackingCreature.card);
   const defendingStats = getEffectiveCreatureStats(nextState, defendingCreature.card);
-  const speedModifiers = normalizeSpeedModifiers(session.speedModifiers);
+  const suggestedSpeedModifiers = normalizeSpeedModifiers(
+    getSuggestedSpeedModifiers(session.suggestedEffects)
+  );
+  const speedModifiers = speedModifiersAreEqual(currentSpeedModifiers, previousAutoSpeedModifiers)
+    ? suggestedSpeedModifiers
+    : currentSpeedModifiers;
   const attackingEffectiveSpeed = getEffectiveSpeedWithModifier(
     attackingStats.speed,
     speedModifiers.attackingSpeedDelta
@@ -2433,6 +2454,28 @@ export function rollManualBattleHit(
     strike.defender.playerId,
     strike.defender.creatureInstanceId
   );
+
+  const previousSuggestedEffects = session.suggestedEffects ?? [];
+  const previousAutoStrikeModifiers = normalizeStrikeModifiers(
+    getSuggestedStrikeModifiers(
+      previousSuggestedEffects,
+      strike.attacker.creatureInstanceId,
+      strike.defender.creatureInstanceId
+    )
+  );
+  const currentStrikeModifiers = normalizeStrikeModifiers(strike.modifiers);
+  session.suggestedEffects = collectBattleEffectSuggestions(nextState, session);
+
+  if (modifiersAreEqual(currentStrikeModifiers, previousAutoStrikeModifiers)) {
+    strike.modifiers = normalizeStrikeModifiers(
+      getSuggestedStrikeModifiers(
+        session.suggestedEffects,
+        strike.attacker.creatureInstanceId,
+        strike.defender.creatureInstanceId
+      )
+    );
+  }
+
   runBattleTimingTriggers(nextState, {
     timing: "BEFORE_HIT_ROLL",
     battleSession: session,
@@ -2711,6 +2754,28 @@ export function rollManualBattleDamage(
     strike.attacker.playerId,
     strike.attacker.creatureInstanceId
   );
+
+  const previousSuggestedEffects = session.suggestedEffects ?? [];
+  const previousAutoStrikeModifiers = normalizeStrikeModifiers(
+    getSuggestedStrikeModifiers(
+      previousSuggestedEffects,
+      strike.attacker.creatureInstanceId,
+      strike.defender.creatureInstanceId
+    )
+  );
+  const currentStrikeModifiers = normalizeStrikeModifiers(strike.modifiers);
+  session.suggestedEffects = collectBattleEffectSuggestions(nextState, session);
+
+  if (modifiersAreEqual(currentStrikeModifiers, previousAutoStrikeModifiers)) {
+    strike.modifiers = normalizeStrikeModifiers(
+      getSuggestedStrikeModifiers(
+        session.suggestedEffects,
+        strike.attacker.creatureInstanceId,
+        strike.defender.creatureInstanceId
+      )
+    );
+  }
+
   runBattleTimingTriggers(nextState, {
     timing: "BEFORE_DAMAGE_ROLL",
     battleSession: session,
@@ -3003,8 +3068,23 @@ export function rollPendingEffectRoll(
   effectRollSessionId: string
 ): MatchState {
   const nextState = cloneState(state);
-  rollPendingEffectRollInPlace(nextState, effectRollSessionId, addEvent);
+  const session = rollPendingEffectRollInPlace(nextState, effectRollSessionId, addEvent);
+
+  if (shouldAutoApplyStandaloneStatusTickEffectRoll(session)) {
+    applyPendingEffectRollStatusInPlace(nextState, effectRollSessionId, addEvent);
+  }
+
   return nextState;
+}
+
+function shouldAutoApplyStandaloneStatusTickEffectRoll(session: ReturnType<typeof rollPendingEffectRollInPlace>): boolean {
+  if (session.linkedBattleSessionId || session.linkedStrikeId) {
+    return false;
+  }
+
+  return normalizeEffectToken(session.actionType) === "RESOLVE_STATUS_TICK" ||
+    normalizeEffectToken(session.onSuccessActionType) === "REMOVE_STATUS" ||
+    Boolean(session.targetStatusId);
 }
 
 function continueBattleAfterPendingEffectRoll(

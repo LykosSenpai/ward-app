@@ -37,7 +37,7 @@
           "type": "TEXT"
         },
         "damageType": "",
-        "sourceLinked": false,
+        "sourceLinked": true,
         "usesAnchoring": false,
         "roundingMode": null,
         "stackRule": null,
@@ -88,7 +88,7 @@
           "type": "TEXT"
         },
         "damageType": "",
-        "sourceLinked": false,
+        "sourceLinked": true,
         "usesAnchoring": false,
         "roundingMode": null,
         "stackRule": null,

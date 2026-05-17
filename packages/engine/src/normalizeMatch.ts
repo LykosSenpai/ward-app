@@ -3,9 +3,12 @@ import type {
   ActiveEffectInstance,
   ActiveRecurringCreatureEffect,
   ActiveStatModifier,
+  BattleEffectSuggestion,
   CardInstance,
   CannotInflictAttackDamageBattlePolicy,
   DevForcedRoll,
+  ManualBattleSpeedModifiers,
+  ManualBattleStrikeModifiers,
   MatchState,
   PendingEffectRollSession,
   PlayerField,
@@ -14,6 +17,11 @@ import type {
 } from "@ward/shared";
 import { calculateCemeteryCreatureHp } from "./cemetery.js";
 import { normalizeAllActiveEffectInstances } from "./activeEffectInstances.js";
+import {
+  collectBattleEffectSuggestions,
+  getSuggestedSpeedModifiers,
+  getSuggestedStrikeModifiers
+} from "./battleEffectAdapter.js";
 
 type PartialRecord = Record<string, unknown>;
 
@@ -78,6 +86,31 @@ function normalizeActiveStatModifier(modifier: unknown): ActiveStatModifier | un
   };
 }
 
+function dedupeActiveStatModifiers(modifiers: ActiveStatModifier[]): ActiveStatModifier[] {
+  const permanentBySourceEffectStat = new Map<string, ActiveStatModifier>();
+  const result: ActiveStatModifier[] = [];
+
+  for (const modifier of modifiers) {
+    if (modifier.durationType !== "PERMANENT_UNTIL_SOURCE_REMOVED") {
+      result.push(modifier);
+      continue;
+    }
+
+    const key = [
+      modifier.sourceCardInstanceId,
+      modifier.sourceEffectId,
+      modifier.stat
+    ].join(":");
+
+    if (!permanentBySourceEffectStat.has(key)) {
+      permanentBySourceEffectStat.set(key, modifier);
+      result.push(modifier);
+    }
+  }
+
+  return result;
+}
+
 function normalizeRecurringTickTimingValue(tickTiming: string | undefined): ActiveRecurringCreatureEffect["tickTiming"] {
   if (tickTiming === "BEGINNING_OF_TURN") return "BEGINNING_OF_TURN";
   if (tickTiming === "BEGINNING_OF_COMBAT_PHASE") return "BEGINNING_OF_COMBAT_PHASE";
@@ -120,6 +153,7 @@ function normalizeCardInstance(card: CardInstance): CardInstance {
   )
     .map(normalizeActiveStatModifier)
     .filter((modifier): modifier is ActiveStatModifier => !!modifier);
+  card.activeStatModifiers = dedupeActiveStatModifiers(card.activeStatModifiers);
 
   card.activeStatuses = asArray<ActiveCreatureStatus>(card.activeStatuses).filter(
     status => !!status.id && !!status.sourceEffectId && !!status.sourceCardInstanceId
@@ -270,47 +304,83 @@ function normalizePendingEffectTargetPrompt(match: MatchState): void {
   }
 }
 
+function normalizeSpeedModifiersForHydration(
+  modifiers?: Partial<ManualBattleSpeedModifiers>
+): ManualBattleSpeedModifiers {
+  return {
+    attackingSpeedDelta: Number(modifiers?.attackingSpeedDelta ?? 0),
+    defendingSpeedDelta: Number(modifiers?.defendingSpeedDelta ?? 0),
+    override:
+      modifiers?.override === "ATTACKER_FIRST" ||
+      modifiers?.override === "DEFENDER_FIRST"
+        ? modifiers.override
+        : "AUTO",
+    note: typeof modifiers?.note === "string" && modifiers.note.trim()
+      ? modifiers.note.trim().slice(0, 500)
+      : undefined
+  };
+}
+
+function normalizeStrikeModifiersForHydration(
+  modifiers?: Partial<ManualBattleStrikeModifiers>
+): ManualBattleStrikeModifiers {
+  return {
+    hitDiceDelta: Number(modifiers?.hitDiceDelta ?? 0),
+    hitDiceLimit: Number.isFinite(Number(modifiers?.hitDiceLimit))
+      ? Math.max(1, Math.trunc(Number(modifiers?.hitDiceLimit)))
+      : undefined,
+    hitFlatBonus: Number(modifiers?.hitFlatBonus ?? 0),
+    hitRollMultiplier: Number(modifiers?.hitRollMultiplier ?? 1),
+    forceHitResult:
+      modifiers?.forceHitResult === "FORCE_HIT" ||
+      modifiers?.forceHitResult === "FORCE_MISS"
+        ? modifiers.forceHitResult
+        : "AUTO",
+    damageDiceDelta: Number(modifiers?.damageDiceDelta ?? 0),
+    damageFlatBonus: Number(modifiers?.damageFlatBonus ?? 0),
+    damageMultiplier: Number(modifiers?.damageMultiplier ?? 1),
+    preventAttackDamage: Boolean(modifiers?.preventAttackDamage),
+    note: typeof modifiers?.note === "string" && modifiers.note.trim()
+      ? modifiers.note.trim().slice(0, 500)
+      : undefined
+  };
+}
+
+function speedModifiersEqual(left: ManualBattleSpeedModifiers, right: ManualBattleSpeedModifiers): boolean {
+  return left.attackingSpeedDelta === right.attackingSpeedDelta &&
+    left.defendingSpeedDelta === right.defendingSpeedDelta &&
+    left.override === right.override &&
+    (left.note ?? "") === (right.note ?? "");
+}
+
+function strikeModifiersEqual(left: ManualBattleStrikeModifiers, right: ManualBattleStrikeModifiers): boolean {
+  return left.hitDiceDelta === right.hitDiceDelta &&
+    left.hitDiceLimit === right.hitDiceLimit &&
+    left.hitFlatBonus === right.hitFlatBonus &&
+    left.hitRollMultiplier === right.hitRollMultiplier &&
+    left.forceHitResult === right.forceHitResult &&
+    left.damageDiceDelta === right.damageDiceDelta &&
+    left.damageFlatBonus === right.damageFlatBonus &&
+    left.damageMultiplier === right.damageMultiplier &&
+    left.preventAttackDamage === right.preventAttackDamage &&
+    (left.note ?? "") === (right.note ?? "");
+}
+
 
 function normalizePendingBattle(match: MatchState): void {
   if (!match.pendingBattle) {
     return;
   }
 
+  const previousSuggestedEffects = asArray<BattleEffectSuggestion>(match.pendingBattle.suggestedEffects);
+
   match.pendingBattle.speedTieRolls = asArray(match.pendingBattle.speedTieRolls);
   match.pendingBattle.strikes = asArray(match.pendingBattle.strikes);
-  match.pendingBattle.suggestedEffects = asArray(match.pendingBattle.suggestedEffects);
-  match.pendingBattle.speedModifiers = {
-    attackingSpeedDelta: Number(match.pendingBattle.speedModifiers?.attackingSpeedDelta ?? 0),
-    defendingSpeedDelta: Number(match.pendingBattle.speedModifiers?.defendingSpeedDelta ?? 0),
-    override:
-      match.pendingBattle.speedModifiers?.override === "ATTACKER_FIRST" ||
-      match.pendingBattle.speedModifiers?.override === "DEFENDER_FIRST"
-        ? match.pendingBattle.speedModifiers.override
-        : "AUTO",
-    note: typeof match.pendingBattle.speedModifiers?.note === "string"
-      ? match.pendingBattle.speedModifiers.note
-      : undefined
-  };
+  match.pendingBattle.suggestedEffects = previousSuggestedEffects;
+  match.pendingBattle.speedModifiers = normalizeSpeedModifiersForHydration(match.pendingBattle.speedModifiers);
   match.pendingBattle.strikes = match.pendingBattle.strikes.map(strike => ({
     ...strike,
-    modifiers: {
-      hitDiceDelta: Number(strike.modifiers?.hitDiceDelta ?? 0),
-      hitDiceLimit: Number.isFinite(Number(strike.modifiers?.hitDiceLimit))
-        ? Math.max(1, Math.trunc(Number(strike.modifiers?.hitDiceLimit)))
-        : undefined,
-      hitFlatBonus: Number(strike.modifiers?.hitFlatBonus ?? 0),
-      hitRollMultiplier: Number(strike.modifiers?.hitRollMultiplier ?? 1),
-      forceHitResult:
-        strike.modifiers?.forceHitResult === "FORCE_HIT" ||
-        strike.modifiers?.forceHitResult === "FORCE_MISS"
-          ? strike.modifiers.forceHitResult
-          : "AUTO",
-      damageDiceDelta: Number(strike.modifiers?.damageDiceDelta ?? 0),
-      damageFlatBonus: Number(strike.modifiers?.damageFlatBonus ?? 0),
-      damageMultiplier: Number(strike.modifiers?.damageMultiplier ?? 1),
-      preventAttackDamage: Boolean(strike.modifiers?.preventAttackDamage),
-      note: typeof strike.modifiers?.note === "string" ? strike.modifiers.note : undefined
-    }
+    modifiers: normalizeStrikeModifiersForHydration(strike.modifiers)
   }));
 
   if (match.pendingBattle.status === "COMPLETE") {
@@ -319,7 +389,51 @@ function normalizePendingBattle(match: MatchState): void {
 
   if (!match.pendingBattle.id || !match.pendingBattle.declaredAttacker || !match.pendingBattle.declaredDefender) {
     match.pendingBattle = undefined;
+    return;
   }
+
+  const recalculatedSuggestedEffects = collectBattleEffectSuggestions(match, match.pendingBattle);
+
+  if (match.pendingBattle.status === "AWAITING_SPEED_CHECK") {
+    const previousAutoSpeedModifiers = normalizeSpeedModifiersForHydration(
+      getSuggestedSpeedModifiers(previousSuggestedEffects)
+    );
+
+    if (speedModifiersEqual(match.pendingBattle.speedModifiers, previousAutoSpeedModifiers)) {
+      match.pendingBattle.speedModifiers = normalizeSpeedModifiersForHydration(
+        getSuggestedSpeedModifiers(recalculatedSuggestedEffects)
+      );
+    }
+  }
+
+  match.pendingBattle.strikes = match.pendingBattle.strikes.map(strike => {
+    if (strike.status === "RESOLVED") return strike;
+
+    const previousAutoStrikeModifiers = normalizeStrikeModifiersForHydration(
+      getSuggestedStrikeModifiers(
+        previousSuggestedEffects,
+        strike.attacker.creatureInstanceId,
+        strike.defender.creatureInstanceId
+      )
+    );
+
+    if (!strikeModifiersEqual(strike.modifiers, previousAutoStrikeModifiers)) {
+      return strike;
+    }
+
+    return {
+      ...strike,
+      modifiers: normalizeStrikeModifiersForHydration(
+        getSuggestedStrikeModifiers(
+          recalculatedSuggestedEffects,
+          strike.attacker.creatureInstanceId,
+          strike.defender.creatureInstanceId
+        )
+      )
+    };
+  });
+
+  match.pendingBattle.suggestedEffects = recalculatedSuggestedEffects;
 }
 
 

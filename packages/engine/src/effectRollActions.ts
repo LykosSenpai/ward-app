@@ -243,13 +243,32 @@ function parseSuccessRanges(effect: WardEngineEffect): EffectRollSuccessRange[] 
   return [{ min: 4, max: 6 }];
 }
 
-function firstPositiveNumber(effect: WardEngineEffect): number | undefined {
-  const explicit = Number(effect.params?.amount ?? effect.params?.damageAmount ?? effect.params?.healAmount);
+function statusTickFailureDamageAmount(effect: WardEngineEffect): number | undefined {
+  const params = (effect.params ?? {}) as Record<string, unknown>;
+  const onFailure = (params.onFailure ?? {}) as Record<string, unknown>;
+  const explicit = Number(
+    onFailure.damageAmount ??
+    onFailure.amount ??
+    params.onFailureDamageAmount ??
+    params.damageAmount ??
+    params.amount
+  );
   if (Number.isFinite(explicit) && explicit > 0) return Math.trunc(explicit);
 
-  const match = effectText(effect).match(/(\d+)/);
-  const value = Number(match?.[1]);
-  return Number.isFinite(value) && value > 0 ? Math.trunc(value) : undefined;
+  const text = effectText(effect).toLowerCase();
+  const failureMatch = text.match(/(?:otherwise|else|fail(?:s|ed|ure)?|unsuccessful)[^.?!;:]*?(\d+)\s*(?:damage|dmg|hp)/i);
+  if (failureMatch) {
+    const value = Number(failureMatch[1]);
+    if (Number.isFinite(value) && value > 0) return Math.trunc(value);
+  }
+
+  const damageMatch = text.match(/(?:receive|receives|take|takes|deal|deals|inflict|inflicts)\s+(\d+)\s*(?:damage|dmg|hp)/i);
+  if (damageMatch) {
+    const value = Number(damageMatch[1]);
+    if (Number.isFinite(value) && value > 0) return Math.trunc(value);
+  }
+
+  return undefined;
 }
 
 function getOnSuccess(effect: WardEngineEffect): OnSuccessParams {
@@ -513,7 +532,7 @@ export function createPendingStatusTickEffectRollSession(
 
       const now = new Date().toISOString();
       const successRanges = parseSuccessRanges(effect);
-      const damageAmount = firstPositiveNumber(effect) ?? 10;
+      const damageAmount = statusTickFailureDamageAmount(effect) ?? 10;
       const session: PendingEffectRollSession = {
         id: uuidv4(),
         status: "AWAITING_ROLL",

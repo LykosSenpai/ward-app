@@ -213,6 +213,134 @@ function getBattleCreatureCard(state: MatchState, creature: BattleCreatureRef): 
     .find(card => card?.instanceId === creature.creatureInstanceId);
 }
 
+function getCreatureCardByInstanceId(state: MatchState, creatureInstanceId: string | undefined): CardInstance | undefined {
+  if (!creatureInstanceId) return undefined;
+
+  return state.players
+    .flatMap(player => [
+      player.field.primaryCreature,
+      ...player.field.limitedSummons
+    ])
+    .find(card => card?.instanceId === creatureInstanceId);
+}
+
+type MaterializedBattleStat = "armorLevel" | "speed" | "attackDice" | "modifier";
+
+function hasMaterializedBaseStat(
+  state: MatchState,
+  suggestion: BattleEffectSuggestion,
+  stat: MaterializedBattleStat
+): boolean {
+  if (!suggestion.effectId) return false;
+
+  const creatureCard = getCreatureCardByInstanceId(state, suggestion.appliesToCreatureInstanceId);
+  return Boolean((creatureCard?.activeStatModifiers ?? []).some(modifier =>
+    modifier.sourceCardInstanceId === suggestion.sourceCardInstanceId &&
+    modifier.sourceEffectId === suggestion.effectId &&
+    modifier.stat === stat
+  ));
+}
+
+function inferredBaseStatsFromInfoSuggestion(suggestion: BattleEffectSuggestion): MaterializedBattleStat[] {
+  const text = [suggestion.label, suggestion.note].filter(Boolean).join(" ").toUpperCase();
+  const stats: MaterializedBattleStat[] = [];
+
+  if (/\bAL\b|\bARMOR/.test(text)) stats.push("armorLevel");
+  if (/\bSPD\b|\bSPEED/.test(text)) stats.push("speed");
+  if (/\b(?:ATK|ATTACK)[_\s-]*DICE/.test(text)) stats.push("attackDice");
+  if (/\b(?:MOD|MODIFIER)\b/.test(text)) stats.push("modifier");
+
+  return stats;
+}
+
+function hasMeaningfulStrikeModifiers(modifiers: Partial<ManualBattleStrikeModifiers> | undefined): boolean {
+  if (!modifiers) return false;
+
+  return Boolean(
+    Number(modifiers.hitDiceDelta ?? 0) !== 0 ||
+    modifiers.hitDiceLimit !== undefined ||
+    Number(modifiers.hitFlatBonus ?? 0) !== 0 ||
+    Number(modifiers.hitRollMultiplier ?? 1) !== 1 ||
+    modifiers.forceHitResult === "FORCE_HIT" ||
+    modifiers.forceHitResult === "FORCE_MISS" ||
+    Number(modifiers.damageDiceDelta ?? 0) !== 0 ||
+    Number(modifiers.damageFlatBonus ?? 0) !== 0 ||
+    Number(modifiers.damageMultiplier ?? 1) !== 1 ||
+    modifiers.preventAttackDamage === true
+  );
+}
+
+function sanitizeMaterializedBaseStatSuggestion(
+  state: MatchState,
+  suggestion: BattleEffectSuggestion
+): BattleEffectSuggestion | undefined {
+  if (String(suggestion.trigger ?? "").trim().toUpperCase() === "ACTIVE_STAT_MODIFIER") {
+    const materializedStats: MaterializedBattleStat[] = ["armorLevel", "speed", "attackDice", "modifier"];
+    if (materializedStats.some(stat => hasMaterializedBaseStat(state, suggestion, stat))) {
+      return undefined;
+    }
+  }
+
+  if (suggestion.kind === "SPEED" && hasMaterializedBaseStat(state, suggestion, "speed")) {
+    const speedModifiers = {
+      ...suggestion.speedModifiers,
+      attackingSpeedDelta: 0,
+      defendingSpeedDelta: 0
+    };
+    const hasOverride = speedModifiers.override && speedModifiers.override !== "AUTO";
+
+    if (!hasOverride) {
+      return undefined;
+    }
+
+    return {
+      ...suggestion,
+      speedModifiers,
+      note: [suggestion.note, "Base speed modifier is already applied to the creature."]
+        .filter(Boolean)
+        .join(" ")
+    };
+  }
+
+  const damageDiceDelta = Number(suggestion.strikeModifiers?.damageDiceDelta ?? 0);
+  if (suggestion.kind === "STRIKE" && damageDiceDelta !== 0 && hasMaterializedBaseStat(state, suggestion, "attackDice")) {
+    const strikeModifiers = {
+      ...suggestion.strikeModifiers,
+      damageDiceDelta: 0
+    };
+
+    if (!hasMeaningfulStrikeModifiers(strikeModifiers)) {
+      return undefined;
+    }
+
+    return {
+      ...suggestion,
+      strikeModifiers,
+      note: [suggestion.note, "Base attack dice modifier is already applied to the creature."]
+        .filter(Boolean)
+        .join(" ")
+    };
+  }
+
+  if (suggestion.kind === "INFO") {
+    const stats = inferredBaseStatsFromInfoSuggestion(suggestion);
+    if (stats.length > 0 && stats.every(stat => hasMaterializedBaseStat(state, suggestion, stat))) {
+      return undefined;
+    }
+  }
+
+  return suggestion;
+}
+
+export function sanitizeBattleEffectSuggestions(
+  state: MatchState,
+  suggestions: BattleEffectSuggestion[]
+): BattleEffectSuggestion[] {
+  return suggestions
+    .map(suggestion => sanitizeMaterializedBaseStatSuggestion(state, suggestion))
+    .filter((suggestion): suggestion is BattleEffectSuggestion => Boolean(suggestion));
+}
+
 function isPositiveStrikeModifierSuppressed(state: MatchState, suggestion: BattleEffectSuggestion): boolean {
   if (suggestion.kind !== "STRIKE" || !suggestion.strikeModifiers) return false;
   if (!suggestion.appliesToCreatureInstanceId) return false;
@@ -796,9 +924,10 @@ export function collectBattleEffectSuggestions(
   }
 
   const unsuppressed = suggestions.filter(suggestion => !isPositiveStrikeModifierSuppressed(state, suggestion));
+  const sanitized = sanitizeBattleEffectSuggestions(state, unsuppressed);
 
   const unique = new Map<string, BattleEffectSuggestion>();
-  for (const suggestion of unsuppressed) {
+  for (const suggestion of sanitized) {
     unique.set(suggestion.id, suggestion);
   }
 

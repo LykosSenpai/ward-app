@@ -494,7 +494,7 @@ function moveSelectedCardByProgram(args: {
   const destinationZone = normalize(anyStep.destinationZone ?? args.step.data?.destinationZone);
 
   if (destinationZone === "HAND") {
-    return moveSelectedCardToHand(args.state, args.selectedOption);
+    return moveSelectedCardToHand(args.state, args.selectedOption, addEvent, "EFFECT_PROGRAM_CARD_MOVE_TO_HAND");
   }
 
   if (destinationZone === "CEMETERY" || destinationZone === "OWNER_CEMETERY") {

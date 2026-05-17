@@ -11,7 +11,7 @@ import type {
 } from "@ward/shared";
 import { calculateCemeteryCreatureHp } from "./cemetery.js";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
-import { removeActiveEffectInstancesFromSource } from "./activeEffectInstances.js";
+import { removeActiveEffectInstancesFromSource, removeSourceLinkedRuntimeEffectsFromSource } from "./activeEffectInstances.js";
 import { getCardDefinition, getPlayer, type AddEventFn } from "./engineRuntime.js";
 import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
 import { moveFieldCreatureToCemetery } from "./fieldRemoval.js";
@@ -485,7 +485,9 @@ function getMutablePlayerZoneCards(
 
 export function moveSelectedCardToHand(
   state: MatchState,
-  option: EffectTargetOption
+  option: EffectTargetOption,
+  addEvent?: AddEventFn,
+  reason = "CARD_RETURNED_TO_HAND"
 ): {
   sourcePlayerId: string;
   destinationPlayerId: string;
@@ -515,6 +517,15 @@ export function moveSelectedCardToHand(
     const definition = getCardDefinition(state, card);
     const destinationPlayer = getPlayer(state, card.ownerPlayerId);
     moveAttachedMagicCardsToCemeteryForCreature(state, card.instanceId);
+    removeSourceLinkedRuntimeEffectsFromSource(state, {
+      sourceCardInstanceId: card.instanceId,
+      sourceCardId: card.cardId,
+      sourceCardName: definition.name,
+      sourceDefinition: definition,
+      causedByPlayerId: selected.playerId,
+      reason,
+      addEvent
+    });
     removeActiveEffectInstancesFromSource(card, card.instanceId);
     card.zone = "HAND";
     card.controllerPlayerId = destinationPlayer.id;

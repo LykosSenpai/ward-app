@@ -211,9 +211,26 @@ export function getEffectiveCreatureStat(
   baseValue: number,
   match?: AppMatchState
 ): number {
+  const countedPermanentModifiers = new Set<string>();
   const activeDelta = (card.activeStatModifiers ?? [])
     .filter(modifier => modifier.stat === stat)
-    .reduce((total, modifier) => total + modifier.delta, 0);
+    .reduce((total, modifier) => {
+      if (modifier.durationType === "PERMANENT_UNTIL_SOURCE_REMOVED") {
+        const key = [
+          modifier.sourceCardInstanceId,
+          modifier.sourceEffectId,
+          modifier.stat
+        ].join(":");
+
+        if (countedPermanentModifiers.has(key)) {
+          return total;
+        }
+
+        countedPermanentModifiers.add(key);
+      }
+
+      return total + modifier.delta;
+    }, 0);
   const attachedStaticDelta = match
     ? match.players
       .flatMap(player => player.field.magicSlots)
@@ -290,6 +307,12 @@ export function getCreatureStatsLine(match: AppMatchState, card: CardInstance): 
 export function getAdvanceBlockReason(match: AppMatchState): string {
   if (match.pendingBattle && match.pendingBattle.status !== "COMPLETE") {
     return "Finish the pending battle before advancing.";
+  }
+
+  if (match.pendingEffectRoll) {
+    return match.pendingEffectRoll.status === "AWAITING_ROLL"
+      ? "Roll the pending effect dice before advancing."
+      : "Resolve the pending effect roll before advancing.";
   }
 
   if (match.pendingPrompt) {

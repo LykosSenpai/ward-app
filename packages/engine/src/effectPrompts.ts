@@ -2108,7 +2108,12 @@ export function resolvePendingEffectTargetPrompt(
 
   if (prompt.actionType === "SEARCH_DECK_TO_HAND" || prompt.actionType === "MOVE_CARD") {
     const selectedCardOption = requireSelectedCardOption(selectedOption);
-    const result = moveSelectedCardToHand(nextState, selectedCardOption);
+    const result = moveSelectedCardToHand(
+      nextState,
+      selectedCardOption,
+      addEvent,
+      prompt.actionType === "SEARCH_DECK_TO_HAND" ? "SEARCH_DECK_TO_HAND" : "MOVE_CARD_TO_HAND"
+    );
 
     clearCurrentPromptAndQueueNext(nextState, prompt);
 

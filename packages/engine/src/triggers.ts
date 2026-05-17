@@ -4,6 +4,7 @@ import { getCardDefinition, getPlayer, type AddEventFn } from "./engineRuntime.j
 import { getCardEngineEffects } from "./effectResolver.js";
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
+import { removeSourceLinkedRuntimeEffectsFromSource } from "./activeEffectInstances.js";
 
 export type RemovedFromFieldTriggerResult = {
   linkedDestroyedCreatures: Array<{
@@ -12,6 +13,7 @@ export type RemovedFromFieldTriggerResult = {
     fieldOwnerPlayerId: string;
     ownerPlayerId: string;
   }>;
+  sourceLinkedRuntimeEffectRemovalCount: number;
 };
 
 function boardZoneRef(playerId: string | undefined, zone: BoardZoneRef["zone"]): BoardZoneRef {
@@ -209,6 +211,16 @@ export function runCardRemovedFromFieldTriggers(
     addEvent?: AddEventFn;
   }
 ): RemovedFromFieldTriggerResult {
+  const sourceLinkedRuntimeEffectRemovalCount = removeSourceLinkedRuntimeEffectsFromSource(state, {
+    sourceCardInstanceId: args.removedCard.instanceId,
+    sourceCardId: args.removedCard.cardId,
+    sourceCardName: args.removedCardName,
+    sourceDefinition: state.cardCatalog[args.removedCard.cardId],
+    causedByPlayerId: args.causedByPlayerId,
+    reason: args.reason ?? "CARD_REMOVED_FROM_FIELD",
+    addEvent: args.addEvent
+  });
+
   const linkedDestroyedCreatures = destroyCreaturesAnchoredToCard(
     state,
     args.removedCard.instanceId,
@@ -230,7 +242,7 @@ export function runCardRemovedFromFieldTriggers(
     });
   }
 
-  return { linkedDestroyedCreatures };
+  return { linkedDestroyedCreatures, sourceLinkedRuntimeEffectRemovalCount };
 }
 
 export function returnLinkedSummonsForInvalidatedSource(
@@ -243,6 +255,14 @@ export function returnLinkedSummonsForInvalidatedSource(
     addEvent?: AddEventFn;
   }
 ): RemovedFromFieldTriggerResult {
+  const sourceLinkedRuntimeEffectRemovalCount = removeSourceLinkedRuntimeEffectsFromSource(state, {
+    sourceCardInstanceId: args.sourceCardInstanceId,
+    sourceCardName: args.sourceCardName,
+    causedByPlayerId: args.causedByPlayerId,
+    reason: args.reason,
+    addEvent: args.addEvent
+  });
+
   const linkedDestroyedCreatures = destroyCreaturesAnchoredToCard(
     state,
     args.sourceCardInstanceId,
@@ -277,7 +297,7 @@ export function returnLinkedSummonsForInvalidatedSource(
     });
   }
 
-  return { linkedDestroyedCreatures };
+  return { linkedDestroyedCreatures, sourceLinkedRuntimeEffectRemovalCount };
 }
 
 export type BattleTimingTrigger =
