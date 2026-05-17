@@ -44,13 +44,19 @@ assert.deepEqual(packedDecoded.cardIds.toSorted(), packedCardIds.toSorted());
 const namedPackedCode = encodeWardDeckString({
   name: "Thirty Card Packed Deck",
   deckId: "thirty-card-packed-deck",
-  cardIds: packedCardIds
+  cardIds: packedCardIds,
+  format: "TOURNAMENT",
+  startingHandSize: 5,
+  notes: "Shared deck notes"
 }, { cardLibrary: packedLibrary });
 const namedPackedDecoded = decodeWardDeckString(namedPackedCode, { cardLibrary: packedLibrary });
 
-assert.equal(namedPackedCode.startsWith("WARDDECK3:"), true);
+assert.equal(namedPackedCode.startsWith("WARDDECK4:"), true);
 assert.equal(namedPackedDecoded.name, "Thirty Card Packed Deck");
 assert.equal(namedPackedDecoded.deckId, "thirty-card-packed-deck");
+assert.equal(namedPackedDecoded.format, "TOURNAMENT");
+assert.equal(namedPackedDecoded.startingHandSize, 5);
+assert.equal(namedPackedDecoded.notes, "Shared deck notes");
 assert.equal(namedPackedDecoded.cardIds.length, 30);
 assert.deepEqual(namedPackedDecoded.cardIds.toSorted(), packedCardIds.toSorted());
 

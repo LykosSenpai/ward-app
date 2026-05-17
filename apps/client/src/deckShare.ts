@@ -30,6 +30,14 @@ type WardDeckSharePayloadV3 = Omit<WardDeckSharePayloadV2, "v"> & {
   v: 3;
 };
 
+type WardDeckSharePayloadV4Metadata = {
+  n?: string;
+  d?: string;
+  f?: "F" | "T";
+  h?: number;
+  m?: string;
+};
+
 type DeckShareCodecOptions = {
   cardLibrary?: CardLibraryCardSummary[];
 };
@@ -102,16 +110,6 @@ function decodeUtf8Base64Url(value: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-function hasShareMetadata(payload: Omit<WardDeckSharePayload, "v" | "kind">): boolean {
-  return Boolean(
-    payload.name?.trim() ||
-    payload.deckId?.trim() ||
-    payload.format ||
-    Number.isFinite(payload.startingHandSize) ||
-    payload.notes?.trim()
-  );
-}
-
 function normalizeImportedCardIds(cardIds: unknown): string[] {
   if (!Array.isArray(cardIds)) {
     throw new Error("Deck code is missing a cardIds array.");
@@ -170,7 +168,75 @@ function decodeCompactArtKey(artKey: unknown): string {
   }
 }
 
-function encodeV4PackedFromRefs(cardRefs: string[], cardArtKeys?: string[]): string {
+function getV4Metadata(payload: Omit<WardDeckSharePayload, "v" | "kind">): WardDeckSharePayloadV4Metadata | undefined {
+  const metadata: WardDeckSharePayloadV4Metadata = {
+    n: payload.name?.trim() || undefined,
+    d: payload.deckId?.trim() || undefined,
+    f: payload.format === "TOURNAMENT" ? "T" : payload.format === "FREE_PLAY" ? "F" : undefined,
+    h: Number.isFinite(payload.startingHandSize)
+      ? Math.max(0, Math.floor(payload.startingHandSize ?? 0))
+      : undefined,
+    m: payload.notes?.trim() || undefined
+  };
+
+  return Object.values(metadata).some(value => value !== undefined) ? metadata : undefined;
+}
+
+function appendV4MetadataTrailer(bytes: Uint8Array, metadata?: WardDeckSharePayloadV4Metadata): Uint8Array {
+  if (!metadata) return bytes;
+
+  const metadataBytes = new TextEncoder().encode(JSON.stringify(metadata));
+  if (metadataBytes.length > 65535) {
+    throw new Error("Packed WARDDECK4 metadata is too large.");
+  }
+
+  const trailer = new Uint8Array(6 + metadataBytes.length);
+  trailer.set([87, 68, 52, 77], 0);
+  trailer[4] = (metadataBytes.length >> 8) & 0xff;
+  trailer[5] = metadataBytes.length & 0xff;
+  trailer.set(metadataBytes, 6);
+
+  const result = new Uint8Array(bytes.length + trailer.length);
+  result.set(bytes, 0);
+  result.set(trailer, bytes.length);
+  return result;
+}
+
+function readV4MetadataTrailer(bytes: Uint8Array, startByte: number): WardDeckSharePayloadV4Metadata | undefined {
+  if (startByte >= bytes.length) return undefined;
+  if (bytes.length - startByte < 6) {
+    throw new Error("Packed WARDDECK4 metadata trailer is truncated.");
+  }
+
+  if (
+    bytes[startByte] !== 87 ||
+    bytes[startByte + 1] !== 68 ||
+    bytes[startByte + 2] !== 52 ||
+    bytes[startByte + 3] !== 77
+  ) {
+    throw new Error("Packed WARDDECK4 metadata trailer has an unsupported marker.");
+  }
+
+  const metadataLength = (bytes[startByte + 4] << 8) | bytes[startByte + 5];
+  const metadataStart = startByte + 6;
+  const metadataEnd = metadataStart + metadataLength;
+
+  if (metadataEnd > bytes.length) {
+    throw new Error("Packed WARDDECK4 metadata trailer is truncated.");
+  }
+
+  const parsed = JSON.parse(new TextDecoder().decode(bytes.slice(metadataStart, metadataEnd))) as Partial<WardDeckSharePayloadV4Metadata>;
+
+  return {
+    n: parsed.n ? String(parsed.n) : undefined,
+    d: parsed.d ? String(parsed.d) : undefined,
+    f: parsed.f === "T" ? "T" : parsed.f === "F" ? "F" : undefined,
+    h: Number.isFinite(parsed.h) ? Math.max(0, Math.floor(parsed.h ?? 0)) : undefined,
+    m: parsed.m ? String(parsed.m) : undefined
+  };
+}
+
+function encodeV4PackedFromRefs(cardRefs: string[], cardArtKeys?: string[], metadata?: WardDeckSharePayloadV4Metadata): string {
   const cards = cardRefs.map((ref, index) => {
     const [g36, n36] = String(ref ?? "").split(".");
     const gen = parseInt(g36 ?? "", 36);
@@ -215,10 +281,11 @@ function encodeV4PackedFromRefs(cardRefs: string[], cardArtKeys?: string[]): str
     }
     bytes[offset / 8] = value;
   }
+  const payloadBytes = appendV4MetadataTrailer(bytes, metadata);
 
   let binary = "";
-  for (let index = 0; index < bytes.length; index += 1) {
-    binary += String.fromCharCode(bytes[index]);
+  for (let index = 0; index < payloadBytes.length; index += 1) {
+    binary += String.fromCharCode(payloadBytes[index]);
   }
 
   const payload = btoa(binary)
@@ -228,7 +295,11 @@ function encodeV4PackedFromRefs(cardRefs: string[], cardArtKeys?: string[]): str
   return `${WARD_DECK_STRING_V4_PREFIX}${payload}`;
 }
 
-function decodeV4PackedToRefs(input: string): { cardRefs: string[]; cardArtKeys?: string[] } {
+function decodeV4PackedToRefs(input: string): {
+  cardRefs: string[];
+  cardArtKeys?: string[];
+  metadata?: WardDeckSharePayloadV4Metadata;
+} {
   const encoded = input.trim().slice(WARD_DECK_STRING_V4_PREFIX.length);
   const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
@@ -284,9 +355,14 @@ function decodeV4PackedToRefs(input: string): { cardRefs: string[]; cardArtKeys?
     cardArtKeys.push(artBits === 1 ? "holo" : artBits === 2 ? "zero-art" : artBits === 3 ? "zero-art-holo" : "default");
   }
 
+  if (cursor % 8 !== 0) {
+    cursor += 8 - (cursor % 8);
+  }
+
   return {
     cardRefs,
-    cardArtKeys: cardArtKeys.some(value => value !== "default") ? cardArtKeys : undefined
+    cardArtKeys: cardArtKeys.some(value => value !== "default") ? cardArtKeys : undefined,
+    metadata: readV4MetadataTrailer(bytes, cursor / 8)
   };
 }
 
@@ -439,17 +515,14 @@ export function encodeWardDeckString(payload: Omit<WardDeckSharePayload, "v" | "
   const cardIds = normalizeImportedCardIds(payload.cardIds);
   const cardArtKeys = normalizeImportedCardArtKeys(payload.cardArtKeys, cardIds.length);
   const compactCardRefEntries = buildCompactCardRefEntries(cardIds, cardArtKeys, options.cardLibrary);
-  const payloadHasMetadata = hasShareMetadata(payload);
 
   if (compactCardRefEntries) {
     const expandedCompactCards = expandCompactCardEntries(compactCardRefEntries, { usesCardRefs: false });
 
-    if (!payloadHasMetadata) {
-      try {
-        return encodeV4PackedFromRefs(expandedCompactCards.cardIds, expandedCompactCards.cardArtKeys);
-      } catch {
-        // Fall through to v3 payload format when packed v4 encoding is not possible.
-      }
+    try {
+      return encodeV4PackedFromRefs(expandedCompactCards.cardIds, expandedCompactCards.cardArtKeys, getV4Metadata(payload));
+    } catch {
+      // Fall through to v3 payload format when packed v4 encoding is not possible.
     }
 
     const normalizedPayload: WardDeckSharePayloadV3 = {
@@ -497,8 +570,13 @@ export function decodeWardDeckString(value: string, options: DeckShareCodecOptio
     return {
       v: 1,
       kind: "WARD_DECK",
+      name: packed.metadata?.n,
+      deckId: packed.metadata?.d,
       cardIds: expandedCards.cardIds,
-      cardArtKeys: packed.cardArtKeys ?? expandedCards.cardArtKeys
+      cardArtKeys: packed.cardArtKeys ?? expandedCards.cardArtKeys,
+      format: packed.metadata?.f === "T" ? "TOURNAMENT" : packed.metadata?.f === "F" ? "FREE_PLAY" : undefined,
+      startingHandSize: packed.metadata?.h,
+      notes: packed.metadata?.m
     };
   }
 
