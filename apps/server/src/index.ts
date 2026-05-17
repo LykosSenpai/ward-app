@@ -229,6 +229,7 @@ type DiscordUserResponse = {
   global_name?: string | null;
   avatar?: string | null;
   email?: string | null;
+  verified?: boolean | null;
 };
 
 type SocketAckResponse = {
@@ -295,6 +296,15 @@ function canUserReviewTournamentDecks(user: AuthUser | null | undefined): boolea
 
 function canUserUseAdminTools(user: AuthUser | null | undefined): boolean {
   return user?.role === "ADMIN";
+}
+
+function hasCompletedEmailVerification(user: AuthUser | null | undefined): boolean {
+  if (!user) return false;
+  return Boolean(user.emailVerifiedAt) || isSyntheticDiscordEmail(user.email);
+}
+
+function isSyntheticDiscordEmail(email: string | undefined): boolean {
+  return Boolean(email?.trim().toLowerCase().endsWith("@discord.local"));
 }
 
 function getDiscordOAuthConfigured(): boolean {
@@ -901,7 +911,8 @@ const supportTicketUpdateSchema = z.object({
 
 function getSocketUser(socket: { request: unknown }): AuthUser | null {
   const request = socket.request as { session?: { user?: AuthUser } };
-  return request.session?.user ?? null;
+  const user = request.session?.user ?? null;
+  return hasCompletedEmailVerification(user) ? user : null;
 }
 
 function getSocketEmbedContext(socket: { request: unknown }): {
@@ -915,6 +926,12 @@ function getSocketEmbedContext(socket: { request: unknown }): {
 }
 
 function requireSocketUser(socket: { request: unknown }): AuthUser {
+  const request = socket.request as { session?: { user?: AuthUser } };
+  const sessionUser = request.session?.user ?? null;
+  if (sessionUser && !hasCompletedEmailVerification(sessionUser)) {
+    throw new Error("Email verification required.");
+  }
+
   const user = getSocketUser(socket);
 
   if (!user) {
@@ -2566,7 +2583,8 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
     const existingUser = await findUserByDiscordId(discordUser.id);
     const user = existingUser ?? await createUserFromDiscord({
       ...discordAccount,
-      email: discordUser.email ?? null
+      email: discordUser.email ?? null,
+      emailVerified: Boolean(discordUser.email && discordUser.verified)
     });
 
     if (existingUser && await isTotpEnabled(user.id)) {
@@ -2596,6 +2614,11 @@ app.get("/api/auth/discord/callback", authRateLimit, async (req, res) => {
     }
 
     const profile = await getUserProfile(user.id);
+    if (!existingUser && !hasCompletedEmailVerification(profile)) {
+      void sendEmailVerificationMessage(profile.id, profile.email, profile.displayName)
+        .catch(error => console.error(error instanceof Error ? error.message : error));
+    }
+
     req.session.user = profile;
     await trustDevice(profile.id, req, res);
     await saveCurrentSession(req);
@@ -3766,8 +3789,11 @@ io.on("connection", async socket => {
     socketId: socket.id
   });
 
-  socket.emit("setup:options", await getUserSetupOptions(connectedUser));
-  socket.emit("lobby:list", listLobbySnapshots());
+  if (connectedUser) {
+    socket.emit("setup:options", await getUserSetupOptions(connectedUser));
+    socket.emit("lobby:list", listLobbySnapshots());
+  }
+
   socket.emit("features:list", { ok: true, features: await listFeatureFlagsForUser(connectedUser) });
 
   socket.on("features:list", async (ack?: (payload: { ok: boolean; features?: unknown[]; error?: string }) => void) => {
@@ -5009,7 +5035,7 @@ io.on("connection", async socket => {
   );
   socket.on("setup:listOptions", async () => {
     try {
-      const user = getSocketUser(socket);
+      const user = requireSocketUser(socket);
       socket.emit("setup:options", await getUserSetupOptions(user));
       socket.emit("lobby:list", listLobbySnapshots());
     } catch (error) {
@@ -5021,7 +5047,7 @@ io.on("connection", async socket => {
 
   socket.on("deck:listDetails", async () => {
     try {
-      const user = getSocketUser(socket);
+      const user = requireSocketUser(socket);
       const deckDetails = await getDeckDetailsForUser(user);
 
       socket.emit("deck:details", deckDetails);
@@ -5104,6 +5130,7 @@ io.on("connection", async socket => {
 
   socket.on("cards:listForPacks", (data: { packIds: string[] }) => {
     try {
+      requireSocketUser(socket);
       socket.emit(
         "cards:library",
         listCardLibraryForPacks(data.packIds, loadCardLimitMap())
@@ -5117,7 +5144,8 @@ io.on("connection", async socket => {
 
   const emitCollectionOwnership = async () => {
     try {
-      socket.emit("collection:ownership", await loadOwnershipForSocketUser(getSocketUser(socket)));
+      const user = requireSocketUser(socket);
+      socket.emit("collection:ownership", await loadOwnershipForSocketUser(user));
     } catch (error) {
       socket.emit("collection:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -5387,6 +5415,7 @@ io.on("connection", async socket => {
   });
   socket.on("marketplace:listTransactions", async () => {
     try {
+      requireSocketUser(socket);
       await returnExpiredItemsToPool();
       socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
     } catch (error) {
@@ -6053,6 +6082,7 @@ io.on("connection", async socket => {
 
   socket.on("match:listSaved", async () => {
     try {
+      requireSocketUser(socket);
       await socket.join(SAVED_MATCHES_SOCKET_ROOM);
       socket.emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
@@ -6316,7 +6346,14 @@ io.on("connection", async socket => {
   });
 
   socket.on("lobby:list", () => {
-    socket.emit("lobby:list", listLobbySnapshots());
+    try {
+      requireSocketUser(socket);
+      socket.emit("lobby:list", listLobbySnapshots());
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
   });
 
   socket.on("lobby:cleanupStale", () => {

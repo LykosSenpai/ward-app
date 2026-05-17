@@ -183,6 +183,32 @@
   padding-top: 0.85rem;
 }
 
+.email-verification-panel {
+  max-width: 440px;
+}
+
+.email-verification-copy {
+  color: #cbd5e1;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.email-verification-copy strong {
+  color: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+.email-verification-actions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.email-verification-logout {
+  background: transparent;
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #cbd5e1;
+}
+
 .board-report-card {
   display: grid;
   gap: 1rem;

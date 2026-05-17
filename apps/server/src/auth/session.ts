@@ -5,6 +5,8 @@ import { getDbPool } from "../db/pool.js";
 export type AuthUser = {
   id: string;
   username: string;
+  email?: string;
+  emailVerifiedAt?: string;
   displayName: string;
   role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   canAccessDevTools: boolean;
@@ -69,6 +71,7 @@ export const sessionMiddleware = session({
   }),
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: {
     httpOnly: true,
     sameSite: getSessionCookieSameSite(),

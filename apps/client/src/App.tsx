@@ -6,6 +6,7 @@ import { DiceRollerPanel } from "./components/DiceRollerPanel";
 import { EffectCoveragePage } from "./components/EffectCoveragePage";
 import { EffectDebugPanel } from "./components/EffectDebugPanel";
 import { EffectDevToolPage } from "./components/EffectDevToolPage";
+import { EmailVerificationGate } from "./components/EmailVerificationGate";
 import { DeckLibraryPage } from "./components/DeckLibraryPage";
 import { EventLogCard } from "./components/EventLogCard";
 import { EffectRollModal } from "./components/EffectRollModal";
@@ -36,6 +37,7 @@ import { ModalPanel } from "./components/ui/ModalPanel";
 import type { CardArtKey } from "./components/CardImagePreview";
 import { socket } from "./socket";
 import { API_BASE_URL } from "./config";
+import { hasCompletedEmailVerification, needsEmailVerification } from "./authVerification";
 import { applyMatchDelta } from "./matchDelta";
 import {
   parseEmbedMode,
@@ -308,6 +310,8 @@ export default function App() {
   const lastRequestedCardLibraryKeyRef = useMemo(() => ({ current: "" }), []);
   const socketAuthRefreshAttemptedRef = useRef(false);
   const socketAuthRefreshInFlightRef = useRef(false);
+  const canLoadAppDataRef = useRef(false);
+  const socketAuthUserIdRef = useRef<string | null>(null);
   const canUseDevTools = !!authUser?.devToolsEnabled;
   const updateFeatureRollout = async (key: ServerFeatureFlag["key"], enabledForPlayers: boolean): Promise<void> => {
     await new Promise<void>((resolve, reject) => {
@@ -439,8 +443,12 @@ export default function App() {
         setSocketAuthenticated(null);
         setError(current => current.startsWith(SOCKET_SESSION_ERROR_PREFIX) ? "" : current);
         setSaveMessage(options.manual ? "Login session refreshed. Reconnecting live server..." : "");
-        socket.disconnect();
-        window.setTimeout(() => socket.connect(), 50);
+        if (hasCompletedEmailVerification(data.user)) {
+          socket.disconnect();
+          window.setTimeout(() => socket.connect(), 50);
+        } else {
+          socket.disconnect();
+        }
         return true;
       }
 
@@ -578,7 +586,7 @@ export default function App() {
           setAuthUser(data.user);
         }
 
-        setActivePage("profile");
+        setActivePage(DEFAULT_APP_PAGE);
         setProfileRefreshKey(current => current + 1);
       } catch (verificationError) {
         setError(verificationError instanceof Error ? verificationError.message : "Unable to verify email.");
@@ -587,6 +595,36 @@ export default function App() {
 
     void verifyEmail();
   }, [authChecked, authUser]);
+
+  useEffect(() => {
+    const canLoadAppData = Boolean(authUser && hasCompletedEmailVerification(authUser));
+    canLoadAppDataRef.current = canLoadAppData;
+
+    if (!authChecked) return;
+
+    if (!authUser) {
+      socketAuthUserIdRef.current = null;
+      return;
+    }
+
+    if (canLoadAppData) {
+      const needsFreshSocketSession = socketAuthUserIdRef.current !== authUser.id;
+      socketAuthUserIdRef.current = authUser.id;
+
+      if (needsFreshSocketSession || !socket.connected) {
+        socket.disconnect();
+        socket.connect();
+      } else {
+        requestInitialData();
+      }
+      return;
+    }
+
+    socketAuthUserIdRef.current = null;
+    if (socket.connected) {
+      socket.disconnect();
+    }
+  }, [authChecked, authUser?.email, authUser?.emailVerifiedAt, authUser?.id]);
 
   useEffect(() => {
     socket.on("server:welcome", (data: ServerWelcome) => {
@@ -1079,6 +1117,10 @@ export default function App() {
 
 
   function requestInitialData() {
+    if (!canLoadAppDataRef.current) {
+      return;
+    }
+
     socket.emit("setup:listOptions");
     socket.emit("lobby:list");
     if (canUseDevTools) {
@@ -2165,7 +2207,6 @@ export default function App() {
     setOwnershipSaveStatus("idle");
     setSocketAuthenticated(false);
     socket.disconnect();
-    socket.connect();
   }
 
   const advanceBlockReason = match ? getAdvanceBlockReason(match) : "";
@@ -2229,10 +2270,21 @@ export default function App() {
     return <LoginPage onAuthenticated={user => {
       setAuthUser(user);
       setSocketAuthenticated(null);
-      socket.disconnect();
-      socket.connect();
-      requestInitialData();
     }} discordAuthEnabled={discordAuthEnabled} />;
+  }
+
+  if (needsEmailVerification(authUser)) {
+    return (
+      <EmailVerificationGate
+        user={authUser}
+        onVerified={user => {
+          setAuthUser(user);
+          setSocketAuthenticated(null);
+          setActivePage(DEFAULT_APP_PAGE);
+        }}
+        onLogout={() => void logout()}
+      />
+    );
   }
 
   const isBoardFocusMode = activePage === "play" && !!match && playViewMode === "board3d";
@@ -2466,8 +2518,12 @@ export default function App() {
           <ProfilePage key={profileRefreshKey} onUserUpdated={user => {
             setAuthUser(user);
             setSocketAuthenticated(null);
-            socket.disconnect();
-            socket.connect();
+            if (hasCompletedEmailVerification(user)) {
+              socket.disconnect();
+              socket.connect();
+            } else {
+              socket.disconnect();
+            }
           }} discordAuthEnabled={discordAuthEnabled} />
         ) : activePage === "marketplace" ? (
           <MarketplacePage authUser={authUser} cardLibrary={cardLibrary} />

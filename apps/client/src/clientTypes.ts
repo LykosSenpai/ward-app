@@ -24,6 +24,8 @@ export type ServerWelcome = {
 export type AuthUser = {
   id: string;
   username: string;
+  email?: string;
+  emailVerifiedAt?: string;
   displayName: string;
   role: "PLAYER" | "HOST" | "DEVELOPER" | "ADMIN";
   canAccessDevTools: boolean;
