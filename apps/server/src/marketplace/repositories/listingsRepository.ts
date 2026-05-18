@@ -32,18 +32,42 @@ function mapRow(row: any): MarketplaceListingRecord {
   };
 }
 
-export async function listMarketplaceListings(args?: { page?: number; limit?: number }): Promise<MarketplaceListingRecord[]> {
+export async function listMarketplaceListings(args?: { page?: number; limit?: number; q?: string; listingType?: string }): Promise<{ items: MarketplaceListingRecord[]; total: number }> {
   const page = Math.max(1, args?.page ?? 1);
   const limit = Math.max(1, Math.min(args?.limit ?? 20, 100));
   const offset = (page - 1) * limit;
+  const q = String(args?.q ?? "").trim().toLowerCase();
+  const listingType = String(args?.listingType ?? "").trim();
+  const filters: string[] = [];
+  const values: unknown[] = [];
+
+  if (q) {
+    values.push(`%${q}%`);
+    filters.push(`lower(card_id) like $${values.length}`);
+  }
+
+  if (listingType) {
+    values.push(listingType);
+    filters.push(`listing_type = $${values.length}`);
+  }
+
+  const whereClause = filters.length > 0 ? ` where ${filters.join(" and ")}` : "";
+  const countResult = await getDbPool().query(
+    `select count(*)::int as total
+       from marketplace_posts${whereClause}`,
+    values
+  );
+  const total = Number(countResult.rows[0]?.total ?? 0);
+
+  values.push(limit, offset);
   const result = await getDbPool().query(
     `select id,user_id,game_id,card_id,quantity,listing_type,status,preferred_return,description,created_at,updated_at
-       from marketplace_posts
+       from marketplace_posts${whereClause}
       order by updated_at desc
-      limit $1 offset $2`,
-    [limit, offset]
+      limit $${values.length - 1} offset $${values.length}`,
+    values
   );
-  return result.rows.map(mapRow);
+  return { items: result.rows.map(mapRow), total };
 }
 
 export async function getMarketplaceListingById(id: string): Promise<MarketplaceListingRecord | undefined> {

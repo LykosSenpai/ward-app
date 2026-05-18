@@ -104,6 +104,7 @@ export async function createSupportTicket(args: {
   clientContext: Record<string, unknown>;
 }): Promise<SupportTicketRecord> {
   const id = randomUUID();
+  const inlineMatchSnapshot = args.matchSnapshotKey ? null : (args.matchSnapshot ?? {});
   const result = await getDbPool().query<SupportTicketRow>(
     `insert into support_tickets (
        id,
@@ -137,7 +138,7 @@ export async function createSupportTicket(args: {
       args.description,
       args.category ?? "BOARD_REPORT",
       args.severity,
-      args.matchSnapshot ?? {},
+      inlineMatchSnapshot,
       args.matchSnapshotKey ?? null,
       args.clientContext
     ]
