@@ -4,6 +4,13 @@ const { Pool } = pg;
 
 let pool: pg.Pool | null = null;
 
+function readOptionalPositiveIntEnv(name: string): number | undefined {
+  const raw = process.env[name]?.trim();
+  if (!raw) return undefined;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
 export function getDatabaseUrl(): string {
   const databaseUrl = process.env.DATABASE_URL?.trim();
 
@@ -16,8 +23,15 @@ export function getDatabaseUrl(): string {
 
 export function getDbPool(): pg.Pool {
   if (!pool) {
+    const max = readOptionalPositiveIntEnv("PG_POOL_MAX");
+    const idleTimeoutMillis = readOptionalPositiveIntEnv("PG_POOL_IDLE_TIMEOUT_MS");
+    const connectionTimeoutMillis = readOptionalPositiveIntEnv("PG_POOL_CONNECTION_TIMEOUT_MS");
+
     pool = new Pool({
-      connectionString: getDatabaseUrl()
+      connectionString: getDatabaseUrl(),
+      ...(max ? { max } : {}),
+      ...(idleTimeoutMillis ? { idleTimeoutMillis } : {}),
+      ...(connectionTimeoutMillis ? { connectionTimeoutMillis } : {})
     });
   }
 
