@@ -3,6 +3,7 @@ import { MARKETPLACE_LISTING_VARIANT_LABELS, MARKETPLACE_STATUS_LABELS, formatCu
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { CardImageThumbnail, normalizeCardArtKey } from "./CardImagePreview";
 import { ModalPanel } from "./ui/ModalPanel";
+import { copyMarketplaceText } from "./marketplaceClipboard";
 
 export type MarketplacePost = {
   id: string;
@@ -149,13 +150,15 @@ function MarketplaceItemSection({
   );
 }
 
+type CopyState = "idle" | "copied" | "failed";
+
 export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, onStatusChange, matches = [], onLineItemContact }: Props) {
-  const [contactCopied, setContactCopied] = useState(false);
+  const [contactCopyState, setContactCopyState] = useState<CopyState>("idle");
   const [cardsOpen, setCardsOpen] = useState(false);
   const haveCount = getItemQuantity(post.haveItems);
   const needCount = getItemQuantity(post.needItems);
   const visibleMatches = matches.slice(0, 3);
-  const contactLabel = contactCopied ? "Copied" : "Contact";
+  const contactLabel = contactCopyState === "copied" ? "Copied" : contactCopyState === "failed" ? "Copy Failed" : "Copy Handle";
   const discordName = post.discord?.globalName || post.discord?.username || post.discordHandle || "";
   const discordProfileUrl = post.discord?.userId ? `https://discord.com/users/${post.discord.userId}` : undefined;
 
@@ -163,13 +166,8 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
     const handle = discordName.trim();
     if (!handle) return;
 
-    try {
-      await navigator.clipboard?.writeText(handle);
-      setContactCopied(true);
-      window.setTimeout(() => setContactCopied(false), 1600);
-    } catch {
-      setContactCopied(false);
-    }
+    setContactCopyState(await copyMarketplaceText(handle) ? "copied" : "failed");
+    window.setTimeout(() => setContactCopyState("idle"), 1600);
   }
 
   return (
@@ -203,7 +201,7 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
           aria-haspopup="dialog"
           onClick={() => setCardsOpen(true)}
         >
-          View cards
+          Cards
         </button>
         {isMine ? (
           <div className="marketplace-status-controls" aria-label={`${post.title} post status controls`}>
@@ -231,8 +229,11 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
       </div>
       {!!post.note && <p><strong>Note:</strong> {post.note}</p>}
       {visibleMatches.length > 0 ? (
-        <div className="marketplace-linked-matches">
-          <strong>Auto matches</strong>
+        <details className="marketplace-linked-matches">
+          <summary>
+            <strong>Auto Matches</strong>
+            <span>{matches.length}</span>
+          </summary>
           {visibleMatches.map(match => (
             <article key={match.postId}>
               <div className="marketplace-linked-match-heading">
@@ -244,7 +245,7 @@ export function MarketplacePostCard({ post, cardById, isMine = false, onEdit, on
             </article>
           ))}
           {matches.length > visibleMatches.length ? <small>+{matches.length - visibleMatches.length} more linked post{matches.length - visibleMatches.length === 1 ? "" : "s"}</small> : null}
-        </div>
+        </details>
       ) : null}
       {cardsOpen ? (
         <ModalPanel title={`Cards in ${post.title}`} onClose={() => setCardsOpen(false)} wide>

@@ -13063,3 +13063,378 @@ button:disabled:hover {
 .marketplace-toggle-row input {
   accent-color: #8b5cf6;
 }
+
+/* Marketplace compact square-edge UX pass */
+.marketplace-dashboard-page {
+  --marketplace-panel: rgba(7, 15, 27, 0.92);
+  --marketplace-panel-strong: rgba(9, 17, 30, 0.96);
+  --marketplace-border: rgba(148, 163, 184, 0.28);
+  gap: 0.65rem;
+}
+
+.marketplace-dashboard-page :where(
+  .marketplace-card,
+  .marketplace-logo-mark,
+  .marketplace-top-search input,
+  .marketplace-filter-sidebar select,
+  .marketplace-filter-sidebar input,
+  .marketplace-filter-note,
+  .marketplace-empty-state,
+  .marketplace-list-heading-row > span,
+  .marketplace-listing-shell,
+  .marketplace-listing-type,
+  .marketplace-match-badge,
+  .marketplace-status-pill,
+  .marketplace-match-card,
+  .marketplace-match-thumb,
+  .marketplace-table-thumb,
+  .marketplace-want-progress,
+  .marketplace-item-section,
+  .marketplace-item-section-heading span,
+  .marketplace-contact-button,
+  .marketplace-status-controls button,
+  .marketplace-post-meta span,
+  .marketplace-linked-matches,
+  .marketplace-linked-matches article,
+  .marketplace-line-thumb,
+  .marketplace-card-results button,
+  .marketplace-builder-list li,
+  .marketplace-builder-controls,
+  .marketplace-card-picker,
+  .marketplace-builder-list
+) {
+  border-radius: 0;
+}
+
+.marketplace-page.marketplace-dashboard-page,
+.marketplace-dashboard-page.marketplace-card,
+.marketplace-dashboard-page .marketplace-card,
+.marketplace-dashboard-page .marketplace-logo-mark,
+.marketplace-dashboard-page .marketplace-filter-note,
+.marketplace-dashboard-page .marketplace-empty-state,
+.marketplace-dashboard-page .marketplace-list-heading-row > span,
+.marketplace-dashboard-page .marketplace-listing-shell,
+.marketplace-dashboard-page .marketplace-listing-type,
+.marketplace-dashboard-page .marketplace-match-badge,
+.marketplace-dashboard-page .marketplace-status-pill,
+.marketplace-dashboard-page .marketplace-match-card,
+.marketplace-dashboard-page .marketplace-match-thumb,
+.marketplace-dashboard-page .marketplace-table-thumb,
+.marketplace-dashboard-page .marketplace-want-progress,
+.marketplace-dashboard-page .marketplace-item-section,
+.marketplace-dashboard-page .marketplace-item-section-heading span,
+.marketplace-dashboard-page .marketplace-contact-button,
+.marketplace-dashboard-page .marketplace-status-controls button,
+.marketplace-dashboard-page .marketplace-post-meta span,
+.marketplace-dashboard-page .marketplace-linked-matches,
+.marketplace-dashboard-page .marketplace-linked-matches article,
+.marketplace-dashboard-page .marketplace-line-thumb,
+.marketplace-dashboard-page .marketplace-line-thumb img,
+.marketplace-dashboard-page .marketplace-card-results button,
+.marketplace-dashboard-page .marketplace-builder-list li,
+.marketplace-dashboard-page .marketplace-builder-controls,
+.marketplace-dashboard-page .marketplace-card-picker,
+.marketplace-dashboard-page .marketplace-builder-list {
+  border-radius: 0 !important;
+}
+
+.marketplace-dashboard-page :where(button, a, input, select, textarea) {
+  border-radius: 0 !important;
+}
+
+.marketplace-dashboard-page .marketplace-card {
+  background: var(--marketplace-panel);
+  box-shadow: none;
+}
+
+.marketplace-dashboard-topnav {
+  gap: 0.55rem;
+  grid-template-columns: minmax(160px, 0.62fr) minmax(220px, 0.9fr) minmax(300px, 1fr) auto;
+  padding: 0.55rem;
+}
+
+.marketplace-dashboard-hero {
+  background: var(--marketplace-panel-strong);
+  gap: 0.65rem;
+  padding: 0.65rem;
+}
+
+.marketplace-dashboard-hero h2,
+.marketplace-dashboard-side h3,
+.marketplace-live-listings h3,
+.marketplace-my-posted-cards h3,
+.marketplace-post-header h3 {
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.marketplace-compact-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.marketplace-compact-stats span {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  padding: 0.16rem 0.4rem;
+}
+
+.marketplace-dashboard-grid {
+  gap: 0.65rem;
+  grid-template-columns: minmax(190px, 0.55fr) minmax(0, 2.35fr) minmax(230px, 0.82fr);
+}
+
+.marketplace-filter-sidebar,
+.marketplace-match-panel,
+.marketplace-my-posted-cards {
+  padding: 0.6rem;
+}
+
+.marketplace-compact-details {
+  display: block;
+}
+
+.marketplace-compact-details > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 0.55rem;
+  justify-content: space-between;
+  list-style: none;
+  min-height: 2rem;
+}
+
+.marketplace-compact-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.marketplace-compact-details > summary::before {
+  color: #93c5fd;
+  content: "+";
+  font-weight: 950;
+}
+
+.marketplace-compact-details[open] > summary::before {
+  content: "-";
+}
+
+.marketplace-compact-details > summary span,
+.marketplace-compact-details > summary strong,
+.marketplace-compact-panel-title span,
+.marketplace-filter-sidebar label {
+  color: #93c5fd;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.marketplace-compact-details > summary strong {
+  color: #e2e8f0;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.marketplace-filter-grid {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.marketplace-filter-sidebar label {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.marketplace-filter-actions,
+.marketplace-hero-actions,
+.marketplace-listing-action-strip,
+.marketplace-top-tabs,
+.marketplace-match-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.marketplace-filter-actions {
+  margin-top: 0.5rem;
+}
+
+.marketplace-dashboard-page :where(
+  .marketplace-top-tabs button,
+  .marketplace-match-tabs button,
+  .marketplace-mini-action,
+  .marketplace-listing-action-strip button,
+  .marketplace-listing-action-strip a,
+  .marketplace-table-actions button,
+  .marketplace-filter-actions button,
+  .marketplace-hero-actions button,
+  .marketplace-contact-button
+) {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #e2e8f0;
+  display: inline-flex;
+  font-size: 0.74rem;
+  font-weight: 850;
+  justify-content: center;
+  min-height: 1.85rem;
+  padding: 0.24rem 0.55rem;
+  text-decoration: none;
+}
+
+.marketplace-dashboard-page :where(
+  .marketplace-top-tabs button.active,
+  .marketplace-match-tabs button.active,
+  .marketplace-listing-action-strip button:first-child,
+  .marketplace-create-post-button
+) {
+  background: rgba(37, 99, 235, 0.45);
+  border-color: rgba(147, 197, 253, 0.55);
+  color: #f8fafc;
+}
+
+.marketplace-top-search span,
+.marketplace-section-kicker {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+
+.marketplace-top-search input,
+.marketplace-filter-sidebar select,
+.marketplace-filter-sidebar input {
+  min-height: 2rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.marketplace-listing-grid {
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.marketplace-listing-shell {
+  gap: 0.4rem;
+  padding: 0.35rem;
+}
+
+.marketplace-listing-accent-row {
+  font-size: 0.72rem;
+}
+
+.marketplace-post-card {
+  gap: 0.32rem;
+  padding: 0.5rem;
+}
+
+.marketplace-post-pills,
+.marketplace-post-actions,
+.marketplace-status-controls {
+  gap: 0.25rem;
+}
+
+.marketplace-status-pill,
+.marketplace-listing-type,
+.marketplace-match-badge {
+  font-size: 0.62rem;
+  padding: 0.12rem 0.34rem;
+}
+
+.marketplace-post-meta {
+  gap: 0.3rem;
+  grid-template-columns: repeat(auto-fit, minmax(4.8rem, 1fr));
+}
+
+.marketplace-post-meta span {
+  padding: 0.25rem 0.35rem;
+}
+
+.marketplace-post-meta strong {
+  font-size: 0.58rem;
+}
+
+.marketplace-post-description {
+  font-size: 0.78rem;
+  -webkit-line-clamp: 1;
+}
+
+.marketplace-linked-matches {
+  padding: 0.45rem;
+}
+
+.marketplace-linked-matches > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.marketplace-linked-matches > summary::-webkit-details-marker {
+  display: none;
+}
+
+.marketplace-linked-matches > summary span {
+  border: 1px solid rgba(52, 211, 153, 0.32);
+  color: #bbf7d0;
+  font-size: 0.66rem;
+  font-weight: 900;
+  padding: 0.06rem 0.34rem;
+}
+
+.marketplace-linked-matches[open] > summary {
+  margin-bottom: 0.4rem;
+}
+
+.marketplace-match-panel {
+  gap: 0.55rem;
+}
+
+.marketplace-compact-panel-title {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.marketplace-match-card {
+  gap: 0.32rem;
+  padding: 0.5rem;
+}
+
+.marketplace-right-panel {
+  gap: 0.45rem;
+  padding: 0.5rem;
+}
+
+.marketplace-filter-note,
+.marketplace-empty-state {
+  padding: 0.5rem;
+}
+
+.marketplace-table-actions {
+  gap: 0.25rem;
+}
+
+.marketplace-posted-table th,
+.marketplace-posted-table td {
+  padding: 0.45rem;
+}
+
+.marketplace-builder-heading,
+.marketplace-builder-layout,
+.marketplace-builder-summary {
+  gap: 0.55rem;
+}
+
+.marketplace-builder-card,
+.marketplace-card-picker,
+.marketplace-builder-controls,
+.marketplace-builder-list {
+  gap: 0.45rem;
+}
+
+.marketplace-builder-add-row button {
+  min-height: 2rem;
+}

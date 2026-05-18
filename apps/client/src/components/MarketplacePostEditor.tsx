@@ -249,7 +249,6 @@ export function MarketplacePostEditor({ cardLibrary, initialDraft, mode = "creat
       <div className="marketplace-builder-heading">
         <div>
           <h3>{mode === "edit" ? "Edit Post" : "Create Post"}</h3>
-          <p className="muted">Search your loaded cards, choose a variant, then add it to Have or Need.</p>
         </div>
         <div className="marketplace-builder-top-actions">
           <div className="marketplace-mode-toggles" role="group" aria-label="Marketplace post mode">
@@ -319,8 +318,8 @@ export function MarketplacePostEditor({ cardLibrary, initialDraft, mode = "creat
             <label>Note (optional)<textarea value={draft.note} onChange={e => setDraft(prev => ({ ...prev, note: e.target.value }))} rows={2} /></label>
           </div>
           <div className="marketplace-builder-add-row">
-            <button type="button" onClick={() => addSelectedCard("have")} disabled={!selectedCard || (!draft.tradeEnabled && !draft.saleEnabled)}>+ Have</button>
-            <button type="button" onClick={() => addSelectedCard("need")} disabled={!selectedCard || (!draft.tradeEnabled && !draft.saleEnabled)}>+ Need</button>
+            <button type="button" onClick={() => addSelectedCard("have")} disabled={!selectedCard || (!draft.tradeEnabled && !draft.saleEnabled)}>Add to Have</button>
+            <button type="button" onClick={() => addSelectedCard("need")} disabled={!selectedCard || (!draft.tradeEnabled && !draft.saleEnabled)}>Add to Need</button>
           </div>
         </div>
       </div>

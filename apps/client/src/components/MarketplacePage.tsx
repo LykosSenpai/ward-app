@@ -6,6 +6,7 @@ import { CardImageThumbnail, normalizeCardArtKey } from "./CardImagePreview";
 import { ModalPanel } from "./ui/ModalPanel";
 import { getMarketplaceVariantLabel, type MarketplacePostLineItem, type MarketplacePostStatus } from "../marketplaceHelpers";
 import { socket } from "../socket";
+import { copyMarketplaceText } from "./marketplaceClipboard";
 
 type Props = {
   authUser: AuthUser;
@@ -15,7 +16,11 @@ type Props = {
 type MarketplaceFeedSort = "UPDATED" | "BEST_MATCH" | "GEN_ASC" | "GEN_DESC" | "PRICE_ASC" | "PRICE_DESC";
 type ListingTypeFilter = "ALL" | "TRADE" | "SALE" | "TRADE_OR_SALE";
 type AvailabilityFilter = "ACTIVE_ONLY" | "INCLUDING_PENDING" | "ALL";
+type MarketplaceVariantFilter = "ALL" | "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
+type MarketplaceCardSideFilter = "ANY" | "HAVE" | "NEED";
+type MarketplaceMatchFilter = "ALL" | "MATCHED_ONLY" | "UNMATCHED_ONLY";
 type MatchPanelTab = "ALL" | "NEED_YOUR_CARDS" | "YOU_NEED" | "MUTUAL";
+type MarketplaceCopyFeedback = { postId: string; status: "copied" | "failed" } | null;
 type MarketplaceServerMatchType = "THEY_HAVE_WHAT_I_NEED" | "I_HAVE_WHAT_THEY_NEED" | "MUTUAL_TRADE_MATCH";
 type MarketplaceServerMatch = {
   type: MarketplaceServerMatchType;
@@ -115,6 +120,25 @@ function getPostCards(post: MarketplacePost, cardById: Map<string, CardLibraryCa
   const seen = new Set<string>();
   const cards: CardLibraryCardSummary[] = [];
   for (const item of [...post.haveItems, ...post.needItems]) {
+    const card = getLineItemCard(item, cardById);
+    if (card && !seen.has(card.id)) {
+      seen.add(card.id);
+      cards.push(card);
+    }
+  }
+  return cards;
+}
+
+function getPostItemsForSide(post: MarketplacePost, sideFilter: MarketplaceCardSideFilter): Array<string | MarketplacePostLineItem> {
+  if (sideFilter === "HAVE") return post.haveItems;
+  if (sideFilter === "NEED") return post.needItems;
+  return [...post.haveItems, ...post.needItems];
+}
+
+function getPostCardsForSide(post: MarketplacePost, cardById: Map<string, CardLibraryCardSummary>, sideFilter: MarketplaceCardSideFilter): CardLibraryCardSummary[] {
+  const seen = new Set<string>();
+  const cards: CardLibraryCardSummary[] = [];
+  for (const item of getPostItemsForSide(post, sideFilter)) {
     const card = getLineItemCard(item, cardById);
     if (card && !seen.has(card.id)) {
       seen.add(card.id);
@@ -256,9 +280,33 @@ function matchesGeneration(post: MarketplacePost, generationFilter: string, card
   return getPostCards(post, cardById).some(card => `${card.generation ?? ""}` === generationFilter);
 }
 
-function matchesRarity(post: MarketplacePost, rarityFilter: string, cardById: Map<string, CardLibraryCardSummary>): boolean {
+function matchesRarity(post: MarketplacePost, rarityFilter: string, cardById: Map<string, CardLibraryCardSummary>, sideFilter: MarketplaceCardSideFilter): boolean {
   if (rarityFilter === "ALL") return true;
-  return getPostCards(post, cardById).some(card => `${card.rarity ?? ""}` === rarityFilter);
+  return getPostCardsForSide(post, cardById, sideFilter).some(card => `${card.rarity ?? ""}` === rarityFilter);
+}
+
+function matchesCardSide(post: MarketplacePost, sideFilter: MarketplaceCardSideFilter): boolean {
+  if (sideFilter === "HAVE") return post.haveItems.length > 0;
+  if (sideFilter === "NEED") return post.needItems.length > 0;
+  return true;
+}
+
+function matchesMarketplaceVariant(post: MarketplacePost, variantFilter: MarketplaceVariantFilter, sideFilter: MarketplaceCardSideFilter): boolean {
+  if (variantFilter === "ALL") return true;
+  const items = getPostItemsForSide(post, sideFilter);
+  return items.some(item => {
+    const variant = typeof item === "string" ? "default" : item.variant ?? "default";
+    if (variantFilter === "DEFAULT") return variant === "default";
+    if (variantFilter === "HOLO") return variant === "holo" || variant === "zero-art-holo";
+    if (variantFilter === "ZERO") return variant === "zero-art" || variant === "zero-art-holo";
+    return variant === "zero-art-holo";
+  });
+}
+
+function matchesMatchFilter(post: MarketplacePost, matchFilter: MarketplaceMatchFilter, matchesByPostId: Map<string, MarketplacePostMatchSummary[]>): boolean {
+  if (matchFilter === "ALL") return true;
+  const hasMatches = (matchesByPostId.get(post.id)?.length ?? 0) > 0;
+  return matchFilter === "MATCHED_ONLY" ? hasMatches : !hasMatches;
 }
 
 function sortMarketplacePosts(
@@ -383,18 +431,20 @@ function MatchPanel({
   cardById: Map<string, CardLibraryCardSummary>;
 }) {
   const tabs: Array<{ tab: MatchPanelTab; label: string }> = [
-    { tab: "ALL", label: "All Matches" },
-    { tab: "NEED_YOUR_CARDS", label: "Need Your Cards" },
+    { tab: "ALL", label: "All" },
+    { tab: "NEED_YOUR_CARDS", label: "They Need" },
     { tab: "YOU_NEED", label: "You Need" },
-    { tab: "MUTUAL", label: "Mutual Trades" }
+    { tab: "MUTUAL", label: "Mutual" }
   ];
 
   const visibleItems = filterMatchPanelItems(items, activeTab).slice(0, 8);
 
   return (
-    <aside className="marketplace-dashboard-side marketplace-card marketplace-match-panel">
-      <div className="marketplace-section-kicker">Matches</div>
-      <h3>People Who Have / Need Your Cards</h3>
+    <aside id="marketplace-matches-panel" className="marketplace-dashboard-side marketplace-card marketplace-match-panel">
+      <div className="marketplace-compact-panel-title">
+        <span className="marketplace-section-kicker">Matches</span>
+        <h3>Auto Matches</h3>
+      </div>
       <div className="marketplace-match-tabs" role="tablist" aria-label="Marketplace match filters">
         {tabs.map(tab => (
           <button key={tab.tab} type="button" className={activeTab === tab.tab ? "active" : ""} onClick={() => setActiveTab(tab.tab)}>
@@ -428,25 +478,25 @@ function MatchPanel({
           ))}
         </div>
       )}
-      <section className="marketplace-right-panel marketplace-card">
-        <div className="marketplace-list-heading-row">
-          <h4>Your Want List Overview</h4>
-          <span>{items.length} cards</span>
-        </div>
+      <details className="marketplace-right-panel marketplace-card marketplace-compact-details">
+        <summary>
+          <span>Want Overview</span>
+          <strong>{items.length}</strong>
+        </summary>
         <div className="marketplace-want-progress">
           <div className="marketplace-want-progress-bar" style={{ width: `${Math.min(88, 28 + items.length * 5)}%` }} />
         </div>
-        <p className="subtitle">Top priority wants are surfaced first in your match queue.</p>
-      </section>
-      <section className="marketplace-right-panel marketplace-card">
-        <h4>Trading Tools</h4>
-        <label className="marketplace-toggle-row"><span>Auto-Match Alerts</span><input type="checkbox" checked readOnly /></label>
-        <label className="marketplace-toggle-row"><span>Price Tracker</span><input type="checkbox" checked readOnly /></label>
+      </details>
+      <details className="marketplace-right-panel marketplace-card marketplace-compact-details">
+        <summary>
+          <span>Beta Limits</span>
+          <strong>Info</strong>
+        </summary>
         <div className="marketplace-filter-note">
-          <strong>Payments & Shipping</strong>
-          <span>Disabled by feature flags in this release. Trading + messaging only.</span>
+          <strong>No checkout or shipping</strong>
+          <span>Use Discord to coordinate trades.</span>
         </div>
-      </section>
+      </details>
     </aside>
   );
 }
@@ -465,7 +515,7 @@ function MyPostedCardsTable({
   onStatusChange: (post: MarketplacePost, status: MarketplacePostStatus) => void;
 }) {
   return (
-    <section className="marketplace-my-posted-cards marketplace-card">
+    <section id="marketplace-my-posts" className="marketplace-my-posted-cards marketplace-card">
       <div className="marketplace-list-heading-row">
         <div>
           <div className="marketplace-section-kicker">My Posted Cards</div>
@@ -515,7 +565,8 @@ function MyPostedCardsTable({
                     <td>
                       <div className="marketplace-table-actions">
                         <button type="button" onClick={() => onEdit(post)}>Edit</button>
-                        <button type="button" disabled={post.status === "PENDING"} onClick={() => onStatusChange(post, "PENDING")}>Pause</button>
+                        <button type="button" disabled={post.status === "OPEN"} onClick={() => onStatusChange(post, "OPEN")}>Open</button>
+                        <button type="button" disabled={post.status === "PENDING"} onClick={() => onStatusChange(post, "PENDING")}>Pending</button>
                         <button type="button" disabled={post.status === "CLOSED"} onClick={() => onStatusChange(post, "CLOSED")}>Close</button>
                       </div>
                     </td>
@@ -541,7 +592,12 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
   const [generationFilter, setGenerationFilter] = useState("ALL");
   const [rarityFilter, setRarityFilter] = useState("ALL");
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>("ACTIVE_ONLY");
+  const [variantFilter, setVariantFilter] = useState<MarketplaceVariantFilter>("ALL");
+  const [cardSideFilter, setCardSideFilter] = useState<MarketplaceCardSideFilter>("ANY");
+  const [matchFilter, setMatchFilter] = useState<MarketplaceMatchFilter>("ALL");
   const [matchTab, setMatchTab] = useState<MatchPanelTab>("ALL");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<MarketplaceCopyFeedback>(null);
   const cardById = useMemo(() => new Map(cardLibrary.map(card => [card.id, card])), [cardLibrary]);
   const generations = useMemo(() => Array.from(new Set(cardLibrary.map(card => `${card.generation ?? ""}`).filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), [cardLibrary]);
   const rarities = useMemo(() => Array.from(new Set(cardLibrary.map(card => `${card.rarity ?? ""}`).filter(Boolean))).sort(), [cardLibrary]);
@@ -559,14 +615,27 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
       if (normalizedSearch && !getPostSearchText(post, cardById).includes(normalizedSearch)) return false;
       if (!matchesListingType(post, listingTypeFilter)) return false;
       if (!matchesAvailability(post, availabilityFilter)) return false;
+      if (!matchesCardSide(post, cardSideFilter)) return false;
+      if (!matchesMarketplaceVariant(post, variantFilter, cardSideFilter)) return false;
+      if (!matchesMatchFilter(post, matchFilter, matchesByPostId)) return false;
       if (!matchesGeneration(post, generationFilter, cardById)) return false;
-      if (!matchesRarity(post, rarityFilter, cardById)) return false;
+      if (!matchesRarity(post, rarityFilter, cardById, cardSideFilter)) return false;
       return true;
     });
 
     return sortMarketplacePosts(filtered, feedSort, cardById, matchesByPostId);
-  }, [availabilityFilter, cardById, feedSearch, feedSort, generationFilter, listingTypeFilter, matchesByPostId, rarityFilter, visibleOtherPosts]);
+  }, [availabilityFilter, cardById, cardSideFilter, feedSearch, feedSort, generationFilter, listingTypeFilter, matchFilter, matchesByPostId, rarityFilter, variantFilter, visibleOtherPosts]);
   const matchPanelItems = useMemo(() => buildMatchPanelItems(myPosts, matchesByPostId), [matchesByPostId, myPosts]);
+  const activeFilterCount = [
+    listingTypeFilter !== "ALL",
+    generationFilter !== "ALL",
+    rarityFilter !== "ALL",
+    availabilityFilter !== "ACTIVE_ONLY",
+    variantFilter !== "ALL",
+    cardSideFilter !== "ANY",
+    matchFilter !== "ALL",
+    feedSort !== "UPDATED"
+  ].filter(Boolean).length;
 
   useEffect(() => {
     const onPosts = (incoming: MarketplacePost[]) => setPosts(incoming);
@@ -648,14 +717,48 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
     socket.emit("marketplace:updatePost", { ...post, status });
   }
 
+  function resetMarketplaceFilters() {
+    setFeedSearch("");
+    setFeedSort("UPDATED");
+    setListingTypeFilter("ALL");
+    setGenerationFilter("ALL");
+    setRarityFilter("ALL");
+    setAvailabilityFilter("ACTIVE_ONLY");
+    setVariantFilter("ALL");
+    setCardSideFilter("ANY");
+    setMatchFilter("ALL");
+  }
+
+  function refreshMarketplace() {
+    socket.emit("marketplace:listPosts");
+    socket.emit("marketplace:listMatches");
+  }
+
+  function scrollToMarketplaceSection(sectionId: string) {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function showListingType(filter: ListingTypeFilter) {
+    setListingTypeFilter(filter);
+    scrollToMarketplaceSection("marketplace-live-listings");
+  }
+
+  function showMatches() {
+    setMatchTab("ALL");
+    scrollToMarketplaceSection("marketplace-matches-panel");
+  }
+
+  async function copyPostMessage(post: MarketplacePost) {
+    const seller = post.discord?.globalName || post.discord?.username || post.discordHandle || post.displayName || "there";
+    const message = `Hi ${seller}, I'm interested in your WARD marketplace post "${post.title}".`;
+    setCopyFeedback({ postId: post.id, status: await copyMarketplaceText(message) ? "copied" : "failed" });
+    window.setTimeout(() => setCopyFeedback(null), 1600);
+  }
+
   async function handleLineItemContact(post: MarketplacePost, item: MarketplacePostLineItem) {
     const seller = post.discord?.globalName || post.discord?.username || post.discordHandle || post.displayName || "seller";
     const message = `Hi ${seller}, I'm interested in ${item.quantity}x ${item.name} (${getMarketplaceVariantLabel(item.variant)}) from your post "${post.title}".`;
-    try {
-      await navigator.clipboard?.writeText(message);
-    } catch {
-      // noop: clipboard unavailable in some browser contexts
-    }
+    await copyMarketplaceText(message);
   }
 
   return (
@@ -679,11 +782,11 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
           />
         </label>
         <nav className="marketplace-top-tabs" aria-label="Marketplace navigation">
-          <button type="button" className={listingTypeFilter === "ALL" ? "active" : ""} onClick={() => setListingTypeFilter("ALL")}>Marketplace</button>
-          <button type="button" className={listingTypeFilter === "TRADE" ? "active" : ""} onClick={() => setListingTypeFilter("TRADE")}>Trade Listings</button>
-          <button type="button" onClick={() => setMatchTab("YOU_NEED")}>Wants</button>
-          <button type="button" onClick={() => setAvailabilityFilter("ALL")}>My Posts</button>
-          <button type="button" onClick={() => setMatchTab("ALL")}>Matches</button>
+          <button type="button" className={listingTypeFilter === "ALL" ? "active" : ""} onClick={() => showListingType("ALL")}>All</button>
+          <button type="button" className={listingTypeFilter === "TRADE" ? "active" : ""} onClick={() => showListingType("TRADE")}>Trade</button>
+          <button type="button" className={listingTypeFilter === "SALE" ? "active" : ""} onClick={() => showListingType("SALE")}>Sale</button>
+          <button type="button" onClick={showMatches}>Matches</button>
+          <button type="button" onClick={() => scrollToMarketplaceSection("marketplace-my-posts")}>My Posts</button>
         </nav>
         <div className="marketplace-profile-block">
           <span className="marketplace-notification-dot" aria-label="Marketplace notifications">New</span>
@@ -708,77 +811,105 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
 
       <section className="marketplace-dashboard-hero marketplace-card">
         <div>
-          <div className="marketplace-section-kicker">Discovery - Trade - Coordinate</div>
-          <h2>Live Trade Listings</h2>
-          <p>Browse cards, match wants against posted cards, and coordinate through Discord. Sale posts are inquiry-only in this release.</p>
+          <div className="marketplace-section-kicker">Trade Board</div>
+          <h2>Live Listings</h2>
+          <div className="marketplace-compact-stats" aria-label="Marketplace totals">
+            <span><strong>{filteredOtherPosts.length}</strong> shown</span>
+            <span><strong>{visibleOtherPosts.length}</strong> active</span>
+            <span><strong>{myPosts.length}</strong> mine</span>
+            <span><strong>{matchPanelItems.length}</strong> matches</span>
+          </div>
         </div>
         <div className="marketplace-hero-actions">
           <button type="button" className="marketplace-create-post-button" onClick={startCreatingPost} disabled={!canPost}>Create Post</button>
-          <button type="button" className="marketplace-disabled-action" disabled title="Checkout is not available in this beta. Use messaging to coordinate with the seller directly.">Checkout Disabled</button>
-          <button type="button" className="marketplace-disabled-action" disabled title="Shipping tools are planned, but trades are currently coordinated manually.">Shipping Coming Soon</button>
+          <button type="button" onClick={refreshMarketplace}>Refresh</button>
         </div>
         {!canPost ? <p className="subtitle">Connect Discord from your profile to create or edit marketplace posts.</p> : null}
       </section>
 
       <div className="marketplace-dashboard-grid">
-        <aside className="marketplace-dashboard-side marketplace-card marketplace-filter-sidebar">
-          <div className="marketplace-section-kicker">Filters</div>
-          <h3>Find Listings</h3>
-          <label>
-            Listing type
-            <select value={listingTypeFilter} onChange={event => setListingTypeFilter(event.target.value as ListingTypeFilter)}>
-              <option value="ALL">All listing types</option>
-              <option value="TRADE">Trade first</option>
-              <option value="SALE">Sale inquiry only</option>
-              <option value="TRADE_OR_SALE">Trade or sale inquiry</option>
-            </select>
-          </label>
-          <label>
-            Game
-            <select disabled>
-              <option>WARD TCG</option>
-            </select>
-          </label>
-          <label>
-            Generation / Set
-            <select value={generationFilter} onChange={event => setGenerationFilter(event.target.value)}>
-              <option value="ALL">All generations</option>
-              {generations.map(generation => <option value={generation} key={generation}>Gen {generation}</option>)}
-            </select>
-          </label>
-          <label>
-            Rarity
-            <select value={rarityFilter} onChange={event => setRarityFilter(event.target.value)}>
-              <option value="ALL">All rarities</option>
-              {rarities.map(rarity => <option value={rarity} key={rarity}>{rarity}</option>)}
-            </select>
-          </label>
-          <label>
-            Availability
-            <select value={availabilityFilter} onChange={event => setAvailabilityFilter(event.target.value as AvailabilityFilter)}>
-              <option value="ACTIVE_ONLY">Active only</option>
-              <option value="INCLUDING_PENDING">Active + pending</option>
-              <option value="ALL">All statuses</option>
-            </select>
-          </label>
-          <label>
-            Sort
-            <select value={feedSort} onChange={event => setFeedSort(event.target.value as MarketplaceFeedSort)}>
-              <option value="UPDATED">Newest activity</option>
-              <option value="BEST_MATCH">Best match</option>
-              <option value="GEN_ASC">Generation low to high</option>
-              <option value="GEN_DESC">Generation high to low</option>
-              <option value="PRICE_ASC">Reference value low to high</option>
-              <option value="PRICE_DESC">Reference value high to low</option>
-            </select>
-          </label>
-          <div className="marketplace-filter-note">
-            <strong>Beta safety</strong>
-            <span>No checkout, payment collection, shipping address collection, or label generation is active.</span>
+        <details className="marketplace-dashboard-side marketplace-card marketplace-filter-sidebar marketplace-compact-details" open={filtersOpen} onToggle={event => setFiltersOpen(event.currentTarget.open)}>
+          <summary>
+            <span>Filters</span>
+            <strong>{activeFilterCount > 0 ? `${activeFilterCount} active` : "Closed"}</strong>
+          </summary>
+          <div className="marketplace-filter-grid">
+            <label>
+              Listing
+              <select value={listingTypeFilter} onChange={event => setListingTypeFilter(event.target.value as ListingTypeFilter)}>
+                <option value="ALL">All types</option>
+                <option value="TRADE">Trade</option>
+                <option value="SALE">Sale</option>
+                <option value="TRADE_OR_SALE">Trade or Sale</option>
+              </select>
+            </label>
+            <label>
+              Side
+              <select value={cardSideFilter} onChange={event => setCardSideFilter(event.target.value as MarketplaceCardSideFilter)}>
+                <option value="ANY">Have or Need</option>
+                <option value="HAVE">Have cards</option>
+                <option value="NEED">Need cards</option>
+              </select>
+            </label>
+            <label>
+              Variant
+              <select value={variantFilter} onChange={event => setVariantFilter(event.target.value as MarketplaceVariantFilter)}>
+                <option value="ALL">All variants</option>
+                <option value="DEFAULT">Default</option>
+                <option value="HOLO">Holo</option>
+                <option value="ZERO">Zero</option>
+                <option value="ZERO_HOLO">Zero Holo</option>
+              </select>
+            </label>
+            <label>
+              Generation
+              <select value={generationFilter} onChange={event => setGenerationFilter(event.target.value)}>
+                <option value="ALL">All generations</option>
+                {generations.map(generation => <option value={generation} key={generation}>Gen {generation}</option>)}
+              </select>
+            </label>
+            <label>
+              Rarity
+              <select value={rarityFilter} onChange={event => setRarityFilter(event.target.value)}>
+                <option value="ALL">All rarities</option>
+                {rarities.map(rarity => <option value={rarity} key={rarity}>{rarity}</option>)}
+              </select>
+            </label>
+            <label>
+              Status
+              <select value={availabilityFilter} onChange={event => setAvailabilityFilter(event.target.value as AvailabilityFilter)}>
+                <option value="ACTIVE_ONLY">Open</option>
+                <option value="INCLUDING_PENDING">Open + Pending</option>
+                <option value="ALL">All statuses</option>
+              </select>
+            </label>
+            <label>
+              Matches
+              <select value={matchFilter} onChange={event => setMatchFilter(event.target.value as MarketplaceMatchFilter)}>
+                <option value="ALL">Any match state</option>
+                <option value="MATCHED_ONLY">With matches</option>
+                <option value="UNMATCHED_ONLY">No matches</option>
+              </select>
+            </label>
+            <label>
+              Sort
+              <select value={feedSort} onChange={event => setFeedSort(event.target.value as MarketplaceFeedSort)}>
+                <option value="UPDATED">Newest</option>
+                <option value="BEST_MATCH">Best match</option>
+                <option value="GEN_ASC">Gen low-high</option>
+                <option value="GEN_DESC">Gen high-low</option>
+                <option value="PRICE_ASC">Value low-high</option>
+                <option value="PRICE_DESC">Value high-low</option>
+              </select>
+            </label>
           </div>
-        </aside>
+          <div className="marketplace-filter-actions">
+            <button type="button" onClick={resetMarketplaceFilters}>Clear</button>
+            <button type="button" onClick={() => setFiltersOpen(false)}>Hide</button>
+          </div>
+        </details>
 
-        <main className="marketplace-live-listings">
+        <main id="marketplace-live-listings" className="marketplace-live-listings">
           <div className="marketplace-list-heading-row">
             <div>
               <div className="marketplace-section-kicker">Active WARD Listings</div>
@@ -811,9 +942,11 @@ export function MarketplacePage({ authUser, cardLibrary }: Props) {
                     onLineItemContact={item => handleLineItemContact(post, item)}
                   />
                   <div className="marketplace-listing-action-strip">
-                    <button type="button">{getPrimaryActionLabel(post)}</button>
-                    <button type="button">Add to Wants</button>
-                    <button type="button" className="marketplace-disabled-action" disabled title="Integrated payments are not available in this beta. Message the seller to coordinate.">Checkout Disabled</button>
+                    <button type="button" onClick={() => copyPostMessage(post)}>
+                      {copyFeedback?.postId === post.id ? (copyFeedback.status === "copied" ? "Copied" : "Copy Failed") : getPrimaryActionLabel(post)}
+                    </button>
+                    {post.discord?.userId ? <a href={`https://discord.com/users/${post.discord.userId}`} target="_blank" rel="noreferrer">Open Discord</a> : null}
+                    <button type="button" className="marketplace-disabled-action" disabled title="Integrated checkout is off.">Checkout Off</button>
                   </div>
                 </div>
               ))}
