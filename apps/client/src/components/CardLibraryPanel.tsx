@@ -192,6 +192,8 @@ export function CardLibraryPanel({
   const [activeMarketplaceAction, setActiveMarketplaceAction] = useState<null | { cardId: string; mode: "need" | "have" }>(null);
   const [activeFloatingCardId, setActiveFloatingCardId] = useState<string | null>(null);
   const [floatingControlsPosition, setFloatingControlsPosition] = useState<FloatingControlsPosition | null>(null);
+  const [mobileLayoutActive, setMobileLayoutActive] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [useInlineCardControlsOnly, setUseInlineCardControlsOnly] = useState(false);
 
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
@@ -210,17 +212,20 @@ export function CardLibraryPanel({
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
 
     const mediaQuery = window.matchMedia("(hover: none), (pointer: coarse), (max-width: 820px)");
-    const syncFloatingControlsMode = () => setUseInlineCardControlsOnly(mediaQuery.matches);
+    const syncMobileLayoutMode = () => {
+      setMobileLayoutActive(mediaQuery.matches);
+      setUseInlineCardControlsOnly(mediaQuery.matches);
+    };
 
-    syncFloatingControlsMode();
+    syncMobileLayoutMode();
 
     if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncFloatingControlsMode);
-      return () => mediaQuery.removeEventListener("change", syncFloatingControlsMode);
+      mediaQuery.addEventListener("change", syncMobileLayoutMode);
+      return () => mediaQuery.removeEventListener("change", syncMobileLayoutMode);
     }
 
-    mediaQuery.addListener(syncFloatingControlsMode);
-    return () => mediaQuery.removeListener(syncFloatingControlsMode);
+    mediaQuery.addListener(syncMobileLayoutMode);
+    return () => mediaQuery.removeListener(syncMobileLayoutMode);
   }, []);
 
   const deckCounts = useMemo(() => getDeckBuilderCounts(), [deckBuilderCardIds, getDeckBuilderCounts]);

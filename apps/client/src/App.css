@@ -5814,6 +5814,23 @@
   z-index: 20;
 }
 
+.library-option-a-filter-panel.mobile-collapsible.is-collapsed {
+  gap: 0;
+}
+
+.library-option-a-filter-panel.mobile-collapsible.is-collapsed .library-option-a-panel-header {
+  margin-bottom: 0;
+}
+
+.library-option-a-filter-panel.mobile-collapsible.is-collapsed .library-option-a-filter-stack {
+  display: none;
+}
+
+.library-option-a-mobile-filter-toggle {
+  min-height: 1.7rem;
+  padding: 0.22rem 0.5rem;
+}
+
 .library-option-a-filter-stack input,
 .library-option-a-filter-stack select,
 .library-option-a-drawer-grid select {
