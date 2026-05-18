@@ -79,6 +79,36 @@ function effectHasDeferredEffectRoll(effect: WardEngineEffect): boolean {
     Boolean(params?.roll);
 }
 
+function isFromHandBattleResponseTrigger(trigger: string): boolean {
+  return trigger.includes("_FROM_HAND") ||
+    trigger === "WHEN_OPPONENT_FINISHES_ATTACK";
+}
+
+function isResolvedFieldBattleResponseEffect(
+  source: ActiveBattleSource,
+  effect: WardEngineEffect
+): boolean {
+  if (source.zone !== "MAGIC_SLOT") return false;
+
+  const trigger = normalizeText(effect.trigger).trim().toUpperCase();
+  return isFromHandBattleResponseTrigger(trigger);
+}
+
+function preventionBlocksOutgoingAttackDamage(suggestion: BattleEffectSuggestion): boolean {
+  if (suggestion.strikeModifiers?.preventAttackDamage !== true) return false;
+
+  const text = [
+    suggestion.trigger,
+    suggestion.actionType,
+    suggestion.label,
+    suggestion.note
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return text.includes("cannot inflict") ||
+    text.includes("cannot deal atk damage") ||
+    text.includes("cannot deal attack damage");
+}
+
 function parseDiceLimit(effect: WardEngineEffect): number | undefined {
   const text = [effect.value, effect.params?.valueText, effect.actionText, effect.notes]
     .filter(Boolean)
@@ -683,6 +713,7 @@ function suggestionFromEffect(
   creature: BattleCreatureRef,
   index: number
 ): BattleEffectSuggestion | BattleEffectSuggestion[] | undefined {
+  if (isResolvedFieldBattleResponseEffect(source, effect)) return undefined;
   if (!sourceAppliesToCreature(state, source, effect, creature)) return undefined;
 
   const text = effectSearchText(effect);
@@ -1020,8 +1051,14 @@ export function getSuggestedStrikeModifiers(
     const patch = suggestion.strikeModifiers ?? {};
 
     if (appliesToAttacker) {
-      mergeStrikeModifier(result, patch);
-      notes.push(suggestion.label);
+      const attackerPatch = patch.preventAttackDamage && !preventionBlocksOutgoingAttackDamage(suggestion)
+        ? { ...patch, preventAttackDamage: false }
+        : patch;
+
+      if (hasMeaningfulStrikeModifiers(attackerPatch)) {
+        mergeStrikeModifier(result, attackerPatch);
+        notes.push(suggestion.label);
+      }
     } else if (appliesToDefender && patch.preventAttackDamage) {
       result.preventAttackDamage = true;
       notes.push(suggestion.label);

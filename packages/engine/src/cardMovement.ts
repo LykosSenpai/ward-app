@@ -14,7 +14,7 @@ import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
 import { removeActiveEffectInstancesFromSource, removeSourceLinkedRuntimeEffectsFromSource } from "./activeEffectInstances.js";
 import { getCardDefinition, getPlayer, type AddEventFn } from "./engineRuntime.js";
 import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
-import { moveFieldCreatureToCemetery } from "./fieldRemoval.js";
+import { moveFieldCreatureToCemetery, type FieldCreatureRemovalResult } from "./fieldRemoval.js";
 import { runCardRemovedFromFieldTriggers } from "./triggers.js";
 
 export type MoveMagicSlotToCemeteryResult = {
@@ -311,9 +311,10 @@ function creatureCannotReceiveHpDamage(card: CardInstance): boolean {
 
 function moveCreatureTargetToCemetery(
   state: MatchState,
-  target: ReturnType<typeof getCreatureTargetFromOption>
-): void {
-  moveFieldCreatureToCemetery(state, {
+  target: ReturnType<typeof getCreatureTargetFromOption>,
+  addEvent?: AddEventFn
+): FieldCreatureRemovalResult {
+  return moveFieldCreatureToCemetery(state, {
     fieldOwnerPlayerId: target.fieldOwnerPlayerId,
     creatureInstanceId: target.creature.instanceId,
     removedFromZone: target.targetKind,
@@ -322,18 +323,21 @@ function moveCreatureTargetToCemetery(
       ? "PRIMARY_CREATURE_KILLED_BY_EFFECT_DAMAGE"
       : "LIMITED_SUMMON_REMOVED_BY_EFFECT_DAMAGE",
     requirePrimaryReplacement: target.targetKind === "PRIMARY_CREATURE",
-    autoPromoteSingleLimitedSummon: true
+    autoPromoteSingleLimitedSummon: true,
+    addEvent
   });
 }
 
 export function applyDamageToCreatureTarget(
   state: MatchState,
   option: EffectTargetOption,
-  damageAmount: number
+  damageAmount: number,
+  addEvent?: AddEventFn
 ): CreatureTargetResult & {
   damageAmount: number;
   remainingHp: number;
   killed: boolean;
+  removalResult?: FieldCreatureRemovalResult;
 } {
   if (!Number.isFinite(damageAmount) || damageAmount <= 0) {
     throw new Error("Damage amount must be greater than 0.");
@@ -360,10 +364,9 @@ export function applyDamageToCreatureTarget(
   const nextHp = Math.max(0, currentHp - damageAmount);
 
   target.creature.currentHp = nextHp;
-
-  if (nextHp === 0) {
-    moveCreatureTargetToCemetery(state, target);
-  }
+  const removalResult = nextHp === 0
+    ? moveCreatureTargetToCemetery(state, target, addEvent)
+    : undefined;
 
   return {
     playerId: target.fieldOwnerPlayerId,
@@ -373,7 +376,8 @@ export function applyDamageToCreatureTarget(
     targetKind: target.targetKind,
     damageAmount,
     remainingHp: nextHp,
-    killed: nextHp === 0
+    killed: nextHp === 0,
+    removalResult
   };
 }
 

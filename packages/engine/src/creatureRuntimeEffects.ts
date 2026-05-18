@@ -4,6 +4,7 @@ import type {
   ActiveEffectInstance,
   ActiveRecurringCreatureEffect,
   BoardEventType,
+  BoardZoneRef,
   CannotInflictAttackDamageBattlePolicy,
   BattleParticipantSnapshot,
   CardDefinition,
@@ -32,7 +33,7 @@ import {
   normalizeRecurringTickTiming,
   shouldRecurringEffectTickNow
 } from "./effectTiming.js";
-import { addActiveStatusIfAbsent, syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
+import { addActiveStatusIfAbsent, addRecurringEffectIfAbsent, findActiveRecurringEffect, syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
 import { getRuntimeBlockActionType, getRuntimeBlockStatChanges, getRuntimeBlockText } from "./effectBlockRuntime.js";
 import { createPendingForcedDamageDiceRollSession } from "./effectRollActions.js";
 
@@ -93,6 +94,10 @@ type BoardEventPayload = {
   rollKind?: string;
   diceLimitMode?: string;
   diceLimitValue?: number;
+  fromZoneRef?: BoardZoneRef;
+  toZoneRef?: BoardZoneRef;
+  remainingHp?: number;
+  killed?: boolean;
 };
 
 function runtimeBoardEventBase(
@@ -119,6 +124,13 @@ function timingBoardEventFields(state: MatchState): {
     phase: state.turn.phase,
     turnNumber: state.turn.turnNumber,
     turnCycleNumber: state.turn.turnCycleNumber
+  };
+}
+
+function boardZoneRef(playerId: string | undefined, zone: BoardZoneRef["zone"]): BoardZoneRef {
+  return {
+    ...(playerId ? { playerId } : {}),
+    zone
   };
 }
 
@@ -796,7 +808,31 @@ function addRecurringEffectToCreature(
   const stackRule = String(effect.params?.stackRule ?? effect.duration?.stackRule ?? "DO_NOT_STACK");
   target.card.activeRecurringEffects ??= [];
 
-  if (stackRule === "DO_NOT_STACK" && target.card.activeRecurringEffects.some(item => item.effectType === effectType)) {
+  const existingRecurring = findActiveRecurringEffect(target.card, {
+    sourceCardInstanceId: source.card.instanceId,
+    sourceEffectId: effect.id,
+    effectType
+  });
+
+  if (existingRecurring && effectType === "DAMAGE_OVER_TIME") {
+    addEvent?.(state, "BATTLE_RECURRING_EFFECT_ALREADY_ACTIVE", source.player.id, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      targetCreatureInstanceId: target.card.instanceId,
+      targetCreatureName: target.definition.name,
+      effectType,
+      remainingTicks: existingRecurring.remainingTicks,
+      note: "Recurring effect is already active on this creature; counters were not refreshed."
+    });
+    return;
+  }
+
+  if (stackRule === "DO_NOT_STACK" && target.card.activeRecurringEffects.some(item =>
+    item.effectType === effectType &&
+    item.id !== existingRecurring?.id
+  )) {
     addEvent?.(state, "BATTLE_RECURRING_EFFECT_NOT_STACKED", source.player.id, {
       sourceCardInstanceId: source.card.instanceId,
       sourceCardName: source.definition.name,
@@ -843,8 +879,21 @@ function addRecurringEffectToCreature(
     expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
   };
 
-  target.card.activeRecurringEffects.push(activeRecurring);
-  syncRecurringActiveEffectInstance(target.card, activeRecurring);
+  const addResult = addRecurringEffectIfAbsent(target.card, activeRecurring);
+  if (!addResult.applied) {
+    addEvent?.(state, "BATTLE_RECURRING_EFFECT_ALREADY_ACTIVE", source.player.id, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      targetCreatureInstanceId: target.card.instanceId,
+      targetCreatureName: target.definition.name,
+      effectType,
+      remainingTicks: addResult.activeRecurring.remainingTicks,
+      note: "Recurring effect is already active on this creature; counters were not refreshed."
+    });
+    return;
+  }
 
   if (activeRecurring.healImmediatelyOnApply && activeRecurring.effectType === "HEAL_OVER_TIME") {
     const result = healCreatureTarget(state, targetOptionFromCreatureLocation(target), activeRecurring.amount);
@@ -1048,12 +1097,20 @@ function targetForBattleEffect(
     targetText.includes("defending creature") ||
     targetText.includes("defender") ||
     targetText.includes("missed creature");
+  const onHitTextMeansBattleOpponent =
+    (normalize(effect.trigger) === "ON_HIT" || fullText.includes("when this creature hits")) &&
+    (
+      fullText.includes("targeted creature receives") ||
+      fullText.includes("targeted creature takes") ||
+      fullText.includes("target creature receives") ||
+      fullText.includes("target creature takes")
+    );
 
   // Prefer the parsed target fields over the full card text. Conditions often say
   // "when this creature hits", but the effect target is the opposing battle creature.
   // Blue Dragon is the key case: source text says "this creature hits", while the
   // target is the creature that was hit.
-  if (parsedTargetMeansBattleOpponent) {
+  if (parsedTargetMeansBattleOpponent || onHitTextMeansBattleOpponent) {
     return opposingStrikeParticipantForSource(state, source, strike);
   }
 
@@ -1941,7 +1998,73 @@ function processRecurringRuntimeEffectsForTiming(
         ]
       });
     } else {
-      const result = applyDamageToCreatureTarget(state, option, recurring.amount);
+      const result = applyDamageToCreatureTarget(state, option, recurring.amount, addEvent);
+      const boardEvents: BoardEventPayload[] = [
+        {
+          type: "RECURRING_EFFECT_TICKED",
+          playerId: recurring.sourcePlayerId,
+          sourceCardInstanceId: recurring.sourceCardInstanceId,
+          sourceEffectId: recurring.sourceEffectId,
+          actionType: "APPLY_DAMAGE_OVER_TIME",
+          reason: "RECURRING_DAMAGE_TICK",
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          amount: result.damageAmount,
+          effectType: recurring.effectType,
+          status: recurring.effectType,
+          statusLabel: recurring.label,
+          ticksRemainingAfterThis,
+          ...timingBoardEventFields(state)
+        },
+        {
+          type: "CARD_DAMAGED",
+          playerId: recurring.sourcePlayerId,
+          sourceCardInstanceId: recurring.sourceCardInstanceId,
+          sourceEffectId: recurring.sourceEffectId,
+          actionType: "APPLY_DAMAGE_OVER_TIME",
+          reason: "RECURRING_DAMAGE_TICK",
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          amount: result.damageAmount,
+          remainingHp: result.remainingHp,
+          killed: result.killed,
+          damageType: recurring.effectType,
+          ...timingBoardEventFields(state)
+        }
+      ];
+
+      if (result.killed && result.removalResult) {
+        boardEvents.push({
+          type: "CARD_MOVED",
+          playerId: result.playerId,
+          sourceCardInstanceId: recurring.sourceCardInstanceId,
+          sourceEffectId: recurring.sourceEffectId,
+          actionType: "APPLY_DAMAGE_OVER_TIME",
+          reason: "RECURRING_DAMAGE_TICK_KILLED_CREATURE",
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          fromZoneRef: boardZoneRef(result.playerId, result.removalResult.removedFromZone),
+          toZoneRef: boardZoneRef(result.ownerPlayerId, "CEMETERY"),
+          ...timingBoardEventFields(state)
+        });
+      }
+
+      if (result.removalResult?.autoPromotedLimitedSummon) {
+        boardEvents.push({
+          type: "CARD_MOVED",
+          playerId: result.playerId,
+          sourceCardInstanceId: recurring.sourceCardInstanceId,
+          sourceEffectId: recurring.sourceEffectId,
+          actionType: "APPLY_DAMAGE_OVER_TIME",
+          reason: "RECURRING_DAMAGE_AUTO_PROMOTED_LIMITED_SUMMON",
+          cardInstanceId: result.removalResult.autoPromotedLimitedSummon.cardInstanceId,
+          targetCardInstanceId: result.removalResult.autoPromotedLimitedSummon.cardInstanceId,
+          fromZoneRef: boardZoneRef(result.playerId, "LIMITED_SUMMON"),
+          toZoneRef: boardZoneRef(result.playerId, "PRIMARY_CREATURE"),
+          ...timingBoardEventFields(state)
+        });
+      }
+
       addEvent?.(state, "RECURRING_DAMAGE_TICK_RESOLVED", recurring.sourcePlayerId, {
         sourceCardInstanceId: recurring.sourceCardInstanceId,
         sourceCardName: recurring.sourceCardName,
@@ -1957,37 +2080,9 @@ function processRecurringRuntimeEffectsForTiming(
         killed: result.killed,
         tickTiming,
         ticksRemainingAfterThis,
-        boardEvents: [
-          {
-            type: "RECURRING_EFFECT_TICKED",
-            playerId: recurring.sourcePlayerId,
-            sourceCardInstanceId: recurring.sourceCardInstanceId,
-            sourceEffectId: recurring.sourceEffectId,
-            actionType: "APPLY_DAMAGE_OVER_TIME",
-            reason: "RECURRING_DAMAGE_TICK",
-            cardInstanceId: result.creature.instanceId,
-            targetCardInstanceId: result.creature.instanceId,
-            amount: result.damageAmount,
-            effectType: recurring.effectType,
-            status: recurring.effectType,
-            statusLabel: recurring.label,
-            ticksRemainingAfterThis,
-            ...timingBoardEventFields(state)
-          } satisfies BoardEventPayload,
-          {
-            type: "CARD_DAMAGED",
-            playerId: recurring.sourcePlayerId,
-            sourceCardInstanceId: recurring.sourceCardInstanceId,
-            sourceEffectId: recurring.sourceEffectId,
-            actionType: "APPLY_DAMAGE_OVER_TIME",
-            reason: "RECURRING_DAMAGE_TICK",
-            cardInstanceId: result.creature.instanceId,
-            targetCardInstanceId: result.creature.instanceId,
-            amount: result.damageAmount,
-            damageType: recurring.effectType,
-            ...timingBoardEventFields(state)
-          } satisfies BoardEventPayload
-        ]
+        primaryReplacementRequired: result.removalResult?.primaryReplacementRequired ?? false,
+        autoPromotedLimitedSummon: result.removalResult?.autoPromotedLimitedSummon,
+        boardEvents
       });
     }
 

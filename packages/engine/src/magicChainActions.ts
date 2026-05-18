@@ -216,6 +216,10 @@ function returnOpponentFieldToHandForFoolishTricks(
     });
   }
 
+  if (primary) {
+    moveAttachedMagicCardsToCemeteryForCreature(state, primary.instanceId, addEvent);
+  }
+
   state.setup.primaryReplacementRequiredForPlayerId = undefined;
   return returned;
 }

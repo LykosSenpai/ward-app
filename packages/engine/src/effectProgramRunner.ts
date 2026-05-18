@@ -31,7 +31,7 @@ import {
   getTurnCycleExpiration,
   normalizeRecurringTickTiming
 } from "./effectTiming.js";
-import { syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
+import { addRecurringEffectIfAbsent, findActiveRecurringEffect } from "./activeEffectInstances.js";
 
 type CreatureTarget = {
   player: PlayerState;
@@ -419,7 +419,7 @@ function registerRecurringStep(args: {
   step: WardEffectProgramStep;
   target: CreatureTarget;
   effectType: ActiveRecurringCreatureEffect["effectType"];
-}): ActiveRecurringCreatureEffect {
+}): { recurring: ActiveRecurringCreatureEffect; applied: boolean } {
   const amount = firstPositiveNumberFromStep(args.effect, args.step);
 
   if (!amount) {
@@ -440,9 +440,22 @@ function registerRecurringStep(args: {
 
   args.target.card.activeRecurringEffects ??= [];
 
+  const existingRecurring = findActiveRecurringEffect(args.target.card, {
+    sourceCardInstanceId: args.prompt.sourceCardInstanceId,
+    sourceEffectId: args.prompt.effectId,
+    effectType: args.effectType
+  });
+
+  if (existingRecurring && args.effectType === "DAMAGE_OVER_TIME") {
+    return { recurring: existingRecurring, applied: false };
+  }
+
   if (
     stackRule === "DO_NOT_STACK" &&
-    args.target.card.activeRecurringEffects.some(item => item.effectType === args.effectType)
+    args.target.card.activeRecurringEffects.some(item =>
+      item.effectType === args.effectType &&
+      item.id !== existingRecurring?.id
+    )
   ) {
     throw new Error(`${args.effectType} does not stack on this creature.`);
   }
@@ -478,10 +491,9 @@ function registerRecurringStep(args: {
     expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
   };
 
-  args.target.card.activeRecurringEffects.push(recurring);
-  syncRecurringActiveEffectInstance(args.target.card, recurring);
+  const addResult = addRecurringEffectIfAbsent(args.target.card, recurring);
 
-  return recurring;
+  return { recurring: addResult.activeRecurring, applied: addResult.applied };
 }
 
 function moveSelectedCardByProgram(args: {
@@ -1067,7 +1079,7 @@ for (const step of steps) {
     }
 
     if ((op === "DOT.REGISTER" || op === "HOT.REGISTER") && target) {
-      const recurring = registerRecurringStep({
+      const recurringResult = registerRecurringStep({
         state: args.state,
         prompt: args.prompt,
         effect: args.effect,
@@ -1075,6 +1087,7 @@ for (const step of steps) {
         target,
         effectType: op === "HOT.REGISTER" ? "HEAL_OVER_TIME" : "DAMAGE_OVER_TIME"
       });
+      const recurring = recurringResult.recurring;
 
       appliedSteps.push(step.id);
 
@@ -1091,7 +1104,11 @@ for (const step of steps) {
         remainingTicks: recurring.remainingTicks,
         tickTiming: recurring.tickTiming,
         nextTickPlayerId: recurring.nextTickPlayerId,
-        nextTickTurnStartCount: recurring.nextTickTurnStartCount
+        nextTickTurnStartCount: recurring.nextTickTurnStartCount,
+        applied: recurringResult.applied,
+        note: recurringResult.applied
+          ? "Recurring effect registered."
+          : "Recurring effect was already active; counters were not refreshed."
       });
 
       continue;

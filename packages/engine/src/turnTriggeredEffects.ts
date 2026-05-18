@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import type {
   CardDefinition,
   CardInstance,
+  BoardZoneRef,
   EffectTargetOption,
   MatchState,
   PlayerState,
@@ -33,6 +34,13 @@ type CreatureLocation = {
   definition: Extract<CardDefinition, { cardType: "CREATURE" }>;
   targetKind: "PRIMARY_CREATURE" | "LIMITED_SUMMON";
 };
+
+function boardZoneRef(playerId: string | undefined, zone: BoardZoneRef["zone"]): BoardZoneRef {
+  return {
+    ...(playerId ? { playerId } : {}),
+    zone
+  };
+}
 
 function normalize(value: unknown): string {
   return typeof value === "string" ? value.trim().toUpperCase() : "";
@@ -314,14 +322,18 @@ function applyDamageEffect(
   for (const location of targetLocations) {
     const current = findCreatureLocationByInstanceId(state, location.card.instanceId);
     if (!current) continue;
-    const result = applyDamageToCreatureTarget(state, targetOptionFromLocation(current), amount * multiplier);
+    const result = applyDamageToCreatureTarget(state, targetOptionFromLocation(current), amount * multiplier, addEvent);
     results.push({
       playerId: result.playerId,
+      ownerPlayerId: result.ownerPlayerId,
+      removedFromZone: result.removalResult?.removedFromZone ?? result.targetKind,
       creatureName: result.creatureName,
       creatureInstanceId: result.creature.instanceId,
       damageAmount: result.damageAmount,
       remainingHp: result.remainingHp,
-      killed: result.killed
+      killed: result.killed,
+      primaryReplacementRequired: result.removalResult?.primaryReplacementRequired ?? false,
+      autoPromotedLimitedSummon: result.removalResult?.autoPromotedLimitedSummon
     });
   }
 
@@ -337,19 +349,59 @@ function applyDamageEffect(
     amountPerTrigger: amount,
     multiplier,
     results,
-    boardEvents: results.map(result => ({
-      type: "CARD_DAMAGED",
-      playerId: source.card.controllerPlayerId,
-      sourceCardInstanceId: source.card.instanceId,
-      sourceCardId: source.card.cardId,
-      sourceEffectId: effect.id,
-      actionType: effect.actionType,
-      reason: "TURN_TRIGGER_DAMAGE",
-      cardInstanceId: result.creatureInstanceId,
-      targetCardInstanceId: result.creatureInstanceId,
-      amount: result.damageAmount,
-      damageType: effect.params?.damageType ?? effect.actionType
-    }))
+    boardEvents: results.flatMap(result => {
+      const boardEvents: Array<Record<string, unknown>> = [
+        {
+          type: "CARD_DAMAGED",
+          playerId: source.card.controllerPlayerId,
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardId: source.card.cardId,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: "TURN_TRIGGER_DAMAGE",
+          cardInstanceId: result.creatureInstanceId,
+          targetCardInstanceId: result.creatureInstanceId,
+          amount: result.damageAmount,
+          damageType: effect.params?.damageType ?? effect.actionType,
+          remainingHp: result.remainingHp,
+          killed: result.killed
+        }
+      ];
+
+      if (result.killed) {
+        boardEvents.push({
+          type: "CARD_MOVED",
+          playerId: result.playerId,
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardId: source.card.cardId,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: "TURN_TRIGGER_DAMAGE_KILLED_CREATURE",
+          cardInstanceId: result.creatureInstanceId,
+          targetCardInstanceId: result.creatureInstanceId,
+          fromZoneRef: boardZoneRef(result.playerId, result.removedFromZone),
+          toZoneRef: boardZoneRef(result.ownerPlayerId, "CEMETERY")
+        });
+      }
+
+      if (result.autoPromotedLimitedSummon) {
+        boardEvents.push({
+          type: "CARD_MOVED",
+          playerId: result.playerId,
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardId: source.card.cardId,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: "TURN_TRIGGER_DAMAGE_AUTO_PROMOTED_LIMITED_SUMMON",
+          cardInstanceId: result.autoPromotedLimitedSummon.cardInstanceId,
+          targetCardInstanceId: result.autoPromotedLimitedSummon.cardInstanceId,
+          fromZoneRef: boardZoneRef(result.playerId, "LIMITED_SUMMON"),
+          toZoneRef: boardZoneRef(result.playerId, "PRIMARY_CREATURE")
+        });
+      }
+
+      return boardEvents;
+    })
   });
 
   return true;

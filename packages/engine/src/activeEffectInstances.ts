@@ -468,6 +468,56 @@ export function syncRecurringActiveEffectInstance(card: CardInstance, recurring:
   });
 }
 
+function recurringEffectMatches(
+  existing: ActiveRecurringCreatureEffect,
+  incoming: Pick<ActiveRecurringCreatureEffect, "sourceCardInstanceId" | "sourceEffectId" | "effectType">
+): boolean {
+  return existing.sourceCardInstanceId === incoming.sourceCardInstanceId &&
+    existing.sourceEffectId === incoming.sourceEffectId &&
+    normalize(existing.effectType) === normalize(incoming.effectType);
+}
+
+export function findActiveRecurringEffect(
+  card: CardInstance,
+  identity: Pick<ActiveRecurringCreatureEffect, "sourceCardInstanceId" | "sourceEffectId" | "effectType">
+): ActiveRecurringCreatureEffect | undefined {
+  return (card.activeRecurringEffects ?? []).find(existing => recurringEffectMatches(existing, identity));
+}
+
+export function addRecurringEffectIfAbsent(
+  card: CardInstance,
+  recurring: ActiveRecurringCreatureEffect
+): { activeRecurring: ActiveRecurringCreatureEffect; applied: boolean } {
+  card.activeRecurringEffects ??= [];
+  const existing = findActiveRecurringEffect(card, recurring);
+
+  if (existing) {
+    if (normalize(recurring.effectType) !== "HEAL_OVER_TIME") {
+      if (!card.activeEffectInstances?.some(instance => instance.id === existing.id)) {
+        syncRecurringActiveEffectInstance(card, existing);
+      }
+
+      return { activeRecurring: existing, applied: false };
+    }
+
+    card.activeRecurringEffects = card.activeRecurringEffects.filter(item => !recurringEffectMatches(item, recurring));
+    card.activeEffectInstances = (card.activeEffectInstances ?? []).filter(instance => instance.id !== existing.id);
+  }
+
+  const existingAfterHotReset = findActiveRecurringEffect(card, recurring);
+  if (existingAfterHotReset) {
+    if (!card.activeEffectInstances?.some(instance => instance.id === existingAfterHotReset.id)) {
+      syncRecurringActiveEffectInstance(card, existingAfterHotReset);
+    }
+
+    return { activeRecurring: existingAfterHotReset, applied: false };
+  }
+
+  card.activeRecurringEffects.push(recurring);
+  syncRecurringActiveEffectInstance(card, recurring);
+  return { activeRecurring: recurring, applied: true };
+}
+
 export function normalizeAllActiveEffectInstances(state: MatchState): void {
   for (const player of state.players) {
     const cards = [

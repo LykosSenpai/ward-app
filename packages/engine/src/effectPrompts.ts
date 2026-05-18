@@ -38,7 +38,7 @@ import {
   getTargetOptionsForQuery,
   inferTargetQueryForEffect
 } from "./targets.js";
-import { addActiveStatusIfAbsent, syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
+import { addActiveStatusIfAbsent, addRecurringEffectIfAbsent, findActiveRecurringEffect } from "./activeEffectInstances.js";
 import { getNextRecurringEffectTickSchedule } from "./effectTiming.js";
 import { getEffectResolutionMode } from "./effectRegistry.js";
 import { applyDestroyedMagicCountModifier, isAutomaticMagicEffectSupported, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
@@ -846,7 +846,21 @@ function applyRecurringPromptEffect(
   const stackRule = String(effect.params?.stackRule ?? effect.duration?.stackRule ?? "DO_NOT_STACK");
 
   target.card.activeRecurringEffects ??= [];
-  if (stackRule === "DO_NOT_STACK" && target.card.activeRecurringEffects.some(item => item.effectType === effectType)) {
+
+  const existingRecurring = findActiveRecurringEffect(target.card, {
+    sourceCardInstanceId: prompt.sourceCardInstanceId,
+    sourceEffectId: prompt.effectId,
+    effectType
+  });
+
+  if (existingRecurring && effectType === "DAMAGE_OVER_TIME") {
+    return { target, recurring: existingRecurring, applied: false };
+  }
+
+  if (stackRule === "DO_NOT_STACK" && target.card.activeRecurringEffects.some(item =>
+    item.effectType === effectType &&
+    item.id !== existingRecurring?.id
+  )) {
     throw new Error(`${effectType} does not stack on this creature.`);
   }
 
@@ -872,8 +886,11 @@ function applyRecurringPromptEffect(
     expiresAtPlayerTurnStartCount: (state.turn.turnStartCountsByPlayer[prompt.controllerPlayerId] ?? 0) + totalTicks
   };
 
-  target.card.activeRecurringEffects.push(recurring);
-  syncRecurringActiveEffectInstance(target.card, recurring);
+  const addResult = addRecurringEffectIfAbsent(target.card, recurring);
+
+  if (!addResult.applied) {
+    return { target, recurring: addResult.activeRecurring, applied: false };
+  }
 
   addEvent(state, "RECURRING_EFFECT_APPLIED", prompt.controllerPlayerId, {
     sourceCardInstanceId: prompt.sourceCardInstanceId,
@@ -890,7 +907,7 @@ function applyRecurringPromptEffect(
     nextTickTurnStartCount: recurring.nextTickTurnStartCount
   });
 
-  return { target, recurring };
+  return { target, recurring: addResult.activeRecurring, applied: true };
 }
 
 function applyDiceLimitPromptEffect(
@@ -1074,15 +1091,15 @@ function resolveCabalRetaliationChoicePrompt(
 
   const session = state.pendingBattle;
   if (!session) {
-    throw new Error("Cabal Warchief retaliation choice requires a pending battle.");
+    throw new Error("Extra-battle retaliation choice requires a pending battle.");
   }
 
   if (session.status !== "AWAITING_SPEED_CHECK") {
-    throw new Error("Choose the Cabal Warchief retaliation timing before the speed check.");
+    throw new Error("Choose the extra-battle retaliation timing before the speed check.");
   }
 
   if (session.defendingPlayerId !== prompt.controllerPlayerId) {
-    throw new Error("Only the defending player can choose Cabal Warchief retaliation timing.");
+    throw new Error("Only the defending player can choose extra-battle retaliation timing.");
   }
 
   const attackingPlayer = getPlayer(state, session.attackingPlayerId);
@@ -1102,7 +1119,7 @@ function resolveCabalRetaliationChoicePrompt(
     session.limitedSummonNoRetaliation = false;
     session.message = `Defender chose to return attack in this ${prompt.sourceCardName} battle. Run the speed check.`;
   } else {
-    throw new Error("Select a Cabal Warchief retaliation option.");
+    throw new Error("Select an extra-battle retaliation option.");
   }
 
   session.updatedAt = new Date().toISOString();
@@ -2446,7 +2463,11 @@ export function resolvePendingEffectTargetPrompt(
       remainingTicks: result.recurring?.remainingTicks ?? 0,
       nextTickPlayerId: result.recurring?.nextTickPlayerId,
       nextTickTurnStartCount: result.recurring?.nextTickTurnStartCount,
-      boardEvents: [
+      applied: result.applied,
+      note: result.applied
+        ? "Recurring effect applied."
+        : "Recurring effect was already active; counters were not refreshed.",
+      boardEvents: result.applied ? [
         {
           type: "STATUS_APPLIED",
           ...promptBoardEventBase(prompt, "RECURRING_EFFECT_APPLIED"),
@@ -2457,7 +2478,7 @@ export function resolvePendingEffectTargetPrompt(
           statusLabel: result.recurring?.label ?? (prompt.actionType.includes("HEAL") ? "Healing over time" : "Damage over time"),
           effectType: result.recurring?.effectType
         } satisfies BoardEventPayload
-      ]
+      ] : []
     });
 
     return nextState;

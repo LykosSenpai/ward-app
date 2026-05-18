@@ -14,7 +14,7 @@ import type {
   WardEffectStatChange
 } from "@ward/shared";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
-import { addActiveEffectInstance, addActiveStatusIfAbsent, syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
+import { addActiveEffectInstance, addActiveStatusIfAbsent, addRecurringEffectIfAbsent, findActiveRecurringEffect } from "./activeEffectInstances.js";
 import { getNextRecurringEffectTickSchedule, getTurnCycleExpiration } from "./effectTiming.js";
 import { moveAllMagicSlotCardsToCemetery } from "./cardMovement.js";
 import { getRuntimeBlockActionType, getRuntimeBlockDurationText, getRuntimeBlockMultiplier, getRuntimeBlockTargetText, getRuntimeBlockText } from "./effectBlockRuntime.js";
@@ -925,9 +925,18 @@ export function applyWhileEquippedBattleRequirementEffects(
     const trigger = String(effect.trigger ?? "").trim().toUpperCase();
     const durationType = String(effect.duration?.type ?? effect.params?.duration?.type ?? "").trim().toUpperCase();
     const targetText = (getRuntimeBlockTargetText(effect) ?? "").toLowerCase();
+    const text = [
+      getRuntimeBlockText(effect),
+      effect.value,
+      effect.params?.valueText,
+      effect.notes
+    ].filter(Boolean).join(" ").toLowerCase();
+    const hasReturnAttackCap = Number.isFinite(Number(effect.params?.maxReturnAttacksAgainstThisEffect)) ||
+      text.includes("only return attack for 1") ||
+      text.includes("only return attack for one");
     return actionType === "APPLY_BATTLE_REQUIREMENT" &&
       (trigger === "WHILE_EQUIPPED" || durationType === "WHILE_EQUIPPED") &&
-      targetText.includes("equipped creature");
+      (targetText.includes("equipped creature") || hasReturnAttackCap);
   });
 
   if (effects.length === 0) return 0;
@@ -1288,14 +1297,16 @@ export function applyOnEquipRecurringEffects(
     }
 
     const stackRule = String(effect.params?.stackRule ?? "DO_NOT_STACK");
-    const existingIndex = targetCreature.activeRecurringEffects.findIndex(item =>
-      item.sourceCardInstanceId === sourceMagicCard.instanceId &&
-      item.sourceEffectId === effect.id
-    );
+    const existingRecurring = findActiveRecurringEffect(targetCreature, {
+      sourceCardInstanceId: sourceMagicCard.instanceId,
+      sourceEffectId: effect.id,
+      effectType: "HEAL_OVER_TIME"
+    });
 
-    if (existingIndex >= 0) {
-      targetCreature.activeRecurringEffects.splice(existingIndex, 1);
-    } else if (stackRule === "DO_NOT_STACK" && targetCreature.activeRecurringEffects.some(item => item.effectType === "HEAL_OVER_TIME")) {
+    if (stackRule === "DO_NOT_STACK" && targetCreature.activeRecurringEffects.some(item =>
+      item.effectType === "HEAL_OVER_TIME" &&
+      item.id !== existingRecurring?.id
+    )) {
       addEvent(state, "AUTO_EQUIP_RECURRING_HEAL_NOT_STACKED", sourceMagicCard.controllerPlayerId, {
         sourceCardName: getCardName(state, sourceMagicCard),
         sourceCardInstanceId: sourceMagicCard.instanceId,
@@ -1341,8 +1352,20 @@ export function applyOnEquipRecurringEffects(
       appliedTurnCycle: state.turn.turnCycleNumber
     };
 
-    targetCreature.activeRecurringEffects.push(recurring);
-    syncRecurringActiveEffectInstance(targetCreature, recurring);
+    const addResult = addRecurringEffectIfAbsent(targetCreature, recurring);
+    if (!addResult.applied) {
+      addEvent(state, "AUTO_EQUIP_RECURRING_HEAL_ALREADY_ACTIVE", sourceMagicCard.controllerPlayerId, {
+        sourceCardName: getCardName(state, sourceMagicCard),
+        sourceCardInstanceId: sourceMagicCard.instanceId,
+        targetCreatureInstanceId: targetCreature.instanceId,
+        targetCreatureName: getCardName(state, targetCreature),
+        effectId: effect.id,
+        actionType: effect.actionType,
+        remainingTicks: addResult.activeRecurring.remainingTicks,
+        note: "Recurring heal is already active on this creature; counters were not refreshed."
+      });
+      continue;
+    }
 
     if (recurring.healImmediatelyOnApply) {
       const maxHp = targetCreature.baseHp ?? targetDefinition.hp;

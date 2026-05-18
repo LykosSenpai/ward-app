@@ -41,7 +41,7 @@ import {
   rollPendingEffectRollInPlace,
   skipPendingEffectRollInPlace
 } from "./effectRollActions.js";
-import { syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
+import { addRecurringEffectIfAbsent, findActiveRecurringEffect } from "./activeEffectInstances.js";
 import {
   getNextRecurringEffectTickSchedule,
   getTurnCycleExpiration,
@@ -1015,7 +1015,7 @@ function addRecurringEffectFromBattleResponse(
   sourceDefinition: CardDefinition,
   target: BattleCreatureRef,
   effect: WardEngineEffect
-): ActiveRecurringCreatureEffect | undefined {
+): { recurring: ActiveRecurringCreatureEffect; applied: boolean } | undefined {
   const amount = firstPositiveEffectNumber(effect);
   if (!amount) return undefined;
 
@@ -1025,9 +1025,20 @@ function addRecurringEffectFromBattleResponse(
   const stackRule = String(effect.params?.stackRule ?? effect.duration?.stackRule ?? "DO_NOT_STACK");
   target.card.activeRecurringEffects ??= [];
 
+  const existingRecurring = findActiveRecurringEffect(target.card, {
+    sourceCardInstanceId: sourceCard.instanceId,
+    sourceEffectId: effect.id,
+    effectType
+  });
+
+  if (existingRecurring && effectType === "DAMAGE_OVER_TIME") {
+    return { recurring: existingRecurring, applied: false };
+  }
+
   if (stackRule === "DO_NOT_STACK" && target.card.activeRecurringEffects.some(item =>
     item.effectType === effectType &&
-    item.sourceCardName === sourceDefinition.name
+    item.sourceCardName === sourceDefinition.name &&
+    item.id !== existingRecurring?.id
   )) {
     return undefined;
   }
@@ -1071,9 +1082,8 @@ function addRecurringEffectFromBattleResponse(
     expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
   };
 
-  target.card.activeRecurringEffects.push(recurring);
-  syncRecurringActiveEffectInstance(target.card, recurring);
-  return recurring;
+  const addResult = addRecurringEffectIfAbsent(target.card, recurring);
+  return { recurring: addResult.activeRecurring, applied: addResult.applied };
 }
 
 function moveBattleResponseToCemetery(player: PlayerState, handIndex: number, card: CardInstance): void {
@@ -1194,7 +1204,7 @@ function createCabalRetaliationChoicePrompt(
       },
       {
         id: "cabal-save-retaliation",
-        label: "Save return attack for Cabal Warchief's next battle",
+        label: `Save return attack for ${attackingDefinition.name}'s next battle`,
         targetKind: "PLAYER",
         playerId: defendingPlayer.id,
         zone: "PLAYER"
@@ -2273,7 +2283,7 @@ export function playBattleResponseFromHand(
       return actionType === "APPLY_DAMAGE_OVER_TIME" || actionType === "APPLY_HEAL_OVER_TIME";
     });
     if (recurringEffect) {
-      recurring = addRecurringEffectFromBattleResponse(
+      const recurringResult = addRecurringEffectFromBattleResponse(
         nextState,
         args.playerId,
         card,
@@ -2281,7 +2291,8 @@ export function playBattleResponseFromHand(
         attacker,
         recurringEffect
       );
-      if (recurring) {
+      if (recurringResult?.applied) {
+        recurring = recurringResult.recurring;
         boardEvents.push({
           type: "STATUS_APPLIED",
           playerId: attacker.playerId,
