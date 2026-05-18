@@ -53,11 +53,16 @@ export async function loadUserCardOwnershipMap(userId: string): Promise<CardOwne
   }, {});
 }
 
-export async function setUserCardOwnershipCount(args: {
+export type OwnershipDelta = {
+  ownershipKey: string;
+  ownedCount: number;
+};
+
+export async function setUserCardOwnershipCountOnly(args: {
   userId: string;
   ownershipKey: string;
   ownedCount: number;
-}): Promise<CardOwnershipMap> {
+}): Promise<OwnershipDelta> {
   const { cardId, artKey } = parseCardArtOwnershipKey(args.ownershipKey);
   const safeOwnedCount = normalizeOwnershipCount(args.ownedCount);
 
@@ -81,5 +86,14 @@ export async function setUserCardOwnershipCount(args: {
     );
   }
 
+  return { ownershipKey: getCardArtOwnershipKey(cardId, artKey), ownedCount: safeOwnedCount };
+}
+
+export async function setUserCardOwnershipCount(args: {
+  userId: string;
+  ownershipKey: string;
+  ownedCount: number;
+}): Promise<CardOwnershipMap> {
+  await setUserCardOwnershipCountOnly(args);
   return loadUserCardOwnershipMap(args.userId);
 }

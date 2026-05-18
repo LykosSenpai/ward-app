@@ -25,11 +25,13 @@ export type SupportTicketRecord = {
 };
 
 export type SupportTicketDetailRecord = SupportTicketRecord & {
-  matchSnapshot: SupportTicketSnapshot;
+  matchSnapshot?: SupportTicketSnapshot;
+  matchSnapshotKey?: string;
   clientContext: Record<string, unknown>;
 };
 
 type SupportTicketRow = {
+  match_snapshot_key?: string | null;
   id: string;
   reporter_user_id: string | null;
   reporter_username?: string | null;
@@ -71,8 +73,23 @@ function serializeSupportTicketDetail(row: SupportTicketRow): SupportTicketDetai
   return {
     ...serializeSupportTicket(row),
     matchSnapshot: row.match_snapshot ?? {},
+    matchSnapshotKey: row.match_snapshot_key ?? undefined,
     clientContext: row.client_context ?? {}
   };
+}
+
+export async function saveSupportTicketMatchSnapshot(args: {
+  matchId: string;
+  snapshotKey: string;
+  matchSnapshot: SupportTicketSnapshot
+}): Promise<void> {
+  await getDbPool().query(
+    `insert into support_ticket_match_snapshots (match_id, snapshot_key, match_snapshot)
+     values ($1, $2, $3)
+     on conflict (match_id, snapshot_key)
+     do nothing`,
+    [args.matchId, args.snapshotKey, args.matchSnapshot]
+  );
 }
 
 export async function createSupportTicket(args: {
@@ -82,7 +99,8 @@ export async function createSupportTicket(args: {
   subject: string;
   description: string;
   severity: SupportTicketSeverity;
-  matchSnapshot: SupportTicketSnapshot;
+  matchSnapshot?: SupportTicketSnapshot;
+  matchSnapshotKey?: string;
   clientContext: Record<string, unknown>;
 }): Promise<SupportTicketRecord> {
   const id = randomUUID();
@@ -96,9 +114,10 @@ export async function createSupportTicket(args: {
        category,
        severity,
        match_snapshot,
+       match_snapshot_key,
        client_context
      )
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
      returning id,
                reporter_user_id,
                match_id,
@@ -107,6 +126,7 @@ export async function createSupportTicket(args: {
                category,
                severity,
                status,
+               match_snapshot_key,
                created_at,
                updated_at`,
     [
@@ -117,7 +137,8 @@ export async function createSupportTicket(args: {
       args.description,
       args.category ?? "BOARD_REPORT",
       args.severity,
-      args.matchSnapshot,
+      args.matchSnapshot ?? {},
+      args.matchSnapshotKey ?? null,
       args.clientContext
     ]
   );
@@ -179,6 +200,7 @@ export async function getSupportTicket(ticketId: string): Promise<SupportTicketD
             t.severity,
             t.status,
             t.match_snapshot,
+            t.match_snapshot_key,
             t.client_context,
             t.created_at,
             t.updated_at
@@ -188,7 +210,16 @@ export async function getSupportTicket(ticketId: string): Promise<SupportTicketD
     [ticketId]
   );
 
-  return result.rows[0] ? serializeSupportTicketDetail(result.rows[0]) : undefined;
+  if (!result.rows[0]) return undefined;
+  const row = result.rows[0];
+  if ((!row.match_snapshot || Object.keys(row.match_snapshot as Record<string, unknown>).length === 0) && row.match_snapshot_key) {
+    const snapshotResult = await getDbPool().query<{ match_snapshot: SupportTicketSnapshot }>(
+      `select match_snapshot from support_ticket_match_snapshots where match_id = $1 and snapshot_key = $2 limit 1`,
+      [row.match_id, row.match_snapshot_key]
+    );
+    row.match_snapshot = snapshotResult.rows[0]?.match_snapshot ?? row.match_snapshot;
+  }
+  return serializeSupportTicketDetail(row);
 }
 
 export async function updateSupportTicketStatus(
@@ -217,4 +248,28 @@ export async function updateSupportTicketStatus(
 
   if (!result.rows[0]) return undefined;
   return getSupportTicket(result.rows[0].id);
+}
+
+export async function listSupportTicketsByMatchId(matchId: string): Promise<SupportTicketRecord[]> {
+  const result = await getDbPool().query<SupportTicketRow>(
+    `select t.id,
+            t.reporter_user_id,
+            u.username as reporter_username,
+            u.display_name as reporter_display_name,
+            t.match_id,
+            t.subject,
+            t.description,
+            t.category,
+            t.severity,
+            t.status,
+            t.created_at,
+            t.updated_at
+       from support_tickets t
+       left join users u on u.id = t.reporter_user_id
+      where t.match_id = $1
+      order by t.created_at asc`,
+    [matchId]
+  );
+
+  return result.rows.map(serializeSupportTicket);
 }

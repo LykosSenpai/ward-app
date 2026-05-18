@@ -1,21 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { AppMatchState } from "../clientTypes";
-import { API_BASE_URL } from "../config";
 
 type BoardReportSeverity = "LOW" | "NORMAL" | "HIGH" | "BLOCKING";
 
-type BoardReportPanelProps = {
-  match: AppMatchState;
-  onSubmitted?: () => void;
+export type QueuedBoardReport = {
+  matchId: string;
+  turnNumber: number;
+  phase: string;
+  activePlayerId: string;
+  subject: string;
+  description: string;
+  severity: BoardReportSeverity;
+  clientContext: Record<string, unknown>;
 };
 
-type BoardReportResponse = {
-  ticket?: {
-    id: string;
-    createdAt: string;
-  };
-  message?: string;
+type BoardReportPanelProps = {
+  match: AppMatchState;
+  onQueued?: (report: QueuedBoardReport) => void;
+  onSubmitted?: () => void;
 };
 
 function getPlayerName(match: AppMatchState, playerId: string): string {
@@ -36,28 +39,20 @@ function getViewportContext(): Record<string, unknown> {
   };
 }
 
-export function BoardReportPanel({ match, onSubmitted }: BoardReportPanelProps) {
+export function BoardReportPanel({ match, onQueued, onSubmitted }: BoardReportPanelProps) {
   const defaultSubject = useMemo(
     () => `3D board report: turn ${match.turn.turnNumber} ${match.turn.phase}`,
     [match.turn.phase, match.turn.turnNumber]
   );
-  const closeTimerRef = useRef<number | null>(null);
   const [subject, setSubject] = useState(defaultSubject);
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<BoardReportSeverity>("NORMAL");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  useEffect(() => () => {
-    if (closeTimerRef.current !== null) {
-      window.clearTimeout(closeTimerRef.current);
-    }
-  }, []);
-
-  async function submitReport() {
-    if (isSubmitting || isSubmitted) return;
+  function submitReport() {
+    if (isSubmitted) return;
 
     const trimmedSubject = subject.trim();
     const trimmedDescription = description.trim();
@@ -67,44 +62,22 @@ export function BoardReportPanel({ match, onSubmitted }: BoardReportPanelProps) 
       return;
     }
 
-    setIsSubmitting(true);
-    setIsSubmitted(false);
+    onQueued?.({
+      matchId: match.matchId,
+      turnNumber: match.turn.turnNumber,
+      phase: match.turn.phase,
+      activePlayerId: match.turn.activePlayerId,
+      subject: trimmedSubject,
+      description: trimmedDescription,
+      severity,
+      clientContext: getViewportContext()
+    });
+
     setSubmitError("");
-    setSubmitMessage("");
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/support-tickets/board-report`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          matchId: match.matchId,
-          subject: trimmedSubject,
-          description: trimmedDescription,
-          severity,
-          clientContext: getViewportContext()
-        })
-      });
-      const payload = await response.json().catch(() => ({})) as BoardReportResponse;
-
-      if (!response.ok) {
-        throw new Error(payload.message ?? "Unable to send report.");
-      }
-
-      setSubmitMessage(payload.ticket?.id ? `Report sent: ${payload.ticket.id}` : "Report sent.");
-      setDescription("");
-      setIsSubmitted(true);
-
-      closeTimerRef.current = window.setTimeout(() => {
-        onSubmitted?.();
-      }, 2000);
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Unable to send report.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setSubmitMessage("Report queued locally. It will send when match is saved/closed.");
+    setDescription("");
+    setIsSubmitted(true);
+    onSubmitted?.();
   }
 
   return (
@@ -128,16 +101,12 @@ export function BoardReportPanel({ match, onSubmitted }: BoardReportPanelProps) 
         className="board-report-form"
         onSubmit={event => {
           event.preventDefault();
-          void submitReport();
+          submitReport();
         }}
       >
         <label>
           Subject
-          <input
-            value={subject}
-            maxLength={140}
-            onChange={event => setSubject(event.target.value)}
-          />
+          <input value={subject} maxLength={140} onChange={event => setSubject(event.target.value)} />
         </label>
 
         <label>
@@ -152,21 +121,14 @@ export function BoardReportPanel({ match, onSubmitted }: BoardReportPanelProps) 
 
         <label>
           What happened?
-          <textarea
-            value={description}
-            maxLength={2400}
-            rows={7}
-            onChange={event => setDescription(event.target.value)}
-          />
+          <textarea value={description} maxLength={2400} rows={7} onChange={event => setDescription(event.target.value)} />
         </label>
 
         {submitError ? <p className="error-box">{submitError}</p> : null}
         {submitMessage ? <p className="success-box">{submitMessage}</p> : null}
 
         <div className="board-report-actions">
-          <button type="submit" disabled={isSubmitting || isSubmitted}>
-            {isSubmitting ? "Sending..." : isSubmitted ? "Sent" : "Send Report"}
-          </button>
+          <button type="submit" disabled={isSubmitted}>{isSubmitted ? "Queued" : "Queue Report"}</button>
         </div>
       </form>
     </section>
