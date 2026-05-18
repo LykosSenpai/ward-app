@@ -475,6 +475,20 @@ function effectDealsBattleDirectDamage(effect: WardEngineEffect): boolean {
     actionType === "DAMAGE_CREATURE";
 }
 
+function battleResponseAttachesToAttacker(definition: CardDefinition, effect: WardEngineEffect): boolean {
+  const text = [
+    effect.actionText,
+    effect.target,
+    effect.value,
+    effect.params?.target,
+    effect.params?.valueText
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return definition.cardType === "MAGIC" &&
+    definition.magicSubType === "EQUIP" &&
+    (Boolean((definition as { isEquip?: boolean }).isEquip) || Boolean(effect.params?.usesAnchoring) || text.includes("equip"));
+}
+
 function getAutomatedBattleResponse(definition: CardDefinition | undefined): { effect: WardEngineEffect; role: BattleResponseRole } | undefined {
   if (!definition || definition.cardType !== "MAGIC") return undefined;
   if (definition.magicType !== "BATTLE_LIGHTNING" && definition.magicType !== "LIGHTNING") return undefined;
@@ -567,7 +581,11 @@ export function buildBattleAffordances(match: AppMatchState, controlledPlayerId?
           kind: disabledReason ? "DISABLED_ACTION" : "VALID_BATTLE_RESPONSE",
           playerId: player.id,
           sourceCardInstanceId: card.instanceId,
-          targetCardInstanceId: response.role === "ATTACKER" ? strike?.attacker.creatureInstanceId : strike?.defender.creatureInstanceId,
+          targetCardInstanceId: battleResponseAttachesToAttacker(definition, response.effect)
+            ? strike?.attacker.creatureInstanceId
+            : response.role === "ATTACKER"
+              ? strike?.attacker.creatureInstanceId
+              : strike?.defender.creatureInstanceId,
           targetZoneRef: battleZoneRef(player.id),
           actionId: disabledReason ? undefined : "PLAY_BATTLE_RESPONSE",
           label: disabledReason ? `Cannot play ${cardName}` : `Battle response: ${cardName}`,

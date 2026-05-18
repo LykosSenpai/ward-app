@@ -387,6 +387,43 @@ export function syncStatusActiveEffectInstance(card: CardInstance, status: Activ
   });
 }
 
+export function addActiveStatusIfAbsent(
+  card: CardInstance,
+  status: ActiveCreatureStatus
+): { activeStatus: ActiveCreatureStatus; applied: boolean } {
+  const normalizedStatus = normalize(status.status);
+
+  card.activeStatuses ??= [];
+  const existingStatus = card.activeStatuses.find(existing =>
+    existing.sourceCardInstanceId === status.sourceCardInstanceId &&
+    existing.sourceEffectId === status.sourceEffectId &&
+    normalize(existing.status) === normalizedStatus
+  );
+
+  if (existingStatus) {
+    if (!card.activeEffectInstances?.some(instance => instance.id === existingStatus.id)) {
+      syncStatusActiveEffectInstance(card, existingStatus);
+    }
+
+    return { activeStatus: existingStatus, applied: false };
+  }
+
+  if (card.activeEffectInstances) {
+    card.activeEffectInstances = card.activeEffectInstances.filter(instance =>
+      instance.kind !== "STATUS" ||
+      !(
+        instance.sourceCardInstanceId === status.sourceCardInstanceId &&
+        instance.sourceEffectId === status.sourceEffectId &&
+        normalize(instance.status) === normalizedStatus
+      )
+    );
+  }
+
+  card.activeStatuses.push(status);
+  syncStatusActiveEffectInstance(card, status);
+  return { activeStatus: status, applied: true };
+}
+
 export function syncRecurringActiveEffectInstance(card: CardInstance, recurring: ActiveRecurringCreatureEffect): void {
   addActiveEffectInstance(card, {
     id: recurring.id,
@@ -440,6 +477,8 @@ export function normalizeAllActiveEffectInstances(state: MatchState): void {
 
     for (const card of cards) {
       card.activeEffectInstances = (card.activeEffectInstances ?? []).filter(item => !!item.id && !!item.sourceEffectId && !!item.sourceCardInstanceId);
+      const activeStatusIds = new Set((card.activeStatuses ?? []).map(status => status.id));
+      card.activeEffectInstances = card.activeEffectInstances.filter(item => item.kind !== "STATUS" || activeStatusIds.has(item.id));
 
       for (const status of card.activeStatuses ?? []) {
         if (!card.activeEffectInstances.some(item => item.id === status.id)) {

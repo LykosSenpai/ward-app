@@ -38,7 +38,7 @@ import {
   getTargetOptionsForQuery,
   inferTargetQueryForEffect
 } from "./targets.js";
-import { syncRecurringActiveEffectInstance, syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
+import { addActiveStatusIfAbsent, syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
 import { getNextRecurringEffectTickSchedule } from "./effectTiming.js";
 import { getEffectResolutionMode } from "./effectRegistry.js";
 import { applyDestroyedMagicCountModifier, isAutomaticMagicEffectSupported, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
@@ -819,10 +819,9 @@ function applyStatusPromptEffect(
     expiresOnPlayerId: prompt.controllerPlayerId,
     expiresAtPlayerTurnStartCount: sourceTurnStartCount + duration
   };
-  target.card.activeStatuses.push(activeStatus);
-  syncStatusActiveEffectInstance(target.card, activeStatus);
+  const addResult = addActiveStatusIfAbsent(target.card, activeStatus);
 
-  return { target, activeStatus };
+  return { target, activeStatus: addResult.activeStatus, applied: addResult.applied };
 }
 
 function getRecurringTickTimingForEffectType(
@@ -2382,6 +2381,23 @@ export function resolvePendingEffectTargetPrompt(
   if (prompt.actionType === "APPLY_STATUS" || prompt.actionType === "APPLY_STATUS_WITH_ESCAPE_ROLL" || prompt.actionType === "APPLY_DAMAGE_IMMUNITY") {
     const result = applyStatusPromptEffect(nextState, prompt, selectedOption, effect);
     clearCurrentPromptAndQueueNext(nextState, prompt);
+
+    if (!result.applied) {
+      addEvent(nextState, "AUTO_EFFECT_STATUS_TARGET_ALREADY_ACTIVE", prompt.controllerPlayerId, {
+        promptId,
+        sourceCardName: prompt.sourceCardName,
+        effectId: prompt.effectId,
+        actionType: prompt.actionType,
+        targetPlayerId: result.target.player.id,
+        targetCreatureInstanceId: result.target.card.instanceId,
+        targetCreatureName: result.target.definition.name,
+        status: result.activeStatus.status,
+        label: result.activeStatus.label,
+        reason: "A matching status from this source/effect is already active; not refreshing or stacking it."
+      });
+
+      return nextState;
+    }
 
     addEvent(nextState, "AUTO_EFFECT_STATUS_TARGET_RESOLVED", prompt.controllerPlayerId, {
       promptId,

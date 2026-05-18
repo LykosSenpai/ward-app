@@ -32,7 +32,7 @@ import {
   normalizeRecurringTickTiming,
   shouldRecurringEffectTickNow
 } from "./effectTiming.js";
-import { syncRecurringActiveEffectInstance, syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
+import { addActiveStatusIfAbsent, syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
 import { getRuntimeBlockActionType, getRuntimeBlockStatChanges, getRuntimeBlockText } from "./effectBlockRuntime.js";
 import { createPendingForcedDamageDiceRollSession } from "./effectRollActions.js";
 
@@ -709,8 +709,23 @@ function addStatusToCreature(
     expiresAtPlayerTurnStartCount: expiration?.expiresAtPlayerTurnStartCount
   };
 
-  target.card.activeStatuses.push(activeStatus);
-  syncStatusActiveEffectInstance(target.card, activeStatus);
+  const addResult = addActiveStatusIfAbsent(target.card, activeStatus);
+
+  if (!addResult.applied) {
+    addEvent?.(state, "BATTLE_EFFECT_STATUS_ALREADY_ACTIVE", source.player.id, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      targetPlayerId: target.player.id,
+      targetCreatureInstanceId: target.card.instanceId,
+      targetCreatureName: target.definition.name,
+      status: addResult.activeStatus.status,
+      label: addResult.activeStatus.label,
+      reason: "A matching status from this source/effect is already active; not refreshing or stacking it."
+    });
+    return;
+  }
 
   addEvent?.(state, "BATTLE_EFFECT_STATUS_APPLIED", source.player.id, {
     sourceCardInstanceId: source.card.instanceId,

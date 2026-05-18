@@ -18,7 +18,7 @@ import { sumDice } from "./dice.js";
 import { getCardEngineEffects } from "./effectResolver.js";
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { getTurnCycleExpiration } from "./effectTiming.js";
-import { removeActiveEffectInstance, syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
+import { addActiveStatusIfAbsent, removeActiveEffectInstance } from "./activeEffectInstances.js";
 import { applyDamageToCreatureTarget } from "./cardMovement.js";
 
 type AddEventFn = (state: MatchState, type: string, playerId?: string, payload?: unknown) => void;
@@ -992,10 +992,9 @@ export function applyPendingEffectRollStatusInPlace(
       expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
     };
 
-    target.card.activeStatuses.push(status);
-    syncStatusActiveEffectInstance(target.card, status);
+    const addResult = addActiveStatusIfAbsent(target.card, status);
 
-    addEvent?.(state, "EFFECT_ROLL_APPLIED", session.sourcePlayerId, {
+    addEvent?.(state, addResult.applied ? "EFFECT_ROLL_APPLIED" : "EFFECT_ROLL_STATUS_ALREADY_ACTIVE", session.sourcePlayerId, {
       effectRollSessionId: session.id,
       battleSessionId: session.linkedBattleSessionId,
       strikeId: session.linkedStrikeId,
@@ -1005,11 +1004,14 @@ export function applyPendingEffectRollStatusInPlace(
       targetPlayerId: target.player.id,
       targetCreatureInstanceId: target.card.instanceId,
       targetCreatureName: target.definition.name,
-      status: status.status,
-      label: status.label,
-      flags: status.flags,
+      status: addResult.activeStatus.status,
+      label: addResult.activeStatus.label,
+      flags: addResult.activeStatus.flags,
       duration,
-      rollTotal: session.rollTotal
+      rollTotal: session.rollTotal,
+      reason: addResult.applied
+        ? undefined
+        : "A matching status from this source/effect is already active; not refreshing or stacking it."
     });
   } else {
     addEvent?.(state, "EFFECT_ROLL_APPLY_NEEDS_MANUAL_REVIEW", session.sourcePlayerId, {

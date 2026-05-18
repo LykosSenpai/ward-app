@@ -3225,7 +3225,7 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
     const sentinel = removed?.card ?? source.card;
     if (attacker) {
       sentinel.attachedToInstanceId = attacker.instanceId;
-      moveCardToMagicSlot(match, attackerPlayerId, sentinel);
+      moveCardToMagicSlot(match, source.playerId, sentinel);
       addDamageOverTime(attacker, 10, 2);
     } else {
       moveCardToCemetery(match, source.playerId, sentinel);
