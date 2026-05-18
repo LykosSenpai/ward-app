@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { CardInstance, PlayerState } from "@ward/shared";
 import type { AppMatchState } from "../../clientTypes";
 import { MatchCardImage } from "../MatchCardImage";
@@ -59,6 +60,28 @@ function isAutomatedBattleResponseCard(match: AppMatchState, card: CardInstance)
   }));
 }
 
+function useTouchHoverMode(): boolean {
+  const [touchHoverMode, setTouchHoverMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const mediaQuery = window.matchMedia("(hover: none), (pointer: coarse)");
+    const syncMode = () => setTouchHoverMode(mediaQuery.matches);
+    syncMode();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncMode);
+      return () => mediaQuery.removeEventListener("change", syncMode);
+    }
+
+    mediaQuery.addListener(syncMode);
+    return () => mediaQuery.removeListener(syncMode);
+  }, []);
+
+  return touchHoverMode;
+}
+
 export function HandZone({
   match,
   player,
@@ -90,6 +113,9 @@ export function HandZone({
   onPlayLightningResponse: (cardInstanceId: string) => void;
   onPlayBattleResponse: (cardInstanceId: string) => void;
 }) {
+  const touchHoverMode = useTouchHoverMode();
+  const [touchHoverArmedCardId, setTouchHoverArmedCardId] = useState<string | null>(null);
+
   return (
     <section className="zone-box">
       <h3>Hand</h3>
@@ -116,6 +142,10 @@ export function HandZone({
               onPlayMagic={onPlayMagic}
               onPlayLightningResponse={onPlayLightningResponse}
               onPlayBattleResponse={onPlayBattleResponse}
+              touchHoverMode={touchHoverMode}
+              touchHoverArmed={touchHoverArmedCardId === card.instanceId}
+              onArmTouchHover={() => setTouchHoverArmedCardId(card.instanceId)}
+              onClearTouchHover={() => setTouchHoverArmedCardId(current => current === card.instanceId ? null : current)}
             />
           ))}
         </div>
@@ -139,7 +169,11 @@ function HandCard({
   onPlayPrimary,
   onPlayMagic,
   onPlayLightningResponse,
-  onPlayBattleResponse
+  onPlayBattleResponse,
+  touchHoverMode,
+  touchHoverArmed,
+  onArmTouchHover,
+  onClearTouchHover
 }: {
   match: AppMatchState;
   player: PlayerState;
@@ -156,6 +190,10 @@ function HandCard({
   onPlayMagic: (cardInstanceId: string) => void;
   onPlayLightningResponse: (cardInstanceId: string) => void;
   onPlayBattleResponse: (cardInstanceId: string) => void;
+  touchHoverMode: boolean;
+  touchHoverArmed: boolean;
+  onArmTouchHover: () => void;
+  onClearTouchHover: () => void;
 }) {
   const requiredSacrifices = getRequiredSacrificesForCard(match, card);
   const sacrificeCandidates = getPrimarySummonSacrificeCandidates(
@@ -214,18 +252,33 @@ function HandCard({
     }
   }
 
+  function handleCardClick() {
+    if (touchHoverMode && canPerformCardClick && !touchHoverArmed) {
+      onArmTouchHover();
+      return;
+    }
+
+    performCardClick();
+    if (touchHoverMode) onClearTouchHover();
+  }
+
   return (
     <div
       className={[
         "mini-card",
         "hand-card",
         isCreature(match, card) ? "creature-card" : "magic-card",
-        canPerformCardClick ? "playable" : ""
+        canPerformCardClick ? "playable" : "",
+        touchHoverMode && touchHoverArmed ? "touch-hover-active" : ""
       ].filter(Boolean).join(" ")}
       role={canPerformCardClick ? "button" : undefined}
       tabIndex={canPerformCardClick ? 0 : undefined}
       draggable
-      onClick={canPerformCardClick ? performCardClick : undefined}
+      onClick={canPerformCardClick ? handleCardClick : undefined}
+      onPointerDown={event => {
+        if (event.pointerType !== "touch") return;
+        if (!touchHoverArmed) onArmTouchHover();
+      }}
       onDragStart={event => {
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("application/x-ward-hand-card", JSON.stringify({

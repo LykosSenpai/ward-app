@@ -7383,6 +7383,64 @@ code,
   }
 }
 
+/* Mobile-first readability pass: avoid "desktop squeezed into phone" layouts. */
+@media (max-width: 820px) {
+  .app-shell,
+  .match-lobby-page,
+  .profile-page,
+  .deck-library-page,
+  .compact-save-load-card,
+  .setup-section {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .library-option-a-toolbar,
+  .library-option-a-grid,
+  .match-lobby-layout,
+  .deck-library-layout,
+  .deck-library-grid,
+  .effect-dev-three-pane-grid,
+  .effect-dev-three-pane-grid.card-picker-collapsed,
+  .effect-dev-option-a-page .effect-dev-three-pane-grid,
+  .effect-dev-option-a-page .effect-dev-three-pane-grid.card-picker-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .library-option-a-filter-panel,
+  .library-option-a-browser-panel,
+  .library-option-a-deck-rail,
+  .match-lobby-main,
+  .match-lobby-side,
+  .effect-dev-option-a-card-picker,
+  .effect-dev-option-a-editor,
+  .effect-dev-option-a-test-rail {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .library-option-a-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .library-option-a-card-content .card-image-frame,
+  .card-image-frame {
+    width: min(280px, 100%);
+    margin-inline: auto;
+  }
+
+  .library-option-a-deck-rail-codes .deck-share-tools-grid,
+  .deck-share-actions,
+  .library-option-a-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .library-option-a-current-deck-panel {
+    max-height: none;
+  }
+}
+
 /* Desktop polish pass from full-width screenshots. */
 @media (min-width: 981px) {
   .match-lobby-page,
@@ -9334,7 +9392,9 @@ button:disabled:hover {
 }
 
 .playmat-card:hover .card-hover-preview,
-.hand-card:hover .card-hover-preview {
+.hand-card:hover .card-hover-preview,
+.playmat-card.touch-hover-active .card-hover-preview,
+.hand-card.touch-hover-active .card-hover-preview {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
   visibility: visible;
@@ -9362,7 +9422,8 @@ button:disabled:hover {
   overflow: hidden;
 }
 
-.revealed-hand-card:hover .card-hover-preview {
+.revealed-hand-card:hover .card-hover-preview,
+.revealed-hand-card.touch-hover-active .card-hover-preview {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
   visibility: visible;
