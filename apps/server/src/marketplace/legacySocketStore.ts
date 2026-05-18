@@ -93,6 +93,17 @@ export async function listLegacyMarketplacePosts(): Promise<MarketplacePost[]> {
   return result.rows.map(normalizePost);
 }
 
+export async function listLegacyMarketplacePostsByUser(userId: string): Promise<MarketplacePost[]> {
+  const result = await getDbPool().query<PostRow>(
+    `select id, user_id, post_data, status, updated_at
+       from marketplace_socket_posts
+      where user_id = $1
+      order by updated_at desc, id`,
+    [userId]
+  );
+  return result.rows.map(normalizePost);
+}
+
 export async function upsertLegacyMarketplacePost(post: MarketplacePost): Promise<void> {
   if (!post.id || !post.userId) {
     throw new Error("Marketplace post id and user id are required.");
@@ -120,6 +131,16 @@ export async function listLegacyMarketplaceTransactions(): Promise<MarketplaceTr
       order by updated_at desc, id`
   );
   return result.rows.map(normalizeTransaction);
+}
+
+export async function getLegacyMarketplaceTransaction(transactionId: string): Promise<MarketplaceTransaction | undefined> {
+  const result = await getDbPool().query<TransactionRow>(
+    `select id, transaction_data, status, expires_at, updated_at
+       from marketplace_socket_transactions
+      where id = $1`,
+    [transactionId]
+  );
+  return result.rows[0] ? normalizeTransaction(result.rows[0]) : undefined;
 }
 
 export async function upsertLegacyMarketplaceTransaction(transaction: MarketplaceTransaction): Promise<void> {
@@ -154,4 +175,24 @@ export async function upsertLegacyMarketplaceTransaction(transaction: Marketplac
       new Date(transaction.updatedAt)
     ]
   );
+}
+
+export async function expireLegacyMarketplaceTransactions(nowMs = Date.now()): Promise<number> {
+  const result = await getDbPool().query<TransactionRow>(
+    `select id, transaction_data, status, expires_at, updated_at
+       from marketplace_socket_transactions
+      where status in ('PENDING_CONFIRMATION', 'CONFIRMED_BY_ONE_PARTY')
+        and expires_at <= $1`,
+    [new Date(nowMs)]
+  );
+
+  for (const row of result.rows) {
+    const transaction = normalizeTransaction(row);
+    transaction.status = "EXPIRED";
+    transaction.updatedAt = new Date(nowMs).toISOString();
+    transaction.confirmedByUserIds = [];
+    await upsertLegacyMarketplaceTransaction(transaction);
+  }
+
+  return result.rows.length;
 }

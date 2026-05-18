@@ -177,7 +177,10 @@ import { marketplaceCardsQuerySchema, marketplaceCatalogQuerySchema, marketplace
 import { marketplaceCardsListResponseSchema, marketplaceCatalogResponseSchema } from "./marketplace/responseSchemas.js";
 import { buildMatchId, scoreMarketplaceMatch } from "./marketplace/matching.js";
 import {
+  expireLegacyMarketplaceTransactions,
+  getLegacyMarketplaceTransaction,
   listLegacyMarketplacePosts,
+  listLegacyMarketplacePostsByUser,
   listLegacyMarketplaceTransactions,
   upsertLegacyMarketplacePost,
   upsertLegacyMarketplaceTransaction,
@@ -585,41 +588,8 @@ async function continueLoginAfterTotp(req: express.Request, res: express.Respons
   });
 }
 
-async function hydrateMarketplaceSocketStore(): Promise<void> {
-  if (marketplaceSocketStoreHydrated) return;
-
-  const [posts, transactions] = await Promise.all([
-    listLegacyMarketplacePosts(),
-    listLegacyMarketplaceTransactions()
-  ]);
-
-  marketplacePosts.clear();
-  for (const post of posts) {
-    if (!post.userId) continue;
-    marketplacePosts.set(post.userId, [...(marketplacePosts.get(post.userId) ?? []), post]);
-  }
-
-  marketplaceTransactions.clear();
-  for (const transaction of transactions) {
-    marketplaceTransactions.set(transaction.id, transaction);
-  }
-
-  marketplaceSocketStoreHydrated = true;
-}
-
 async function returnExpiredItemsToPool(nowMs = Date.now()): Promise<boolean> {
-  await hydrateMarketplaceSocketStore();
-  let changed = false;
-  for (const transaction of marketplaceTransactions.values()) {
-    if ((transaction.status === "PENDING_CONFIRMATION" || transaction.status === "CONFIRMED_BY_ONE_PARTY") && Date.parse(transaction.expiresAt) <= nowMs) {
-      transaction.status = "EXPIRED";
-      transaction.updatedAt = new Date(nowMs).toISOString();
-      transaction.confirmedByUserIds = [];
-      await upsertLegacyMarketplaceTransaction(transaction);
-      changed = true;
-    }
-  }
-  return changed;
+  return (await expireLegacyMarketplaceTransactions(nowMs)) > 0;
 }
 
 const ALLOWED_PROOF_PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -764,10 +734,6 @@ type CachedMatchSocketPayload = {
 };
 type MarketplaceMatch = { type: MarketplaceMatchType; postId: string; matchedItems: MarketplaceMatchItem[]; reciprocalMatchedItems?: MarketplaceMatchItem[]; linkedPostId?: string };
 type MarketplaceMatchGroup = { postId: string; matches: MarketplaceMatch[] };
-
-const marketplaceTransactions = new Map<string, MarketplaceTransaction>();
-const marketplacePosts = new Map<string, MarketplacePost[]>();
-let marketplaceSocketStoreHydrated = false;
 
 function normalizeMarketplaceVariant(value?: string): string {
   return (value ?? "default").trim().toLowerCase().replace(/_/g, "-");
@@ -1324,12 +1290,16 @@ function emitLobbyList(): void {
   io.emit("lobby:list", listLobbySnapshots());
 }
 
-function listMarketplacePosts(): MarketplacePost[] {
-  return Array.from(marketplacePosts.values()).flat().sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+function sortMarketplacePosts(posts: MarketplacePost[]): MarketplacePost[] {
+  return [...posts].sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
 }
 
-function listMarketplaceMatchesForUser(userId: string): MarketplaceMatchGroup[] {
-  const allPosts = listMarketplacePosts().filter(post => post.status !== "CLOSED");
+async function listMarketplacePosts(): Promise<MarketplacePost[]> {
+  return sortMarketplacePosts(await listLegacyMarketplacePosts());
+}
+
+function listMarketplaceMatchesForUserFromPosts(userId: string, posts: MarketplacePost[]): MarketplaceMatchGroup[] {
+  const allPosts = sortMarketplacePosts(posts).filter(post => post.status !== "CLOSED");
   const myPosts = allPosts.filter(post => post.userId === userId && post.id);
   const otherPosts = allPosts.filter(post => post.userId !== userId && post.id);
   const groups = [
@@ -1346,17 +1316,37 @@ function listMarketplaceMatchesForUser(userId: string): MarketplaceMatchGroup[] 
   return groups.filter(group => group.matches.length > 0);
 }
 
+async function listMarketplaceMatchesForUser(userId: string): Promise<MarketplaceMatchGroup[]> {
+  return listMarketplaceMatchesForUserFromPosts(userId, await listMarketplacePosts());
+}
+
+async function listMarketplaceAvailabilityPostsForUser(userId: string): Promise<MarketplacePost[]> {
+  const [posts, transactions] = await Promise.all([
+    listLegacyMarketplacePostsByUser(userId),
+    listLegacyMarketplaceTransactions()
+  ]);
+  const activeReservedPosts: MarketplacePost[] = transactions
+    .filter(transaction => transaction.requesterUserId === userId)
+    .filter(transaction => transaction.status === "PENDING_CONFIRMATION" || transaction.status === "CONFIRMED_BY_ONE_PARTY")
+    .flatMap(transaction => transaction.offered.map(line => ({
+      userId,
+      cardId: line.cardId,
+      quantity: line.quantity,
+      updatedAt: transaction.updatedAt
+    })));
+
+  return [...posts, ...activeReservedPosts];
+}
+
 async function emitMarketplaceMatches(socket: Socket): Promise<void> {
-  await hydrateMarketplaceSocketStore();
   const user = getSocketUser(socket);
-  socket.emit("marketplace:matches", user ? listMarketplaceMatchesForUser(user.id) : []);
+  socket.emit("marketplace:matches", user ? await listMarketplaceMatchesForUser(user.id) : []);
 }
 
 async function emitMarketplaceMatchesToAll(): Promise<void> {
   const watcherIds = io.sockets.adapter.rooms.get(MARKETPLACE_SOCKET_ROOM);
   if (!watcherIds || watcherIds.size === 0) return;
 
-  await hydrateMarketplaceSocketStore();
   await Promise.all(Array.from(watcherIds).map(socketId => {
     const socket = io.sockets.sockets.get(socketId);
     return socket ? emitMarketplaceMatches(socket) : undefined;
@@ -1364,8 +1354,7 @@ async function emitMarketplaceMatchesToAll(): Promise<void> {
 }
 
 async function emitMarketplacePosts(): Promise<void> {
-  await hydrateMarketplaceSocketStore();
-  io.to(MARKETPLACE_SOCKET_ROOM).emit("marketplace:posts", listMarketplacePosts());
+  io.to(MARKETPLACE_SOCKET_ROOM).emit("marketplace:posts", await listMarketplacePosts());
   await emitMarketplaceMatchesToAll();
 }
 
@@ -2166,6 +2155,36 @@ function logSavedMatchStoreError(action: string, error: unknown): void {
   console.error(`[saved-match] ${action} failed`, error instanceof Error ? error.message : error);
 }
 
+function hasSavedMatchDatabase(): boolean {
+  return Boolean(process.env.DATABASE_URL?.trim());
+}
+
+function shouldUseSavedMatchDiskFallback(): boolean {
+  return !hasSavedMatchDatabase() || process.env.WARD_SAVED_MATCH_DISK_MIRROR === "true";
+}
+
+function listSavedMatchesFromDiskFallback(): SavedMatchSummary[] {
+  if (!shouldUseSavedMatchDiskFallback()) return [];
+
+  try {
+    return listSavedMatchesFromDisk();
+  } catch (error) {
+    logSavedMatchStoreError("list disk saved matches", error);
+    return [];
+  }
+}
+
+function saveMatchToDiskFallback(match: MatchState): void {
+  try {
+    saveMatchToDisk(match);
+  } catch (error) {
+    logSavedMatchStoreError(`save disk ${match.matchId}`, error);
+    if (!hasSavedMatchDatabase()) {
+      throw error;
+    }
+  }
+}
+
 function mergeSavedMatchSummaries(
   primary: SavedMatchSummary[],
   fallback: SavedMatchSummary[]
@@ -2184,63 +2203,73 @@ function mergeSavedMatchSummaries(
 }
 
 async function listSavedMatchesForServer(): Promise<SavedMatchSummary[]> {
-  let diskMatches: SavedMatchSummary[] = [];
+  const diskMatches = listSavedMatchesFromDiskFallback();
 
-  try {
-    diskMatches = listSavedMatchesFromDisk();
-  } catch (error) {
-    logSavedMatchStoreError("list disk saved matches", error);
+  if (!hasSavedMatchDatabase()) {
+    return diskMatches;
   }
 
   try {
     const dbMatches = await listSavedMatchesFromDb();
-    const dbMatchIds = new Set(dbMatches.map(match => match.matchId));
-
-    for (const diskMatch of diskMatches) {
-      if (dbMatchIds.has(diskMatch.matchId)) continue;
-
-      try {
-        await saveSavedMatch(loadMatchFromDiskFile(diskMatch.matchId));
-      } catch (error) {
-        logSavedMatchStoreError(`backfill ${diskMatch.matchId}`, error);
-      }
-    }
-
-    return mergeSavedMatchSummaries(dbMatches, diskMatches);
+    return shouldUseSavedMatchDiskFallback() ? mergeSavedMatchSummaries(dbMatches, diskMatches) : dbMatches;
   } catch (error) {
     logSavedMatchStoreError("list Postgres saved matches", error);
+    if (!shouldUseSavedMatchDiskFallback()) {
+      throw error;
+    }
     return diskMatches;
   }
 }
 
 function saveMatchSnapshotEventually(match: MatchState): void {
-  saveMatchToDisk(match);
+  if (shouldUseSavedMatchDiskFallback()) {
+    saveMatchToDiskFallback(match);
+  }
+
+  if (!hasSavedMatchDatabase()) return;
+
   void saveSavedMatch(match).catch(error => {
     logSavedMatchStoreError(`save ${match.matchId}`, error);
   });
 }
 
 async function saveMatchSnapshotForServer(match: MatchState): Promise<"DATABASE" | "FILE_FALLBACK"> {
-  saveMatchToDisk(match);
+  if (!hasSavedMatchDatabase()) {
+    saveMatchToDiskFallback(match);
+    return "FILE_FALLBACK";
+  }
 
   try {
     await saveSavedMatch(match);
+    if (shouldUseSavedMatchDiskFallback()) {
+      saveMatchToDiskFallback(match);
+    }
     return "DATABASE";
   } catch (error) {
     logSavedMatchStoreError(`save ${match.matchId}`, error);
-    if (process.env.DATABASE_URL?.trim()) {
+    if (!shouldUseSavedMatchDiskFallback()) {
       throw error;
     }
+    saveMatchToDiskFallback(match);
     return "FILE_FALLBACK";
   }
 }
 
 async function loadSavedMatchForServer(matchId: string): Promise<MatchState> {
-  try {
-    const dbMatch = await loadSavedMatchFromDb(matchId);
-    if (dbMatch) return dbMatch;
-  } catch (error) {
-    logSavedMatchStoreError(`load ${matchId}`, error);
+  if (hasSavedMatchDatabase()) {
+    try {
+      const dbMatch = await loadSavedMatchFromDb(matchId);
+      if (dbMatch) return dbMatch;
+    } catch (error) {
+      logSavedMatchStoreError(`load ${matchId}`, error);
+      if (!shouldUseSavedMatchDiskFallback()) {
+        throw error;
+      }
+    }
+  }
+
+  if (!shouldUseSavedMatchDiskFallback()) {
+    throw new Error(`Saved match not found: ${matchId}`);
   }
 
   return loadMatchFromDiskFile(matchId);
@@ -2249,10 +2278,22 @@ async function loadSavedMatchForServer(matchId: string): Promise<MatchState> {
 async function deleteSavedMatchForServer(matchId: string): Promise<void> {
   let deletedFromDb = false;
 
-  try {
-    deletedFromDb = await deleteSavedMatchFromDb(matchId);
-  } catch (error) {
-    logSavedMatchStoreError(`delete ${matchId}`, error);
+  if (hasSavedMatchDatabase()) {
+    try {
+      deletedFromDb = await deleteSavedMatchFromDb(matchId);
+    } catch (error) {
+      logSavedMatchStoreError(`delete ${matchId}`, error);
+      if (!shouldUseSavedMatchDiskFallback()) {
+        throw error;
+      }
+    }
+  }
+
+  if (!shouldUseSavedMatchDiskFallback()) {
+    if (!deletedFromDb) {
+      throw new Error(`Saved match not found: ${matchId}`);
+    }
+    return;
   }
 
   try {
@@ -3748,9 +3789,12 @@ app.use(
   "/api",
   createMatchesRouter({
     listForUser: async (userId: string, type?: string) => {
-      await hydrateMarketplaceSocketStore();
-      const persistedStatuses = await getMarketplaceMatchStatusesForUser(userId);
-      const groups = listMarketplaceMatchesForUser(userId);
+      const [persistedStatuses, posts] = await Promise.all([
+        getMarketplaceMatchStatusesForUser(userId),
+        listMarketplacePosts()
+      ]);
+      const postById = new Map(posts.filter(post => post.id).map(post => [post.id!, post]));
+      const groups = listMarketplaceMatchesForUserFromPosts(userId, posts);
       const flat = groups.flatMap(group =>
         group.matches.map(match => {
           const id = buildMatchId(group.postId, match.postId, match.type);
@@ -3760,8 +3804,8 @@ app.use(
             type: match.type,
             matchedQuantity: matchedQty,
             reciprocalQuantity: reciprocalQty,
-            sourceUpdatedAt: group.postId ? listMarketplacePosts().find(post => post.id === group.postId)?.updatedAt : undefined,
-            targetUpdatedAt: match.postId ? listMarketplacePosts().find(post => post.id === match.postId)?.updatedAt : undefined
+            sourceUpdatedAt: group.postId ? postById.get(group.postId)?.updatedAt : undefined,
+            targetUpdatedAt: match.postId ? postById.get(match.postId)?.updatedAt : undefined
           });
           return { id, groupPostId: group.postId, ...match, status: persistedStatuses.get(id) ?? "NEW", score: scored.score, explanation: scored.explanation };
         })
@@ -5452,7 +5496,7 @@ io.on("connection", async socket => {
   socket.on("marketplace:returnExpiredItemsToPool", async () => {
     try {
       await returnExpiredItemsToPool();
-      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+      socket.emit("marketplace:transactions", await listLegacyMarketplaceTransactions());
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
@@ -5461,8 +5505,7 @@ io.on("connection", async socket => {
   socket.on("marketplace:listPosts", async () => {
     try {
       await socket.join(MARKETPLACE_SOCKET_ROOM);
-      await hydrateMarketplaceSocketStore();
-      socket.emit("marketplace:posts", listMarketplacePosts());
+      socket.emit("marketplace:posts", await listMarketplacePosts());
       await emitMarketplaceMatches(socket);
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
@@ -5484,11 +5527,9 @@ io.on("connection", async socket => {
 
   socket.on("marketplace:createPost", async (post: MarketplacePost) => {
     try {
-      await hydrateMarketplaceSocketStore();
       const user = getSocketUser(socket);
       if (!user) throw new Error("Authentication required.");
       if (!user.discord?.userId) throw new Error("Connect Discord from your profile before posting in the marketplace.");
-      const currentPosts = marketplacePosts.get(user.id) ?? [];
       const createdAt = new Date().toISOString();
       const nextPost: MarketplacePost = {
         ...post,
@@ -5500,7 +5541,6 @@ io.on("connection", async socket => {
         status: post.status ?? "OPEN",
         updatedAt: createdAt
       };
-      marketplacePosts.set(user.id, [nextPost, ...currentPosts]);
       await upsertLegacyMarketplacePost(nextPost);
       await emitMarketplacePosts();
     } catch (error) {
@@ -5510,12 +5550,11 @@ io.on("connection", async socket => {
 
   socket.on("marketplace:updatePost", async (post: MarketplacePost) => {
     try {
-      await hydrateMarketplaceSocketStore();
       const user = getSocketUser(socket);
       if (!user) throw new Error("Authentication required.");
       if (!user.discord?.userId) throw new Error("Connect Discord from your profile before updating marketplace posts.");
       if (!post.id) throw new Error("Marketplace post id is required.");
-      const currentPosts = marketplacePosts.get(user.id) ?? [];
+      const currentPosts = await listLegacyMarketplacePostsByUser(user.id);
       const existing = currentPosts.find(item => item.id === post.id);
       if (!existing) throw new Error("Marketplace post not found.");
       const updatedAt = new Date().toISOString();
@@ -5529,7 +5568,6 @@ io.on("connection", async socket => {
         discordHandle: getDiscordDisplayName(user.discord),
         updatedAt
       };
-      marketplacePosts.set(user.id, currentPosts.map(item => item.id === post.id ? nextPost : item));
       await upsertLegacyMarketplacePost(nextPost);
       await emitMarketplacePosts();
     } catch (error) {
@@ -5543,7 +5581,7 @@ io.on("connection", async socket => {
       if (!user) throw new Error("Authentication required.");
       await returnExpiredItemsToPool();
       const ownership = await loadUserCardOwnershipMap(user.id);
-      const currentPosts = marketplacePosts.get(user.id) ?? [];
+      const currentPosts = await listMarketplaceAvailabilityPostsForUser(user.id);
       for (const line of data.offered) {
         const owned = ownership[line.cardId] ?? 0;
         const posted = currentPosts.filter(post => post.cardId === line.cardId).reduce((sum, post) => sum + (post.quantity ?? 0), 0);
@@ -5564,10 +5602,8 @@ io.on("connection", async socket => {
         requested: data.requested,
         confirmedByUserIds: []
       };
-      marketplaceTransactions.set(transaction.id, transaction);
-      marketplacePosts.set(user.id, [...currentPosts, ...data.offered.map(line => ({ userId: user.id, cardId: line.cardId, quantity: line.quantity }))]);
       await upsertLegacyMarketplaceTransaction(transaction);
-      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+      socket.emit("marketplace:transactions", await listLegacyMarketplaceTransactions());
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
@@ -5578,42 +5614,40 @@ io.on("connection", async socket => {
       const user = getSocketUser(socket);
       if (!user) throw new Error("Authentication required.");
       await returnExpiredItemsToPool();
-      const transaction = marketplaceTransactions.get(transactionId);
+      const transaction = await getLegacyMarketplaceTransaction(transactionId);
       if (!transaction) throw new Error("Transaction not found.");
       if (transaction.status !== "PENDING_CONFIRMATION" && transaction.status !== "CONFIRMED_BY_ONE_PARTY") throw new Error("Transaction is not confirmable.");
       if (!transaction.confirmedByUserIds.includes(user.id)) transaction.confirmedByUserIds.push(user.id);
       transaction.status = transaction.confirmedByUserIds.length >= 2 ? "COMPLETED" : "CONFIRMED_BY_ONE_PARTY";
       transaction.updatedAt = new Date().toISOString();
       await upsertLegacyMarketplaceTransaction(transaction);
-      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+      socket.emit("marketplace:transactions", await listLegacyMarketplaceTransactions());
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
   });
   socket.on("marketplace:denyTransaction", async (transactionId: string) => {
     try {
-      await hydrateMarketplaceSocketStore();
-      const transaction = marketplaceTransactions.get(transactionId);
+      const transaction = await getLegacyMarketplaceTransaction(transactionId);
       if (transaction) {
         transaction.status = "DENIED";
         transaction.updatedAt = new Date().toISOString();
         await upsertLegacyMarketplaceTransaction(transaction);
       }
-      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+      socket.emit("marketplace:transactions", await listLegacyMarketplaceTransactions());
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
   });
   socket.on("marketplace:cancelTransaction", async (transactionId: string) => {
     try {
-      await hydrateMarketplaceSocketStore();
-      const transaction = marketplaceTransactions.get(transactionId);
+      const transaction = await getLegacyMarketplaceTransaction(transactionId);
       if (transaction) {
         transaction.status = "CANCELED";
         transaction.updatedAt = new Date().toISOString();
         await upsertLegacyMarketplaceTransaction(transaction);
       }
-      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+      socket.emit("marketplace:transactions", await listLegacyMarketplaceTransactions());
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
@@ -5622,7 +5656,7 @@ io.on("connection", async socket => {
     try {
       requireSocketUser(socket);
       await returnExpiredItemsToPool();
-      socket.emit("marketplace:transactions", Array.from(marketplaceTransactions.values()));
+      socket.emit("marketplace:transactions", await listLegacyMarketplaceTransactions());
     } catch (error) {
       socket.emit("error", { message: (error as Error).message });
     }
