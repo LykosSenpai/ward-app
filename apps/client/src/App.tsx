@@ -83,6 +83,38 @@ import "./App.css";
 type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
 const DEFAULT_APP_PAGE: AppPage = "card-library";
 const SOCKET_SESSION_ERROR_PREFIX = "The live server connection did not receive your login session.";
+const SERVER_BOOT_STORAGE_KEY = "ward-nexus-server-boot-id";
+const AUTH_SESSION_SEEN_STORAGE_KEY = "ward-nexus-auth-session-seen";
+const SERVER_RESTART_NOTICE = "Ward Nexus was just restarted. Please log in again. If sign-in keeps looping, fully close and reopen your browser before signing in again.";
+
+type ServerIdentityPayload = {
+  serverBootId?: string;
+  serverStartedAt?: string;
+};
+
+function readClientStorage(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeClientStorage(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Ignore storage failures; the live socket check still works for this tab.
+  }
+}
+
+function removeClientStorage(key: string): void {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore storage failures.
+  }
+}
 
 const APP_PAGES = new Set<AppPage>([
   "play",
@@ -264,6 +296,7 @@ export default function App() {
   const [featureFlagsLoaded, setFeatureFlagsLoaded] = useState(false);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [serverMessage, setServerMessage] = useState("Connecting...");
+  const [serverRestartNotice, setServerRestartNotice] = useState("");
   const [match, setMatch] = useState<AppMatchState | null>(null);
   const [controlledPlayersByMatchId, setControlledPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
   const [error, setError] = useState("");
@@ -310,6 +343,7 @@ export default function App() {
   const lastRequestedCardLibraryKeyRef = useMemo(() => ({ current: "" }), []);
   const socketAuthRefreshAttemptedRef = useRef(false);
   const socketAuthRefreshInFlightRef = useRef(false);
+  const lastServerBootIdRef = useRef(readClientStorage(SERVER_BOOT_STORAGE_KEY));
   const canLoadAppDataRef = useRef(false);
   const socketAuthUserIdRef = useRef<string | null>(null);
   const canUseDevTools = !!authUser?.devToolsEnabled;
@@ -388,6 +422,24 @@ export default function App() {
     }
   }
 
+  function recordAuthenticatedSession(): void {
+    writeClientStorage(AUTH_SESSION_SEEN_STORAGE_KEY, "true");
+  }
+
+  function rememberServerIdentity(payload: ServerIdentityPayload): boolean {
+    const serverBootId = typeof payload.serverBootId === "string" ? payload.serverBootId : "";
+    if (!serverBootId) return false;
+
+    const previousBootId = lastServerBootIdRef.current ?? readClientStorage(SERVER_BOOT_STORAGE_KEY);
+    const hadKnownSession = readClientStorage(AUTH_SESSION_SEEN_STORAGE_KEY) === "true";
+    const restarted = Boolean(previousBootId && previousBootId !== serverBootId && hadKnownSession);
+
+    lastServerBootIdRef.current = serverBootId;
+    writeClientStorage(SERVER_BOOT_STORAGE_KEY, serverBootId);
+
+    return restarted;
+  }
+
   function emitAccountSave(
     event: AccountSaveEvent,
     payload: unknown,
@@ -424,7 +476,7 @@ export default function App() {
     return true;
   }
 
-  async function refreshLoginSessionForSocket(options: { manual?: boolean } = {}): Promise<boolean> {
+  async function refreshLoginSessionForSocket(options: { manual?: boolean; serverRestarted?: boolean } = {}): Promise<boolean> {
     if (socketAuthRefreshInFlightRef.current) return false;
 
     socketAuthRefreshInFlightRef.current = true;
@@ -436,11 +488,14 @@ export default function App() {
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         credentials: "include"
       });
-      const data = await response.json().catch(() => ({})) as { user?: AuthUser | null };
+      const data = await response.json().catch(() => ({})) as { user?: AuthUser | null } & ServerIdentityPayload;
+      const restartDetected = Boolean(options.serverRestarted || rememberServerIdentity(data));
 
       if (response.ok && data.user) {
+        recordAuthenticatedSession();
         setAuthUser(data.user);
         setSocketAuthenticated(null);
+        setServerRestartNotice("");
         setError(current => current.startsWith(SOCKET_SESSION_ERROR_PREFIX) ? "" : current);
         setSaveMessage(options.manual ? "Login session refreshed. Reconnecting live server..." : "");
         if (hasCompletedEmailVerification(data.user)) {
@@ -453,14 +508,25 @@ export default function App() {
       }
 
       setSocketAuthenticated(false);
-      setError(`${SOCKET_SESSION_ERROR_PREFIX} Your page can stay open, but saves need a logged-in live connection. Use Reconnect Login Session or log in again if your session expired.`);
+      if (restartDetected) {
+        setAuthUser(null);
+        setServerRestartNotice(SERVER_RESTART_NOTICE);
+        setError("");
+      } else {
+        setError(`${SOCKET_SESSION_ERROR_PREFIX} Your page can stay open, but saves need a logged-in live connection. Use Reconnect Login Session or log in again if your session expired.`);
+      }
       if (options.manual) {
         setSaveMessage("");
       }
       return false;
     } catch {
       setSocketAuthenticated(false);
-      setError(`${SOCKET_SESSION_ERROR_PREFIX} I could not re-check your login session. Use Reconnect Login Session, then retry the save.`);
+      if (options.serverRestarted) {
+        setServerRestartNotice(SERVER_RESTART_NOTICE);
+        setError("");
+      } else {
+        setError(`${SOCKET_SESSION_ERROR_PREFIX} I could not re-check your login session. Use Reconnect Login Session, then retry the save.`);
+      }
       if (options.manual) {
         setSaveMessage("");
       }
@@ -542,7 +608,13 @@ export default function App() {
         const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
           credentials: "include"
         });
-        const data = await response.json() as { user?: AuthUser | null };
+        const data = await response.json() as { user?: AuthUser | null } & ServerIdentityPayload;
+        const restartDetected = rememberServerIdentity(data);
+        if (data.user) {
+          recordAuthenticatedSession();
+        } else if (restartDetected) {
+          setServerRestartNotice(SERVER_RESTART_NOTICE);
+        }
         setAuthUser(data.user ?? null);
       } catch {
         setAuthUser(null);
@@ -630,15 +702,20 @@ export default function App() {
     socket.on("server:welcome", (data: ServerWelcome) => {
       setServerMessage(data.message);
       setSocketAuthenticated(data.authenticated === true);
+      const restartDetected = rememberServerIdentity(data);
       if (!data.authenticated) {
         if (!socketAuthRefreshAttemptedRef.current) {
           socketAuthRefreshAttemptedRef.current = true;
-          setError(`${SOCKET_SESSION_ERROR_PREFIX} Checking your login session now...`);
-          void refreshLoginSessionForSocket();
+          setError(restartDetected ? "" : `${SOCKET_SESSION_ERROR_PREFIX} Checking your login session now...`);
+          void refreshLoginSessionForSocket({ serverRestarted: restartDetected });
         } else {
-          setError(`${SOCKET_SESSION_ERROR_PREFIX} Your page can stay open, but saves need a logged-in live connection. Use Reconnect Login Session or log in again if your session expired.`);
+          if (restartDetected) {
+            setServerRestartNotice(SERVER_RESTART_NOTICE);
+          }
+          setError(restartDetected ? "" : `${SOCKET_SESSION_ERROR_PREFIX} Your page can stay open, but saves need a logged-in live connection. Use Reconnect Login Session or log in again if your session expired.`);
         }
       } else {
+        recordAuthenticatedSession();
         socketAuthRefreshAttemptedRef.current = false;
         setError(current => current.startsWith(SOCKET_SESSION_ERROR_PREFIX) ? "" : current);
       }
@@ -2345,6 +2422,8 @@ export default function App() {
     setCardOwnershipCounts({});
     setOwnershipSaveStatus("idle");
     setSocketAuthenticated(false);
+    setServerRestartNotice("");
+    removeClientStorage(AUTH_SESSION_SEEN_STORAGE_KEY);
     socket.disconnect();
   }
 
@@ -2406,10 +2485,19 @@ export default function App() {
   }
 
   if (!authUser) {
-    return <LoginPage onAuthenticated={user => {
-      setAuthUser(user);
-      setSocketAuthenticated(null);
-    }} discordAuthEnabled={discordAuthEnabled} />;
+    return (
+      <LoginPage
+        discordAuthEnabled={discordAuthEnabled}
+        serverRestartNotice={serverRestartNotice}
+        onDismissServerRestartNotice={() => setServerRestartNotice("")}
+        onAuthenticated={user => {
+          recordAuthenticatedSession();
+          setServerRestartNotice("");
+          setAuthUser(user);
+          setSocketAuthenticated(null);
+        }}
+      />
+    );
   }
 
   if (needsEmailVerification(authUser)) {
@@ -2550,6 +2638,25 @@ export default function App() {
             </>
           )}
         </nav>}
+
+        {serverRestartNotice && (
+          <div className="warning-box server-restart-notice">
+            <span>{serverRestartNotice}</span>
+            <div className="server-restart-actions">
+              {authUser ? (
+                <button type="button" onClick={() => void refreshLoginSessionForSocket({ manual: true, serverRestarted: true })}>
+                  Reconnect Login Session
+                </button>
+              ) : null}
+              <button type="button" onClick={() => window.location.reload()}>
+                Reload Page
+              </button>
+              <button type="button" onClick={() => setServerRestartNotice("")}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="error-box">

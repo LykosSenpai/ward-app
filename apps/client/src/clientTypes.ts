@@ -19,6 +19,8 @@ export type ServerWelcome = {
   message: string;
   authenticated?: boolean;
   socketId: string;
+  serverBootId?: string;
+  serverStartedAt?: string;
 };
 
 export type AuthUser = {

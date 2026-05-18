@@ -189,6 +189,8 @@ import {
 import { createSupportTicket, getSupportTicket, listSupportTickets, updateSupportTicketStatus } from "./supportTickets/supportTicketStore.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
+const SERVER_BOOT_ID = randomUUID();
+const SERVER_STARTED_AT = new Date().toISOString();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "../../..");
@@ -2503,7 +2505,9 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     service: "ward-server",
-    message: "WARD server is running"
+    message: "WARD server is running",
+    serverBootId: SERVER_BOOT_ID,
+    serverStartedAt: SERVER_STARTED_AT
   });
 });
 
@@ -2514,6 +2518,8 @@ app.get("/ready", async (_req, res) => {
     res.json({
       ok: true,
       service: "ward-server",
+      serverBootId: SERVER_BOOT_ID,
+      serverStartedAt: SERVER_STARTED_AT,
       database: "ok",
       sessions: "postgres",
       production: isProduction,
@@ -2531,17 +2537,29 @@ app.get("/ready", async (_req, res) => {
 
 app.get("/api/auth/me", async (req, res) => {
   if (!req.session.user) {
-    res.json({ user: null });
+    res.json({
+      user: null,
+      serverBootId: SERVER_BOOT_ID,
+      serverStartedAt: SERVER_STARTED_AT
+    });
     return;
   }
 
   try {
     const profile = await getUserProfile(req.session.user.id);
     req.session.user = profile;
-    res.json({ user: req.session.user });
+    res.json({
+      user: req.session.user,
+      serverBootId: SERVER_BOOT_ID,
+      serverStartedAt: SERVER_STARTED_AT
+    });
   } catch {
     delete req.session.user;
-    res.json({ user: null });
+    res.json({
+      user: null,
+      serverBootId: SERVER_BOOT_ID,
+      serverStartedAt: SERVER_STARTED_AT
+    });
   }
 });
 
@@ -3802,7 +3820,9 @@ io.on("connection", async socket => {
   socket.emit("server:welcome", {
     message: "Connected to server",
     authenticated: Boolean(connectedUser),
-    socketId: socket.id
+    socketId: socket.id,
+    serverBootId: SERVER_BOOT_ID,
+    serverStartedAt: SERVER_STARTED_AT
   });
 
   if (connectedUser) {

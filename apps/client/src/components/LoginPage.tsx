@@ -9,6 +9,8 @@ import { PasswordInput } from "./ui/PasswordInput";
 type LoginPageProps = {
   onAuthenticated: (user: AuthUser) => void;
   discordAuthEnabled: boolean;
+  serverRestartNotice?: string;
+  onDismissServerRestartNotice?: () => void;
 };
 
 type AuthMode = "login" | "register" | "forgot" | "reset";
@@ -93,7 +95,12 @@ const FALLBACK_SHOWCASE_CARDS: CardLibraryCardSummary[] = [
   }
 ];
 
-export function LoginPage({ discordAuthEnabled, onAuthenticated }: LoginPageProps) {
+export function LoginPage({
+  discordAuthEnabled,
+  onAuthenticated,
+  onDismissServerRestartNotice,
+  serverRestartNotice
+}: LoginPageProps) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [login, setLogin] = useState("");
   const [username, setUsername] = useState("");
@@ -421,6 +428,21 @@ export function LoginPage({ discordAuthEnabled, onAuthenticated }: LoginPageProp
             <h1>{getLoginTitle(mode, authChallenge)}</h1>
           </div>
 
+          {serverRestartNotice && (
+            <div className="login-warning">
+              <span>{serverRestartNotice}</span>
+              <div className="login-warning-actions">
+                <button type="button" onClick={() => window.location.reload()}>
+                  Reload Page
+                </button>
+                {onDismissServerRestartNotice ? (
+                  <button type="button" onClick={onDismissServerRestartNotice}>
+                    Dismiss
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          )}
           {error && <p className="login-error">{error}</p>}
           {message && <p className="login-success">{message}</p>}
 
