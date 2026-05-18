@@ -109,6 +109,17 @@ async function loadFeatureFlagsFromFile(): Promise<ServerFeatureFlag[] | null> {
   }
 }
 
+async function saveFeatureFlagsToFile(features: ServerFeatureFlag[]): Promise<void> {
+  const normalizedFeatures = mergeWithDefaults(features);
+
+  await fs.promises.mkdir(path.dirname(FEATURE_FLAGS_FILE_PATH), { recursive: true });
+  await fs.promises.writeFile(
+    FEATURE_FLAGS_FILE_PATH,
+    `${JSON.stringify({ features: normalizedFeatures }, null, 2)}\n`,
+    "utf8"
+  );
+}
+
 async function listFeatureFlagRows(): Promise<FeatureFlagRow[]> {
   const result = await getDbPool().query<FeatureFlagRow>(
     `select key,
@@ -137,9 +148,17 @@ async function upsertFeatureFlagRows(features: ServerFeatureFlag[], updatedByUse
 
 async function insertMissingDefaultRows(existingRows: FeatureFlagRow[]): Promise<void> {
   const existingKeys = new Set(existingRows.map(row => row.key));
+  const missingFlags = DEFAULT_FLAGS.filter(flag => !existingKeys.has(flag.key));
 
-  for (const flag of DEFAULT_FLAGS) {
-    if (existingKeys.has(flag.key)) continue;
+  if (missingFlags.length === 0) {
+    return;
+  }
+
+  const seedFlags = await loadFeatureFlagsFromFile() ?? DEFAULT_FLAGS;
+  const seedFlagsByKey = new Map(seedFlags.map(flag => [flag.key, flag]));
+
+  for (const defaultFlag of missingFlags) {
+    const flag = seedFlagsByKey.get(defaultFlag.key) ?? defaultFlag;
 
     await getDbPool().query(
       `insert into admin_feature_flags (key, enabled_for_players, updated_at, updated_by_user_id)
@@ -215,7 +234,9 @@ export async function updateFeatureFlagForPlayers(user: Pick<AuthUser, "id" | "r
     [key, enabledForPlayers, user?.id ?? null]
   );
 
-  return loadFeatureFlags();
+  const features = await loadFeatureFlags();
+  await saveFeatureFlagsToFile(features);
+  return features;
 }
 
 export async function isFeatureEnabledForPlayers(key: FeatureKey): Promise<boolean> {

@@ -74,11 +74,11 @@
       "key": "discord-auth",
       "label": "Discord Login & Linking",
       "description": "Allow players to sign in with Discord or connect Discord from profile.",
-      "enabledForPlayers": false,
+      "enabledForPlayers": true,
       "adminCanPreview": true,
       "adminOnly": false,
       "sortOrder": 75,
-      "updatedAt": "2026-05-16T19:50:33.948Z"
+      "updatedAt": "2026-05-18T00:00:00.000Z"
     },
     {
       "key": "effect-tools",
