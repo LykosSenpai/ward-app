@@ -9334,7 +9334,9 @@ button:disabled:hover {
 }
 
 .playmat-card:hover .card-hover-preview,
-.hand-card:hover .card-hover-preview {
+.hand-card:hover .card-hover-preview,
+.playmat-card.touch-hover-active .card-hover-preview,
+.hand-card.touch-hover-active .card-hover-preview {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
   visibility: visible;
@@ -9362,7 +9364,8 @@ button:disabled:hover {
   overflow: hidden;
 }
 
-.revealed-hand-card:hover .card-hover-preview {
+.revealed-hand-card:hover .card-hover-preview,
+.revealed-hand-card.touch-hover-active .card-hover-preview {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
   visibility: visible;
