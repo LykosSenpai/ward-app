@@ -883,6 +883,7 @@ const boardReportRequestSchema = z.object({
   subject: z.string().trim().min(1).max(140),
   description: z.string().trim().min(1).max(2400),
   severity: z.enum(["LOW", "NORMAL", "HIGH", "BLOCKING"]).default("NORMAL"),
+  matchSnapshot: z.record(z.unknown()).optional(),
   clientContext: z.record(z.unknown()).optional().default({})
 });
 const boardReportItemSchema = z.object({
@@ -897,7 +898,8 @@ const boardReportItemSchema = z.object({
 });
 const boardReportBatchRequestSchema = z.object({
   matchId: z.string().trim().min(1).max(160),
-  reports: z.array(boardReportItemSchema).min(1).max(20)
+  reports: z.array(boardReportItemSchema).min(1).max(20),
+  matchSnapshot: z.record(z.unknown()).optional()
 });
 const siteReportRequestSchema = z.object({
   matchId: z.string().trim().min(1).max(160).optional(),
@@ -3161,19 +3163,17 @@ app.post("/api/support-tickets/board-report", supportTicketRateLimit, async (req
       }
     }
 
-    if (!match) {
-      res.status(404).json({ message: "Match not found." });
-      return;
-    }
-
     if (!canUserReportMatch(user, parsed.data.matchId)) {
       res.status(403).json({ message: "You can only report matches you are part of." });
       return;
     }
 
-    const savedMatchTarget = await saveMatchSnapshotForServer(match);
-    const snapshotKey = `save-${Date.now()}`;
-    await saveSupportTicketMatchSnapshot({ matchId: parsed.data.matchId, snapshotKey, matchSnapshot: cloneMatchState(match) });
+    const savedMatchTarget = match ? await saveMatchSnapshotForServer(match) : undefined;
+    const reportSnapshot = match ? cloneMatchState(match) : parsed.data.matchSnapshot;
+    const snapshotKey = reportSnapshot ? `save-${Date.now()}` : undefined;
+    if (reportSnapshot && snapshotKey) {
+      await saveSupportTicketMatchSnapshot({ matchId: parsed.data.matchId, snapshotKey, matchSnapshot: reportSnapshot });
+    }
     const ticket = await createSupportTicket({
       reporterUserId: user.id,
       matchId: parsed.data.matchId,
@@ -3183,7 +3183,9 @@ app.post("/api/support-tickets/board-report", supportTicketRateLimit, async (req
       matchSnapshotKey: snapshotKey,
       clientContext: {
         ...parsed.data.clientContext,
-        savedMatchTarget,
+        savedMatchTarget: savedMatchTarget ?? (reportSnapshot ? "CLIENT_SNAPSHOT" : "UNAVAILABLE"),
+        matchSnapshotUnavailable: !match,
+        clientSnapshotUsed: !match && Boolean(reportSnapshot),
         reporterPlayerId: getUserOwnedPlayerId(user, parsed.data.matchId) ?? null,
         reporterRole: user.role,
         submittedAt: new Date().toISOString()
@@ -3229,14 +3231,12 @@ app.post("/api/support-tickets/board-report/batch", supportTicketRateLimit, asyn
       }
     }
 
-    if (!match) {
-      res.status(404).json({ message: "Match not found." });
-      return;
+    const savedMatchTarget = match ? await saveMatchSnapshotForServer(match) : undefined;
+    const reportSnapshot = match ? cloneMatchState(match) : parsed.data.matchSnapshot;
+    const snapshotKey = reportSnapshot ? `batch-${Date.now()}` : undefined;
+    if (reportSnapshot && snapshotKey) {
+      await saveSupportTicketMatchSnapshot({ matchId: parsed.data.matchId, snapshotKey, matchSnapshot: reportSnapshot });
     }
-
-    const savedMatchTarget = await saveMatchSnapshotForServer(match);
-    const snapshotKey = `batch-${Date.now()}`;
-    await saveSupportTicketMatchSnapshot({ matchId: parsed.data.matchId, snapshotKey, matchSnapshot: cloneMatchState(match) });
     const created = [];
     for (const report of parsed.data.reports) {
       if (report.matchId !== parsed.data.matchId) continue;
@@ -3249,10 +3249,12 @@ app.post("/api/support-tickets/board-report/batch", supportTicketRateLimit, asyn
         matchSnapshotKey: snapshotKey,
         clientContext: {
           ...report.clientContext,
-          savedMatchTarget,
-          turnNumber: report.turnNumber ?? match.turn.turnNumber,
-          phase: report.phase ?? match.turn.phase,
-          activePlayerId: report.activePlayerId ?? match.turn.activePlayerId,
+          savedMatchTarget: savedMatchTarget ?? (reportSnapshot ? "CLIENT_SNAPSHOT" : "UNAVAILABLE"),
+          matchSnapshotUnavailable: !match,
+          clientSnapshotUsed: !match && Boolean(reportSnapshot),
+          turnNumber: report.turnNumber ?? match?.turn.turnNumber ?? null,
+          phase: report.phase ?? match?.turn.phase ?? null,
+          activePlayerId: report.activePlayerId ?? match?.turn.activePlayerId ?? null,
           reporterPlayerId: getUserOwnedPlayerId(user, parsed.data.matchId) ?? null,
           reporterRole: user.role,
           submittedAt: new Date().toISOString()

@@ -140,16 +140,24 @@ function queueBoardReport(report: QueuedBoardReport): void {
   writeQueuedBoardReports(queue);
 }
 
-async function flushQueuedBoardReports(matchId: string): Promise<number> {
+async function flushQueuedBoardReports(matchId: string, matchSnapshot?: AppMatchState): Promise<number> {
   const queue = readQueuedBoardReports();
   const reports = queue[matchId] ?? [];
   if (reports.length === 0) return 0;
+
+  const payload: { matchId: string; reports: QueuedBoardReport[]; matchSnapshot?: AppMatchState } = {
+    matchId,
+    reports
+  };
+  if (matchSnapshot) {
+    payload.matchSnapshot = matchSnapshot;
+  }
 
   const response = await fetch(`${API_BASE_URL}/api/support-tickets/board-report/batch`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ matchId, reports })
+    body: JSON.stringify(payload)
   });
 
   if (!response.ok) {
@@ -1838,8 +1846,8 @@ export default function App() {
     socket.emit("lobby:list");
   }
 
-  async function flushQueuedBoardReportsAndRefresh(matchId: string): Promise<number> {
-    const flushedCount = await flushQueuedBoardReports(matchId);
+  async function flushQueuedBoardReportsAndRefresh(matchId: string, matchSnapshot?: AppMatchState): Promise<number> {
+    const flushedCount = await flushQueuedBoardReports(matchId, matchSnapshot);
     if (flushedCount > 0) {
       setSupportTicketRefreshKey(current => current + 1);
     }
@@ -1864,7 +1872,7 @@ export default function App() {
     setError("");
     setSaveMessage("Sending queued board reports...");
     try {
-      await flushQueuedBoardReportsAndRefresh(matchId);
+      await flushQueuedBoardReportsAndRefresh(matchId, match);
     } catch (error) {
       setSaveMessage("");
       setError(getBoardReportFlushErrorMessage(error));
@@ -1894,7 +1902,7 @@ export default function App() {
     setError("");
     setSaveMessage("Sending queued board reports...");
     try {
-      await flushQueuedBoardReportsAndRefresh(matchId);
+      await flushQueuedBoardReportsAndRefresh(matchId, match);
     } catch (error) {
       setSaveMessage("");
       setError(getBoardReportFlushErrorMessage(error));
