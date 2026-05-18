@@ -15,10 +15,10 @@ import type {
 } from "@ward/shared";
 import { rollD6WithDev } from "./devRolls.js";
 import { sumDice } from "./dice.js";
-import { getCardEngineEffects } from "./effectResolver.js";
+import { getCardEngineEffects, isAutomaticMagicEffectSupported, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { getTurnCycleExpiration } from "./effectTiming.js";
-import { removeActiveEffectInstance, syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
+import { addActiveStatusIfAbsent, removeActiveEffectInstance } from "./activeEffectInstances.js";
 import { applyDamageToCreatureTarget } from "./cardMovement.js";
 
 type AddEventFn = (state: MatchState, type: string, playerId?: string, payload?: unknown) => void;
@@ -932,6 +932,42 @@ export function applyPendingEffectRollStatusInPlace(
     return session;
   }
 
+  const sourceDefinition = state.cardCatalog[session.sourceCardId];
+  const rolledEffect = sourceDefinition
+    ? getCardEngineEffects(sourceDefinition).find(effect => effect.id === session.effectId)
+    : undefined;
+
+  if (rolledEffect && isAutomaticMagicEffectSupported(rolledEffect)) {
+    const resolved = tryResolveAutomaticMagicEffect(state, {
+      effect: rolledEffect,
+      controllerPlayerId: session.sourcePlayerId,
+      sourceCardName: session.sourceCardName,
+      sourceCardInstanceId: session.sourceCardInstanceId,
+      addEvent: addEvent ?? (() => undefined)
+    });
+
+    session.status = "APPLIED";
+    session.updatedAt = new Date().toISOString();
+    session.message = resolved
+      ? `${session.sourceCardName} effect resolved.`
+      : `${session.sourceCardName} roll succeeded, but the effect result could not be automated.`;
+
+    addEvent?.(state, resolved ? "EFFECT_ROLL_AUTOMATIC_EFFECT_APPLIED" : "EFFECT_ROLL_AUTOMATIC_EFFECT_NOT_APPLIED", session.sourcePlayerId, {
+      effectRollSessionId: session.id,
+      sourceCardInstanceId: session.sourceCardInstanceId,
+      sourceCardId: session.sourceCardId,
+      sourceCardName: session.sourceCardName,
+      effectId: session.effectId,
+      actionType: session.actionType,
+      rollTotal: session.rollTotal,
+      success: session.success,
+      resolved
+    });
+
+    state.pendingEffectRoll = undefined;
+    return session;
+  }
+
   const target = session.targetCardInstanceId
     ? findFieldCreatureByInstanceId(state, session.targetCardInstanceId)
     : undefined;
@@ -992,10 +1028,9 @@ export function applyPendingEffectRollStatusInPlace(
       expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
     };
 
-    target.card.activeStatuses.push(status);
-    syncStatusActiveEffectInstance(target.card, status);
+    const addResult = addActiveStatusIfAbsent(target.card, status);
 
-    addEvent?.(state, "EFFECT_ROLL_APPLIED", session.sourcePlayerId, {
+    addEvent?.(state, addResult.applied ? "EFFECT_ROLL_APPLIED" : "EFFECT_ROLL_STATUS_ALREADY_ACTIVE", session.sourcePlayerId, {
       effectRollSessionId: session.id,
       battleSessionId: session.linkedBattleSessionId,
       strikeId: session.linkedStrikeId,
@@ -1005,11 +1040,14 @@ export function applyPendingEffectRollStatusInPlace(
       targetPlayerId: target.player.id,
       targetCreatureInstanceId: target.card.instanceId,
       targetCreatureName: target.definition.name,
-      status: status.status,
-      label: status.label,
-      flags: status.flags,
+      status: addResult.activeStatus.status,
+      label: addResult.activeStatus.label,
+      flags: addResult.activeStatus.flags,
       duration,
-      rollTotal: session.rollTotal
+      rollTotal: session.rollTotal,
+      reason: addResult.applied
+        ? undefined
+        : "A matching status from this source/effect is already active; not refreshing or stacking it."
     });
   } else {
     addEvent?.(state, "EFFECT_ROLL_APPLY_NEEDS_MANUAL_REVIEW", session.sourcePlayerId, {

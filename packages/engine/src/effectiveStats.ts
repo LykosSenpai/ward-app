@@ -442,6 +442,15 @@ function moveDurationExpiredSourceMagicToCemetery(
   return false;
 }
 
+function pruneOrphanStatusActiveEffectInstances(card: CardInstance): void {
+  if (!card.activeEffectInstances) return;
+
+  const activeStatusIds = new Set((card.activeStatuses ?? []).map(status => status.id));
+  card.activeEffectInstances = card.activeEffectInstances.filter(instance =>
+    instance.kind !== "STATUS" || activeStatusIds.has(instance.id)
+  );
+}
+
 function removeExpiredFromCard(state: MatchState, card: CardInstance, playerId: string, currentTurnStartCount: number, addBoardEvent?: AddEventFn): void {
   if (card.activeStatModifiers) {
     const removed = card.activeStatModifiers.filter(modifier => {
@@ -606,6 +615,8 @@ function removeExpiredFromCard(state: MatchState, card: CardInstance, playerId: 
       return stillActive;
     });
   }
+
+  pruneOrphanStatusActiveEffectInstances(card);
 }
 
 export function removeExpiredStatModifiersForPlayerTurnStart(

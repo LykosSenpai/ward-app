@@ -14,7 +14,7 @@ import type {
   WardEffectStatChange
 } from "@ward/shared";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
-import { addActiveEffectInstance, syncRecurringActiveEffectInstance, syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
+import { addActiveEffectInstance, addActiveStatusIfAbsent, syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
 import { getNextRecurringEffectTickSchedule, getTurnCycleExpiration } from "./effectTiming.js";
 import { moveAllMagicSlotCardsToCemetery } from "./cardMovement.js";
 import { getRuntimeBlockActionType, getRuntimeBlockDurationText, getRuntimeBlockMultiplier, getRuntimeBlockTargetText, getRuntimeBlockText } from "./effectBlockRuntime.js";
@@ -1670,19 +1670,22 @@ export function applyOnEquipImmediateEffects(
         expiresAtPlayerTurnStartCount: expiration?.expiresAtPlayerTurnStartCount
       };
 
-      targetCreature.activeStatuses ??= [];
-      targetCreature.activeStatuses = targetCreature.activeStatuses.filter(existing => !(
-        existing.sourceCardInstanceId === sourceMagicCard.instanceId &&
-        existing.sourceEffectId === effect.id
-      ));
-      if (targetCreature.activeEffectInstances) {
-        targetCreature.activeEffectInstances = targetCreature.activeEffectInstances.filter(existing => !(
-          existing.sourceCardInstanceId === sourceMagicCard.instanceId &&
-          existing.sourceEffectId === effect.id
-        ));
+      const addResult = addActiveStatusIfAbsent(targetCreature, status);
+      if (!addResult.applied) {
+        addEvent(state, "AUTO_EQUIP_DAMAGE_IMMUNITY_ALREADY_ACTIVE", sourceMagicCard.controllerPlayerId, {
+          sourceCardName: getCardName(state, sourceMagicCard),
+          sourceCardInstanceId: sourceMagicCard.instanceId,
+          targetCreatureInstanceId: targetCreature.instanceId,
+          targetCreatureName: getCardName(state, targetCreature),
+          effectId: effect.id,
+          actionType: effect.actionType,
+          status: addResult.activeStatus.status,
+          label: addResult.activeStatus.label,
+          reason: "A matching status from this source/effect is already active; not refreshing or stacking it."
+        });
+        continue;
       }
-      targetCreature.activeStatuses.push(status);
-      syncStatusActiveEffectInstance(targetCreature, status);
+
       resolvedCount += 1;
 
       addEvent(state, "AUTO_EQUIP_DAMAGE_IMMUNITY_APPLIED", sourceMagicCard.controllerPlayerId, {

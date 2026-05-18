@@ -193,8 +193,6 @@ export function CardLibraryPanel({
   const [activeFloatingCardId, setActiveFloatingCardId] = useState<string | null>(null);
   const [floatingControlsPosition, setFloatingControlsPosition] = useState<FloatingControlsPosition | null>(null);
   const [useInlineCardControlsOnly, setUseInlineCardControlsOnly] = useState(false);
-  const [mobileLayoutActive, setMobileLayoutActive] = useState(false);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
   const [completionGeneration, setCompletionGeneration] = useState("ALL");
@@ -223,24 +221,6 @@ export function CardLibraryPanel({
 
     mediaQuery.addListener(syncFloatingControlsMode);
     return () => mediaQuery.removeListener(syncFloatingControlsMode);
-  }, []);
-
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-
-    const mediaQuery = window.matchMedia("(max-width: 820px)");
-    const syncMobileLayout = () => setMobileLayoutActive(mediaQuery.matches);
-
-    syncMobileLayout();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncMobileLayout);
-      return () => mediaQuery.removeEventListener("change", syncMobileLayout);
-    }
-
-    mediaQuery.addListener(syncMobileLayout);
-    return () => mediaQuery.removeListener(syncMobileLayout);
   }, []);
 
   const deckCounts = useMemo(() => getDeckBuilderCounts(), [deckBuilderCardIds, getDeckBuilderCounts]);

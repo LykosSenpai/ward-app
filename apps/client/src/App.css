@@ -7451,15 +7451,6 @@ code,
   .library-option-a-current-deck-panel {
     max-height: none;
   }
-
-  .library-option-a-mobile-filter-toggle {
-    justify-self: end;
-    min-height: 1.9rem;
-  }
-
-  .library-option-a-filter-panel.mobile-collapsible.is-collapsed .library-option-a-filter-stack {
-    display: none;
-  }
 }
 
 /* Desktop polish pass from full-width screenshots. */

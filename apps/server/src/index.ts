@@ -1520,6 +1520,15 @@ function requireSocketCanFinishManualBattle(socket: { request: unknown }, match:
 
 function requireSocketCanControlEffectRollStep(socket: { request: unknown }, match: MatchState): void {
   const effectRoll = match.pendingEffectRoll;
+  const effectRollControllerPlayerId = effectRoll
+    ? effectRoll.rollPlayerId ?? effectRoll.sourcePlayerId
+    : undefined;
+
+  if (effectRollControllerPlayerId) {
+    requireSocketCanControlPlayer(socket, match.matchId, effectRollControllerPlayerId);
+    return;
+  }
+
   if (
     effectRoll?.linkedBattleSessionId &&
     match.pendingBattle?.id === effectRoll.linkedBattleSessionId

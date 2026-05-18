@@ -241,6 +241,34 @@ function hasMaterializedBaseStat(
   ));
 }
 
+function hasRuntimeBaseStatLayer(
+  state: MatchState,
+  suggestion: BattleEffectSuggestion,
+  stat: MaterializedBattleStat
+): boolean {
+  if (!suggestion.effectId) return false;
+  if (!suggestion.appliesToCreatureInstanceId) return false;
+
+  const location = getCreatureLocation(state, suggestion.appliesToCreatureInstanceId);
+  if (!location) return false;
+
+  return collectRuntimeModifierLayers(state, location).some(layer =>
+    layer.sourceCardInstanceId === suggestion.sourceCardInstanceId &&
+    layer.effectId === suggestion.effectId &&
+    layer.stat === stat &&
+    layer.operation !== "SUPPRESS_POSITIVE"
+  );
+}
+
+function hasAppliedBaseStat(
+  state: MatchState,
+  suggestion: BattleEffectSuggestion,
+  stat: MaterializedBattleStat
+): boolean {
+  return hasMaterializedBaseStat(state, suggestion, stat) ||
+    hasRuntimeBaseStatLayer(state, suggestion, stat);
+}
+
 function inferredBaseStatsFromInfoSuggestion(suggestion: BattleEffectSuggestion): MaterializedBattleStat[] {
   const text = [suggestion.label, suggestion.note].filter(Boolean).join(" ").toUpperCase();
   const stats: MaterializedBattleStat[] = [];
@@ -276,12 +304,12 @@ function sanitizeMaterializedBaseStatSuggestion(
 ): BattleEffectSuggestion | undefined {
   if (String(suggestion.trigger ?? "").trim().toUpperCase() === "ACTIVE_STAT_MODIFIER") {
     const materializedStats: MaterializedBattleStat[] = ["armorLevel", "speed", "attackDice", "modifier"];
-    if (materializedStats.some(stat => hasMaterializedBaseStat(state, suggestion, stat))) {
+    if (materializedStats.some(stat => hasAppliedBaseStat(state, suggestion, stat))) {
       return undefined;
     }
   }
 
-  if (suggestion.kind === "SPEED" && hasMaterializedBaseStat(state, suggestion, "speed")) {
+  if (suggestion.kind === "SPEED" && hasAppliedBaseStat(state, suggestion, "speed")) {
     const speedModifiers = {
       ...suggestion.speedModifiers,
       attackingSpeedDelta: 0,
@@ -303,7 +331,7 @@ function sanitizeMaterializedBaseStatSuggestion(
   }
 
   const damageDiceDelta = Number(suggestion.strikeModifiers?.damageDiceDelta ?? 0);
-  if (suggestion.kind === "STRIKE" && damageDiceDelta !== 0 && hasMaterializedBaseStat(state, suggestion, "attackDice")) {
+  if (suggestion.kind === "STRIKE" && damageDiceDelta !== 0 && hasAppliedBaseStat(state, suggestion, "attackDice")) {
     const strikeModifiers = {
       ...suggestion.strikeModifiers,
       damageDiceDelta: 0
@@ -324,7 +352,7 @@ function sanitizeMaterializedBaseStatSuggestion(
 
   if (suggestion.kind === "INFO") {
     const stats = inferredBaseStatsFromInfoSuggestion(suggestion);
-    if (stats.length > 0 && stats.every(stat => hasMaterializedBaseStat(state, suggestion, stat))) {
+    if (stats.length > 0 && stats.every(stat => hasAppliedBaseStat(state, suggestion, stat))) {
       return undefined;
     }
   }

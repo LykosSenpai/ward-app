@@ -1586,14 +1586,18 @@ export function BoardPreview3D({
       ])
     ].filter((playerId): playerId is string => Boolean(playerId)));
   }, [pendingBattle]);
+  const pendingEffectRollControllerPlayerId = match.pendingEffectRoll
+    ? match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.sourcePlayerId
+    : null;
   const battleStepControllerPlayerId = pendingBattle
     ? match.pendingEffectTargetPrompt?.controllerPlayerId ??
+      pendingEffectRollControllerPlayerId ??
       (pendingBattle.status === "AWAITING_SPEED_CHECK" || pendingBattle.status === "COMPLETE"
       ? pendingBattle.attackingPlayerId
       : pendingBattleStrike?.attacker.playerId ?? pendingBattle.attackingPlayerId)
     : null;
   const standaloneEffectRollControllerPlayerId = !pendingBattle && match.pendingEffectRoll
-    ? (match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.targetPlayerId ?? match.pendingEffectRoll.sourcePlayerId)
+    ? pendingEffectRollControllerPlayerId
     : null;
   const canAdvanceBattleResolver = pendingBattle?.status === "COMPLETE"
     ? !match.pendingEffectTargetPrompt &&
@@ -1637,7 +1641,7 @@ export function BoardPreview3D({
     }
 
     if (match.pendingEffectRoll?.status === "AWAITING_ROLL") {
-      const owner = (match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.targetPlayerId ?? match.pendingEffectRoll.sourcePlayerId ?? focusedPlayerId) as BoardPlayerId;
+      const owner = (match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.sourcePlayerId ?? focusedPlayerId) as BoardPlayerId;
       const rollPlayerLabel = match.players.find(player => player.id === owner)?.displayName ?? owner;
       const canRoll = !controlledPlayerId || controlledPlayerId === owner;
       return {
@@ -1652,7 +1656,7 @@ export function BoardPreview3D({
     }
 
     if (!pendingBattle && match.pendingEffectRoll?.status === "ROLLED") {
-      const owner = (match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.targetPlayerId ?? match.pendingEffectRoll.sourcePlayerId ?? focusedPlayerId) as BoardPlayerId;
+      const owner = (match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.sourcePlayerId ?? focusedPlayerId) as BoardPlayerId;
       const rollPlayerLabel = match.players.find(player => player.id === owner)?.displayName ?? owner;
       const canApply = !controlledPlayerId || controlledPlayerId === owner;
       return {

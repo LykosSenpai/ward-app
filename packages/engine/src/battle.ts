@@ -930,6 +930,30 @@ function responseCanPlayForStrike(
   return null;
 }
 
+function getPlayableBattleResponsesForStrike(
+  state: MatchState,
+  session: PendingBattleSession,
+  strike: ManualBattleStrike
+): Array<{ player: PlayerState; card: CardInstance; definition: CardDefinition; response: AutomatedBattleResponse }> {
+  const playable: Array<{ player: PlayerState; card: CardInstance; definition: CardDefinition; response: AutomatedBattleResponse }> = [];
+
+  for (const player of state.players) {
+    for (const card of player.hand) {
+      const definition = state.cardCatalog[card.cardId];
+      if (!definition) continue;
+
+      const response = getAutomatedBattleResponse(definition);
+      if (!response) continue;
+
+      if (!responseCanPlayForStrike(session, strike, player.id, response)) {
+        playable.push({ player, card, definition, response });
+      }
+    }
+  }
+
+  return playable;
+}
+
 function applyBattleResponseNegation(
   definition: CardDefinition,
   effect: WardEngineEffect,
@@ -3122,6 +3146,43 @@ export function rollAndApplyManualBattleDamage(
   battleSessionId: string
 ): MatchState {
   const rolledState = rollManualBattleDamage(state, battleSessionId);
+  const session = rolledState.pendingBattle;
+  const strike = session?.id === battleSessionId ? getCurrentManualStrike(session) : undefined;
+
+  if (
+    session &&
+    strike &&
+    strike.status === "AWAITING_DAMAGE_APPLICATION" &&
+    strike.damageTarget === "DEFENDER" &&
+    (strike.damageDealt ?? 0) > 0
+  ) {
+    const playableResponses = getPlayableBattleResponsesForStrike(rolledState, session, strike);
+
+    if (playableResponses.length > 0) {
+      const defender = getPlayer(rolledState, strike.defender.playerId);
+      const responseNames = [...new Set(playableResponses.map(item => item.definition.name))].join(", ");
+      setSessionUpdated(
+        session,
+        `Damage rolled. ${defender.displayName} may play ${responseNames} before damage is applied.`
+      );
+      addEvent(rolledState, "BATTLE_DAMAGE_APPLICATION_PAUSED_FOR_RESPONSE", defender.id, {
+        battleSessionId: session.id,
+        strikeId: strike.id,
+        defenderPlayerId: defender.id,
+        pendingDamage: strike.damageDealt,
+        availableResponses: playableResponses.map(item => ({
+          playerId: item.player.id,
+          cardInstanceId: item.card.instanceId,
+          cardId: item.card.cardId,
+          cardName: item.definition.name,
+          effectId: item.response.effect.id,
+          actionType: item.response.effect.actionType
+        }))
+      });
+      return rolledState;
+    }
+  }
+
   return applyManualBattleDamage(rolledState, battleSessionId);
 }
 
