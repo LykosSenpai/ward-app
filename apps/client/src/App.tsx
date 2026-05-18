@@ -25,7 +25,7 @@ import { MarketplaceTransactionPanel } from "./components/MarketplaceTransaction
 import { MarketplacePage } from "./components/MarketplacePage";
 import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { BoardPreview3D } from "./components/BoardPreview3D";
-import { BoardReportPanel } from "./components/BoardReportPanel";
+import { BoardReportPanel, type QueuedBoardReport } from "./components/BoardReportPanel";
 import type { PointerGestureIntent } from "./components/boardInteractionIntents";
 import type { BoardIntentCommand } from "./components/boardIntentCommands";
 import { ProfilePage } from "./components/ProfilePage";
@@ -116,6 +116,51 @@ function removeClientStorage(key: string): void {
   }
 }
 
+
+const BOARD_REPORT_QUEUE_STORAGE_KEY = "ward-board-report-queue";
+
+function readQueuedBoardReports(): Record<string, QueuedBoardReport[]> {
+  const raw = readClientStorage(BOARD_REPORT_QUEUE_STORAGE_KEY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, QueuedBoardReport[]>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeQueuedBoardReports(queue: Record<string, QueuedBoardReport[]>): void {
+  writeClientStorage(BOARD_REPORT_QUEUE_STORAGE_KEY, JSON.stringify(queue));
+}
+
+function queueBoardReport(report: QueuedBoardReport): void {
+  const queue = readQueuedBoardReports();
+  queue[report.matchId] = [...(queue[report.matchId] ?? []), report].slice(-20);
+  writeQueuedBoardReports(queue);
+}
+
+async function flushQueuedBoardReports(matchId: string): Promise<number> {
+  const queue = readQueuedBoardReports();
+  const reports = queue[matchId] ?? [];
+  if (reports.length === 0) return 0;
+
+  const response = await fetch(`${API_BASE_URL}/api/support-tickets/board-report/batch`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ matchId, reports })
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({})) as { message?: string };
+    throw new Error(payload.message ?? "Unable to flush queued board reports.");
+  }
+
+  delete queue[matchId];
+  writeQueuedBoardReports(queue);
+  return reports.length;
+}
 const APP_PAGES = new Set<AppPage>([
   "play",
   "card-library",
@@ -760,10 +805,12 @@ export default function App() {
 
     socket.on("match:saved", (data: { message: string; matchId: string }) => {
       setSaveMessage(data.message);
+      void flushQueuedBoardReports(data.matchId).catch(() => undefined);
     });
 
     socket.on("match:closed", (data: { message: string; matchId: string; saved?: boolean }) => {
       setSaveMessage(data.message);
+      void flushQueuedBoardReports(data.matchId).catch(() => undefined);
       setDashboardModal(null);
       setActiveLobby(undefined);
       setMatch(currentMatch => currentMatch?.matchId === data.matchId ? null : currentMatch);
@@ -881,6 +928,28 @@ export default function App() {
 
     socket.on("collection:ownership", (data: CardOwnershipMap) => {
       setCardOwnershipCounts(data);
+      setOwnershipSaveStatus(current => current === "saving" ? "saved" : current);
+    });
+
+    socket.on("collection:ownershipDelta", (data: { changed?: Record<string, number> }) => {
+      const changed = data?.changed ?? {};
+      const entries = Object.entries(changed);
+      if (entries.length === 0) {
+        return;
+      }
+
+      setCardOwnershipCounts(current => {
+        const next = { ...current };
+        for (const [key, value] of entries) {
+          const safeValue = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+          if (safeValue <= 0) {
+            delete next[key];
+          } else {
+            next[key] = safeValue;
+          }
+        }
+        return next;
+      });
       setOwnershipSaveStatus(current => current === "saving" ? "saved" : current);
     });
 
@@ -1101,6 +1170,7 @@ export default function App() {
       socket.off("features:visibilityChanged");
       socket.off("lobby:cleanupComplete");
       socket.off("collection:ownership");
+      socket.off("collection:ownershipDelta");
       socket.off("collection:error");
       socket.off("dev:effectCoverage");
       socket.off("dev:effectRuntimeTestStatusSaved");
@@ -1760,16 +1830,21 @@ export default function App() {
     socket.emit("match:saveCurrent", match.matchId);
   }
 
-  function saveAndQuitCurrentMatch() {
+  async function exitCurrentMatchWithoutSaving() {
     if (!match) return;
 
-    const confirmed = window.confirm("Save this match and quit the live board? You can reload it later from Saved Matches.");
+    const confirmed = window.confirm("Exit this match without saving? Unsaved match state will be lost.");
     if (!confirmed) return;
 
     setDashboardModal(null);
     setError("");
-    setSaveMessage("Saving match...");
-    socket.emit("match:saveAndQuit", match.matchId);
+    setSaveMessage("Exiting match...");
+    try {
+      await flushQueuedBoardReports(match.matchId);
+    } catch {
+      // keep queued reports for later retry if flush fails
+    }
+    socket.emit("match:exit", match.matchId);
   }
 
   function undoLastAction() {
@@ -3072,7 +3147,7 @@ export default function App() {
 
             {getMatchStatus(match) === "COMPLETE" && (
               <ModalPanel title="Match Complete" blocking wide>
-                <MatchCompleteCard match={match} onClose={closeCompletedMatch} />
+                <MatchCompleteCard match={match} onClose={closeCompletedMatch} onSaveAndClose={exitCurrentMatchWithoutSaving} />
               </ModalPanel>
             )}
 
@@ -3172,7 +3247,7 @@ export default function App() {
                 onClose={() => setDashboardModal(null)}
                 wide
               >
-                <BoardReportPanel match={match} onSubmitted={() => setDashboardModal(null)} />
+                <BoardReportPanel match={match} onQueued={queueBoardReport} onSubmitted={() => setDashboardModal(null)} />
               </ModalPanel>
             )}
             {dashboardModal === "match-details" && (

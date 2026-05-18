@@ -129,7 +129,7 @@ import { saveLlmPhase4VerificationReport } from "./llm/phase4Reports.js";
 import { runLlmHeadlessEffectTest } from "./llm/headlessEffectRunner.js";
 import type { EffectRuntimeTestStatusRecord } from "./dataStore.js";
 import type { LlmDirectEffectSmokeTestResult, LlmEffectResultReview, LlmEffectTestPlan } from "./llm/types.js";
-import { loadUserCardOwnershipMap, setUserCardOwnershipCount } from "./collection/ownershipStore.js";
+import { loadUserCardOwnershipMap, setUserCardOwnershipCountOnly } from "./collection/ownershipStore.js";
 import { createOrReplaceAutoNeedRule, disableAutoNeedRule, loadMarketplaceNeeds, recomputeMarketplaceNeedsForUser } from "./collection/marketplaceNeedRuleStore.js";
 import { sessionMiddleware } from "./auth/session.js";
 import type { AuthUser } from "./auth/session.js";
@@ -186,7 +186,7 @@ import {
   type MarketplaceTradeLine,
   type MarketplaceTransaction
 } from "./marketplace/legacySocketStore.js";
-import { createSupportTicket, getSupportTicket, listSupportTickets, updateSupportTicketStatus } from "./supportTickets/supportTicketStore.js";
+import { createSupportTicket, getSupportTicket, listSupportTickets, listSupportTicketsByMatchId, saveSupportTicketMatchSnapshot, updateSupportTicketStatus } from "./supportTickets/supportTicketStore.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const SERVER_BOOT_ID = randomUUID();
@@ -884,6 +884,20 @@ const boardReportRequestSchema = z.object({
   description: z.string().trim().min(1).max(2400),
   severity: z.enum(["LOW", "NORMAL", "HIGH", "BLOCKING"]).default("NORMAL"),
   clientContext: z.record(z.unknown()).optional().default({})
+});
+const boardReportItemSchema = z.object({
+  matchId: z.string().trim().min(1).max(160),
+  subject: z.string().trim().min(1).max(140),
+  description: z.string().trim().min(1).max(2400),
+  severity: z.enum(["LOW", "NORMAL", "HIGH", "BLOCKING"]).default("NORMAL"),
+  turnNumber: z.number().int().min(0).optional(),
+  phase: z.string().trim().min(1).max(80).optional(),
+  activePlayerId: z.string().trim().min(1).max(80).optional(),
+  clientContext: z.record(z.unknown()).optional().default({})
+});
+const boardReportBatchRequestSchema = z.object({
+  matchId: z.string().trim().min(1).max(160),
+  reports: z.array(boardReportItemSchema).min(1).max(20)
 });
 const siteReportRequestSchema = z.object({
   matchId: z.string().trim().min(1).max(160).optional(),
@@ -3041,6 +3055,27 @@ app.get("/api/support-tickets", async (req, res) => {
   }
 });
 
+
+app.get("/api/support-tickets/match/:matchId", async (req, res) => {
+  try {
+    if (!canUserUseAdminTools(req.session.user)) {
+      res.status(req.session.user ? 403 : 401).json({ message: req.session.user ? "Admin access required." : "Login required." });
+      return;
+    }
+
+    const matchId = z.string().trim().min(1).max(160).safeParse(req.params.matchId);
+    if (!matchId.success) {
+      res.status(400).json({ message: "Invalid match ID." });
+      return;
+    }
+
+    const tickets = await listSupportTicketsByMatchId(matchId.data);
+    res.json({ matchId: matchId.data, tickets });
+  } catch (error) {
+    res.status(400).json({ message: error instanceof Error ? error.message : "Unable to list match tickets." });
+  }
+});
+
 app.get("/api/support-tickets/:ticketId", async (req, res) => {
   try {
     if (!canUserUseAdminTools(req.session.user)) {
@@ -3137,13 +3172,15 @@ app.post("/api/support-tickets/board-report", supportTicketRateLimit, async (req
     }
 
     const savedMatchTarget = await saveMatchSnapshotForServer(match);
+    const snapshotKey = `save-${Date.now()}`;
+    await saveSupportTicketMatchSnapshot({ matchId: parsed.data.matchId, snapshotKey, matchSnapshot: cloneMatchState(match) });
     const ticket = await createSupportTicket({
       reporterUserId: user.id,
       matchId: parsed.data.matchId,
       subject: parsed.data.subject,
       description: parsed.data.description,
       severity: parsed.data.severity,
-      matchSnapshot: cloneMatchState(match),
+      matchSnapshotKey: snapshotKey,
       clientContext: {
         ...parsed.data.clientContext,
         savedMatchTarget,
@@ -3157,6 +3194,77 @@ app.post("/api/support-tickets/board-report", supportTicketRateLimit, async (req
   } catch (error) {
     res.status(400).json({
       message: error instanceof Error ? error.message : "Unable to create support ticket."
+    });
+  }
+});
+
+
+app.post("/api/support-tickets/board-report/batch", supportTicketRateLimit, async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+
+    const parsed = boardReportBatchRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid report batch." });
+      return;
+    }
+
+    validateDataFileId(parsed.data.matchId);
+
+    if (!canUserReportMatch(user, parsed.data.matchId)) {
+      res.status(403).json({ message: "You can only report matches you are part of." });
+      return;
+    }
+
+    let match = activeMatches.get(parsed.data.matchId);
+    if (!match) {
+      try {
+        match = await loadSavedMatchForServer(parsed.data.matchId);
+      } catch {
+        match = undefined;
+      }
+    }
+
+    if (!match) {
+      res.status(404).json({ message: "Match not found." });
+      return;
+    }
+
+    const savedMatchTarget = await saveMatchSnapshotForServer(match);
+    const snapshotKey = `batch-${Date.now()}`;
+    await saveSupportTicketMatchSnapshot({ matchId: parsed.data.matchId, snapshotKey, matchSnapshot: cloneMatchState(match) });
+    const created = [];
+    for (const report of parsed.data.reports) {
+      if (report.matchId !== parsed.data.matchId) continue;
+      const ticket = await createSupportTicket({
+        reporterUserId: user.id,
+        matchId: parsed.data.matchId,
+        subject: report.subject,
+        description: report.description,
+        severity: report.severity,
+        matchSnapshotKey: snapshotKey,
+        clientContext: {
+          ...report.clientContext,
+          savedMatchTarget,
+          turnNumber: report.turnNumber ?? match.turn.turnNumber,
+          phase: report.phase ?? match.turn.phase,
+          activePlayerId: report.activePlayerId ?? match.turn.activePlayerId,
+          reporterPlayerId: getUserOwnedPlayerId(user, parsed.data.matchId) ?? null,
+          reporterRole: user.role,
+          submittedAt: new Date().toISOString()
+        }
+      });
+      created.push(ticket);
+    }
+
+    res.status(201).json({ tickets: created, createdCount: created.length });
+  } catch (error) {
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Unable to create support ticket batch."
     });
   }
 });
@@ -5246,11 +5354,13 @@ io.on("connection", async socket => {
     async (data: { cardId: string; variant?: string; ownedCount: number; requiredCount?: number }, ack?: SocketAck) => {
       try {
         const user = requireSocketUser(socket);
-        const ownershipMap = await setUserCardOwnershipCount({
+        const delta = await setUserCardOwnershipCountOnly({
             userId: user.id,
             ownershipKey: data.variant && data.variant !== "default" ? `${data.cardId}__art_${data.variant}` : data.cardId,
             ownedCount: data.ownedCount
           });
+        const ownershipMap = await loadOwnershipForSocketUser(user);
+        socket.emit("collection:ownershipDelta", { changed: { [delta.ownershipKey]: delta.ownedCount } });
         socket.emit("collection:ownership", ownershipMap);
         sendSocketAckSuccess(ack);
       } catch (error) {
@@ -5267,14 +5377,17 @@ io.on("connection", async socket => {
     async (data: { updates: Array<{ cardId: string; variant?: string; ownedCount: number; requiredCount?: number }> }, ack?: SocketAck) => {
       try {
         const user = requireSocketUser(socket);
-        let ownershipMap = await loadOwnershipForSocketUser(user);
+        const changed: Record<string, number> = {};
         for (const update of data.updates ?? []) {
-          ownershipMap = await setUserCardOwnershipCount({
+          const delta = await setUserCardOwnershipCountOnly({
               userId: user.id,
               ownershipKey: update.variant && update.variant !== "default" ? `${update.cardId}__art_${update.variant}` : update.cardId,
               ownedCount: update.ownedCount
             });
+          changed[delta.ownershipKey] = delta.ownedCount;
         }
+        const ownershipMap = await loadOwnershipForSocketUser(user);
+        socket.emit("collection:ownershipDelta", { changed });
         socket.emit("collection:ownership", ownershipMap);
         const ownership = await loadUserCardOwnershipMap(user.id);
         const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
@@ -6187,6 +6300,36 @@ io.on("connection", async socket => {
       matchPlayerOwners.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
       closeLobbyForMatch(matchId, "SAVED_AND_EXITED");
+      io.to(SAVED_MATCHES_SOCKET_ROOM).emit("match:savedList", await listSavedMatchesForServer());
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+
+  socket.on("match:exit", async (matchId: string) => {
+    try {
+      const match = getMatchOrThrow(matchId);
+      requireSocketCanSaveMatch(socket, match);
+      const closePayload = {
+        message: `Match closed without saving: ${matchId}`,
+        matchId,
+        saved: false
+      };
+      const roomSocketIds = io.sockets.adapter.rooms.get(matchId);
+
+      io.to(matchId).emit("match:closed", closePayload);
+      if (!roomSocketIds?.has(socket.id)) {
+        socket.emit("match:closed", closePayload);
+      }
+      io.in(matchId).socketsLeave(matchId);
+      activeMatches.delete(matchId);
+      matchUndoHistory.delete(matchId);
+      matchPlayerOwners.delete(matchId);
+      clearMatchPayloadCacheForMatch(matchId);
+      closeLobbyForMatch(matchId, "MATCH_COMPLETE");
       io.to(SAVED_MATCHES_SOCKET_ROOM).emit("match:savedList", await listSavedMatchesForServer());
     } catch (error) {
       socket.emit("match:error", {
