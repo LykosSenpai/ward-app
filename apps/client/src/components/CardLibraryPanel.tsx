@@ -4,13 +4,14 @@ import { createPortal } from "react-dom";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { buildDeckNotesMarkdown, decodeWardDeckString, downloadTextFile, encodeWardDeckString, getWardDeckStringFormatLabel, sanitizeDownloadFileName } from "../deckShare";
 import { getDisplayMagicType } from "../gameViewHelpers";
-import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, coerceCardArtKeyForCard, composeArtKey, getBaseArtKey, getBaseArtOptionsForCard, getCardArtLabel } from "./CardImagePreview";
+import { ACTIVE_CARD_ART_OPTIONS, CardImagePreview, CardImageThumbnail, cardSupportsZeroArt, coerceCardArtKeyForCard, composeArtKey, getBaseArtKey, getBaseArtOptionsForCard, getCardArtLabel } from "./CardImagePreview";
 import type { CardArtKey } from "./CardImagePreview";
 import { AddCardToMarketplaceModal } from "./AddCardToMarketplaceModal";
 
 type CardTypeFilter = "ALL" | "CREATURE" | "MAGIC";
 type DeckMembershipFilter = "ALL" | "IN_DECK" | "NOT_IN_DECK";
 type OwnershipFilter = "ALL" | "OWNED" | "MISSING";
+type ArtVariantFilter = "ALL" | "DEFAULT" | "HOLO" | "ZERO" | "ZERO_HOLO";
 type TournamentLimitStatus = "LEGAL" | "LIMITED" | "BANNED";
 type DeckFormat = "FREE_PLAY" | "TOURNAMENT";
 type SortMode = "number" | "name" | "generation" | "deckCount" | "ownedCount" | "armorLevel" | "hp" | "speed";
@@ -178,6 +179,7 @@ export function CardLibraryPanel({
   const [effectTypeFilter, setEffectTypeFilter] = useState("ALL");
   const [deckMembershipFilter, setDeckMembershipFilter] = useState<DeckMembershipFilter>("ALL");
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipFilter>("ALL");
+  const [artVariantFilter, setArtVariantFilter] = useState<ArtVariantFilter>("ALL");
   const [sortMode, setSortMode] = useState<SortMode>("number");
   const [selectedArtKeysByCardId, setSelectedArtKeysByCardId] = useState<Record<string, CardArtKey>>({});
   const [draggedCard, setDraggedCard] = useState<{ cardId: string; artKey: CardArtKey } | null>(null);
@@ -256,6 +258,13 @@ export function CardLibraryPanel({
     { key: "holo", label: "Holo" },
     { key: "zero-art", label: "Zero" },
     { key: "zero-art-holo", label: "Zero Holo" }
+  ];
+  const artVariantFilterOptions: Array<{ value: ArtVariantFilter; label: string }> = [
+    { value: "ALL", label: "All Variants" },
+    { value: "DEFAULT", label: "Default" },
+    { value: "HOLO", label: "Holo" },
+    { value: "ZERO", label: "Zero" },
+    { value: "ZERO_HOLO", label: "Zero Holo" }
   ];
 
   const selectedCompletionVariants = collectionVariantOptions.filter(option => completionVariants[option.key]);
@@ -433,7 +442,7 @@ export function CardLibraryPanel({
     return cardLibrary
       .filter(card => {
         const deckCount = deckCounts[card.id] ?? 0;
-        const ownedCount = getTotalOwnedCopiesForCard(card.id);
+        const ownedCount = getFilteredOwnedCopiesForCard(card);
 
         if (typeFilter !== "ALL" && card.cardType !== typeFilter) return false;
         if (generationFilter !== "ALL" && `${card.generation ?? ""}` !== generationFilter) return false;
@@ -443,6 +452,7 @@ export function CardLibraryPanel({
         if (effectTypeFilter !== "ALL" && !(card.effectTypes ?? []).includes(effectTypeFilter)) return false;
         if (deckMembershipFilter === "IN_DECK" && deckCount === 0) return false;
         if (deckMembershipFilter === "NOT_IN_DECK" && deckCount > 0) return false;
+        if (!cardMatchesArtVariantFilter(card)) return false;
         if (ownershipFilter === "OWNED" && ownedCount === 0) return false;
         if (ownershipFilter === "MISSING" && ownedCount > 0) return false;
         if (missingFocusCardIds && !missingFocusCardIds.includes(card.id)) return false;
@@ -458,14 +468,14 @@ export function CardLibraryPanel({
             a.name.localeCompare(b.name);
         }
         if (sortMode === "deckCount") return (deckCounts[b.id] ?? 0) - (deckCounts[a.id] ?? 0) || a.name.localeCompare(b.name);
-        if (sortMode === "ownedCount") return getTotalOwnedCopiesForCard(b.id) - getTotalOwnedCopiesForCard(a.id) || a.name.localeCompare(b.name);
+        if (sortMode === "ownedCount") return getFilteredOwnedCopiesForCard(b) - getFilteredOwnedCopiesForCard(a) || a.name.localeCompare(b.name);
         if (sortMode === "armorLevel") return (b.armorLevel ?? -1) - (a.armorLevel ?? -1) || a.name.localeCompare(b.name);
         if (sortMode === "hp") return (b.hp ?? -1) - (a.hp ?? -1) || a.name.localeCompare(b.name);
         if (sortMode === "speed") return (b.speed ?? -1) - (a.speed ?? -1) || a.name.localeCompare(b.name);
 
         return getCardSortNumber(a).localeCompare(getCardSortNumber(b), undefined, { numeric: true }) || a.name.localeCompare(b.name);
       });
-  }, [cardLibrary, creatureTypeFilter, deckBuilderFormat, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, missingFocusCardIds, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
+  }, [artVariantFilter, cardLibrary, creatureTypeFilter, deckBuilderFormat, deckCounts, deckMembershipFilter, effectTypeFilter, generationFilter, magicTypeFilter, missingFocusCardIds, ownershipCounts, ownershipFilter, rarityFilter, searchText, sortMode, typeFilter, selectedArtKeysByCardId]);
 
   const displayCards = useMemo(
     () => filteredCards,
@@ -489,6 +499,7 @@ export function CardLibraryPanel({
     generationFilter,
     magicTypeFilter,
     ownershipFilter,
+    artVariantFilter,
     rarityFilter,
     searchText,
     sortMode,
@@ -633,6 +644,7 @@ export function CardLibraryPanel({
     setEffectTypeFilter("ALL");
     setDeckMembershipFilter("ALL");
     setOwnershipFilter("ALL");
+    setArtVariantFilter("ALL");
     setSortMode("number");
     setMissingFocusCardIds(null);
   }
@@ -739,6 +751,23 @@ export function CardLibraryPanel({
     return ownershipCounts[getCardArtOwnershipKey(cardId, artKey)] ?? 0;
   }
 
+  function getArtVariantFilterKeys(): CardArtKey[] {
+    if (artVariantFilter === "DEFAULT") return ["default"];
+    if (artVariantFilter === "HOLO") return ["holo", "zero-art-holo"];
+    if (artVariantFilter === "ZERO") return ["zero-art", "zero-art-holo"];
+    if (artVariantFilter === "ZERO_HOLO") return ["zero-art-holo"];
+    return ACTIVE_CARD_ART_OPTIONS.map(option => option.key);
+  }
+
+  function cardMatchesArtVariantFilter(card: CardLibraryCardSummary): boolean {
+    if (artVariantFilter === "ALL" || artVariantFilter === "DEFAULT" || artVariantFilter === "HOLO") return true;
+    return cardSupportsZeroArt(card);
+  }
+
+  function getFilteredOwnedCopiesForCard(card: CardLibraryCardSummary): number {
+    if (!cardMatchesArtVariantFilter(card)) return 0;
+    return getArtVariantFilterKeys().reduce((total, artKey) => total + getOwnedCopiesForArt(card.id, artKey), 0);
+  }
 
   function getTotalOwnedCopiesForCard(cardId: string): number {
     return ACTIVE_CARD_ART_OPTIONS.reduce((total, artOption) => {
@@ -1295,6 +1324,13 @@ export function CardLibraryPanel({
                     <option value="ALL">All Cards</option>
                     <option value="OWNED">Owned Only</option>
                     <option value="MISSING">Missing Only</option>
+                  </select>
+                </label>
+
+                <label>
+                  Art Variant
+                  <select value={artVariantFilter} onChange={event => setArtVariantFilter(event.target.value as ArtVariantFilter)}>
+                    {artVariantFilterOptions.map(option => <option value={option.value} key={option.value}>{option.label}</option>)}
                   </select>
                 </label>
 
