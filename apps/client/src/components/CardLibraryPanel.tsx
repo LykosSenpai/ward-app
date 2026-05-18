@@ -192,6 +192,9 @@ export function CardLibraryPanel({
   const [activeMarketplaceAction, setActiveMarketplaceAction] = useState<null | { cardId: string; mode: "need" | "have" }>(null);
   const [activeFloatingCardId, setActiveFloatingCardId] = useState<string | null>(null);
   const [floatingControlsPosition, setFloatingControlsPosition] = useState<FloatingControlsPosition | null>(null);
+  const [useInlineCardControlsOnly, setUseInlineCardControlsOnly] = useState(false);
+  const [mobileLayoutActive, setMobileLayoutActive] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const [estimatedCardBlockSize, setEstimatedCardBlockSize] = useState(360);
   const [completionGeneration, setCompletionGeneration] = useState("ALL");
@@ -203,6 +206,42 @@ export function CardLibraryPanel({
   const floatingAnchorRef = useRef<HTMLElement | null>(null);
   const floatingControlsRef = useRef<HTMLDivElement | null>(null);
   const closeFloatingControlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const mediaQuery = window.matchMedia("(hover: none), (pointer: coarse), (max-width: 820px)");
+    const syncFloatingControlsMode = () => setUseInlineCardControlsOnly(mediaQuery.matches);
+
+    syncFloatingControlsMode();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncFloatingControlsMode);
+      return () => mediaQuery.removeEventListener("change", syncFloatingControlsMode);
+    }
+
+    mediaQuery.addListener(syncFloatingControlsMode);
+    return () => mediaQuery.removeListener(syncFloatingControlsMode);
+  }, []);
+
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const mediaQuery = window.matchMedia("(max-width: 820px)");
+    const syncMobileLayout = () => setMobileLayoutActive(mediaQuery.matches);
+
+    syncMobileLayout();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncMobileLayout);
+      return () => mediaQuery.removeEventListener("change", syncMobileLayout);
+    }
+
+    mediaQuery.addListener(syncMobileLayout);
+    return () => mediaQuery.removeListener(syncMobileLayout);
+  }, []);
 
   const deckCounts = useMemo(() => getDeckBuilderCounts(), [deckBuilderCardIds, getDeckBuilderCounts]);
 
@@ -659,6 +698,7 @@ export function CardLibraryPanel({
   }
 
   function openFloatingControls(cardId: string, anchor: HTMLElement) {
+    if (useInlineCardControlsOnly) return;
     clearFloatingControlsCloseTimer();
     floatingAnchorRef.current = anchor;
     setActiveFloatingCardId(cardId);
@@ -1100,10 +1140,20 @@ export function CardLibraryPanel({
       )}
 
       <div className="library-option-a-grid">
-        <aside className="library-option-a-filter-panel">
+        <aside className={`library-option-a-filter-panel ${mobileLayoutActive ? "mobile-collapsible" : ""} ${mobileLayoutActive && !mobileFiltersOpen ? "is-collapsed" : ""}`}>
           <div className="library-option-a-panel-header">
             <h4>Filters</h4>
             <span>{displayCards.length}/{cardLibrary.length}</span>
+            {mobileLayoutActive ? (
+              <button
+                type="button"
+                className="library-option-a-mobile-filter-toggle"
+                onClick={() => setMobileFiltersOpen(current => !current)}
+                aria-expanded={mobileFiltersOpen}
+              >
+                {mobileFiltersOpen ? "Hide Filters" : "Show Filters"}
+              </button>
+            ) : null}
           </div>
 
           <div className="library-option-a-filter-stack">
@@ -1339,6 +1389,7 @@ export function CardLibraryPanel({
                           holoIntensity={FIXED_HOLO_INTENSITY}
                           hideInlineControls
                           onSelectedArtKeyChange={artKey => setSelectedArtKey(card.id, artKey)}
+                          expandedActions={renderCardFloatingControlsContent(card)}
                         />
                       </div>
                     </div>
@@ -1491,7 +1542,7 @@ export function CardLibraryPanel({
           }}
         />
       ) : null}
-      {activeFloatingCard && typeof document !== "undefined" ? createPortal(
+      {!useInlineCardControlsOnly && activeFloatingCard && typeof document !== "undefined" ? createPortal(
         <div
           className={`unified-card-actions-row library-option-a-card-actions-row compact-art-ownership-row library-option-a-floating-card-controls ${floatingControlsPosition?.placement === "above" ? "is-above" : "is-below"}`}
           ref={floatingControlsRef}

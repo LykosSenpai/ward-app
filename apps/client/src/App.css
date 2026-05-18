@@ -3746,6 +3746,18 @@
     grid-template-columns: 1fr;
   }
 
+  .library-option-a-deck-rail {
+    order: 1;
+  }
+
+  .library-option-a-browser-panel {
+    order: 2;
+  }
+
+  .library-option-a-filter-panel {
+    order: 3;
+  }
+
   .library-option-a-card-content {
     grid-template-columns: 82px minmax(0, 1fr);
   }
@@ -7383,6 +7395,73 @@ code,
   }
 }
 
+/* Mobile-first readability pass: avoid "desktop squeezed into phone" layouts. */
+@media (max-width: 820px) {
+  .app-shell,
+  .match-lobby-page,
+  .profile-page,
+  .deck-library-page,
+  .compact-save-load-card,
+  .setup-section {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .library-option-a-toolbar,
+  .library-option-a-grid,
+  .match-lobby-layout,
+  .deck-library-layout,
+  .deck-library-grid,
+  .effect-dev-three-pane-grid,
+  .effect-dev-three-pane-grid.card-picker-collapsed,
+  .effect-dev-option-a-page .effect-dev-three-pane-grid,
+  .effect-dev-option-a-page .effect-dev-three-pane-grid.card-picker-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .library-option-a-filter-panel,
+  .library-option-a-browser-panel,
+  .library-option-a-deck-rail,
+  .match-lobby-main,
+  .match-lobby-side,
+  .effect-dev-option-a-card-picker,
+  .effect-dev-option-a-editor,
+  .effect-dev-option-a-test-rail {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .library-option-a-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .library-option-a-card-content .card-image-frame,
+  .card-image-frame {
+    width: min(280px, 100%);
+    margin-inline: auto;
+  }
+
+  .library-option-a-deck-rail-codes .deck-share-tools-grid,
+  .deck-share-actions,
+  .library-option-a-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .library-option-a-current-deck-panel {
+    max-height: none;
+  }
+
+  .library-option-a-mobile-filter-toggle {
+    justify-self: end;
+    min-height: 1.9rem;
+  }
+
+  .library-option-a-filter-panel.mobile-collapsible.is-collapsed .library-option-a-filter-stack {
+    display: none;
+  }
+}
+
 /* Desktop polish pass from full-width screenshots. */
 @media (min-width: 981px) {
   .match-lobby-page,
@@ -7517,6 +7596,21 @@ code,
 
 .expanded-card-image-wrap > small.expanded-card-art-select-label {
   margin-top: 0.4rem;
+}
+
+.expanded-card-actions-panel {
+  border-top: 1px solid rgba(148, 163, 184, 0.24);
+  margin-top: 0.5rem;
+  padding-top: 0.6rem;
+}
+
+.expanded-card-actions-content .library-option-a-expanded-controls-grid {
+  gap: 0.45rem;
+  grid-template-columns: 1fr;
+}
+
+.expanded-card-actions-content .library-option-a-expanded-cell {
+  background: rgba(30, 41, 59, 0.42);
 }
 
 @media (max-width: 640px) {
@@ -9334,7 +9428,9 @@ button:disabled:hover {
 }
 
 .playmat-card:hover .card-hover-preview,
-.hand-card:hover .card-hover-preview {
+.hand-card:hover .card-hover-preview,
+.playmat-card.touch-hover-active .card-hover-preview,
+.hand-card.touch-hover-active .card-hover-preview {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
   visibility: visible;
@@ -9362,7 +9458,8 @@ button:disabled:hover {
   overflow: hidden;
 }
 
-.revealed-hand-card:hover .card-hover-preview {
+.revealed-hand-card:hover .card-hover-preview,
+.revealed-hand-card.touch-hover-active .card-hover-preview {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
   visibility: visible;
