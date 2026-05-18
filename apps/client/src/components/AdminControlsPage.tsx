@@ -74,11 +74,21 @@ function getTicketExportFileName(ticket: SupportTicketDetail): string {
   return `ward-support-ticket-${ticket.id}-${subject}.json`;
 }
 
+function getBatchedReports(ticket: SupportTicketDetail): unknown[] {
+  const reports = ticket.clientContext.reports;
+  return Array.isArray(reports) ? reports : [];
+}
+
 function buildTicketExport(ticket: SupportTicketDetail): Record<string, unknown> {
+  const reports = getBatchedReports(ticket);
+
   return {
     exportVersion: 1,
     exportedAt: new Date().toISOString(),
     app: "Ward Nexus",
+    reportBatch: reports.length > 0,
+    reportCount: reports.length || 1,
+    reports: reports.length > 0 ? reports : undefined,
     ticket
   };
 }
@@ -187,6 +197,8 @@ export function AdminControlsPage({ features, refreshKey = 0, onToggleFeature }:
     setTicketMessage("Downloaded support ticket JSON.");
   }
 
+  const selectedTicketReportCount = selectedTicket ? getBatchedReports(selectedTicket).length : 0;
+
   return (
     <section className="panel admin-controls-page">
       <h2>Admin Controls</h2>
@@ -284,6 +296,12 @@ export function AdminControlsPage({ features, refreshKey = 0, onToggleFeature }:
               <strong>{selectedTicket.matchId ?? "None"}</strong>
               <span>Severity</span>
               <strong>{selectedTicket.severity}</strong>
+              {selectedTicketReportCount > 0 ? (
+                <>
+                  <span>Reports</span>
+                  <strong>{selectedTicketReportCount}</strong>
+                </>
+              ) : null}
               <span>Created</span>
               <strong>{formatDate(selectedTicket.createdAt)}</strong>
             </div>
@@ -296,7 +314,7 @@ export function AdminControlsPage({ features, refreshKey = 0, onToggleFeature }:
                 onClick={downloadSelectedTicket}
                 disabled={ticketsBusy}
               >
-                Download JSON
+                {selectedTicketReportCount > 1 ? `Download JSON (${selectedTicketReportCount} reports)` : "Download JSON"}
               </button>
               {SUPPORT_TICKET_STATUSES.map(status => (
                 <button

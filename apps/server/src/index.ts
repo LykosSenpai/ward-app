@@ -940,6 +940,13 @@ const supportTicketUpdateSchema = z.object({
   status: supportTicketStatusSchema
 });
 
+const SUPPORT_TICKET_SEVERITY_RANK = {
+  LOW: 0,
+  NORMAL: 1,
+  HIGH: 2,
+  BLOCKING: 3
+} as const;
+
 function getSocketUser(socket: { request: unknown }): AuthUser | null {
   const request = socket.request as { session?: { user?: AuthUser } };
   const user = request.session?.user ?? null;
@@ -3231,39 +3238,68 @@ app.post("/api/support-tickets/board-report/batch", supportTicketRateLimit, asyn
       }
     }
 
+    const batchReports = parsed.data.reports.filter(report => report.matchId === parsed.data.matchId);
+    if (batchReports.length === 0) {
+      res.status(400).json({ message: "Report batch did not contain reports for this match." });
+      return;
+    }
+
     const savedMatchTarget = match ? await saveMatchSnapshotForServer(match) : undefined;
     const reportSnapshot = match ? cloneMatchState(match) : parsed.data.matchSnapshot;
     const snapshotKey = reportSnapshot ? `batch-${Date.now()}` : undefined;
     if (reportSnapshot && snapshotKey) {
       await saveSupportTicketMatchSnapshot({ matchId: parsed.data.matchId, snapshotKey, matchSnapshot: reportSnapshot });
     }
-    const created = [];
-    for (const report of parsed.data.reports) {
-      if (report.matchId !== parsed.data.matchId) continue;
-      const ticket = await createSupportTicket({
-        reporterUserId: user.id,
-        matchId: parsed.data.matchId,
-        subject: report.subject,
-        description: report.description,
-        severity: report.severity,
-        matchSnapshotKey: snapshotKey,
-        clientContext: {
-          ...report.clientContext,
-          savedMatchTarget: savedMatchTarget ?? (reportSnapshot ? "CLIENT_SNAPSHOT" : "UNAVAILABLE"),
-          matchSnapshotUnavailable: !match,
-          clientSnapshotUsed: !match && Boolean(reportSnapshot),
+    const highestSeverity = batchReports.reduce(
+      (highest, report) => SUPPORT_TICKET_SEVERITY_RANK[report.severity] > SUPPORT_TICKET_SEVERITY_RANK[highest] ? report.severity : highest,
+      batchReports[0].severity
+    );
+    const submittedAt = new Date().toISOString();
+    const issueList = batchReports.map((report, index) => {
+      const turnNumber = report.turnNumber ?? match?.turn.turnNumber ?? null;
+      const phase = report.phase ?? match?.turn.phase ?? null;
+      const activePlayerId = report.activePlayerId ?? match?.turn.activePlayerId ?? null;
+      return [
+        `${index + 1}. [${report.severity}] ${report.subject}`,
+        `Turn: ${turnNumber ?? "unknown"} | Phase: ${phase ?? "unknown"} | Active player: ${activePlayerId ?? "unknown"}`,
+        report.description
+      ].join("\n");
+    });
+    const ticket = await createSupportTicket({
+      reporterUserId: user.id,
+      matchId: parsed.data.matchId,
+      subject: batchReports.length === 1
+        ? batchReports[0].subject
+        : `Queued board reports (${batchReports.length}): ${parsed.data.matchId}`,
+      description: batchReports.length === 1
+        ? batchReports[0].description
+        : `Queued board report batch for match ${parsed.data.matchId}.\n\n${issueList.join("\n\n")}`,
+      severity: highestSeverity,
+      matchSnapshotKey: snapshotKey,
+      clientContext: {
+        reportBatch: true,
+        reportCount: batchReports.length,
+        reports: batchReports.map((report, index) => ({
+          index: index + 1,
+          matchId: report.matchId,
+          subject: report.subject,
+          description: report.description,
+          severity: report.severity,
           turnNumber: report.turnNumber ?? match?.turn.turnNumber ?? null,
           phase: report.phase ?? match?.turn.phase ?? null,
           activePlayerId: report.activePlayerId ?? match?.turn.activePlayerId ?? null,
-          reporterPlayerId: getUserOwnedPlayerId(user, parsed.data.matchId) ?? null,
-          reporterRole: user.role,
-          submittedAt: new Date().toISOString()
-        }
-      });
-      created.push(ticket);
-    }
+          clientContext: report.clientContext
+        })),
+        savedMatchTarget: savedMatchTarget ?? (reportSnapshot ? "CLIENT_SNAPSHOT" : "UNAVAILABLE"),
+        matchSnapshotUnavailable: !match,
+        clientSnapshotUsed: !match && Boolean(reportSnapshot),
+        reporterPlayerId: getUserOwnedPlayerId(user, parsed.data.matchId) ?? null,
+        reporterRole: user.role,
+        submittedAt
+      }
+    });
 
-    res.status(201).json({ tickets: created, createdCount: created.length });
+    res.status(201).json({ tickets: [ticket], createdCount: 1, reportCount: batchReports.length });
   } catch (error) {
     res.status(400).json({
       message: error instanceof Error ? error.message : "Unable to create support ticket batch."
