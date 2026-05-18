@@ -17,6 +17,7 @@ import type {
   ManualBattleStrikeModifiers,
   MatchState,
   PendingBattleSession,
+  PendingEffectRollSession,
   PlayerState,
   WardEngineEffect
 } from "@ward/shared";
@@ -757,6 +758,23 @@ function getCurrentManualStrike(session: PendingBattleSession): ManualBattleStri
   }
 
   return strike;
+}
+
+function pauseBattleForPendingEffectRoll(
+  state: MatchState,
+  session: PendingBattleSession,
+  strike: ManualBattleStrike,
+  message: string
+): boolean {
+  const pending = state.pendingEffectRoll;
+  if (!pending || pending.linkedBattleSessionId !== session.id || pending.linkedStrikeId !== strike.id) {
+    return false;
+  }
+
+  strike.status = "AWAITING_EFFECT_ROLL";
+  session.status = "AWAITING_EFFECT_ROLL";
+  setSessionUpdated(session, message);
+  return true;
 }
 
 type AutomatedBattleResponseRole = "ATTACKER" | "DEFENDER";
@@ -2605,6 +2623,15 @@ export function rollManualBattleHit(
       addEvent
     });
 
+    if (pauseBattleForPendingEffectRoll(
+      nextState,
+      session,
+      strike,
+      "Hit confirmed. Resolve the pending effect roll before rolling attack damage."
+    )) {
+      return nextState;
+    }
+
     if (strike.role === "FIRST_STRIKE") {
       runBattleTimingTriggers(nextState, {
         timing: "ON_HIT_FIRST",
@@ -2619,6 +2646,15 @@ export function rollManualBattleHit(
         strike,
         addEvent
       });
+
+      if (pauseBattleForPendingEffectRoll(
+        nextState,
+        session,
+        strike,
+        "First hit confirmed. Resolve the pending effect roll before rolling attack damage."
+      )) {
+        return nextState;
+      }
     }
 
     const attackerAfterHitEffects = tryFindBattleCreatureRef(
@@ -3031,28 +3067,54 @@ export function applyManualBattleDamage(
     addEvent
   });
 
+  if (pauseBattleForPendingEffectRoll(
+    nextState,
+    session,
+    strike,
+    "Damage applied. Resolve the pending effect roll before finishing the strike."
+  )) {
+    return nextState;
+  }
+
+  finishManualBattleDamageAfterTriggeredEffects(nextState, session, strike);
+
+  return nextState;
+}
+
+function finishManualBattleDamageAfterTriggeredEffects(
+  state: MatchState,
+  session: PendingBattleSession,
+  strike: ManualBattleStrike
+): void {
   if (strike.defenderKilled || strike.attackerKilledByCriticalMiss) {
-    runBattleTimingTriggers(nextState, {
+    runBattleTimingTriggers(state, {
       timing: "WHEN_CREATURE_KILLED_IN_BATTLE",
       battleSession: session,
       strike,
       addEvent
     });
 
-    resolveBattleTriggeredRuntimeEffects(nextState, {
+    resolveBattleTriggeredRuntimeEffects(state, {
       timing: "WHEN_CREATURE_KILLED_IN_BATTLE",
       battleSession: session,
       strike,
       addEvent
     });
+
+    if (pauseBattleForPendingEffectRoll(
+      state,
+      session,
+      strike,
+      "A creature was killed. Resolve the pending effect roll before finishing the battle."
+    )) {
+      return;
+    }
   }
 
   strike.status = "RESOLVED";
-  strike.message = "Damage applied.";
+  strike.message = strike.message ?? "Damage applied.";
 
-  advanceManualBattleAfterResolvedStrike(nextState, session, strike);
-
-  return nextState;
+  advanceManualBattleAfterResolvedStrike(state, session, strike);
 }
 
 export function rollAndApplyManualBattleDamage(
@@ -3090,7 +3152,8 @@ function shouldAutoApplyStandaloneStatusTickEffectRoll(session: ReturnType<typeo
 function continueBattleAfterPendingEffectRoll(
   state: MatchState,
   linkedBattleSessionId?: string,
-  linkedStrikeId?: string
+  linkedStrikeId?: string,
+  resumeBattleAfterEffectRoll?: PendingEffectRollSession["resumeBattleAfterEffectRoll"]
 ): void {
   if (!linkedBattleSessionId || !linkedStrikeId) {
     return;
@@ -3108,11 +3171,25 @@ function continueBattleAfterPendingEffectRoll(
     return;
   }
 
-  if (session.status === "AWAITING_EFFECT_ROLL") {
-    strike.status = "AWAITING_DAMAGE_ROLL";
-    session.status = "AWAITING_DAMAGE_ROLL";
-    setSessionUpdated(session, "Effect roll resolved. Roll attack damage.");
+  if (session.status !== "AWAITING_EFFECT_ROLL" && strike.status !== "AWAITING_EFFECT_ROLL") {
+    return;
   }
+
+  if (resumeBattleAfterEffectRoll === "RESOLVE_STRIKE") {
+    finishManualBattleDamageAfterTriggeredEffects(state, session, strike);
+    return;
+  }
+
+  if (strike.defenderKilled || strike.attackerKilledByCriticalMiss || strike.status === "RESOLVED") {
+    strike.status = "RESOLVED";
+    strike.message = strike.message ?? "A triggered effect resolved this strike before attack damage.";
+    advanceManualBattleAfterResolvedStrike(state, session, strike);
+    return;
+  }
+
+  strike.status = "AWAITING_DAMAGE_ROLL";
+  session.status = "AWAITING_DAMAGE_ROLL";
+  setSessionUpdated(session, "Effect roll resolved. Roll attack damage.");
 }
 
 export function applyPendingEffectRoll(
@@ -3128,9 +3205,10 @@ export function applyPendingEffectRoll(
 
   const linkedBattleSessionId = pending.linkedBattleSessionId;
   const linkedStrikeId = pending.linkedStrikeId;
+  const resumeBattleAfterEffectRoll = pending.resumeBattleAfterEffectRoll;
 
   applyPendingEffectRollStatusInPlace(nextState, effectRollSessionId, addEvent);
-  continueBattleAfterPendingEffectRoll(nextState, linkedBattleSessionId, linkedStrikeId);
+  continueBattleAfterPendingEffectRoll(nextState, linkedBattleSessionId, linkedStrikeId, resumeBattleAfterEffectRoll);
 
   return nextState;
 }
@@ -3148,9 +3226,10 @@ export function skipPendingEffectRoll(
 
   const linkedBattleSessionId = pending.linkedBattleSessionId;
   const linkedStrikeId = pending.linkedStrikeId;
+  const resumeBattleAfterEffectRoll = pending.resumeBattleAfterEffectRoll;
 
   skipPendingEffectRollInPlace(nextState, effectRollSessionId, addEvent);
-  continueBattleAfterPendingEffectRoll(nextState, linkedBattleSessionId, linkedStrikeId);
+  continueBattleAfterPendingEffectRoll(nextState, linkedBattleSessionId, linkedStrikeId, resumeBattleAfterEffectRoll);
 
   return nextState;
 }

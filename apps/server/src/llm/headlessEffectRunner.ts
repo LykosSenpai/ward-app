@@ -1655,7 +1655,7 @@ function readDerivedPath(root: unknown, path: string): unknown {
       const damageAmount = Number(payload?.damageAmount);
       if (!Number.isFinite(damageAmount)) return [];
 
-      if (event.type === "BATTLE_FORCED_DAMAGE_DICE_RESOLVED") {
+      if (event.type === "BATTLE_FORCED_DAMAGE_DICE_RESOLVED" || event.type === "FORCED_DAMAGE_DICE_APPLIED") {
         return [`effectDamage:${damageAmount}`];
       }
 

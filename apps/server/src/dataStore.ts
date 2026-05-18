@@ -976,6 +976,8 @@ export function listCardLibraryForPacks(
         deckLimitReason: limitRule?.reason,
         magicType: card.magicType,
         magicSubType: card.magicSubType,
+        attackDice: card.attackDice,
+        modifier: card.modifier,
         text: card.text
       });
     }

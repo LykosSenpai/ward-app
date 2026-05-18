@@ -34,6 +34,7 @@ import {
 } from "./effectTiming.js";
 import { syncRecurringActiveEffectInstance, syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
 import { getRuntimeBlockActionType, getRuntimeBlockStatChanges, getRuntimeBlockText } from "./effectBlockRuntime.js";
+import { createPendingForcedDamageDiceRollSession } from "./effectRollActions.js";
 
 const BATTLE_TRIGGER_ALIASES: Record<string, string[]> = {
   ON_HIT: ["ON_HIT", "WHEN_OPPONENT_LANDS_HIT", "ON_OPPONENT_LANDS_HIT"],
@@ -1535,55 +1536,70 @@ function applyImmediateDamageOrHeal(
   });
 }
 
-function applyForcedDamageDice(
+function createForcedDamageDiceRoll(
   state: MatchState,
   source: ActiveEffectSource,
   target: FieldCreatureLocation,
   effect: WardEngineEffect,
+  battleSession: PendingBattleSession | undefined,
+  strike: ManualBattleStrike | undefined,
+  timing: string,
   addEvent?: AddEventFn
 ): void {
-  const diceCount = firstPositiveNumber(effect) ?? 1;
-  const dice = rollD6WithDev(state, {
-    kind: "EFFECT_ROLL",
-    count: diceCount,
-    playerId: target.player.id,
-    label: `${source.definition.name} forced damage dice`,
-    addEvent,
-    context: {
+  if (!battleSession || !strike) {
+    addEvent?.(state, "FORCED_DAMAGE_DICE_ROLL_SKIPPED", source.player.id, {
       sourceCardInstanceId: source.card.instanceId,
       sourceCardName: source.definition.name,
       effectId: effect.id,
       actionType: effect.actionType,
       targetCreatureInstanceId: target.card.instanceId,
-      targetCreatureName: target.definition.name
-    }
-  });
-  const damageAmount = dice.reduce((total, die) => total + die, 0);
-  const result = applyDamageToCreatureTarget(state, targetOptionFromCreatureLocation(target), damageAmount);
+      targetCreatureName: target.definition.name,
+      reason: "Forced damage dice currently require an active battle strike."
+    });
+    return;
+  }
 
-  addEvent?.(state, "BATTLE_FORCED_DAMAGE_DICE_RESOLVED", source.player.id, {
+  if (state.pendingEffectRoll) {
+    addEvent?.(state, "FORCED_DAMAGE_DICE_ROLL_SKIPPED", source.player.id, {
+      sourceCardInstanceId: source.card.instanceId,
+      sourceCardName: source.definition.name,
+      effectId: effect.id,
+      actionType: effect.actionType,
+      targetCreatureInstanceId: target.card.instanceId,
+      targetCreatureName: target.definition.name,
+      reason: "Another effect roll is already pending."
+    });
+    return;
+  }
+
+  const session = createPendingForcedDamageDiceRollSession({
+    source,
+    target,
+    effect,
+    battleSession,
+    strike,
+    resumeBattleAfterEffectRoll: timing === "AFTER_DAMAGE_APPLIED"
+      ? "RESOLVE_STRIKE"
+      : "DAMAGE_ROLL"
+  });
+
+  state.pendingEffectRoll = session;
+
+  addEvent?.(state, "FORCED_DAMAGE_DICE_ROLL_CREATED", source.player.id, {
+    effectRollSessionId: session.id,
+    battleSessionId: battleSession.id,
+    strikeId: strike.id,
     sourceCardInstanceId: source.card.instanceId,
     sourceCardName: source.definition.name,
     effectId: effect.id,
     actionType: effect.actionType,
     targetPlayerId: target.player.id,
-    targetCreatureInstanceId: result.creature.instanceId,
-    targetCreatureName: result.creatureName,
-    dice,
-    damageAmount: result.damageAmount,
-    remainingHp: result.remainingHp,
-    killed: result.killed,
-    note: "Forced effect damage dice use dice total only; attack modifiers and critical rules do not apply.",
-    boardEvents: [
-      {
-        type: "CARD_DAMAGED",
-        ...runtimeBoardEventBase(source, effect, "FORCED_DAMAGE_DICE"),
-        cardInstanceId: result.creature.instanceId,
-        targetCardInstanceId: result.creature.instanceId,
-        amount: result.damageAmount,
-        damageType: "ROLL_DAMAGE_DICE"
-      } satisfies BoardEventPayload
-    ]
+    targetCreatureInstanceId: target.card.instanceId,
+    targetCreatureName: target.definition.name,
+    diceCount: session.diceCount,
+    successRanges: session.successRanges,
+    resumeBattleAfterEffectRoll: session.resumeBattleAfterEffectRoll,
+    message: session.message
   });
 }
 
@@ -1592,7 +1608,9 @@ function resolveEffectAction(
   source: ActiveEffectSource,
   effect: WardEngineEffect,
   target: FieldCreatureLocation,
+  battleSession: PendingBattleSession | undefined,
   strike?: ManualBattleStrike,
+  timing = "",
   addEvent?: AddEventFn
 ): void {
   const actionType = normalize(getRuntimeBlockActionType(effect));
@@ -1666,12 +1684,12 @@ function resolveEffectAction(
   }
 
   if (actionType === "ROLL_DAMAGE_DICE") {
-    applyForcedDamageDice(state, source, target, effect, addEvent);
+    createForcedDamageDiceRoll(state, source, target, effect, battleSession, strike, timing, addEvent);
     return;
   }
 
   if (effectForcesOpponentSelfDamageDice(effect) && (actionType === "DAMAGE" || actionType === "DEAL_INSTANT_DAMAGE" || actionType === "DAMAGE_CREATURE")) {
-    applyForcedDamageDice(state, source, target, effect, addEvent);
+    createForcedDamageDiceRoll(state, source, target, effect, battleSession, strike, timing, addEvent);
     return;
   }
 
@@ -1711,7 +1729,7 @@ export function resolveBattleTriggeredRuntimeEffects(
   if (!args.strike) return;
 
   const activeSources = collectActiveEffectSources(state);
-  const killedSources = args.timing === "WHEN_CREATURE_KILLED_IN_BATTLE"
+  const killedSources = args.timing === "WHEN_CREATURE_KILLED_IN_BATTLE" || args.timing === "AFTER_DAMAGE_APPLIED"
     ? collectKilledBattleEffectSources(state, args.strike)
     : [];
   const seen = new Set<string>();
@@ -1748,7 +1766,8 @@ export function resolveBattleTriggeredRuntimeEffects(
         strikeRole: args.strike.role
       });
 
-      resolveEffectAction(state, source, effect, target, args.strike, args.addEvent);
+      resolveEffectAction(state, source, effect, target, args.battleSession, args.strike, args.timing, args.addEvent);
+      if (state.pendingEffectRoll) return;
     }
   }
 }

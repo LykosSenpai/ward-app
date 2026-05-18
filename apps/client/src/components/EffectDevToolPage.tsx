@@ -106,7 +106,10 @@ function getCardRulesSummary(card: CardLibraryCardSummary): string {
     return `${card.creatureType ?? "Creature"}  -  AL ${card.armorLevel ?? "?"}  -  SPD ${card.speed ?? "?"}  -  HP ${card.hp ?? "?"}  -  ${card.attackDice ?? "?"}D6  -  MOD ${card.modifier ?? "?"}`;
   }
 
-  return `${getDisplayMagicType(card.magicType) || "Magic"}  -  ${card.magicSubType ?? "NONE"}`;
+  const summary = [`${getDisplayMagicType(card.magicType) || "Magic"}`, card.magicSubType ?? "NONE"];
+  if (card.attackDice !== undefined) summary.push(`ATK ${card.attackDice}D6`);
+  if (card.modifier !== undefined) summary.push(`MOD ${card.modifier >= 0 ? "+" : ""}${card.modifier}`);
+  return summary.join("  -  ");
 }
 
 function normalizeEffectJsonInput(value: string): string {

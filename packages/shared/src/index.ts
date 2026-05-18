@@ -123,6 +123,9 @@ export type MagicCardDefinition = {
   magicType: MagicType;
   magicSubType: MagicSubType;
 
+  attackDice?: number;
+  modifier?: number;
+
   generation?: string;
   edition?: string;
   rarity?: CardRarity;
@@ -846,6 +849,10 @@ export type EffectRollSuccessRange = {
   max: number;
 };
 
+export type PendingEffectRollBattleResume =
+  | "DAMAGE_ROLL"
+  | "RESOLVE_STRIKE";
+
 export type PendingEffectRollSession = {
   id: string;
   status: EffectRollStatus;
@@ -866,6 +873,7 @@ export type PendingEffectRollSession = {
 
   linkedBattleSessionId?: string;
   linkedStrikeId?: string;
+  resumeBattleAfterEffectRoll?: PendingEffectRollBattleResume;
 
   targetPlayerId?: string;
   targetCardInstanceId?: string;

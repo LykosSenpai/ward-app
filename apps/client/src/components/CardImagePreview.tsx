@@ -64,7 +64,17 @@ function formatCardStats(card: CardLibraryCardSummary): string {
   }
 
   const magicType = card.magicType === "BATTLE_LIGHTNING" ? "LIGHTNING" : card.magicType ?? "MAGIC";
-  return [magicType, card.magicSubType ?? "NONE"].join(" | ");
+  const stats = [magicType, card.magicSubType ?? "NONE"];
+
+  if (card.attackDice !== undefined) {
+    stats.push(`ATK ${card.attackDice}D6`);
+  }
+
+  if (card.modifier !== undefined) {
+    stats.push(`MOD ${card.modifier >= 0 ? "+" : ""}${card.modifier}`);
+  }
+
+  return stats.join(" | ");
 }
 
 function formatCardIdentity(card: CardLibraryCardSummary): string {

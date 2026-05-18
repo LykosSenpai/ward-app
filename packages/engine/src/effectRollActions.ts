@@ -179,6 +179,11 @@ function parseDiceCount(effect: WardEngineEffect): number {
     return Math.min(20, toPositiveInteger(match[1], 1));
   }
 
+  const countBeforeDice = effectText(effect).match(/(\d+)(?:\s+\w+){0,3}\s+(?:d6|die|dice)\b/i);
+  if (countBeforeDice) {
+    return Math.min(20, toPositiveInteger(countBeforeDice[1], 1));
+  }
+
   return 1;
 }
 
@@ -476,6 +481,49 @@ export function detectPendingEffectRollForStrike(args: {
   return session;
 }
 
+export function createPendingForcedDamageDiceRollSession(args: {
+  source: {
+    player: PlayerState;
+    card: CardInstance;
+    definition: CardDefinition;
+  };
+  target: FieldCreatureLocation;
+  effect: WardEngineEffect;
+  battleSession: PendingBattleSession;
+  strike: ManualBattleStrike;
+  resumeBattleAfterEffectRoll?: PendingEffectRollSession["resumeBattleAfterEffectRoll"];
+}): PendingEffectRollSession {
+  const now = new Date().toISOString();
+  const diceCount = parseDiceCount(args.effect);
+
+  return {
+    id: uuidv4(),
+    status: "AWAITING_ROLL",
+    createdAt: now,
+    updatedAt: now,
+    sourcePlayerId: args.source.player.id,
+    sourceCardInstanceId: args.source.card.instanceId,
+    sourceCardId: args.source.card.cardId,
+    sourceCardName: args.source.definition.name,
+    rollPlayerId: args.target.player.id,
+    effectId: args.effect.id,
+    trigger: args.effect.trigger ?? "ON_HIT",
+    actionType: args.effect.actionType,
+    actionText: args.effect.actionText ?? args.effect.value ?? args.effect.params?.valueText,
+    linkedBattleSessionId: args.battleSession.id,
+    linkedStrikeId: args.strike.id,
+    resumeBattleAfterEffectRoll: args.resumeBattleAfterEffectRoll,
+    targetPlayerId: args.target.player.id,
+    targetCardInstanceId: args.target.card.instanceId,
+    targetCardName: args.target.definition.name,
+    diceKind: "EFFECT_ROLL",
+    diceCount,
+    successRanges: [{ min: diceCount, max: diceCount * 6 }],
+    onSuccessActionType: "DAMAGE",
+    message: `${args.target.definition.name} must roll ${diceCount}D6 damage from ${args.source.definition.name}.`
+  };
+}
+
 function findStatusTickEffect(
   sourceDefinition: CardDefinition,
   status: ActiveCreatureStatus
@@ -663,6 +711,99 @@ export function applyPendingEffectRollStatusInPlace(
 
   if (session.status !== "ROLLED") {
     throw new Error("Roll the effect dice before applying the effect.");
+  }
+
+  if (normalize(session.onSuccessActionType) === "DAMAGE") {
+    const target = session.targetCardInstanceId
+      ? findFieldCreatureByInstanceId(state, session.targetCardInstanceId)
+      : undefined;
+    const damageAmount = session.rollTotal ?? sumDice(session.rolledDice ?? []);
+
+    if (!target || damageAmount <= 0) {
+      session.status = "APPLIED";
+      session.updatedAt = new Date().toISOString();
+      session.message = target
+        ? "Effect damage roll resolved, but no damage amount was available."
+        : "Effect damage roll resolved, but the target creature is no longer on the field.";
+
+      addEvent?.(state, "FORCED_DAMAGE_DICE_TARGET_MISSING", session.rollPlayerId ?? session.sourcePlayerId, {
+        effectRollSessionId: session.id,
+        battleSessionId: session.linkedBattleSessionId,
+        strikeId: session.linkedStrikeId,
+        sourceCardInstanceId: session.sourceCardInstanceId,
+        sourceCardName: session.sourceCardName,
+        targetCardInstanceId: session.targetCardInstanceId,
+        damageAmount
+      });
+
+      state.pendingEffectRoll = undefined;
+      return session;
+    }
+
+    const result = applyDamageToCreatureTarget(state, targetOptionFromFieldCreature(target), damageAmount);
+    const battle = session.linkedBattleSessionId === state.pendingBattle?.id
+      ? state.pendingBattle
+      : undefined;
+    const strike = battle?.strikes.find(candidate => candidate.id === session.linkedStrikeId);
+
+    if (strike) {
+      if (strike.defender.creatureInstanceId === target.card.instanceId) {
+        strike.defenderRemainingHp = result.remainingHp;
+        strike.defenderKilled = result.killed;
+      }
+
+      if (strike.attacker.creatureInstanceId === target.card.instanceId) {
+        strike.attackerRemainingHp = result.remainingHp;
+        strike.attackerKilledByCriticalMiss = result.killed;
+      }
+
+      if (result.killed) {
+        strike.damageTarget = "NONE";
+        strike.damageDealt = 0;
+        strike.message = `${session.sourceCardName} destroyed ${result.creatureName} with forced damage dice.`;
+      }
+    }
+
+    session.status = "APPLIED";
+    session.updatedAt = new Date().toISOString();
+    session.message = `${result.creatureName} received ${result.damageAmount} damage from ${session.sourceCardName}.`;
+
+    addEvent?.(state, "FORCED_DAMAGE_DICE_APPLIED", session.rollPlayerId ?? session.sourcePlayerId, {
+      effectRollSessionId: session.id,
+      battleSessionId: session.linkedBattleSessionId,
+      strikeId: session.linkedStrikeId,
+      sourceCardInstanceId: session.sourceCardInstanceId,
+      sourceCardName: session.sourceCardName,
+      sourceCardId: session.sourceCardId,
+      effectId: session.effectId,
+      actionType: session.actionType,
+      targetPlayerId: result.playerId,
+      targetCreatureInstanceId: target.card.instanceId,
+      targetCreatureName: result.creatureName,
+      dice: session.rolledDice ?? [],
+      damageAmount: result.damageAmount,
+      remainingHp: result.remainingHp,
+      killed: result.killed,
+      note: "Forced effect damage dice use dice total only; attack modifiers and critical rules do not apply.",
+      boardEvents: [
+        {
+          type: "CARD_DAMAGED",
+          playerId: result.playerId,
+          sourceCardInstanceId: session.sourceCardInstanceId,
+          sourceCardId: session.sourceCardId,
+          sourceEffectId: session.effectId,
+          actionType: session.actionType,
+          targetCardInstanceId: target.card.instanceId,
+          damageAmount: result.damageAmount,
+          remainingHp: result.remainingHp,
+          killed: result.killed,
+          reason: "FORCED_DAMAGE_DICE"
+        }
+      ]
+    });
+
+    state.pendingEffectRoll = undefined;
+    return session;
   }
 
   if (normalize(session.onSuccessActionType) === "REMOVE_STATUS") {

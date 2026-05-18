@@ -4162,7 +4162,7 @@
             "summonSelf": true,
             "summonType": "LIMITED_SUMMON"
           },
-          "notes": "Card is typed as Magic but effect turns it into a Limited Summon. Stats are not present in CSV, so implementation needs a token/creature definition if it can battle.",
+            "notes": "Card is typed as Magic but effect turns it into a Limited Summon. Printed combat stats are 2D6 with +3 modifier.",
           "needsReview": true
         },
         {
@@ -4209,6 +4209,8 @@
       "cardType": "MAGIC",
       "magicType": "LIGHTNING",
       "magicSubType": "NONE",
+      "attackDice": 2,
+      "modifier": 3,
       "isEquip": false
     },
     {
