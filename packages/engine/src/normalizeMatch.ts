@@ -22,6 +22,7 @@ import {
   getSuggestedSpeedModifiers,
   getSuggestedStrikeModifiers
 } from "./battleEffectAdapter.js";
+import { repairPrimaryReplacementRequirementIfNeeded } from "./replacementRequirements.js";
 
 type PartialRecord = Record<string, unknown>;
 
@@ -589,6 +590,20 @@ export function normalizeMatch(match: MatchState): MatchState {
   for (const player of match.players) {
     match.setup.firstTurnDrawsByPlayer[player.id] ??= false;
     match.turn.turnStartCountsByPlayer[player.id] ??= 0;
+  }
+
+  if (
+    match.status !== "COMPLETE" &&
+    (
+      match.setup.primaryReplacementRequiredForPlayerId ||
+      (
+        match.turn.firstTurnCycleComplete &&
+        !match.pendingPrompt &&
+        !match.pendingChain
+      )
+    )
+  ) {
+    repairPrimaryReplacementRequirementIfNeeded(match);
   }
 
   match.devTools = {

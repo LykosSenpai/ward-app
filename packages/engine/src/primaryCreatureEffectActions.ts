@@ -7,6 +7,7 @@ import {
   ensureNoOpenChain,
   ensureNoPendingManualEffects
 } from "./actionGuards.js";
+import { markPrimaryReplacementRequired } from "./replacementRequirements.js";
 
 export function applyManualDamageToPrimaryCreature(
   state: MatchState,
@@ -62,7 +63,7 @@ export function applyManualDamageToPrimaryCreature(
       addEvent
     );
 
-    nextState.setup.primaryReplacementRequiredForPlayerId = playerId;
+    markPrimaryReplacementRequired(nextState, playerId);
   }
 
   addEvent(nextState, "MANUAL_DAMAGE_APPLIED", playerId, {

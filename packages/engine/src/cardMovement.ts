@@ -16,6 +16,7 @@ import { getCardDefinition, getPlayer, type AddEventFn } from "./engineRuntime.j
 import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
 import { moveFieldCreatureToCemetery, type FieldCreatureRemovalResult } from "./fieldRemoval.js";
 import { runCardRemovedFromFieldTriggers } from "./triggers.js";
+import { advancePrimaryReplacementRequirement } from "./replacementRequirements.js";
 
 export type MoveMagicSlotToCemeteryResult = {
   magicCard: CardInstance;
@@ -847,7 +848,7 @@ export function summonPrimaryFromCemeteryAndEquipSource(
 
   controllerPlayer.field.primaryCreature = card;
   sourcePlayer.cemeteryCreatureHpTotal = calculateCemeteryCreatureHp(sourcePlayer);
-  state.setup.primaryReplacementRequiredForPlayerId = undefined;
+  advancePrimaryReplacementRequirement(state, controllerPlayer.id);
 
   sourceLocation.remove();
 

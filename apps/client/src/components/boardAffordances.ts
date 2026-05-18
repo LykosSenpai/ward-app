@@ -135,6 +135,7 @@ type HandPlacementContext = {
   canControlThisPlayer: boolean;
   canPlayMagicNow: boolean;
   canPlayPrimaryNow: boolean;
+  discardRequiredForThisPlayer: boolean;
   isActivePlayer: boolean;
   isMatchComplete: boolean;
   limitedSummonPromotionRequiredForThisPlayer: boolean;
@@ -150,6 +151,7 @@ function buildHandPlacementContext(
   const canControlThisPlayer = !controlledPlayerId || controlledPlayerId === player.id;
   const isActivePlayer = match.turn.activePlayerId === player.id;
   const anyDiscardRequired = Boolean(match.setup.handDiscardRequiredForPlayerId);
+  const discardRequiredForThisPlayer = match.setup.handDiscardRequiredForPlayerId === player.id;
   const replacementRequiredForThisPlayer =
     match.setup.primaryReplacementRequiredForPlayerId === player.id;
   const limitedSummonPromotionRequiredForThisPlayer =
@@ -182,6 +184,7 @@ function buildHandPlacementContext(
     canControlThisPlayer,
     canPlayMagicNow,
     canPlayPrimaryNow,
+    discardRequiredForThisPlayer,
     isActivePlayer,
     isMatchComplete,
     limitedSummonPromotionRequiredForThisPlayer,
@@ -797,6 +800,34 @@ export function buildHandPlacementAffordances({
     : null;
 
   const affordances: BoardAffordance[] = [];
+
+  if (context.discardRequiredForThisPlayer) {
+    const discardBlockedReason = context.isMatchComplete
+      ? "Match is complete."
+      : !context.canControlThisPlayer
+        ? `You cannot control ${player.displayName ?? "this player"} right now.`
+        : match.pendingPrompt
+          ? "Resolve the pending prompt before discarding."
+          : null;
+
+    for (const card of player.hand) {
+      const cardName = getCardName(match, card);
+      affordances.push({
+        id: `hand:${player.id}:${card.instanceId}:hand-size-discard`,
+        kind: discardBlockedReason ? "DISABLED_ACTION" : "VALID_DISCARD_CARD",
+        playerId: player.id,
+        sourceCardInstanceId: card.instanceId,
+        targetCardInstanceId: card.instanceId,
+        targetZoneRef: { playerId: player.id, zone: "CEMETERY" },
+        actionId: discardBlockedReason ? undefined : "DISCARD_HAND_SIZE",
+        label: discardBlockedReason ? `Cannot discard ${cardName}` : `Discard ${cardName} to Cemetery`,
+        highlightStyle: discardBlockedReason ? "LOCKED" : "COST",
+        disabledReason: discardBlockedReason ?? undefined
+      });
+    }
+
+    return affordances;
+  }
 
   for (const card of player.hand) {
     const cardName = getCardName(match, card);

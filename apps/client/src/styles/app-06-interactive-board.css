@@ -2066,6 +2066,11 @@
   box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.34) inset, 0 0 18px rgba(34, 197, 94, 0.18);
 }
 
+.board-preview-3d__hand-rail button.is-discardable {
+  border-color: rgba(248, 113, 113, 0.78);
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.32) inset, 0 0 18px rgba(248, 113, 113, 0.2);
+}
+
 .board-preview-3d__hand-rail button.is-disabled-action {
   border-color: rgba(148, 163, 184, 0.28);
   filter: saturate(0.65);

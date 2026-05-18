@@ -4,6 +4,7 @@ import { calculateCemeteryCreatureHp } from "./cemetery.js";
 import { addEvent as defaultAddEvent, getCardDefinition, getPlayer, type AddEventFn } from "./engineRuntime.js";
 import { runCardRemovedFromFieldTriggers, type RemovedFromFieldTriggerResult } from "./triggers.js";
 import { markReplacementCreatureForSilenceFromTheGraveIfNeeded } from "./silenceFromTheGrave.js";
+import { advancePrimaryReplacementRequirement, markPrimaryReplacementRequired } from "./replacementRequirements.js";
 
 export type FieldCreatureZone = "PRIMARY_CREATURE" | "LIMITED_SUMMON";
 
@@ -65,7 +66,7 @@ function promoteSingleLimitedSummonToPrimaryIfRequired(
 
   player.field.primaryCreature = promotedCreature;
   markReplacementCreatureForSilenceFromTheGraveIfNeeded(state, promotedCreature, addEvent ?? defaultAddEvent);
-  state.setup.primaryReplacementRequiredForPlayerId = undefined;
+  advancePrimaryReplacementRequirement(state, player.id);
 
   addEvent?.(state, "LIMITED_SUMMON_AUTO_PROMOTED_AFTER_PRIMARY_REMOVAL", player.id, {
     cardInstanceId: promotedCreature.instanceId,
@@ -160,7 +161,7 @@ export function moveFieldCreatureToCemetery(
   let autoPromotedLimitedSummon: FieldCreatureRemovalResult["autoPromotedLimitedSummon"] | undefined;
 
   if (finalRemovedFromZone === "PRIMARY_CREATURE" && args.requirePrimaryReplacement !== false) {
-    state.setup.primaryReplacementRequiredForPlayerId = fieldOwner.id;
+    markPrimaryReplacementRequired(state, fieldOwner.id);
     primaryReplacementRequired = true;
 
     if (args.autoPromoteSingleLimitedSummon !== false) {

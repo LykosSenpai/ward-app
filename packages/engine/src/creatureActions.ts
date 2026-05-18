@@ -14,6 +14,7 @@ import { effectNeedsTargetPrompt } from "./effectRegistry.js";
 import { runCardRemovedFromFieldTriggers } from "./triggers.js";
 import { moveFieldCreatureToCemetery } from "./fieldRemoval.js";
 import { markReplacementCreatureForSilenceFromTheGraveIfNeeded } from "./silenceFromTheGrave.js";
+import { advancePrimaryReplacementRequirement } from "./replacementRequirements.js";
 
 function createOnSummonTargetPromptIfNeeded(
   state: MatchState,
@@ -273,7 +274,7 @@ export function playCreatureFromHandAsPrimary(
   }
 
   if (isForcedPrimaryReplacement) {
-    nextState.setup.primaryReplacementRequiredForPlayerId = undefined;
+    advancePrimaryReplacementRequirement(nextState, playerId);
   }
 
   player.cemeteryCreatureHpTotal = calculateCemeteryCreatureHp(player);
@@ -356,7 +357,7 @@ export function promoteLimitedSummonToPrimary(
 
   player.field.primaryCreature = promotedCreature;
   markReplacementCreatureForSilenceFromTheGraveIfNeeded(nextState, promotedCreature, addEvent);
-  nextState.setup.primaryReplacementRequiredForPlayerId = undefined;
+  advancePrimaryReplacementRequirement(nextState, playerId);
 
   addEvent(nextState, "LIMITED_SUMMON_PROMOTED_TO_PRIMARY", playerId, {
     cardInstanceId: promotedCreature.instanceId,

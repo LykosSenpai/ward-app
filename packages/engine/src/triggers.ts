@@ -5,6 +5,7 @@ import { getCardEngineEffects } from "./effectResolver.js";
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
 import { removeSourceLinkedRuntimeEffectsFromSource } from "./activeEffectInstances.js";
+import { markPrimaryReplacementRequired } from "./replacementRequirements.js";
 
 export type RemovedFromFieldTriggerResult = {
   linkedDestroyedCreatures: Array<{
@@ -146,7 +147,7 @@ function destroyCreaturesAnchoredToCard(
       addEvent
     );
 
-    state.setup.primaryReplacementRequiredForPlayerId = fieldOwner.id;
+    markPrimaryReplacementRequired(state, fieldOwner.id);
 
     const record = {
       creature: primary,

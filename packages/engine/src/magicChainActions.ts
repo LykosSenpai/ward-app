@@ -24,6 +24,7 @@ import { resolveBattleResponseChainLinkInPlace } from "./battle.js";
 import { removeActiveEffectInstancesFromSource } from "./activeEffectInstances.js";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
 import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
+import { advancePrimaryReplacementRequirement } from "./replacementRequirements.js";
 
 const FOOLISH_TRICKS_CARD_ID = "gen1_086_foolish_tricks";
 const JUDGEMENT_CARD_ID = "gen1_113_judgement";
@@ -1362,7 +1363,7 @@ export function resolveForcedAlSummonPrompt(
   summonedCard.activeEffectInstances = [];
 
   player.field.primaryCreature = summonedCard;
-  nextState.setup.primaryReplacementRequiredForPlayerId = undefined;
+  advancePrimaryReplacementRequirement(nextState, player.id);
   nextState.pendingPrompt = undefined;
 
   addEvent(nextState, "FORCED_AL_SUMMON_RESOLVED", player.id, {

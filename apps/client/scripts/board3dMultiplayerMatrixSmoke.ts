@@ -88,6 +88,24 @@ assert.equal(p2AsSeenByP1.some(a => a.kind === "DISABLED_ACTION" && (a.disabledR
 const spectatorAffordances = buildHandPlacementAffordances({ match: p1ControlledMatch, playerId: "player_1", controlledPlayerId: null });
 assert.equal(spectatorAffordances.some(a => a.kind === "PLAYABLE_CARD" && a.playerId === "player_1"), true);
 
+const discardRequiredMatch = createMatch("player_1");
+discardRequiredMatch.setup.handDiscardRequiredForPlayerId = "player_1";
+discardRequiredMatch.players[0].hand = Array.from({ length: 9 }, (_, index) => ({
+  instanceId: `p1-discard-${index + 1}`,
+  cardId: "magic-playable",
+  ownerPlayerId: "player_1",
+  controllerPlayerId: "player_1",
+  zone: "HAND"
+}));
+const discardAffordances = buildHandPlacementAffordances({ match: discardRequiredMatch, playerId: "player_1", controlledPlayerId: "player_1" });
+assert.equal(discardAffordances.filter(a => a.kind === "VALID_DISCARD_CARD").length, 9);
+assert.equal(discardAffordances.some(a => a.kind === "PLAYABLE_CARD"), false);
+assert.equal(discardAffordances.every(a => a.targetZoneRef?.zone === "CEMETERY"), true);
+
+const opponentDiscardAffordances = buildHandPlacementAffordances({ match: discardRequiredMatch, playerId: "player_1", controlledPlayerId: "player_2" });
+assert.equal(opponentDiscardAffordances.some(a => a.kind === "VALID_DISCARD_CARD"), false);
+assert.equal(opponentDiscardAffordances.some(a => a.kind === "DISABLED_ACTION" && (a.disabledReason ?? "").includes("cannot control")), true);
+
 const battleP1 = buildBattleAffordances(createMatch("player_1"), "player_1");
 assert.equal(battleP1.some(a => a.kind === "VALID_BATTLE_ATTACKER" && a.playerId === "player_1"), true);
 assert.equal(battleP1.some(a => a.kind === "VALID_BATTLE_ATTACKER" && a.playerId === "player_2"), false);

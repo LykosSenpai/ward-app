@@ -9,6 +9,7 @@ import {
   ensureNoOpenChain
 } from "./actionGuards.js";
 import { sourceMagicIsCurrentlyOnField } from "./actionCards.js";
+import { markPrimaryReplacementRequired } from "./replacementRequirements.js";
 
 function isManualDrawEffect(actionType?: string): boolean {
   const normalized = String(actionType ?? "").trim().toUpperCase();
@@ -203,7 +204,7 @@ export function applyManualMagicDamageToPrimaryCreature(
       addEvent
     );
 
-    nextState.setup.primaryReplacementRequiredForPlayerId = targetPlayerId;
+    markPrimaryReplacementRequired(nextState, targetPlayerId);
   }
 
   addEvent(nextState, "MANUAL_MAGIC_DAMAGE_APPLIED", effect.controllerPlayerId, {

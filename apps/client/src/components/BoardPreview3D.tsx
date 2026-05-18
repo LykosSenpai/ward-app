@@ -1153,10 +1153,16 @@ export function BoardPreview3D({
   );
   const getDropZoneSlotIdsForCard = useCallback((cardInstanceId: string) => {
     return combinedHandAffordances.flatMap(affordance => {
+      const affordanceCardInstanceId = affordance.sourceCardInstanceId ?? affordance.targetCardInstanceId;
+      const isValidDropZone =
+        affordance.kind === "VALID_DROP_ZONE" &&
+        affordance.highlightStyle === "VALID";
+      const isValidDiscardZone =
+        affordance.kind === "VALID_DISCARD_CARD" &&
+        (affordance.highlightStyle === "COST" || affordance.highlightStyle === "VALID");
       if (
-        affordance.kind !== "VALID_DROP_ZONE" ||
-        affordance.sourceCardInstanceId !== cardInstanceId ||
-        affordance.highlightStyle !== "VALID"
+        (!isValidDropZone && !isValidDiscardZone) ||
+        affordanceCardInstanceId !== cardInstanceId
       ) {
         return [] as string[];
       }
@@ -1165,20 +1171,32 @@ export function BoardPreview3D({
     });
   }, [combinedHandAffordances]);
   const getLegalTargetSlotIdsForCard = useCallback((cardInstanceId: string) => {
+    const dropZoneSlotIds = getDropZoneSlotIdsForCard(cardInstanceId);
     if (
       match.setup.handDiscardRequiredForPlayerId === focusedPlayerId &&
       canControlPlayer(focusedPlayerId) &&
-      onDiscardHandCardToCemetery
+      onDiscardHandCardToCemetery &&
+      handCards.some(card => card.instanceId === cardInstanceId)
     ) {
-      return [`${focusedPlayerId}-cemetery`];
+      return [...new Set([...dropZoneSlotIds, `${focusedPlayerId}-cemetery`])];
     }
-    return getDropZoneSlotIdsForCard(cardInstanceId);
-  }, [focusedPlayerId, getDropZoneSlotIdsForCard, match.setup.handDiscardRequiredForPlayerId, onDiscardHandCardToCemetery]);
+    return dropZoneSlotIds;
+  }, [canControlPlayer, focusedPlayerId, getDropZoneSlotIdsForCard, handCards, match.setup.handDiscardRequiredForPlayerId, onDiscardHandCardToCemetery]);
   const playableHandCardIds = useMemo(
     () => new Set(combinedHandAffordances
       .filter(affordance => (affordance.kind === "PLAYABLE_CARD" || affordance.kind === "VALID_CHAIN_RESPONSE" || affordance.kind === "VALID_BATTLE_RESPONSE") && affordance.sourceCardInstanceId)
       .map(affordance => affordance.sourceCardInstanceId!)),
     [combinedHandAffordances]
+  );
+  const discardableHandCardIds = useMemo(
+    () => new Set(combinedHandAffordances
+      .filter(affordance => affordance.kind === "VALID_DISCARD_CARD" && (affordance.sourceCardInstanceId || affordance.targetCardInstanceId))
+      .map(affordance => (affordance.sourceCardInstanceId ?? affordance.targetCardInstanceId)!)),
+    [combinedHandAffordances]
+  );
+  const draggableHandCardIds = useMemo(
+    () => new Set([...playableHandCardIds, ...discardableHandCardIds]),
+    [discardableHandCardIds, playableHandCardIds]
   );
   const playableChainResponseCardIds = useMemo(
     () => new Set(magicChainAffordances
@@ -1199,6 +1217,7 @@ export function BoardPreview3D({
         affordance.kind === "DISABLED_ACTION" &&
         affordance.sourceCardInstanceId &&
         !playableHandCardIds.has(affordance.sourceCardInstanceId) &&
+        !discardableHandCardIds.has(affordance.sourceCardInstanceId) &&
         !affordance.targetZoneRef &&
         affordance.disabledReason
       ) {
@@ -1206,11 +1225,11 @@ export function BoardPreview3D({
       }
     }
     return reasons;
-  }, [combinedHandAffordances, playableHandCardIds]);
+  }, [combinedHandAffordances, discardableHandCardIds, playableHandCardIds]);
   const visualTargetSlotIds = useMemo(() => {
     if (!selectedHandCardId) return [] as string[];
-    return getDropZoneSlotIdsForCard(selectedHandCardId);
-  }, [getDropZoneSlotIdsForCard, selectedHandCardId]);
+    return getLegalTargetSlotIdsForCard(selectedHandCardId);
+  }, [getLegalTargetSlotIdsForCard, selectedHandCardId]);
   const playerGlobalSlotIds = useMemo(() => {
     return playerGlobalAffordances.flatMap(affordance => {
       if (affordance.kind !== "AFFECTED_PLAYER_SIDE" && affordance.kind !== "DISABLED_ACTION") return [] as string[];
@@ -2539,6 +2558,16 @@ export function BoardPreview3D({
             onDeckSlotClick={onDeckSlotClick}
             onPlayHandCardToSlot={(slotId) => {
               if (!selectedHandCardId) return;
+              if (
+                slotId === `${focusedPlayerId}-cemetery` &&
+                discardRequiredForFocusedPlayer &&
+                handCards.some(card => card.instanceId === selectedHandCardId)
+              ) {
+                onDiscardHandCardToCemetery?.(focusedPlayerId, selectedHandCardId);
+                setSelectedHandCardId(null);
+                setStatusMessage("Discarding to hand size.");
+                return;
+              }
               if (!getLegalTargetSlotIdsForCard(selectedHandCardId).includes(slotId)) {
                 setStatusMessage("That card cannot be played to that 3D board slot right now.");
                 return;
@@ -2662,7 +2691,7 @@ export function BoardPreview3D({
               setDeckActionsExpanded(true);
               setDeckHandControlsOwner(owner);
             }}
-            draggableHandCardIds={[...playableHandCardIds]}
+            draggableHandCardIds={[...draggableHandCardIds]}
             draggableBattleAttackerCardIds={[...legalBattleAttackerIds]}
             draggableEquipMagicCardIds={draggableEquipMagicCardIds}
             validBattleTargetPieceIds={battleDefender ? [battleDefender.object.id] : battleTargetPieceIds}
@@ -2834,20 +2863,35 @@ export function BoardPreview3D({
               <div className="board-preview-3d__hand-rail-cards">
                 {handCards.map(card => {
                   const disabledReason = disabledHandCardReasons.get(card.instanceId);
+                  const canDiscardForHandSize = discardableHandCardIds.has(card.instanceId);
+                  const canDragHandCard =
+                    playableHandCardIds.has(card.instanceId) ||
+                    sacrificeCandidateIds.has(card.instanceId) ||
+                    canDiscardForHandSize;
+                  const cardTitle = canDiscardForHandSize
+                    ? "Discard to cemetery."
+                    : disabledReason ?? undefined;
                   return (
                   <button
                     key={card.instanceId}
                     type="button"
-                    draggable={playableHandCardIds.has(card.instanceId) || sacrificeCandidateIds.has(card.instanceId)}
+                    draggable={canDragHandCard}
                     className={[
                       selectedHandCardId === card.instanceId ? "is-selected" : "",
-                      playableHandCardIds.has(card.instanceId) ? "is-playable" : "",
-                      disabledReason ? "is-disabled-action" : "",
+                      playableHandCardIds.has(card.instanceId) || canDiscardForHandSize ? "is-playable" : "",
+                      canDiscardForHandSize ? "is-discardable" : "",
+                      disabledReason && !canDiscardForHandSize ? "is-disabled-action" : "",
                       sacrificeCandidateIds.has(card.instanceId) ? "is-sacrifice-candidate" : "",
                       selectedSacrificeIdSet.has(card.instanceId) ? "is-selected-sacrifice" : ""
                     ].filter(Boolean).join(" ") || undefined}
-                    title={disabledReason ?? undefined}
+                    title={cardTitle}
                     onClick={() => {
+                      if (canDiscardForHandSize && onDiscardHandCardToCemetery) {
+                        onDiscardHandCardToCemetery(focusedPlayerId, card.instanceId);
+                        setSelectedHandCardId(null);
+                        setStatusMessage("Discarding to hand size.");
+                        return;
+                      }
                       if (playableChainResponseCardIds.has(card.instanceId) && onPlayLightningResponse) {
                         onPlayLightningResponse(focusedPlayerId, card.instanceId);
                         return;
@@ -2867,7 +2911,7 @@ export function BoardPreview3D({
                     onBlur={() => setHoveredHandCardId(current => current === card.instanceId ? null : current)}
                     onMouseLeave={() => setHoveredHandCardId(current => current === card.instanceId ? null : current)}
                     onDragStart={(event) => {
-                      if (!playableHandCardIds.has(card.instanceId) && !sacrificeCandidateIds.has(card.instanceId)) {
+                      if (!canDragHandCard) {
                         event.preventDefault();
                         setStatusMessage(disabledReason ?? "That card cannot be played right now.");
                         return;

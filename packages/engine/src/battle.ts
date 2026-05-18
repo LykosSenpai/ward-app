@@ -407,7 +407,39 @@ function getCreatureBattleUseLimit(card: CardInstance): number {
   return 1 + Math.max(activeExtraBattles, isCabalWarchief(card) ? 1 : 0);
 }
 
-function getReturnAttackLimit(card: CardInstance): number | undefined {
+function getReturnAttackLimitFromText(text: string): number | undefined {
+  return text.includes("only return attack for 1") || text.includes("only return attack for one") ? 1 : undefined;
+}
+
+function getReturnAttackLimitFromEffect(effect: WardEngineEffect): number | undefined {
+  const explicit = Number(effect.params?.maxReturnAttacksAgainstThisEffect);
+  if (Number.isFinite(explicit) && explicit >= 0) return Math.trunc(explicit);
+
+  return getReturnAttackLimitFromText([
+    effect.actionText,
+    effect.target,
+    effect.value,
+    effect.params?.target,
+    effect.params?.valueText,
+    effect.notes
+  ].filter(Boolean).join(" ").toLowerCase());
+}
+
+function findAttachedSourceCard(state: MatchState, card: CardInstance, sourceCardInstanceId: string | undefined): CardInstance | undefined {
+  if (!sourceCardInstanceId) return undefined;
+
+  for (const player of state.players) {
+    const source = player.field.magicSlots.find(candidate =>
+      candidate.instanceId === sourceCardInstanceId &&
+      candidate.attachedToInstanceId === card.instanceId
+    );
+    if (source) return source;
+  }
+
+  return undefined;
+}
+
+function getReturnAttackLimit(state: MatchState, card: CardInstance): number | undefined {
   const activeLimits = (card.activeEffectInstances ?? [])
     .filter(instance => String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_BATTLE_REQUIREMENT")
     .flatMap(instance => {
@@ -419,15 +451,51 @@ function getReturnAttackLimit(card: CardInstance): number | undefined {
         instance.durationText,
         ...(instance.debug ?? [])
       ].filter(Boolean).join(" ").toLowerCase();
-      return text.includes("only return attack for 1") || text.includes("only return attack for one") ? [1] : [];
+      const textLimit = getReturnAttackLimitFromText(text);
+      if (textLimit !== undefined) return [textLimit];
+
+      const sourceCard = findAttachedSourceCard(state, card, instance.sourceCardInstanceId);
+      const sourceDefinition = sourceCard ? state.cardCatalog[sourceCard.cardId] : undefined;
+      const sourceLimits = sourceDefinition?.effects
+        ?.filter(effect => String(effect.actionType ?? "").trim().toUpperCase() === "APPLY_BATTLE_REQUIREMENT")
+        .flatMap(effect => {
+          const sourceLimit = getReturnAttackLimitFromEffect(effect);
+          return sourceLimit === undefined ? [] : [sourceLimit];
+        }) ?? [];
+      return sourceLimits;
     });
 
   if (isCabalWarchief(card)) activeLimits.push(1);
   return activeLimits.length > 0 ? Math.min(...activeLimits) : undefined;
 }
 
-function limitsReturnAttacksAcrossExtraBattles(card: CardInstance): boolean {
-  return getCreatureBattleUseLimit(card) > 1 && getReturnAttackLimit(card) === 1;
+function getReturnAttackLimitSourceName(state: MatchState, card: CardInstance): string | undefined {
+  for (const instance of card.activeEffectInstances ?? []) {
+    if (String(instance.actionType ?? "").trim().toUpperCase() !== "APPLY_BATTLE_REQUIREMENT") continue;
+
+    const explicit = Number(instance.maxReturnAttacksAgainstThisEffect);
+    const text = [
+      instance.label,
+      instance.durationText,
+      ...(instance.debug ?? [])
+    ].filter(Boolean).join(" ").toLowerCase();
+    if ((Number.isFinite(explicit) && explicit >= 0) || getReturnAttackLimitFromText(text) !== undefined) {
+      return instance.sourceCardName;
+    }
+
+    const sourceCard = findAttachedSourceCard(state, card, instance.sourceCardInstanceId);
+    const sourceDefinition = sourceCard ? state.cardCatalog[sourceCard.cardId] : undefined;
+    if (sourceCard && sourceDefinition?.effects?.some(effect => getReturnAttackLimitFromEffect(effect) !== undefined)) {
+      return getCardName(state, sourceCard);
+    }
+  }
+
+  if (isCabalWarchief(card)) return state.cardCatalog[card.cardId]?.name ?? card.cardId;
+  return undefined;
+}
+
+function limitsReturnAttacksAcrossExtraBattles(state: MatchState, card: CardInstance): boolean {
+  return getCreatureBattleUseLimit(card) > 1 && getReturnAttackLimit(state, card) === 1;
 }
 
 function getCreatureBattleUseCount(player: PlayerState, creatureInstanceId: string): number {
@@ -443,8 +511,8 @@ function canCreatureBattleThisCombat(player: PlayerState, creature: BattleCreatu
   return getCreatureBattleUseCount(player, creature.card.instanceId) < getCreatureBattleUseLimit(creature.card);
 }
 
-function shouldSuppressRetaliationForBattle(player: PlayerState, creature: BattleCreatureRef): boolean {
-  return limitsReturnAttacksAcrossExtraBattles(creature.card) &&
+function shouldSuppressRetaliationForBattle(state: MatchState, player: PlayerState, creature: BattleCreatureRef): boolean {
+  return limitsReturnAttacksAcrossExtraBattles(state, creature.card) &&
     getCreatureBattleUseCount(player, creature.card.instanceId) >= 1;
 }
 
@@ -1175,11 +1243,16 @@ function createCabalRetaliationChoicePrompt(
   battleSessionId: string
 ): void {
   if (state.pendingEffectTargetPrompt) return;
-  if (!limitsReturnAttacksAcrossExtraBattles(attackingCreature.card)) return;
+  if (!limitsReturnAttacksAcrossExtraBattles(state, attackingCreature.card)) return;
 
   const attackingPlayer = getPlayer(state, attackingCreature.playerId);
   if (getCreatureBattleUseCount(attackingPlayer, attackingCreature.card.instanceId) > 0) return;
   const attackingDefinition = getCreatureDefinition(state, attackingCreature.card);
+  const returnLimitSourceName = getReturnAttackLimitSourceName(state, attackingCreature.card);
+  const returnLimitSourceText = returnLimitSourceName
+    ? `${returnLimitSourceName} lets ${attackingDefinition.name} battle`
+    : `${attackingDefinition.name} can battle`;
+  const returnLimitBattleLabel = returnLimitSourceName ?? attackingDefinition.name;
 
   state.pendingEffectTargetPrompt = {
     id: uuidv4(),
@@ -1191,20 +1264,20 @@ function createCabalRetaliationChoicePrompt(
     actionType: CABAL_RETALIATION_CHOICE_ACTION,
     effectGroup: "Battle Retaliation",
     actionText: "Choose whether to return attack now or save the single return attack.",
-    effectValue: `${attackingDefinition.name} can battle more than once, but the opponent only gets one return attack.`,
-    promptText: `${attackingDefinition.name} can battle more than once this Combat Phase. Choose whether to return attack in this battle or save your return attack for its next battle.`,
+    effectValue: `${returnLimitSourceText} more than once, but the opponent only gets one return attack.`,
+    promptText: `${returnLimitSourceText} more than once this Combat Phase. Choose whether to return attack against this battle or save your return attack for the next battle.`,
     targetKind: "PLAYER",
     options: [
       {
         id: "cabal-retaliate-now",
-        label: "Return attack in this battle",
+        label: `Return attack against this ${returnLimitBattleLabel} battle`,
         targetKind: "PLAYER",
         playerId: defendingPlayer.id,
         zone: "PLAYER"
       },
       {
         id: "cabal-save-retaliation",
-        label: `Save return attack for ${attackingDefinition.name}'s next battle`,
+        label: `Save return attack for the next ${returnLimitBattleLabel} battle`,
         targetKind: "PLAYER",
         playerId: defendingPlayer.id,
         zone: "PLAYER"
@@ -1215,6 +1288,7 @@ function createCabalRetaliationChoicePrompt(
   addEvent(state, "CABAL_RETALIATION_CHOICE_PROMPT_CREATED", defendingPlayer.id, {
     battleSessionId,
     cabalCreatureInstanceId: attackingCreature.card.instanceId,
+    returnLimitSourceName,
     sourceCardName: attackingDefinition.name,
     note: "Defender chooses which extra-battle window gets the single return attack."
   });
@@ -1906,7 +1980,7 @@ export function startManualBattleSession(
 
   const savedRetaliationIds = ensureRetaliationSavedList(attackingPlayer);
   const hasSavedRetaliation =
-    limitsReturnAttacksAcrossExtraBattles(attackingCreature.card) &&
+    limitsReturnAttacksAcrossExtraBattles(nextState, attackingCreature.card) &&
     getCreatureBattleUseCount(attackingPlayer, attackingCreature.card.instanceId) >= 1 &&
     savedRetaliationIds.includes(attackingCreature.card.instanceId);
 
@@ -1918,7 +1992,7 @@ export function startManualBattleSession(
 
   const suppressesRetaliation =
     attackingCreature.kind === "LIMITED_SUMMON" ||
-    (shouldSuppressRetaliationForBattle(attackingPlayer, attackingCreature) && !hasSavedRetaliation);
+    (shouldSuppressRetaliationForBattle(nextState, attackingPlayer, attackingCreature) && !hasSavedRetaliation);
 
   nextState.pendingBattle = {
     id: uuidv4(),
@@ -3363,7 +3437,7 @@ export function battleWithCreature(
   );
   const defendingCreature = getPrimaryCreatureRef(defendingPlayer);
 
-  const suppressesRetaliation = shouldSuppressRetaliationForBattle(attackingPlayer, attackingCreature);
+  const suppressesRetaliation = shouldSuppressRetaliationForBattle(nextState, attackingPlayer, attackingCreature);
 
   if (!canCreatureBattleThisCombat(attackingPlayer, attackingCreature)) {
     throw new Error("This creature has already battled during this Combat Phase.");

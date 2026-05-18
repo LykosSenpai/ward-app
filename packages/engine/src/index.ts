@@ -10,6 +10,7 @@ export * from "./magicChainActions.js";
 export * from "./manualMagicEffectActions.js";
 export * from "./matchOutcomeActions.js";
 export * from "./primaryCreatureEffectActions.js";
+export * from "./replacementRequirements.js";
 export * from "./attachments.js";
 export * from "./battle.js";
 export * from "./battleEffectAdapter.js";
