@@ -161,6 +161,10 @@ async function flushQueuedBoardReports(matchId: string): Promise<number> {
   writeQueuedBoardReports(queue);
   return reports.length;
 }
+
+function getBoardReportFlushErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unable to send queued board reports.";
+}
 const APP_PAGES = new Set<AppPage>([
   "play",
   "card-library",
@@ -347,6 +351,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [savedMatches, setSavedMatches] = useState<SavedMatchSummary[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
+  const [supportTicketRefreshKey, setSupportTicketRefreshKey] = useState(0);
   const [cardPacks, setCardPacks] = useState<CardPackSummary[]>([]);
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [deckDetails, setDeckDetails] = useState<DeckDetail[]>([]);
@@ -805,17 +810,17 @@ export default function App() {
 
     socket.on("match:saved", (data: { message: string; matchId: string }) => {
       setSaveMessage(data.message);
-      void flushQueuedBoardReports(data.matchId).catch(() => undefined);
+      void flushQueuedBoardReportsAndRefresh(data.matchId).catch(error => {
+        setError(getBoardReportFlushErrorMessage(error));
+      });
     });
 
     socket.on("match:closed", (data: { message: string; matchId: string; saved?: boolean }) => {
       setSaveMessage(data.message);
-      void flushQueuedBoardReports(data.matchId).catch(() => undefined);
-      setDashboardModal(null);
-      setActiveLobby(undefined);
-      setMatch(currentMatch => currentMatch?.matchId === data.matchId ? null : currentMatch);
-      socket.emit("match:listSaved");
-      socket.emit("lobby:list");
+      void flushQueuedBoardReportsAndRefresh(data.matchId).catch(error => {
+        setError(getBoardReportFlushErrorMessage(error));
+      });
+      clearClosedMatchState(data.matchId);
     });
 
     socket.on("match:deleted", (data: { message: string; matchId: string }) => {
@@ -1825,31 +1830,53 @@ export default function App() {
     socket.emit("match:listSaved");
   }
 
+  function clearClosedMatchState(matchId: string) {
+    setDashboardModal(null);
+    setActiveLobby(undefined);
+    setMatch(currentMatch => currentMatch?.matchId === matchId ? null : currentMatch);
+    socket.emit("match:listSaved");
+    socket.emit("lobby:list");
+  }
+
+  async function flushQueuedBoardReportsAndRefresh(matchId: string): Promise<number> {
+    const flushedCount = await flushQueuedBoardReports(matchId);
+    if (flushedCount > 0) {
+      setSupportTicketRefreshKey(current => current + 1);
+    }
+    return flushedCount;
+  }
+
   function saveCurrentMatch() {
     if (!match) return;
     if (getMatchStatus(match) !== "COMPLETE") return;
     socket.emit("match:saveCurrent", match.matchId);
   }
 
-  async function closeCurrentMatchWithoutSaving(options: { confirm: boolean }) {
+  async function closeCurrentMatchWithoutSaving(options: { confirm: boolean; closeLocally?: boolean }) {
     if (!match) return;
+    const matchId = match.matchId;
 
     if (options.confirm) {
       const confirmed = window.confirm("Close this match without saving? Unsaved match state will be lost.");
       if (!confirmed) return;
     }
 
-    setDashboardModal(null);
     setError("");
-    setSaveMessage("Exiting match...");
+    setSaveMessage("Sending queued board reports...");
     try {
-      await flushQueuedBoardReports(match.matchId);
+      await flushQueuedBoardReportsAndRefresh(matchId);
     } catch (error) {
       setSaveMessage("");
-      setError(error instanceof Error ? error.message : "Unable to send queued board reports before closing the match.");
+      setError(getBoardReportFlushErrorMessage(error));
       return;
     }
-    socket.emit("match:exit", match.matchId);
+
+    setDashboardModal(null);
+    setSaveMessage("Closing match...");
+    socket.emit("match:exit", matchId);
+    if (options.closeLocally) {
+      clearClosedMatchState(matchId);
+    }
   }
 
   function closeActiveMatchWithoutSaving() {
@@ -1857,16 +1884,26 @@ export default function App() {
   }
 
   function closeCompletedMatchWithoutSaving() {
-    void closeCurrentMatchWithoutSaving({ confirm: false });
+    void closeCurrentMatchWithoutSaving({ confirm: false, closeLocally: true });
   }
 
-  function saveCompletedMatchAndClose() {
+  async function saveCompletedMatchAndClose() {
     if (!match || getMatchStatus(match) !== "COMPLETE") return;
+    const matchId = match.matchId;
+
+    setError("");
+    setSaveMessage("Sending queued board reports...");
+    try {
+      await flushQueuedBoardReportsAndRefresh(matchId);
+    } catch (error) {
+      setSaveMessage("");
+      setError(getBoardReportFlushErrorMessage(error));
+      return;
+    }
 
     setDashboardModal(null);
-    setError("");
     setSaveMessage("Saving and closing match...");
-    socket.emit("match:saveAndQuit", match.matchId);
+    socket.emit("match:saveAndQuit", matchId);
   }
 
   function undoLastAction() {
@@ -2815,7 +2852,11 @@ export default function App() {
             onResetWorkflow={resetLlmWorkflow}
           />
         ) : activePage === "admin-controls" && isAdminUser ? (
-          <AdminControlsPage features={featureFlags} onToggleFeature={updateFeatureRollout} />
+          <AdminControlsPage
+            features={featureFlags}
+            refreshKey={supportTicketRefreshKey}
+            onToggleFeature={updateFeatureRollout}
+          />
         ) : activePage === "deck-library" ? (
           <DeckLibraryPage
             decks={decks}
