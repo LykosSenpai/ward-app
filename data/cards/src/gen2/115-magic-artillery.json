@@ -3,7 +3,7 @@
   "name": "Magic Artillery",
   "generation": "2",
   "edition": "2nd Edition",
-  "rarity": "Uncommon",
+  "rarity": "Rare",
   "cardNumber": "115",
   "text": "At the beginning of your turn, you may roll 1 die. If the result is: 6: Opponent must discard 1 Magic card. 2-5: Nothing happens. 1: Destroy this card.",
   "effects": [

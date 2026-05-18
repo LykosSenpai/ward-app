@@ -549,6 +549,7 @@ export function getPlayerBattleCreatureOptions(
 function getActiveBattleLockReason(match: AppMatchState): string {
   for (const player of match.players) {
     for (const magic of player.field.magicSlots) {
+      if (!magic) continue;
       const activeLock = (magic.activeEffectInstances ?? []).find(instance =>
         String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_BATTLE_LOCK"
       );

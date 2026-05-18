@@ -3,7 +3,7 @@
   "name": "Sleepy Scent",
   "generation": "2",
   "edition": "2nd Edition",
-  "rarity": "Uncommon",
+  "rarity": "Rare",
   "cardNumber": "123",
   "text": "Equipped creature is put to sleep for 2 turn cycles. It cannot initiate battle, but also heals 10 HP per turn cycle. Any damage wakes the sleeping creature and sends this card to your cemetery.",
   "effects": [

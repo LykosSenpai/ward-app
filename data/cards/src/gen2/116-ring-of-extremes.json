@@ -3,7 +3,7 @@
   "name": "Ring of Extremes",
   "generation": "2",
   "edition": "2nd Edition",
-  "rarity": "Uncommon",
+  "rarity": "Common",
   "cardNumber": "116",
   "text": "When the equipped creature rolls to hit, ignore its Hit Modifier and the target's AL. Use the following outcomes instead: 1-8: Critical Fail. 9-12: Critical Hit. 13+: Normal Hit.",
   "effects": [

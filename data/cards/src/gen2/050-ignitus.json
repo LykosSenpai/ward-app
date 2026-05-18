@@ -3,7 +3,7 @@
   "name": "Ignitus",
   "generation": "2",
   "edition": "2nd Edition",
-  "rarity": "Common",
+  "rarity": "Rare",
   "cardNumber": "050",
   "text": "Roll 1 die to inflict damage on a creature. If the result is: 1-5: 15 damage. 6: 30 damage.",
   "effects": [
@@ -66,7 +66,7 @@
       "needsReview": false
     }
   ],
-  "notes": "Rarity visually unclear; set to Common from visible grey/no rarity marker.",
+  "notes": "Rarity corrected to Rare.",
   "cardType": "MAGIC",
   "magicType": "STANDARD",
   "magicSubType": "NONE",

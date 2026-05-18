@@ -3,7 +3,7 @@
   "name": "Thief",
   "generation": "2",
   "edition": "2nd Edition",
-  "rarity": "Uncommon",
+  "rarity": "Common",
   "cardNumber": "086",
   "text": "When summoned, steal 1 equip card from your opponent's side of the field and equip it to this card. Send the stolen card to its original owner's cemetery if this card leaves the field, changes control, or this effect is negated.",
   "effects": [

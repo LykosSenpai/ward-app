@@ -3,7 +3,7 @@
   "name": "The Alchemist",
   "generation": "2",
   "edition": "2nd Edition",
-  "rarity": "Uncommon",
+  "rarity": "Common",
   "cardNumber": "113",
   "text": "During your turn, roll 1 die. If the result is: 1-2: Heal this creature 5 HP. 3-4: Inflict 10 damage to opponent's creature. 5-6: Inflict 5 damage to this card.",
   "effects": [

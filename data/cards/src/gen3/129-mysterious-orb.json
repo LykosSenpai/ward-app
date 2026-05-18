@@ -3,7 +3,7 @@
   "name": "Mysterious Orb",
   "generation": "3",
   "edition": "1st Edition",
-  "rarity": "Common",
+  "rarity": "Rare",
   "cardNumber": "129",
   "text": "At the beginning of your turn roll 1 die. Gain the following for 1 turn cycle: 1-2: SPD: +6. 3-4: Atk: +6. 5-6: Hit: +6.",
   "effects": [

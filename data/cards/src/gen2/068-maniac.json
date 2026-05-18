@@ -3,7 +3,7 @@
   "name": "Maniac",
   "generation": "2",
   "edition": "2nd Edition",
-  "rarity": "Common",
+  "rarity": "Rare",
   "cardNumber": "068",
   "text": "When this creature rolls to hit, ignore the target's AL. Use the following outcomes instead: 1-7: Critical Fail. 8-12: Critical Hit. 13+: Normal Hit. This card is unaffected by Hit Modifier increases.",
   "effects": [
