@@ -118,6 +118,7 @@ function removeClientStorage(key: string): void {
 
 
 const BOARD_REPORT_QUEUE_STORAGE_KEY = "ward-board-report-queue";
+const BOARD_REPORT_BACKGROUND_FLUSH_MS = 90_000;
 
 function readQueuedBoardReports(): Record<string, QueuedBoardReport[]> {
   const raw = readClientStorage(BOARD_REPORT_QUEUE_STORAGE_KEY);
@@ -404,6 +405,7 @@ export default function App() {
   const lastServerBootIdRef = useRef(readClientStorage(SERVER_BOOT_STORAGE_KEY));
   const canLoadAppDataRef = useRef(false);
   const socketAuthUserIdRef = useRef<string | null>(null);
+  const boardReportFlushInFlightRef = useRef(false);
   const canUseDevTools = !!authUser?.devToolsEnabled;
   const updateFeatureRollout = async (key: ServerFeatureFlag["key"], enabledForPlayers: boolean): Promise<void> => {
     await new Promise<void>((resolve, reject) => {
@@ -433,6 +435,29 @@ export default function App() {
     [featureFlags]
   );
   const discordAuthEnabled = featureFlagsByKey["discord-auth"]?.enabledForPlayers === true;
+
+  useEffect(() => {
+    if (!match?.matchId) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (boardReportFlushInFlightRef.current) {
+        return;
+      }
+
+      boardReportFlushInFlightRef.current = true;
+      void flushQueuedBoardReports(match.matchId)
+        .catch(() => undefined)
+        .finally(() => {
+          boardReportFlushInFlightRef.current = false;
+        });
+    }, BOARD_REPORT_BACKGROUND_FLUSH_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [match?.matchId]);
 
   function canSeePage(page: AppPage): boolean {
     if (page === "profile") return true;
@@ -781,6 +806,7 @@ export default function App() {
 
     socket.on("connect", () => {
       setSocketAuthenticated(null);
+      socket.emit("collection:setCapabilities", { ownershipDeltaOnly: true });
       requestInitialData();
     });
 

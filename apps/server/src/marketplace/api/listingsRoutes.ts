@@ -5,7 +5,7 @@ import { listingsListResponseSchema, singleItemResponseSchema } from "../respons
 import { marketplaceListingCreateSchema, marketplaceListingUpdateSchema, marketplaceListingsQuerySchema, marketplacePaginationQuerySchema } from "../schemas.js";
 
 type ListingReader = {
-  list: (args?: { page?: number; limit?: number }) => Promise<unknown[]> | unknown[];
+  list: (args?: { page?: number; limit?: number; q?: string; listingType?: string }) => Promise<{ items: unknown[]; total: number } | unknown[]> | { items: unknown[]; total: number } | unknown[];
   getById: (id: string) => Promise<unknown | undefined> | unknown | undefined;
   create?: (userId: string, payload: Record<string, unknown>) => Promise<unknown> | unknown;
   update?: (userId: string, listingId: string, payload: Record<string, unknown>) => Promise<unknown> | unknown;
@@ -34,7 +34,9 @@ export function createMarketplaceListingsRouter(reader: ListingReader): Router {
     const q = String(query.data.q ?? "").trim().toLowerCase();
     const listingType = String(query.data.listingType ?? "").trim();
 
-    const items = (await reader.list({ page: pagination.data.page, limit: pagination.data.limit })).filter(item => {
+    const listed = await reader.list({ page: pagination.data.page, limit: pagination.data.limit, q, listingType });
+    const rawItems = Array.isArray(listed) ? listed : listed.items;
+    const filteredItems = rawItems.filter(item => {
       const data = item as Record<string, unknown>;
       const cardName = String(data.cardName ?? data.cardId ?? "").toLowerCase();
       const displayName = String(data.displayName ?? "").toLowerCase();
@@ -44,8 +46,9 @@ export function createMarketplaceListingsRouter(reader: ListingReader): Router {
       if (listingType && listingType !== type) return false;
       return true;
     });
+    const total = Array.isArray(listed) ? filteredItems.length : listed.total;
 
-    const response = ok({ items, total: items.length, page: pagination.data.page, limit: pagination.data.limit });
+    const response = ok({ items: filteredItems, total, page: pagination.data.page, limit: pagination.data.limit });
     listingsListResponseSchema.parse(response);
     res.json(response);
   });
