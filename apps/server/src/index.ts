@@ -3,6 +3,7 @@ console.log("BOOTING WARD SERVER...");
 
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import http from "http";
 import fs from "node:fs";
 import path from "node:path";
@@ -656,6 +657,7 @@ app.use(cors({
   },
   credentials: true
 }));
+app.use(compression());
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -5333,6 +5335,8 @@ io.on("connection", async socket => {
     }
   });
 
+  let supportsOwnershipDeltaOnly = false;
+
   const emitCollectionOwnership = async () => {
     try {
       const user = requireSocketUser(socket);
@@ -5346,6 +5350,9 @@ io.on("connection", async socket => {
 
   socket.on("collection:getOwnership", emitCollectionOwnership);
   socket.on("collection:listOwnership", emitCollectionOwnership);
+  socket.on("collection:setCapabilities", (data: { ownershipDeltaOnly?: boolean } | undefined) => {
+    supportsOwnershipDeltaOnly = data?.ownershipDeltaOnly === true;
+  });
 
   socket.on("marketplace:listNeeds", async () => {
     try {
@@ -5397,9 +5404,10 @@ io.on("connection", async socket => {
             ownershipKey: data.variant && data.variant !== "default" ? `${data.cardId}__art_${data.variant}` : data.cardId,
             ownedCount: data.ownedCount
           });
-        const ownershipMap = await loadOwnershipForSocketUser(user);
         socket.emit("collection:ownershipDelta", { changed: { [delta.ownershipKey]: delta.ownedCount } });
-        socket.emit("collection:ownership", ownershipMap);
+        if (!supportsOwnershipDeltaOnly) {
+          socket.emit("collection:ownership", await loadOwnershipForSocketUser(user));
+        }
         sendSocketAckSuccess(ack);
       } catch (error) {
         const message = sendSocketAckError(ack, error, "Unable to save card ownership.");
@@ -5424,9 +5432,10 @@ io.on("connection", async socket => {
             });
           changed[delta.ownershipKey] = delta.ownedCount;
         }
-        const ownershipMap = await loadOwnershipForSocketUser(user);
         socket.emit("collection:ownershipDelta", { changed });
-        socket.emit("collection:ownership", ownershipMap);
+        if (!supportsOwnershipDeltaOnly) {
+          socket.emit("collection:ownership", await loadOwnershipForSocketUser(user));
+        }
         const ownership = await loadUserCardOwnershipMap(user.id);
         const needs = await recomputeMarketplaceNeedsForUser(user.id, ownership);
         socket.emit("marketplace:needs", needs);
