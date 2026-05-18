@@ -11,6 +11,7 @@ import { ModalPanel } from "./ui/ModalPanel";
 
 type Props = {
   features: ServerFeatureFlag[];
+  refreshKey?: number;
   onToggleFeature: (key: ServerFeatureFlag["key"], enabledForPlayers: boolean) => Promise<void>;
 };
 
@@ -82,7 +83,7 @@ function buildTicketExport(ticket: SupportTicketDetail): Record<string, unknown>
   };
 }
 
-export function AdminControlsPage({ features, onToggleFeature }: Props) {
+export function AdminControlsPage({ features, refreshKey = 0, onToggleFeature }: Props) {
   const [tickets, setTickets] = useState<SupportTicketSummary[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicketDetail | null>(null);
   const [ticketStatusFilter, setTicketStatusFilter] = useState<SupportTicketStatus | "ALL">("OPEN");
@@ -93,7 +94,7 @@ export function AdminControlsPage({ features, onToggleFeature }: Props) {
 
   useEffect(() => {
     void loadTickets();
-  }, [ticketStatusFilter]);
+  }, [ticketStatusFilter, refreshKey]);
 
   async function loadTickets() {
     setTicketsBusy(true);

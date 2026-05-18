@@ -21,7 +21,7 @@ export function MatchCompleteCard({ match, onClose, onSaveAndClose, onAddMissing
       <p>{match.completionReason}</p>
       <div className="actions">
         <button onClick={onClose}>Close Without Saving</button>
-        {onSaveAndClose ? <button onClick={onSaveAndClose}>Exit Match</button> : null}
+        {onSaveAndClose ? <button onClick={onSaveAndClose}>Save & Close</button> : null}
         {onAddMissingNeedsToMarketplace ? (
           <button onClick={() => onAddMissingNeedsToMarketplace({ quantity: 1, mergeWithExisting: true, onlyFocusedMissingCards: false })}>
             Add Missing to Marketplace Needs
