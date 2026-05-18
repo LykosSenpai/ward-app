@@ -1120,10 +1120,20 @@ export function CardLibraryPanel({
       )}
 
       <div className="library-option-a-grid">
-        <aside className="library-option-a-filter-panel">
+        <aside className={`library-option-a-filter-panel ${mobileLayoutActive ? "mobile-collapsible" : ""} ${mobileLayoutActive && !mobileFiltersOpen ? "is-collapsed" : ""}`}>
           <div className="library-option-a-panel-header">
             <h4>Filters</h4>
             <span>{displayCards.length}/{cardLibrary.length}</span>
+            {mobileLayoutActive ? (
+              <button
+                type="button"
+                className="library-option-a-mobile-filter-toggle"
+                onClick={() => setMobileFiltersOpen(current => !current)}
+                aria-expanded={mobileFiltersOpen}
+              >
+                {mobileFiltersOpen ? "Hide Filters" : "Show Filters"}
+              </button>
+            ) : null}
           </div>
 
           <div className="library-option-a-filter-stack">
@@ -1359,6 +1369,7 @@ export function CardLibraryPanel({
                           holoIntensity={FIXED_HOLO_INTENSITY}
                           hideInlineControls
                           onSelectedArtKeyChange={artKey => setSelectedArtKey(card.id, artKey)}
+                          expandedActions={renderCardFloatingControlsContent(card)}
                         />
                       </div>
                     </div>

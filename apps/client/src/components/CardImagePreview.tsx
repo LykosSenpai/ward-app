@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { filterCardImageCandidates, useCardImageManifest } from "../cardImageManifest";
 import type { CardImageCandidate } from "../cardImageManifest";
@@ -33,6 +34,7 @@ type CardImagePreviewProps = {
   holoIntensity?: number;
   hideInlineControls?: boolean;
   onSelectedArtKeyChange?: (artKey: CardArtKey) => void;
+  expandedActions?: ReactNode;
 };
 
 type CardImageThumbnailProps = {
@@ -341,7 +343,7 @@ export function CardImageThumbnail({ card, className, artKey = "default", holoIn
   );
 }
 
-export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, hideInlineControls = false, onSelectedArtKeyChange }: CardImagePreviewProps) {
+export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, hideInlineControls = false, onSelectedArtKeyChange, expandedActions }: CardImagePreviewProps) {
   const [internalSelectedArtKey, setInternalSelectedArtKey] = useState<CardArtKey>("default");
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -499,6 +501,15 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, h
                 <span className="label">Skill Notes</span>
                 <p>Detailed skill explanation can be added here once rules notes are authored.</p>
               </div>
+
+              {expandedActions ? (
+                <div className="expanded-card-actions-panel">
+                  <span className="label">Card Actions</span>
+                  <div className="expanded-card-actions-content">
+                    {expandedActions}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </ModalPanel>
