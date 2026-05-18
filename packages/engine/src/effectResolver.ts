@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import type {
+  ActiveCreatureStatus,
   ActiveEffectInstance,
   ActiveRecurringCreatureEffect,
   BoardEventType,
@@ -13,7 +14,7 @@ import type {
   WardEffectStatChange
 } from "@ward/shared";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
-import { addActiveEffectInstance, syncRecurringActiveEffectInstance } from "./activeEffectInstances.js";
+import { addActiveEffectInstance, syncRecurringActiveEffectInstance, syncStatusActiveEffectInstance } from "./activeEffectInstances.js";
 import { getNextRecurringEffectTickSchedule, getTurnCycleExpiration } from "./effectTiming.js";
 import { moveAllMagicSlotCardsToCemetery } from "./cardMovement.js";
 import { getRuntimeBlockActionType, getRuntimeBlockDurationText, getRuntimeBlockMultiplier, getRuntimeBlockTargetText, getRuntimeBlockText } from "./effectBlockRuntime.js";
@@ -1621,18 +1622,102 @@ export function applyOnEquipImmediateEffects(
 
   for (const effect of effects) {
     const trigger = String(effect.trigger ?? "").trim().toUpperCase();
-    const actionType = String(effect.actionType ?? "").trim().toUpperCase();
+    const actionType = getRuntimeBlockActionType(effect).trim().toUpperCase();
+    const durationType = String(effect.duration?.type ?? effect.params?.duration?.type ?? "").trim().toUpperCase();
     const text = [effect.target, effect.params?.target, effect.value, effect.params?.valueText, effect.actionText]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
 
     const targetsEquippedCreature = text.includes("equipped creature") || text.includes("on equip") || text.includes("fully heal");
+    const isEquipDamageImmunity = (
+      trigger === "ON_EQUIP" ||
+      trigger === "WHILE_EQUIPPED" ||
+      durationType === "WHILE_EQUIPPED"
+    ) &&
+      targetsEquippedCreature &&
+      actionType === "APPLY_DAMAGE_IMMUNITY";
     const isOnEquipHeal = trigger === "ON_EQUIP" && targetsEquippedCreature && (
       actionType === "HEAL_TO_FULL" ||
       actionType === "HEAL" ||
       actionType === "HEAL_CREATURE"
     );
+
+    if (isEquipDamageImmunity) {
+      const isWhileEquipped = trigger === "WHILE_EQUIPPED" || durationType === "WHILE_EQUIPPED";
+      const expiration = isWhileEquipped
+        ? undefined
+        : getTurnCycleExpiration({
+            state,
+            sourcePlayerId: sourceMagicCard.controllerPlayerId,
+            targetPlayerId: targetCreature.controllerPlayerId,
+            effect,
+            fallbackDuration: 1
+          });
+      const status: ActiveCreatureStatus = {
+        id: uuidv4(),
+        sourceEffectId: effect.id,
+        sourceCardInstanceId: sourceMagicCard.instanceId,
+        sourceCardName: getCardName(state, sourceMagicCard),
+        sourcePlayerId: sourceMagicCard.controllerPlayerId,
+        status: "DAMAGE_IMMUNITY",
+        label: effect.value ?? effect.actionText ?? "Cannot be damaged",
+        flags: { canReceiveDamage: false },
+        durationType: isWhileEquipped ? "PERMANENT_UNTIL_SOURCE_REMOVED" : "TARGET_PLAYER_TURN_STARTS",
+        appliedTurnNumber: state.turn.turnNumber,
+        appliedTurnCycle: state.turn.turnCycleNumber,
+        expiresOnPlayerId: expiration?.expiresOnPlayerId,
+        expiresAtPlayerTurnStartCount: expiration?.expiresAtPlayerTurnStartCount
+      };
+
+      targetCreature.activeStatuses ??= [];
+      targetCreature.activeStatuses = targetCreature.activeStatuses.filter(existing => !(
+        existing.sourceCardInstanceId === sourceMagicCard.instanceId &&
+        existing.sourceEffectId === effect.id
+      ));
+      if (targetCreature.activeEffectInstances) {
+        targetCreature.activeEffectInstances = targetCreature.activeEffectInstances.filter(existing => !(
+          existing.sourceCardInstanceId === sourceMagicCard.instanceId &&
+          existing.sourceEffectId === effect.id
+        ));
+      }
+      targetCreature.activeStatuses.push(status);
+      syncStatusActiveEffectInstance(targetCreature, status);
+      resolvedCount += 1;
+
+      addEvent(state, "AUTO_EQUIP_DAMAGE_IMMUNITY_APPLIED", sourceMagicCard.controllerPlayerId, {
+        sourceCardName: getCardName(state, sourceMagicCard),
+        sourceCardInstanceId: sourceMagicCard.instanceId,
+        targetCreatureInstanceId: targetCreature.instanceId,
+        targetCreatureName: getCardName(state, targetCreature),
+        effectId: effect.id,
+        actionType: effect.actionType,
+        status: status.status,
+        label: status.label,
+        flags: status.flags,
+        expiresOnPlayerId: status.expiresOnPlayerId,
+        expiresAtPlayerTurnStartCount: status.expiresAtPlayerTurnStartCount,
+        boardEvents: [
+          {
+            type: "STATUS_APPLIED",
+            ...effectBoardEventBase({
+              playerId: sourceMagicCard.controllerPlayerId,
+              sourceCardInstanceId: sourceMagicCard.instanceId,
+              sourceCardId: sourceMagicCard.cardId,
+              sourceEffectId: effect.id,
+              actionType: effect.actionType,
+              reason: isWhileEquipped ? "WHILE_EQUIPPED_DAMAGE_IMMUNITY" : "ON_EQUIP_DAMAGE_IMMUNITY"
+            }),
+            cardInstanceId: targetCreature.instanceId,
+            targetCardInstanceId: targetCreature.instanceId,
+            status: status.status,
+            statusLabel: status.label
+          } satisfies BoardEventPayload
+        ]
+      });
+
+      continue;
+    }
 
     if (!isOnEquipHeal) {
       continue;

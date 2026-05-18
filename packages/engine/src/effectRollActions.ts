@@ -309,7 +309,7 @@ function getOnSuccess(effect: WardEngineEffect): OnSuccessParams {
   if (fullText.includes("cannot be damaged") || fullText.includes("cannot receive damage") || fullText.includes("immune to damage") || fullText.includes("unaffected by damage")) {
     return {
       actionType: "APPLY_STATUS",
-      status: "DAMAGE_IMMUNE",
+      status: "DAMAGE_IMMUNITY",
       label: "Damage Immune",
       flags: {
         canReceiveDamage: false

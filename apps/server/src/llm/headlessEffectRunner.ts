@@ -6813,13 +6813,21 @@ function runInitialAction(match: MatchState, plan: LlmEffectTestPlan, effect: Wa
           appliedTurnCycle: match.turn.turnCycleNumber
         });
       } else if ((actionType.includes("apply_status") || actionType.includes("apply_damage_immunity") || actionType.includes("unaffected_by_magic")) && attachedTarget?.card) {
-        const status = statusForStaticEquipEffect(match, source, definition, effect);
-        if (status) {
-          attachedTarget.card.activeStatuses ??= [];
-          attachedTarget.card.activeStatuses = attachedTarget.card.activeStatuses.filter(item =>
-            !(item.sourceCardInstanceId === source.card.instanceId && item.sourceEffectId === status.sourceEffectId)
-          );
-          attachedTarget.card.activeStatuses.push(status);
+        if (actionType.includes("apply_damage_immunity")) {
+          applyOnEquipImmediateEffects(match, {
+            sourceMagicCard: source.card,
+            targetCreature: attachedTarget.card,
+            addEvent: addHeadlessEvent
+          });
+        } else {
+          const status = statusForStaticEquipEffect(match, source, definition, effect);
+          if (status) {
+            attachedTarget.card.activeStatuses ??= [];
+            attachedTarget.card.activeStatuses = attachedTarget.card.activeStatuses.filter(item =>
+              !(item.sourceCardInstanceId === source.card.instanceId && item.sourceEffectId === status.sourceEffectId)
+            );
+            attachedTarget.card.activeStatuses.push(status);
+          }
         }
       } else if (actionType.includes("change_creature_type") && attachedTarget?.card) {
         attachedTarget.card.activeEffectInstances ??= [];

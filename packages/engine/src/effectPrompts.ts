@@ -548,7 +548,7 @@ function statusFromPromptEffect(effect: WardEngineEffect): { status: string; lab
   }
 
   if (text.includes("cannot be damaged") || text.includes("cannot receive damage") || text.includes("immune to damage") || text.includes("unaffected by damage")) {
-    status = status === "STATUS" ? "DAMAGE_IMMUNE" : status;
+    status = status === "STATUS" ? "DAMAGE_IMMUNITY" : status;
     flags.canReceiveDamage = false;
   }
 
