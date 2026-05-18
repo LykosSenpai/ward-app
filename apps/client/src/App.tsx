@@ -87,6 +87,23 @@ const SERVER_BOOT_STORAGE_KEY = "ward-nexus-server-boot-id";
 const AUTH_SESSION_SEEN_STORAGE_KEY = "ward-nexus-auth-session-seen";
 const SERVER_RESTART_NOTICE = "Ward Nexus was just restarted. Please log in again. If sign-in keeps looping, fully close and reopen your browser before signing in again.";
 
+function buildCardLibraryRequestKey(packIds: string[], cardPacks: CardPackSummary[]): string {
+  const packsById = new Map(cardPacks.map(pack => [pack.id, pack]));
+
+  return [...packIds]
+    .sort((a, b) => a.localeCompare(b))
+    .map(packId => {
+      const pack = packsById.get(packId);
+      return [
+        packId,
+        pack?.version ?? "",
+        pack?.cardCount ?? "",
+        pack?.updatedAt ?? ""
+      ].join(":");
+    })
+    .join("|");
+}
+
 type ServerIdentityPayload = {
   serverBootId?: string;
   serverStartedAt?: string;
@@ -1253,14 +1270,14 @@ export default function App() {
       return;
     }
 
-    const requestKey = [...selectedPackIds].sort().join("|");
+    const requestKey = buildCardLibraryRequestKey(selectedPackIds, cardPacks);
     if (lastRequestedCardLibraryKeyRef.current === requestKey && cardLibrary.length > 0) {
       return;
     }
 
     lastRequestedCardLibraryKeyRef.current = requestKey;
     socket.emit("cards:listForPacks", { packIds: selectedPackIds });
-  }, [activePage, canUseDevTools, cardLibrary.length, match, selectedPackIds]);
+  }, [activePage, canUseDevTools, cardLibrary.length, cardPacks, match, selectedPackIds]);
 
   useEffect(() => {
     if (activePage === "deck-library") {

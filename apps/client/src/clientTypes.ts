@@ -98,6 +98,7 @@ export type CardPackSummary = {
   name: string;
   version: string;
   cardCount: number;
+  updatedAt: string;
 };
 
 export type DeckSummary = {

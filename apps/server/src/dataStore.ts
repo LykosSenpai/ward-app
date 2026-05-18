@@ -701,6 +701,7 @@ export type CardPackSummary = {
   name: string;
   version: string;
   cardCount: number;
+  updatedAt: string;
 };
 
 export type DeckSummary = {
@@ -823,12 +824,14 @@ export function listCardPacks(): CardPackSummary[] {
     .map(fileName => {
       const filePath = path.join(packsDir, fileName);
       const pack = readJsonFile<CardPackDefinition>(filePath);
+      const stats = fs.statSync(filePath);
 
       return {
         id: pack.id,
         name: pack.name,
         version: pack.version,
-        cardCount: pack.cards.length
+        cardCount: pack.cards.length,
+        updatedAt: stats.mtime.toISOString()
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));

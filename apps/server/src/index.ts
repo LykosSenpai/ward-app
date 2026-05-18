@@ -641,7 +641,7 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "20mb" }));
 app.get("/api/cards/library", (_req, res) => {
-  res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=60");
+  res.setHeader("Cache-Control", "no-store");
   res.json({ cards: listDefaultCardLibrary() });
 });
 
@@ -660,7 +660,7 @@ app.get("/api/cards/showcase", (_req, res) => {
       deckLimit: card.deckLimit
     }));
 
-  res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=60");
+  res.setHeader("Cache-Control", "no-store");
   res.json({ cards });
 });
 app.use(sessionMiddleware);
