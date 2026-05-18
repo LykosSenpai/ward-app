@@ -62,11 +62,26 @@ export function moveAttachedMagicCardsToCemeteryForCreature(
       }
 
       addEvent?.(state, "ATTACHED_MAGIC_SENT_TO_CEMETERY", fieldOwner.id, {
+        cardInstanceId: magicCard.instanceId,
         magicCardInstanceId: magicCard.instanceId,
         magicCardName: definition?.name ?? magicCard.cardId,
         attachedCreatureInstanceId: creatureInstanceId,
         fieldOwnerPlayerId: fieldOwner.id,
-        cardOwnerPlayerId: ownerPlayer.id
+        cardOwnerPlayerId: ownerPlayer.id,
+        sourceZone: "MAGIC_SLOT",
+        destinationZone: "CEMETERY",
+        boardEvents: [
+          {
+            type: "CARD_MOVED",
+            playerId: fieldOwner.id,
+            actionType: "ATTACHED_MAGIC_SENT_TO_CEMETERY",
+            reason: "ATTACHED_CREATURE_LEFT_FIELD",
+            cardInstanceId: magicCard.instanceId,
+            targetCardInstanceId: magicCard.instanceId,
+            fromZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" },
+            toZoneRef: { playerId: ownerPlayer.id, zone: "CEMETERY" }
+          }
+        ]
       });
     }
   }

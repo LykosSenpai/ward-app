@@ -239,6 +239,7 @@ function inferEventType(rawType: string, data: Record<string, unknown>): BoardRe
   if (combined.includes("CARD_REVEALED") || combined.includes("REVEALED_CARD")) return "CARD_REVEALED";
   if (combined.includes("RETURN") && combined.includes("HAND")) return "CARD_RETURNED_TO_HAND";
   if (combined.includes("RETURN") && combined.includes("DECK")) return "CARD_RETURNED_TO_DECK";
+  if (combined.includes("SENT_TO_CEMETERY") || combined.includes("SEND_TO_CEMETERY")) return "CARD_SENT_TO_CEMETERY";
   if (combined.includes("DISCARD")) return "CARD_DISCARDED";
   if (combined.includes("DESTROY") || combined.includes("KILLED")) return "CARD_DESTROYED";
   if (combined.includes("DRAW")) return "CARD_DRAWN";
@@ -257,7 +258,7 @@ function inferCardInstanceId(type: BoardRenderEvent["type"], data: Record<string
     return readFirstString(data, "selectedCardInstanceId", "cardInstanceId", "targetCardInstanceId");
   }
   if (type === "CARD_SENT_TO_CEMETERY") {
-    return readFirstString(data, "cardInstanceId", "targetCardInstanceId");
+    return readFirstString(data, "cardInstanceId", "magicCardInstanceId", "targetCardInstanceId");
   }
   if (type === "CREATURE_SUMMONED_PRIMARY" || type === "CREATURE_SUMMONED_LIMITED") {
     return readFirstString(data, "summonedCardInstanceId", "cardInstanceId", "targetCardInstanceId");
@@ -291,7 +292,10 @@ function inferFromZoneRef(type: BoardRenderEvent["type"], playerId: string | und
   if (type === "CARD_REVEALED") return buildZoneRef(sourcePlayerId, normalizeZoneKind(readString(data, "zone")) ?? "DECK");
   if (type === "HAND_REVEALED") return buildZoneRef(readString(data, "revealedPlayerId", "targetPlayerId") ?? playerId, "HAND");
   if (type === "CARD_DISCARDED") return buildZoneRef(sourcePlayerId, "HAND");
-  if (type === "CARD_SENT_TO_CEMETERY") return buildZoneRef(sourcePlayerId, "CHAIN");
+  if (type === "CARD_SENT_TO_CEMETERY") {
+    if (readString(data, "magicCardInstanceId")) return buildZoneRef(sourcePlayerId, "MAGIC_SLOT");
+    return buildZoneRef(sourcePlayerId, "CHAIN");
+  }
   if (type === "CARD_DESTROYED") return buildZoneRef(sourcePlayerId, "MAGIC_SLOT");
   if (type === "CARD_RETURNED_TO_DECK" || type === "CARD_RETURNED_TO_HAND") return undefined;
   if (type === "CREATURE_SUMMONED_PRIMARY" || type === "CREATURE_SUMMONED_LIMITED") return buildZoneRef(sourcePlayerId, "HAND");
