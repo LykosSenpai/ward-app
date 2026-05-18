@@ -507,7 +507,7 @@ type BoardPreview3DProps = {
   onSkipEffectRoll?: (effectRollSessionId: string) => void;
   onActivateCardEffect?: (sourceInstanceId: string, effectId: string) => void;
   onOpenBoardReport?: () => void;
-  onSaveAndQuit?: () => void;
+  onCloseMatch?: () => void;
   intentLabel?: string;
   commandLabel?: string;
   onSlotFocus?: (event: BoardSlotFocusEvent) => void;
@@ -703,7 +703,7 @@ export function BoardPreview3D({
   onSkipEffectRoll,
   onActivateCardEffect,
   onOpenBoardReport,
-  onSaveAndQuit,
+  onCloseMatch,
   intentLabel = "",
   commandLabel = "",
   onSlotFocus,
@@ -2786,9 +2786,9 @@ export function BoardPreview3D({
                       Report
                     </button>
                   ) : null}
-                  {onSaveAndQuit ? (
-                    <button type="button" className="is-save-exit" onClick={onSaveAndQuit}>
-                      Save & Quit
+                  {onCloseMatch ? (
+                    <button type="button" className="is-save-exit" onClick={onCloseMatch}>
+                      Close
                     </button>
                   ) : null}
                   <button

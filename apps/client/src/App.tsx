@@ -1827,24 +1827,46 @@ export default function App() {
 
   function saveCurrentMatch() {
     if (!match) return;
+    if (getMatchStatus(match) !== "COMPLETE") return;
     socket.emit("match:saveCurrent", match.matchId);
   }
 
-  async function exitCurrentMatchWithoutSaving() {
+  async function closeCurrentMatchWithoutSaving(options: { confirm: boolean }) {
     if (!match) return;
 
-    const confirmed = window.confirm("Exit this match without saving? Unsaved match state will be lost.");
-    if (!confirmed) return;
+    if (options.confirm) {
+      const confirmed = window.confirm("Close this match without saving? Unsaved match state will be lost.");
+      if (!confirmed) return;
+    }
 
     setDashboardModal(null);
     setError("");
     setSaveMessage("Exiting match...");
     try {
       await flushQueuedBoardReports(match.matchId);
-    } catch {
-      // keep queued reports for later retry if flush fails
+    } catch (error) {
+      setSaveMessage("");
+      setError(error instanceof Error ? error.message : "Unable to send queued board reports before closing the match.");
+      return;
     }
     socket.emit("match:exit", match.matchId);
+  }
+
+  function closeActiveMatchWithoutSaving() {
+    void closeCurrentMatchWithoutSaving({ confirm: true });
+  }
+
+  function closeCompletedMatchWithoutSaving() {
+    void closeCurrentMatchWithoutSaving({ confirm: false });
+  }
+
+  function saveCompletedMatchAndClose() {
+    if (!match || getMatchStatus(match) !== "COMPLETE") return;
+
+    setDashboardModal(null);
+    setError("");
+    setSaveMessage("Saving and closing match...");
+    socket.emit("match:saveAndQuit", match.matchId);
   }
 
   function undoLastAction() {
@@ -2476,14 +2498,6 @@ export default function App() {
     });
   }
 
-  function closeCompletedMatch() {
-    setDashboardModal(null);
-    socket.emit("match:listSaved");
-    socket.emit("lobby:list");
-    setActiveLobby(undefined);
-    setMatch(null);
-  }
-
   async function logout() {
     await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: "POST",
@@ -2829,7 +2843,7 @@ export default function App() {
         ) : activePage === "saved-matches" ? (
           <SaveLoadPanel
             savedMatches={savedMatches}
-            canSave={!!match}
+            canSave={match ? getMatchStatus(match) === "COMPLETE" : false}
             onRefresh={refreshSavedMatches}
             onSave={saveCurrentMatch}
             onLoad={loadSavedMatch}
@@ -3023,7 +3037,7 @@ export default function App() {
                       onSkipEffectRoll={skipEffectRoll}
                       onActivateCardEffect={activateCardEffect}
                       onOpenBoardReport={() => setDashboardModal("board-report")}
-                      onSaveAndQuit={saveAndQuitCurrentMatch}
+                      onCloseMatch={closeActiveMatchWithoutSaving}
                       intentLabel={lastBoardIntentLabel}
                       commandLabel={lastBoardCommandLabel}
                       onIntent={(intent: PointerGestureIntent) => {
@@ -3147,7 +3161,11 @@ export default function App() {
 
             {getMatchStatus(match) === "COMPLETE" && (
               <ModalPanel title="Match Complete" blocking wide>
-                <MatchCompleteCard match={match} onClose={closeCompletedMatch} onSaveAndClose={exitCurrentMatchWithoutSaving} />
+                <MatchCompleteCard
+                  match={match}
+                  onClose={closeCompletedMatchWithoutSaving}
+                  onSaveAndClose={saveCompletedMatchAndClose}
+                />
               </ModalPanel>
             )}
 
@@ -3159,7 +3177,7 @@ export default function App() {
               >
                 <SaveLoadPanel
                   savedMatches={savedMatches}
-                  canSave={!!match}
+                  canSave={getMatchStatus(match) === "COMPLETE"}
                   onRefresh={refreshSavedMatches}
                   onSave={saveCurrentMatch}
                   onLoad={loadSavedMatch}
