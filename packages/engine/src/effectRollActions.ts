@@ -15,7 +15,7 @@ import type {
 } from "@ward/shared";
 import { rollD6WithDev } from "./devRolls.js";
 import { sumDice } from "./dice.js";
-import { getCardEngineEffects } from "./effectResolver.js";
+import { getCardEngineEffects, isAutomaticMagicEffectSupported, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
 import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { getTurnCycleExpiration } from "./effectTiming.js";
 import { addActiveStatusIfAbsent, removeActiveEffectInstance } from "./activeEffectInstances.js";
@@ -926,6 +926,42 @@ export function applyPendingEffectRollStatusInPlace(
       sourceCardName: session.sourceCardName,
       targetCreatureName: session.targetCardName,
       rollTotal: session.rollTotal
+    });
+
+    state.pendingEffectRoll = undefined;
+    return session;
+  }
+
+  const sourceDefinition = state.cardCatalog[session.sourceCardId];
+  const rolledEffect = sourceDefinition
+    ? getCardEngineEffects(sourceDefinition).find(effect => effect.id === session.effectId)
+    : undefined;
+
+  if (rolledEffect && isAutomaticMagicEffectSupported(rolledEffect)) {
+    const resolved = tryResolveAutomaticMagicEffect(state, {
+      effect: rolledEffect,
+      controllerPlayerId: session.sourcePlayerId,
+      sourceCardName: session.sourceCardName,
+      sourceCardInstanceId: session.sourceCardInstanceId,
+      addEvent: addEvent ?? (() => undefined)
+    });
+
+    session.status = "APPLIED";
+    session.updatedAt = new Date().toISOString();
+    session.message = resolved
+      ? `${session.sourceCardName} effect resolved.`
+      : `${session.sourceCardName} roll succeeded, but the effect result could not be automated.`;
+
+    addEvent?.(state, resolved ? "EFFECT_ROLL_AUTOMATIC_EFFECT_APPLIED" : "EFFECT_ROLL_AUTOMATIC_EFFECT_NOT_APPLIED", session.sourcePlayerId, {
+      effectRollSessionId: session.id,
+      sourceCardInstanceId: session.sourceCardInstanceId,
+      sourceCardId: session.sourceCardId,
+      sourceCardName: session.sourceCardName,
+      effectId: session.effectId,
+      actionType: session.actionType,
+      rollTotal: session.rollTotal,
+      success: session.success,
+      resolved
     });
 
     state.pendingEffectRoll = undefined;

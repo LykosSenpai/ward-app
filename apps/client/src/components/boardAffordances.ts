@@ -6,7 +6,6 @@ import {
   getBattleBlockReason,
   getPlayerBattleCreatureOptions,
   getRequiredSacrificesForCard,
-  isPendingEffectRollPhaseBlocking,
   isCreature,
   isMagic
 } from "../gameViewHelpers";
@@ -291,7 +290,7 @@ function cardEffectDisabledReason(
   if (match.pendingEffectTargetPrompt) return "Choose the pending effect target before using this effect.";
   if (match.pendingChain) return "Resolve the Magic Chain before using this effect.";
   if (match.pendingBattle && match.pendingBattle.status !== "COMPLETE") return "Finish the pending battle before using this effect.";
-  if (match.pendingEffectRoll && isPendingEffectRollPhaseBlocking(match.pendingEffectRoll)) return "Resolve the pending effect roll before using this effect.";
+  if (match.pendingEffectRoll) return "Resolve the pending effect roll before using this effect.";
   if (match.setup.handDiscardRequiredForPlayerId) return "Resolve the hand discard before using this effect.";
   if (match.setup.primaryReplacementRequiredForPlayerId) return "Resolve the primary creature replacement before using this effect.";
 

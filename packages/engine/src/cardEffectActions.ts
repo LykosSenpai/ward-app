@@ -2,9 +2,11 @@ import type {
   CardDefinition,
   CardInstance,
   MatchState,
+  PendingEffectRollSession,
   PlayerState,
   WardEngineEffect
 } from "@ward/shared";
+import { v4 as uuidv4 } from "uuid";
 import { addEvent, cloneState, getCardName, getOpponentPlayer, getPlayer } from "./engineRuntime.js";
 import { rollD6WithDev } from "./devRolls.js";
 import {
@@ -245,6 +247,47 @@ function getEffectLabel(effect: WardEngineEffect): string {
   return effect.actionText ?? effect.value ?? effect.actionType;
 }
 
+function successRangesFromValues(values: number[]): PendingEffectRollSession["successRanges"] {
+  return values
+    .map(value => Math.trunc(Number(value)))
+    .filter(value => Number.isInteger(value) && value > 0)
+    .map(value => ({ min: value, max: value }));
+}
+
+function createPendingActivatedEffectRoll(
+  state: MatchState,
+  args: {
+    playerId: string;
+    source: FieldEffectSource;
+    effect: WardEngineEffect;
+    condition: RollCondition;
+  }
+): PendingEffectRollSession {
+  const now = new Date().toISOString();
+  const sourceCardName = getCardName(state, args.source.card);
+
+  return {
+    id: uuidv4(),
+    status: "AWAITING_ROLL",
+    createdAt: now,
+    updatedAt: now,
+    sourcePlayerId: args.playerId,
+    sourceCardInstanceId: args.source.card.instanceId,
+    sourceCardId: args.source.card.cardId,
+    sourceCardName,
+    rollPlayerId: args.playerId,
+    effectId: args.effect.id,
+    trigger: args.effect.trigger ?? "DURING_YOUR_TURN_ACTIVATED",
+    actionType: args.effect.actionType,
+    actionText: args.effect.actionText ?? args.effect.value ?? args.effect.params?.valueText,
+    diceKind: "EFFECT_ROLL",
+    diceCount: 1,
+    successRanges: successRangesFromValues(args.condition.successValues),
+    onSuccessActionType: args.effect.actionType,
+    message: `${sourceCardName} is ready. Roll 1D6 for its effect.`
+  };
+}
+
 function sourceDisabledReason(
   state: MatchState,
   source: FieldEffectSource,
@@ -283,6 +326,10 @@ function sourceDisabledReason(
 
   if (state.pendingBattle && state.pendingBattle.status !== "COMPLETE") {
     return "Finish the pending battle first.";
+  }
+
+  if (state.pendingEffectRoll) {
+    return "Resolve the pending effect roll before using another effect.";
   }
 
   if (isActivatedRollEffect(effect) && state.turn.activePlayerId !== playerId) {
@@ -495,6 +542,34 @@ function activateRollBasedEffect(
 
   if (condition.dieSize !== 6) {
     throw new Error("Only D6 activated creature effects are supported right now.");
+  }
+
+  if (!isStatusEscapeRollEffect(args.effect) && isAutomaticMagicEffectSupported(args.effect)) {
+    if (nextState.pendingEffectRoll) {
+      throw new Error("Resolve the pending effect roll before using another dice effect.");
+    }
+
+    const session = createPendingActivatedEffectRoll(nextState, {
+      playerId: args.playerId,
+      source: args.source,
+      effect: args.effect,
+      condition
+    });
+    nextState.pendingEffectRoll = session;
+
+    addEvent(nextState, "CARD_EFFECT_ROLL_CREATED", args.playerId, {
+      effectRollSessionId: session.id,
+      sourceCardInstanceId: args.source.card.instanceId,
+      sourceCardId: args.source.card.cardId,
+      sourceCardName: getCardName(nextState, args.source.card),
+      effectId: args.effect.id,
+      actionType: args.effect.actionType,
+      diceCount: session.diceCount,
+      successRanges: session.successRanges,
+      message: session.message
+    });
+
+    return nextState;
   }
 
   const roll = rollD6WithDev(nextState, {
