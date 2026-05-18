@@ -34,6 +34,8 @@ type RevealPayload = {
   revealedCards?: RevealedCard[];
 };
 
+const ACTIVATED_EFFECT_USAGE_ACTION = "ACTIVATED_EFFECT_USAGE";
+
 function getEffectText(effect: WardEngineEffect): string {
   return [
     effect.actionType,
@@ -63,6 +65,21 @@ function isRevealOpponentHandEffect(effect: WardEngineEffect): boolean {
 function isActivatedRollEffect(effect: WardEngineEffect): boolean {
   return (effect.trigger ?? "").trim().toUpperCase() === "DURING_YOUR_TURN_ACTIVATED" ||
     effect.actionType === "RESOLVE_STATUS_ESCAPE_ROLL";
+}
+
+function consumesOncePerTurnActivation(effect: WardEngineEffect): boolean {
+  const trigger = (effect.trigger ?? "").trim().toUpperCase();
+  return trigger === "DURING_YOUR_TURN_ACTIVATED" ||
+    trigger === "ONCE_PER_TURN_ACTIVATED";
+}
+
+function effectUsedThisTurn(match: AppMatchState, source: EffectSource, effect: WardEngineEffect): boolean {
+  return (source.card.activeEffectInstances ?? []).some(instance =>
+    instance.actionType === ACTIVATED_EFFECT_USAGE_ACTION &&
+    instance.sourceEffectId === effect.id &&
+    instance.sourceCardInstanceId === source.card.instanceId &&
+    instance.appliedTurnNumber === match.turn.turnNumber
+  );
 }
 
 function isSupportedEffect(effect: WardEngineEffect): boolean {
@@ -141,6 +158,10 @@ function getEffectDisabledReason(
 
   if (isActivatedRollEffect(effect) && match.turn.activePlayerId !== player.id) {
     return "Only usable during this player's turn.";
+  }
+
+  if (consumesOncePerTurnActivation(effect) && effectUsedThisTurn(match, source, effect)) {
+    return "This effect has already been used this turn.";
   }
 
   return undefined;

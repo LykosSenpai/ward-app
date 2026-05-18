@@ -43,10 +43,12 @@ import {
 } from "./effectRollActions.js";
 import { addRecurringEffectIfAbsent, findActiveRecurringEffect } from "./activeEffectInstances.js";
 import {
+  effectDurationIsUntilSourceLeaves,
   getNextRecurringEffectTickSchedule,
   getTurnCycleExpiration,
   normalizeRecurringTickTiming
 } from "./effectTiming.js";
+import { getCardEngineEffects, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
 
 type CreatureDefinition = Extract<CardDefinition, { cardType: "CREATURE" }>;
 const HOGGAN_CARD_ID = "gen3_009_hoggan";
@@ -378,6 +380,72 @@ function getCreatureDefinition(
 
 function getCardName(state: MatchState, card: CardInstance): string {
   return state.cardCatalog[card.cardId]?.name ?? card.cardId;
+}
+
+function getActiveBattleLockReason(state: MatchState): string | undefined {
+  for (const player of state.players) {
+    for (const magic of player.field.magicSlots) {
+      const activeLock = (magic.activeEffectInstances ?? []).find(instance =>
+        String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_BATTLE_LOCK"
+      );
+
+      if (activeLock) {
+        return activeLock.label || `Creatures cannot battle while ${getCardName(state, magic)} is active.`;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function isDragonRageDefinition(definition: CardDefinition | undefined): boolean {
+  const id = String(definition?.id ?? "").trim().toLowerCase();
+  const name = String(definition?.name ?? "").trim().toLowerCase();
+  const cardNumber = String(definition?.cardNumber ?? "").trim();
+
+  return id.includes("dragon_rage") ||
+    id.includes("dragon-rage") ||
+    name === "dragon rage" ||
+    (cardNumber === "042" && name.includes("dragon") && name.includes("rage"));
+}
+
+function resolveDragonRageBattleResponseFollowupEffects(
+  state: MatchState,
+  args: {
+    playerId: string;
+    cardInstanceId: string;
+    cardName: string;
+    definition: CardDefinition | undefined;
+    primaryEffectId?: string;
+  }
+): void {
+  if (!isDragonRageDefinition(args.definition)) return;
+
+  const followupEffects = getCardEngineEffects(args.definition).filter(effect => {
+    const actionType = normalizeEffectToken(effect.actionType);
+    return effect.id !== args.primaryEffectId &&
+      (actionType === "DESTROY_MAGIC_CARDS" || actionType === "DESTROY_ALL_MAGIC" || actionType === "DRAW_CARDS");
+  });
+
+  for (const effect of followupEffects) {
+    const resolved = tryResolveAutomaticMagicEffect(state, {
+      effect,
+      controllerPlayerId: args.playerId,
+      sourceCardName: args.cardName,
+      sourceCardInstanceId: args.cardInstanceId,
+      addEvent
+    });
+
+    if (!resolved) {
+      addEvent(state, "DRAGON_RAGE_BATTLE_FOLLOWUP_UNRESOLVED", args.playerId, {
+        sourceCardInstanceId: args.cardInstanceId,
+        sourceCardName: args.cardName,
+        effectId: effect.id,
+        actionType: effect.actionType,
+        reason: "NO_AUTOMATIC_FOLLOWUP_ROUTE"
+      });
+    }
+  }
 }
 
 function ensureBattleUsedList(player: PlayerState): string[] {
@@ -1126,6 +1194,7 @@ function addRecurringEffectFromBattleResponse(
     fallbackDuration: totalTicks
   });
   const nextTick = getNextRecurringEffectTickSchedule(state, sourcePlayerId, tickTiming);
+  const untilSourceLeaves = effectDurationIsUntilSourceLeaves(effect);
 
   const recurring: ActiveRecurringCreatureEffect = {
     id: uuidv4(),
@@ -1138,16 +1207,16 @@ function addRecurringEffectFromBattleResponse(
     label: effect.value ?? effect.actionText ?? effect.params?.valueText ?? `${amount}`,
     tickTiming,
     stackRule,
-    remainingTicks: totalTicks,
+    remainingTicks: untilSourceLeaves ? 1 : totalTicks,
     nextTickPlayerId: nextTick.nextTickPlayerId,
     nextTickTurnStartCount: nextTick.nextTickTurnStartCount,
-    durationType: "TARGET_PLAYER_TURN_STARTS",
+    durationType: untilSourceLeaves ? "PERMANENT_UNTIL_SOURCE_REMOVED" : "TARGET_PLAYER_TURN_STARTS",
     appliedTurnNumber: state.turn.turnNumber,
     appliedTurnCycle: state.turn.turnCycleNumber,
     appliedSequenceNumber: state.eventLog.length + 1,
     expiresWhenSourceLeaves: true,
-    expiresOnPlayerId: expiration.expiresOnPlayerId,
-    expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
+    expiresOnPlayerId: untilSourceLeaves ? undefined : expiration.expiresOnPlayerId,
+    expiresAtPlayerTurnStartCount: untilSourceLeaves ? undefined : expiration.expiresAtPlayerTurnStartCount
   };
 
   const addResult = addRecurringEffectIfAbsent(target.card, recurring);
@@ -1936,6 +2005,11 @@ function validateBattleCanStart(state: MatchState, playerId: string): void {
   if (!state.turn.firstTurnCycleComplete) {
     throw new Error("The Battle Phase is skipped during the first turn cycle.");
   }
+
+  const battleLockReason = getActiveBattleLockReason(state);
+  if (battleLockReason) {
+    throw new Error(battleLockReason);
+  }
 }
 
 export function startManualBattleSession(
@@ -2387,6 +2461,14 @@ export function playBattleResponseFromHand(
     moveBattleResponseToCemetery(player, handIndex, card);
   }
 
+  resolveDragonRageBattleResponseFollowupEffects(nextState, {
+    playerId: args.playerId,
+    cardInstanceId: card.instanceId,
+    cardName: definition.name,
+    definition,
+    primaryEffectId: effect.id
+  });
+
   boardEvents.unshift({
     type: "CARD_MOVED",
     playerId: args.playerId,
@@ -2480,6 +2562,7 @@ export function resolveBattleResponseChainLinkInPlace(
   link: {
     playerId: string;
     cardInstanceId: string;
+    cardId?: string;
     cardName: string;
     battleResponse?: {
       battleSessionId: string;
@@ -2545,6 +2628,14 @@ export function resolveBattleResponseChainLinkInPlace(
     actionType: battleResponse.actionType,
     protectedCreatureInstanceId: strike.defender.creatureInstanceId,
     protectedCreatureName: strike.defender.creatureName
+  });
+
+  resolveDragonRageBattleResponseFollowupEffects(state, {
+    playerId: link.playerId,
+    cardInstanceId: link.cardInstanceId,
+    cardName: link.cardName,
+    definition: link.cardId ? state.cardCatalog[link.cardId] : undefined,
+    primaryEffectId: battleResponse.effectId
   });
 
   return true;

@@ -546,6 +546,22 @@ export function getPlayerBattleCreatureOptions(
   return options;
 }
 
+function getActiveBattleLockReason(match: AppMatchState): string {
+  for (const player of match.players) {
+    for (const magic of player.field.magicSlots) {
+      const activeLock = (magic.activeEffectInstances ?? []).find(instance =>
+        String(instance.actionType ?? "").trim().toUpperCase() === "APPLY_BATTLE_LOCK"
+      );
+
+      if (activeLock) {
+        return activeLock.label || `Creatures cannot battle while ${getCardName(match, magic)} is active.`;
+      }
+    }
+  }
+
+  return "";
+}
+
 export function getBattleBlockReason(match: AppMatchState): string {
   const matchStatus = getMatchStatus(match);
 
@@ -559,6 +575,8 @@ export function getBattleBlockReason(match: AppMatchState): string {
   if (match.manualEffectQueue.some(effect => !effect.completed)) return "Complete all pending Magic effects before battling.";
   if (match.setup.handDiscardRequiredForPlayerId) return "A player must discard down to 8 cards before battling.";
   if (match.setup.primaryReplacementRequiredForPlayerId) return "A primary creature replacement is required before battling.";
+  const battleLockReason = getActiveBattleLockReason(match);
+  if (battleLockReason) return battleLockReason;
 
   const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
   const defendingPlayer = match.players.find(player => player.id !== match.turn.activePlayerId);

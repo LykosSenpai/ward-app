@@ -15,7 +15,7 @@ import type {
 } from "@ward/shared";
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
 import { addActiveEffectInstance, addActiveStatusIfAbsent, addRecurringEffectIfAbsent, findActiveRecurringEffect } from "./activeEffectInstances.js";
-import { getNextRecurringEffectTickSchedule, getTurnCycleExpiration } from "./effectTiming.js";
+import { getEffectDurationAmount, getNextRecurringEffectTickSchedule, getTurnCycleExpiration } from "./effectTiming.js";
 import { moveAllMagicSlotCardsToCemetery } from "./cardMovement.js";
 import { getRuntimeBlockActionType, getRuntimeBlockDurationText, getRuntimeBlockMultiplier, getRuntimeBlockTargetText, getRuntimeBlockText } from "./effectBlockRuntime.js";
 import { isFringeAutomaticMagicEffectSupported, tryResolveFringeAutomaticMagicEffect } from "./fringeEffectHandlers.js";
@@ -654,15 +654,20 @@ export function isDeferredToAttachmentEffect(
   effect: WardEngineEffect
 ): boolean {
   const target = (getRuntimeBlockTargetText(effect) ?? "").toLowerCase();
-  const durationType = effect.duration?.type ?? effect.params?.duration?.type;
+  const durationType = String(effect.duration?.type ?? effect.params?.duration?.type ?? "").trim().toUpperCase();
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
 
   const actionType = getRuntimeBlockActionType(effect).trim().toUpperCase();
 
   return (
     (actionType === "APPLY_STAT_MODIFIER" || actionType === "APPLY_MULTI_MODIFIER") &&
     target.includes("equipped creature") &&
-    durationType === "WHILE_EQUIPPED"
+    (durationType === "WHILE_EQUIPPED" || (trigger === "ON_EQUIP" && durationType === "TURN_CYCLES"))
   );
+}
+
+function isWhileEquippedStatEffect(effect: WardEngineEffect): boolean {
+  return String(effect.duration?.type ?? effect.params?.duration?.type ?? "").trim().toUpperCase() === "WHILE_EQUIPPED";
 }
 
 export function tryResolveAutomaticMagicEffect(
@@ -842,6 +847,19 @@ export function applyWhileEquippedStatModifiers(
   for (const effect of equipStatEffects) {
     const statChanges = effect.params?.statChanges ?? [];
     const boardEvents: BoardEventPayload[] = [];
+    const isWhileEquipped = isWhileEquippedStatEffect(effect);
+    const expiration = isWhileEquipped
+      ? undefined
+      : getTurnCycleExpiration({
+          state,
+          sourcePlayerId: sourceMagicCard.controllerPlayerId,
+          targetPlayerId: targetCreature.controllerPlayerId,
+          effect,
+          fallbackDuration: getEffectDurationAmount(effect, 1)
+        });
+    const durationType: "PERMANENT_UNTIL_SOURCE_REMOVED" | "TARGET_PLAYER_TURN_STARTS" =
+      isWhileEquipped ? "PERMANENT_UNTIL_SOURCE_REMOVED" : "TARGET_PLAYER_TURN_STARTS";
+    const reason = isWhileEquipped ? "WHILE_EQUIPPED" : "TEMP_EQUIP_DURATION";
 
     for (const change of statChanges) {
       const stat = normalizeStatKey(change.stat);
@@ -868,9 +886,11 @@ export function applyWhileEquippedStatModifiers(
         sourceCardName: getCardName(state, sourceMagicCard),
         stat,
         delta,
-        durationType: "PERMANENT_UNTIL_SOURCE_REMOVED",
+        durationType,
         appliedTurnNumber: state.turn.turnNumber,
-        appliedTurnCycle: state.turn.turnCycleNumber
+        appliedTurnCycle: state.turn.turnCycleNumber,
+        expiresOnPlayerId: expiration?.expiresOnPlayerId,
+        expiresAtPlayerTurnStartCount: expiration?.expiresAtPlayerTurnStartCount
       });
 
       appliedCount++;
@@ -882,13 +902,38 @@ export function applyWhileEquippedStatModifiers(
           sourceCardId: sourceMagicCard.cardId,
           sourceEffectId: effect.id,
           actionType: effect.actionType,
-          reason: "WHILE_EQUIPPED"
+          reason
         }),
         cardInstanceId: targetCreature.instanceId,
         targetCardInstanceId: targetCreature.instanceId,
         stat,
         delta,
         modifierId
+      });
+    }
+
+    if (!isWhileEquipped && boardEvents.length > 0) {
+      addActiveEffectInstance(targetCreature, {
+        id: uuidv4(),
+        kind: "STAT_MODIFIER",
+        sourceEffectId: effect.id,
+        sourceCardInstanceId: sourceMagicCard.instanceId,
+        sourceCardName: getCardName(state, sourceMagicCard),
+        sourcePlayerId: sourceMagicCard.controllerPlayerId,
+        targetPlayerId: targetCreature.controllerPlayerId,
+        targetCardInstanceId: targetCreature.instanceId,
+        targetCardName: getCardName(state, targetCreature),
+        actionType: "APPLY_STAT_MODIFIER",
+        label: effect.value ?? effect.actionText ?? "Temporary equip modifier",
+        durationType,
+        durationText: effect.duration?.text ?? effect.params?.duration?.text,
+        sourcePlacement: "TEMP_EQUIP",
+        sourceLinked: true,
+        expiresWhenSourceLeaves: true,
+        expiresOnPlayerId: expiration?.expiresOnPlayerId,
+        expiresAtPlayerTurnStartCount: expiration?.expiresAtPlayerTurnStartCount,
+        appliedTurnNumber: state.turn.turnNumber,
+        appliedTurnCycle: state.turn.turnCycleNumber
       });
     }
 

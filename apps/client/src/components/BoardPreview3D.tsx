@@ -2254,7 +2254,8 @@ export function BoardPreview3D({
     (match.turn.phase !== "DRAW" || Boolean(activePlayer?.turnFlags.drawnThisTurn));
   const currentPhaseLabel = formatPhaseLabel(match.turn.phase);
   const nextPhaseLabel = getNextBoardPhaseLabel(match);
-  const shouldShowAdvancePhaseButton = match.turn.phase !== "DRAW";
+  const shouldShowAdvancePhaseButton =
+    match.turn.phase !== "DRAW" || Boolean(activePlayer?.turnFlags.drawnThisTurn);
   const boardDeckActions = match.players.filter(player => player.id === focusedPlayerId).map(player => {
     const owner: BoardPlayerId = player.id === "player_1" ? "player_1" : "player_2";
     const opponent = match.players.find(candidate => candidate.id !== player.id);

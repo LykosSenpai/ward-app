@@ -1978,18 +1978,44 @@ export function resolveMagicChain(state: MatchState): MatchState {
 
     const resolvesToMagicSlot =
       !link.isLightningResponse &&
-      (link.magicType === "INFINITE" || (link.magicType === "STANDARD" && link.magicSubType === "EQUIP"));
+      (
+        link.magicType === "INFINITE" ||
+        (link.magicType === "STANDARD" && (link.magicSubType === "EQUIP" || link.magicSubType === "FIELD"))
+      );
 
     if (resolvesToMagicSlot) {
       const fieldOwner = getPlayer(nextState, link.playerId);
-      const reason = link.magicType === "INFINITE" ? "INFINITE_MAGIC_TO_FIELD" : "TEMP_EQUIP_MAGIC_TO_FIELD";
-      const slotFullReason = link.magicType === "INFINITE" ? "INFINITE_MAGIC_SLOT_FULL" : "TEMP_EQUIP_MAGIC_SLOT_FULL";
+      const resolutionKind = link.magicType === "INFINITE"
+        ? "INFINITE"
+        : link.magicSubType === "FIELD"
+          ? "FIELD"
+          : "TEMP_EQUIP";
+      const reason = resolutionKind === "INFINITE"
+        ? "INFINITE_MAGIC_TO_FIELD"
+        : resolutionKind === "FIELD"
+          ? "FIELD_MAGIC_TO_FIELD"
+          : "TEMP_EQUIP_MAGIC_TO_FIELD";
+      const slotFullReason = resolutionKind === "INFINITE"
+        ? "INFINITE_MAGIC_SLOT_FULL"
+        : resolutionKind === "FIELD"
+          ? "FIELD_MAGIC_SLOT_FULL"
+          : "TEMP_EQUIP_MAGIC_SLOT_FULL";
+      const failedEventType = resolutionKind === "INFINITE"
+        ? "INFINITE_MAGIC_FAILED_SLOT_FULL"
+        : resolutionKind === "FIELD"
+          ? "FIELD_MAGIC_FAILED_SLOT_FULL"
+          : "TEMP_EQUIP_MAGIC_FAILED_SLOT_FULL";
+      const resolvedEventType = resolutionKind === "INFINITE"
+        ? "INFINITE_MAGIC_RESOLVED_TO_FIELD"
+        : resolutionKind === "FIELD"
+          ? "FIELD_MAGIC_RESOLVED_TO_FIELD"
+          : "TEMP_EQUIP_MAGIC_RESOLVED_TO_FIELD";
 
       if (fieldOwner.field.magicSlots.length >= 5) {
         chainCard.zone = "CEMETERY";
         ownerPlayer.cemetery.push(chainCard);
 
-        addEvent(nextState, link.magicType === "INFINITE" ? "INFINITE_MAGIC_FAILED_SLOT_FULL" : "TEMP_EQUIP_MAGIC_FAILED_SLOT_FULL", link.playerId, {
+        addEvent(nextState, failedEventType, link.playerId, {
           chainId: chain.id,
           chainLinkId: link.id,
           cardInstanceId: link.cardInstanceId,
@@ -2027,7 +2053,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
         chainCard.zone = "MAGIC_SLOT";
         fieldOwner.field.magicSlots.push(chainCard);
 
-        addEvent(nextState, link.magicType === "INFINITE" ? "INFINITE_MAGIC_RESOLVED_TO_FIELD" : "TEMP_EQUIP_MAGIC_RESOLVED_TO_FIELD", link.playerId, {
+        addEvent(nextState, resolvedEventType, link.playerId, {
           chainId: chain.id,
           chainLinkId: link.id,
           cardInstanceId: link.cardInstanceId,

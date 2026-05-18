@@ -39,7 +39,7 @@ import {
   inferTargetQueryForEffect
 } from "./targets.js";
 import { addActiveStatusIfAbsent, addRecurringEffectIfAbsent, findActiveRecurringEffect } from "./activeEffectInstances.js";
-import { getNextRecurringEffectTickSchedule } from "./effectTiming.js";
+import { effectDurationIsUntilSourceLeaves, getNextRecurringEffectTickSchedule } from "./effectTiming.js";
 import { getEffectResolutionMode } from "./effectRegistry.js";
 import { applyDestroyedMagicCountModifier, isAutomaticMagicEffectSupported, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
 import { resolveEffectProgramTargetPrompt } from "./effectProgramRunner.js";
@@ -844,6 +844,7 @@ function applyRecurringPromptEffect(
   const tickTiming = getRecurringTickTimingForEffectType(effectType);
   const nextTick = getNextRecurringEffectTickSchedule(state, prompt.controllerPlayerId, tickTiming);
   const stackRule = String(effect.params?.stackRule ?? effect.duration?.stackRule ?? "DO_NOT_STACK");
+  const untilSourceLeaves = effectDurationIsUntilSourceLeaves(effect);
 
   target.card.activeRecurringEffects ??= [];
 
@@ -875,15 +876,16 @@ function applyRecurringPromptEffect(
     label: effect.value ?? effect.actionText ?? effect.params?.valueText ?? `${amount}`,
     tickTiming,
     stackRule,
-    remainingTicks: totalTicks,
+    remainingTicks: untilSourceLeaves ? 1 : totalTicks,
     nextTickPlayerId: nextTick.nextTickPlayerId,
     nextTickTurnStartCount: nextTick.nextTickTurnStartCount,
-    durationType: "TARGET_PLAYER_TURN_STARTS",
+    durationType: untilSourceLeaves ? "PERMANENT_UNTIL_SOURCE_REMOVED" : "TARGET_PLAYER_TURN_STARTS",
     appliedTurnNumber: state.turn.turnNumber,
     appliedTurnCycle: state.turn.turnCycleNumber,
     appliedSequenceNumber: state.eventLog.length + 1,
-    expiresOnPlayerId: prompt.controllerPlayerId,
-    expiresAtPlayerTurnStartCount: (state.turn.turnStartCountsByPlayer[prompt.controllerPlayerId] ?? 0) + totalTicks
+    expiresWhenSourceLeaves: untilSourceLeaves ? true : undefined,
+    expiresOnPlayerId: untilSourceLeaves ? undefined : prompt.controllerPlayerId,
+    expiresAtPlayerTurnStartCount: untilSourceLeaves ? undefined : (state.turn.turnStartCountsByPlayer[prompt.controllerPlayerId] ?? 0) + totalTicks
   };
 
   const addResult = addRecurringEffectIfAbsent(target.card, recurring);

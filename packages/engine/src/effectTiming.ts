@@ -43,6 +43,23 @@ export function effectUsesSourceTurnCycle(effect: WardEngineEffect): boolean {
     text.includes("turn cycle");
 }
 
+export function effectDurationIsUntilSourceLeaves(effect: WardEngineEffect): boolean {
+  const duration = durationData(effect);
+  const type = normalize(duration.type);
+  const text = effectDurationText(effect);
+  const hasFiniteDuration = Number.isFinite(Number(
+    duration.amount ??
+    effect.params?.durationAmount ??
+    effect.params?.startingTicks
+  ));
+
+  return type === "UNTIL_SOURCE_LEAVES_FIELD" ||
+    text.includes("until_source_leaves_field") ||
+    text.includes("until source leaves") ||
+    text.includes("until this card leaves") ||
+    ((duration.sourceLinked === true || effect.params?.sourceLinked === true || effect.params?.expiresWhenSourceLeaves === true) && !hasFiniteDuration);
+}
+
 export function getTurnCycleExpiration(args: {
   state: MatchState;
   sourcePlayerId: string;

@@ -1,4 +1,5 @@
 import type {
+  ActiveEffectInstance,
   CardDefinition,
   CardInstance,
   MatchState,
@@ -18,6 +19,8 @@ import { areCreatureEffectsSuppressed } from "./creatureEffectSuppression.js";
 import { createEffectTargetPromptFromChainLink } from "./effectPrompts.js";
 import { inferTargetQueryForEffect } from "./targets.js";
 import { moveMagicSlotCardToCemetery } from "./cardMovement.js";
+
+const ACTIVATED_EFFECT_USAGE_ACTION = "ACTIVATED_EFFECT_USAGE";
 
 export type CardEffectSourceZone = "PRIMARY_CREATURE" | "LIMITED_SUMMON" | "MAGIC_SLOT";
 
@@ -136,6 +139,51 @@ function isActivatedRollEffect(effect: WardEngineEffect): boolean {
   const trigger = (effect.trigger ?? "").trim().toUpperCase();
   return ["DURING_YOUR_TURN_ACTIVATED", "ONCE_PER_TURN_ACTIVATED", "ACTIVATED", "DURING_YOUR_TURN"].includes(trigger) ||
     isStatusEscapeRollEffect(effect);
+}
+
+function consumesOncePerTurnActivation(effect: WardEngineEffect): boolean {
+  const trigger = (effect.trigger ?? "").trim().toUpperCase();
+  return trigger === "DURING_YOUR_TURN_ACTIVATED" ||
+    trigger === "ONCE_PER_TURN_ACTIVATED";
+}
+
+function hasUsedEffectThisTurn(
+  state: MatchState,
+  source: FieldEffectSource,
+  effect: WardEngineEffect
+): boolean {
+  return (source.card.activeEffectInstances ?? []).some(instance =>
+    instance.actionType === ACTIVATED_EFFECT_USAGE_ACTION &&
+    instance.sourceEffectId === effect.id &&
+    instance.sourceCardInstanceId === source.card.instanceId &&
+    instance.appliedTurnNumber === state.turn.turnNumber
+  );
+}
+
+function createActivatedEffectUsageMarker(
+  state: MatchState,
+  source: FieldEffectSource,
+  effect: WardEngineEffect,
+  playerId: string
+): ActiveEffectInstance {
+  return {
+    id: uuidv4(),
+    kind: "OTHER",
+    sourceEffectId: effect.id,
+    sourceCardInstanceId: source.card.instanceId,
+    sourceCardName: getCardName(state, source.card),
+    sourcePlayerId: playerId,
+    targetPlayerId: playerId,
+    targetCardInstanceId: source.card.instanceId,
+    targetCardName: getCardName(state, source.card),
+    actionType: ACTIVATED_EFFECT_USAGE_ACTION,
+    label: "Effect used this turn",
+    durationType: "TARGET_PLAYER_TURN_STARTS",
+    expiresOnPlayerId: playerId,
+    expiresAtPlayerTurnStartCount: (state.turn.turnStartCountsByPlayer[playerId] ?? 0) + 1,
+    appliedTurnNumber: state.turn.turnNumber,
+    appliedTurnCycle: state.turn.turnCycleNumber
+  };
 }
 
 function isStatusEscapeRollEffect(effect: WardEngineEffect): boolean {
@@ -334,6 +382,10 @@ function sourceDisabledReason(
 
   if (isActivatedRollEffect(effect) && state.turn.activePlayerId !== playerId) {
     return "This activated effect can only be used during your turn.";
+  }
+
+  if (consumesOncePerTurnActivation(effect) && hasUsedEffectThisTurn(state, source, effect)) {
+    return "This effect has already been used this turn.";
   }
 
   return undefined;
@@ -739,6 +791,15 @@ export function activateCardEffect(
 
   if (!nextSource) {
     throw new Error("The source card was not found after cloning state.");
+  }
+
+  if (consumesOncePerTurnActivation(effect)) {
+    nextSource.card.activeEffectInstances = (nextSource.card.activeEffectInstances ?? []).filter(instance => !(
+      instance.actionType === ACTIVATED_EFFECT_USAGE_ACTION &&
+      instance.sourceEffectId === effect.id &&
+      instance.appliedTurnNumber === nextState.turn.turnNumber
+    ));
+    nextSource.card.activeEffectInstances.push(createActivatedEffectUsageMarker(nextState, nextSource, effect, args.playerId));
   }
 
   if (isRevealOpponentHandEffect(effect)) {

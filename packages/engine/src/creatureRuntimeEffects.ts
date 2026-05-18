@@ -27,6 +27,7 @@ import {
   moveMagicSlotCardToCemetery
 } from "./cardMovement.js";
 import {
+  effectDurationIsUntilSourceLeaves,
   getFollowingRecurringEffectTickSchedule,
   getNextRecurringEffectTickSchedule,
   getTurnCycleExpiration,
@@ -849,6 +850,7 @@ function addRecurringEffectToCreature(
   const tickTiming = getRecurringTickTimingForEffect(effect);
   const expiration = expirationForRuntimeEffect(state, source, target, effect, totalTicks);
   const nextTick = getNextRecurringEffectTickSchedule(state, source.player.id, tickTiming);
+  const untilSourceLeaves = effectDurationIsUntilSourceLeaves(effect);
 
   const activeRecurring: ActiveRecurringCreatureEffect = {
     id: uuidv4(),
@@ -861,22 +863,24 @@ function addRecurringEffectToCreature(
     label: effect.value ?? effect.actionText ?? effect.params?.valueText ?? `${amount}`,
     tickTiming,
     stackRule,
-    remainingTicks: totalTicks,
+    remainingTicks: untilSourceLeaves ? 1 : totalTicks,
     nextTickPlayerId: nextTick.nextTickPlayerId,
     nextTickTurnStartCount: nextTick.nextTickTurnStartCount,
-    durationType: "TARGET_PLAYER_TURN_STARTS",
+    durationType: untilSourceLeaves ? "PERMANENT_UNTIL_SOURCE_REMOVED" : "TARGET_PLAYER_TURN_STARTS",
     appliedTurnNumber: state.turn.turnNumber,
     appliedTurnCycle: state.turn.turnCycleNumber,
     appliedSequenceNumber: state.eventLog.length + 1,
     refreshAtEndOfSourceOwnerTurn: Boolean(effect.params?.refreshAtEndOfSourceOwnerTurn),
     refreshAmount: Number.isFinite(Number(effect.params?.refreshAmount)) ? Math.max(1, Math.trunc(Number(effect.params?.refreshAmount))) : undefined,
     maxRefreshCounter: Number.isFinite(Number(effect.params?.maxRefreshCounter)) ? Math.max(1, Math.trunc(Number(effect.params?.maxRefreshCounter))) : undefined,
-    expiresWhenSourceLeaves: effect.params?.expiresWhenSourceLeaves === undefined
+    expiresWhenSourceLeaves: untilSourceLeaves
+      ? true
+      : effect.params?.expiresWhenSourceLeaves === undefined
       ? Boolean(effect.params?.sourceLinked)
       : Boolean(effect.params?.expiresWhenSourceLeaves),
     healImmediatelyOnApply: Boolean(effect.params?.healImmediatelyOnApply),
-    expiresOnPlayerId: expiration.expiresOnPlayerId,
-    expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
+    expiresOnPlayerId: untilSourceLeaves ? undefined : expiration.expiresOnPlayerId,
+    expiresAtPlayerTurnStartCount: untilSourceLeaves ? undefined : expiration.expiresAtPlayerTurnStartCount
   };
 
   const addResult = addRecurringEffectIfAbsent(target.card, activeRecurring);
@@ -1911,7 +1915,8 @@ function processRecurringRuntimeEffectsForTiming(
 
   for (const location of collectFieldCreatureLocations(state)) {
     for (const recurring of location.card.activeRecurringEffects ?? []) {
-      if (normalizeRecurringTickTiming(recurring.tickTiming) !== tickTiming || recurring.remainingTicks <= 0) {
+      const permanentUntilSourceRemoved = recurring.durationType === "PERMANENT_UNTIL_SOURCE_REMOVED";
+      if (normalizeRecurringTickTiming(recurring.tickTiming) !== tickTiming || (!permanentUntilSourceRemoved && recurring.remainingTicks <= 0)) {
         fallbackOrder += 1;
         continue;
       }
@@ -1942,12 +1947,15 @@ function processRecurringRuntimeEffectsForTiming(
 
     const active = location.card.activeRecurringEffects ?? [];
     const recurring = active.find(item => item.id === dueEffect.recurringId);
-    if (!recurring || recurring.remainingTicks <= 0 || normalizeRecurringTickTiming(recurring.tickTiming) !== tickTiming || !shouldRecurringEffectTickNow(state, recurring)) {
+    const permanentUntilSourceRemoved = recurring?.durationType === "PERMANENT_UNTIL_SOURCE_REMOVED";
+    if (!recurring || (!permanentUntilSourceRemoved && recurring.remainingTicks <= 0) || normalizeRecurringTickTiming(recurring.tickTiming) !== tickTiming || !shouldRecurringEffectTickNow(state, recurring)) {
       continue;
     }
 
     const option = targetOptionFromCreatureLocation(location);
-    const ticksRemainingAfterThis = recurring.remainingTicks - 1;
+    const ticksRemainingAfterThis = permanentUntilSourceRemoved
+      ? recurring.remainingTicks
+      : recurring.remainingTicks - 1;
 
     if (recurring.effectType === "HEAL_OVER_TIME") {
       const result = healCreatureTarget(state, option, recurring.amount);

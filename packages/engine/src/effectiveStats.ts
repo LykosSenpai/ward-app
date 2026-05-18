@@ -634,6 +634,10 @@ export function removeExpiredStatModifiersForPlayerTurnStart(
     for (const limited of player.field.limitedSummons) {
       removeExpiredFromCard(state, limited, playerId, currentTurnStartCount, addBoardEvent);
     }
+
+    for (const magic of [...player.field.magicSlots]) {
+      removeExpiredFromCard(state, magic, playerId, currentTurnStartCount, addBoardEvent);
+    }
   }
 
   return state;

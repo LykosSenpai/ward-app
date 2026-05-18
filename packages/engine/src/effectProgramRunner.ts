@@ -27,6 +27,7 @@ import { calculateCemeteryCreatureHp } from "./cemetery.js";
 import { addEvent, getCardDefinition, getPlayer } from "./engineRuntime.js";
 import { moveFieldCreatureToCemetery } from "./fieldRemoval.js";
 import {
+  effectDurationIsUntilSourceLeaves,
   getNextRecurringEffectTickSchedule,
   getTurnCycleExpiration,
   normalizeRecurringTickTiming
@@ -468,6 +469,7 @@ function registerRecurringStep(args: {
     fallbackDuration: totalTicks
   });
   const nextTick = getNextRecurringEffectTickSchedule(args.state, args.prompt.controllerPlayerId, tickTiming);
+  const untilSourceLeaves = effectDurationIsUntilSourceLeaves(durationEffect);
 
   const recurring: ActiveRecurringCreatureEffect = {
     id: uuidv4(),
@@ -480,15 +482,16 @@ function registerRecurringStep(args: {
     label: args.step.valueText ?? args.effect.value ?? args.effect.actionText ?? args.effect.params?.valueText ?? `${amount}`,
     tickTiming,
     stackRule,
-    remainingTicks: totalTicks,
+    remainingTicks: untilSourceLeaves ? 1 : totalTicks,
     nextTickPlayerId: nextTick.nextTickPlayerId,
     nextTickTurnStartCount: nextTick.nextTickTurnStartCount,
-    durationType: "TARGET_PLAYER_TURN_STARTS",
+    durationType: untilSourceLeaves ? "PERMANENT_UNTIL_SOURCE_REMOVED" : "TARGET_PLAYER_TURN_STARTS",
     appliedTurnNumber: args.state.turn.turnNumber,
     appliedTurnCycle: args.state.turn.turnCycleNumber,
     appliedSequenceNumber: args.state.eventLog.length + 1,
-    expiresOnPlayerId: expiration.expiresOnPlayerId,
-    expiresAtPlayerTurnStartCount: expiration.expiresAtPlayerTurnStartCount
+    expiresWhenSourceLeaves: untilSourceLeaves ? true : undefined,
+    expiresOnPlayerId: untilSourceLeaves ? undefined : expiration.expiresOnPlayerId,
+    expiresAtPlayerTurnStartCount: untilSourceLeaves ? undefined : expiration.expiresAtPlayerTurnStartCount
   };
 
   const addResult = addRecurringEffectIfAbsent(args.target.card, recurring);

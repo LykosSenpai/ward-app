@@ -7,6 +7,7 @@ import type {
   WardEngineEffect
 } from "@ward/shared";
 import { getRuntimeBlockActionType, getRuntimeBlockDurationText, getRuntimeBlockText } from "./effectBlockRuntime.js";
+import { effectUsesSourceTurnCycle, getEffectDurationAmount, getTurnCycleExpiration } from "./effectTiming.js";
 
 type FringeAddEventFn = (
   state: MatchState,
@@ -126,6 +127,12 @@ function shuffleInPlace<T>(items: T[]): void {
 
 function findSourceCard(state: MatchState, sourceCardInstanceId?: string): { player: PlayerState; card: CardInstance } | undefined {
   if (!sourceCardInstanceId) return undefined;
+  const chainCard = state.chainZone.find(card => card.instanceId === sourceCardInstanceId);
+  if (chainCard) {
+    const player = state.players.find(item => item.id === chainCard.controllerPlayerId || item.id === chainCard.ownerPlayerId);
+    if (player) return { player, card: chainCard };
+  }
+
   for (const player of state.players) {
     const zones = [
       player.hand,
@@ -168,6 +175,16 @@ function attachSourceInstanceMarker(
 
   const actionType = getRuntimeBlockActionType(args.effect).trim().toUpperCase();
   const durationText = getRuntimeBlockDurationText(args.effect) ?? args.effect.duration?.text ?? args.effect.params?.duration?.text;
+  const hasTurnCycleDuration = effectUsesSourceTurnCycle(args.effect);
+  const expiration = hasTurnCycleDuration
+    ? getTurnCycleExpiration({
+        state,
+        sourcePlayerId: args.controllerPlayerId,
+        targetPlayerId: source.player.id,
+        effect: args.effect,
+        fallbackDuration: getEffectDurationAmount(args.effect, 1)
+      })
+    : undefined;
   const activeInstance: ActiveEffectInstance = {
     id: uuidv4(),
     kind: args.kind ?? "OTHER",
@@ -180,8 +197,11 @@ function attachSourceInstanceMarker(
     targetCardName: getCardName(state, source.card),
     actionType,
     label: args.label,
-    durationType: args.effect.duration?.type ?? args.effect.params?.duration?.type ?? "STATIC_RULE",
+    durationType: expiration ? "TARGET_PLAYER_TURN_STARTS" : args.effect.duration?.type ?? args.effect.params?.duration?.type ?? "STATIC_RULE",
     durationText,
+    turnCyclesTotal: expiration ? getEffectDurationAmount(args.effect, 1) : undefined,
+    expiresOnPlayerId: expiration?.expiresOnPlayerId,
+    expiresAtPlayerTurnStartCount: expiration?.expiresAtPlayerTurnStartCount,
     appliedTurnNumber: state.turn.turnNumber,
     appliedTurnCycle: state.turn.turnCycleNumber,
     debug: [

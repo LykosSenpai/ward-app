@@ -266,6 +266,7 @@ const ACTIVATED_CARD_EFFECT_TRIGGERS = new Set([
   "ONCE_PER_TURN_ACTIVATED",
   "REQUEST_BASED"
 ]);
+const ACTIVATED_EFFECT_USAGE_ACTION = "ACTIVATED_EFFECT_USAGE";
 
 function isActivatedCardEffect(effect: WardEngineEffect): boolean {
   const trigger = String(effect.trigger ?? "").trim().toUpperCase();
@@ -273,6 +274,21 @@ function isActivatedCardEffect(effect: WardEngineEffect): boolean {
 
   return ACTIVATED_CARD_EFFECT_TRIGGERS.has(trigger) ||
     actionType === "RESOLVE_STATUS_ESCAPE_ROLL";
+}
+
+function consumesOncePerTurnActivation(effect: WardEngineEffect): boolean {
+  const trigger = String(effect.trigger ?? "").trim().toUpperCase();
+  return trigger === "DURING_YOUR_TURN_ACTIVATED" ||
+    trigger === "ONCE_PER_TURN_ACTIVATED";
+}
+
+function effectUsedThisTurn(match: AppMatchState, card: CardInstance, effect: WardEngineEffect): boolean {
+  return (card.activeEffectInstances ?? []).some(instance =>
+    instance.actionType === ACTIVATED_EFFECT_USAGE_ACTION &&
+    instance.sourceEffectId === effect.id &&
+    instance.sourceCardInstanceId === card.instanceId &&
+    instance.appliedTurnNumber === match.turn.turnNumber
+  );
 }
 
 function cardEffectLabel(effect: WardEngineEffect): string {
@@ -299,6 +315,10 @@ function cardEffectDisabledReason(
 
   if (isActivatedCardEffect(effect) && match.turn.activePlayerId !== player.id) {
     return "This activated effect can only be used during your turn.";
+  }
+
+  if (consumesOncePerTurnActivation(effect) && effectUsedThisTurn(match, card, effect)) {
+    return "This effect has already been used this turn.";
   }
 
   return null;
