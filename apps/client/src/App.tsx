@@ -113,6 +113,16 @@ function buildCardLibraryRequestKey(packIds: string[], cardPacks: CardPackSummar
     .join("|");
 }
 
+function shouldAutoIncludeNewCardPacks(currentPackIds: string[], validPackIds: string[]): boolean {
+  if (currentPackIds.length === 0 || currentPackIds.length >= validPackIds.length) return false;
+
+  const baseGenerationPackIds = validPackIds.filter(packId => /^ward-gen\d+$/i.test(packId));
+  if (baseGenerationPackIds.length === 0) return false;
+
+  return baseGenerationPackIds.every(packId => currentPackIds.includes(packId)) &&
+    currentPackIds.every(packId => baseGenerationPackIds.includes(packId));
+}
+
 type ServerIdentityPayload = {
   serverBootId?: string;
   serverStartedAt?: string;
@@ -959,6 +969,10 @@ export default function App() {
         const stillValidCurrent = current.filter(packId =>
           validPackIds.includes(packId)
         );
+
+        if (shouldAutoIncludeNewCardPacks(stillValidCurrent, validPackIds)) {
+          return validPackIds;
+        }
 
         if (stillValidCurrent.length > 0) {
           return stillValidCurrent;

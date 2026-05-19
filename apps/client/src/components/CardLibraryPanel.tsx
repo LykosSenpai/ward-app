@@ -129,6 +129,10 @@ function getTournamentLimitStatus(card: CardLibraryCardSummary): TournamentLimit
   return "LEGAL";
 }
 
+function getGenerationFilterLabel(value: string): string {
+  return value.toLowerCase() === "promo" ? "Promo Cards" : `Gen ${value}`;
+}
+
 function getEffectiveDeckLimit(card: CardLibraryCardSummary | undefined, format: DeckFormat): number {
   return format === "TOURNAMENT" ? card?.deckLimit ?? 3 : 3;
 }
@@ -1251,7 +1255,7 @@ export function CardLibraryPanel({
                   Generation
                   <select value={completionGeneration} onChange={event => setCompletionGeneration(event.target.value)}>
                     <option value="ALL">All</option>
-                    {generations.map(value => <option value={value} key={`completion-${value}`}>{value}</option>)}
+                    {generations.map(value => <option value={value} key={`completion-${value}`}>{getGenerationFilterLabel(value)}</option>)}
                   </select>
                 </label>
                 <label>
@@ -1314,7 +1318,7 @@ export function CardLibraryPanel({
                   Generation
                   <select value={generationFilter} onChange={event => setGenerationFilter(event.target.value)}>
                     <option value="ALL">All</option>
-                    {generations.map(value => <option value={value} key={value}>{value}</option>)}
+                    {generations.map(value => <option value={value} key={value}>{getGenerationFilterLabel(value)}</option>)}
                   </select>
                 </label>
 
