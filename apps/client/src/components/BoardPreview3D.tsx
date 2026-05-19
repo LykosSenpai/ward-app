@@ -2558,7 +2558,7 @@ export function BoardPreview3D({
             resolveBoardPoint={resolveBoardPoint}
             resolveZoneRect={resolveZoneRect}
             onSelectSlot={(slotId) => selectSlot(slotId, "table")}
-            onDeckSlotClick={onDeckSlotClick}
+            onDeckSlotClick={spectatorMode ? undefined : onDeckSlotClick}
             onPlayHandCardToSlot={(slotId) => {
               if (!selectedHandCardId) return;
               if (
@@ -2855,7 +2855,8 @@ export function BoardPreview3D({
               </div>
             ))}
           </aside>
-          {actionDock && !actionDockCollapsed ? (
+          ) : null}
+          {actionDock && !actionDockCollapsed && !spectatorMode ? (
             <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
               <div className="board-preview-3d__floating-title">
                 <strong>Action Dock</strong>

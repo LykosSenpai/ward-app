@@ -2673,6 +2673,15 @@ export default function App() {
     (!controlledPlayerId || controlledPlayerId === getPendingPromptControllerId(match.pendingPrompt))
   );
   const show3dBoardView = playViewMode === "board3d";
+  const isLiveMatchSpectator = Boolean(
+    match &&
+    authUser &&
+    activeLobby?.matchId === match.matchId &&
+    !activeLobby.players.some(player =>
+      player.userId === authUser.id ||
+      (player.isClone && player.ownerUserId === authUser.id)
+    )
+  );
 
   if (!authChecked) {
     return (
@@ -3105,6 +3114,7 @@ export default function App() {
                       presentation="game"
                       defaultIntegrationMode
                       controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
+                      spectatorMode={isLiveMatchSpectator}
                       onAdvancePhase={advancePhase}
                       onEndTurn={endTurn}
                       onUndoLastAction={undoLastAction}
