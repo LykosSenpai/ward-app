@@ -3187,6 +3187,18 @@ export default function App() {
                             : `Command: focus piece ${command.cardInstanceId ?? command.pieceId}`;
                         setLastBoardCommandLabel(label);
                       }}
+                      soloControlOverlay={activeLobby?.matchId === match.matchId && activeLobby.mode === "SOLO" ? (
+                        <div className="solo-control-switch" aria-label="Solo control side">
+                          <span className="label">Solo Control</span>
+                          <strong>{controlledPlayerId === "player_2" ? "Clone side" : "Player side"}</strong>
+                          <button
+                            type="button"
+                            onClick={() => switchSoloControlledPlayer(controlledPlayerId === "player_2" ? "player_1" : "player_2")}
+                          >
+                            Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                          </button>
+                        </div>
+                      ) : null}
                       actionDock={(
                         <CompactMatchControlPanel
                           match={match}
