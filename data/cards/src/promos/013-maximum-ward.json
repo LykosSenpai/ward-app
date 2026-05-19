@@ -1,0 +1,67 @@
+{
+  "id": "promo_013_maximum_ward",
+  "name": "Maximum Ward",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "013",
+  "text": "All players must roll a die each turn. If the result of all die match, all cards on the field are destroyed. If this effect occurs, send this card to the cemetery.",
+  "effects": [
+    {
+      "id": "013-E01",
+      "trigger": "BEGINNING_OF_EACH_TURN",
+      "condition": {
+        "type": "ALL_PLAYERS_MATCHING_TURN_ROLL",
+        "dieSize": 6,
+        "dicePerPlayer": 1,
+        "text": "Each turn, all players roll 1D6; if all results match, destroy all cards on the field."
+      },
+      "actionType": "RESOLVE_FIELD_ROLL_OUTCOME",
+      "effectGroup": "Field Roll",
+      "actionText": "All players roll; matching results destroy the field",
+      "target": "All cards on the field",
+      "value": "If all players' die results match, destroy all cards on the field and send Maximum Ward to the cemetery",
+      "duration": {
+        "text": "Each turn while field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "resolveFieldRollOutcome",
+      "params": {
+        "target": "All cards on the field",
+        "valueText": "If all players' die results match, destroy all cards on the field and send Maximum Ward to the cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "ALL_PLAYERS_MATCHING_TURN_ROLL",
+          "dieSize": 6,
+          "dicePerPlayer": 1,
+          "text": "Each turn, all players roll 1D6; if all results match, destroy all cards on the field."
+        },
+        "duration": {
+          "text": "Each turn while field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "allPlayersRoll": true,
+        "dieSize": 6,
+        "dicePerPlayer": 1,
+        "matchAllResults": true,
+        "destroyAllCardsOnField": true,
+        "sendSourceToCemetery": true
+      },
+      "notes": "Requires a multiplayer-capable all-players turn-start roll resolver and a destroy-all-cards-on-field routine.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Infinite Field promo. Card text says 'all die match'; modeled as all participating players' 1D6 results matching.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true,
+  "printedGeneration": "Pre-Order Exclusive"
+}

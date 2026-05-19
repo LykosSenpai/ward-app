@@ -1,0 +1,150 @@
+{
+  "id": "promo_014_moon_owl",
+  "name": "Moon Owl",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "014",
+  "text": "If this card is removed from the field by your opponent, it’s instead equipped to your opponent’s primary creature as a magic card. The equipped creature loses 10 HP at the beginning of each of their turns. Return this card to the original owner’s deck if the equipped creature is removed from the field.",
+  "effects": [
+    {
+      "id": "014-E01",
+      "trigger": "WHEN_THIS_CARD_LEAVES_FIELD",
+      "condition": {
+        "type": "REMOVED_FROM_FIELD_BY_OPPONENT",
+        "text": "Moon Owl would be removed from the field by an opponent."
+      },
+      "actionType": "CONVERT_CREATURE_TO_EQUIP_ON_DEATH",
+      "effectGroup": "Replacement / Equip",
+      "actionText": "Equip this card to opponent primary instead of removing it",
+      "target": "Opponent primary creature",
+      "value": "This card becomes an equipped magic card on the opponent's primary creature",
+      "duration": {
+        "text": "Instant replacement",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "convertCreatureToEquipOnRemoval",
+      "params": {
+        "target": "Opponent primary creature",
+        "valueText": "This card becomes an equipped magic card on the opponent's primary creature",
+        "statChanges": [],
+        "condition": {
+          "type": "REMOVED_FROM_FIELD_BY_OPPONENT",
+          "text": "Moon Owl would be removed from the field by an opponent."
+        },
+        "duration": {
+          "text": "Instant replacement",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "treatAsMagic": true,
+        "magicType": "INFINITE",
+        "magicSubType": "EQUIP",
+        "replacementEffect": true
+      },
+      "notes": "Uses the existing convert-creature-to-equip action family, but the trigger is broader than death: any opponent-caused field removal.",
+      "needsReview": true
+    },
+    {
+      "id": "014-E02",
+      "trigger": "BEGINNING_OF_EQUIPPED_CREATURE_CONTROLLER_TURN",
+      "condition": {
+        "type": "WHILE_EQUIPPED",
+        "text": "Moon Owl is equipped to a creature."
+      },
+      "actionType": "APPLY_START_TURN_HP_LOSS",
+      "effectGroup": "Damage",
+      "actionText": "Equipped creature loses HP at turn start",
+      "target": "Equipped creature",
+      "value": "Lose 10 HP",
+      "duration": {
+        "text": "Each turn while equipped",
+        "type": "WHILE_EQUIPPED"
+      },
+      "reusableFunction": "applyStartTurnHpLoss",
+      "params": {
+        "target": "Equipped creature",
+        "valueText": "Lose 10 HP",
+        "statChanges": [],
+        "condition": {
+          "type": "WHILE_EQUIPPED",
+          "text": "Moon Owl is equipped to a creature."
+        },
+        "duration": {
+          "text": "Each turn while equipped",
+          "type": "WHILE_EQUIPPED"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 10,
+        "timing": "BEGINNING_OF_EQUIPPED_CREATURE_CONTROLLER_TURN"
+      },
+      "notes": "Needs equipped-creature-controller turn-start trigger routing.",
+      "needsReview": true
+    },
+    {
+      "id": "014-E03",
+      "trigger": "WHEN_EQUIPPED_CREATURE_REMOVED_FROM_FIELD",
+      "condition": {
+        "type": "EQUIPPED_CREATURE_REMOVED_FROM_FIELD",
+        "text": "The creature Moon Owl is equipped to leaves the field."
+      },
+      "actionType": "RETURN_SELF_TO_DECK_AND_SHUFFLE",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return Moon Owl to original owner's deck",
+      "target": "This card",
+      "value": "Return to original owner deck if the equipped creature is removed from the field",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnSelfToDeckAndShuffle",
+      "params": {
+        "target": "This card",
+        "valueText": "Return to original owner deck if the equipped creature is removed from the field",
+        "statChanges": [],
+        "condition": {
+          "type": "EQUIPPED_CREATURE_REMOVED_FROM_FIELD",
+          "text": "The creature Moon Owl is equipped to leaves the field."
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "destination": "ORIGINAL_OWNER_DECK",
+        "shuffle": true
+      },
+      "notes": "Source-linked cleanup tied to the equipped creature leaving the field.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Boss/pre-order promo. Removal replacement and equip cleanup need runtime QA.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 12,
+  "speed": 12,
+  "hp": 70,
+  "attackName": "Lunar Slam",
+  "attackDice": 2,
+  "modifier": 4,
+  "printedGeneration": "Pre-Order Exclusive",
+  "artworkTags": [
+    "MOON",
+    "BIRD"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "promo_015_nadara",
+  "name": "Nadara",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "015",
+  "text": "During battle you may use the below attack in place of \"Slash\". Piecing Arrow. 1 Dice Rolls + 4.",
+  "effects": [
+    {
+      "id": "015-E01",
+      "trigger": "DURING_BATTLE_ACTIVATED",
+      "condition": {
+        "type": "PLAYER_CHOICE",
+        "text": "During battle, choose Piecing Arrow instead of Slash."
+      },
+      "actionType": "REPLACE_ATTACK_PROFILE",
+      "effectGroup": "Alternate Attack",
+      "actionText": "Use Piecing Arrow instead of Slash",
+      "target": "This creature",
+      "value": "Attack becomes Piecing Arrow: 1 Dice Roll +4 for this battle",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "replaceAttackProfile",
+      "params": {
+        "target": "This creature",
+        "valueText": "Attack becomes Piecing Arrow: 1 Dice Roll +4 for this battle",
+        "statChanges": [],
+        "condition": {
+          "type": "PLAYER_CHOICE",
+          "text": "During battle, choose Piecing Arrow instead of Slash."
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "alternateAttack": {
+          "attackName": "Piecing Arrow",
+          "attackDice": 1,
+          "modifier": 4
+        },
+        "replacesAttackName": "Slash"
+      },
+      "notes": "Card text appears to spell the alternate attack as 'Piecing Arrow'; kept as printed.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Generation II promo.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 12,
+  "hp": 60,
+  "attackName": "Slash",
+  "attackDice": 4,
+  "modifier": 1,
+  "printedGeneration": "Generation - II",
+  "artworkTags": [
+    "WEAPON",
+    "BOW"
+  ]
+}

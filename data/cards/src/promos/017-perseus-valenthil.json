@@ -1,0 +1,148 @@
+{
+  "id": "promo_017_perseus_valenthil",
+  "name": "Perseus Valenthil",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "017",
+  "text": "During your turn roll 1 die. If 5-6 this card cannot be damaged for 1 turn cycle. You also cannot play magic cards while this effect is active.",
+  "effects": [
+    {
+      "id": "017-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          5,
+          6
+        ],
+        "text": "Roll 1 die; success 5-6."
+      },
+      "actionType": "APPLY_DAMAGE_IMMUNITY",
+      "effectGroup": "Damage Immunity",
+      "actionText": "This card cannot be damaged",
+      "target": "This creature",
+      "value": "Cannot be damaged for 1 turn cycle on a 5-6 roll",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyDamageImmunity",
+      "params": {
+        "target": "This creature",
+        "valueText": "Cannot be damaged for 1 turn cycle on a 5-6 roll",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            5,
+            6
+          ],
+          "text": "Roll 1 die; success 5-6."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "ALL_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "successValues": [
+          5,
+          6
+        ],
+        "status": "DAMAGE_IMMUNE"
+      },
+      "notes": "Activated roll-gated immunity. Needs turn-cycle expiration QA.",
+      "needsReview": true
+    },
+    {
+      "id": "017-E02",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          5,
+          6
+        ],
+        "text": "Roll 1 die; success 5-6."
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "actionText": "Controller cannot play Magic while immunity is active",
+      "target": "Controller",
+      "value": "Cannot play Magic cards while this damage-immunity effect is active",
+      "duration": {
+        "text": "1 turn cycle",
+        "type": "TURN_CYCLES",
+        "amount": 1,
+        "unit": "TURN_CYCLE",
+        "starts": "EFFECT_ACTIVATION",
+        "expires": "BEGINNING_OF_START_PLAYER_TURN"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "Controller",
+        "valueText": "Cannot play Magic cards while this damage-immunity effect is active",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            5,
+            6
+          ],
+          "text": "Roll 1 die; success 5-6."
+        },
+        "duration": {
+          "text": "1 turn cycle",
+          "type": "TURN_CYCLES",
+          "amount": 1,
+          "unit": "TURN_CYCLE",
+          "starts": "EFFECT_ACTIVATION",
+          "expires": "BEGINNING_OF_START_PLAYER_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "restrictedCardTypes": [
+          "MAGIC"
+        ],
+        "tiedToEffectId": "017-E01"
+      },
+      "notes": "Magic lock should only exist if the damage-immunity roll succeeds and should expire with that immunity.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Generation I promo.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 10,
+  "speed": 3,
+  "hp": 100,
+  "attackName": "Rite Slice",
+  "attackDice": 2,
+  "modifier": 3,
+  "printedGeneration": "Generation - I",
+  "artworkTags": [
+    "WEAPON"
+  ]
+}

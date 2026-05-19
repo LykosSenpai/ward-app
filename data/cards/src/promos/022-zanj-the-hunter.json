@@ -1,0 +1,115 @@
+{
+  "id": "promo_022_zanj_the_hunter",
+  "name": "Zanj the Hunter",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "022",
+  "text": "Reduce opponent’s creature base armor level -6 while this card is on the field. Negate all other opponent AL increases.",
+  "effects": [
+    {
+      "id": "022-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "OPPONENT_CREATURE_ON_FIELD",
+        "text": "Opponent has a creature on the field."
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Stat Modifier",
+      "actionText": "Reduce opponent creature base AL",
+      "target": "Opponent primary creature",
+      "value": "Opponent creature base AL -6 while this card is on the field",
+      "duration": {
+        "text": "While this card remains on the field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "Opponent primary creature",
+        "valueText": "Opponent creature base AL -6 while this card is on the field",
+        "statChanges": [
+          {
+            "stat": "AL",
+            "operation": "ADD",
+            "value": -6,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "OPPONENT_CREATURE_ON_FIELD",
+          "text": "Opponent has a creature on the field."
+        },
+        "duration": {
+          "text": "While this card remains on the field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "affectsBaseStat": true
+      },
+      "notes": "Card says base Armor Level is reduced. Runtime needs QA because most current modifiers operate on effective stat layers.",
+      "needsReview": true
+    },
+    {
+      "id": "022-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "OPPONENT_AL_INCREASE",
+        "stat": "AL",
+        "text": "An effect would increase an opponent creature's AL."
+      },
+      "actionType": "SUPPRESS_MODIFIER_LAYER",
+      "effectGroup": "Stat Suppression",
+      "actionText": "Negate opponent AL increases",
+      "target": "Opponent creatures",
+      "value": "Negate all other opponent AL increases",
+      "duration": {
+        "text": "While this card remains on the field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "suppressModifierLayer",
+      "params": {
+        "target": "Opponent creatures",
+        "valueText": "Negate all other opponent AL increases",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_AL_INCREASE",
+          "stat": "AL",
+          "text": "An effect would increase an opponent creature's AL."
+        },
+        "duration": {
+          "text": "While this card remains on the field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "suppressedStats": [
+          "AL"
+        ],
+        "suppressPositiveModifiers": true,
+        "affectedPlayers": "OPPONENTS"
+      },
+      "notes": "Scope should suppress AL increases for opponent creatures only, while keeping the base -6 reduction active.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Generation I promo. Attack line has no printed modifier after Dice Rolls, so modifier is recorded as 0.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 4,
+  "hp": 60,
+  "attackName": "Rage Strike",
+  "attackDice": 4,
+  "modifier": 0,
+  "printedGeneration": "Generation - I",
+  "artworkTags": []
+}

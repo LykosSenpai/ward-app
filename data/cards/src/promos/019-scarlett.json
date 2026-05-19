@@ -1,0 +1,111 @@
+{
+  "id": "promo_019_scarlett",
+  "name": "Scarlett",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "019",
+  "text": "During battle, your opponent’s hit dice must match to hit this creature. Does not include \"Snake Eyes\". This creature’s AL cannot increase.",
+  "effects": [
+    {
+      "id": "019-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "TARGETING_THIS_CREATURE",
+        "text": "Opponent is rolling to hit Scarlett during battle."
+      },
+      "actionType": "APPLY_HIT_OUTCOME_OVERRIDE",
+      "effectGroup": "Hit Requirement",
+      "actionText": "Opponent hit dice must match to hit Scarlett",
+      "target": "Opposing creatures attacking this creature",
+      "value": "Opponent's hit dice must be matching values to hit; Snake Eyes does not count",
+      "duration": {
+        "text": "While this card remains on the field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyHitOutcomeOverride",
+      "params": {
+        "target": "Opposing creatures attacking this creature",
+        "valueText": "Opponent's hit dice must be matching values to hit; Snake Eyes does not count",
+        "statChanges": [],
+        "condition": {
+          "type": "TARGETING_THIS_CREATURE",
+          "text": "Opponent is rolling to hit Scarlett during battle."
+        },
+        "duration": {
+          "text": "While this card remains on the field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "requireHitDiceMatch": true,
+        "excludeSnakeEyes": true,
+        "overridesNormalAlCheck": true
+      },
+      "notes": "Requires battle hit-roll metadata. Double 1 remains Snake Eyes/critical miss and cannot satisfy this requirement.",
+      "needsReview": true
+    },
+    {
+      "id": "019-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "STAT_INCREASE_TO_THIS_CREATURE",
+        "stat": "AL",
+        "text": "An effect would increase Scarlett's AL."
+      },
+      "actionType": "SUPPRESS_MODIFIER_LAYER",
+      "effectGroup": "Stat Suppression",
+      "actionText": "Prevent AL increases on this creature",
+      "target": "This creature",
+      "value": "This creature's AL cannot increase",
+      "duration": {
+        "text": "While this card remains on the field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "suppressModifierLayer",
+      "params": {
+        "target": "This creature",
+        "valueText": "This creature's AL cannot increase",
+        "statChanges": [],
+        "condition": {
+          "type": "STAT_INCREASE_TO_THIS_CREATURE",
+          "stat": "AL",
+          "text": "An effect would increase Scarlett's AL."
+        },
+        "duration": {
+          "text": "While this card remains on the field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "suppressedStats": [
+          "AL"
+        ],
+        "suppressPositiveModifiers": true
+      },
+      "notes": "Uses the existing modifier-layer suppression family.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Generation II promo.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 1,
+  "speed": 12,
+  "hp": 10,
+  "attackName": "Bloody Draw",
+  "attackDice": 1,
+  "modifier": 4,
+  "printedGeneration": "Generation - II",
+  "artworkTags": [
+    "WEAPON"
+  ]
+}

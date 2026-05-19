@@ -1,0 +1,21 @@
+{
+  "id": "promo_020_sweet_tooth",
+  "name": "Sweet-Tooth",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "020",
+  "text": "",
+  "effects": [],
+  "notes": "G-III promo. No additional rules text visible beyond attack profile.",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 6,
+  "speed": 12,
+  "hp": 50,
+  "attackName": "Sugarrush",
+  "attackDice": 4,
+  "modifier": 4,
+  "printedGeneration": "G-III",
+  "artworkTags": []
+}

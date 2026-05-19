@@ -1,63 +1,64 @@
-# Adding Cards Through Source JSON
+# Adding Cards to the WARD App Card Library
 
-The app now has a source-card workflow that is safer than editing generated pack files directly.
+The app now supports card data through split source files. Do not edit generated pack JSON directly unless you are doing a temporary local experiment.
 
-## Preferred workflow
+## Where to add cards
 
-1. Create or edit one source card file:
-
-```text
-data/cards/src/<pack-folder>/<number-card-slug>.json
-```
-
-2. Keep the card ID stable:
-
-```json
-"id": "promo_013_example_card"
-```
-
-3. Add a matching card image:
+Promo cards live here:
 
 ```text
-apps/client/public/card-images/promo_013_example_card.webp
+data/cards/src/promos/
 ```
 
-4. Rebuild generated packs:
+The generated pack file is built here:
+
+```text
+data/cards/packs/ward-promos.json
+```
+
+Card images live here:
+
+```text
+apps/client/public/card-images/
+```
+
+Use a file name that matches the card id, for example:
+
+```text
+promo_023_new_card_name.webp
+```
+
+## Normal add-card workflow
+
+1. Add one JSON file per card under `data/cards/src/promos/`.
+2. Add the matching card image under `apps/client/public/card-images/`.
+3. Add the image file name to `apps/client/public/card-images/manifest.json`.
+4. Rebuild generated packs.
+5. Run the project checks.
 
 ```powershell
+cd C:\Users\brjar\Documents\ward-app
 pnpm.cmd cards:build
-```
-
-5. Verify everything:
-
-```powershell
 pnpm.cmd cards:check
 pnpm.cmd effects:audit
 pnpm.cmd check
 ```
 
-## Important rule
-
-Do not hand-edit these generated files unless you are debugging:
-
-```text
-data/cards/packs/ward-gen1.json
-data/cards/packs/ward-gen2.json
-data/cards/packs/ward-gen3.json
-data/cards/packs/ward-promos.json
-```
-
-The build script recreates generated pack files from `data/cards/src/**`.
-
-## Promo pack numbering
+## Next promo ids
 
 The current promo pack uses:
 
 ```text
 promo_001_aqua_dragon
-promo_002_arcturus
 ...
-promo_012_luc_tiberius
+promo_022_zanj_the_hunter
 ```
 
-For the next uploaded promo image batch, continue at `promo_013_...` unless the card has an official promo number.
+Continue future uploads with:
+
+```text
+promo_023_<slug>
+promo_024_<slug>
+```
+
+Keep future promo cards in the promo source pack unless you intentionally want them mixed into Gen 1, Gen 2, or Gen 3.

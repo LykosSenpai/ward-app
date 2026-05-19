@@ -1,8 +1,8 @@
 {
   "id": "ward-promos",
   "name": "WARD Promo Cards",
-  "version": "1.0.0",
-  "source": "user-uploaded-promo-card-images-2026-05-19",
+  "version": "1.1.0",
+  "source": "user-uploaded-promo-card-images-2026-05-19-batches-1-2",
   "globalRules": {
     "wardRulesVersionSource": "Ward Rules Guide 2nd Edition, effective 2026-01-27",
     "maxArmorLevel": 12,
@@ -1027,6 +1027,923 @@
       "attackDice": 3,
       "modifier": 2,
       "printedGeneration": "Generation II"
+    },
+    {
+      "id": "promo_013_maximum_ward",
+      "name": "Maximum Ward",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "013",
+      "text": "All players must roll a die each turn. If the result of all die match, all cards on the field are destroyed. If this effect occurs, send this card to the cemetery.",
+      "effects": [
+        {
+          "id": "013-E01",
+          "trigger": "BEGINNING_OF_EACH_TURN",
+          "condition": {
+            "type": "ALL_PLAYERS_MATCHING_TURN_ROLL",
+            "dieSize": 6,
+            "dicePerPlayer": 1,
+            "text": "Each turn, all players roll 1D6; if all results match, destroy all cards on the field."
+          },
+          "actionType": "RESOLVE_FIELD_ROLL_OUTCOME",
+          "effectGroup": "Field Roll",
+          "actionText": "All players roll; matching results destroy the field",
+          "target": "All cards on the field",
+          "value": "If all players' die results match, destroy all cards on the field and send Maximum Ward to the cemetery",
+          "duration": {
+            "text": "Each turn while field effect is active",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "resolveFieldRollOutcome",
+          "params": {
+            "target": "All cards on the field",
+            "valueText": "If all players' die results match, destroy all cards on the field and send Maximum Ward to the cemetery",
+            "statChanges": [],
+            "condition": {
+              "type": "ALL_PLAYERS_MATCHING_TURN_ROLL",
+              "dieSize": 6,
+              "dicePerPlayer": 1,
+              "text": "Each turn, all players roll 1D6; if all results match, destroy all cards on the field."
+            },
+            "duration": {
+              "text": "Each turn while field effect is active",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "allPlayersRoll": true,
+            "dieSize": 6,
+            "dicePerPlayer": 1,
+            "matchAllResults": true,
+            "destroyAllCardsOnField": true,
+            "sendSourceToCemetery": true
+          },
+          "notes": "Requires a multiplayer-capable all-players turn-start roll resolver and a destroy-all-cards-on-field routine.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Infinite Field promo. Card text says 'all die match'; modeled as all participating players' 1D6 results matching.",
+      "cardType": "MAGIC",
+      "magicType": "INFINITE",
+      "magicSubType": "FIELD",
+      "isEquip": false,
+      "isField": true,
+      "printedGeneration": "Pre-Order Exclusive"
+    },
+    {
+      "id": "promo_014_moon_owl",
+      "name": "Moon Owl",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "014",
+      "text": "If this card is removed from the field by your opponent, it’s instead equipped to your opponent’s primary creature as a magic card. The equipped creature loses 10 HP at the beginning of each of their turns. Return this card to the original owner’s deck if the equipped creature is removed from the field.",
+      "effects": [
+        {
+          "id": "014-E01",
+          "trigger": "WHEN_THIS_CARD_LEAVES_FIELD",
+          "condition": {
+            "type": "REMOVED_FROM_FIELD_BY_OPPONENT",
+            "text": "Moon Owl would be removed from the field by an opponent."
+          },
+          "actionType": "CONVERT_CREATURE_TO_EQUIP_ON_DEATH",
+          "effectGroup": "Replacement / Equip",
+          "actionText": "Equip this card to opponent primary instead of removing it",
+          "target": "Opponent primary creature",
+          "value": "This card becomes an equipped magic card on the opponent's primary creature",
+          "duration": {
+            "text": "Instant replacement",
+            "type": "INSTANT"
+          },
+          "reusableFunction": "convertCreatureToEquipOnRemoval",
+          "params": {
+            "target": "Opponent primary creature",
+            "valueText": "This card becomes an equipped magic card on the opponent's primary creature",
+            "statChanges": [],
+            "condition": {
+              "type": "REMOVED_FROM_FIELD_BY_OPPONENT",
+              "text": "Moon Owl would be removed from the field by an opponent."
+            },
+            "duration": {
+              "text": "Instant replacement",
+              "type": "INSTANT"
+            },
+            "damageType": "",
+            "sourceLinked": true,
+            "usesAnchoring": true,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "treatAsMagic": true,
+            "magicType": "INFINITE",
+            "magicSubType": "EQUIP",
+            "replacementEffect": true
+          },
+          "notes": "Uses the existing convert-creature-to-equip action family, but the trigger is broader than death: any opponent-caused field removal.",
+          "needsReview": true
+        },
+        {
+          "id": "014-E02",
+          "trigger": "BEGINNING_OF_EQUIPPED_CREATURE_CONTROLLER_TURN",
+          "condition": {
+            "type": "WHILE_EQUIPPED",
+            "text": "Moon Owl is equipped to a creature."
+          },
+          "actionType": "APPLY_START_TURN_HP_LOSS",
+          "effectGroup": "Damage",
+          "actionText": "Equipped creature loses HP at turn start",
+          "target": "Equipped creature",
+          "value": "Lose 10 HP",
+          "duration": {
+            "text": "Each turn while equipped",
+            "type": "WHILE_EQUIPPED"
+          },
+          "reusableFunction": "applyStartTurnHpLoss",
+          "params": {
+            "target": "Equipped creature",
+            "valueText": "Lose 10 HP",
+            "statChanges": [],
+            "condition": {
+              "type": "WHILE_EQUIPPED",
+              "text": "Moon Owl is equipped to a creature."
+            },
+            "duration": {
+              "text": "Each turn while equipped",
+              "type": "WHILE_EQUIPPED"
+            },
+            "damageType": "EFFECT_DAMAGE",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "amount": 10,
+            "timing": "BEGINNING_OF_EQUIPPED_CREATURE_CONTROLLER_TURN"
+          },
+          "notes": "Needs equipped-creature-controller turn-start trigger routing.",
+          "needsReview": true
+        },
+        {
+          "id": "014-E03",
+          "trigger": "WHEN_EQUIPPED_CREATURE_REMOVED_FROM_FIELD",
+          "condition": {
+            "type": "EQUIPPED_CREATURE_REMOVED_FROM_FIELD",
+            "text": "The creature Moon Owl is equipped to leaves the field."
+          },
+          "actionType": "RETURN_SELF_TO_DECK_AND_SHUFFLE",
+          "effectGroup": "Zone Movement",
+          "actionText": "Return Moon Owl to original owner's deck",
+          "target": "This card",
+          "value": "Return to original owner deck if the equipped creature is removed from the field",
+          "duration": {
+            "text": "Instant",
+            "type": "INSTANT"
+          },
+          "reusableFunction": "returnSelfToDeckAndShuffle",
+          "params": {
+            "target": "This card",
+            "valueText": "Return to original owner deck if the equipped creature is removed from the field",
+            "statChanges": [],
+            "condition": {
+              "type": "EQUIPPED_CREATURE_REMOVED_FROM_FIELD",
+              "text": "The creature Moon Owl is equipped to leaves the field."
+            },
+            "duration": {
+              "text": "Instant",
+              "type": "INSTANT"
+            },
+            "damageType": "",
+            "sourceLinked": true,
+            "usesAnchoring": true,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "destination": "ORIGINAL_OWNER_DECK",
+            "shuffle": true
+          },
+          "notes": "Source-linked cleanup tied to the equipped creature leaving the field.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Boss/pre-order promo. Removal replacement and equip cleanup need runtime QA.",
+      "cardType": "CREATURE",
+      "creatureType": "Beast",
+      "armorLevel": 12,
+      "speed": 12,
+      "hp": 70,
+      "attackName": "Lunar Slam",
+      "attackDice": 2,
+      "modifier": 4,
+      "printedGeneration": "Pre-Order Exclusive",
+      "artworkTags": [
+        "MOON",
+        "BIRD"
+      ]
+    },
+    {
+      "id": "promo_015_nadara",
+      "name": "Nadara",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "015",
+      "text": "During battle you may use the below attack in place of \"Slash\". Piecing Arrow. 1 Dice Rolls + 4.",
+      "effects": [
+        {
+          "id": "015-E01",
+          "trigger": "DURING_BATTLE_ACTIVATED",
+          "condition": {
+            "type": "PLAYER_CHOICE",
+            "text": "During battle, choose Piecing Arrow instead of Slash."
+          },
+          "actionType": "REPLACE_ATTACK_PROFILE",
+          "effectGroup": "Alternate Attack",
+          "actionText": "Use Piecing Arrow instead of Slash",
+          "target": "This creature",
+          "value": "Attack becomes Piecing Arrow: 1 Dice Roll +4 for this battle",
+          "duration": {
+            "text": "Current battle",
+            "type": "CURRENT_BATTLE"
+          },
+          "reusableFunction": "replaceAttackProfile",
+          "params": {
+            "target": "This creature",
+            "valueText": "Attack becomes Piecing Arrow: 1 Dice Roll +4 for this battle",
+            "statChanges": [],
+            "condition": {
+              "type": "PLAYER_CHOICE",
+              "text": "During battle, choose Piecing Arrow instead of Slash."
+            },
+            "duration": {
+              "text": "Current battle",
+              "type": "CURRENT_BATTLE"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "alternateAttack": {
+              "attackName": "Piecing Arrow",
+              "attackDice": 1,
+              "modifier": 4
+            },
+            "replacesAttackName": "Slash"
+          },
+          "notes": "Card text appears to spell the alternate attack as 'Piecing Arrow'; kept as printed.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Generation II promo.",
+      "cardType": "CREATURE",
+      "creatureType": "Humanoid",
+      "armorLevel": 6,
+      "speed": 12,
+      "hp": 60,
+      "attackName": "Slash",
+      "attackDice": 4,
+      "modifier": 1,
+      "printedGeneration": "Generation - II",
+      "artworkTags": [
+        "WEAPON",
+        "BOW"
+      ]
+    },
+    {
+      "id": "promo_016_omega_titan",
+      "name": "Omega Titan",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "016",
+      "text": "During your turn, roll a die. If the result is 1-3, your opponent cannot cause damage or play magic cards until the end of your turn.",
+      "effects": [
+        {
+          "id": "016-E01",
+          "trigger": "DURING_YOUR_TURN_ACTIVATED",
+          "condition": {
+            "type": "ROLL_DIE_RANGE",
+            "dieSize": 6,
+            "successValues": [
+              1,
+              2,
+              3
+            ],
+            "text": "Roll 1 die; success 1-3."
+          },
+          "actionType": "PREVENT_DAMAGE",
+          "effectGroup": "Damage Prevention",
+          "actionText": "Opponent cannot cause damage",
+          "target": "Opponent players",
+          "value": "Opponent cannot cause damage until end of your turn on a 1-3 roll",
+          "duration": {
+            "text": "Until end of your turn",
+            "type": "CURRENT_TURN"
+          },
+          "reusableFunction": "preventDamage",
+          "params": {
+            "target": "Opponent players",
+            "valueText": "Opponent cannot cause damage until end of your turn on a 1-3 roll",
+            "statChanges": [],
+            "condition": {
+              "type": "ROLL_DIE_RANGE",
+              "dieSize": 6,
+              "successValues": [
+                1,
+                2,
+                3
+              ],
+              "text": "Roll 1 die; success 1-3."
+            },
+            "duration": {
+              "text": "Until end of your turn",
+              "type": "CURRENT_TURN"
+            },
+            "damageType": "ALL_DAMAGE",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "preventedDamageController": "OPPONENTS",
+            "dieSize": 6,
+            "successValues": [
+              1,
+              2,
+              3
+            ]
+          },
+          "notes": "Activated roll-gated prevention. Needs guard coverage for battle, effect damage, and already-pending damage windows.",
+          "needsReview": true
+        },
+        {
+          "id": "016-E02",
+          "trigger": "DURING_YOUR_TURN_ACTIVATED",
+          "condition": {
+            "type": "ROLL_DIE_RANGE",
+            "dieSize": 6,
+            "successValues": [
+              1,
+              2,
+              3
+            ],
+            "text": "Roll 1 die; success 1-3."
+          },
+          "actionType": "APPLY_PLAY_RESTRICTION",
+          "effectGroup": "Play Restriction",
+          "actionText": "Opponent cannot play Magic cards",
+          "target": "Opponent players",
+          "value": "Opponent cannot play Magic cards until end of your turn on a 1-3 roll",
+          "duration": {
+            "text": "Until end of your turn",
+            "type": "CURRENT_TURN"
+          },
+          "reusableFunction": "applyPlayRestriction",
+          "params": {
+            "target": "Opponent players",
+            "valueText": "Opponent cannot play Magic cards until end of your turn on a 1-3 roll",
+            "statChanges": [],
+            "condition": {
+              "type": "ROLL_DIE_RANGE",
+              "dieSize": 6,
+              "successValues": [
+                1,
+                2,
+                3
+              ],
+              "text": "Roll 1 die; success 1-3."
+            },
+            "duration": {
+              "text": "Until end of your turn",
+              "type": "CURRENT_TURN"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "restrictedCardTypes": [
+              "MAGIC"
+            ],
+            "dieSize": 6,
+            "successValues": [
+              1,
+              2,
+              3
+            ]
+          },
+          "notes": "Needs Magic-play guard QA for standard, infinite, equip, field, and Lightning after effect resolves.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Boss/pre-order Cosmic promo.",
+      "cardType": "CREATURE",
+      "creatureType": "Cosmic",
+      "armorLevel": 12,
+      "speed": 6,
+      "hp": 120,
+      "attackName": "Nebula Blast",
+      "attackDice": 4,
+      "modifier": 4,
+      "printedGeneration": "Pre-Order Exclusive",
+      "artworkTags": [
+        "SPACE"
+      ]
+    },
+    {
+      "id": "promo_017_perseus_valenthil",
+      "name": "Perseus Valenthil",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "017",
+      "text": "During your turn roll 1 die. If 5-6 this card cannot be damaged for 1 turn cycle. You also cannot play magic cards while this effect is active.",
+      "effects": [
+        {
+          "id": "017-E01",
+          "trigger": "DURING_YOUR_TURN_ACTIVATED",
+          "condition": {
+            "type": "ROLL_DIE_RANGE",
+            "dieSize": 6,
+            "successValues": [
+              5,
+              6
+            ],
+            "text": "Roll 1 die; success 5-6."
+          },
+          "actionType": "APPLY_DAMAGE_IMMUNITY",
+          "effectGroup": "Damage Immunity",
+          "actionText": "This card cannot be damaged",
+          "target": "This creature",
+          "value": "Cannot be damaged for 1 turn cycle on a 5-6 roll",
+          "duration": {
+            "text": "1 turn cycle",
+            "type": "TURN_CYCLES",
+            "amount": 1,
+            "unit": "TURN_CYCLE",
+            "starts": "EFFECT_ACTIVATION",
+            "expires": "BEGINNING_OF_START_PLAYER_TURN"
+          },
+          "reusableFunction": "applyDamageImmunity",
+          "params": {
+            "target": "This creature",
+            "valueText": "Cannot be damaged for 1 turn cycle on a 5-6 roll",
+            "statChanges": [],
+            "condition": {
+              "type": "ROLL_DIE_RANGE",
+              "dieSize": 6,
+              "successValues": [
+                5,
+                6
+              ],
+              "text": "Roll 1 die; success 5-6."
+            },
+            "duration": {
+              "text": "1 turn cycle",
+              "type": "TURN_CYCLES",
+              "amount": 1,
+              "unit": "TURN_CYCLE",
+              "starts": "EFFECT_ACTIVATION",
+              "expires": "BEGINNING_OF_START_PLAYER_TURN"
+            },
+            "damageType": "ALL_DAMAGE",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "dieSize": 6,
+            "successValues": [
+              5,
+              6
+            ],
+            "status": "DAMAGE_IMMUNE"
+          },
+          "notes": "Activated roll-gated immunity. Needs turn-cycle expiration QA.",
+          "needsReview": true
+        },
+        {
+          "id": "017-E02",
+          "trigger": "DURING_YOUR_TURN_ACTIVATED",
+          "condition": {
+            "type": "ROLL_DIE_RANGE",
+            "dieSize": 6,
+            "successValues": [
+              5,
+              6
+            ],
+            "text": "Roll 1 die; success 5-6."
+          },
+          "actionType": "APPLY_PLAY_RESTRICTION",
+          "effectGroup": "Play Restriction",
+          "actionText": "Controller cannot play Magic while immunity is active",
+          "target": "Controller",
+          "value": "Cannot play Magic cards while this damage-immunity effect is active",
+          "duration": {
+            "text": "1 turn cycle",
+            "type": "TURN_CYCLES",
+            "amount": 1,
+            "unit": "TURN_CYCLE",
+            "starts": "EFFECT_ACTIVATION",
+            "expires": "BEGINNING_OF_START_PLAYER_TURN"
+          },
+          "reusableFunction": "applyPlayRestriction",
+          "params": {
+            "target": "Controller",
+            "valueText": "Cannot play Magic cards while this damage-immunity effect is active",
+            "statChanges": [],
+            "condition": {
+              "type": "ROLL_DIE_RANGE",
+              "dieSize": 6,
+              "successValues": [
+                5,
+                6
+              ],
+              "text": "Roll 1 die; success 5-6."
+            },
+            "duration": {
+              "text": "1 turn cycle",
+              "type": "TURN_CYCLES",
+              "amount": 1,
+              "unit": "TURN_CYCLE",
+              "starts": "EFFECT_ACTIVATION",
+              "expires": "BEGINNING_OF_START_PLAYER_TURN"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "restrictedCardTypes": [
+              "MAGIC"
+            ],
+            "tiedToEffectId": "017-E01"
+          },
+          "notes": "Magic lock should only exist if the damage-immunity roll succeeds and should expire with that immunity.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Generation I promo.",
+      "cardType": "CREATURE",
+      "creatureType": "Humanoid",
+      "armorLevel": 10,
+      "speed": 3,
+      "hp": 100,
+      "attackName": "Rite Slice",
+      "attackDice": 2,
+      "modifier": 3,
+      "printedGeneration": "Generation - I",
+      "artworkTags": [
+        "WEAPON"
+      ]
+    },
+    {
+      "id": "promo_018_rampage_orc",
+      "name": "Rampage Orc",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "018",
+      "text": "",
+      "effects": [],
+      "notes": "G-III pre-order promo. No additional rules text visible beyond attack profile.",
+      "cardType": "CREATURE",
+      "creatureType": "Humanoid",
+      "armorLevel": 11,
+      "speed": 11,
+      "hp": 110,
+      "attackName": "Fatal Barrage",
+      "attackDice": 4,
+      "modifier": 5,
+      "printedGeneration": "G-III Pre-Order",
+      "artworkTags": []
+    },
+    {
+      "id": "promo_019_scarlett",
+      "name": "Scarlett",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "019",
+      "text": "During battle, your opponent’s hit dice must match to hit this creature. Does not include \"Snake Eyes\". This creature’s AL cannot increase.",
+      "effects": [
+        {
+          "id": "019-E01",
+          "trigger": "STATIC_WHILE_ON_FIELD",
+          "condition": {
+            "type": "TARGETING_THIS_CREATURE",
+            "text": "Opponent is rolling to hit Scarlett during battle."
+          },
+          "actionType": "APPLY_HIT_OUTCOME_OVERRIDE",
+          "effectGroup": "Hit Requirement",
+          "actionText": "Opponent hit dice must match to hit Scarlett",
+          "target": "Opposing creatures attacking this creature",
+          "value": "Opponent's hit dice must be matching values to hit; Snake Eyes does not count",
+          "duration": {
+            "text": "While this card remains on the field",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "applyHitOutcomeOverride",
+          "params": {
+            "target": "Opposing creatures attacking this creature",
+            "valueText": "Opponent's hit dice must be matching values to hit; Snake Eyes does not count",
+            "statChanges": [],
+            "condition": {
+              "type": "TARGETING_THIS_CREATURE",
+              "text": "Opponent is rolling to hit Scarlett during battle."
+            },
+            "duration": {
+              "text": "While this card remains on the field",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "requireHitDiceMatch": true,
+            "excludeSnakeEyes": true,
+            "overridesNormalAlCheck": true
+          },
+          "notes": "Requires battle hit-roll metadata. Double 1 remains Snake Eyes/critical miss and cannot satisfy this requirement.",
+          "needsReview": true
+        },
+        {
+          "id": "019-E02",
+          "trigger": "STATIC_WHILE_ON_FIELD",
+          "condition": {
+            "type": "STAT_INCREASE_TO_THIS_CREATURE",
+            "stat": "AL",
+            "text": "An effect would increase Scarlett's AL."
+          },
+          "actionType": "SUPPRESS_MODIFIER_LAYER",
+          "effectGroup": "Stat Suppression",
+          "actionText": "Prevent AL increases on this creature",
+          "target": "This creature",
+          "value": "This creature's AL cannot increase",
+          "duration": {
+            "text": "While this card remains on the field",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "suppressModifierLayer",
+          "params": {
+            "target": "This creature",
+            "valueText": "This creature's AL cannot increase",
+            "statChanges": [],
+            "condition": {
+              "type": "STAT_INCREASE_TO_THIS_CREATURE",
+              "stat": "AL",
+              "text": "An effect would increase Scarlett's AL."
+            },
+            "duration": {
+              "text": "While this card remains on the field",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "suppressedStats": [
+              "AL"
+            ],
+            "suppressPositiveModifiers": true
+          },
+          "notes": "Uses the existing modifier-layer suppression family.",
+          "needsReview": false
+        }
+      ],
+      "notes": "Generation II promo.",
+      "cardType": "CREATURE",
+      "creatureType": "Humanoid",
+      "armorLevel": 1,
+      "speed": 12,
+      "hp": 10,
+      "attackName": "Bloody Draw",
+      "attackDice": 1,
+      "modifier": 4,
+      "printedGeneration": "Generation - II",
+      "artworkTags": [
+        "WEAPON"
+      ]
+    },
+    {
+      "id": "promo_020_sweet_tooth",
+      "name": "Sweet-Tooth",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "020",
+      "text": "",
+      "effects": [],
+      "notes": "G-III promo. No additional rules text visible beyond attack profile.",
+      "cardType": "CREATURE",
+      "creatureType": "Cosmic",
+      "armorLevel": 6,
+      "speed": 12,
+      "hp": 50,
+      "attackName": "Sugarrush",
+      "attackDice": 4,
+      "modifier": 4,
+      "printedGeneration": "G-III",
+      "artworkTags": []
+    },
+    {
+      "id": "promo_021_ward_united",
+      "name": "Ward United",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "021",
+      "text": "While this card is on the field, the attack dice rolls and modifier of any creatures used as sacrifice are added to the summoned creature they were sacrificed for.",
+      "effects": [
+        {
+          "id": "021-E01",
+          "trigger": "STATIC_WHILE_ON_FIELD",
+          "condition": {
+            "type": "CREATURES_USED_AS_SACRIFICE",
+            "text": "A creature is summoned by sacrificing one or more creatures while Ward United is on the field."
+          },
+          "actionType": "APPLY_SACRIFICE_VALUE",
+          "effectGroup": "Summon Modifier",
+          "actionText": "Sacrificed creatures add attack profile to summoned creature",
+          "target": "Summoned creature",
+          "value": "Add the attack dice rolls and modifier of sacrificed creatures to the creature summoned with those sacrifices",
+          "duration": {
+            "text": "While this field card remains on the field",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "applySacrificeValue",
+          "params": {
+            "target": "Summoned creature",
+            "valueText": "Add the attack dice rolls and modifier of sacrificed creatures to the creature summoned with those sacrifices",
+            "statChanges": [
+              {
+                "stat": "ATK_DICE_ROLLS",
+                "operation": "ADD_FROM_SACRIFICED_CREATURES",
+                "value": "attackDice",
+                "rounding": null
+              },
+              {
+                "stat": "MODIFIER",
+                "operation": "ADD_FROM_SACRIFICED_CREATURES",
+                "value": "modifier",
+                "rounding": null
+              }
+            ],
+            "condition": {
+              "type": "CREATURES_USED_AS_SACRIFICE",
+              "text": "A creature is summoned by sacrificing one or more creatures while Ward United is on the field."
+            },
+            "duration": {
+              "text": "While this field card remains on the field",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "statSources": "SACRIFICED_CREATURES",
+            "appliesToSummonedCreature": true
+          },
+          "notes": "Needs summon pipeline support to preserve which creatures were sacrificed and apply their printed attack dice/modifier to the summoned creature.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Infinite Field pre-order promo.",
+      "cardType": "MAGIC",
+      "magicType": "INFINITE",
+      "magicSubType": "FIELD",
+      "isEquip": false,
+      "isField": true,
+      "printedGeneration": "Pre-Order Exclusive"
+    },
+    {
+      "id": "promo_022_zanj_the_hunter",
+      "name": "Zanj the Hunter",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "022",
+      "text": "Reduce opponent’s creature base armor level -6 while this card is on the field. Negate all other opponent AL increases.",
+      "effects": [
+        {
+          "id": "022-E01",
+          "trigger": "STATIC_WHILE_ON_FIELD",
+          "condition": {
+            "type": "OPPONENT_CREATURE_ON_FIELD",
+            "text": "Opponent has a creature on the field."
+          },
+          "actionType": "APPLY_STAT_MODIFIER",
+          "effectGroup": "Stat Modifier",
+          "actionText": "Reduce opponent creature base AL",
+          "target": "Opponent primary creature",
+          "value": "Opponent creature base AL -6 while this card is on the field",
+          "duration": {
+            "text": "While this card remains on the field",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "applyStatModifier",
+          "params": {
+            "target": "Opponent primary creature",
+            "valueText": "Opponent creature base AL -6 while this card is on the field",
+            "statChanges": [
+              {
+                "stat": "AL",
+                "operation": "ADD",
+                "value": -6,
+                "rounding": null
+              }
+            ],
+            "condition": {
+              "type": "OPPONENT_CREATURE_ON_FIELD",
+              "text": "Opponent has a creature on the field."
+            },
+            "duration": {
+              "text": "While this card remains on the field",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "affectsBaseStat": true
+          },
+          "notes": "Card says base Armor Level is reduced. Runtime needs QA because most current modifiers operate on effective stat layers.",
+          "needsReview": true
+        },
+        {
+          "id": "022-E02",
+          "trigger": "STATIC_WHILE_ON_FIELD",
+          "condition": {
+            "type": "OPPONENT_AL_INCREASE",
+            "stat": "AL",
+            "text": "An effect would increase an opponent creature's AL."
+          },
+          "actionType": "SUPPRESS_MODIFIER_LAYER",
+          "effectGroup": "Stat Suppression",
+          "actionText": "Negate opponent AL increases",
+          "target": "Opponent creatures",
+          "value": "Negate all other opponent AL increases",
+          "duration": {
+            "text": "While this card remains on the field",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "suppressModifierLayer",
+          "params": {
+            "target": "Opponent creatures",
+            "valueText": "Negate all other opponent AL increases",
+            "statChanges": [],
+            "condition": {
+              "type": "OPPONENT_AL_INCREASE",
+              "stat": "AL",
+              "text": "An effect would increase an opponent creature's AL."
+            },
+            "duration": {
+              "text": "While this card remains on the field",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "suppressedStats": [
+              "AL"
+            ],
+            "suppressPositiveModifiers": true,
+            "affectedPlayers": "OPPONENTS"
+          },
+          "notes": "Scope should suppress AL increases for opponent creatures only, while keeping the base -6 reduction active.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Generation I promo. Attack line has no printed modifier after Dice Rolls, so modifier is recorded as 0.",
+      "cardType": "CREATURE",
+      "creatureType": "Humanoid",
+      "armorLevel": 6,
+      "speed": 4,
+      "hp": 60,
+      "attackName": "Rage Strike",
+      "attackDice": 4,
+      "modifier": 0,
+      "printedGeneration": "Generation - I",
+      "artworkTags": []
     }
   ]
 }

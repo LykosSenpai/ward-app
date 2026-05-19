@@ -1,0 +1,21 @@
+{
+  "id": "promo_018_rampage_orc",
+  "name": "Rampage Orc",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "018",
+  "text": "",
+  "effects": [],
+  "notes": "G-III pre-order promo. No additional rules text visible beyond attack profile.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 11,
+  "speed": 11,
+  "hp": 110,
+  "attackName": "Fatal Barrage",
+  "attackDice": 4,
+  "modifier": 5,
+  "printedGeneration": "G-III Pre-Order",
+  "artworkTags": []
+}

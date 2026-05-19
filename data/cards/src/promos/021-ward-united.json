@@ -1,0 +1,72 @@
+{
+  "id": "promo_021_ward_united",
+  "name": "Ward United",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "021",
+  "text": "While this card is on the field, the attack dice rolls and modifier of any creatures used as sacrifice are added to the summoned creature they were sacrificed for.",
+  "effects": [
+    {
+      "id": "021-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "CREATURES_USED_AS_SACRIFICE",
+        "text": "A creature is summoned by sacrificing one or more creatures while Ward United is on the field."
+      },
+      "actionType": "APPLY_SACRIFICE_VALUE",
+      "effectGroup": "Summon Modifier",
+      "actionText": "Sacrificed creatures add attack profile to summoned creature",
+      "target": "Summoned creature",
+      "value": "Add the attack dice rolls and modifier of sacrificed creatures to the creature summoned with those sacrifices",
+      "duration": {
+        "text": "While this field card remains on the field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applySacrificeValue",
+      "params": {
+        "target": "Summoned creature",
+        "valueText": "Add the attack dice rolls and modifier of sacrificed creatures to the creature summoned with those sacrifices",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD_FROM_SACRIFICED_CREATURES",
+            "value": "attackDice",
+            "rounding": null
+          },
+          {
+            "stat": "MODIFIER",
+            "operation": "ADD_FROM_SACRIFICED_CREATURES",
+            "value": "modifier",
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "CREATURES_USED_AS_SACRIFICE",
+          "text": "A creature is summoned by sacrificing one or more creatures while Ward United is on the field."
+        },
+        "duration": {
+          "text": "While this field card remains on the field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "statSources": "SACRIFICED_CREATURES",
+        "appliesToSummonedCreature": true
+      },
+      "notes": "Needs summon pipeline support to preserve which creatures were sacrificed and apply their printed attack dice/modifier to the summoned creature.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Infinite Field pre-order promo.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true,
+  "printedGeneration": "Pre-Order Exclusive"
+}

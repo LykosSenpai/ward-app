@@ -1,0 +1,142 @@
+{
+  "id": "promo_016_omega_titan",
+  "name": "Omega Titan",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "016",
+  "text": "During your turn, roll a die. If the result is 1-3, your opponent cannot cause damage or play magic cards until the end of your turn.",
+  "effects": [
+    {
+      "id": "016-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2,
+          3
+        ],
+        "text": "Roll 1 die; success 1-3."
+      },
+      "actionType": "PREVENT_DAMAGE",
+      "effectGroup": "Damage Prevention",
+      "actionText": "Opponent cannot cause damage",
+      "target": "Opponent players",
+      "value": "Opponent cannot cause damage until end of your turn on a 1-3 roll",
+      "duration": {
+        "text": "Until end of your turn",
+        "type": "CURRENT_TURN"
+      },
+      "reusableFunction": "preventDamage",
+      "params": {
+        "target": "Opponent players",
+        "valueText": "Opponent cannot cause damage until end of your turn on a 1-3 roll",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            1,
+            2,
+            3
+          ],
+          "text": "Roll 1 die; success 1-3."
+        },
+        "duration": {
+          "text": "Until end of your turn",
+          "type": "CURRENT_TURN"
+        },
+        "damageType": "ALL_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "preventedDamageController": "OPPONENTS",
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2,
+          3
+        ]
+      },
+      "notes": "Activated roll-gated prevention. Needs guard coverage for battle, effect damage, and already-pending damage windows.",
+      "needsReview": true
+    },
+    {
+      "id": "016-E02",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ROLL_DIE_RANGE",
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2,
+          3
+        ],
+        "text": "Roll 1 die; success 1-3."
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "actionText": "Opponent cannot play Magic cards",
+      "target": "Opponent players",
+      "value": "Opponent cannot play Magic cards until end of your turn on a 1-3 roll",
+      "duration": {
+        "text": "Until end of your turn",
+        "type": "CURRENT_TURN"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "Opponent players",
+        "valueText": "Opponent cannot play Magic cards until end of your turn on a 1-3 roll",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_DIE_RANGE",
+          "dieSize": 6,
+          "successValues": [
+            1,
+            2,
+            3
+          ],
+          "text": "Roll 1 die; success 1-3."
+        },
+        "duration": {
+          "text": "Until end of your turn",
+          "type": "CURRENT_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "restrictedCardTypes": [
+          "MAGIC"
+        ],
+        "dieSize": 6,
+        "successValues": [
+          1,
+          2,
+          3
+        ]
+      },
+      "notes": "Needs Magic-play guard QA for standard, infinite, equip, field, and Lightning after effect resolves.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Boss/pre-order Cosmic promo.",
+  "cardType": "CREATURE",
+  "creatureType": "Cosmic",
+  "armorLevel": 12,
+  "speed": 6,
+  "hp": 120,
+  "attackName": "Nebula Blast",
+  "attackDice": 4,
+  "modifier": 4,
+  "printedGeneration": "Pre-Order Exclusive",
+  "artworkTags": [
+    "SPACE"
+  ]
+}
