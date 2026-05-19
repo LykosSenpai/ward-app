@@ -6,6 +6,7 @@ import {
   assignGameplayKeybinding,
   formatKeybindingCode,
   GAMEPLAY_KEYBINDING_DEFINITIONS,
+  readGameplayKeybindings,
   resetGameplayKeybindings,
   writeGameplayKeybindings,
   type GameplayKeybindingAction,
@@ -16,8 +17,6 @@ import { PasswordInput } from "./ui/PasswordInput";
 type ProfilePageProps = {
   onUserUpdated: (user: AuthUser) => void;
   discordAuthEnabled: boolean;
-  keybindings: GameplayKeybindings;
-  onKeybindingsChanged: (keybindings: GameplayKeybindings) => void;
 };
 
 type TwoFactorSetup = {
@@ -27,8 +26,6 @@ type TwoFactorSetup = {
 
 export function ProfilePage({
   discordAuthEnabled,
-  keybindings,
-  onKeybindingsChanged,
   onUserUpdated
 }: ProfilePageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -46,6 +43,7 @@ export function ProfilePage({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [keybindings, setKeybindings] = useState<GameplayKeybindings>(() => readGameplayKeybindings());
   const [capturingKeybindingAction, setCapturingKeybindingAction] = useState<GameplayKeybindingAction | null>(null);
 
   useEffect(() => {
@@ -105,7 +103,7 @@ export function ProfilePage({
 
   function saveKeybinding(action: GameplayKeybindingAction, code: string) {
     const nextKeybindings = assignGameplayKeybinding(keybindings, action, code);
-    onKeybindingsChanged(nextKeybindings);
+    setKeybindings(nextKeybindings);
     writeGameplayKeybindings(nextKeybindings);
     setCapturingKeybindingAction(null);
     setError("");
@@ -114,7 +112,7 @@ export function ProfilePage({
 
   function resetKeybindings() {
     const nextKeybindings = resetGameplayKeybindings();
-    onKeybindingsChanged(nextKeybindings);
+    setKeybindings(nextKeybindings);
     setCapturingKeybindingAction(null);
     setError("");
     setMessage("Gameplay keybindings reset.");

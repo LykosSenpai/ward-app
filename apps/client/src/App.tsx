@@ -78,14 +78,6 @@ import type {
   ,ServerFeatureFlag
 } from "./clientTypes";
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
-import {
-  GAMEPLAY_KEYBINDINGS_CHANGED_EVENT,
-  getGameplayKeybindingActionByCode,
-  isEditableKeybindingTarget,
-  readGameplayKeybindings,
-  type GameplayKeybindingAction,
-  type GameplayKeybindings
-} from "./keybindings";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
@@ -445,16 +437,6 @@ export default function App() {
       });
     });
   };
-
-  useEffect(() => {
-    function handleKeybindingsChanged(event: Event) {
-      const nextKeybindings = (event as CustomEvent<GameplayKeybindings>).detail;
-      setGameplayKeybindings(nextKeybindings ?? readGameplayKeybindings());
-    }
-
-    window.addEventListener(GAMEPLAY_KEYBINDINGS_CHANGED_EVENT, handleKeybindingsChanged);
-    return () => window.removeEventListener(GAMEPLAY_KEYBINDINGS_CHANGED_EVENT, handleKeybindingsChanged);
-  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -2695,10 +2677,6 @@ export default function App() {
 
     return controlledPlayersByMatchId[match.matchId];
   })();
-  const isSoloGameplayMatch = Boolean(match && activeLobby?.matchId !== match.matchId);
-  const soloViewedPlayerId = match && isSoloGameplayMatch
-    ? soloViewedPlayersByMatchId[match.matchId] ?? null
-    : null;
   const canResolvePendingEffectTargetPrompt = Boolean(
     match?.pendingEffectTargetPrompt &&
     (!controlledPlayerId || controlledPlayerId === match.pendingEffectTargetPrompt.controllerPlayerId)
@@ -3027,7 +3005,7 @@ export default function App() {
             } else {
               socket.disconnect();
             }
-          }} discordAuthEnabled={discordAuthEnabled} keybindings={gameplayKeybindings} onKeybindingsChanged={setGameplayKeybindings} />
+          }} discordAuthEnabled={discordAuthEnabled} />
         ) : activePage === "marketplace" ? (
           <MarketplacePage authUser={authUser} cardLibrary={cardLibrary} />
         ) : activePage === "card-library" ? (

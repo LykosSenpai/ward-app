@@ -701,7 +701,8 @@ export function BoardPreview3D({
   onIntentCommand,
   onResolveEffectTarget
 }: BoardPreview3DProps) {
-  const focusedPlayerId: BoardPlayerId = viewedPlayerId ?? controlledPlayerId ?? (match.turn.activePlayerId === "player_1" ? "player_1" : "player_2");
+  const activeBoardPlayerId: BoardPlayerId = match.turn.activePlayerId === "player_1" ? "player_1" : "player_2";
+  const focusedPlayerId: BoardPlayerId = spectatorMode ? activeBoardPlayerId : controlledPlayerId ?? activeBoardPlayerId;
   const [locallyRevealedHands, setLocallyRevealedHands] = useState<Partial<Record<BoardPlayerId, boolean>>>({});
   const revealedHandPlayerIds = match.setup.revealedHandPlayerIds ?? [];
   const handRevealMode = (() => {
