@@ -2673,16 +2673,11 @@ export default function App() {
     (!controlledPlayerId || controlledPlayerId === getPendingPromptControllerId(match.pendingPrompt))
   );
   const show3dBoardView = playViewMode === "board3d";
-  const matchLobbyForView = match
-    ? (activeLobby?.matchId === match.matchId
-      ? activeLobby
-      : matchLobbies.find(lobby => lobby.matchId === match.matchId))
-    : undefined;
   const isLiveMatchSpectator = Boolean(
     match &&
     authUser &&
-    matchLobbyForView?.matchId === match.matchId &&
-    !matchLobbyForView.players.some(player =>
+    activeLobby?.matchId === match.matchId &&
+    !activeLobby.players.some(player =>
       player.userId === authUser.id ||
       (player.isClone && player.ownerUserId === authUser.id)
     )
@@ -3095,9 +3090,18 @@ export default function App() {
                 <span className="label">Table View</span>
                 <strong>3D Board (Only)</strong>
               </div>
-              {isLiveMatchSpectator ? (
-                <button type="button" onClick={() => setMatch(null)}>Leave Watch View</button>
-              ) : null}
+              {activeLobby?.matchId === match.matchId && activeLobby.mode === "SOLO" && (
+                <div className="solo-control-switch" aria-label="Solo control side">
+                  <span className="label">Solo Control</span>
+                  <strong>{controlledPlayerId === "player_2" ? "Clone side" : "Player side"}</strong>
+                  <button
+                    type="button"
+                    onClick={() => switchSoloControlledPlayer(controlledPlayerId === "player_2" ? "player_1" : "player_2")}
+                  >
+                    Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                  </button>
+                </div>
+              )}
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
