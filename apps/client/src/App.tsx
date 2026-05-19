@@ -374,6 +374,9 @@ export default function App() {
   const [serverRestartNotice, setServerRestartNotice] = useState("");
   const [match, setMatch] = useState<AppMatchState | null>(null);
   const [controlledPlayersByMatchId, setControlledPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
+  const [matchViewModeByMatchId, setMatchViewModeByMatchId] = useState<Record<string, "participant" | "spectator">>({});
+  const [watchPolicy, setWatchPolicy] = useState<"PUBLIC" | "LOBBY_MEMBERS" | "PARTICIPANTS_ONLY">("PUBLIC");
+  const [watchPolicySaveState, setWatchPolicySaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState("");
   const [savedMatches, setSavedMatches] = useState<SavedMatchSummary[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
@@ -825,6 +828,11 @@ export default function App() {
       setSocketAuthenticated(null);
       socket.emit("collection:setCapabilities", { ownershipDeltaOnly: true });
       requestInitialData();
+      socket.emit("admin:watchPolicy:get", (response: { ok: boolean; policy?: string }) => {
+        if (!response?.ok) return;
+        const policy = response.policy === "LOBBY_MEMBERS" || response.policy === "PARTICIPANTS_ONLY" ? response.policy : "PUBLIC";
+        setWatchPolicy(policy);
+      });
     });
 
     socket.on("match:state", (data: AppMatchState) => {
@@ -980,6 +988,15 @@ export default function App() {
 
     socket.on("lobby:cleanupComplete", (data: { message: string; closedCount: number }) => {
       setSaveMessage(data.message);
+    });
+
+    socket.on("match:viewMode", (data: { matchId: string; mode: "participant" | "spectator" }) => {
+      setMatchViewModeByMatchId(current => ({ ...current, [data.matchId]: data.mode }));
+    });
+
+    socket.on("match:watchPolicy", (data: { policy?: string }) => {
+      const policy = data.policy === "LOBBY_MEMBERS" || data.policy === "PARTICIPANTS_ONLY" ? data.policy : "PUBLIC";
+      setWatchPolicy(policy);
     });
 
     socket.on("collection:ownership", (data: CardOwnershipMap) => {
@@ -1225,6 +1242,8 @@ export default function App() {
       socket.off("features:list");
       socket.off("features:visibilityChanged");
       socket.off("lobby:cleanupComplete");
+      socket.off("match:viewMode");
+      socket.off("match:watchPolicy");
       socket.off("collection:ownership");
       socket.off("collection:ownershipDelta");
       socket.off("collection:error");
@@ -1395,13 +1414,14 @@ export default function App() {
     });
   }
 
-  function createLobby(data: { name: string; format: DeckFormat }) {
+  function createLobby(data: { name: string; format: DeckFormat; solo?: boolean }) {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:create", {
       name: data.name,
       format: data.format,
-      selectedPackIds
+      selectedPackIds,
+      solo: data.solo === true
     });
   }
 
@@ -1413,6 +1433,11 @@ export default function App() {
   function selectLobbyDeck(lobbyId: string, deckId: string) {
     setError("");
     socket.emit("lobby:selectDeck", { lobbyId, deckId });
+  }
+
+  function selectLobbyCloneDeck(lobbyId: string, deckId: string) {
+    setError("");
+    socket.emit("lobby:selectCloneDeck", { lobbyId, deckId });
   }
 
   function viewLobby(lobbyId: string) {
@@ -1434,6 +1459,16 @@ export default function App() {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:startMatch", lobbyId);
+  }
+
+  function switchSoloControlledPlayer(playerId: "player_1" | "player_2") {
+    if (!match) return;
+    setError("");
+    setControlledPlayersByMatchId(current => ({
+      ...current,
+      [match.matchId]: playerId
+    }));
+    socket.emit("match:switchControlledPlayer", { matchId: match.matchId, playerId });
   }
 
   function cleanupStaleLobbies() {
@@ -2610,13 +2645,19 @@ export default function App() {
 
   useEffect(() => {
     if (!activeLobby?.matchId || !authUser) return;
-    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id && !player.isClone);
     if (lobbyPlayer?.seat !== 1 && lobbyPlayer?.seat !== 2) return;
 
-    setControlledPlayersByMatchId(current => ({
-      ...current,
-      [activeLobby.matchId!]: lobbyPlayer.seat === 1 ? "player_1" : "player_2"
-    }));
+    setControlledPlayersByMatchId(current => {
+      if (activeLobby.mode === "SOLO" && current[activeLobby.matchId!]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [activeLobby.matchId!]: lobbyPlayer.seat === 1 ? "player_1" : "player_2"
+      };
+    });
   }, [activeLobby, authUser]);
 
   const controlledPlayerId = (() => {
@@ -2625,7 +2666,11 @@ export default function App() {
     }
 
     if (activeLobby?.matchId === match.matchId) {
-      const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+      if (activeLobby.mode === "SOLO") {
+        return controlledPlayersByMatchId[match.matchId] ?? "player_1";
+      }
+
+      const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id && !player.isClone);
       if (lobbyPlayer?.seat === 1 || lobbyPlayer?.seat === 2) {
         return lobbyPlayer.seat === 1 ? "player_1" : "player_2";
       }
@@ -2647,6 +2692,24 @@ export default function App() {
     (!controlledPlayerId || controlledPlayerId === getPendingPromptControllerId(match.pendingPrompt))
   );
   const show3dBoardView = playViewMode === "board3d";
+  const matchLobbyForView = match
+    ? (activeLobby?.matchId === match.matchId
+      ? activeLobby
+      : matchLobbies.find(lobby => lobby.matchId === match.matchId))
+    : undefined;
+  const isLiveMatchSpectator = Boolean(
+    match && (
+      matchViewModeByMatchId[match.matchId] === "spectator" ||
+      (
+        authUser &&
+        matchLobbyForView?.matchId === match.matchId &&
+        !matchLobbyForView.players.some(player =>
+          player.userId === authUser.id ||
+          (player.isClone && player.ownerUserId === authUser.id)
+        )
+      )
+    )
+  );
 
   if (!authChecked) {
     return (
@@ -3031,6 +3094,7 @@ export default function App() {
                 onCreateLobby={createLobby}
                 onJoinLobby={joinLobby}
                 onSelectDeck={selectLobbyDeck}
+                onSelectCloneDeck={selectLobbyCloneDeck}
                 onViewLobby={viewLobby}
                 onLeaveLobby={leaveLobby}
                 onStartMatch={startLobbyMatch}
@@ -3054,6 +3118,38 @@ export default function App() {
                 <span className="label">Table View</span>
                 <strong>3D Board (Only)</strong>
               </div>
+              {canUseDevTools ? (
+                <label style={{ display: "grid", gap: 4 }}>
+                  <span className="label">Watch Policy</span>
+                  <select
+                    value={watchPolicy}
+                    onChange={event => {
+                      const policy = event.target.value as "PUBLIC" | "LOBBY_MEMBERS" | "PARTICIPANTS_ONLY";
+                      setWatchPolicy(policy);
+                      setWatchPolicySaveState("saving");
+                      socket.emit("admin:watchPolicy:set", { policy }, (response: { ok: boolean; policy?: string; error?: string }) => {
+                        if (!response?.ok) {
+                          setWatchPolicySaveState("error");
+                          if (response?.error) setError(response.error);
+                          return;
+                        }
+
+                        const nextPolicy = response.policy === "LOBBY_MEMBERS" || response.policy === "PARTICIPANTS_ONLY" ? response.policy : "PUBLIC";
+                        setWatchPolicy(nextPolicy);
+                        setWatchPolicySaveState("saved");
+                      });
+                    }}
+                  >
+                    <option value="PUBLIC">Public</option>
+                    <option value="LOBBY_MEMBERS">Lobby Members</option>
+                    <option value="PARTICIPANTS_ONLY">Participants Only</option>
+                  </select>
+                  <small>{watchPolicySaveState === "saving" ? "Saving..." : watchPolicySaveState === "saved" ? "Saved" : watchPolicySaveState === "error" ? "Save failed" : ""}</small>
+                </label>
+              ) : null}
+              {isLiveMatchSpectator ? (
+                <button type="button" onClick={() => { if (match) socket.emit("match:leaveView", match.matchId); setMatch(null); }}>Leave Watch View</button>
+              ) : null}
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
@@ -3066,6 +3162,7 @@ export default function App() {
                       presentation="game"
                       defaultIntegrationMode
                       controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
+                      spectatorMode={isLiveMatchSpectator}
                       onAdvancePhase={advancePhase}
                       onEndTurn={endTurn}
                       onUndoLastAction={undoLastAction}
@@ -3129,7 +3226,7 @@ export default function App() {
                       onSkipEffectRoll={skipEffectRoll}
                       onActivateCardEffect={activateCardEffect}
                       onOpenBoardReport={() => setDashboardModal("board-report")}
-                      onCloseMatch={closeActiveMatchWithoutSaving}
+                      onCloseMatch={isLiveMatchSpectator ? undefined : closeActiveMatchWithoutSaving}
                       intentLabel={lastBoardIntentLabel}
                       commandLabel={lastBoardCommandLabel}
                       onIntent={(intent: PointerGestureIntent) => {
@@ -3148,6 +3245,18 @@ export default function App() {
                             : `Command: focus piece ${command.cardInstanceId ?? command.pieceId}`;
                         setLastBoardCommandLabel(label);
                       }}
+                      soloControlOverlay={activeLobby?.matchId === match.matchId && activeLobby.mode === "SOLO" ? (
+                        <div className="solo-control-switch" aria-label="Solo control side">
+                          <span className="label">Solo Control</span>
+                          <strong>{controlledPlayerId === "player_2" ? "Clone side" : "Player side"}</strong>
+                          <button
+                            type="button"
+                            onClick={() => switchSoloControlledPlayer(controlledPlayerId === "player_2" ? "player_1" : "player_2")}
+                          >
+                            Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                          </button>
+                        </div>
+                      ) : null}
                       actionDock={(
                         <CompactMatchControlPanel
                           match={match}
