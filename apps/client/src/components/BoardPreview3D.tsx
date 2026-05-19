@@ -2855,7 +2855,6 @@ export function BoardPreview3D({
               </div>
             ))}
           </aside>
-          ) : null}
           {actionDock && !actionDockCollapsed && !spectatorMode ? (
             <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
               <div className="board-preview-3d__floating-title">
