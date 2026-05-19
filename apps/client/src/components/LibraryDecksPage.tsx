@@ -34,7 +34,9 @@ type LibraryDecksPageProps = {
   onAddMarketplaceNeed?: (payload: Record<string, unknown>) => void;
   onAddMarketplaceHave?: (payload: Record<string, unknown>) => void;
   canUseDevTools?: boolean;
+  canManageZeroArtVariants?: boolean;
   onSaveCardLimit?: (cardId: string, status: "LEGAL" | "LIMITED" | "BANNED") => void;
+  onSaveCardZeroArtVariant?: (cardId: string, hasZeroArtVariant: boolean) => void;
 };
 
 export function LibraryDecksPage({
@@ -63,7 +65,9 @@ export function LibraryDecksPage({
   onAddMarketplaceNeed,
   onAddMarketplaceHave,
   canUseDevTools = false,
-  onSaveCardLimit
+  canManageZeroArtVariants = false,
+  onSaveCardLimit,
+  onSaveCardZeroArtVariant
 }: LibraryDecksPageProps) {
   return (
     <section className="library-decks-page library-decks-page-compact">
@@ -93,7 +97,9 @@ export function LibraryDecksPage({
         onAddMarketplaceNeed={onAddMarketplaceNeed}
         onAddMarketplaceHave={onAddMarketplaceHave}
         canUseDevTools={canUseDevTools}
+        canManageZeroArtVariants={canManageZeroArtVariants}
         onSaveCardLimit={onSaveCardLimit}
+        onSaveCardZeroArtVariant={onSaveCardZeroArtVariant}
       />
     </section>
   );

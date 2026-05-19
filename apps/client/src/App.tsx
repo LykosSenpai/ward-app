@@ -1162,6 +1162,10 @@ export default function App() {
       }
     );
 
+    socket.on("admin:cardZeroArtVariantSaved", (data: { message: string }) => {
+      setSaveMessage(data.message);
+    });
+
     socket.on("dev:testMatchCreated", (data: { message: string; matchId: string }) => {
       setSaveMessage(data.message);
       setLlmBusy(false);
@@ -1285,6 +1289,7 @@ export default function App() {
       socket.off("deck:overwriteRequired");
       socket.off("deck:deleted");
       socket.off("dev:cardEffectsSaved");
+      socket.off("admin:cardZeroArtVariantSaved");
       socket.off("dev:testMatchCreated");
       socket.off("marketplace:transactions");
       socket.off("llm:status");
@@ -1425,6 +1430,19 @@ export default function App() {
       packIds,
       cardId,
       limit
+    });
+  }
+
+  function saveCardZeroArtVariant(cardId: string, hasZeroArtVariant: boolean) {
+    const packIds =
+      selectedPackIds.length > 0
+        ? selectedPackIds
+        : cardPacks.map(pack => pack.id);
+
+    socket.emit("admin:saveCardZeroArtVariant", {
+      packIds,
+      cardId,
+      hasZeroArtVariant
     });
   }
 
@@ -3269,7 +3287,9 @@ export default function App() {
               });
             }}
             canUseDevTools={canUseDevTools}
+            canManageZeroArtVariants={isAdminUser}
             onSaveCardLimit={saveCardTournamentLimit}
+            onSaveCardZeroArtVariant={saveCardZeroArtVariant}
           />
         ) : !match ? (
           <>

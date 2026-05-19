@@ -3930,6 +3930,32 @@
   width: 100%;
 }
 
+.library-option-a-zero-art-toggle {
+  align-items: center;
+  color: #bfdbfe;
+  display: grid;
+  font-size: 0.52rem;
+  font-weight: 900;
+  gap: 0.22rem;
+  grid-template-columns: 0.78rem minmax(0, 1fr);
+  letter-spacing: 0;
+  line-height: 1;
+  min-width: 0;
+  text-transform: uppercase;
+}
+
+.library-option-a-zero-art-toggle input {
+  height: 0.78rem;
+  margin: 0;
+  width: 0.78rem;
+}
+
+.library-option-a-zero-art-toggle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .library-option-a-mini-deck-add {
   border-radius: 999px;
   font-size: 0.58rem;

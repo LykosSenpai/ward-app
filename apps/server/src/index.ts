@@ -95,6 +95,7 @@ import {
   saveDeckListToDisk,
   updateCardEffectsInPack,
   updateCardLimitRule,
+  setCardZeroArtVariantFlag,
   saveMatchToDisk,
   validateDataFileId
 } from "./dataStore.js";
@@ -659,6 +660,7 @@ app.get("/api/cards/showcase", (_req, res) => {
       generation: card.generation,
       rarity: card.rarity,
       cardNumber: card.cardNumber,
+      hasZeroArtVariant: card.hasZeroArtVariant,
       deckLimit: card.deckLimit
     }));
 
@@ -6301,6 +6303,45 @@ io.on("connection", async socket => {
           message: `Saved tournament limit for ${data.cardId}.`,
           cardId: data.cardId,
           limit: Math.min(3, Math.max(0, Math.floor(data.limit)))
+        });
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "admin:saveCardZeroArtVariant",
+    (data: {
+      packIds?: string[];
+      cardId: string;
+      hasZeroArtVariant: boolean;
+    }) => {
+      try {
+        const user = requireSocketUser(socket);
+        if (!canUserUseAdminTools(user)) {
+          throw new Error("Admin access required.");
+        }
+
+        setCardZeroArtVariantFlag({
+          cardId: data.cardId,
+          hasZeroArtVariant: data.hasZeroArtVariant === true
+        });
+
+        const requestedPackIds = data.packIds?.length
+          ? data.packIds
+          : listSetupOptions().cardPacks.map(pack => pack.id);
+
+        socket.emit(
+          "cards:library",
+          listCardLibraryForPacks(requestedPackIds, loadCardLimitMap())
+        );
+        socket.emit("admin:cardZeroArtVariantSaved", {
+          message: `${data.hasZeroArtVariant === true ? "Enabled" : "Disabled"} Zero art for ${data.cardId}.`,
+          cardId: data.cardId,
+          hasZeroArtVariant: data.hasZeroArtVariant === true
         });
       } catch (error) {
         socket.emit("match:error", {

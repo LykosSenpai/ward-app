@@ -22,6 +22,8 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "../../..");
 const DATA_DIR = path.join(ROOT_DIR, "data");
 
+const CARD_DATA_DIR = path.join(DATA_DIR, "cards");
+const CARD_ART_VARIANTS_FILE = path.join(CARD_DATA_DIR, "art-variants.json");
 const MATCHES_DIR = path.join(DATA_DIR, "matches");
 const USER_DATA_DIR = path.join(DATA_DIR, "users");
 const CARD_LIMITS_DIR = path.join(DATA_DIR, "rules", "card-limits");
@@ -44,6 +46,7 @@ function ensureDirectoryExists(directoryPath: string): void {
 
 ensureDirectoryExists(MATCHES_DIR);
 ensureDirectoryExists(USER_DATA_DIR);
+ensureDirectoryExists(CARD_DATA_DIR);
 ensureDirectoryExists(CARD_LIMITS_DIR);
 ensureDirectoryExists(CARD_COLLECTION_DIR);
 ensureDirectoryExists(DEV_DATA_DIR);
@@ -274,8 +277,12 @@ export function validateSavedMatchId(matchId: string): void {
   }
 }
 
+function isDataFileId(value: string): boolean {
+  return /^[a-zA-Z0-9_-]+$/.test(value);
+}
+
 export function validateDataFileId(id: string): void {
-  if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+  if (!isDataFileId(id)) {
     throw new Error(
       "IDs can only contain letters, numbers, underscores, and hyphens."
     );
@@ -725,6 +732,7 @@ export type CardLibraryCardSummary = {
   name: string;
   packId: string;
   cardType: "CREATURE" | "MAGIC";
+  hasZeroArtVariant: boolean;
 
   generation?: string;
   edition?: string;
@@ -752,6 +760,12 @@ export type CardLibraryCardSummary = {
   text?: string;
 };
 
+type CardArtVariantsFile = {
+  version: 1;
+  zeroArtCardIds: string[];
+  updatedAt?: string;
+};
+
 type CardDefinitionMetadata = CardDefinition & {
   generation?: string | number;
   edition?: string;
@@ -759,6 +773,74 @@ type CardDefinitionMetadata = CardDefinition & {
   cardNumber?: string | number;
   effects?: WardEngineEffect[];
 };
+
+function normalizeCardIdList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map(item => String(item ?? "").trim())
+    .filter(isDataFileId);
+}
+
+function loadZeroArtCardIdSet(): Set<string> {
+  ensureDirectoryExists(CARD_DATA_DIR);
+
+  if (!fs.existsSync(CARD_ART_VARIANTS_FILE)) {
+    return new Set();
+  }
+
+  try {
+    const fileData = readJsonFile<Partial<CardArtVariantsFile> | string[] | Record<string, unknown>>(
+      CARD_ART_VARIANTS_FILE
+    );
+
+    if (Array.isArray(fileData)) {
+      return new Set(normalizeCardIdList(fileData));
+    }
+
+    if (Array.isArray((fileData as Partial<CardArtVariantsFile>).zeroArtCardIds)) {
+      return new Set(normalizeCardIdList((fileData as Partial<CardArtVariantsFile>).zeroArtCardIds));
+    }
+
+    const mappedIds = Object.entries(fileData as Record<string, unknown>)
+      .filter(([, enabled]) => enabled === true)
+      .map(([cardId]) => cardId.trim())
+      .filter(isDataFileId);
+
+    return new Set(mappedIds);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveZeroArtCardIdSet(cardIds: Set<string>): void {
+  ensureDirectoryExists(CARD_DATA_DIR);
+
+  const fileData: CardArtVariantsFile = {
+    version: 1,
+    zeroArtCardIds: Array.from(cardIds).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    updatedAt: new Date().toISOString()
+  };
+
+  writeJsonFileAtomic(CARD_ART_VARIANTS_FILE, fileData);
+}
+
+export function setCardZeroArtVariantFlag(args: {
+  cardId: string;
+  hasZeroArtVariant: boolean;
+}): Set<string> {
+  validateDataFileId(args.cardId);
+
+  const zeroArtCardIds = loadZeroArtCardIdSet();
+  if (args.hasZeroArtVariant) {
+    zeroArtCardIds.add(args.cardId);
+  } else {
+    zeroArtCardIds.delete(args.cardId);
+  }
+
+  saveZeroArtCardIdSet(zeroArtCardIds);
+  return zeroArtCardIds;
+}
 
 function getCardEffectTypes(card: CardDefinition): string[] {
   const metadata = card as CardDefinitionMetadata;
@@ -930,6 +1012,7 @@ export function listCardLibraryForPacks(
   cardLimits: DeckCardLimitMap = {}
 ): CardLibraryCardSummary[] {
   const results: CardLibraryCardSummary[] = [];
+  const zeroArtCardIds = loadZeroArtCardIdSet();
 
   for (const packId of packIds) {
     validateDataFileId(packId);
@@ -954,6 +1037,7 @@ export function listCardLibraryForPacks(
           name: card.name,
           packId: pack.id,
           cardType: card.cardType,
+          hasZeroArtVariant: zeroArtCardIds.has(card.id),
           ...metadata,
           deckLimit,
           deckLimitReason: limitRule?.reason,
@@ -974,6 +1058,7 @@ export function listCardLibraryForPacks(
         name: card.name,
         packId: pack.id,
         cardType: card.cardType,
+        hasZeroArtVariant: zeroArtCardIds.has(card.id),
         ...metadata,
         deckLimit,
         deckLimitReason: limitRule?.reason,

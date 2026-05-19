@@ -83,7 +83,9 @@ type CardLibraryPanelProps = {
   onAddMarketplaceNeed?: (payload: Record<string, unknown>) => void;
   onAddMarketplaceHave?: (payload: Record<string, unknown>) => void;
   canUseDevTools?: boolean;
+  canManageZeroArtVariants?: boolean;
   onSaveCardLimit?: (cardId: string, status: TournamentLimitStatus) => void;
+  onSaveCardZeroArtVariant?: (cardId: string, hasZeroArtVariant: boolean) => void;
   onOpenMarketplaceOverride?: (cardId: string) => void;
 };
 
@@ -167,7 +169,9 @@ export function CardLibraryPanel({
   onAddMarketplaceNeed,
   onAddMarketplaceHave,
   canUseDevTools = false,
+  canManageZeroArtVariants = false,
   onSaveCardLimit,
+  onSaveCardZeroArtVariant,
   onOpenMarketplaceOverride
 }: CardLibraryPanelProps) {
   const [searchText, setSearchText] = useState("");
@@ -279,13 +283,16 @@ export function CardLibraryPanel({
     const missingItems: MissingCollectionItem[] = [];
 
     for (const variantOption of selectedCompletionVariants) {
-      const requiredMatches = completionCards.length * requiredQuantityPerCard;
-      const ownedMatches = completionCards.reduce((total, card) => {
+      const eligibleCards = isZeroArtVariant(variantOption.key)
+        ? completionCards.filter(cardSupportsZeroArt)
+        : completionCards;
+      const requiredMatches = eligibleCards.length * requiredQuantityPerCard;
+      const ownedMatches = eligibleCards.reduce((total, card) => {
         const owned = ownershipCounts[getCardArtOwnershipKey(card.id, variantOption.key)] ?? 0;
         return total + Math.min(requiredQuantityPerCard, owned);
       }, 0);
 
-      for (const card of completionCards) {
+      for (const card of eligibleCards) {
         const owned = ownershipCounts[getCardArtOwnershipKey(card.id, variantOption.key)] ?? 0;
         const missing = Math.max(0, requiredQuantityPerCard - owned);
 
@@ -739,6 +746,16 @@ export function CardLibraryPanel({
     return artKey === "default" ? cardId : `${cardId}__art_${artKey.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
   }
 
+  function isZeroArtVariant(variant: CardArtKey | CollectionVariant): boolean {
+    return variant === "zero-art" || variant === "zero-art-holo";
+  }
+
+  function getSupportedArtKeysForCard(card: CardLibraryCardSummary | undefined): CardArtKey[] {
+    return cardSupportsZeroArt(card ?? { hasZeroArtVariant: false })
+      ? ACTIVE_CARD_ART_OPTIONS.map(option => option.key)
+      : ["default", "holo"];
+  }
+
   function getOwnershipVariantFromArtworkAndHolo(artworkMode: "DEFAULT" | "ZERO", isHolo: boolean): CardArtKey {
     if (artworkMode === "ZERO") {
       return isHolo ? "zero-art-holo" : "zero-art";
@@ -751,12 +768,14 @@ export function CardLibraryPanel({
     return ownershipCounts[getCardArtOwnershipKey(cardId, artKey)] ?? 0;
   }
 
-  function getArtVariantFilterKeys(): CardArtKey[] {
+  function getArtVariantFilterKeys(card: CardLibraryCardSummary): CardArtKey[] {
+    const supportsZero = cardSupportsZeroArt(card);
+
     if (artVariantFilter === "DEFAULT") return ["default"];
-    if (artVariantFilter === "HOLO") return ["holo", "zero-art-holo"];
-    if (artVariantFilter === "ZERO") return ["zero-art", "zero-art-holo"];
-    if (artVariantFilter === "ZERO_HOLO") return ["zero-art-holo"];
-    return ACTIVE_CARD_ART_OPTIONS.map(option => option.key);
+    if (artVariantFilter === "HOLO") return supportsZero ? ["holo", "zero-art-holo"] : ["holo"];
+    if (artVariantFilter === "ZERO") return supportsZero ? ["zero-art", "zero-art-holo"] : [];
+    if (artVariantFilter === "ZERO_HOLO") return supportsZero ? ["zero-art-holo"] : [];
+    return getSupportedArtKeysForCard(card);
   }
 
   function cardMatchesArtVariantFilter(card: CardLibraryCardSummary): boolean {
@@ -766,12 +785,17 @@ export function CardLibraryPanel({
 
   function getFilteredOwnedCopiesForCard(card: CardLibraryCardSummary): number {
     if (!cardMatchesArtVariantFilter(card)) return 0;
-    return getArtVariantFilterKeys().reduce((total, artKey) => total + getOwnedCopiesForArt(card.id, artKey), 0);
+    return getArtVariantFilterKeys(card).reduce((total, artKey) => total + getOwnedCopiesForArt(card.id, artKey), 0);
   }
 
-  function getTotalOwnedCopiesForCard(cardId: string): number {
-    return ACTIVE_CARD_ART_OPTIONS.reduce((total, artOption) => {
-      return total + (ownershipCounts[getCardArtOwnershipKey(cardId, artOption.key)] ?? 0);
+  function getTotalOwnedCopiesForCard(cardOrId: CardLibraryCardSummary | string): number {
+    const card = typeof cardOrId === "string"
+      ? cardLibrary.find(item => item.id === cardOrId)
+      : cardOrId;
+    const cardId = typeof cardOrId === "string" ? cardOrId : cardOrId.id;
+
+    return getSupportedArtKeysForCard(card).reduce((total, artKey) => {
+      return total + (ownershipCounts[getCardArtOwnershipKey(cardId, artKey)] ?? 0);
     }, 0);
   }
   function setArtOwnedCopies(cardId: string, artKey: CardArtKey, requestedOwnedCount: number) {
@@ -942,6 +966,7 @@ export function CardLibraryPanel({
       ? deckLimit === 0 ? "BANNED" : deckLimit < 3 ? `LIMIT ${deckLimit}` : "LEGAL"
       : "FREE PLAY";
     const tournamentLimitStatus = getTournamentLimitStatus(card);
+    const canEditZeroArtVariant = canManageZeroArtVariants && !!onSaveCardZeroArtVariant;
 
     return (
       <div className="library-option-a-expanded-controls-grid">
@@ -973,6 +998,22 @@ export function CardLibraryPanel({
         </div>
 
         <div className="library-option-a-expanded-cell library-option-a-expanded-cell-status">
+          {canEditZeroArtVariant ? (
+            <label className="library-option-a-zero-art-toggle" title="Allow this card to show Zero in the art dropdown.">
+              <input
+                type="checkbox"
+                checked={card.hasZeroArtVariant === true}
+                onChange={event => {
+                  const enabled = event.target.checked;
+                  onSaveCardZeroArtVariant?.(card.id, enabled);
+                  if (!enabled && isZeroArtVariant(selectedArtKey)) {
+                    setSelectedArtKey(card.id, selectedIsHolo ? "holo" : "default");
+                  }
+                }}
+              />
+              <span>Zero Card</span>
+            </label>
+          ) : null}
           {canUseDevTools && onSaveCardLimit ? (
             <label className="library-option-a-limit-editor" title={card.deckLimitReason ?? "Tournament limit status"}>
               <span>Tournament</span>
@@ -1091,7 +1132,7 @@ export function CardLibraryPanel({
       <div className="library-option-a-toolbar">
         <div className="library-option-a-title-block">
           <h3>Card Library + Deck Editor</h3>
-          <p className="library-option-a-variant-hint">Art update: choose <strong>Default</strong> or <strong>Zero</strong> in each card, then toggle <strong>Holo Finish</strong>.</p>
+          <p className="library-option-a-variant-hint">Art update: cards with a Zero variant can choose <strong>Default</strong> or <strong>Zero</strong>, then toggle <strong>Holo Finish</strong>.</p>
           <div className="library-option-a-format-toggle" role="group" aria-label="Deck format">
             <button
               type="button"

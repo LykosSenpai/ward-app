@@ -106,11 +106,11 @@ export const ACTIVE_CARD_ART_OPTIONS = CARD_ART_OPTIONS.filter(option =>
   option.key === "default" || option.key === "holo" || option.key === "zero-art" || option.key === "zero-art-holo"
 );
 
-export function cardSupportsZeroArt(card: Pick<CardLibraryCardSummary, "cardType">): boolean {
-  return card.cardType === "CREATURE";
+export function cardSupportsZeroArt(card: Pick<CardLibraryCardSummary, "hasZeroArtVariant">): boolean {
+  return card.hasZeroArtVariant === true;
 }
 
-export function coerceCardArtKeyForCard(card: Pick<CardLibraryCardSummary, "cardType">, artKey: CardArtKey): CardArtKey {
+export function coerceCardArtKeyForCard(card: Pick<CardLibraryCardSummary, "hasZeroArtVariant">, artKey: CardArtKey): CardArtKey {
   if (cardSupportsZeroArt(card) || getBaseArtKey(artKey) !== "zero-art") {
     return artKey;
   }
@@ -118,7 +118,7 @@ export function coerceCardArtKeyForCard(card: Pick<CardLibraryCardSummary, "card
   return isHoloArtKey(artKey) ? "holo" : "default";
 }
 
-export function getBaseArtOptionsForCard(card: Pick<CardLibraryCardSummary, "cardType">): CardArtOption[] {
+export function getBaseArtOptionsForCard(card: Pick<CardLibraryCardSummary, "hasZeroArtVariant">): CardArtOption[] {
   return ACTIVE_CARD_ART_OPTIONS.filter(option =>
     option.key === "default" || (option.key === "zero-art" && cardSupportsZeroArt(card))
   );

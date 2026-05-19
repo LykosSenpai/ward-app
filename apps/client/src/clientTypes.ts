@@ -183,6 +183,7 @@ export type CardLibraryCardSummary = {
   name: string;
   packId: string;
   cardType: "CREATURE" | "MAGIC";
+  hasZeroArtVariant?: boolean;
 
   generation?: string;
   edition?: string;
