@@ -727,6 +727,7 @@ const MARKETPLACE_MATCH_REFRESH_INTERVAL_MS = 30 * 1000;
 const MARKETPLACE_SOCKET_ROOM = "marketplace:watch";
 const SAVED_MATCHES_SOCKET_ROOM = "match:saved-watch";
 let matchWatchPolicy = (process.env.MATCH_WATCH_POLICY ?? "PUBLIC").trim().toUpperCase();
+const matchSpectatorSockets = new Map<string, Set<string>>();
 
 
 type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
