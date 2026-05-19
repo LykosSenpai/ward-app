@@ -64,6 +64,26 @@ const DEFAULT_VISIBLE_SLOT_LAYERS: VisibleSlotLayers = {
   hand: false
 };
 
+
+function useMobileCompactLayout() {
+  const [isMobileCompact, setIsMobileCompact] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+
+    const media = window.matchMedia("(max-width: 430px), (max-height: 430px) and (max-width: 932px)");
+    const sync = () => setIsMobileCompact(media.matches);
+
+    sync();
+    media.addEventListener("change", sync);
+    return () => {
+      media.removeEventListener("change", sync);
+    };
+  }, []);
+
+  return isMobileCompact;
+}
+
 function sumDice(values: number[] | undefined): number {
   return (values ?? []).reduce((total, value) => total + value, 0);
 }
@@ -1715,6 +1735,16 @@ export function BoardPreview3D({
     }
   };
 
+  const isMobileCompactLayout = useMobileCompactLayout();
+  const [mobileHudExpanded, setMobileHudExpanded] = useState(false);
+
+
+  useEffect(() => {
+    if (!isMobileCompactLayout && mobileHudExpanded) {
+      setMobileHudExpanded(false);
+    }
+  }, [isMobileCompactLayout, mobileHudExpanded]);
+
   const handleBoardWheel: WheelEventHandler<HTMLElement> = (event) => {
     if (isCameraControlTarget(event.target)) return;
     event.preventDefault();
@@ -1722,7 +1752,7 @@ export function BoardPreview3D({
   };
 
   return (
-    <section className={`board-preview-3d board-preview-3d--${presentation}`} aria-label={presentation === "game" ? "Live 3D game board" : "Prototype 3D board space"} tabIndex={0} onKeyDown={handleKeyDown}>
+    <section className={`board-preview-3d board-preview-3d--${presentation}${isMobileCompactLayout ? " is-mobile-compact" : ""}`} aria-label={presentation === "game" ? "Live 3D game board" : "Prototype 3D board space"} tabIndex={0} onKeyDown={handleKeyDown}>
       <header className="board-preview-3d__hud">
         <details className="board-preview-3d__hud-tab">
           <summary>{presentation === "game" ? "3D game board" : "3D board lab"}</summary>
@@ -1764,7 +1794,7 @@ export function BoardPreview3D({
           </div>
         </details>
       </header>
-      {!controlsCollapsed ? (
+      {!controlsCollapsed && !isMobileCompactLayout ? (
         <aside className={`board-preview-3d__floating-controls board-preview-3d__floating-controls--${controlsDockPosition}`}>
           <div className="board-preview-3d__floating-title">
             <strong>HUD Controls</strong>
@@ -1804,7 +1834,7 @@ export function BoardPreview3D({
           />
         </aside>
       ) : null}
-      {integrationMode ? <p className="board-preview-3d__status">Integration mode enabled: gameplay dispatch wiring is active.</p> : null}
+      {integrationMode ? <p className={`board-preview-3d__status${isMobileCompactLayout ? " board-preview-3d__status--compact" : ""}`}>Integration mode enabled: gameplay dispatch wiring is active.</p> : null}
 
       {statusMessage ? <p className="board-preview-3d__status">{statusMessage}</p> : null}
       {lastCopiedLabel ? <p className="board-preview-3d__status">Last copied: {lastCopiedLabel}</p> : null}
@@ -1974,11 +2004,11 @@ export function BoardPreview3D({
             cardByInstanceId={cardByInstanceId}
             blockedReasonsBySlotId={blockedReasonsBySlotId}
           />
-          <OpeningRollBoardControl
+          {(!isMobileCompactLayout || mobileHudExpanded) ? <OpeningRollBoardControl
             match={match}
             controlledPlayerId={controlledPlayerId}
             onOpeningRoll={onOpeningRoll}
-          />
+          /> : null}
           <aside className="board-phase-control" aria-label="Turn phase controls">
             <div className="board-phase-control__status">
               <span>Current Phase</span>
@@ -2010,8 +2040,19 @@ export function BoardPreview3D({
               </button>
             </div>
           </aside>
-          {boardDiceRollAction ? <BoardDiceRollControl action={boardDiceRollAction} /> : null}
-          {boardDeckActions.map(action => (
+          {isMobileCompactLayout ? (
+            <button
+              type="button"
+              className={`board-preview-3d__mobile-hud-toggle${mobileHudExpanded ? " is-open" : ""}`}
+              onClick={() => setMobileHudExpanded(current => !current)}
+              aria-expanded={mobileHudExpanded}
+              aria-label={mobileHudExpanded ? "Hide secondary game controls" : "Show secondary game controls"}
+            >
+              {mobileHudExpanded ? "Hide game controls" : "Game controls"}
+            </button>
+          ) : null}
+          {boardDiceRollAction && (!isMobileCompactLayout || mobileHudExpanded) ? <BoardDiceRollControl action={boardDiceRollAction} /> : null}
+          {(!isMobileCompactLayout || mobileHudExpanded) ? boardDeckActions.map(action => (
             <div
               key={`${action.owner}-deck-actions`}
               className={`board-preview-3d__deck-actions board-preview-3d__deck-actions--${action.owner}${action.shouldShowHandControls ? " has-hand-controls" : ""}${deckActionsExpanded ? " is-expanded" : " is-collapsed"}`}
@@ -2074,8 +2115,8 @@ export function BoardPreview3D({
                 ) : null}
               </div>
             </div>
-          ))}
-          {actionDock && !actionDockCollapsed ? (
+          )) : null}
+          {actionDock && !actionDockCollapsed && (!isMobileCompactLayout || mobileHudExpanded) ? (
             <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
               <div className="board-preview-3d__floating-title">
                 <strong>Action Dock</strong>
