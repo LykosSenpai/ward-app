@@ -473,6 +473,7 @@ type BoardPreview3DProps = {
   soloControlOverlay?: ReactNode;
   onDeckSlotClick?: (slotId: string) => void;
   controlledPlayerId?: "player_1" | "player_2" | null;
+  spectatorMode?: boolean;
   onAdvancePhase?: () => void;
   onUndoLastAction?: () => void;
   onRequestNoCreatureRedraw?: (playerId: "player_1" | "player_2") => void;
@@ -676,6 +677,7 @@ export function BoardPreview3D({
   soloControlOverlay,
   onDeckSlotClick,
   controlledPlayerId = null,
+  spectatorMode = false,
   onAdvancePhase,
   onUndoLastAction,
   onRequestNoCreatureRedraw,
@@ -741,6 +743,8 @@ export function BoardPreview3D({
   const [boardOffsetZ, setBoardOffsetZ] = useState(DEFAULT_CAMERA_SETTINGS.boardOffsetZ);
   const [cameraPanX, setCameraPanX] = useState(DEFAULT_CAMERA_SETTINGS.cameraPanX);
   const [cameraPanY, setCameraPanY] = useState(DEFAULT_CAMERA_SETTINGS.cameraPanY);
+  const [zoneScale, setZoneScale] = useState(1);
+  const [compactCardTextures, setCompactCardTextures] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(() =>
     presentation === "game" ? false : (globalThis.innerHeight ? globalThis.innerHeight > 980 : true)
   );
@@ -2438,7 +2442,10 @@ export function BoardPreview3D({
     <section className={`board-preview-3d board-preview-3d--${presentation}`} aria-label={presentation === "game" ? "Live 3D game board" : "Prototype 3D board space"} tabIndex={0} onKeyDown={handleKeyDown}>
       <header className="board-preview-3d__hud">
         <details className="board-preview-3d__hud-tab">
-          <summary>{presentation === "game" ? "3D game board" : "3D board lab"}</summary>
+          <summary aria-label="Board settings" title="Board settings">
+            <span aria-hidden="true">⚙</span>
+            <span>{presentation === "game" ? "Settings" : "Lab Settings"}</span>
+          </summary>
           <div className="board-preview-3d__hud-tab-panel">
             {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
             <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
@@ -2446,34 +2453,6 @@ export function BoardPreview3D({
             <p>Drag to pan | Wheel to zoom | WASD to move | +/- zoom | 0 reset</p>
             {intentLabel ? <p>Intent: {intentLabel}</p> : null}
             {commandLabel ? <p>Command: {commandLabel}</p> : null}
-            <div>
-              <button
-                type="button"
-                className={`ghost${controlsCollapsed ? "" : " is-active"}`}
-                aria-pressed={!controlsCollapsed}
-                onClick={() => setControlsCollapsed(value => !value)}
-              >
-                HUD Controls
-              </button>
-              {actionDock ? (
-                <button
-                  type="button"
-                  className={`ghost${actionDockCollapsed ? "" : " is-active"}`}
-                  aria-pressed={!actionDockCollapsed}
-                  onClick={() => setActionDockCollapsed(value => !value)}
-                >
-                  Action Dock
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className={`ghost${showDebugPanel ? " is-active" : ""}`}
-                aria-pressed={showDebugPanel}
-                onClick={() => setShowDebugPanel(value => !value)}
-              >
-                Debug HUD
-              </button>
-            </div>
           </div>
         </details>
       </header>
@@ -2502,6 +2481,10 @@ export function BoardPreview3D({
             setCameraPanX={(value) => setClampedCameraPan("x", value)}
             cameraPanY={cameraPanY}
             setCameraPanY={(value) => setClampedCameraPan("y", value)}
+            zoneScale={zoneScale}
+            setZoneScale={setZoneScale}
+            compactCardTextures={compactCardTextures}
+            setCompactCardTextures={setCompactCardTextures}
             ownerFilter={ownerFilter}
             setOwnerFilter={setOwnerFilter}
             showDebugPanel={showDebugPanel}
@@ -2549,6 +2532,8 @@ export function BoardPreview3D({
             cameraPanY={cameraPanY}
             tiltDegrees={tiltDegrees}
             heightScale={heightScale}
+            zoneScale={zoneScale}
+            compactCardTextures={compactCardTextures}
             showAnchors={showAnchors}
             showZoneRects={showZoneRects}
             visibleSlotLayers={visibleSlotLayers}
@@ -2786,6 +2771,29 @@ export function BoardPreview3D({
                   Menu
                 </button>
                 <div className="board-preview-3d__deck-actions-panel">
+                  <button
+                    type="button"
+                    className={`${controlsCollapsed ? "" : "is-emphasis "}`}
+                    onClick={() => setControlsCollapsed(value => !value)}
+                  >
+                    {controlsCollapsed ? "Show HUD Controls" : "Hide HUD Controls"}
+                  </button>
+                  {!spectatorMode && actionDock ? (
+                    <button
+                      type="button"
+                      className={`${actionDockCollapsed ? "" : "is-emphasis "}`}
+                      onClick={() => setActionDockCollapsed(value => !value)}
+                    >
+                      {actionDockCollapsed ? "Show Action Dock" : "Hide Action Dock"}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={`${showDebugPanel ? "is-emphasis " : ""}`}
+                    onClick={() => setShowDebugPanel(value => !value)}
+                  >
+                    {showDebugPanel ? "Hide Debug HUD" : "Show Debug HUD"}
+                  </button>
                   <button type="button" disabled={!action.canUndo} onClick={onUndoLastAction}>
                     Undo
                   </button>
@@ -2855,7 +2863,6 @@ export function BoardPreview3D({
               </div>
             ))}
           </aside>
-          ) : null}
           {actionDock && !actionDockCollapsed && !spectatorMode ? (
             <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
               <div className="board-preview-3d__floating-title">
