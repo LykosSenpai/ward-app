@@ -129,8 +129,19 @@ function getTournamentLimitStatus(card: CardLibraryCardSummary): TournamentLimit
   return "LEGAL";
 }
 
+function normalizeGenerationFilterValue(value: string | undefined): string {
+  const normalized = `${value ?? ""}`.trim();
+  return normalized.length > 0 ? normalized : "";
+}
+
+function getCardGenerationFilterValue(card: Pick<CardLibraryCardSummary, "generation" | "packId">): string {
+  const normalizedGeneration = normalizeGenerationFilterValue(card.generation);
+  if (normalizedGeneration) return normalizedGeneration;
+  return card.packId === "ward-promos" ? "Promo" : "";
+}
+
 function getGenerationFilterLabel(value: string): string {
-  return value.toLowerCase() === "promo" ? "Promo Cards" : `Gen ${value}`;
+  return normalizeGenerationFilterValue(value).toLowerCase() === "promo" ? "Promo Cards" : `Gen ${value}`;
 }
 
 function getEffectiveDeckLimit(card: CardLibraryCardSummary | undefined, format: DeckFormat): number {
@@ -241,7 +252,7 @@ export function CardLibraryPanel({
   const deckCounts = useMemo(() => getDeckBuilderCounts(), [deckBuilderCardIds, getDeckBuilderCounts]);
 
   const generations = useMemo(
-    () => getUniqueValues(cardLibrary.map(card => card.generation)),
+    () => getUniqueValues(cardLibrary.map(card => getCardGenerationFilterValue(card))),
     [cardLibrary]
   );
   const rarities = useMemo(
@@ -278,7 +289,7 @@ export function CardLibraryPanel({
   const selectedCompletionVariants = collectionVariantOptions.filter(option => completionVariants[option.key]);
 
   const completionCards = useMemo(
-    () => cardLibrary.filter(card => completionGeneration === "ALL" || `${card.generation ?? ""}` === completionGeneration),
+    () => cardLibrary.filter(card => completionGeneration === "ALL" || getCardGenerationFilterValue(card) === completionGeneration),
     [cardLibrary, completionGeneration]
   );
 
@@ -456,7 +467,7 @@ export function CardLibraryPanel({
         const ownedCount = getFilteredOwnedCopiesForCard(card);
 
         if (typeFilter !== "ALL" && card.cardType !== typeFilter) return false;
-        if (generationFilter !== "ALL" && `${card.generation ?? ""}` !== generationFilter) return false;
+        if (generationFilter !== "ALL" && getCardGenerationFilterValue(card) !== generationFilter) return false;
         if (rarityFilter !== "ALL" && `${card.rarity ?? ""}` !== rarityFilter) return false;
         if (creatureTypeFilter !== "ALL" && `${card.creatureType ?? ""}` !== creatureTypeFilter) return false;
         if (magicTypeFilter !== "ALL" && getDisplayMagicType(card.magicType) !== magicTypeFilter) return false;
