@@ -2,11 +2,22 @@ import { useEffect, useState } from "react";
 import { hasCompletedEmailVerification } from "../authVerification";
 import type { AuthUser, UserProfile } from "../clientTypes";
 import { API_BASE_URL } from "../config";
+import {
+  assignGameplayKeybinding,
+  formatKeybindingCode,
+  GAMEPLAY_KEYBINDING_DEFINITIONS,
+  resetGameplayKeybindings,
+  writeGameplayKeybindings,
+  type GameplayKeybindingAction,
+  type GameplayKeybindings
+} from "../keybindings";
 import { PasswordInput } from "./ui/PasswordInput";
 
 type ProfilePageProps = {
   onUserUpdated: (user: AuthUser) => void;
   discordAuthEnabled: boolean;
+  keybindings: GameplayKeybindings;
+  onKeybindingsChanged: (keybindings: GameplayKeybindings) => void;
 };
 
 type TwoFactorSetup = {
@@ -14,7 +25,12 @@ type TwoFactorSetup = {
   qrCodeDataUrl: string;
 };
 
-export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePageProps) {
+export function ProfilePage({
+  discordAuthEnabled,
+  keybindings,
+  onKeybindingsChanged,
+  onUserUpdated
+}: ProfilePageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,6 +46,7 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [capturingKeybindingAction, setCapturingKeybindingAction] = useState<GameplayKeybindingAction | null>(null);
 
   useEffect(() => {
     void loadProfile();
@@ -53,6 +70,55 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
     const nextSearch = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`);
   }, []);
+
+  useEffect(() => {
+    if (!capturingKeybindingAction) return;
+
+    function handleKeybindingCapture(event: KeyboardEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (event.code === "Escape") {
+        setCapturingKeybindingAction(null);
+        return;
+      }
+
+      if (event.code === "Backspace" || event.code === "Delete") {
+        saveKeybinding(capturingKeybindingAction, "");
+        return;
+      }
+
+      if (event.ctrlKey || event.altKey || event.metaKey || event.code.startsWith("Shift")) {
+        return;
+      }
+
+      saveKeybinding(capturingKeybindingAction, event.code);
+    }
+
+    window.addEventListener("keydown", handleKeybindingCapture, { capture: true });
+    return () => window.removeEventListener("keydown", handleKeybindingCapture, { capture: true });
+  }, [capturingKeybindingAction, keybindings]);
+
+  function getKeybindingLabel(action: GameplayKeybindingAction): string {
+    return GAMEPLAY_KEYBINDING_DEFINITIONS.find(definition => definition.action === action)?.label ?? "Keybinding";
+  }
+
+  function saveKeybinding(action: GameplayKeybindingAction, code: string) {
+    const nextKeybindings = assignGameplayKeybinding(keybindings, action, code);
+    onKeybindingsChanged(nextKeybindings);
+    writeGameplayKeybindings(nextKeybindings);
+    setCapturingKeybindingAction(null);
+    setError("");
+    setMessage(code ? `${getKeybindingLabel(action)} set to ${formatKeybindingCode(code)}.` : `${getKeybindingLabel(action)} cleared.`);
+  }
+
+  function resetKeybindings() {
+    const nextKeybindings = resetGameplayKeybindings();
+    onKeybindingsChanged(nextKeybindings);
+    setCapturingKeybindingAction(null);
+    setError("");
+    setMessage("Gameplay keybindings reset.");
+  }
 
   async function loadProfile() {
     setError("");
@@ -405,6 +471,48 @@ export function ProfilePage({ discordAuthEnabled, onUserUpdated }: ProfilePagePr
                 )}
               </div>
             </form>
+          </section>
+
+          <section className="profile-card profile-card-keybindings">
+            <div className="profile-card-header">
+              <h3>Gameplay Keybindings</h3>
+              <span className="profile-status-pill">Local</span>
+            </div>
+
+            <div className="profile-keybinding-list">
+              {GAMEPLAY_KEYBINDING_DEFINITIONS.map(definition => {
+                const currentCode = keybindings[definition.action];
+                const isCapturing = capturingKeybindingAction === definition.action;
+
+                return (
+                  <div className="profile-keybinding-row" key={definition.action}>
+                    <div className="profile-keybinding-copy">
+                      <strong>{definition.label}</strong>
+                      <span>{definition.description}</span>
+                      {definition.suggestedCode && !definition.defaultCode && (
+                        <small>Suggestion: {formatKeybindingCode(definition.suggestedCode)}</small>
+                      )}
+                    </div>
+
+                    <div className="profile-keybinding-controls">
+                      <kbd>{isCapturing ? "Press key" : formatKeybindingCode(currentCode)}</kbd>
+                      <button type="button" onClick={() => setCapturingKeybindingAction(definition.action)}>
+                        {isCapturing ? "Listening" : "Change"}
+                      </button>
+                      <button type="button" onClick={() => saveKeybinding(definition.action, "")} disabled={!currentCode}>
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="profile-action-row">
+              <button type="button" onClick={resetKeybindings}>
+                Reset Defaults
+              </button>
+            </div>
           </section>
 
           <section className="profile-card profile-card-security">

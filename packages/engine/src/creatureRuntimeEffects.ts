@@ -1898,6 +1898,178 @@ function collectFieldCreatureLocations(state: MatchState): FieldCreatureLocation
   });
 }
 
+function findOpponentPrimaryCreature(
+  state: MatchState,
+  sourcePlayerId: string
+): FieldCreatureLocation | undefined {
+  const opponent = state.players.find(player => player.id !== sourcePlayerId);
+  const primary = opponent?.field.primaryCreature;
+  if (!opponent || !primary) return undefined;
+
+  const definition = getCardDefinition(state, primary);
+  if (definition.cardType !== "CREATURE") return undefined;
+
+  return { player: opponent, card: primary, definition, targetKind: "PRIMARY_CREATURE" };
+}
+
+function sourceHasActiveRecurringEffect(
+  state: MatchState,
+  source: ActiveEffectSource,
+  effect: WardEngineEffect,
+  effectType: ActiveRecurringCreatureEffect["effectType"]
+): boolean {
+  return collectFieldCreatureLocations(state).some(location =>
+    (location.card.activeRecurringEffects ?? []).some(recurring =>
+      recurring.sourceCardInstanceId === source.card.instanceId &&
+      recurring.sourceEffectId === effect.id &&
+      recurring.effectType === effectType
+    )
+  );
+}
+
+function processSourceOwnedEndOfCombatDamageEffects(
+  state: MatchState,
+  addEvent?: AddEventFn
+): void {
+  if (state.turn.phase !== "COMBAT") return;
+
+  for (const source of collectActiveEffectSources(state)) {
+    if (source.player.id !== state.turn.activePlayerId) continue;
+
+    for (const effect of getCardEngineEffects(source.definition)) {
+      const trigger = normalize(effect.trigger);
+      const actionType = normalize(getRuntimeBlockActionType(effect));
+      if (trigger !== "WHILE_ON_FIELD" || actionType !== "APPLY_DAMAGE_OVER_TIME") {
+        continue;
+      }
+
+      const tickTiming = getRecurringTickTimingForEffect(effect);
+      if (normalizeRecurringTickTiming(tickTiming) !== "END_OF_COMBAT_PHASE") {
+        continue;
+      }
+
+      if (sourceHasActiveRecurringEffect(state, source, effect, "DAMAGE_OVER_TIME")) {
+        continue;
+      }
+
+      const amount = firstPositiveNumber(effect);
+      const target = findOpponentPrimaryCreature(state, source.player.id);
+      if (!amount || !target) {
+        addEvent?.(state, "FIELD_DAMAGE_OVER_TIME_SKIPPED", source.player.id, {
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: source.definition.name,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: amount ? "NO_OPPONENT_PRIMARY_CREATURE" : "NO_AUTOMATIC_DAMAGE_AMOUNT",
+          ...timingBoardEventFields(state)
+        });
+        continue;
+      }
+
+      const stackRule = String(effect.params?.stackRule ?? effect.duration?.stackRule ?? "DO_NOT_STACK").trim().toUpperCase();
+      if (stackRule === "DO_NOT_STACK" && (target.card.activeRecurringEffects ?? []).some(recurring =>
+        recurring.effectType === "DAMAGE_OVER_TIME"
+      )) {
+        addEvent?.(state, "FIELD_DAMAGE_OVER_TIME_NOT_STACKED", source.player.id, {
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardName: source.definition.name,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          targetPlayerId: target.player.id,
+          targetCreatureInstanceId: target.card.instanceId,
+          targetCreatureName: target.definition.name,
+          reason: "TARGET_ALREADY_HAS_DAMAGE_OVER_TIME",
+          ...timingBoardEventFields(state)
+        });
+        continue;
+      }
+
+      const result = applyDamageToCreatureTarget(
+        state,
+        targetOptionFromCreatureLocation(target),
+        amount,
+        addEvent
+      );
+      const boardEvents: BoardEventPayload[] = [
+        {
+          type: "RECURRING_EFFECT_TICKED",
+          ...runtimeBoardEventBase(source, effect, "FIELD_DAMAGE_OVER_TIME_TICK"),
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          amount: result.damageAmount,
+          effectType: "DAMAGE_OVER_TIME",
+          status: "DAMAGE_OVER_TIME",
+          statusLabel: effect.value ?? effect.actionText ?? effect.params?.valueText ?? "Damage over time",
+          ...timingBoardEventFields(state)
+        },
+        {
+          type: "CARD_DAMAGED",
+          ...runtimeBoardEventBase(source, effect, "FIELD_DAMAGE_OVER_TIME_TICK"),
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          amount: result.damageAmount,
+          remainingHp: result.remainingHp,
+          killed: result.killed,
+          damageType: "DAMAGE_OVER_TIME",
+          ...timingBoardEventFields(state)
+        }
+      ];
+
+      if (result.killed && result.removalResult) {
+        boardEvents.push({
+          type: "CARD_MOVED",
+          playerId: result.playerId,
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardId: source.card.cardId,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: "FIELD_DAMAGE_OVER_TIME_KILLED_CREATURE",
+          cardInstanceId: result.creature.instanceId,
+          targetCardInstanceId: result.creature.instanceId,
+          fromZoneRef: boardZoneRef(result.playerId, result.removalResult.removedFromZone),
+          toZoneRef: boardZoneRef(result.ownerPlayerId, "CEMETERY"),
+          ...timingBoardEventFields(state)
+        });
+      }
+
+      if (result.removalResult?.autoPromotedLimitedSummon) {
+        boardEvents.push({
+          type: "CARD_MOVED",
+          playerId: result.playerId,
+          sourceCardInstanceId: source.card.instanceId,
+          sourceCardId: source.card.cardId,
+          sourceEffectId: effect.id,
+          actionType: effect.actionType,
+          reason: "FIELD_DAMAGE_OVER_TIME_AUTO_PROMOTED_LIMITED_SUMMON",
+          cardInstanceId: result.removalResult.autoPromotedLimitedSummon.cardInstanceId,
+          targetCardInstanceId: result.removalResult.autoPromotedLimitedSummon.cardInstanceId,
+          fromZoneRef: boardZoneRef(result.playerId, "LIMITED_SUMMON"),
+          toZoneRef: boardZoneRef(result.playerId, "PRIMARY_CREATURE"),
+          ...timingBoardEventFields(state)
+        });
+      }
+
+      addEvent?.(state, "FIELD_DAMAGE_OVER_TIME_TICK_RESOLVED", source.player.id, {
+        sourceCardInstanceId: source.card.instanceId,
+        sourceCardName: source.definition.name,
+        sourceEffectId: effect.id,
+        actionType: effect.actionType,
+        targetPlayerId: result.playerId,
+        targetCreatureInstanceId: result.creature.instanceId,
+        targetCreatureName: result.creatureName,
+        damageAmount: result.damageAmount,
+        remainingHp: result.remainingHp,
+        killed: result.killed,
+        tickTiming,
+        primaryReplacementRequired: result.removalResult?.primaryReplacementRequired ?? false,
+        autoPromotedLimitedSummon: result.removalResult?.autoPromotedLimitedSummon,
+        ...timingBoardEventFields(state),
+        boardEvents
+      });
+    }
+  }
+}
+
 type DueRecurringEffect = {
   recurringId: string;
   targetCardInstanceId: string;
@@ -2410,5 +2582,6 @@ export function processEndOfCombatRuntimeEffects(
   state: MatchState,
   addEvent?: AddEventFn
 ): void {
+  processSourceOwnedEndOfCombatDamageEffects(state, addEvent);
   processRecurringRuntimeEffectsForTiming(state, "END_OF_COMBAT_PHASE", addEvent);
 }

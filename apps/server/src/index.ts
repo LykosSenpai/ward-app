@@ -704,6 +704,13 @@ const supportTicketRateLimit = rateLimit({
 
 const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
+const matchTurnResetSnapshots = new Map<string, {
+  activePlayerId: string;
+  turnNumber: number;
+  turnCycleNumber: number;
+  turnStartCount: number;
+  match: MatchState;
+}>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
 const matchPayloadCacheBySocketId = new Map<string, Map<string, CachedMatchSocketPayload>>();
@@ -1999,6 +2006,308 @@ function cloneMatchState(match: MatchState): MatchState {
 
 function cloneJsonValue<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function appendMatchEvent(
+  match: MatchState,
+  type: string,
+  playerId?: string,
+  payload?: unknown
+): void {
+  match.eventLog.push({
+    id: randomUUID(),
+    sequenceNumber: match.eventLog.length + 1,
+    timestamp: new Date().toISOString(),
+    type,
+    playerId,
+    payload
+  });
+}
+
+function recordTurnResetSnapshotIfReady(match: MatchState): void {
+  const activePlayer = match.players.find(player => player.id === match.turn.activePlayerId);
+  if (!activePlayer?.turnFlags.drawnThisTurn || match.turn.phase !== "SUMMON_MAGIC") {
+    return;
+  }
+
+  const turnStartCount = match.turn.turnStartCountsByPlayer[activePlayer.id] ?? 0;
+  const existing = matchTurnResetSnapshots.get(match.matchId);
+  if (
+    existing?.activePlayerId === activePlayer.id &&
+    existing.turnNumber === match.turn.turnNumber &&
+    existing.turnCycleNumber === match.turn.turnCycleNumber &&
+    existing.turnStartCount === turnStartCount
+  ) {
+    return;
+  }
+
+  matchTurnResetSnapshots.set(match.matchId, {
+    activePlayerId: activePlayer.id,
+    turnNumber: match.turn.turnNumber,
+    turnCycleNumber: match.turn.turnCycleNumber,
+    turnStartCount,
+    match: cloneMatchState(match)
+  });
+}
+
+function getCardEffects(definition: CardDefinition | undefined): WardEngineEffect[] {
+  return ((definition as { effects?: WardEngineEffect[] } | undefined)?.effects ?? []);
+}
+
+function findCardInstanceInMatch(match: MatchState, cardInstanceId: string | undefined): CardInstance | undefined {
+  if (!cardInstanceId) return undefined;
+
+  const chainCard = match.chainZone.find(card => card.instanceId === cardInstanceId);
+  if (chainCard) return chainCard;
+
+  for (const player of match.players) {
+    const zones: Array<CardInstance[]> = [
+      player.hand,
+      player.deck,
+      player.cemetery,
+      player.removedFromGame,
+      player.field.magicSlots,
+      player.field.limitedSummons,
+      player.field.primaryCreature ? [player.field.primaryCreature] : []
+    ];
+
+    for (const zone of zones) {
+      const found = zone.find(card => card.instanceId === cardInstanceId);
+      if (found) return found;
+    }
+  }
+
+  return undefined;
+}
+
+function removeCardInstanceFromMatch(match: MatchState, cardInstanceId: string | undefined): CardInstance | undefined {
+  if (!cardInstanceId) return undefined;
+  let removed: CardInstance | undefined;
+
+  const removeFromZone = (zone: CardInstance[]): void => {
+    const index = zone.findIndex(card => card.instanceId === cardInstanceId);
+    if (index === -1) return;
+    const [card] = zone.splice(index, 1);
+    removed ??= card;
+  };
+
+  removeFromZone(match.chainZone);
+
+  for (const player of match.players) {
+    removeFromZone(player.hand);
+    removeFromZone(player.deck);
+    removeFromZone(player.cemetery);
+    removeFromZone(player.removedFromGame);
+    removeFromZone(player.field.magicSlots);
+    removeFromZone(player.field.limitedSummons);
+
+    if (player.field.primaryCreature?.instanceId === cardInstanceId) {
+      removed ??= player.field.primaryCreature;
+      player.field.primaryCreature = undefined;
+    }
+  }
+
+  return removed;
+}
+
+function applyHourglassCemeteryLockMarker(
+  match: MatchState,
+  card: CardInstance,
+  controllerPlayerId: string,
+  sourceCardName: string
+): void {
+  const lockEffect = getCardEffects(match.cardCatalog[card.cardId]).find(effect =>
+    String(effect.actionType ?? "").trim().toUpperCase() === "APPLY_ZONE_LOCK"
+  );
+  if (!lockEffect) return;
+
+  type CardActiveEffectInstance = NonNullable<CardInstance["activeEffectInstances"]>[number];
+  const actionType = String(lockEffect.actionType ?? "APPLY_ZONE_LOCK").trim().toUpperCase();
+
+  card.activeEffectInstances ??= [];
+  card.activeEffectInstances = card.activeEffectInstances.filter(instance => !(
+    instance.sourceCardInstanceId === card.instanceId &&
+    instance.sourceEffectId === lockEffect.id &&
+    instance.actionType === actionType
+  ));
+
+  const marker: CardActiveEffectInstance = {
+    id: randomUUID(),
+    kind: "STATIC_MODIFIER",
+    sourceEffectId: lockEffect.id,
+    sourceCardInstanceId: card.instanceId,
+    sourceCardName,
+    sourcePlayerId: controllerPlayerId,
+    targetPlayerId: card.ownerPlayerId,
+    targetCardInstanceId: card.instanceId,
+    targetCardName: sourceCardName,
+    actionType,
+    label: lockEffect.value ?? lockEffect.actionText ?? "Cannot be removed from cemetery",
+    durationType: lockEffect.duration?.type ?? lockEffect.params?.duration?.type ?? "STATIC_RULE",
+    durationText: lockEffect.duration?.text ?? lockEffect.params?.duration?.text ?? "Always",
+    appliedTurnNumber: match.turn.turnNumber,
+    appliedTurnCycle: match.turn.turnCycleNumber,
+    debug: [
+      "Hourglass of Time reset left this card in cemetery.",
+      "The cemetery zone-lock marker is reapplied after restoring the turn snapshot."
+    ]
+  };
+
+  card.activeEffectInstances.push(marker);
+}
+
+function findTurnResetRequestEvent(
+  match: MatchState,
+  startEventCount: number
+): MatchState["eventLog"][number] | undefined {
+  return match.eventLog.slice(startEventCount).find(event => {
+    const payload = event.payload as { actionType?: unknown } | undefined;
+    return String(payload?.actionType ?? "").trim().toUpperCase() === "RESET_CURRENT_TURN";
+  });
+}
+
+function restoreCurrentTurnFromHourglassSnapshot(
+  matchId: string,
+  resolvedMatch: MatchState,
+  startEventCount: number
+): MatchState {
+  const requestEvent = findTurnResetRequestEvent(resolvedMatch, startEventCount);
+  if (!requestEvent) {
+    return resolvedMatch;
+  }
+
+  const payload = requestEvent.payload as {
+    sourceCardInstanceId?: string;
+    sourceCardName?: string;
+    effectId?: string;
+    targetPlayerId?: string;
+  } | undefined;
+  const sourceCardInstanceId = payload?.sourceCardInstanceId;
+  const sourceCardName = payload?.sourceCardName ?? "Hourglass of Time";
+  const controllerPlayerId = requestEvent.playerId ?? resolvedMatch.turn.activePlayerId;
+  const targetPlayerId = payload?.targetPlayerId ?? resolvedMatch.turn.activePlayerId;
+  const snapshot = matchTurnResetSnapshots.get(matchId);
+
+  if (
+    !snapshot ||
+    snapshot.activePlayerId !== targetPlayerId ||
+    snapshot.turnNumber !== resolvedMatch.turn.turnNumber ||
+    snapshot.turnCycleNumber !== resolvedMatch.turn.turnCycleNumber
+  ) {
+    appendMatchEvent(resolvedMatch, "AUTO_EFFECT_TURN_RESET_FAILED", controllerPlayerId, {
+      sourceCardName,
+      sourceCardInstanceId,
+      effectId: payload?.effectId,
+      actionType: "RESET_CURRENT_TURN",
+      targetPlayerId,
+      reason: "NO_TURN_RESET_SNAPSHOT",
+      note: "No post-draw snapshot was available for the active turn."
+    });
+    return resolvedMatch;
+  }
+
+  const resolvedSourceCard = findCardInstanceInMatch(resolvedMatch, sourceCardInstanceId);
+  const restoredMatch = cloneMatchState(snapshot.match);
+  const restoredSourceCard = removeCardInstanceFromMatch(restoredMatch, sourceCardInstanceId);
+  const cemeteryCard = resolvedSourceCard
+    ? cloneJsonValue(resolvedSourceCard)
+    : restoredSourceCard
+      ? cloneJsonValue(restoredSourceCard)
+      : undefined;
+
+  if (!cemeteryCard) {
+    appendMatchEvent(resolvedMatch, "AUTO_EFFECT_TURN_RESET_FAILED", controllerPlayerId, {
+      sourceCardName,
+      sourceCardInstanceId,
+      effectId: payload?.effectId,
+      actionType: "RESET_CURRENT_TURN",
+      targetPlayerId,
+      reason: "SOURCE_CARD_NOT_FOUND",
+      note: "The reset snapshot was available, but the Hourglass card instance could not be found."
+    });
+    return resolvedMatch;
+  }
+
+  const ownerPlayerId = cemeteryCard.ownerPlayerId || controllerPlayerId;
+  const owner = restoredMatch.players.find(player => player.id === ownerPlayerId) ??
+    restoredMatch.players.find(player => player.id === controllerPlayerId);
+
+  if (!owner) {
+    appendMatchEvent(resolvedMatch, "AUTO_EFFECT_TURN_RESET_FAILED", controllerPlayerId, {
+      sourceCardName,
+      sourceCardInstanceId,
+      effectId: payload?.effectId,
+      actionType: "RESET_CURRENT_TURN",
+      targetPlayerId,
+      reason: "OWNER_NOT_FOUND"
+    });
+    return resolvedMatch;
+  }
+
+  cemeteryCard.zone = "CEMETERY";
+  cemeteryCard.controllerPlayerId = owner.id;
+  cemeteryCard.ownerPlayerId = owner.id;
+  cemeteryCard.attachedToInstanceId = undefined;
+  cemeteryCard.anchorSourceInstanceId = undefined;
+  cemeteryCard.activeStatuses = [];
+  cemeteryCard.activeStatModifiers = [];
+  cemeteryCard.activeRecurringEffects = [];
+  cemeteryCard.activeEffectInstances = [];
+  applyHourglassCemeteryLockMarker(restoredMatch, cemeteryCard, controllerPlayerId, sourceCardName);
+  owner.cemetery.push(cemeteryCard);
+
+  const revertedEventCount = Math.max(0, resolvedMatch.eventLog.length - snapshot.match.eventLog.length);
+  appendMatchEvent(restoredMatch, "AUTO_EFFECT_TURN_RESET_RESOLVED", controllerPlayerId, {
+    sourceCardName,
+    sourceCardInstanceId: cemeteryCard.instanceId,
+    effectId: payload?.effectId,
+    actionType: "RESET_CURRENT_TURN",
+    targetPlayerId,
+    restoredTurnNumber: restoredMatch.turn.turnNumber,
+    restoredTurnCycleNumber: restoredMatch.turn.turnCycleNumber,
+    restoredPhase: restoredMatch.turn.phase,
+    revertedEventCount,
+    note: "Restored the current turn to the post-draw snapshot and left Hourglass of Time in cemetery.",
+    boardEvents: [
+      {
+        type: "TURN_RESET",
+        playerId: targetPlayerId,
+        sourceCardInstanceId: cemeteryCard.instanceId,
+        sourceEffectId: payload?.effectId,
+        actionType: "RESET_CURRENT_TURN",
+        reason: "HOURGLASS_OF_TIME"
+      },
+      {
+        type: "CARD_MOVED",
+        playerId: owner.id,
+        cardInstanceId: cemeteryCard.instanceId,
+        sourceCardInstanceId: cemeteryCard.instanceId,
+        sourceEffectId: payload?.effectId,
+        actionType: "RESET_CURRENT_TURN",
+        reason: "HOURGLASS_OF_TIME_REMAINS_IN_CEMETERY",
+        fromZoneRef: { playerId: owner.id, zone: "HAND" },
+        toZoneRef: { playerId: owner.id, zone: "CEMETERY" }
+      },
+      {
+        type: "STATUS_APPLIED",
+        playerId: owner.id,
+        cardInstanceId: cemeteryCard.instanceId,
+        sourceCardInstanceId: cemeteryCard.instanceId,
+        sourceEffectId: "064-E02",
+        actionType: "APPLY_ZONE_LOCK",
+        reason: "HOURGLASS_CEMETERY_LOCK",
+        status: "ZONE_LOCK",
+        statusLabel: "Cannot be removed from cemetery"
+      }
+    ]
+  });
+
+  matchTurnResetSnapshots.set(matchId, {
+    ...snapshot,
+    match: cloneMatchState(restoredMatch)
+  });
+
+  return restoredMatch;
 }
 
 function getSocketMatchPayloadCache(socketId: string): Map<string, CachedMatchSocketPayload> {
@@ -4162,6 +4471,7 @@ io.on("connection", async socket => {
       const match = getPlayableMatchOrThrow(matchId);
       requireSocketCanControlActivePlayer(socket, match);
       const updatedMatch = advancePhase(match);
+      recordTurnResetSnapshotIfReady(updatedMatch);
 
       activeMatches.set(matchId, updatedMatch);
       emitMatchState(updatedMatch);
@@ -4243,6 +4553,7 @@ io.on("connection", async socket => {
       const match = getPlayableMatchOrThrow(matchId);
       requireSocketCanControlActivePlayer(socket, match);
       const updatedMatch = drawForActivePlayer(match);
+      recordTurnResetSnapshotIfReady(updatedMatch);
 
       activeMatches.set(matchId, updatedMatch);
       emitMatchState(updatedMatch);
@@ -4263,6 +4574,7 @@ io.on("connection", async socket => {
         !drawnMatch.setup.handDiscardRequiredForPlayerId
           ? advancePhase(drawnMatch)
           : drawnMatch;
+      recordTurnResetSnapshotIfReady(updatedMatch);
 
       activeMatches.set(matchId, updatedMatch);
       emitMatchState(updatedMatch);
@@ -5060,7 +5372,10 @@ io.on("connection", async socket => {
         requireSocketCanControlActivePlayer(socket, match);
       }
       pushUndoSnapshot(match);
-      const updatedMatch = resolveMagicChain(match);
+      const startEventCount = match.eventLog.length;
+      const resolvedMatch = resolveMagicChain(match);
+      const updatedMatch = restoreCurrentTurnFromHourglassSnapshot(matchId, resolvedMatch, startEventCount);
+      recordTurnResetSnapshotIfReady(updatedMatch);
 
       activeMatches.set(matchId, updatedMatch);
       emitMatchState(updatedMatch);

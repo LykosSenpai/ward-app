@@ -78,6 +78,14 @@ import type {
   ,ServerFeatureFlag
 } from "./clientTypes";
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
+import {
+  GAMEPLAY_KEYBINDINGS_CHANGED_EVENT,
+  getGameplayKeybindingActionByCode,
+  isEditableKeybindingTarget,
+  readGameplayKeybindings,
+  type GameplayKeybindingAction,
+  type GameplayKeybindings
+} from "./keybindings";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
@@ -374,6 +382,8 @@ export default function App() {
   const [serverRestartNotice, setServerRestartNotice] = useState("");
   const [match, setMatch] = useState<AppMatchState | null>(null);
   const [controlledPlayersByMatchId, setControlledPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
+  const [soloViewedPlayersByMatchId, setSoloViewedPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
+  const [gameplayKeybindings, setGameplayKeybindings] = useState<GameplayKeybindings>(() => readGameplayKeybindings());
   const [error, setError] = useState("");
   const [savedMatches, setSavedMatches] = useState<SavedMatchSummary[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
@@ -435,6 +445,16 @@ export default function App() {
       });
     });
   };
+
+  useEffect(() => {
+    function handleKeybindingsChanged(event: Event) {
+      const nextKeybindings = (event as CustomEvent<GameplayKeybindings>).detail;
+      setGameplayKeybindings(nextKeybindings ?? readGameplayKeybindings());
+    }
+
+    window.addEventListener(GAMEPLAY_KEYBINDINGS_CHANGED_EVENT, handleKeybindingsChanged);
+    return () => window.removeEventListener(GAMEPLAY_KEYBINDINGS_CHANGED_EVENT, handleKeybindingsChanged);
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -2633,6 +2653,10 @@ export default function App() {
 
     return controlledPlayersByMatchId[match.matchId];
   })();
+  const isSoloGameplayMatch = Boolean(match && activeLobby?.matchId !== match.matchId);
+  const soloViewedPlayerId = match && isSoloGameplayMatch
+    ? soloViewedPlayersByMatchId[match.matchId] ?? null
+    : null;
   const canResolvePendingEffectTargetPrompt = Boolean(
     match?.pendingEffectTargetPrompt &&
     (!controlledPlayerId || controlledPlayerId === match.pendingEffectTargetPrompt.controllerPlayerId)
@@ -2647,6 +2671,124 @@ export default function App() {
     (!controlledPlayerId || controlledPlayerId === getPendingPromptControllerId(match.pendingPrompt))
   );
   const show3dBoardView = playViewMode === "board3d";
+
+  function runGameplayKeybindingAction(action: GameplayKeybindingAction): boolean {
+    if (!match) return false;
+
+    const matchStatus = getMatchStatus(match);
+    const canUseMatchActions = matchStatus !== "COMPLETE";
+    const canControlActiveTurn = !controlledPlayerId || controlledPlayerId === match.turn.activePlayerId;
+
+    if (action === "swapPlayerView") {
+      if (!isSoloGameplayMatch) return false;
+
+      const fallbackPlayerId = match.turn.activePlayerId === "player_2" ? "player_2" : "player_1";
+      const currentViewedPlayerId = soloViewedPlayersByMatchId[match.matchId] ?? fallbackPlayerId;
+      const nextViewedPlayerId = currentViewedPlayerId === "player_1" ? "player_2" : "player_1";
+      const nextPlayer = match.players.find(player => player.id === nextViewedPlayerId);
+
+      setSoloViewedPlayersByMatchId(current => ({
+        ...current,
+        [match.matchId]: nextViewedPlayerId
+      }));
+      setLastBoardCommandLabel(`Shortcut: viewing ${nextPlayer?.displayName ?? nextViewedPlayerId}`);
+      return true;
+    }
+
+    if (action === "drawCards") {
+      if (!canUseMatchActions) return false;
+
+      const drawTargetPlayerId =
+        controlledPlayerId === "player_1" || controlledPlayerId === "player_2"
+          ? controlledPlayerId
+          : match.turn.activePlayerId;
+      const pendingDrawEffect = getPendingManualDrawEffectForPlayer(match, drawTargetPlayerId);
+      if (pendingDrawEffect) {
+        resolveManualDrawEffect(pendingDrawEffect.id, drawTargetPlayerId);
+        setLastBoardCommandLabel("Shortcut: draw effect resolved");
+        return true;
+      }
+
+      if (!canDrawForCurrentTurn(match, controlledPlayerId)) return false;
+
+      drawActivePlayer();
+      setLastBoardCommandLabel("Shortcut: draw");
+      return true;
+    }
+
+    if (action === "advancePhase") {
+      if (!canUseMatchActions || !canControlActiveTurn || advanceBlockReason) return false;
+
+      advancePhase();
+      setLastBoardCommandLabel("Shortcut: advance phase");
+      return true;
+    }
+
+    if (action === "undoLastAction") {
+      if (!canUseMatchActions || !canControlActiveTurn) return false;
+
+      undoLastAction();
+      setLastBoardCommandLabel("Shortcut: undo");
+      return true;
+    }
+
+    if (action === "openDiceRoller") {
+      setDashboardModal("dice-roller");
+      setLastBoardCommandLabel("Shortcut: dice roller");
+      return true;
+    }
+
+    if (action === "openEventLog") {
+      setDashboardModal("event-log");
+      setLastBoardCommandLabel("Shortcut: event log");
+      return true;
+    }
+
+    if (action === "openSaveLoad") {
+      setDashboardModal("save-load");
+      setLastBoardCommandLabel("Shortcut: save / load");
+      return true;
+    }
+
+    return false;
+  }
+
+  useEffect(() => {
+    if (activePage !== "play" || !match || !show3dBoardView || dashboardModal) return;
+
+    function handleGameplayKeyDown(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        isEditableKeybindingTarget(event.target)
+      ) {
+        return;
+      }
+
+      const action = getGameplayKeybindingActionByCode(gameplayKeybindings, event.code);
+      if (!action || !runGameplayKeybindingAction(action)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    window.addEventListener("keydown", handleGameplayKeyDown);
+    return () => window.removeEventListener("keydown", handleGameplayKeyDown);
+  }, [
+    activePage,
+    advanceBlockReason,
+    controlledPlayerId,
+    dashboardModal,
+    gameplayKeybindings,
+    isSoloGameplayMatch,
+    match,
+    show3dBoardView,
+    soloViewedPlayersByMatchId
+  ]);
 
   if (!authChecked) {
     return (
@@ -2952,7 +3094,7 @@ export default function App() {
             } else {
               socket.disconnect();
             }
-          }} discordAuthEnabled={discordAuthEnabled} />
+          }} discordAuthEnabled={discordAuthEnabled} keybindings={gameplayKeybindings} onKeybindingsChanged={setGameplayKeybindings} />
         ) : activePage === "marketplace" ? (
           <MarketplacePage authUser={authUser} cardLibrary={cardLibrary} />
         ) : activePage === "card-library" ? (
@@ -3066,6 +3208,7 @@ export default function App() {
                       presentation="game"
                       defaultIntegrationMode
                       controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
+                      viewedPlayerId={soloViewedPlayerId}
                       onAdvancePhase={advancePhase}
                       onEndTurn={endTurn}
                       onUndoLastAction={undoLastAction}

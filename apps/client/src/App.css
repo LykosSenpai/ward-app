@@ -834,6 +834,67 @@
   flex: 1 1 12rem;
 }
 
+.profile-keybinding-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.profile-keybinding-row {
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 7px;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  padding: 0.6rem;
+}
+
+.profile-keybinding-copy {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 0;
+}
+
+.profile-keybinding-copy strong {
+  color: #f8fafc;
+}
+
+.profile-keybinding-copy span,
+.profile-keybinding-copy small {
+  color: #cbd5e1;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.profile-keybinding-copy small {
+  color: #7dd3fc;
+}
+
+.profile-keybinding-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.profile-keybinding-controls kbd {
+  background: rgba(2, 6, 23, 0.62);
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  border-radius: 6px;
+  color: #e0f2fe;
+  display: inline-grid;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.76rem;
+  font-weight: 900;
+  min-height: 2rem;
+  min-width: 5.8rem;
+  padding: 0.38rem 0.55rem;
+  place-items: center;
+  text-align: center;
+}
+
 .profile-form label {
   color: #cbd5e1;
   display: grid;
@@ -962,6 +1023,19 @@
 
   .profile-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-keybinding-row {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-keybinding-controls {
+    justify-content: stretch;
+  }
+
+  .profile-keybinding-controls button,
+  .profile-keybinding-controls kbd {
+    flex: 1 1 7rem;
   }
 }
 

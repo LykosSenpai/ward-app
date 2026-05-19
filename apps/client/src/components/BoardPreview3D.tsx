@@ -472,6 +472,7 @@ type BoardPreview3DProps = {
   actionDock?: ReactNode;
   onDeckSlotClick?: (slotId: string) => void;
   controlledPlayerId?: "player_1" | "player_2" | null;
+  viewedPlayerId?: "player_1" | "player_2" | null;
   onAdvancePhase?: () => void;
   onUndoLastAction?: () => void;
   onRequestNoCreatureRedraw?: (playerId: "player_1" | "player_2") => void;
@@ -674,6 +675,7 @@ export function BoardPreview3D({
   actionDock,
   onDeckSlotClick,
   controlledPlayerId = null,
+  viewedPlayerId = null,
   onAdvancePhase,
   onUndoLastAction,
   onRequestNoCreatureRedraw,
@@ -712,7 +714,7 @@ export function BoardPreview3D({
   onIntentCommand,
   onResolveEffectTarget
 }: BoardPreview3DProps) {
-  const focusedPlayerId: BoardPlayerId = controlledPlayerId ?? (match.turn.activePlayerId === "player_1" ? "player_1" : "player_2");
+  const focusedPlayerId: BoardPlayerId = viewedPlayerId ?? controlledPlayerId ?? (match.turn.activePlayerId === "player_1" ? "player_1" : "player_2");
   const [locallyRevealedHands, setLocallyRevealedHands] = useState<Partial<Record<BoardPlayerId, boolean>>>({});
   const revealedHandPlayerIds = match.setup.revealedHandPlayerIds ?? [];
   const handRevealMode = (() => {
