@@ -1395,13 +1395,14 @@ export default function App() {
     });
   }
 
-  function createLobby(data: { name: string; format: DeckFormat }) {
+  function createLobby(data: { name: string; format: DeckFormat; solo?: boolean }) {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:create", {
       name: data.name,
       format: data.format,
-      selectedPackIds
+      selectedPackIds,
+      solo: data.solo === true
     });
   }
 
@@ -1413,6 +1414,11 @@ export default function App() {
   function selectLobbyDeck(lobbyId: string, deckId: string) {
     setError("");
     socket.emit("lobby:selectDeck", { lobbyId, deckId });
+  }
+
+  function selectLobbyCloneDeck(lobbyId: string, deckId: string) {
+    setError("");
+    socket.emit("lobby:selectCloneDeck", { lobbyId, deckId });
   }
 
   function viewLobby(lobbyId: string) {
@@ -1434,6 +1440,16 @@ export default function App() {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:startMatch", lobbyId);
+  }
+
+  function switchSoloControlledPlayer(playerId: "player_1" | "player_2") {
+    if (!match) return;
+    setError("");
+    setControlledPlayersByMatchId(current => ({
+      ...current,
+      [match.matchId]: playerId
+    }));
+    socket.emit("match:switchControlledPlayer", { matchId: match.matchId, playerId });
   }
 
   function cleanupStaleLobbies() {
@@ -2610,13 +2626,19 @@ export default function App() {
 
   useEffect(() => {
     if (!activeLobby?.matchId || !authUser) return;
-    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id && !player.isClone);
     if (lobbyPlayer?.seat !== 1 && lobbyPlayer?.seat !== 2) return;
 
-    setControlledPlayersByMatchId(current => ({
-      ...current,
-      [activeLobby.matchId!]: lobbyPlayer.seat === 1 ? "player_1" : "player_2"
-    }));
+    setControlledPlayersByMatchId(current => {
+      if (activeLobby.mode === "SOLO" && current[activeLobby.matchId!]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [activeLobby.matchId!]: lobbyPlayer.seat === 1 ? "player_1" : "player_2"
+      };
+    });
   }, [activeLobby, authUser]);
 
   const controlledPlayerId = (() => {
@@ -2625,7 +2647,11 @@ export default function App() {
     }
 
     if (activeLobby?.matchId === match.matchId) {
-      const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+      if (activeLobby.mode === "SOLO") {
+        return controlledPlayersByMatchId[match.matchId] ?? "player_1";
+      }
+
+      const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id && !player.isClone);
       if (lobbyPlayer?.seat === 1 || lobbyPlayer?.seat === 2) {
         return lobbyPlayer.seat === 1 ? "player_1" : "player_2";
       }
@@ -3031,6 +3057,7 @@ export default function App() {
                 onCreateLobby={createLobby}
                 onJoinLobby={joinLobby}
                 onSelectDeck={selectLobbyDeck}
+                onSelectCloneDeck={selectLobbyCloneDeck}
                 onViewLobby={viewLobby}
                 onLeaveLobby={leaveLobby}
                 onStartMatch={startLobbyMatch}
@@ -3054,6 +3081,18 @@ export default function App() {
                 <span className="label">Table View</span>
                 <strong>3D Board (Only)</strong>
               </div>
+              {activeLobby?.matchId === match.matchId && activeLobby.mode === "SOLO" && (
+                <div className="solo-control-switch" aria-label="Solo control side">
+                  <span className="label">Solo Control</span>
+                  <strong>{controlledPlayerId === "player_2" ? "Clone side" : "Player side"}</strong>
+                  <button
+                    type="button"
+                    onClick={() => switchSoloControlledPlayer(controlledPlayerId === "player_2" ? "player_1" : "player_2")}
+                  >
+                    Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                  </button>
+                </div>
+              )}
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
