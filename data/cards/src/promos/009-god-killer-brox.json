@@ -1,0 +1,68 @@
+{
+  "id": "promo_009_god_killer_brox",
+  "name": "God Killer Brox",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "009",
+  "text": "This card inflicts 4x attack damage to any creature with an AL of 12. This includes magic card increases.",
+  "effects": [
+    {
+      "id": "009-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "condition": {
+        "type": "TARGET_EFFECTIVE_AL_EQUALS",
+        "value": 12,
+        "includeMagicIncreases": true,
+        "text": "Target creature effective AL is 12, including Magic card increases"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply attack damage",
+      "target": "Target creature with effective AL 12",
+      "value": "4x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Target creature with effective AL 12",
+        "valueText": "4x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TARGET_EFFECTIVE_AL_EQUALS",
+          "value": 12,
+          "includeMagicIncreases": true,
+          "text": "Target creature effective AL is 12, including Magic card increases"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 4
+      },
+      "notes": "Condition uses effective/current AL, not only printed base AL.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Condition includes Magic-based AL increases.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 11,
+  "speed": 5,
+  "hp": 110,
+  "attackName": "Reality Impale",
+  "attackDice": 2,
+  "modifier": 5,
+  "printedGeneration": "Generation I",
+  "artworkTags": [
+    "ARMOR"
+  ]
+}

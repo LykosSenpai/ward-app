@@ -1,0 +1,23 @@
+{
+  "id": "promo_003_artist_eg_toroth",
+  "name": "Artist Eg’Toroth",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "003",
+  "text": "",
+  "effects": [],
+  "notes": "No rules effect visible beyond printed attack profile.",
+  "cardType": "CREATURE",
+  "creatureType": "Demon",
+  "armorLevel": 2,
+  "speed": 12,
+  "hp": 10,
+  "attackName": "Creative Torture",
+  "attackDice": 5,
+  "modifier": 5,
+  "printedGeneration": "Generation I",
+  "artworkTags": [
+    "FIRE"
+  ]
+}

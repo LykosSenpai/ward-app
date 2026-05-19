@@ -1,0 +1,1032 @@
+{
+  "id": "ward-promos",
+  "name": "WARD Promo Cards",
+  "version": "1.0.0",
+  "source": "user-uploaded-promo-card-images-2026-05-19",
+  "globalRules": {
+    "wardRulesVersionSource": "Ward Rules Guide 2nd Edition, effective 2026-01-27",
+    "maxArmorLevel": 12,
+    "baseHitDice": 2,
+    "modifierAppliesTo": [
+      "HIT_ROLL",
+      "ATTACK_DAMAGE_ROLL"
+    ],
+    "atkBonusAppliesTo": [
+      "ATTACK_DAMAGE_ROLL"
+    ],
+    "halfRoundingMode": "CEIL",
+    "turnCycleDefinition": "One full round back to the same player; starts at the beginning of a player's turn.",
+    "durationExpirationDefault": "Beginning of the start player's turn after the specified turn cycles complete.",
+    "dotTickTiming": "END_OF_COMBAT_PHASE",
+    "dotStacking": "DO_NOT_STACK",
+    "hotTickTiming": "END_OF_COMBAT_PHASE",
+    "creatureHpCannotGoBelow": 0,
+    "creatureHealingCannotExceedBaseHp": true,
+    "cemeteryHpCanGoBelow": 0,
+    "infiniteMagicSlotLimit": 5,
+    "limitedSummonMaxPerSide": 4,
+    "limitedSummonsCannotReceiveHpDamage": true,
+    "limitedSummonsLoseCreatureEffects": true,
+    "limitedSummonsCannotBeSacrificed": true,
+    "alchemyNotes": [
+      "Promo cards are isolated in their own source pack so future promo uploads can be added without touching Gen 1/2/3 base source files.",
+      "Modifier is separate from Atk. Modifier adds to both Hit Roll and Attack Damage Roll.",
+      "Atk adds only to Attack Damage Roll.",
+      "Field detection is separated from Magic Type. Magic Type is Standard/Infinite/Lightning; Magic Subtype is None/Equip/Field."
+    ]
+  },
+  "cards": [
+    {
+      "id": "promo_001_aqua_dragon",
+      "name": "Aqua Dragon",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "001",
+      "text": "During battle, add +2 attack dice rolls to this creature if it battles with a \"Demon\", \"Steam\", \"Humanoid\", or \"Beast\" type creature.",
+      "effects": [
+        {
+          "id": "001-E01",
+          "trigger": "DURING_DAMAGE_CALC",
+          "condition": {
+            "type": "TARGET_MATCHES_TYPE_OR_NAME",
+            "creatureTypeIncludes": [
+              "Demon",
+              "Humanoid",
+              "Beast"
+            ],
+            "cardNameIncludes": [
+              "Steam"
+            ],
+            "text": "Battling a Demon, Humanoid, Beast, or Steam-named creature"
+          },
+          "actionType": "APPLY_CONDITIONAL_DICE_MODIFIER",
+          "effectGroup": "Dice Modifier",
+          "actionText": "Add Atk Dice Rolls",
+          "target": "This creature",
+          "value": "Atk Dice Rolls +2",
+          "duration": {
+            "text": "Current battle",
+            "type": "CURRENT_BATTLE"
+          },
+          "reusableFunction": "applyConditionalDiceModifier",
+          "params": {
+            "target": "This creature",
+            "valueText": "Atk Dice Rolls +2",
+            "statChanges": [
+              {
+                "stat": "ATK_DICE_ROLLS",
+                "operation": "ADD",
+                "value": 2,
+                "rounding": null
+              }
+            ],
+            "condition": {
+              "type": "TARGET_MATCHES_TYPE_OR_NAME",
+              "creatureTypeIncludes": [
+                "Demon",
+                "Humanoid",
+                "Beast"
+              ],
+              "cardNameIncludes": [
+                "Steam"
+              ],
+              "text": "Battling a Demon, Humanoid, Beast, or Steam-named creature"
+            },
+            "duration": {
+              "text": "Current battle",
+              "type": "CURRENT_BATTLE"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null
+          },
+          "notes": "Steam is not a standard rules-guide creature type, so this is modeled as a name filter for Steam-named creatures.",
+          "needsReview": false
+        }
+      ],
+      "notes": "Pre-order promo. Steam condition modeled as name contains Steam.",
+      "cardType": "CREATURE",
+      "creatureType": "Dragon",
+      "armorLevel": 12,
+      "speed": 6,
+      "hp": 110,
+      "attackName": "Hydro Flame",
+      "attackDice": 4,
+      "modifier": 7,
+      "printedGeneration": "Pre-Order Edition",
+      "artworkTags": [
+        "WATER",
+        "WINGS"
+      ]
+    },
+    {
+      "id": "promo_002_arcturus",
+      "name": "Arcturus",
+      "generation": "Promo",
+      "edition": "1st Edition",
+      "rarity": "Promo",
+      "cardNumber": "002",
+      "text": "This card can only be damaged by the attacking creature’s base attack and modifier.",
+      "effects": [
+        {
+          "id": "002-E01",
+          "trigger": "STATIC_WHILE_ON_FIELD",
+          "condition": {
+            "type": "NON_BASE_ATTACK_DAMAGE_SOURCE",
+            "text": "Damage is from magic increases, creature effects, bonuses, multipliers, DOT, or other non-base sources"
+          },
+          "actionType": "APPLY_CONDITIONAL_DAMAGE_IMMUNITY",
+          "effectGroup": "Damage Prevention",
+          "actionText": "Ignore non-base attack damage additions",
+          "target": "This card",
+          "value": "Only the attacking creature’s base Atk Dice Rolls and printed Modifier can damage this card",
+          "duration": {
+            "text": "While this card remains on the field",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "applyConditionalDamageImmunity",
+          "params": {
+            "target": "This card",
+            "valueText": "Only the attacking creature’s base Atk Dice Rolls and printed Modifier can damage this card",
+            "statChanges": [],
+            "condition": {
+              "type": "NON_BASE_ATTACK_DAMAGE_SOURCE",
+              "text": "Damage is from magic increases, creature effects, bonuses, multipliers, DOT, or other non-base sources"
+            },
+            "duration": {
+              "text": "While this card remains on the field",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "ATTACK_DAMAGE",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "allowedDamageComponents": [
+              "BASE_ATTACK_DICE_ROLL",
+              "PRINTED_MODIFIER"
+            ]
+          },
+          "notes": "Runtime needs a reducer that strips non-base damage components instead of preventing the whole strike.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Promo G-III card. Effect needs battle-pipeline QA for non-base damage filtering.",
+      "cardType": "CREATURE",
+      "creatureType": "Humanoid",
+      "armorLevel": 6,
+      "speed": 8,
+      "hp": 70,
+      "attackName": "Onslaught",
+      "attackDice": 4,
+      "modifier": 2,
+      "printedGeneration": "G-III",
+      "artworkTags": [
+        "WEAPON",
+        "AXE"
+      ]
+    },
+    {
+      "id": "promo_003_artist_eg_toroth",
+      "name": "Artist Eg’Toroth",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "003",
+      "text": "",
+      "effects": [],
+      "notes": "No rules effect visible beyond printed attack profile.",
+      "cardType": "CREATURE",
+      "creatureType": "Demon",
+      "armorLevel": 2,
+      "speed": 12,
+      "hp": 10,
+      "attackName": "Creative Torture",
+      "attackDice": 5,
+      "modifier": 5,
+      "printedGeneration": "Generation I",
+      "artworkTags": [
+        "FIRE"
+      ]
+    },
+    {
+      "id": "promo_004_cosmic_storm",
+      "name": "Cosmic Storm",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "004",
+      "text": "Field: At the beginning of each turn, all players roll a die. The player with the lowest die result must inflict 5 HP damage to their primary creature.",
+      "effects": [
+        {
+          "id": "004-E01",
+          "trigger": "BEGINNING_OF_EACH_TURN",
+          "condition": {
+            "type": "TURN_START_FIELD_ROLL",
+            "text": "At the beginning of each turn, all players roll 1D6; lowest result loses"
+          },
+          "actionType": "ROLL_TABLE",
+          "effectGroup": "Field Roll",
+          "actionText": "All players roll; lowest damages primary creature",
+          "target": "Lowest-rolling player primary creature",
+          "value": "Lowest die result takes 5 HP damage to primary creature",
+          "duration": {
+            "text": "Each turn while field effect is active",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "resolveFieldRollOutcome",
+          "params": {
+            "target": "Lowest-rolling player primary creature",
+            "valueText": "Lowest die result takes 5 HP damage to primary creature",
+            "statChanges": [],
+            "condition": {
+              "type": "TURN_START_FIELD_ROLL",
+              "text": "At the beginning of each turn, all players roll 1D6; lowest result loses"
+            },
+            "duration": {
+              "text": "Each turn while field effect is active",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "EFFECT_DAMAGE",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "dieSize": 6,
+            "dicePerPlayer": 1,
+            "lowestRollLoses": true,
+            "damage": 5,
+            "damageTarget": "LOWEST_PLAYER_PRIMARY_CREATURE"
+          },
+          "notes": "Requires multiplayer-capable tied-lowest roll handling and turn-start field trigger automation.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Uploaded image includes a browser full-screen overlay near the card title; replace with clean art when available.",
+      "cardType": "MAGIC",
+      "magicType": "INFINITE",
+      "magicSubType": "FIELD",
+      "isEquip": false,
+      "isField": true,
+      "printedGeneration": "Boss Edition / Pre-Order Exclusive",
+      "artworkTags": [
+        "LIGHTNING",
+        "MOON"
+      ]
+    },
+    {
+      "id": "promo_005_cryovore",
+      "name": "Cryovore",
+      "generation": "Promo",
+      "edition": "1st Edition",
+      "rarity": "Promo",
+      "cardNumber": "005",
+      "text": "On this card’s turn it may add 10 damage to the end of its attack, or heal itself 10 HP.",
+      "effects": [
+        {
+          "id": "005-E01",
+          "trigger": "DURING_YOUR_TURN_ACTIVATED",
+          "condition": {
+            "type": "PLAYER_CHOICE",
+            "choiceGroup": "CRYOVORE_DEVOUR",
+            "text": "Choose damage mode on this card’s turn"
+          },
+          "actionType": "APPLY_STAT_MODIFIER",
+          "effectGroup": "Damage Bonus",
+          "actionText": "Choose to add damage to attack",
+          "target": "This creature",
+          "value": "Atk damage +10 at the end of this creature’s attack",
+          "duration": {
+            "text": "Current battle",
+            "type": "CURRENT_BATTLE"
+          },
+          "reusableFunction": "applyStatModifier",
+          "params": {
+            "target": "This creature",
+            "valueText": "Atk damage +10 at the end of this creature’s attack",
+            "statChanges": [
+              {
+                "stat": "ATK_BONUS",
+                "operation": "ADD",
+                "value": 10,
+                "rounding": null
+              }
+            ],
+            "condition": {
+              "type": "PLAYER_CHOICE",
+              "choiceGroup": "CRYOVORE_DEVOUR",
+              "text": "Choose damage mode on this card’s turn"
+            },
+            "duration": {
+              "text": "Current battle",
+              "type": "CURRENT_BATTLE"
+            },
+            "damageType": "ATTACK_DAMAGE",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null
+          },
+          "notes": "Choice-mode activated creature effect; runtime may show as manual/prompt until choice routing is implemented.",
+          "needsReview": true
+        },
+        {
+          "id": "005-E02",
+          "trigger": "DURING_YOUR_TURN_ACTIVATED",
+          "condition": {
+            "type": "PLAYER_CHOICE",
+            "choiceGroup": "CRYOVORE_DEVOUR",
+            "text": "Choose heal mode on this card’s turn"
+          },
+          "actionType": "HEAL",
+          "effectGroup": "Healing",
+          "actionText": "Choose to heal this creature",
+          "target": "This creature",
+          "value": "Heal 10 HP",
+          "duration": {
+            "text": "Instant",
+            "type": "INSTANT"
+          },
+          "reusableFunction": "healCreature",
+          "params": {
+            "target": "This creature",
+            "valueText": "Heal 10 HP",
+            "statChanges": [],
+            "condition": {
+              "type": "PLAYER_CHOICE",
+              "choiceGroup": "CRYOVORE_DEVOUR",
+              "text": "Choose heal mode on this card’s turn"
+            },
+            "duration": {
+              "text": "Instant",
+              "type": "INSTANT"
+            },
+            "damageType": "HEALING",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "amount": 10
+          },
+          "notes": "Choice-mode activated creature effect. Healing cannot exceed base HP.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Choice between damage bonus or self-heal needs runtime QA.",
+      "cardType": "CREATURE",
+      "creatureType": "Bug",
+      "armorLevel": 8,
+      "speed": 4,
+      "hp": 100,
+      "attackName": "Devour",
+      "attackDice": 2,
+      "modifier": 2,
+      "printedGeneration": "G-III",
+      "artworkTags": [
+        "ICE"
+      ]
+    },
+    {
+      "id": "promo_006_denraa_the_bull",
+      "name": "Denraa The Bull",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "006",
+      "text": "",
+      "effects": [],
+      "notes": "No rules effect visible beyond printed attack profile.",
+      "cardType": "CREATURE",
+      "creatureType": "Beast",
+      "armorLevel": 10,
+      "speed": 9,
+      "hp": 90,
+      "attackName": "Axe Rush",
+      "attackDice": 2,
+      "modifier": 10,
+      "printedGeneration": "Generation II",
+      "artworkTags": [
+        "WEAPON",
+        "AXE"
+      ]
+    },
+    {
+      "id": "promo_007_dragon_of_time",
+      "name": "Dragon of Time",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "007",
+      "text": "During your turn, roll a die. If the result is: (1-2) Magic cards cannot be played this turn. (3-4) Negate all creature effects this turn. (Aside from this card) (5-6) All Limited Summons are sent to their original owner’s cemetery.",
+      "effects": [
+        {
+          "id": "007-E01",
+          "trigger": "DURING_YOUR_TURN_ACTIVATED",
+          "condition": {
+            "type": "ACTIVATED_D6_ROLL_TABLE",
+            "text": "During your turn, roll 1D6 and apply the matching Paradox branch"
+          },
+          "actionType": "ROLL_TABLE",
+          "effectGroup": "Roll Table",
+          "actionText": "Roll D6 for Paradox outcome",
+          "target": "All players / all creatures / all Limited Summons",
+          "value": "1-2: Magic cannot be played this turn; 3-4: negate all creature effects this turn except Dragon of Time; 5-6: send all Limited Summons to original owner cemetery",
+          "duration": {
+            "text": "This turn",
+            "type": "CURRENT_TURN"
+          },
+          "reusableFunction": "resolveRollTable",
+          "params": {
+            "target": "All players / all creatures / all Limited Summons",
+            "valueText": "1-2: Magic cannot be played this turn; 3-4: negate all creature effects this turn except Dragon of Time; 5-6: send all Limited Summons to original owner cemetery",
+            "statChanges": [],
+            "condition": {
+              "type": "ACTIVATED_D6_ROLL_TABLE",
+              "text": "During your turn, roll 1D6 and apply the matching Paradox branch"
+            },
+            "duration": {
+              "text": "This turn",
+              "type": "CURRENT_TURN"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "dieSize": 6,
+            "table": [
+              {
+                "results": [
+                  1,
+                  2
+                ],
+                "branchEffectId": "007-E02"
+              },
+              {
+                "results": [
+                  3,
+                  4
+                ],
+                "branchEffectId": "007-E03"
+              },
+              {
+                "results": [
+                  5,
+                  6
+                ],
+                "branchEffectId": "007-E04"
+              }
+            ]
+          },
+          "notes": "Roll-table branch effect. Branches are split below as atomic effects for review/runtime routing.",
+          "needsReview": true
+        },
+        {
+          "id": "007-E02",
+          "trigger": "ROLL_TABLE_RESULT_1_2",
+          "condition": {
+            "type": "ROLL_RESULT_RANGE",
+            "min": 1,
+            "max": 2,
+            "text": "Paradox roll result 1-2"
+          },
+          "actionType": "PREVENT_CARD_PLAY",
+          "effectGroup": "Play Restriction",
+          "actionText": "Prevent Magic cards from being played",
+          "target": "All players",
+          "value": "Magic cards cannot be played this turn",
+          "duration": {
+            "text": "This turn",
+            "type": "CURRENT_TURN"
+          },
+          "reusableFunction": "preventCardPlay",
+          "params": {
+            "target": "All players",
+            "valueText": "Magic cards cannot be played this turn",
+            "statChanges": [],
+            "condition": {
+              "type": "ROLL_RESULT_RANGE",
+              "min": 1,
+              "max": 2,
+              "text": "Paradox roll result 1-2"
+            },
+            "duration": {
+              "text": "This turn",
+              "type": "CURRENT_TURN"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "cardTypes": [
+              "MAGIC"
+            ]
+          },
+          "notes": "Triggered only by Dragon of Time 007-E01 result.",
+          "needsReview": true
+        },
+        {
+          "id": "007-E03",
+          "trigger": "ROLL_TABLE_RESULT_3_4",
+          "condition": {
+            "type": "ROLL_RESULT_RANGE",
+            "min": 3,
+            "max": 4,
+            "text": "Paradox roll result 3-4"
+          },
+          "actionType": "NEGATE_CREATURE_EFFECTS",
+          "effectGroup": "Creature Effect Negation",
+          "actionText": "Negate creature effects",
+          "target": "All creatures except Dragon of Time",
+          "value": "Negate all creature effects this turn except this card",
+          "duration": {
+            "text": "This turn",
+            "type": "CURRENT_TURN"
+          },
+          "reusableFunction": "negateCreatureEffects",
+          "params": {
+            "target": "All creatures except Dragon of Time",
+            "valueText": "Negate all creature effects this turn except this card",
+            "statChanges": [],
+            "condition": {
+              "type": "ROLL_RESULT_RANGE",
+              "min": 3,
+              "max": 4,
+              "text": "Paradox roll result 3-4"
+            },
+            "duration": {
+              "text": "This turn",
+              "type": "CURRENT_TURN"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "excludeSource": true
+          },
+          "notes": "Needs global temporary creature-effect suppression with source exception.",
+          "needsReview": true
+        },
+        {
+          "id": "007-E04",
+          "trigger": "ROLL_TABLE_RESULT_5_6",
+          "condition": {
+            "type": "ROLL_RESULT_RANGE",
+            "min": 5,
+            "max": 6,
+            "text": "Paradox roll result 5-6"
+          },
+          "actionType": "SEND_TO_ORIGINAL_OWNER_CEMETERY",
+          "effectGroup": "Zone Movement",
+          "actionText": "Send Limited Summons to cemetery",
+          "target": "All Limited Summons",
+          "value": "All Limited Summons are sent to their original owner’s cemetery",
+          "duration": {
+            "text": "Instant",
+            "type": "INSTANT"
+          },
+          "reusableFunction": "sendToOriginalOwnerCemetery",
+          "params": {
+            "target": "All Limited Summons",
+            "valueText": "All Limited Summons are sent to their original owner’s cemetery",
+            "statChanges": [],
+            "condition": {
+              "type": "ROLL_RESULT_RANGE",
+              "min": 5,
+              "max": 6,
+              "text": "Paradox roll result 5-6"
+            },
+            "duration": {
+              "text": "Instant",
+              "type": "INSTANT"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null
+          },
+          "notes": "Needs global Limited Summon target routing and original-owner cemetery handling.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Activated roll-table boss promo. Branches require runtime QA.",
+      "cardType": "CREATURE",
+      "creatureType": "Dragon",
+      "armorLevel": 12,
+      "speed": 4,
+      "hp": 80,
+      "attackName": "Paradox",
+      "attackDice": 1,
+      "modifier": 20,
+      "printedGeneration": "Boss Edition / Pre-Order Exclusive",
+      "artworkTags": [
+        "WINGS"
+      ]
+    },
+    {
+      "id": "promo_008_ghul_vok",
+      "name": "Ghul'Vok",
+      "generation": "Promo",
+      "edition": "1st Edition",
+      "rarity": "Promo",
+      "cardNumber": "008",
+      "text": "If “Full Moon” is on the field, this creature may be summoned without sacrifice. Send back to original owner hand if “Full Moon” is removed from the field.",
+      "effects": [
+        {
+          "id": "008-E01",
+          "trigger": "SUMMON_REQUIREMENT",
+          "condition": {
+            "type": "NAMED_CARD_ON_FIELD",
+            "cardName": "Full Moon",
+            "text": "Full Moon is on the field"
+          },
+          "actionType": "APPLY_SUMMON_REQUIREMENT_OVERRIDE",
+          "effectGroup": "Summon Requirement",
+          "actionText": "Allow summon without sacrifice",
+          "target": "This creature",
+          "value": "No sacrifice required if Full Moon is on the field",
+          "duration": {
+            "text": "Before summon",
+            "type": "BEFORE_SUMMON"
+          },
+          "reusableFunction": "applySummonRequirementOverride",
+          "params": {
+            "target": "This creature",
+            "valueText": "No sacrifice required if Full Moon is on the field",
+            "statChanges": [],
+            "condition": {
+              "type": "NAMED_CARD_ON_FIELD",
+              "cardName": "Full Moon",
+              "text": "Full Moon is on the field"
+            },
+            "duration": {
+              "text": "Before summon",
+              "type": "BEFORE_SUMMON"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "requiredSacrifices": 0
+          },
+          "notes": "Conditional summon requirement override. Needs summon-rule QA because the override depends on a named field card.",
+          "needsReview": true
+        },
+        {
+          "id": "008-E02",
+          "trigger": "WHEN_NAMED_CARD_REMOVED_FROM_FIELD",
+          "condition": {
+            "type": "NAMED_CARD_REMOVED_FROM_FIELD",
+            "cardName": "Full Moon",
+            "text": "Full Moon is removed from the field"
+          },
+          "actionType": "RETURN_SELF_TO_HAND",
+          "effectGroup": "Zone Movement",
+          "actionText": "Return this creature to original owner hand",
+          "target": "This creature",
+          "value": "Return to original owner hand if Full Moon is removed from the field",
+          "duration": {
+            "text": "Instant",
+            "type": "INSTANT"
+          },
+          "reusableFunction": "returnSelfToHand",
+          "params": {
+            "target": "This creature",
+            "valueText": "Return to original owner hand if Full Moon is removed from the field",
+            "statChanges": [],
+            "condition": {
+              "type": "NAMED_CARD_REMOVED_FROM_FIELD",
+              "cardName": "Full Moon",
+              "text": "Full Moon is removed from the field"
+            },
+            "duration": {
+              "text": "Instant",
+              "type": "INSTANT"
+            },
+            "damageType": "",
+            "sourceLinked": true,
+            "usesAnchoring": true,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null
+          },
+          "notes": "Source/name-linked cleanup. Similar to anchoring, but keyed to named card Full Moon rather than this source card.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Depends on Gen 2 Full Moon being active. Conditional summon and cleanup require runtime QA.",
+      "cardType": "CREATURE",
+      "creatureType": "Beast",
+      "armorLevel": 12,
+      "speed": 6,
+      "hp": 100,
+      "attackName": "Eldritch Prayer",
+      "attackDice": 5,
+      "modifier": 5,
+      "printedGeneration": "G-III",
+      "artworkTags": [
+        "MOON"
+      ]
+    },
+    {
+      "id": "promo_009_god_killer_brox",
+      "name": "God Killer Brox",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "009",
+      "text": "This card inflicts 4x attack damage to any creature with an AL of 12. This includes magic card increases.",
+      "effects": [
+        {
+          "id": "009-E01",
+          "trigger": "DURING_DAMAGE_CALC",
+          "condition": {
+            "type": "TARGET_EFFECTIVE_AL_EQUALS",
+            "value": 12,
+            "includeMagicIncreases": true,
+            "text": "Target creature effective AL is 12, including Magic card increases"
+          },
+          "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+          "effectGroup": "Damage Multiplier",
+          "actionText": "Multiply attack damage",
+          "target": "Target creature with effective AL 12",
+          "value": "4x Atk damage",
+          "duration": {
+            "text": "Current battle",
+            "type": "CURRENT_BATTLE"
+          },
+          "reusableFunction": "applyConditionalDamageMultiplier",
+          "params": {
+            "target": "Target creature with effective AL 12",
+            "valueText": "4x Atk damage",
+            "statChanges": [],
+            "condition": {
+              "type": "TARGET_EFFECTIVE_AL_EQUALS",
+              "value": 12,
+              "includeMagicIncreases": true,
+              "text": "Target creature effective AL is 12, including Magic card increases"
+            },
+            "duration": {
+              "text": "Current battle",
+              "type": "CURRENT_BATTLE"
+            },
+            "damageType": "ATTACK_DAMAGE",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "multiplier": 4
+          },
+          "notes": "Condition uses effective/current AL, not only printed base AL.",
+          "needsReview": false
+        }
+      ],
+      "notes": "Condition includes Magic-based AL increases.",
+      "cardType": "CREATURE",
+      "creatureType": "Humanoid",
+      "armorLevel": 11,
+      "speed": 5,
+      "hp": 110,
+      "attackName": "Reality Impale",
+      "attackDice": 2,
+      "modifier": 5,
+      "printedGeneration": "Generation I",
+      "artworkTags": [
+        "ARMOR"
+      ]
+    },
+    {
+      "id": "promo_010_hell_walker",
+      "name": "Hell Walker",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "010",
+      "text": "This creature inflicts 2x attack damage to demon-type creatures or creatures with “demon” in their name. Opponents with a demon on their side of the field, cannot play magic.",
+      "effects": [
+        {
+          "id": "010-E01",
+          "trigger": "DURING_DAMAGE_CALC",
+          "condition": {
+            "type": "TARGET_MATCHES_TYPE_OR_NAME",
+            "creatureTypeIncludes": [
+              "Demon"
+            ],
+            "cardNameIncludes": [
+              "Demon"
+            ],
+            "text": "Target is Demon type or has Demon in its name"
+          },
+          "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+          "effectGroup": "Damage Multiplier",
+          "actionText": "Multiply attack damage",
+          "target": "Demon-type creature or creature with Demon in its name",
+          "value": "2x Atk damage",
+          "duration": {
+            "text": "Current battle",
+            "type": "CURRENT_BATTLE"
+          },
+          "reusableFunction": "applyConditionalDamageMultiplier",
+          "params": {
+            "target": "Demon-type creature or creature with Demon in its name",
+            "valueText": "2x Atk damage",
+            "statChanges": [],
+            "condition": {
+              "type": "TARGET_MATCHES_TYPE_OR_NAME",
+              "creatureTypeIncludes": [
+                "Demon"
+              ],
+              "cardNameIncludes": [
+                "Demon"
+              ],
+              "text": "Target is Demon type or has Demon in its name"
+            },
+            "duration": {
+              "text": "Current battle",
+              "type": "CURRENT_BATTLE"
+            },
+            "damageType": "ATTACK_DAMAGE",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "multiplier": 2
+          },
+          "notes": "",
+          "needsReview": false
+        },
+        {
+          "id": "010-E02",
+          "trigger": "STATIC_WHILE_ON_FIELD",
+          "condition": {
+            "type": "OPPONENT_CONTROLS_TYPE_OR_NAME",
+            "creatureTypeIncludes": [
+              "Demon"
+            ],
+            "cardNameIncludes": [
+              "Demon"
+            ],
+            "text": "Opponent controls a Demon-type creature or creature with Demon in its name"
+          },
+          "actionType": "APPLY_PLAY_RESTRICTION",
+          "effectGroup": "Play Restriction",
+          "actionText": "Prevent opponent Magic play while they control a demon",
+          "target": "Opponent players",
+          "value": "Opponents with a Demon on their side of the field cannot play Magic",
+          "duration": {
+            "text": "While this card remains on the field",
+            "type": "WHILE_ON_FIELD"
+          },
+          "reusableFunction": "applyPlayRestriction",
+          "params": {
+            "target": "Opponent players",
+            "valueText": "Opponents with a Demon on their side of the field cannot play Magic",
+            "statChanges": [],
+            "condition": {
+              "type": "OPPONENT_CONTROLS_TYPE_OR_NAME",
+              "creatureTypeIncludes": [
+                "Demon"
+              ],
+              "cardNameIncludes": [
+                "Demon"
+              ],
+              "text": "Opponent controls a Demon-type creature or creature with Demon in its name"
+            },
+            "duration": {
+              "text": "While this card remains on the field",
+              "type": "WHILE_ON_FIELD"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "restrictedCardTypes": [
+              "MAGIC"
+            ]
+          },
+          "notes": "Card-play prevention guard needs runtime QA. Should only restrict an opponent while that opponent controls a matching Demon.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Magic-play lock is conditional on opponent field state.",
+      "cardType": "CREATURE",
+      "creatureType": "Humanoid",
+      "armorLevel": 12,
+      "speed": 9,
+      "hp": 110,
+      "attackName": "B.F.S. Blast",
+      "attackDice": 3,
+      "modifier": 5,
+      "printedGeneration": "Generation II",
+      "artworkTags": [
+        "ARMOR",
+        "WEAPON"
+      ]
+    },
+    {
+      "id": "promo_011_lord_marshal_goroth",
+      "name": "Lord Marshal Goroth",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "011",
+      "text": "",
+      "effects": [],
+      "notes": "No rules effect visible beyond printed attack profile.",
+      "cardType": "CREATURE",
+      "creatureType": "Beast",
+      "armorLevel": 8,
+      "speed": 10,
+      "hp": 70,
+      "attackName": "Beastvisceration",
+      "attackDice": 4,
+      "modifier": 4,
+      "printedGeneration": "Generation I",
+      "artworkTags": [
+        "WEAPON"
+      ]
+    },
+    {
+      "id": "promo_012_luc_tiberius",
+      "name": "Luc Tiberius",
+      "generation": "Promo",
+      "edition": "Promo Edition",
+      "rarity": "Promo",
+      "cardNumber": "012",
+      "text": "If this card hits during battle, and the hit dice match, draw 1 card.",
+      "effects": [
+        {
+          "id": "012-E01",
+          "trigger": "ON_HIT",
+          "condition": {
+            "type": "HIT_DICE_MATCH",
+            "text": "This card hits during battle and the two hit dice show matching values"
+          },
+          "actionType": "DRAW_CARDS",
+          "effectGroup": "Draw",
+          "actionText": "Draw when hit dice match",
+          "target": "Controller",
+          "value": "Draw 1 card",
+          "duration": {
+            "text": "Instant",
+            "type": "INSTANT"
+          },
+          "reusableFunction": "drawCards",
+          "params": {
+            "target": "Controller",
+            "valueText": "Draw 1 card",
+            "statChanges": [],
+            "condition": {
+              "type": "HIT_DICE_MATCH",
+              "text": "This card hits during battle and the two hit dice show matching values"
+            },
+            "duration": {
+              "text": "Instant",
+              "type": "INSTANT"
+            },
+            "damageType": "",
+            "sourceLinked": false,
+            "usesAnchoring": false,
+            "roundingMode": null,
+            "stackRule": null,
+            "tickTiming": null,
+            "amount": 1
+          },
+          "notes": "Needs battle hit-roll metadata check for doubles/matching hit dice.",
+          "needsReview": true
+        }
+      ],
+      "notes": "Draw effect depends on matching hit dice.",
+      "cardType": "CREATURE",
+      "creatureType": "Humanoid",
+      "armorLevel": 7,
+      "speed": 10,
+      "hp": 80,
+      "attackName": "Devious Draw",
+      "attackDice": 3,
+      "modifier": 2,
+      "printedGeneration": "Generation II"
+    }
+  ]
+}

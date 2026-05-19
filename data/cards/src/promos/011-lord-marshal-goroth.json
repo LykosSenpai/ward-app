@@ -1,0 +1,23 @@
+{
+  "id": "promo_011_lord_marshal_goroth",
+  "name": "Lord Marshal Goroth",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "011",
+  "text": "",
+  "effects": [],
+  "notes": "No rules effect visible beyond printed attack profile.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 8,
+  "speed": 10,
+  "hp": 70,
+  "attackName": "Beastvisceration",
+  "attackDice": 4,
+  "modifier": 4,
+  "printedGeneration": "Generation I",
+  "artworkTags": [
+    "WEAPON"
+  ]
+}

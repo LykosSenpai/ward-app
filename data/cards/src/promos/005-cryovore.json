@@ -1,0 +1,114 @@
+{
+  "id": "promo_005_cryovore",
+  "name": "Cryovore",
+  "generation": "Promo",
+  "edition": "1st Edition",
+  "rarity": "Promo",
+  "cardNumber": "005",
+  "text": "On this card’s turn it may add 10 damage to the end of its attack, or heal itself 10 HP.",
+  "effects": [
+    {
+      "id": "005-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "PLAYER_CHOICE",
+        "choiceGroup": "CRYOVORE_DEVOUR",
+        "text": "Choose damage mode on this card’s turn"
+      },
+      "actionType": "APPLY_STAT_MODIFIER",
+      "effectGroup": "Damage Bonus",
+      "actionText": "Choose to add damage to attack",
+      "target": "This creature",
+      "value": "Atk damage +10 at the end of this creature’s attack",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyStatModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "Atk damage +10 at the end of this creature’s attack",
+        "statChanges": [
+          {
+            "stat": "ATK_BONUS",
+            "operation": "ADD",
+            "value": 10,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "PLAYER_CHOICE",
+          "choiceGroup": "CRYOVORE_DEVOUR",
+          "text": "Choose damage mode on this card’s turn"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Choice-mode activated creature effect; runtime may show as manual/prompt until choice routing is implemented.",
+      "needsReview": true
+    },
+    {
+      "id": "005-E02",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "PLAYER_CHOICE",
+        "choiceGroup": "CRYOVORE_DEVOUR",
+        "text": "Choose heal mode on this card’s turn"
+      },
+      "actionType": "HEAL",
+      "effectGroup": "Healing",
+      "actionText": "Choose to heal this creature",
+      "target": "This creature",
+      "value": "Heal 10 HP",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "healCreature",
+      "params": {
+        "target": "This creature",
+        "valueText": "Heal 10 HP",
+        "statChanges": [],
+        "condition": {
+          "type": "PLAYER_CHOICE",
+          "choiceGroup": "CRYOVORE_DEVOUR",
+          "text": "Choose heal mode on this card’s turn"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "HEALING",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 10
+      },
+      "notes": "Choice-mode activated creature effect. Healing cannot exceed base HP.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Choice between damage bonus or self-heal needs runtime QA.",
+  "cardType": "CREATURE",
+  "creatureType": "Bug",
+  "armorLevel": 8,
+  "speed": 4,
+  "hp": 100,
+  "attackName": "Devour",
+  "attackDice": 2,
+  "modifier": 2,
+  "printedGeneration": "G-III",
+  "artworkTags": [
+    "ICE"
+  ]
+}

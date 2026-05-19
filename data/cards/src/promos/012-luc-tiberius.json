@@ -1,0 +1,61 @@
+{
+  "id": "promo_012_luc_tiberius",
+  "name": "Luc Tiberius",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "012",
+  "text": "If this card hits during battle, and the hit dice match, draw 1 card.",
+  "effects": [
+    {
+      "id": "012-E01",
+      "trigger": "ON_HIT",
+      "condition": {
+        "type": "HIT_DICE_MATCH",
+        "text": "This card hits during battle and the two hit dice show matching values"
+      },
+      "actionType": "DRAW_CARDS",
+      "effectGroup": "Draw",
+      "actionText": "Draw when hit dice match",
+      "target": "Controller",
+      "value": "Draw 1 card",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "drawCards",
+      "params": {
+        "target": "Controller",
+        "valueText": "Draw 1 card",
+        "statChanges": [],
+        "condition": {
+          "type": "HIT_DICE_MATCH",
+          "text": "This card hits during battle and the two hit dice show matching values"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "amount": 1
+      },
+      "notes": "Needs battle hit-roll metadata check for doubles/matching hit dice.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Draw effect depends on matching hit dice.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 7,
+  "speed": 10,
+  "hp": 80,
+  "attackName": "Devious Draw",
+  "attackDice": 3,
+  "modifier": 2,
+  "printedGeneration": "Generation II"
+}

@@ -72,7 +72,7 @@ const totals = rows.reduce((acc, row) => {
 }, {});
 
 fs.writeFileSync(OUT_MD, `# WARD Effect Action Type Audit - 2026-05-05\n\n` +
-  `Generated from \`data/cards/src/gen*/\`. This is an action-type work queue, not a card-by-card Working confirmation.\n\n` +
+  `Generated from \`data/cards/src/**\`. This is an action-type work queue, not a card-by-card Working confirmation.\n\n` +
   `## Summary\n\n` +
   `- Total unique action types: ${rows.length}\n` +
   `- Supported/cataloged as runtime-supported: ${totals.SUPPORTED ?? 0}\n` +

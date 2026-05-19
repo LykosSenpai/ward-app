@@ -1,0 +1,131 @@
+{
+  "id": "promo_010_hell_walker",
+  "name": "Hell Walker",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "010",
+  "text": "This creature inflicts 2x attack damage to demon-type creatures or creatures with “demon” in their name. Opponents with a demon on their side of the field, cannot play magic.",
+  "effects": [
+    {
+      "id": "010-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "condition": {
+        "type": "TARGET_MATCHES_TYPE_OR_NAME",
+        "creatureTypeIncludes": [
+          "Demon"
+        ],
+        "cardNameIncludes": [
+          "Demon"
+        ],
+        "text": "Target is Demon type or has Demon in its name"
+      },
+      "actionType": "APPLY_ATTACK_DAMAGE_MULTIPLIER",
+      "effectGroup": "Damage Multiplier",
+      "actionText": "Multiply attack damage",
+      "target": "Demon-type creature or creature with Demon in its name",
+      "value": "2x Atk damage",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDamageMultiplier",
+      "params": {
+        "target": "Demon-type creature or creature with Demon in its name",
+        "valueText": "2x Atk damage",
+        "statChanges": [],
+        "condition": {
+          "type": "TARGET_MATCHES_TYPE_OR_NAME",
+          "creatureTypeIncludes": [
+            "Demon"
+          ],
+          "cardNameIncludes": [
+            "Demon"
+          ],
+          "text": "Target is Demon type or has Demon in its name"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "multiplier": 2
+      },
+      "notes": "",
+      "needsReview": false
+    },
+    {
+      "id": "010-E02",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "OPPONENT_CONTROLS_TYPE_OR_NAME",
+        "creatureTypeIncludes": [
+          "Demon"
+        ],
+        "cardNameIncludes": [
+          "Demon"
+        ],
+        "text": "Opponent controls a Demon-type creature or creature with Demon in its name"
+      },
+      "actionType": "APPLY_PLAY_RESTRICTION",
+      "effectGroup": "Play Restriction",
+      "actionText": "Prevent opponent Magic play while they control a demon",
+      "target": "Opponent players",
+      "value": "Opponents with a Demon on their side of the field cannot play Magic",
+      "duration": {
+        "text": "While this card remains on the field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyPlayRestriction",
+      "params": {
+        "target": "Opponent players",
+        "valueText": "Opponents with a Demon on their side of the field cannot play Magic",
+        "statChanges": [],
+        "condition": {
+          "type": "OPPONENT_CONTROLS_TYPE_OR_NAME",
+          "creatureTypeIncludes": [
+            "Demon"
+          ],
+          "cardNameIncludes": [
+            "Demon"
+          ],
+          "text": "Opponent controls a Demon-type creature or creature with Demon in its name"
+        },
+        "duration": {
+          "text": "While this card remains on the field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "restrictedCardTypes": [
+          "MAGIC"
+        ]
+      },
+      "notes": "Card-play prevention guard needs runtime QA. Should only restrict an opponent while that opponent controls a matching Demon.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Magic-play lock is conditional on opponent field state.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 12,
+  "speed": 9,
+  "hp": 110,
+  "attackName": "B.F.S. Blast",
+  "attackDice": 3,
+  "modifier": 5,
+  "printedGeneration": "Generation II",
+  "artworkTags": [
+    "ARMOR",
+    "WEAPON"
+  ]
+}

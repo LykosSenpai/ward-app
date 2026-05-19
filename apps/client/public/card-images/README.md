@@ -22,8 +22,8 @@ pnpm --filter @ward/client build:card-image-manifest
 The client checks these extensions in order before the manifest has loaded:
 
 ```text
-.png
 .webp
+.png
 .jpg
 .jpeg
 ```
@@ -41,7 +41,7 @@ gen1_001 blue dragon.png
 Preferred naming should still use underscores everywhere:
 
 ```text
-gen1_001_blue_dragon.png
+gen1_001_blue_dragon.webp
 ```
 
 ## Alternate art naming
@@ -69,9 +69,9 @@ The Card Library art selector currently exposes Default plus Alt 1 through Alt 4
 Zero cards are loaded as raw card image files. Use the same base stem as the default card image plus `__zero-art`:
 
 ```text
-gen1_001_blue_dragon__zero-art.png
-gen2_140_green_dragon__zero-art.png
-gen3_057_steam_angel__zero-art.png
+gen1_001_blue_dragon__zero-art.webp
+gen2_140_green_dragon__zero-art.webp
+gen3_057_steam_angel__zero-art.webp
 ```
 
 The client also accepts these Zero suffix aliases:

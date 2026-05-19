@@ -1,0 +1,220 @@
+{
+  "id": "promo_007_dragon_of_time",
+  "name": "Dragon of Time",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "007",
+  "text": "During your turn, roll a die. If the result is: (1-2) Magic cards cannot be played this turn. (3-4) Negate all creature effects this turn. (Aside from this card) (5-6) All Limited Summons are sent to their original owner’s cemetery.",
+  "effects": [
+    {
+      "id": "007-E01",
+      "trigger": "DURING_YOUR_TURN_ACTIVATED",
+      "condition": {
+        "type": "ACTIVATED_D6_ROLL_TABLE",
+        "text": "During your turn, roll 1D6 and apply the matching Paradox branch"
+      },
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Roll Table",
+      "actionText": "Roll D6 for Paradox outcome",
+      "target": "All players / all creatures / all Limited Summons",
+      "value": "1-2: Magic cannot be played this turn; 3-4: negate all creature effects this turn except Dragon of Time; 5-6: send all Limited Summons to original owner cemetery",
+      "duration": {
+        "text": "This turn",
+        "type": "CURRENT_TURN"
+      },
+      "reusableFunction": "resolveRollTable",
+      "params": {
+        "target": "All players / all creatures / all Limited Summons",
+        "valueText": "1-2: Magic cannot be played this turn; 3-4: negate all creature effects this turn except Dragon of Time; 5-6: send all Limited Summons to original owner cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "ACTIVATED_D6_ROLL_TABLE",
+          "text": "During your turn, roll 1D6 and apply the matching Paradox branch"
+        },
+        "duration": {
+          "text": "This turn",
+          "type": "CURRENT_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "table": [
+          {
+            "results": [
+              1,
+              2
+            ],
+            "branchEffectId": "007-E02"
+          },
+          {
+            "results": [
+              3,
+              4
+            ],
+            "branchEffectId": "007-E03"
+          },
+          {
+            "results": [
+              5,
+              6
+            ],
+            "branchEffectId": "007-E04"
+          }
+        ]
+      },
+      "notes": "Roll-table branch effect. Branches are split below as atomic effects for review/runtime routing.",
+      "needsReview": true
+    },
+    {
+      "id": "007-E02",
+      "trigger": "ROLL_TABLE_RESULT_1_2",
+      "condition": {
+        "type": "ROLL_RESULT_RANGE",
+        "min": 1,
+        "max": 2,
+        "text": "Paradox roll result 1-2"
+      },
+      "actionType": "PREVENT_CARD_PLAY",
+      "effectGroup": "Play Restriction",
+      "actionText": "Prevent Magic cards from being played",
+      "target": "All players",
+      "value": "Magic cards cannot be played this turn",
+      "duration": {
+        "text": "This turn",
+        "type": "CURRENT_TURN"
+      },
+      "reusableFunction": "preventCardPlay",
+      "params": {
+        "target": "All players",
+        "valueText": "Magic cards cannot be played this turn",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_RESULT_RANGE",
+          "min": 1,
+          "max": 2,
+          "text": "Paradox roll result 1-2"
+        },
+        "duration": {
+          "text": "This turn",
+          "type": "CURRENT_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "cardTypes": [
+          "MAGIC"
+        ]
+      },
+      "notes": "Triggered only by Dragon of Time 007-E01 result.",
+      "needsReview": true
+    },
+    {
+      "id": "007-E03",
+      "trigger": "ROLL_TABLE_RESULT_3_4",
+      "condition": {
+        "type": "ROLL_RESULT_RANGE",
+        "min": 3,
+        "max": 4,
+        "text": "Paradox roll result 3-4"
+      },
+      "actionType": "NEGATE_CREATURE_EFFECTS",
+      "effectGroup": "Creature Effect Negation",
+      "actionText": "Negate creature effects",
+      "target": "All creatures except Dragon of Time",
+      "value": "Negate all creature effects this turn except this card",
+      "duration": {
+        "text": "This turn",
+        "type": "CURRENT_TURN"
+      },
+      "reusableFunction": "negateCreatureEffects",
+      "params": {
+        "target": "All creatures except Dragon of Time",
+        "valueText": "Negate all creature effects this turn except this card",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_RESULT_RANGE",
+          "min": 3,
+          "max": 4,
+          "text": "Paradox roll result 3-4"
+        },
+        "duration": {
+          "text": "This turn",
+          "type": "CURRENT_TURN"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "excludeSource": true
+      },
+      "notes": "Needs global temporary creature-effect suppression with source exception.",
+      "needsReview": true
+    },
+    {
+      "id": "007-E04",
+      "trigger": "ROLL_TABLE_RESULT_5_6",
+      "condition": {
+        "type": "ROLL_RESULT_RANGE",
+        "min": 5,
+        "max": 6,
+        "text": "Paradox roll result 5-6"
+      },
+      "actionType": "SEND_TO_ORIGINAL_OWNER_CEMETERY",
+      "effectGroup": "Zone Movement",
+      "actionText": "Send Limited Summons to cemetery",
+      "target": "All Limited Summons",
+      "value": "All Limited Summons are sent to their original owner’s cemetery",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "sendToOriginalOwnerCemetery",
+      "params": {
+        "target": "All Limited Summons",
+        "valueText": "All Limited Summons are sent to their original owner’s cemetery",
+        "statChanges": [],
+        "condition": {
+          "type": "ROLL_RESULT_RANGE",
+          "min": 5,
+          "max": 6,
+          "text": "Paradox roll result 5-6"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Needs global Limited Summon target routing and original-owner cemetery handling.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Activated roll-table boss promo. Branches require runtime QA.",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 12,
+  "speed": 4,
+  "hp": 80,
+  "attackName": "Paradox",
+  "attackDice": 1,
+  "modifier": 20,
+  "printedGeneration": "Boss Edition / Pre-Order Exclusive",
+  "artworkTags": [
+    "WINGS"
+  ]
+}

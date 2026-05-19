@@ -14,7 +14,7 @@ type MatchCardImageProps = {
   className?: string;
 };
 
-const IMAGE_EXTENSIONS = ["png", "webp", "jpg", "jpeg"];
+const IMAGE_EXTENSIONS = ["webp", "png", "jpg", "jpeg"];
 const ZERO_ART_SUFFIX_ALIASES = ["zero-art", "zero_art", "zeroart"];
 
 function uniqueValues(values: string[]): string[] {

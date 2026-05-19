@@ -155,7 +155,7 @@ export function composeArtKey(baseArtKey: "default" | "zero-art", holoEnabled: b
   return holoEnabled ? "holo" : "default";
 }
 
-const IMAGE_EXTENSIONS = ["png", "webp", "jpg", "jpeg"];
+const IMAGE_EXTENSIONS = ["webp", "png", "jpg", "jpeg"];
 
 function uniqueValues(values: string[]): string[] {
   return Array.from(new Set(values.filter(value => value.trim() !== "")));

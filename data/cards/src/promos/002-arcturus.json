@@ -1,0 +1,68 @@
+{
+  "id": "promo_002_arcturus",
+  "name": "Arcturus",
+  "generation": "Promo",
+  "edition": "1st Edition",
+  "rarity": "Promo",
+  "cardNumber": "002",
+  "text": "This card can only be damaged by the attacking creature’s base attack and modifier.",
+  "effects": [
+    {
+      "id": "002-E01",
+      "trigger": "STATIC_WHILE_ON_FIELD",
+      "condition": {
+        "type": "NON_BASE_ATTACK_DAMAGE_SOURCE",
+        "text": "Damage is from magic increases, creature effects, bonuses, multipliers, DOT, or other non-base sources"
+      },
+      "actionType": "APPLY_CONDITIONAL_DAMAGE_IMMUNITY",
+      "effectGroup": "Damage Prevention",
+      "actionText": "Ignore non-base attack damage additions",
+      "target": "This card",
+      "value": "Only the attacking creature’s base Atk Dice Rolls and printed Modifier can damage this card",
+      "duration": {
+        "text": "While this card remains on the field",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "applyConditionalDamageImmunity",
+      "params": {
+        "target": "This card",
+        "valueText": "Only the attacking creature’s base Atk Dice Rolls and printed Modifier can damage this card",
+        "statChanges": [],
+        "condition": {
+          "type": "NON_BASE_ATTACK_DAMAGE_SOURCE",
+          "text": "Damage is from magic increases, creature effects, bonuses, multipliers, DOT, or other non-base sources"
+        },
+        "duration": {
+          "text": "While this card remains on the field",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "ATTACK_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "allowedDamageComponents": [
+          "BASE_ATTACK_DICE_ROLL",
+          "PRINTED_MODIFIER"
+        ]
+      },
+      "notes": "Runtime needs a reducer that strips non-base damage components instead of preventing the whole strike.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Promo G-III card. Effect needs battle-pipeline QA for non-base damage filtering.",
+  "cardType": "CREATURE",
+  "creatureType": "Humanoid",
+  "armorLevel": 6,
+  "speed": 8,
+  "hp": 70,
+  "attackName": "Onslaught",
+  "attackDice": 4,
+  "modifier": 2,
+  "printedGeneration": "G-III",
+  "artworkTags": [
+    "WEAPON",
+    "AXE"
+  ]
+}

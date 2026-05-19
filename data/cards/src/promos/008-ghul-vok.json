@@ -1,0 +1,107 @@
+{
+  "id": "promo_008_ghul_vok",
+  "name": "Ghul'Vok",
+  "generation": "Promo",
+  "edition": "1st Edition",
+  "rarity": "Promo",
+  "cardNumber": "008",
+  "text": "If “Full Moon” is on the field, this creature may be summoned without sacrifice. Send back to original owner hand if “Full Moon” is removed from the field.",
+  "effects": [
+    {
+      "id": "008-E01",
+      "trigger": "SUMMON_REQUIREMENT",
+      "condition": {
+        "type": "NAMED_CARD_ON_FIELD",
+        "cardName": "Full Moon",
+        "text": "Full Moon is on the field"
+      },
+      "actionType": "APPLY_SUMMON_REQUIREMENT_OVERRIDE",
+      "effectGroup": "Summon Requirement",
+      "actionText": "Allow summon without sacrifice",
+      "target": "This creature",
+      "value": "No sacrifice required if Full Moon is on the field",
+      "duration": {
+        "text": "Before summon",
+        "type": "BEFORE_SUMMON"
+      },
+      "reusableFunction": "applySummonRequirementOverride",
+      "params": {
+        "target": "This creature",
+        "valueText": "No sacrifice required if Full Moon is on the field",
+        "statChanges": [],
+        "condition": {
+          "type": "NAMED_CARD_ON_FIELD",
+          "cardName": "Full Moon",
+          "text": "Full Moon is on the field"
+        },
+        "duration": {
+          "text": "Before summon",
+          "type": "BEFORE_SUMMON"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "requiredSacrifices": 0
+      },
+      "notes": "Conditional summon requirement override. Needs summon-rule QA because the override depends on a named field card.",
+      "needsReview": true
+    },
+    {
+      "id": "008-E02",
+      "trigger": "WHEN_NAMED_CARD_REMOVED_FROM_FIELD",
+      "condition": {
+        "type": "NAMED_CARD_REMOVED_FROM_FIELD",
+        "cardName": "Full Moon",
+        "text": "Full Moon is removed from the field"
+      },
+      "actionType": "RETURN_SELF_TO_HAND",
+      "effectGroup": "Zone Movement",
+      "actionText": "Return this creature to original owner hand",
+      "target": "This creature",
+      "value": "Return to original owner hand if Full Moon is removed from the field",
+      "duration": {
+        "text": "Instant",
+        "type": "INSTANT"
+      },
+      "reusableFunction": "returnSelfToHand",
+      "params": {
+        "target": "This creature",
+        "valueText": "Return to original owner hand if Full Moon is removed from the field",
+        "statChanges": [],
+        "condition": {
+          "type": "NAMED_CARD_REMOVED_FROM_FIELD",
+          "cardName": "Full Moon",
+          "text": "Full Moon is removed from the field"
+        },
+        "duration": {
+          "text": "Instant",
+          "type": "INSTANT"
+        },
+        "damageType": "",
+        "sourceLinked": true,
+        "usesAnchoring": true,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Source/name-linked cleanup. Similar to anchoring, but keyed to named card Full Moon rather than this source card.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Depends on Gen 2 Full Moon being active. Conditional summon and cleanup require runtime QA.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 12,
+  "speed": 6,
+  "hp": 100,
+  "attackName": "Eldritch Prayer",
+  "attackDice": 5,
+  "modifier": 5,
+  "printedGeneration": "G-III",
+  "artworkTags": [
+    "MOON"
+  ]
+}

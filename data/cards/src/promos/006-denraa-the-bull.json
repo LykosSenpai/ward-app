@@ -1,0 +1,24 @@
+{
+  "id": "promo_006_denraa_the_bull",
+  "name": "Denraa The Bull",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "006",
+  "text": "",
+  "effects": [],
+  "notes": "No rules effect visible beyond printed attack profile.",
+  "cardType": "CREATURE",
+  "creatureType": "Beast",
+  "armorLevel": 10,
+  "speed": 9,
+  "hp": 90,
+  "attackName": "Axe Rush",
+  "attackDice": 2,
+  "modifier": 10,
+  "printedGeneration": "Generation II",
+  "artworkTags": [
+    "WEAPON",
+    "AXE"
+  ]
+}

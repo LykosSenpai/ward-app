@@ -1,0 +1,66 @@
+{
+  "id": "promo_004_cosmic_storm",
+  "name": "Cosmic Storm",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "004",
+  "text": "Field: At the beginning of each turn, all players roll a die. The player with the lowest die result must inflict 5 HP damage to their primary creature.",
+  "effects": [
+    {
+      "id": "004-E01",
+      "trigger": "BEGINNING_OF_EACH_TURN",
+      "condition": {
+        "type": "TURN_START_FIELD_ROLL",
+        "text": "At the beginning of each turn, all players roll 1D6; lowest result loses"
+      },
+      "actionType": "ROLL_TABLE",
+      "effectGroup": "Field Roll",
+      "actionText": "All players roll; lowest damages primary creature",
+      "target": "Lowest-rolling player primary creature",
+      "value": "Lowest die result takes 5 HP damage to primary creature",
+      "duration": {
+        "text": "Each turn while field effect is active",
+        "type": "WHILE_ON_FIELD"
+      },
+      "reusableFunction": "resolveFieldRollOutcome",
+      "params": {
+        "target": "Lowest-rolling player primary creature",
+        "valueText": "Lowest die result takes 5 HP damage to primary creature",
+        "statChanges": [],
+        "condition": {
+          "type": "TURN_START_FIELD_ROLL",
+          "text": "At the beginning of each turn, all players roll 1D6; lowest result loses"
+        },
+        "duration": {
+          "text": "Each turn while field effect is active",
+          "type": "WHILE_ON_FIELD"
+        },
+        "damageType": "EFFECT_DAMAGE",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null,
+        "dieSize": 6,
+        "dicePerPlayer": 1,
+        "lowestRollLoses": true,
+        "damage": 5,
+        "damageTarget": "LOWEST_PLAYER_PRIMARY_CREATURE"
+      },
+      "notes": "Requires multiplayer-capable tied-lowest roll handling and turn-start field trigger automation.",
+      "needsReview": true
+    }
+  ],
+  "notes": "Uploaded image includes a browser full-screen overlay near the card title; replace with clean art when available.",
+  "cardType": "MAGIC",
+  "magicType": "INFINITE",
+  "magicSubType": "FIELD",
+  "isEquip": false,
+  "isField": true,
+  "printedGeneration": "Boss Edition / Pre-Order Exclusive",
+  "artworkTags": [
+    "LIGHTNING",
+    "MOON"
+  ]
+}

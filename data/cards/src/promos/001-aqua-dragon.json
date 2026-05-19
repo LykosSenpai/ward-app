@@ -1,0 +1,87 @@
+{
+  "id": "promo_001_aqua_dragon",
+  "name": "Aqua Dragon",
+  "generation": "Promo",
+  "edition": "Promo Edition",
+  "rarity": "Promo",
+  "cardNumber": "001",
+  "text": "During battle, add +2 attack dice rolls to this creature if it battles with a \"Demon\", \"Steam\", \"Humanoid\", or \"Beast\" type creature.",
+  "effects": [
+    {
+      "id": "001-E01",
+      "trigger": "DURING_DAMAGE_CALC",
+      "condition": {
+        "type": "TARGET_MATCHES_TYPE_OR_NAME",
+        "creatureTypeIncludes": [
+          "Demon",
+          "Humanoid",
+          "Beast"
+        ],
+        "cardNameIncludes": [
+          "Steam"
+        ],
+        "text": "Battling a Demon, Humanoid, Beast, or Steam-named creature"
+      },
+      "actionType": "APPLY_CONDITIONAL_DICE_MODIFIER",
+      "effectGroup": "Dice Modifier",
+      "actionText": "Add Atk Dice Rolls",
+      "target": "This creature",
+      "value": "Atk Dice Rolls +2",
+      "duration": {
+        "text": "Current battle",
+        "type": "CURRENT_BATTLE"
+      },
+      "reusableFunction": "applyConditionalDiceModifier",
+      "params": {
+        "target": "This creature",
+        "valueText": "Atk Dice Rolls +2",
+        "statChanges": [
+          {
+            "stat": "ATK_DICE_ROLLS",
+            "operation": "ADD",
+            "value": 2,
+            "rounding": null
+          }
+        ],
+        "condition": {
+          "type": "TARGET_MATCHES_TYPE_OR_NAME",
+          "creatureTypeIncludes": [
+            "Demon",
+            "Humanoid",
+            "Beast"
+          ],
+          "cardNameIncludes": [
+            "Steam"
+          ],
+          "text": "Battling a Demon, Humanoid, Beast, or Steam-named creature"
+        },
+        "duration": {
+          "text": "Current battle",
+          "type": "CURRENT_BATTLE"
+        },
+        "damageType": "",
+        "sourceLinked": false,
+        "usesAnchoring": false,
+        "roundingMode": null,
+        "stackRule": null,
+        "tickTiming": null
+      },
+      "notes": "Steam is not a standard rules-guide creature type, so this is modeled as a name filter for Steam-named creatures.",
+      "needsReview": false
+    }
+  ],
+  "notes": "Pre-order promo. Steam condition modeled as name contains Steam.",
+  "cardType": "CREATURE",
+  "creatureType": "Dragon",
+  "armorLevel": 12,
+  "speed": 6,
+  "hp": 110,
+  "attackName": "Hydro Flame",
+  "attackDice": 4,
+  "modifier": 7,
+  "printedGeneration": "Pre-Order Edition",
+  "artworkTags": [
+    "WATER",
+    "WINGS"
+  ]
+}
