@@ -2341,24 +2341,49 @@ export function BoardPreview3D({
   const handleKeyDown: KeyboardEventHandler<HTMLElement> = (event) => {
     if (isTextInputTarget(event.target)) return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
-    const key = event.key.toLowerCase();
-    if (key === "w") setClampedCameraPan("y", cameraPanY - 4);
-    if (key === "s") setClampedCameraPan("y", cameraPanY + 4);
-    if (key === "a") setClampedCameraPan("x", cameraPanX - 4);
-    if (key === "d") setClampedCameraPan("x", cameraPanX + 4);
-    if (event.key === "+" || event.key === "=") setClampedZoomScale(zoomScale + 0.08);
-    if (event.key === "-" || event.key === "_") setClampedZoomScale(zoomScale - 0.08);
-    if (event.key === "0") resetCamera();
-    if (["w", "a", "s", "d", "+", "=", "-", "_", "0"].includes(key) || event.key === "+" || event.key === "=") {
+    if (event.key === "ArrowLeft") {
+      if (event.shiftKey && selectedSlotId) {
+        nudgeSelectedSlot("x", -1);
+      } else if (!event.shiftKey) {
+        setClampedCameraPan("x", cameraPanX - 4);
+      }
       event.preventDefault();
       return;
     }
-    if (!selectedSlotId) return;
-    if (event.key === "ArrowLeft") nudgeSelectedSlot("x", -1);
-    if (event.key === "ArrowRight") nudgeSelectedSlot("x", 1);
-    if (event.key === "ArrowUp") nudgeSelectedSlot("z", -1);
-    if (event.key === "ArrowDown") nudgeSelectedSlot("z", 1);
-    if (event.key.startsWith("Arrow")) event.preventDefault();
+    if (event.key === "ArrowRight") {
+      if (event.shiftKey && selectedSlotId) {
+        nudgeSelectedSlot("x", 1);
+      } else if (!event.shiftKey) {
+        setClampedCameraPan("x", cameraPanX + 4);
+      }
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      if (event.shiftKey && selectedSlotId) {
+        nudgeSelectedSlot("z", -1);
+      } else if (!event.shiftKey) {
+        setClampedCameraPan("y", cameraPanY - 4);
+      }
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      if (event.shiftKey && selectedSlotId) {
+        nudgeSelectedSlot("z", 1);
+      } else if (!event.shiftKey) {
+        setClampedCameraPan("y", cameraPanY + 4);
+      }
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "+" || event.key === "=") setClampedZoomScale(zoomScale + 0.08);
+    if (event.key === "-" || event.key === "_") setClampedZoomScale(zoomScale - 0.08);
+    if (event.key === "0") resetCamera();
+    if (["+", "=", "-", "_", "0"].includes(event.key)) {
+      event.preventDefault();
+      return;
+    }
     if (!event.shiftKey && event.key.toLowerCase() === "r") resetAllEditorState();
   };
 
@@ -2773,7 +2798,7 @@ export function BoardPreview3D({
                       {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
                       <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
                       <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({animationQueue.activeEvent?.usesPlannerOutput ? "planner" : getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
-                      <p>Drag to pan | Wheel to zoom | WASD to move | +/- zoom | 0 reset</p>
+                      <p>Drag to pan | Wheel to zoom | Arrow keys pan | +/- zoom | 0 reset</p>
                       {intentLabel ? <p>Intent: {intentLabel}</p> : null}
                       {commandLabel ? <p>Command: {commandLabel}</p> : null}
                     </div>

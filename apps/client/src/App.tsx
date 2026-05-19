@@ -78,6 +78,12 @@ import type {
   ,ServerFeatureFlag
 } from "./clientTypes";
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
+import {
+  getGameplayKeybindingActionByCode,
+  isEditableKeybindingTarget,
+  readGameplayKeybindings,
+  type GameplayKeybindingAction
+} from "./keybindings";
 import "./App.css";
 
 type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
@@ -2700,6 +2706,123 @@ export default function App() {
       (player.isClone && player.ownerUserId === authUser.id)
     )
   );
+
+  function runGameplayKeybindingAction(action: GameplayKeybindingAction): boolean {
+    if (!match) return false;
+
+    const matchStatus = getMatchStatus(match);
+    const canUseMatchActions = matchStatus !== "COMPLETE";
+    const canControlActiveTurn = !controlledPlayerId || controlledPlayerId === match.turn.activePlayerId;
+
+    if (action === "openEventLog") {
+      setDashboardModal("event-log");
+      setLastBoardCommandLabel("Shortcut: event log");
+      return true;
+    }
+
+    if (isLiveMatchSpectator) {
+      return false;
+    }
+
+    if (action === "swapPlayerView") {
+      if (activeLobby?.matchId !== match.matchId || activeLobby.mode !== "SOLO") return false;
+
+      const nextPlayerId = controlledPlayerId === "player_2" ? "player_1" : "player_2";
+      switchSoloControlledPlayer(nextPlayerId);
+      setLastBoardCommandLabel(`Shortcut: ${nextPlayerId === "player_2" ? "clone side" : "player side"}`);
+      return true;
+    }
+
+    if (action === "drawCards") {
+      if (!canUseMatchActions) return false;
+
+      const drawTargetPlayerId =
+        controlledPlayerId === "player_1" || controlledPlayerId === "player_2"
+          ? controlledPlayerId
+          : match.turn.activePlayerId;
+      const pendingDrawEffect = getPendingManualDrawEffectForPlayer(match, drawTargetPlayerId);
+
+      if (pendingDrawEffect) {
+        resolveManualDrawEffect(pendingDrawEffect.id, drawTargetPlayerId);
+        setLastBoardCommandLabel("Shortcut: draw effect resolved");
+        return true;
+      }
+
+      if (!canDrawForCurrentTurn(match, controlledPlayerId)) return false;
+
+      drawActivePlayer();
+      setLastBoardCommandLabel("Shortcut: draw");
+      return true;
+    }
+
+    if (action === "advancePhase") {
+      if (!canUseMatchActions || !canControlActiveTurn || advanceBlockReason) return false;
+
+      advancePhase();
+      setLastBoardCommandLabel("Shortcut: advance phase");
+      return true;
+    }
+
+    if (action === "undoLastAction") {
+      if (!canUseMatchActions || !canControlActiveTurn) return false;
+
+      undoLastAction();
+      setLastBoardCommandLabel("Shortcut: undo");
+      return true;
+    }
+
+    if (action === "openDiceRoller") {
+      setDashboardModal("dice-roller");
+      setLastBoardCommandLabel("Shortcut: dice roller");
+      return true;
+    }
+
+    if (action === "openSaveLoad") {
+      setDashboardModal("save-load");
+      setLastBoardCommandLabel("Shortcut: save / load");
+      return true;
+    }
+
+    return false;
+  }
+
+  useEffect(() => {
+    if (activePage !== "play" || !match || !show3dBoardView || dashboardModal) return;
+
+    function handleGameplayKeyDown(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        isEditableKeybindingTarget(event.target)
+      ) {
+        return;
+      }
+
+      const action = getGameplayKeybindingActionByCode(readGameplayKeybindings(), event.code);
+      if (!action) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (event.repeat) return;
+      runGameplayKeybindingAction(action);
+    }
+
+    window.addEventListener("keydown", handleGameplayKeyDown, true);
+    return () => window.removeEventListener("keydown", handleGameplayKeyDown, true);
+  }, [
+    activeLobby,
+    activePage,
+    advanceBlockReason,
+    controlledPlayerId,
+    dashboardModal,
+    isLiveMatchSpectator,
+    match,
+    show3dBoardView
+  ]);
 
   if (!authChecked) {
     return (

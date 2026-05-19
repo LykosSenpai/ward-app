@@ -136,7 +136,7 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
 
       </div>
       <p className="board-preview-3d__status">
-        Shortcuts: drag pans camera | wheel zooms | WASD moves camera | +/- zoom | 0 resets camera | Arrow keys nudge selected slot
+        Shortcuts: drag pans camera | wheel zooms | Arrow keys move camera | Shift+Arrow nudges selected slot | +/- zoom | 0 resets camera
 
       </p>
     </>
