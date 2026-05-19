@@ -382,8 +382,8 @@ export default function App() {
   const [serverRestartNotice, setServerRestartNotice] = useState("");
   const [match, setMatch] = useState<AppMatchState | null>(null);
   const [controlledPlayersByMatchId, setControlledPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
-  const [soloViewedPlayersByMatchId, setSoloViewedPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
-  const [gameplayKeybindings, setGameplayKeybindings] = useState<GameplayKeybindings>(() => readGameplayKeybindings());
+  const [, setMatchViewModeByMatchId] = useState<Record<string, "participant" | "spectator">>({});
+  const [, setWatchPolicy] = useState<"PUBLIC" | "LOBBY_MEMBERS" | "PARTICIPANTS_ONLY">("PUBLIC");
   const [error, setError] = useState("");
   const [savedMatches, setSavedMatches] = useState<SavedMatchSummary[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
@@ -845,6 +845,11 @@ export default function App() {
       setSocketAuthenticated(null);
       socket.emit("collection:setCapabilities", { ownershipDeltaOnly: true });
       requestInitialData();
+      socket.emit("admin:watchPolicy:get", (response: { ok: boolean; policy?: string }) => {
+        if (!response?.ok) return;
+        const policy = response.policy === "LOBBY_MEMBERS" || response.policy === "PARTICIPANTS_ONLY" ? response.policy : "PUBLIC";
+        setWatchPolicy(policy);
+      });
     });
 
     socket.on("match:state", (data: AppMatchState) => {
@@ -1000,6 +1005,15 @@ export default function App() {
 
     socket.on("lobby:cleanupComplete", (data: { message: string; closedCount: number }) => {
       setSaveMessage(data.message);
+    });
+
+    socket.on("match:viewMode", (data: { matchId: string; mode: "participant" | "spectator" }) => {
+      setMatchViewModeByMatchId(current => ({ ...current, [data.matchId]: data.mode }));
+    });
+
+    socket.on("match:watchPolicy", (data: { policy?: string }) => {
+      const policy = data.policy === "LOBBY_MEMBERS" || data.policy === "PARTICIPANTS_ONLY" ? data.policy : "PUBLIC";
+      setWatchPolicy(policy);
     });
 
     socket.on("collection:ownership", (data: CardOwnershipMap) => {
@@ -1245,6 +1259,8 @@ export default function App() {
       socket.off("features:list");
       socket.off("features:visibilityChanged");
       socket.off("lobby:cleanupComplete");
+      socket.off("match:viewMode");
+      socket.off("match:watchPolicy");
       socket.off("collection:ownership");
       socket.off("collection:ownershipDelta");
       socket.off("collection:error");
@@ -1415,13 +1431,14 @@ export default function App() {
     });
   }
 
-  function createLobby(data: { name: string; format: DeckFormat }) {
+  function createLobby(data: { name: string; format: DeckFormat; solo?: boolean }) {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:create", {
       name: data.name,
       format: data.format,
-      selectedPackIds
+      selectedPackIds,
+      solo: data.solo === true
     });
   }
 
@@ -1433,6 +1450,11 @@ export default function App() {
   function selectLobbyDeck(lobbyId: string, deckId: string) {
     setError("");
     socket.emit("lobby:selectDeck", { lobbyId, deckId });
+  }
+
+  function selectLobbyCloneDeck(lobbyId: string, deckId: string) {
+    setError("");
+    socket.emit("lobby:selectCloneDeck", { lobbyId, deckId });
   }
 
   function viewLobby(lobbyId: string) {
@@ -1454,6 +1476,16 @@ export default function App() {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:startMatch", lobbyId);
+  }
+
+  function switchSoloControlledPlayer(playerId: "player_1" | "player_2") {
+    if (!match) return;
+    setError("");
+    setControlledPlayersByMatchId(current => ({
+      ...current,
+      [match.matchId]: playerId
+    }));
+    socket.emit("match:switchControlledPlayer", { matchId: match.matchId, playerId });
   }
 
   function cleanupStaleLobbies() {
@@ -2630,13 +2662,19 @@ export default function App() {
 
   useEffect(() => {
     if (!activeLobby?.matchId || !authUser) return;
-    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id && !player.isClone);
     if (lobbyPlayer?.seat !== 1 && lobbyPlayer?.seat !== 2) return;
 
-    setControlledPlayersByMatchId(current => ({
-      ...current,
-      [activeLobby.matchId!]: lobbyPlayer.seat === 1 ? "player_1" : "player_2"
-    }));
+    setControlledPlayersByMatchId(current => {
+      if (activeLobby.mode === "SOLO" && current[activeLobby.matchId!]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [activeLobby.matchId!]: lobbyPlayer.seat === 1 ? "player_1" : "player_2"
+      };
+    });
   }, [activeLobby, authUser]);
 
   const controlledPlayerId = (() => {
@@ -2645,7 +2683,11 @@ export default function App() {
     }
 
     if (activeLobby?.matchId === match.matchId) {
-      const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+      if (activeLobby.mode === "SOLO") {
+        return controlledPlayersByMatchId[match.matchId] ?? "player_1";
+      }
+
+      const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id && !player.isClone);
       if (lobbyPlayer?.seat === 1 || lobbyPlayer?.seat === 2) {
         return lobbyPlayer.seat === 1 ? "player_1" : "player_2";
       }
@@ -2671,124 +2713,15 @@ export default function App() {
     (!controlledPlayerId || controlledPlayerId === getPendingPromptControllerId(match.pendingPrompt))
   );
   const show3dBoardView = playViewMode === "board3d";
-
-  function runGameplayKeybindingAction(action: GameplayKeybindingAction): boolean {
-    if (!match) return false;
-
-    const matchStatus = getMatchStatus(match);
-    const canUseMatchActions = matchStatus !== "COMPLETE";
-    const canControlActiveTurn = !controlledPlayerId || controlledPlayerId === match.turn.activePlayerId;
-
-    if (action === "swapPlayerView") {
-      if (!isSoloGameplayMatch) return false;
-
-      const fallbackPlayerId = match.turn.activePlayerId === "player_2" ? "player_2" : "player_1";
-      const currentViewedPlayerId = soloViewedPlayersByMatchId[match.matchId] ?? fallbackPlayerId;
-      const nextViewedPlayerId = currentViewedPlayerId === "player_1" ? "player_2" : "player_1";
-      const nextPlayer = match.players.find(player => player.id === nextViewedPlayerId);
-
-      setSoloViewedPlayersByMatchId(current => ({
-        ...current,
-        [match.matchId]: nextViewedPlayerId
-      }));
-      setLastBoardCommandLabel(`Shortcut: viewing ${nextPlayer?.displayName ?? nextViewedPlayerId}`);
-      return true;
-    }
-
-    if (action === "drawCards") {
-      if (!canUseMatchActions) return false;
-
-      const drawTargetPlayerId =
-        controlledPlayerId === "player_1" || controlledPlayerId === "player_2"
-          ? controlledPlayerId
-          : match.turn.activePlayerId;
-      const pendingDrawEffect = getPendingManualDrawEffectForPlayer(match, drawTargetPlayerId);
-      if (pendingDrawEffect) {
-        resolveManualDrawEffect(pendingDrawEffect.id, drawTargetPlayerId);
-        setLastBoardCommandLabel("Shortcut: draw effect resolved");
-        return true;
-      }
-
-      if (!canDrawForCurrentTurn(match, controlledPlayerId)) return false;
-
-      drawActivePlayer();
-      setLastBoardCommandLabel("Shortcut: draw");
-      return true;
-    }
-
-    if (action === "advancePhase") {
-      if (!canUseMatchActions || !canControlActiveTurn || advanceBlockReason) return false;
-
-      advancePhase();
-      setLastBoardCommandLabel("Shortcut: advance phase");
-      return true;
-    }
-
-    if (action === "undoLastAction") {
-      if (!canUseMatchActions || !canControlActiveTurn) return false;
-
-      undoLastAction();
-      setLastBoardCommandLabel("Shortcut: undo");
-      return true;
-    }
-
-    if (action === "openDiceRoller") {
-      setDashboardModal("dice-roller");
-      setLastBoardCommandLabel("Shortcut: dice roller");
-      return true;
-    }
-
-    if (action === "openEventLog") {
-      setDashboardModal("event-log");
-      setLastBoardCommandLabel("Shortcut: event log");
-      return true;
-    }
-
-    if (action === "openSaveLoad") {
-      setDashboardModal("save-load");
-      setLastBoardCommandLabel("Shortcut: save / load");
-      return true;
-    }
-
-    return false;
-  }
-
-  useEffect(() => {
-    if (activePage !== "play" || !match || !show3dBoardView || dashboardModal) return;
-
-    function handleGameplayKeyDown(event: KeyboardEvent) {
-      if (
-        event.defaultPrevented ||
-        event.repeat ||
-        event.ctrlKey ||
-        event.altKey ||
-        event.metaKey ||
-        event.shiftKey ||
-        isEditableKeybindingTarget(event.target)
-      ) {
-        return;
-      }
-
-      const action = getGameplayKeybindingActionByCode(gameplayKeybindings, event.code);
-      if (!action || !runGameplayKeybindingAction(action)) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
-    window.addEventListener("keydown", handleGameplayKeyDown);
-    return () => window.removeEventListener("keydown", handleGameplayKeyDown);
-  }, [
-    activePage,
-    advanceBlockReason,
-    controlledPlayerId,
-    dashboardModal,
-    gameplayKeybindings,
-    isSoloGameplayMatch,
-    match,
-    show3dBoardView,
-    soloViewedPlayersByMatchId
-  ]);
+  const isLiveMatchSpectator = Boolean(
+    match &&
+    authUser &&
+    activeLobby?.matchId === match.matchId &&
+    !activeLobby.players.some(player =>
+      player.userId === authUser.id ||
+      (player.isClone && player.ownerUserId === authUser.id)
+    )
+  );
 
   if (!authChecked) {
     return (
@@ -3173,6 +3106,7 @@ export default function App() {
                 onCreateLobby={createLobby}
                 onJoinLobby={joinLobby}
                 onSelectDeck={selectLobbyDeck}
+                onSelectCloneDeck={selectLobbyCloneDeck}
                 onViewLobby={viewLobby}
                 onLeaveLobby={leaveLobby}
                 onStartMatch={startLobbyMatch}
@@ -3208,7 +3142,7 @@ export default function App() {
                       presentation="game"
                       defaultIntegrationMode
                       controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
-                      viewedPlayerId={soloViewedPlayerId}
+                      spectatorMode={isLiveMatchSpectator}
                       onAdvancePhase={advancePhase}
                       onEndTurn={endTurn}
                       onUndoLastAction={undoLastAction}
@@ -3272,7 +3206,7 @@ export default function App() {
                       onSkipEffectRoll={skipEffectRoll}
                       onActivateCardEffect={activateCardEffect}
                       onOpenBoardReport={() => setDashboardModal("board-report")}
-                      onCloseMatch={closeActiveMatchWithoutSaving}
+                      onCloseMatch={isLiveMatchSpectator ? undefined : closeActiveMatchWithoutSaving}
                       intentLabel={lastBoardIntentLabel}
                       commandLabel={lastBoardCommandLabel}
                       onIntent={(intent: PointerGestureIntent) => {
@@ -3291,6 +3225,18 @@ export default function App() {
                             : `Command: focus piece ${command.cardInstanceId ?? command.pieceId}`;
                         setLastBoardCommandLabel(label);
                       }}
+                      soloControlOverlay={activeLobby?.matchId === match.matchId && activeLobby.mode === "SOLO" ? (
+                        <div className="solo-control-switch" aria-label="Solo control side">
+                          <span className="label">Solo Control</span>
+                          <strong>{controlledPlayerId === "player_2" ? "Clone side" : "Player side"}</strong>
+                          <button
+                            type="button"
+                            onClick={() => switchSoloControlledPlayer(controlledPlayerId === "player_2" ? "player_1" : "player_2")}
+                          >
+                            Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                          </button>
+                        </div>
+                      ) : null}
                       actionDock={(
                         <CompactMatchControlPanel
                           match={match}

@@ -128,6 +128,8 @@ import {
 } from "./llm/regressionScenarios.js";
 import { saveLlmPhase4VerificationReport } from "./llm/phase4Reports.js";
 import { runLlmHeadlessEffectTest } from "./llm/headlessEffectRunner.js";
+import { canUserViewLiveMatch } from "./matches/watchPolicy.js";
+import { addSpectatorSocket, assertNotSpectator, removeSpectatorSocket } from "./matches/watchRuntime.js";
 import type { EffectRuntimeTestStatusRecord } from "./dataStore.js";
 import type { LlmDirectEffectSmokeTestResult, LlmEffectResultReview, LlmEffectTestPlan } from "./llm/types.js";
 import { loadUserCardOwnershipMap, setUserCardOwnershipCountOnly } from "./collection/ownershipStore.js";
@@ -713,6 +715,7 @@ const matchTurnResetSnapshots = new Map<string, {
 }>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
+const matchSoloControllers = new Map<string, Set<string>>();
 const matchPayloadCacheBySocketId = new Map<string, Map<string, CachedMatchSocketPayload>>();
 const TRANSACTION_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 const marketplaceSettings = {
@@ -730,6 +733,8 @@ const LOBBY_CLEANUP_INTERVAL_MS = 60 * 1000;
 const MARKETPLACE_MATCH_REFRESH_INTERVAL_MS = 30 * 1000;
 const MARKETPLACE_SOCKET_ROOM = "marketplace:watch";
 const SAVED_MATCHES_SOCKET_ROOM = "match:saved-watch";
+let matchWatchPolicy = (process.env.MATCH_WATCH_POLICY ?? "PUBLIC").trim().toUpperCase();
+const matchSpectatorSockets = new Map<string, Set<string>>();
 
 
 type MarketplaceMatchItem = { cardId: string; variant: string; matchedQuantity: number };
@@ -828,6 +833,7 @@ const embedSessions = new Map<string, EmbedSessionRecord>();
 type MatchLobbyStatus = "OPEN" | "IN_MATCH" | "CLOSED";
 type MatchLobbyCloseReason = "EMPTY" | "MATCH_COMPLETE" | "IDLE_TIMEOUT" | "SAVED_AND_EXITED";
 type MatchLobbyFormat = "FREE_PLAY" | "TOURNAMENT";
+type MatchLobbyMode = "MULTIPLAYER" | "SOLO";
 
 type MatchLobbyPlayerRecord = {
   userId: string;
@@ -835,6 +841,8 @@ type MatchLobbyPlayerRecord = {
   seat: number;
   selectedDeckId?: string;
   ready: boolean;
+  isClone?: boolean;
+  ownerUserId?: string;
 };
 
 type MatchLobbyRecord = {
@@ -842,6 +850,7 @@ type MatchLobbyRecord = {
   name: string;
   status: MatchLobbyStatus;
   format: MatchLobbyFormat;
+  mode: MatchLobbyMode;
   hostUserId: string;
   selectedPackIds: string[];
   matchId?: string;
@@ -1415,7 +1424,7 @@ function getLobbyOrThrow(lobbyId: string): MatchLobbyRecord {
 }
 
 function getLobbyPlayerOrThrow(lobby: MatchLobbyRecord, userId: string): MatchLobbyPlayerRecord {
-  const player = lobby.players.find(item => item.userId === userId);
+  const player = lobby.players.find(item => item.userId === userId && !item.isClone);
 
   if (!player) {
     throw new Error("Join this lobby before changing your deck.");
@@ -1462,16 +1471,53 @@ function requireSocketCanSaveMatch(socket: { request: unknown }, match: MatchSta
 }
 
 function requireSocketCanViewMatch(socket: { request: unknown }, matchId: string): void {
-  const owners = matchPlayerOwners.get(matchId);
-  if (!owners) return;
+  if (!matchPlayerOwners.has(matchId)) {
+    return;
+  }
 
   const user = getSocketUser(socket);
-  if (user && canUserReportMatch(user, matchId)) return;
+  if (canUserViewLiveMatch({
+    user,
+    matchId,
+    owners: matchPlayerOwners.get(matchId) ? new Set(Array.from(matchPlayerOwners.get(matchId)!.keys())) : undefined,
+    policy: matchWatchPolicy === "LOBBY_MEMBERS" ? "LOBBY_MEMBERS" : matchWatchPolicy === "PARTICIPANTS_ONLY" ? "PARTICIPANTS_ONLY" : "PUBLIC",
+    findLobbyByMatchId: (id: string) => Array.from(matchLobbies.values()).find(item => item.matchId === id && item.status !== "CLOSED")
+  })) {
+    return;
+  }
 
-  throw new Error("You can only view matches you are part of.");
+  throw new Error("You do not have permission to watch this match.");
 }
 
-function requireSocketCanControlPlayer(socket: { request: unknown }, matchId: string, playerId: string): void {
+
+function addMatchSpectatorSocket(matchId: string, socketId: string): void {
+  addSpectatorSocket(matchSpectatorSockets, matchId, socketId);
+}
+
+function removeMatchSpectatorSocket(matchId: string, socketId: string): void {
+  removeSpectatorSocket(matchSpectatorSockets, matchId, socketId);
+}
+
+function removeSocketFromAllMatchSpectatorSets(socketId: string): void {
+  for (const [matchId, sockets] of matchSpectatorSockets.entries()) {
+    sockets.delete(socketId);
+    if (sockets.size === 0) matchSpectatorSockets.delete(matchId);
+  }
+}
+
+function emitMatchViewMode(socket: Socket, matchId: string): void {
+  const owners = matchPlayerOwners.get(matchId);
+  const user = getSocketUser(socket);
+  const mode = owners && user && owners.has(user.id) ? "participant" : "spectator";
+  socket.emit("match:watchPolicy", { policy: matchWatchPolicy });
+  socket.emit("match:viewMode", { matchId, mode });
+}
+
+function requireSocketNotMatchSpectator(socket: { request: unknown; id?: string }, matchId: string): void {
+  assertNotSpectator(matchSpectatorSockets, matchId, socket.id);
+}
+function requireSocketCanControlPlayer(socket: { request: unknown; id?: string }, matchId: string, playerId: string): void {
+  requireSocketNotMatchSpectator(socket, matchId);
   const owners = matchPlayerOwners.get(matchId);
 
   if (!owners) {
@@ -1480,9 +1526,16 @@ function requireSocketCanControlPlayer(socket: { request: unknown }, matchId: st
 
   const ownedPlayerId = getSocketOwnedPlayerId(socket, matchId);
 
-  if (ownedPlayerId !== playerId) {
-    throw new Error("You can only control your own seat in this match.");
+  if (ownedPlayerId === playerId) {
+    return;
   }
+
+  const user = getSocketUser(socket);
+  if (user && matchSoloControllers.get(matchId)?.has(user.id) && (playerId === "player_1" || playerId === "player_2")) {
+    return;
+  }
+
+  throw new Error("You can only control your own seat in this match.");
 }
 
 function requireSocketCanControlActivePlayer(socket: { request: unknown }, match: MatchState): void {
@@ -4294,6 +4347,33 @@ void returnExpiredItemsToPool().catch(error => {
   console.error("Marketplace transaction expiry check failed:", error instanceof Error ? error.message : error);
 });
 
+
+app.get("/api/dev/watch-policy", (req, res) => {
+  if (!canUserUseAdminTools(req.session.user)) {
+    res.status(req.session.user ? 403 : 401).json({ message: req.session.user ? "Admin access required." : "Login required." });
+    return;
+  }
+
+  res.json({ policy: matchWatchPolicy });
+});
+
+app.post("/api/dev/watch-policy", express.json(), (req, res) => {
+  if (!canUserUseAdminTools(req.session.user)) {
+    res.status(req.session.user ? 403 : 401).json({ message: req.session.user ? "Admin access required." : "Login required." });
+    return;
+  }
+
+  const policy = String(req.body?.policy ?? "").trim().toUpperCase();
+  if (policy !== "PUBLIC" && policy !== "LOBBY_MEMBERS" && policy !== "PARTICIPANTS_ONLY") {
+    res.status(400).json({ message: "Invalid watch policy." });
+    return;
+  }
+
+  matchWatchPolicy = policy;
+  io.emit("match:watchPolicy", { policy: matchWatchPolicy });
+  res.json({ policy: matchWatchPolicy });
+});
+
 io.on("connection", async socket => {
   console.log(`Client connected: ${socket.id}`);
   const connectedUser = getSocketUser(socket);
@@ -4355,6 +4435,31 @@ io.on("connection", async socket => {
     try {
       const features = await listFeatureFlagsForUser(requireSocketUser(socket));
       ack?.({ ok: true, features });
+    } catch (error) {
+      ack?.({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("admin:watchPolicy:get", (ack?: (payload: { ok: boolean; policy?: string; error?: string }) => void) => {
+    try {
+      if (!canUserUseAdminTools(getSocketUser(socket))) throw new Error("Admin access required.");
+      ack?.({ ok: true, policy: matchWatchPolicy });
+    } catch (error) {
+      ack?.({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  socket.on("admin:watchPolicy:set", (payload: { policy: string }, ack?: (response: { ok: boolean; policy?: string; error?: string }) => void) => {
+    try {
+      if (!canUserUseAdminTools(getSocketUser(socket))) throw new Error("Admin access required.");
+      const policy = String(payload?.policy ?? "").trim().toUpperCase();
+      if (policy !== "PUBLIC" && policy !== "LOBBY_MEMBERS" && policy !== "PARTICIPANTS_ONLY") {
+        throw new Error("Invalid watch policy.");
+      }
+
+      matchWatchPolicy = policy;
+      io.emit("match:watchPolicy", { policy: matchWatchPolicy });
+      ack?.({ ok: true, policy: matchWatchPolicy });
     } catch (error) {
       ack?.({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
     }
@@ -6694,6 +6799,7 @@ io.on("connection", async socket => {
       activeMatches.delete(matchId);
       matchUndoHistory.delete(matchId);
       matchPlayerOwners.delete(matchId);
+      matchSoloControllers.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
       closeLobbyForMatch(matchId, "SAVED_AND_EXITED");
       io.to(SAVED_MATCHES_SOCKET_ROOM).emit("match:savedList", await listSavedMatchesForServer());
@@ -6724,6 +6830,7 @@ io.on("connection", async socket => {
       activeMatches.delete(matchId);
       matchUndoHistory.delete(matchId);
       matchPlayerOwners.delete(matchId);
+      matchSoloControllers.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
       closeLobbyForMatch(matchId, "MATCH_COMPLETE");
       io.to(SAVED_MATCHES_SOCKET_ROOM).emit("match:savedList", await listSavedMatchesForServer());
@@ -6739,7 +6846,22 @@ io.on("connection", async socket => {
       const match = getMatchOrThrow(matchId);
       requireSocketCanViewMatch(socket, matchId);
       socket.join(match.matchId);
-      emitFullMatchStateToSocket(socket, match, getSocketOwnedPlayerId(socket, match.matchId));
+      const ownedPlayerId = getSocketOwnedPlayerId(socket, match.matchId);
+      if (!ownedPlayerId) addMatchSpectatorSocket(match.matchId, socket.id);
+      emitMatchViewMode(socket, match.matchId);
+      emitFullMatchStateToSocket(socket, match, ownedPlayerId);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("match:leaveView", (matchId: string) => {
+    try {
+      validateDataFileId(matchId);
+      removeMatchSpectatorSocket(matchId, socket.id);
+      socket.leave(matchId);
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -6754,6 +6876,7 @@ io.on("connection", async socket => {
       activeMatches.set(match.matchId, match);
       matchUndoHistory.set(match.matchId, []);
       matchPlayerOwners.delete(match.matchId);
+      matchSoloControllers.delete(match.matchId);
       clearMatchPayloadCacheForMatch(match.matchId);
       socket.join(match.matchId);
 
@@ -6778,6 +6901,7 @@ io.on("connection", async socket => {
       activeMatches.delete(matchId);
       matchUndoHistory.delete(matchId);
       matchPlayerOwners.delete(matchId);
+      matchSoloControllers.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
 
       socket.emit("match:deleted", {
@@ -6965,8 +7089,12 @@ io.on("connection", async socket => {
       if (lobby.matchId) {
         const lobbyMatch = activeMatches.get(lobby.matchId);
         if (lobbyMatch) {
+          requireSocketCanViewMatch(socket, lobbyMatch.matchId);
           socket.join(lobbyMatch.matchId);
-          emitFullMatchStateToSocket(socket, lobbyMatch, getSocketOwnedPlayerId(socket, lobbyMatch.matchId));
+          const ownedPlayerId = getSocketOwnedPlayerId(socket, lobbyMatch.matchId);
+          if (!ownedPlayerId) addMatchSpectatorSocket(lobbyMatch.matchId, socket.id);
+          emitMatchViewMode(socket, lobbyMatch.matchId);
+          emitFullMatchStateToSocket(socket, lobbyMatch, ownedPlayerId);
         }
       }
     } catch (error) {
@@ -6978,7 +7106,7 @@ io.on("connection", async socket => {
 
   socket.on(
     "lobby:create",
-    async (data: { name?: string; format?: MatchLobbyFormat; selectedPackIds?: string[]; selectedDeckId?: string }) => {
+    async (data: { name?: string; format?: MatchLobbyFormat; selectedPackIds?: string[]; selectedDeckId?: string; solo?: boolean }) => {
       try {
         const user = requireSocketUser(socket);
         const selectedPackIds = (data.selectedPackIds?.length ? data.selectedPackIds : listSetupOptions().cardPacks.map(pack => pack.id))
@@ -6994,20 +7122,35 @@ io.on("connection", async socket => {
         }
 
         const now = new Date().toISOString();
+        const soloMode = data.solo === true;
+        const lobbyPlayers: MatchLobbyPlayerRecord[] = [{
+          userId: user.id,
+          displayName: user.displayName,
+          seat: 1,
+          selectedDeckId: data.selectedDeckId || undefined,
+          ready: Boolean(data.selectedDeckId)
+        }];
+
+        if (soloMode) {
+          lobbyPlayers.push({
+            userId: `${user.id}__solo_clone`,
+            ownerUserId: user.id,
+            displayName: `${user.displayName} Clone`,
+            seat: 2,
+            ready: false,
+            isClone: true
+          });
+        }
+
         const lobby: MatchLobbyRecord = {
           id: createId("lobby"),
           name: String(data.name ?? `${user.displayName}'s Match`).trim() || `${user.displayName}'s Match`,
           status: "OPEN",
           format: normalizeDeckFormat(data.format),
+          mode: soloMode ? "SOLO" : "MULTIPLAYER",
           hostUserId: user.id,
           selectedPackIds,
-          players: [{
-            userId: user.id,
-            displayName: user.displayName,
-            seat: 1,
-            selectedDeckId: data.selectedDeckId || undefined,
-            ready: Boolean(data.selectedDeckId)
-          }],
+          players: lobbyPlayers,
           createdAt: now,
           updatedAt: now,
           lastActivityAt: now
@@ -7033,6 +7176,10 @@ io.on("connection", async socket => {
 
       if (lobby.status !== "OPEN") {
         throw new Error("This lobby is no longer open.");
+      }
+
+      if (lobby.mode === "SOLO") {
+        throw new Error("Solo testing lobbies already include a clone seat.");
       }
 
       const existingPlayer = lobby.players.find(player => player.userId === user.id);
@@ -7066,7 +7213,7 @@ io.on("connection", async socket => {
       const user = requireSocketUser(socket);
       validateDataFileId(lobbyId);
       const lobby = getLobbyOrThrow(lobbyId);
-      lobby.players = lobby.players.filter(player => player.userId !== user.id);
+      lobby.players = lobby.players.filter(player => player.userId !== user.id && player.ownerUserId !== user.id);
       socket.leave(lobby.id);
 
       if (lobby.players.length === 0) {
@@ -7107,6 +7254,34 @@ io.on("connection", async socket => {
     }
   });
 
+  socket.on("lobby:selectCloneDeck", async (data: { lobbyId: string; deckId: string }) => {
+    try {
+      const user = requireSocketUser(socket);
+      validateDataFileId(data.lobbyId);
+      validateDataFileId(data.deckId);
+      const lobby = getLobbyOrThrow(data.lobbyId);
+
+      if (lobby.mode !== "SOLO" || lobby.hostUserId !== user.id) {
+        throw new Error("Only a solo lobby host can choose the clone deck.");
+      }
+
+      const clonePlayer = lobby.players.find(player => player.isClone && player.ownerUserId === user.id);
+      if (!clonePlayer) {
+        throw new Error("This solo lobby does not have a clone seat.");
+      }
+
+      await loadDeckForUser(user.id, data.deckId);
+      clonePlayer.selectedDeckId = data.deckId;
+      clonePlayer.ready = true;
+      touchLobbyActivity(lobby);
+      emitLobbyUpdated(lobby);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   socket.on("lobby:startMatch", async (lobbyId: string) => {
     try {
       const user = requireSocketUser(socket);
@@ -7126,8 +7301,8 @@ io.on("connection", async socket => {
         throw new Error("Both players must choose a deck before the match can start.");
       }
 
-      const player1Deck = await loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId);
-      const player2Deck = await loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId);
+      const player1Deck = await loadDeckForUser(sortedPlayers[0].ownerUserId ?? sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId);
+      const player2Deck = await loadDeckForUser(sortedPlayers[1].ownerUserId ?? sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId);
       const cardCatalog = loadCardCatalog(lobby.selectedPackIds);
       const isTournamentLobby = lobby.format === "TOURNAMENT";
       const match = create1v1MatchFromDeckCardIds({
@@ -7147,15 +7322,46 @@ io.on("connection", async socket => {
       touchLobbyActivity(lobby);
       activeMatches.set(match.matchId, match);
       matchUndoHistory.set(match.matchId, []);
-      matchPlayerOwners.set(match.matchId, new Map([
-        [sortedPlayers[0].userId, "player_1"],
-        [sortedPlayers[1].userId, "player_2"]
-      ]));
+      if (lobby.mode === "SOLO") {
+        matchPlayerOwners.set(match.matchId, new Map([[user.id, "player_1"]]));
+        matchSoloControllers.set(match.matchId, new Set([user.id]));
+      } else {
+        matchPlayerOwners.set(match.matchId, new Map([
+          [sortedPlayers[0].userId, "player_1"],
+          [sortedPlayers[1].userId, "player_2"]
+        ]));
+      }
       io.in(lobby.id).socketsJoin(match.matchId);
       io.to(lobby.id).emit("lobby:updated", getLobbySnapshot(lobby));
       emitMatchState(match);
       emitSavedMatchesEventually(io.to(lobby.id));
       emitLobbyList();
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("match:switchControlledPlayer", (data: { matchId: string; playerId: "player_1" | "player_2" }) => {
+    try {
+      const user = requireSocketUser(socket);
+      validateDataFileId(data.matchId);
+      const match = getMatchOrThrow(data.matchId);
+      const playerId = data.playerId === "player_2" ? "player_2" : "player_1";
+
+      if (!matchSoloControllers.get(match.matchId)?.has(user.id)) {
+        throw new Error("Only solo testing matches can swap controlled sides.");
+      }
+
+      const owners = matchPlayerOwners.get(match.matchId);
+      if (!owners?.has(user.id)) {
+        throw new Error("You are not a controller for this solo testing match.");
+      }
+
+      owners.set(user.id, playerId);
+      clearMatchPayloadCacheForSocket(socket.id);
+      emitFullMatchStateToSocket(socket, match, playerId);
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
@@ -7392,6 +7598,7 @@ socket.on(
   });
 
   socket.on("disconnect", () => {
+    removeSocketFromAllMatchSpectatorSets(socket.id);
     clearMatchPayloadCacheForSocket(socket.id);
     console.log(`Client disconnected: ${socket.id}`);
   });

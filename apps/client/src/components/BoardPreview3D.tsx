@@ -470,9 +470,10 @@ type BoardPreview3DProps = {
   presentation?: "lab" | "game";
   defaultIntegrationMode?: boolean;
   actionDock?: ReactNode;
+  soloControlOverlay?: ReactNode;
   onDeckSlotClick?: (slotId: string) => void;
   controlledPlayerId?: "player_1" | "player_2" | null;
-  viewedPlayerId?: "player_1" | "player_2" | null;
+  spectatorMode?: boolean;
   onAdvancePhase?: () => void;
   onUndoLastAction?: () => void;
   onRequestNoCreatureRedraw?: (playerId: "player_1" | "player_2") => void;
@@ -609,24 +610,9 @@ function OpeningRollBoardControl({
   const displayedRolls = hasCurrentRoundRoll || !openingRoll.lastRolls
     ? openingRoll.rolls
     : openingRoll.lastRolls;
-  const winnerName = openingRoll.winnerPlayerId
-    ? match.players.find(player => player.id === openingRoll.winnerPlayerId)?.displayName ?? openingRoll.winnerPlayerId
-    : null;
-
   if (isComplete) {
     if (isResolverDiceActive) return null;
-
-    const winnerRoll = openingRoll.winnerPlayerId ? displayedRolls[openingRoll.winnerPlayerId] : undefined;
-
-    return (
-      <aside className="board-opening-roll board-opening-roll--mini is-complete" aria-label="Opening roll result">
-        <DiceFace value={winnerRoll ?? 1} />
-        <span className="board-opening-roll__mini-label">
-          <strong>{winnerName ?? "First player"}</strong>
-          <small>first set</small>
-        </span>
-      </aside>
-    );
+    return null;
   }
 
   return (
@@ -673,9 +659,10 @@ export function BoardPreview3D({
   presentation = "lab",
   defaultIntegrationMode = false,
   actionDock,
+  soloControlOverlay,
   onDeckSlotClick,
   controlledPlayerId = null,
-  viewedPlayerId = null,
+  spectatorMode = false,
   onAdvancePhase,
   onUndoLastAction,
   onRequestNoCreatureRedraw,
@@ -741,6 +728,8 @@ export function BoardPreview3D({
   const [boardOffsetZ, setBoardOffsetZ] = useState(DEFAULT_CAMERA_SETTINGS.boardOffsetZ);
   const [cameraPanX, setCameraPanX] = useState(DEFAULT_CAMERA_SETTINGS.cameraPanX);
   const [cameraPanY, setCameraPanY] = useState(DEFAULT_CAMERA_SETTINGS.cameraPanY);
+  const [zoneScale, setZoneScale] = useState(1);
+  const [compactCardTextures, setCompactCardTextures] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(() =>
     presentation === "game" ? false : (globalThis.innerHeight ? globalThis.innerHeight > 980 : true)
   );
@@ -2436,47 +2425,6 @@ export function BoardPreview3D({
 
   return (
     <section className={`board-preview-3d board-preview-3d--${presentation}`} aria-label={presentation === "game" ? "Live 3D game board" : "Prototype 3D board space"} tabIndex={0} onKeyDown={handleKeyDown}>
-      <header className="board-preview-3d__hud">
-        <details className="board-preview-3d__hud-tab">
-          <summary>{presentation === "game" ? "3D game board" : "3D board lab"}</summary>
-          <div className="board-preview-3d__hud-tab-panel">
-            {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
-            <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
-            <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({animationQueue.activeEvent?.usesPlannerOutput ? "planner" : getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
-            <p>Drag to pan | Wheel to zoom | WASD to move | +/- zoom | 0 reset</p>
-            {intentLabel ? <p>Intent: {intentLabel}</p> : null}
-            {commandLabel ? <p>Command: {commandLabel}</p> : null}
-            <div>
-              <button
-                type="button"
-                className={`ghost${controlsCollapsed ? "" : " is-active"}`}
-                aria-pressed={!controlsCollapsed}
-                onClick={() => setControlsCollapsed(value => !value)}
-              >
-                HUD Controls
-              </button>
-              {actionDock ? (
-                <button
-                  type="button"
-                  className={`ghost${actionDockCollapsed ? "" : " is-active"}`}
-                  aria-pressed={!actionDockCollapsed}
-                  onClick={() => setActionDockCollapsed(value => !value)}
-                >
-                  Action Dock
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className={`ghost${showDebugPanel ? " is-active" : ""}`}
-                aria-pressed={showDebugPanel}
-                onClick={() => setShowDebugPanel(value => !value)}
-              >
-                Debug HUD
-              </button>
-            </div>
-          </div>
-        </details>
-      </header>
       {!controlsCollapsed ? (
         <aside className={`board-preview-3d__floating-controls board-preview-3d__floating-controls--${controlsDockPosition}`}>
           <div className="board-preview-3d__floating-title">
@@ -2502,6 +2450,10 @@ export function BoardPreview3D({
             setCameraPanX={(value) => setClampedCameraPan("x", value)}
             cameraPanY={cameraPanY}
             setCameraPanY={(value) => setClampedCameraPan("y", value)}
+            zoneScale={zoneScale}
+            setZoneScale={setZoneScale}
+            compactCardTextures={compactCardTextures}
+            setCompactCardTextures={setCompactCardTextures}
             ownerFilter={ownerFilter}
             setOwnerFilter={setOwnerFilter}
             showDebugPanel={showDebugPanel}
@@ -2549,6 +2501,8 @@ export function BoardPreview3D({
             cameraPanY={cameraPanY}
             tiltDegrees={tiltDegrees}
             heightScale={heightScale}
+            zoneScale={zoneScale}
+            compactCardTextures={compactCardTextures}
             showAnchors={showAnchors}
             showZoneRects={showZoneRects}
             visibleSlotLayers={visibleSlotLayers}
@@ -2558,7 +2512,7 @@ export function BoardPreview3D({
             resolveBoardPoint={resolveBoardPoint}
             resolveZoneRect={resolveZoneRect}
             onSelectSlot={(slotId) => selectSlot(slotId, "table")}
-            onDeckSlotClick={onDeckSlotClick}
+            onDeckSlotClick={spectatorMode ? undefined : onDeckSlotClick}
             onPlayHandCardToSlot={(slotId) => {
               if (!selectedHandCardId) return;
               if (
@@ -2689,11 +2643,11 @@ export function BoardPreview3D({
             }}
             sacrificeCandidateCardIds={discardRequiredForFocusedPlayer ? [] : [...sacrificeCandidateIds]}
             selectedSacrificeCardIds={discardRequiredForFocusedPlayer ? [] : selectedSacrificeIds}
-            onDeckStackContextMenu={(owner) => {
+            onDeckStackContextMenu={spectatorMode ? undefined : (owner => {
               if (owner !== focusedPlayerId) return;
               setDeckActionsExpanded(true);
               setDeckHandControlsOwner(owner);
-            }}
+            })}
             draggableHandCardIds={[...draggableHandCardIds]}
             draggableBattleAttackerCardIds={[...legalBattleAttackerIds]}
             draggableEquipMagicCardIds={draggableEquipMagicCardIds}
@@ -2718,6 +2672,11 @@ export function BoardPreview3D({
             controlledPlayerId={controlledPlayerId}
             onOpeningRoll={onOpeningRoll}
           />
+          {soloControlOverlay ? (
+            <aside className="board-preview-3d__solo-controls" aria-label="Solo control swap">
+              {soloControlOverlay}
+            </aside>
+          ) : null}
           <aside className="board-preview-3d__turn-controls" aria-label="Board turn and dice controls">
             <section className="board-phase-control" aria-label="Turn phase controls">
               <div className="board-phase-control__status">
@@ -2781,6 +2740,43 @@ export function BoardPreview3D({
                   Menu
                 </button>
                 <div className="board-preview-3d__deck-actions-panel">
+                  <details className="board-preview-3d__hud-tab">
+                    <summary aria-label="Board settings" title="Board settings">
+                      <span aria-hidden="true">⚙</span>
+                      <span>{presentation === "game" ? "Settings" : "Lab Settings"}</span>
+                    </summary>
+                    <div className="board-preview-3d__hud-tab-panel">
+                      <button
+                        type="button"
+                        className={`${controlsCollapsed ? "" : "is-emphasis "}`}
+                        onClick={() => setControlsCollapsed(value => !value)}
+                      >
+                        {controlsCollapsed ? "Show HUD Controls" : "Hide HUD Controls"}
+                      </button>
+                      {!spectatorMode && actionDock ? (
+                        <button
+                          type="button"
+                          className={`${actionDockCollapsed ? "" : "is-emphasis "}`}
+                          onClick={() => setActionDockCollapsed(value => !value)}
+                        >
+                          {actionDockCollapsed ? "Show Action Dock" : "Hide Action Dock"}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className={`${showDebugPanel ? "is-emphasis " : ""}`}
+                        onClick={() => setShowDebugPanel(value => !value)}
+                      >
+                        {showDebugPanel ? "Hide Debug HUD" : "Show Debug HUD"}
+                      </button>
+                      {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
+                      <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
+                      <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({animationQueue.activeEvent?.usesPlannerOutput ? "planner" : getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
+                      <p>Drag to pan | Wheel to zoom | WASD to move | +/- zoom | 0 reset</p>
+                      {intentLabel ? <p>Intent: {intentLabel}</p> : null}
+                      {commandLabel ? <p>Command: {commandLabel}</p> : null}
+                    </div>
+                  </details>
                   <button type="button" disabled={!action.canUndo} onClick={onUndoLastAction}>
                     Undo
                   </button>
@@ -2850,7 +2846,7 @@ export function BoardPreview3D({
               </div>
             ))}
           </aside>
-          {actionDock && !actionDockCollapsed ? (
+          {actionDock && !actionDockCollapsed && !spectatorMode ? (
             <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
               <div className="board-preview-3d__floating-title">
                 <strong>Action Dock</strong>

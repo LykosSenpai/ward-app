@@ -19,6 +19,10 @@ type BoardPreview3DControlsProps = {
   setCameraPanX: (value: number) => void;
   cameraPanY: number;
   setCameraPanY: (value: number) => void;
+  zoneScale: number;
+  setZoneScale: (value: number) => void;
+  compactCardTextures: boolean;
+  setCompactCardTextures: (value: boolean) => void;
   ownerFilter: "all" | "player_1" | "player_2";
   setOwnerFilter: (value: "all" | "player_1" | "player_2") => void;
   showDebugPanel: boolean;
@@ -119,6 +123,15 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
           <input type="range" min={-90} max={90} value={Math.round(props.cameraPanY)} onChange={(event) => props.setCameraPanY(Number(event.target.value))} />
 
           <span>{Math.round(props.cameraPanY)}%</span>
+        </label>
+        <label>
+          Zone Scale
+          <input type="range" min={70} max={135} value={Math.round(props.zoneScale * 100)} onChange={(event) => props.setZoneScale(Number(event.target.value) / 100)} />
+          <span>{Math.round(props.zoneScale * 100)}%</span>
+        </label>
+        <label className="board-preview-3d__toggle-inline">
+          Compact Cards
+          <input type="checkbox" checked={props.compactCardTextures} onChange={(event) => props.setCompactCardTextures(event.target.checked)} />
         </label>
 
       </div>
