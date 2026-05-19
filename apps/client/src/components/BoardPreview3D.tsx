@@ -773,6 +773,7 @@ export function BoardPreview3D({
   const [actionDockCollapsed, setActionDockCollapsed] = useState(false);
   const [deckHandControlsOwner, setDeckHandControlsOwner] = useState<BoardPlayerId | null>(null);
   const [deckActionsExpanded, setDeckActionsExpanded] = useState(false);
+  const [menuSettingsExpanded, setMenuSettingsExpanded] = useState(false);
   const [cemeteryViewerOwner, setCemeteryViewerOwner] = useState<BoardPlayerId | null>(null);
   const [hoveredCemeteryCardId, setHoveredCemeteryCardId] = useState<string | null>(null);
   const [selectedCemeteryCardId, setSelectedCemeteryCardId] = useState<string | null>(null);
