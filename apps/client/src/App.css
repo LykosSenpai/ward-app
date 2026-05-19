@@ -13438,3 +13438,42 @@ button:disabled:hover {
 .marketplace-builder-add-row button {
   min-height: 2rem;
 }
+
+.match-lobby-create-actions {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.solo-clone-deck-prompt {
+  border-color: rgba(250, 204, 21, 0.36);
+  background: rgba(113, 63, 18, 0.18);
+}
+
+.solo-play-button {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.solo-control-switch {
+  align-items: center;
+  background: rgba(113, 63, 18, 0.32);
+  border: 1px solid rgba(250, 204, 21, 0.38);
+  border-radius: 999px;
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.45rem 0.55rem 0.45rem 0.85rem;
+}
+
+.solo-control-switch strong {
+  color: #fde68a;
+}
+
+.solo-control-switch button {
+  background: rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(250, 204, 21, 0.42);
+  border-radius: 999px;
+  color: #fffbeb;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+}
