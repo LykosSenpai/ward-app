@@ -12,9 +12,10 @@ type MatchLobbyPanelProps = {
   selectedPackIds: string[];
   onToggleSelectedPack: (packId: string) => void;
   onRefresh: () => void;
-  onCreateLobby: (data: { name: string; format: LobbyFormat }) => void;
+  onCreateLobby: (data: { name: string; format: LobbyFormat; solo?: boolean }) => void;
   onJoinLobby: (lobbyId: string) => void;
   onSelectDeck: (lobbyId: string, deckId: string) => void;
+  onSelectCloneDeck: (lobbyId: string, deckId: string) => void;
   onViewLobby: (lobbyId: string) => void;
   onLeaveLobby: (lobbyId: string) => void;
   onStartMatch: (lobbyId: string) => void;
@@ -92,6 +93,7 @@ export function MatchLobbyPanel({
   onCreateLobby,
   onJoinLobby,
   onSelectDeck,
+  onSelectCloneDeck,
   onViewLobby,
   onLeaveLobby,
   onStartMatch,
@@ -103,7 +105,9 @@ export function MatchLobbyPanel({
   const [nowMs, setNowMs] = useState(Date.now());
   const selectedLobby = activeLobby;
   const selectedLobbyFormat = getLobbyFormat(selectedLobby);
-  const selectedLobbyPlayer = selectedLobby?.players.find(player => player.userId === user.id);
+  const selectedLobbyPlayer = selectedLobby?.players.find(player => player.userId === user.id && !player.isClone);
+  const selectedLobbyClonePlayer = selectedLobby?.players.find(player => player.isClone && player.ownerUserId === user.id);
+  const isSoloLobby = selectedLobby?.mode === "SOLO";
   const isSelectedLobbyHost = selectedLobby?.hostUserId === user.id;
   const canJoinSelectedLobby = Boolean(
     selectedLobby &&
@@ -130,7 +134,7 @@ export function MatchLobbyPanel({
       <div className="match-lobby-header">
         <div>
           <h2>Match Lobby</h2>
-          <p>Make a table, pick an account deck, and jump into the match when both seats are ready.</p>
+          <p>Make a table, pick account decks, or create a solo testing clone to jump into a match without a second player.</p>
         </div>
 
         <div className="match-lobby-header-actions">
@@ -155,7 +159,7 @@ export function MatchLobbyPanel({
               <>
                 <div className="match-lobby-active-title">
                   <strong>{selectedLobby.name}</strong>
-                  <span>{getLobbyFormatLabel(selectedLobbyFormat)} - {selectedLobby.players.length}/2 seats filled</span>
+                  <span>{getLobbyFormatLabel(selectedLobbyFormat)} - {isSoloLobby ? "Solo clone" : `${selectedLobby.players.length}/2 seats filled`}</span>
                 </div>
 
                 <div className="match-lobby-timer-grid">
@@ -170,7 +174,7 @@ export function MatchLobbyPanel({
                   {selectedLobby.players.map(player => (
                     <div className="match-lobby-seat" key={player.userId}>
                       <span>Seat {player.seat}</span>
-                      <strong>{player.displayName}</strong>
+                      <strong>{player.displayName}{player.isClone ? " (Clone)" : ""}</strong>
                       <em>{getDeckName(decks, player.selectedDeckId)}</em>
                     </div>
                   ))}
@@ -199,6 +203,37 @@ export function MatchLobbyPanel({
                               <strong>{deck.name}</strong>
                               <span>{deck.cardCount} cards</span>
                               {selected ? <em>Selected</em> : <em>Choose</em>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+                ) : null}
+
+                {selectedLobbyClonePlayer && selectedLobby.status === "OPEN" ? (
+                  <section className="match-lobby-deck-prompt solo-clone-deck-prompt" aria-label="Choose clone lobby deck">
+                    <div className="match-lobby-section-header">
+                      <h4>Clone deck</h4>
+                      <span>{decks.length} saved</span>
+                    </div>
+                    {decks.length === 0 ? (
+                      <p className="empty-zone">No saved decks found. Build one from Library / Decks before starting a solo test.</p>
+                    ) : (
+                      <div className="match-lobby-deck-list">
+                        {decks.map(deck => {
+                          const selected = selectedLobbyClonePlayer.selectedDeckId === deck.id;
+
+                          return (
+                            <button
+                              type="button"
+                              className={selected ? "match-lobby-deck-card selected" : "match-lobby-deck-card"}
+                              key={deck.id}
+                              onClick={() => onSelectCloneDeck(selectedLobby.id, deck.id)}
+                            >
+                              <strong>{deck.name}</strong>
+                              <span>{deck.cardCount} cards</span>
+                              {selected ? <em>Clone selected</em> : <em>Use for clone</em>}
                             </button>
                           );
                         })}
@@ -281,14 +316,24 @@ export function MatchLobbyPanel({
               )}
             </section>
 
-            <button
-              type="button"
-              className="attention-button"
-              onClick={() => onCreateLobby({ name: newLobbyName, format: newLobbyFormat })}
-              disabled={selectedPackIds.length === 0}
-            >
-              Create Lobby
-            </button>
+            <div className="match-lobby-create-actions">
+              <button
+                type="button"
+                className="attention-button"
+                onClick={() => onCreateLobby({ name: newLobbyName, format: newLobbyFormat })}
+                disabled={selectedPackIds.length === 0}
+              >
+                Create Lobby
+              </button>
+              <button
+                type="button"
+                className="attention-button solo-play-button"
+                onClick={() => onCreateLobby({ name: `${newLobbyName} (Solo Test)`, format: newLobbyFormat, solo: true })}
+                disabled={selectedPackIds.length === 0}
+              >
+                Create Solo Test
+              </button>
+            </div>
           </section>
         </section>
 
@@ -313,7 +358,7 @@ export function MatchLobbyPanel({
                         <span className="match-lobby-status">{lobby.status}</span>
                         <strong>{lobby.name}</strong>
                         <span>{getLobbyFormatLabel(getLobbyFormat(lobby))}</span>
-                        <span>{lobby.players.length}/2 seats</span>
+                        <span>{lobby.mode === "SOLO" ? "Solo clone" : `${lobby.players.length}/2 seats`}</span>
                         <span>Created {getLobbyAge(lobby, nowMs)} ago</span>
                         <span>Idle {getLobbyIdleTime(lobby, nowMs)}</span>
                       </button>

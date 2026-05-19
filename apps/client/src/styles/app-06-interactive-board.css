@@ -4628,3 +4628,17 @@
   font-weight: 700;
   padding: 4px 6px;
 }
+
+.board-preview-3d__solo-controls {
+  bottom: 44px;
+  left: 12px;
+  max-width: min(320px, calc(100% - 24px));
+  pointer-events: none;
+  position: absolute;
+  transform: translateZ(42px);
+  z-index: 35;
+}
+
+.board-preview-3d__solo-controls > * {
+  pointer-events: auto;
+}

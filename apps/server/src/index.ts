@@ -706,6 +706,7 @@ const activeMatches = new Map<string, MatchState>();
 const matchUndoHistory = new Map<string, MatchState[]>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
+const matchSoloControllers = new Map<string, Set<string>>();
 const matchPayloadCacheBySocketId = new Map<string, Map<string, CachedMatchSocketPayload>>();
 const TRANSACTION_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 const marketplaceSettings = {
@@ -821,6 +822,7 @@ const embedSessions = new Map<string, EmbedSessionRecord>();
 type MatchLobbyStatus = "OPEN" | "IN_MATCH" | "CLOSED";
 type MatchLobbyCloseReason = "EMPTY" | "MATCH_COMPLETE" | "IDLE_TIMEOUT" | "SAVED_AND_EXITED";
 type MatchLobbyFormat = "FREE_PLAY" | "TOURNAMENT";
+type MatchLobbyMode = "MULTIPLAYER" | "SOLO";
 
 type MatchLobbyPlayerRecord = {
   userId: string;
@@ -828,6 +830,8 @@ type MatchLobbyPlayerRecord = {
   seat: number;
   selectedDeckId?: string;
   ready: boolean;
+  isClone?: boolean;
+  ownerUserId?: string;
 };
 
 type MatchLobbyRecord = {
@@ -835,6 +839,7 @@ type MatchLobbyRecord = {
   name: string;
   status: MatchLobbyStatus;
   format: MatchLobbyFormat;
+  mode: MatchLobbyMode;
   hostUserId: string;
   selectedPackIds: string[];
   matchId?: string;
@@ -1408,7 +1413,7 @@ function getLobbyOrThrow(lobbyId: string): MatchLobbyRecord {
 }
 
 function getLobbyPlayerOrThrow(lobby: MatchLobbyRecord, userId: string): MatchLobbyPlayerRecord {
-  const player = lobby.players.find(item => item.userId === userId);
+  const player = lobby.players.find(item => item.userId === userId && !item.isClone);
 
   if (!player) {
     throw new Error("Join this lobby before changing your deck.");
@@ -1473,9 +1478,16 @@ function requireSocketCanControlPlayer(socket: { request: unknown }, matchId: st
 
   const ownedPlayerId = getSocketOwnedPlayerId(socket, matchId);
 
-  if (ownedPlayerId !== playerId) {
-    throw new Error("You can only control your own seat in this match.");
+  if (ownedPlayerId === playerId) {
+    return;
   }
+
+  const user = getSocketUser(socket);
+  if (user && matchSoloControllers.get(matchId)?.has(user.id) && (playerId === "player_1" || playerId === "player_2")) {
+    return;
+  }
+
+  throw new Error("You can only control your own seat in this match.");
 }
 
 function requireSocketCanControlActivePlayer(socket: { request: unknown }, match: MatchState): void {
@@ -6379,6 +6391,7 @@ io.on("connection", async socket => {
       activeMatches.delete(matchId);
       matchUndoHistory.delete(matchId);
       matchPlayerOwners.delete(matchId);
+      matchSoloControllers.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
       closeLobbyForMatch(matchId, "SAVED_AND_EXITED");
       io.to(SAVED_MATCHES_SOCKET_ROOM).emit("match:savedList", await listSavedMatchesForServer());
@@ -6409,6 +6422,7 @@ io.on("connection", async socket => {
       activeMatches.delete(matchId);
       matchUndoHistory.delete(matchId);
       matchPlayerOwners.delete(matchId);
+      matchSoloControllers.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
       closeLobbyForMatch(matchId, "MATCH_COMPLETE");
       io.to(SAVED_MATCHES_SOCKET_ROOM).emit("match:savedList", await listSavedMatchesForServer());
@@ -6439,6 +6453,7 @@ io.on("connection", async socket => {
       activeMatches.set(match.matchId, match);
       matchUndoHistory.set(match.matchId, []);
       matchPlayerOwners.delete(match.matchId);
+      matchSoloControllers.delete(match.matchId);
       clearMatchPayloadCacheForMatch(match.matchId);
       socket.join(match.matchId);
 
@@ -6463,6 +6478,7 @@ io.on("connection", async socket => {
       activeMatches.delete(matchId);
       matchUndoHistory.delete(matchId);
       matchPlayerOwners.delete(matchId);
+      matchSoloControllers.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
 
       socket.emit("match:deleted", {
@@ -6663,7 +6679,7 @@ io.on("connection", async socket => {
 
   socket.on(
     "lobby:create",
-    async (data: { name?: string; format?: MatchLobbyFormat; selectedPackIds?: string[]; selectedDeckId?: string }) => {
+    async (data: { name?: string; format?: MatchLobbyFormat; selectedPackIds?: string[]; selectedDeckId?: string; solo?: boolean }) => {
       try {
         const user = requireSocketUser(socket);
         const selectedPackIds = (data.selectedPackIds?.length ? data.selectedPackIds : listSetupOptions().cardPacks.map(pack => pack.id))
@@ -6679,20 +6695,35 @@ io.on("connection", async socket => {
         }
 
         const now = new Date().toISOString();
+        const soloMode = data.solo === true;
+        const lobbyPlayers: MatchLobbyPlayerRecord[] = [{
+          userId: user.id,
+          displayName: user.displayName,
+          seat: 1,
+          selectedDeckId: data.selectedDeckId || undefined,
+          ready: Boolean(data.selectedDeckId)
+        }];
+
+        if (soloMode) {
+          lobbyPlayers.push({
+            userId: `${user.id}__solo_clone`,
+            ownerUserId: user.id,
+            displayName: `${user.displayName} Clone`,
+            seat: 2,
+            ready: false,
+            isClone: true
+          });
+        }
+
         const lobby: MatchLobbyRecord = {
           id: createId("lobby"),
           name: String(data.name ?? `${user.displayName}'s Match`).trim() || `${user.displayName}'s Match`,
           status: "OPEN",
           format: normalizeDeckFormat(data.format),
+          mode: soloMode ? "SOLO" : "MULTIPLAYER",
           hostUserId: user.id,
           selectedPackIds,
-          players: [{
-            userId: user.id,
-            displayName: user.displayName,
-            seat: 1,
-            selectedDeckId: data.selectedDeckId || undefined,
-            ready: Boolean(data.selectedDeckId)
-          }],
+          players: lobbyPlayers,
           createdAt: now,
           updatedAt: now,
           lastActivityAt: now
@@ -6718,6 +6749,10 @@ io.on("connection", async socket => {
 
       if (lobby.status !== "OPEN") {
         throw new Error("This lobby is no longer open.");
+      }
+
+      if (lobby.mode === "SOLO") {
+        throw new Error("Solo testing lobbies already include a clone seat.");
       }
 
       const existingPlayer = lobby.players.find(player => player.userId === user.id);
@@ -6751,7 +6786,7 @@ io.on("connection", async socket => {
       const user = requireSocketUser(socket);
       validateDataFileId(lobbyId);
       const lobby = getLobbyOrThrow(lobbyId);
-      lobby.players = lobby.players.filter(player => player.userId !== user.id);
+      lobby.players = lobby.players.filter(player => player.userId !== user.id && player.ownerUserId !== user.id);
       socket.leave(lobby.id);
 
       if (lobby.players.length === 0) {
@@ -6792,6 +6827,34 @@ io.on("connection", async socket => {
     }
   });
 
+  socket.on("lobby:selectCloneDeck", async (data: { lobbyId: string; deckId: string }) => {
+    try {
+      const user = requireSocketUser(socket);
+      validateDataFileId(data.lobbyId);
+      validateDataFileId(data.deckId);
+      const lobby = getLobbyOrThrow(data.lobbyId);
+
+      if (lobby.mode !== "SOLO" || lobby.hostUserId !== user.id) {
+        throw new Error("Only a solo lobby host can choose the clone deck.");
+      }
+
+      const clonePlayer = lobby.players.find(player => player.isClone && player.ownerUserId === user.id);
+      if (!clonePlayer) {
+        throw new Error("This solo lobby does not have a clone seat.");
+      }
+
+      await loadDeckForUser(user.id, data.deckId);
+      clonePlayer.selectedDeckId = data.deckId;
+      clonePlayer.ready = true;
+      touchLobbyActivity(lobby);
+      emitLobbyUpdated(lobby);
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   socket.on("lobby:startMatch", async (lobbyId: string) => {
     try {
       const user = requireSocketUser(socket);
@@ -6811,8 +6874,8 @@ io.on("connection", async socket => {
         throw new Error("Both players must choose a deck before the match can start.");
       }
 
-      const player1Deck = await loadDeckForUser(sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId);
-      const player2Deck = await loadDeckForUser(sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId);
+      const player1Deck = await loadDeckForUser(sortedPlayers[0].ownerUserId ?? sortedPlayers[0].userId, sortedPlayers[0].selectedDeckId);
+      const player2Deck = await loadDeckForUser(sortedPlayers[1].ownerUserId ?? sortedPlayers[1].userId, sortedPlayers[1].selectedDeckId);
       const cardCatalog = loadCardCatalog(lobby.selectedPackIds);
       const isTournamentLobby = lobby.format === "TOURNAMENT";
       const match = create1v1MatchFromDeckCardIds({
@@ -6832,15 +6895,46 @@ io.on("connection", async socket => {
       touchLobbyActivity(lobby);
       activeMatches.set(match.matchId, match);
       matchUndoHistory.set(match.matchId, []);
-      matchPlayerOwners.set(match.matchId, new Map([
-        [sortedPlayers[0].userId, "player_1"],
-        [sortedPlayers[1].userId, "player_2"]
-      ]));
+      if (lobby.mode === "SOLO") {
+        matchPlayerOwners.set(match.matchId, new Map([[user.id, "player_1"]]));
+        matchSoloControllers.set(match.matchId, new Set([user.id]));
+      } else {
+        matchPlayerOwners.set(match.matchId, new Map([
+          [sortedPlayers[0].userId, "player_1"],
+          [sortedPlayers[1].userId, "player_2"]
+        ]));
+      }
       io.in(lobby.id).socketsJoin(match.matchId);
       io.to(lobby.id).emit("lobby:updated", getLobbySnapshot(lobby));
       emitMatchState(match);
       emitSavedMatchesEventually(io.to(lobby.id));
       emitLobbyList();
+    } catch (error) {
+      socket.emit("match:error", {
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  socket.on("match:switchControlledPlayer", (data: { matchId: string; playerId: "player_1" | "player_2" }) => {
+    try {
+      const user = requireSocketUser(socket);
+      validateDataFileId(data.matchId);
+      const match = getMatchOrThrow(data.matchId);
+      const playerId = data.playerId === "player_2" ? "player_2" : "player_1";
+
+      if (!matchSoloControllers.get(match.matchId)?.has(user.id)) {
+        throw new Error("Only solo testing matches can swap controlled sides.");
+      }
+
+      const owners = matchPlayerOwners.get(match.matchId);
+      if (!owners?.has(user.id)) {
+        throw new Error("You are not a controller for this solo testing match.");
+      }
+
+      owners.set(user.id, playerId);
+      clearMatchPayloadCacheForSocket(socket.id);
+      emitFullMatchStateToSocket(socket, match, playerId);
     } catch (error) {
       socket.emit("match:error", {
         message: error instanceof Error ? error.message : "Unknown error"
