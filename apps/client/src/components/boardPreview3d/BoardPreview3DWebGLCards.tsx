@@ -5,11 +5,14 @@ import type { AppMatchState } from "../../clientTypes";
 import type { BoardObject } from "../boardPreview3dAdapter";
 import { normalizeCardArtKey } from "../CardImagePreview";
 import { getMatchCardImageUrls } from "../MatchCardImage";
+import { getCardName } from "../../gameViewHelpers";
 
 type BoardPreview3DWebGLCardsProps = {
   cardByInstanceId: Map<string, CardInstance>;
   filteredBoardObjects: BoardObject[];
   heightScale: number;
+  zoneScale: number;
+  compactCardTextures: boolean;
   match: AppMatchState;
   resolveSlotPosition: (slotId: string, fallbackX: number, fallbackZ: number) => { xPercent: number; zPercent: number };
 };
@@ -199,25 +202,71 @@ async function loadCardTextureForCard(
   match: AppMatchState,
   card: CardInstance,
   loader: THREE.TextureLoader,
-  renderer: THREE.WebGLRenderer
+  renderer: THREE.WebGLRenderer,
+  compactCardTextures: boolean
 ): Promise<THREE.Texture | null> {
   const artKey = normalizeCardArtKey(card.artKey);
   const holoEnabled = artKey === "holo" || artKey === "zero-art-holo";
   const baseTexture = await loadCardTexture(getMatchCardImageUrls(match, card), loader, renderer);
 
-  if (!baseTexture || !holoEnabled) {
+  if (!baseTexture) {
     return baseTexture;
+  }
+
+  let texture: THREE.Texture = baseTexture;
+  if (compactCardTextures) {
+    const compactKey = `compact:${match.matchId}:${card.instanceId}:${artKey}`;
+    let compactCached = cardTextureCache.get(compactKey);
+    if (!compactCached) {
+      compactCached = Promise.resolve(createCompactCardTexture(baseTexture, getCardName(match, card), renderer));
+      cardTextureCache.set(compactKey, compactCached);
+    }
+    const compactTexture = await compactCached;
+    if (compactTexture) texture = compactTexture;
+  }
+
+  if (!holoEnabled) {
+    return texture;
   }
 
   const cacheKey = `holo:${match.matchId}:${card.instanceId}:${artKey}`;
   let cached = cardTextureCache.get(cacheKey);
 
   if (!cached) {
-    cached = Promise.resolve(createHolographicCardTexture(baseTexture, renderer, cacheKey));
+    cached = Promise.resolve(createHolographicCardTexture(texture, renderer, cacheKey));
     cardTextureCache.set(cacheKey, cached);
   }
 
   return cached;
+}
+
+function createCompactCardTexture(baseTexture: THREE.Texture, cardName: string, renderer: THREE.WebGLRenderer): THREE.Texture {
+  const source = baseTexture.image as CanvasImageSource & { naturalHeight?: number; naturalWidth?: number; height?: number; width?: number; };
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 716;
+  const context = canvas.getContext("2d");
+  if (!context) return baseTexture;
+
+  context.fillStyle = "#020617";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(source, 24, 82, canvas.width - 48, canvas.height - 180);
+  context.fillStyle = "rgba(3, 7, 18, 0.95)";
+  context.fillRect(16, 16, canvas.width - 32, 56);
+  context.strokeStyle = "rgba(148, 163, 184, 0.9)";
+  context.lineWidth = 2;
+  context.strokeRect(16, 16, canvas.width - 32, 56);
+  context.fillStyle = "#f8fafc";
+  context.font = "700 28px system-ui, sans-serif";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(cardName.slice(0, 30), canvas.width / 2, 44);
+  context.fillStyle = "rgba(15, 23, 42, 0.9)";
+  context.fillRect(16, canvas.height - 84, canvas.width - 32, 56);
+  context.fillStyle = "#e2e8f0";
+  context.font = "600 22px system-ui, sans-serif";
+  context.fillText("Tap to inspect", canvas.width / 2, canvas.height - 56);
+  return configureTexture(new THREE.CanvasTexture(canvas), renderer);
 }
 
 function createPlane(texture: THREE.Texture, width: number, height: number): THREE.Mesh {
@@ -236,6 +285,8 @@ export function BoardPreview3DWebGLCards({
   cardByInstanceId,
   filteredBoardObjects,
   heightScale,
+  zoneScale,
+  compactCardTextures,
   match,
   resolveSlotPosition
 }: BoardPreview3DWebGLCardsProps) {
@@ -362,7 +413,7 @@ export function BoardPreview3DWebGLCards({
         if (!shouldRender) return null;
 
         const texture = renderedCard
-          ? await loadCardTextureForCard(latestMatch, renderedCard, loader, renderer)
+          ? await loadCardTextureForCard(latestMatch, renderedCard, loader, renderer, compactCardTextures)
           : backTexture;
         if (!texture || isDisposed) return null;
 
@@ -372,8 +423,8 @@ export function BoardPreview3DWebGLCards({
         const mesh = createPlane(texture, worldCardWidth, worldCardHeight);
         const position = latestResolveSlotPosition(object.slotId, object.xPercent, object.zPercent);
         mesh.position.set(
-          (position.xPercent - 50) / 100 * metrics.worldWidth,
-          (50 - position.zPercent) / 100 * metrics.worldHeight,
+          ((position.xPercent - 50) * zoneScale) / 100 * metrics.worldWidth,
+          ((50 - position.zPercent) * zoneScale) / 100 * metrics.worldHeight,
           Math.max(1, object.yDepth * heightScale)
         );
         mesh.rotation.z = isSideways ? -Math.PI / 2 : 0;

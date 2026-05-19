@@ -473,6 +473,7 @@ type BoardPreview3DProps = {
   soloControlOverlay?: ReactNode;
   onDeckSlotClick?: (slotId: string) => void;
   controlledPlayerId?: "player_1" | "player_2" | null;
+  spectatorMode?: boolean;
   onAdvancePhase?: () => void;
   onUndoLastAction?: () => void;
   onRequestNoCreatureRedraw?: (playerId: "player_1" | "player_2") => void;
@@ -676,6 +677,7 @@ export function BoardPreview3D({
   soloControlOverlay,
   onDeckSlotClick,
   controlledPlayerId = null,
+  spectatorMode = false,
   onAdvancePhase,
   onUndoLastAction,
   onRequestNoCreatureRedraw,
@@ -741,6 +743,8 @@ export function BoardPreview3D({
   const [boardOffsetZ, setBoardOffsetZ] = useState(DEFAULT_CAMERA_SETTINGS.boardOffsetZ);
   const [cameraPanX, setCameraPanX] = useState(DEFAULT_CAMERA_SETTINGS.cameraPanX);
   const [cameraPanY, setCameraPanY] = useState(DEFAULT_CAMERA_SETTINGS.cameraPanY);
+  const [zoneScale, setZoneScale] = useState(1);
+  const [compactCardTextures, setCompactCardTextures] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(() =>
     presentation === "game" ? false : (globalThis.innerHeight ? globalThis.innerHeight > 980 : true)
   );
@@ -2502,6 +2506,10 @@ export function BoardPreview3D({
             setCameraPanX={(value) => setClampedCameraPan("x", value)}
             cameraPanY={cameraPanY}
             setCameraPanY={(value) => setClampedCameraPan("y", value)}
+            zoneScale={zoneScale}
+            setZoneScale={setZoneScale}
+            compactCardTextures={compactCardTextures}
+            setCompactCardTextures={setCompactCardTextures}
             ownerFilter={ownerFilter}
             setOwnerFilter={setOwnerFilter}
             showDebugPanel={showDebugPanel}
@@ -2549,6 +2557,8 @@ export function BoardPreview3D({
             cameraPanY={cameraPanY}
             tiltDegrees={tiltDegrees}
             heightScale={heightScale}
+            zoneScale={zoneScale}
+            compactCardTextures={compactCardTextures}
             showAnchors={showAnchors}
             showZoneRects={showZoneRects}
             visibleSlotLayers={visibleSlotLayers}
@@ -2855,7 +2865,6 @@ export function BoardPreview3D({
               </div>
             ))}
           </aside>
-          ) : null}
           {actionDock && !actionDockCollapsed && !spectatorMode ? (
             <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
               <div className="board-preview-3d__floating-title">
