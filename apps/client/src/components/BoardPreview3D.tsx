@@ -2689,11 +2689,11 @@ export function BoardPreview3D({
             }}
             sacrificeCandidateCardIds={discardRequiredForFocusedPlayer ? [] : [...sacrificeCandidateIds]}
             selectedSacrificeCardIds={discardRequiredForFocusedPlayer ? [] : selectedSacrificeIds}
-            onDeckStackContextMenu={(owner) => {
+            onDeckStackContextMenu={spectatorMode ? undefined : (owner => {
               if (owner !== focusedPlayerId) return;
               setDeckActionsExpanded(true);
               setDeckHandControlsOwner(owner);
-            }}
+            })}
             draggableHandCardIds={[...draggableHandCardIds]}
             draggableBattleAttackerCardIds={[...legalBattleAttackerIds]}
             draggableEquipMagicCardIds={draggableEquipMagicCardIds}
