@@ -2758,7 +2758,13 @@ export function BoardPreview3D({
                   type="button"
                   className="board-preview-3d__deck-actions-menu"
                   onClick={() => {
-                    setDeckActionsExpanded(current => !current);
+                    setDeckActionsExpanded(current => {
+                      const nextExpanded = !current;
+                      if (!nextExpanded) {
+                        setMenuSettingsExpanded(false);
+                      }
+                      return nextExpanded;
+                    });
                     setDeckHandControlsOwner(action.owner);
                   }}
                   aria-expanded={deckActionsExpanded}
@@ -2767,43 +2773,52 @@ export function BoardPreview3D({
                   Menu
                 </button>
                 <div className="board-preview-3d__deck-actions-panel">
-                  <details className="board-preview-3d__hud-tab">
-                    <summary aria-label="Board settings" title="Board settings">
+                  <div className={`board-preview-3d__hud-tab${menuSettingsExpanded ? " is-expanded" : ""}`}>
+                    <button
+                      type="button"
+                      className="board-preview-3d__hud-tab-button"
+                      aria-expanded={menuSettingsExpanded}
+                      aria-controls={`board-settings-panel-${action.owner}`}
+                      onClick={() => setMenuSettingsExpanded(current => !current)}
+                      title="Board settings"
+                    >
                       <span aria-hidden="true">⚙</span>
                       <span>{presentation === "game" ? "Settings" : "Lab Settings"}</span>
-                    </summary>
-                    <div className="board-preview-3d__hud-tab-panel">
-                      <button
-                        type="button"
-                        className={`${controlsCollapsed ? "" : "is-emphasis "}`}
-                        onClick={() => setControlsCollapsed(value => !value)}
-                      >
-                        {controlsCollapsed ? "Show HUD Controls" : "Hide HUD Controls"}
-                      </button>
-                      {!spectatorMode && actionDock ? (
+                    </button>
+                    {menuSettingsExpanded ? (
+                      <div id={`board-settings-panel-${action.owner}`} className="board-preview-3d__hud-tab-panel">
                         <button
                           type="button"
-                          className={`${actionDockCollapsed ? "" : "is-emphasis "}`}
-                          onClick={() => setActionDockCollapsed(value => !value)}
+                          className={`${controlsCollapsed ? "" : "is-emphasis "}`}
+                          onClick={() => setControlsCollapsed(value => !value)}
                         >
-                          {actionDockCollapsed ? "Show Action Dock" : "Hide Action Dock"}
+                          {controlsCollapsed ? "Show HUD Controls" : "Hide HUD Controls"}
                         </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        className={`${showDebugPanel ? "is-emphasis " : ""}`}
-                        onClick={() => setShowDebugPanel(value => !value)}
-                      >
-                        {showDebugPanel ? "Hide Debug HUD" : "Show Debug HUD"}
-                      </button>
-                      {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
-                      <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
-                      <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({animationQueue.activeEvent?.usesPlannerOutput ? "planner" : getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
-                      <p>Drag to pan | Wheel to zoom | Arrow keys pan | +/- zoom | 0 reset</p>
-                      {intentLabel ? <p>Intent: {intentLabel}</p> : null}
-                      {commandLabel ? <p>Command: {commandLabel}</p> : null}
-                    </div>
-                  </details>
+                        {!spectatorMode && actionDock ? (
+                          <button
+                            type="button"
+                            className={`${actionDockCollapsed ? "" : "is-emphasis "}`}
+                            onClick={() => setActionDockCollapsed(value => !value)}
+                          >
+                            {actionDockCollapsed ? "Show Action Dock" : "Hide Action Dock"}
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className={`${showDebugPanel ? "is-emphasis " : ""}`}
+                          onClick={() => setShowDebugPanel(value => !value)}
+                        >
+                          {showDebugPanel ? "Hide Debug HUD" : "Show Debug HUD"}
+                        </button>
+                        {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
+                        <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
+                        <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({animationQueue.activeEvent?.usesPlannerOutput ? "planner" : getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
+                        <p>Drag to pan | Wheel to zoom | Arrow keys pan | +/- zoom | 0 reset</p>
+                        {intentLabel ? <p>Intent: {intentLabel}</p> : null}
+                        {commandLabel ? <p>Command: {commandLabel}</p> : null}
+                      </div>
+                    ) : null}
+                  </div>
                   <button type="button" disabled={!action.canUndo} onClick={onUndoLastAction}>
                     Undo
                   </button>
