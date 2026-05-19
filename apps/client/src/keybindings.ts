@@ -3,7 +3,7 @@ export type GameplayKeybindingAction =
   | "drawCards"
   | "advancePhase"
   | "undoLastAction"
-  | "openDiceRoller"
+  | "rollBoardDice"
   | "openEventLog"
   | "openSaveLoad";
 
@@ -48,11 +48,10 @@ export const GAMEPLAY_KEYBINDING_DEFINITIONS: GameplayKeybindingDefinition[] = [
     suggestedCode: "KeyU"
   },
   {
-    action: "openDiceRoller",
-    label: "Dice Roller",
-    description: "Open the dice roller panel.",
-    defaultCode: "",
-    suggestedCode: "KeyR"
+    action: "rollBoardDice",
+    label: "Roll Board Dice",
+    description: "Trigger the active dice action shown on the 3D game board.",
+    defaultCode: "KeyR"
   },
   {
     action: "openEventLog",
@@ -69,6 +68,10 @@ export const GAMEPLAY_KEYBINDING_DEFINITIONS: GameplayKeybindingDefinition[] = [
     suggestedCode: "KeyS"
   }
 ];
+
+const LEGACY_GAMEPLAY_KEYBINDING_ACTIONS: Partial<Record<string, GameplayKeybindingAction>> = {
+  openDiceRoller: "rollBoardDice"
+};
 
 export const DEFAULT_GAMEPLAY_KEYBINDINGS = GAMEPLAY_KEYBINDING_DEFINITIONS.reduce(
   (bindings, definition) => ({
@@ -101,6 +104,12 @@ export function readGameplayKeybindings(): GameplayKeybindings {
     for (const [action, code] of Object.entries(parsed)) {
       if (isGameplayKeybindingAction(action) && typeof code === "string") {
         bindings[action] = code;
+        continue;
+      }
+
+      const migratedAction = LEGACY_GAMEPLAY_KEYBINDING_ACTIONS[action];
+      if (migratedAction && typeof code === "string" && code) {
+        bindings[migratedAction] = code;
       }
     }
 

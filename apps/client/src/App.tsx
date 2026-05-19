@@ -20,6 +20,7 @@ import { ManualEffectQueueCard } from "./components/ManualEffectQueueCard";
 import { MatchCompleteCard } from "./components/MatchCompleteCard";
 import { MatchLobbyPanel } from "./components/MatchLobbyPanel";
 import { CompactMatchControlPanel } from "./components/CompactMatchControlPanel";
+import { GameplayKeybindingLabel } from "./components/GameplayKeybindingHint";
 import { MatchStatePanel } from "./components/MatchStatePanel";
 import { MarketplaceTransactionPanel } from "./components/MarketplaceTransactionPanel";
 import { MarketplacePage } from "./components/MarketplacePage";
@@ -79,10 +80,12 @@ import type {
 } from "./clientTypes";
 import { getAdvanceBlockReason, getMatchStatus } from "./gameViewHelpers";
 import {
+  GAMEPLAY_KEYBINDINGS_CHANGED_EVENT,
   getGameplayKeybindingActionByCode,
   isEditableKeybindingTarget,
   readGameplayKeybindings,
-  type GameplayKeybindingAction
+  type GameplayKeybindingAction,
+  type GameplayKeybindings
 } from "./keybindings";
 import "./App.css";
 
@@ -281,8 +284,8 @@ function isManualDrawEffect(effect: AppMatchState["manualEffectQueue"][number]):
   return actionType === "DRAW_CARDS" || actionType === "DRAW_CARDS_VARIABLE";
 }
 
-function isOpeningRollCompleteForDraw(match: AppMatchState): boolean {
-  if (match.setup.openingRoll) return match.setup.openingRoll.status === "COMPLETE";
+function getOpeningRollState(match: AppMatchState): NonNullable<AppMatchState["setup"]["openingRoll"]> | null {
+  if (match.setup.openingRoll) return match.setup.openingRoll;
 
   const noOpeningCardsDrawn =
     match.players.every(player => player.hand.length === 0) &&
@@ -293,7 +296,18 @@ function isOpeningRollCompleteForDraw(match: AppMatchState): boolean {
     match.turn.turnNumber === 1 &&
     match.turn.phase === "DRAW";
 
-  return !appearsToBeFreshOpening;
+  if (!appearsToBeFreshOpening) return null;
+
+  return {
+    status: "AWAITING_ROLL",
+    round: 1,
+    rolls: {}
+  };
+}
+
+function isOpeningRollCompleteForDraw(match: AppMatchState): boolean {
+  const openingRoll = getOpeningRollState(match);
+  return !openingRoll || openingRoll.status === "COMPLETE";
 }
 
 function canDrawForCurrentTurn(match: AppMatchState, controlledPlayerId?: string): boolean {
@@ -376,6 +390,7 @@ export default function App() {
   const [socketAuthenticated, setSocketAuthenticated] = useState<boolean | null>(null);
   const [featureFlagsLoaded, setFeatureFlagsLoaded] = useState(false);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
+  const [gameplayKeybindings, setGameplayKeybindings] = useState<GameplayKeybindings>(() => readGameplayKeybindings());
   const [serverMessage, setServerMessage] = useState("Connecting...");
   const [serverRestartNotice, setServerRestartNotice] = useState("");
   const [match, setMatch] = useState<AppMatchState | null>(null);
@@ -672,6 +687,16 @@ export default function App() {
     onSetPage: (page: EmbedPage) => navigateToPage(canSeePage(page) ? page : "profile"),
     onSetView: (_view: EmbedView) => setPlayViewMode("board3d")
   });
+
+  useEffect(() => {
+    function handleKeybindingsChanged(event: Event) {
+      const nextKeybindings = (event as CustomEvent<GameplayKeybindings>).detail;
+      setGameplayKeybindings(nextKeybindings ?? readGameplayKeybindings());
+    }
+
+    window.addEventListener(GAMEPLAY_KEYBINDINGS_CHANGED_EVENT, handleKeybindingsChanged);
+    return () => window.removeEventListener(GAMEPLAY_KEYBINDINGS_CHANGED_EVENT, handleKeybindingsChanged);
+  }, []);
 
   useEffect(() => {
     if (!canUseDevTools && isDevToolPage(activePage)) {
@@ -2707,6 +2732,63 @@ export default function App() {
     )
   );
 
+  function runBoardDiceRollShortcut(): boolean {
+    if (!match || getMatchStatus(match) === "COMPLETE") return false;
+
+    const openingRoll = getOpeningRollState(match);
+    if (openingRoll?.status === "AWAITING_ROLL") {
+      const rollPlayer = controlledPlayerId
+        ? match.players.find(player => player.id === controlledPlayerId)
+        : match.players.find(player => openingRoll.rolls[player.id] === undefined) ?? match.players[0];
+      if (!rollPlayer || openingRoll.rolls[rollPlayer.id] !== undefined) return false;
+
+      rollOpeningTurnOrder(rollPlayer.id);
+      setLastBoardCommandLabel(`Shortcut: roll first (${rollPlayer.displayName})`);
+      return true;
+    }
+
+    if (match.pendingEffectRoll?.status === "AWAITING_ROLL") {
+      const rollPlayerId = match.pendingEffectRoll.rollPlayerId ?? match.pendingEffectRoll.sourcePlayerId;
+      if (controlledPlayerId && controlledPlayerId !== rollPlayerId) return false;
+
+      rollEffectRoll(match.pendingEffectRoll.id);
+      setLastBoardCommandLabel("Shortcut: roll effect dice");
+      return true;
+    }
+
+    if (!match.pendingBattle || match.pendingEffectRoll || match.pendingEffectTargetPrompt) {
+      return false;
+    }
+
+    const pendingBattle = match.pendingBattle;
+    const currentStrike = pendingBattle.strikes[pendingBattle.currentStrikeIndex];
+    const battleControllerId =
+      pendingBattle.status === "AWAITING_SPEED_CHECK"
+        ? pendingBattle.attackingPlayerId
+        : currentStrike?.attacker.playerId ?? pendingBattle.attackingPlayerId;
+    if (controlledPlayerId && controlledPlayerId !== battleControllerId) return false;
+
+    if (pendingBattle.status === "AWAITING_SPEED_CHECK") {
+      runBattleSpeedCheck(pendingBattle.id);
+      setLastBoardCommandLabel("Shortcut: run speed check");
+      return true;
+    }
+
+    if (pendingBattle.status === "AWAITING_HIT_ROLL") {
+      rollBattleHit(pendingBattle.id);
+      setLastBoardCommandLabel("Shortcut: roll hit");
+      return true;
+    }
+
+    if (pendingBattle.status === "AWAITING_DAMAGE_ROLL") {
+      rollAndApplyBattleDamage(pendingBattle.id);
+      setLastBoardCommandLabel("Shortcut: roll damage");
+      return true;
+    }
+
+    return false;
+  }
+
   function runGameplayKeybindingAction(action: GameplayKeybindingAction): boolean {
     if (!match) return false;
 
@@ -2771,10 +2853,8 @@ export default function App() {
       return true;
     }
 
-    if (action === "openDiceRoller") {
-      setDashboardModal("dice-roller");
-      setLastBoardCommandLabel("Shortcut: dice roller");
-      return true;
+    if (action === "rollBoardDice") {
+      return runBoardDiceRollShortcut();
     }
 
     if (action === "openSaveLoad") {
@@ -3242,6 +3322,7 @@ export default function App() {
                       adminView={canUseDevTools}
                       presentation="game"
                       defaultIntegrationMode
+                      gameplayKeybindings={gameplayKeybindings}
                       controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
                       spectatorMode={isLiveMatchSpectator}
                       onAdvancePhase={advancePhase}
@@ -3334,7 +3415,9 @@ export default function App() {
                             type="button"
                             onClick={() => switchSoloControlledPlayer(controlledPlayerId === "player_2" ? "player_1" : "player_2")}
                           >
-                            Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                            <GameplayKeybindingLabel action="swapPlayerView" keybindings={gameplayKeybindings}>
+                              Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                            </GameplayKeybindingLabel>
                           </button>
                         </div>
                       ) : null}
@@ -3343,6 +3426,7 @@ export default function App() {
                           match={match}
                           advanceBlockReason={advanceBlockReason}
                           controlledPlayerId={controlledPlayerId}
+                          gameplayKeybindings={gameplayKeybindings}
                           onOpeningRoll={rollOpeningTurnOrder}
                           onShuffleAllDecks={shuffleAllDecks}
                           onUndoLastAction={undoLastAction}

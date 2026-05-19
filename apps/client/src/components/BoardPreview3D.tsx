@@ -7,6 +7,7 @@ import { BoardPreview3DDebugPanel, type BoardZoneAdjustment } from "./boardPrevi
 import { BoardPreview3DMiniMap } from "./boardPreview3d/BoardPreview3DMiniMap";
 import { BoardPreview3DTable, type BoardAttackAnimation } from "./boardPreview3d/BoardPreview3DTable";
 import { BoardCardInspector } from "./boardPreview3d/BoardCardInspector";
+import { GameplayKeybindingHint, GameplayKeybindingLabel } from "./GameplayKeybindingHint";
 import { MatchCardImage } from "./MatchCardImage";
 import { ForcedAlSummonPromptCard } from "./ForcedAlSummonPromptCard";
 import { parseLayoutSnapshotJson, resolveSlotPosition, toLayoutSnapshot } from "./boardPreview3dAdapter";
@@ -24,6 +25,7 @@ import { resolveBoardIntentCommand } from "./boardIntentCommands";
 import type { BoardPieceFocusEvent, BoardPlayerId, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 import { buildBattleAffordances, buildCardEffectAffordances, buildHandPlacementAffordances, buildMagicChainAffordances, buildPendingEffectTargetAffordances, buildPlayerGlobalAffordances } from "./boardAffordances";
 import type { BoardAffordance } from "@ward/shared";
+import type { GameplayKeybindings } from "../keybindings";
 
 const BOARD_PREVIEW_STORAGE_KEY = "ward.boardPreview3D.settings";
 const BOARD_PREVIEW_STORAGE_VERSION = 11;
@@ -469,6 +471,7 @@ type BoardPreview3DProps = {
   adminView?: boolean;
   presentation?: "lab" | "game";
   defaultIntegrationMode?: boolean;
+  gameplayKeybindings?: GameplayKeybindings;
   actionDock?: ReactNode;
   soloControlOverlay?: ReactNode;
   onDeckSlotClick?: (slotId: string) => void;
@@ -541,7 +544,13 @@ type BoardDiceRollAction = {
   onClick: () => void;
 };
 
-function BoardDiceRollControl({ action }: { action: BoardDiceRollAction }) {
+function BoardDiceRollControl({
+  action,
+  gameplayKeybindings
+}: {
+  action: BoardDiceRollAction;
+  gameplayKeybindings?: GameplayKeybindings;
+}) {
   return (
     <aside className={`board-dice-control board-dice-control--${action.owner}${action.disabled ? " is-disabled" : " is-ready"}`} aria-label="3D board dice roller">
       <button
@@ -551,7 +560,11 @@ function BoardDiceRollControl({ action }: { action: BoardDiceRollAction }) {
         onClick={action.onClick}
         title={action.disabled ? action.disabledLabel : action.detail}
       >
-        <strong>{action.label}</strong>
+        <strong>
+          <GameplayKeybindingLabel action="rollBoardDice" keybindings={gameplayKeybindings}>
+            {action.label}
+          </GameplayKeybindingLabel>
+        </strong>
         <span>{action.disabled ? action.disabledLabel ?? "Waiting" : action.detail}</span>
       </button>
       <button
@@ -562,6 +575,7 @@ function BoardDiceRollControl({ action }: { action: BoardDiceRollAction }) {
         title={action.disabled ? action.disabledLabel : `Roll dice: ${action.label}`}
       >
         <DiceFace value={6} />
+        <GameplayKeybindingHint action="rollBoardDice" keybindings={gameplayKeybindings} />
       </button>
     </aside>
   );
@@ -591,10 +605,12 @@ function getOpeningRollViewState(match: AppMatchState) {
 function OpeningRollBoardControl({
   match,
   controlledPlayerId,
+  gameplayKeybindings,
   onOpeningRoll
 }: {
   match: AppMatchState;
   controlledPlayerId: BoardPlayerId | null;
+  gameplayKeybindings?: GameplayKeybindings;
   onOpeningRoll?: (playerId: BoardPlayerId) => void;
 }) {
   const openingRoll = getOpeningRollViewState(match);
@@ -627,7 +643,9 @@ function OpeningRollBoardControl({
         title={canRoll ? `Roll 1D6 for ${rollPlayer?.displayName ?? "player"}` : "Waiting for the other opening roll"}
       >
         <DiceFace value={displayedRolls[rollPlayer?.id ?? ""] ?? 1} />
-        <span>Roll First</span>
+        <GameplayKeybindingLabel action="rollBoardDice" keybindings={gameplayKeybindings}>
+          Roll First
+        </GameplayKeybindingLabel>
       </button>
 
       <div className="board-opening-roll__lanes">
@@ -658,6 +676,7 @@ export function BoardPreview3D({
   adminView = false,
   presentation = "lab",
   defaultIntegrationMode = false,
+  gameplayKeybindings,
   actionDock,
   soloControlOverlay,
   onDeckSlotClick,
@@ -2697,6 +2716,7 @@ export function BoardPreview3D({
           <OpeningRollBoardControl
             match={match}
             controlledPlayerId={controlledPlayerId}
+            gameplayKeybindings={gameplayKeybindings}
             onOpeningRoll={onOpeningRoll}
           />
           {soloControlOverlay ? (
@@ -2719,7 +2739,9 @@ export function BoardPreview3D({
                     onClick={onAdvancePhase}
                     title={advanceBlockReason || `Move to ${nextPhaseLabel}`}
                   >
-                    Move to {nextPhaseLabel}
+                    <GameplayKeybindingLabel action="advancePhase" keybindings={gameplayKeybindings}>
+                      Move to {nextPhaseLabel}
+                    </GameplayKeybindingLabel>
                   </button>
                 ) : null}
                 <button
@@ -2736,7 +2758,7 @@ export function BoardPreview3D({
                 </button>
               </div>
             </section>
-            {boardDiceRollAction ? <BoardDiceRollControl action={boardDiceRollAction} /> : null}
+            {boardDiceRollAction ? <BoardDiceRollControl action={boardDiceRollAction} gameplayKeybindings={gameplayKeybindings} /> : null}
             {match.pendingChain?.priorityPlayerId && onPassMagicChainPriority && (!controlledPlayerId || controlledPlayerId === match.pendingChain.priorityPlayerId) ? (
               <aside className="board-dice-control board-dice-control--player_1 is-ready" aria-label="Magic Chain priority">
                 <button
@@ -2820,7 +2842,9 @@ export function BoardPreview3D({
                     ) : null}
                   </div>
                   <button type="button" disabled={!action.canUndo} onClick={onUndoLastAction}>
-                    Undo
+                    <GameplayKeybindingLabel action="undoLastAction" keybindings={gameplayKeybindings}>
+                      Undo
+                    </GameplayKeybindingLabel>
                   </button>
                   {onOpenBoardReport ? (
                     <button type="button" className="is-report" onClick={onOpenBoardReport}>

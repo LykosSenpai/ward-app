@@ -1793,6 +1793,13 @@
   padding: 6px 8px;
 }
 
+.board-preview-3d__action-dock .compact-primary-actions button .gameplay-keybind-label,
+.board-preview-3d__action-dock .compact-utility-actions button .gameplay-keybind-label,
+.board-phase-control__actions button .gameplay-keybind-label,
+.board-preview-3d__deck-actions button .gameplay-keybind-label {
+  width: 100%;
+}
+
 .board-preview-3d__action-dock .compact-setting-control {
   grid-column: span 3;
 }
@@ -2687,6 +2694,13 @@
   min-height: 48px;
   min-width: 48px;
   padding: 8px;
+  position: relative;
+}
+
+.board-dice-control__die .gameplay-keybind-hint {
+  position: absolute;
+  right: -7px;
+  top: -7px;
 }
 
 .board-dice-control__die .board-opening-roll__die {
@@ -3079,6 +3093,10 @@
   min-height: 32px;
   padding: 5px 8px;
   text-transform: uppercase;
+}
+
+.board-opening-roll__trigger .gameplay-keybind-label {
+  width: auto;
 }
 
 .board-opening-roll__trigger:disabled {

@@ -7,6 +7,8 @@ import {
   getPlayerBattleCreatureOptions,
   getWinnerName
 } from "../gameViewHelpers";
+import type { GameplayKeybindings } from "../keybindings";
+import { GameplayKeybindingLabel } from "./GameplayKeybindingHint";
 
 function getOpeningRollViewState(match: AppMatchState) {
   if (match.setup.openingRoll) return match.setup.openingRoll;
@@ -33,6 +35,7 @@ type CompactMatchControlPanelProps = {
   match: AppMatchState;
   advanceBlockReason: string;
   controlledPlayerId?: string;
+  gameplayKeybindings?: GameplayKeybindings;
   onOpeningRoll: (playerId: string) => void;
   onShuffleAllDecks: () => void;
   onUndoLastAction: () => void;
@@ -53,6 +56,7 @@ export function CompactMatchControlPanel({
   match,
   advanceBlockReason,
   controlledPlayerId,
+  gameplayKeybindings,
   onOpeningRoll,
   onShuffleAllDecks,
   onUndoLastAction,
@@ -147,15 +151,21 @@ export function CompactMatchControlPanel({
           </button>
 
           <button onClick={() => rollPlayer && onOpeningRoll(rollPlayer.id)} disabled={!canRollOpening}>
-            Roll First
+            <GameplayKeybindingLabel action="rollBoardDice" keybindings={gameplayKeybindings}>
+              Roll First
+            </GameplayKeybindingLabel>
           </button>
 
           <button onClick={onUndoLastAction} disabled={!canUseMatchActions || !canControlActiveTurn}>
-            Undo
+            <GameplayKeybindingLabel action="undoLastAction" keybindings={gameplayKeybindings}>
+              Undo
+            </GameplayKeybindingLabel>
           </button>
 
           <button onClick={onDrawActivePlayer} disabled={drawDisabled}>
-            Draw
+            <GameplayKeybindingLabel action="drawCards" keybindings={gameplayKeybindings}>
+              Draw
+            </GameplayKeybindingLabel>
           </button>
 
           <button onClick={onOpenDiceRoller} disabled={!canUseMatchActions}>
@@ -175,7 +185,9 @@ export function CompactMatchControlPanel({
           </label>
 
           <button onClick={onAdvancePhase} disabled={!canUseMatchActions || !canControlActiveTurn || !!advanceBlockReason}>
-            Advance Phase
+            <GameplayKeybindingLabel action="advancePhase" keybindings={gameplayKeybindings}>
+              Advance Phase
+            </GameplayKeybindingLabel>
           </button>
         </div>
       </div>
@@ -236,7 +248,9 @@ export function CompactMatchControlPanel({
 
       <div className="compact-utility-actions">
         <button className="secondary-button" onClick={onOpenSaveLoad}>
-          Save / Load
+          <GameplayKeybindingLabel action="openSaveLoad" keybindings={gameplayKeybindings}>
+            Save / Load
+          </GameplayKeybindingLabel>
         </button>
 
         <button className="secondary-button" onClick={onOpenMatchDetails}>
@@ -259,7 +273,9 @@ export function CompactMatchControlPanel({
         </button>
 
         <button className="secondary-button" onClick={onOpenEventLog}>
-          Event Log ({match.eventLog.length})
+          <GameplayKeybindingLabel action="openEventLog" keybindings={gameplayKeybindings}>
+            Event Log ({match.eventLog.length})
+          </GameplayKeybindingLabel>
         </button>
 
         {onOpenEffectDebug && (

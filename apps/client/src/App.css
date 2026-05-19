@@ -895,6 +895,41 @@
   text-align: center;
 }
 
+.gameplay-keybind-label {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.38rem;
+  justify-content: center;
+  min-width: 0;
+}
+
+.gameplay-keybind-label__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gameplay-keybind-hint {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(125, 211, 252, 0.58);
+  border-radius: 5px;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.18);
+  color: #e0f2fe;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.62rem;
+  font-weight: 950;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 1;
+  min-height: 1.15rem;
+  min-width: 1.25rem;
+  padding: 0.18rem 0.32rem;
+  text-transform: uppercase;
+}
+
 .profile-form label {
   color: #cbd5e1;
   display: grid;
