@@ -968,6 +968,27 @@ function effectDealsDirectBattleDamage(effect: WardEngineEffect): boolean {
     actionType === "DAMAGE_CREATURE";
 }
 
+function effectDealsPercentageBattleDamage(effect: WardEngineEffect): boolean {
+  return normalizeEffectToken(effect.actionType) === "DEAL_PERCENTAGE_DAMAGE";
+}
+
+function effectIsAfterNegateAttackFollowup(effect: WardEngineEffect): boolean {
+  return normalizeEffectToken(effect.trigger) === "AFTER_NEGATE_ATTACK" &&
+    effectDealsPercentageBattleDamage(effect);
+}
+
+function getAfterNegateAttackFollowupEffects(definition: CardDefinition): WardEngineEffect[] {
+  return definition.effects?.filter(effectIsAfterNegateAttackFollowup) ?? [];
+}
+
+function getHalfRemainingHpDamageAmount(effect: WardEngineEffect, currentHp: number): number {
+  const text = battleResponseEffectText(effect);
+  const dealsHalf = text.includes("1/2") || text.includes("half");
+  if (!dealsHalf) return 0;
+
+  return Math.max(0, Math.ceil(currentHp * 0.5));
+}
+
 function getAutomatedBattleResponse(definition: CardDefinition): AutomatedBattleResponse | undefined {
   if (definition.cardType !== "MAGIC") return undefined;
   if (definition.magicType !== "BATTLE_LIGHTNING" && definition.magicType !== "LIGHTNING") return undefined;
@@ -2369,10 +2390,47 @@ export function playBattleResponseFromHand(
   const boardEvents: Record<string, unknown>[] = [];
   let destination: "CEMETERY" | "MAGIC_SLOT" = "CEMETERY";
   let directDamageResult: ReturnType<typeof applyDamageToCreatureTarget> | undefined;
+  let percentageDamageResult: ReturnType<typeof applyDamageToCreatureTarget> | undefined;
+  let percentageDamageEffect: WardEngineEffect | undefined;
   let recurring: ActiveRecurringCreatureEffect | undefined;
 
   if (effectNegatesAttackDamage(effect)) {
     applyBattleResponseNegation(definition, effect, strike);
+
+    for (const followupEffect of getAfterNegateAttackFollowupEffects(definition)) {
+      const attacker = findBattleCreatureRef(nextState, strike.attacker.playerId, strike.attacker.creatureInstanceId);
+      const currentHp = attacker.card.currentHp ?? attacker.card.baseHp ?? getCreatureDefinition(nextState, attacker.card).hp;
+      const amount = getHalfRemainingHpDamageAmount(followupEffect, currentHp);
+
+      if (amount <= 0) {
+        continue;
+      }
+
+      percentageDamageResult = applyDamageToCreatureTarget(
+        nextState,
+        battleCreatureTargetOption(nextState, attacker),
+        amount,
+        addEvent
+      );
+      percentageDamageEffect = followupEffect;
+      strike.attackerRemainingHp = percentageDamageResult.remainingHp;
+      boardEvents.push({
+        type: "CARD_DAMAGED",
+        playerId: percentageDamageResult.playerId,
+        sourceCardInstanceId: card.instanceId,
+        sourceCardId: card.cardId,
+        sourceEffectId: followupEffect.id,
+        actionType: followupEffect.actionType,
+        targetCardInstanceId: strike.attacker.creatureInstanceId,
+        amount: percentageDamageResult.damageAmount,
+        remainingHp: percentageDamageResult.remainingHp,
+        killed: percentageDamageResult.killed,
+        damageType: "PERCENTAGE_DAMAGE",
+        battleId: session.id,
+        strikeId: strike.id,
+        reason: "AFTER_NEGATE_ATTACK"
+      });
+    }
   }
 
   if (effectAppliesBattleDiceModifier(effect)) {
@@ -2504,11 +2562,13 @@ export function playBattleResponseFromHand(
     });
   }
 
-  if (directDamageResult?.killed) {
+  if (directDamageResult?.killed || percentageDamageResult?.killed) {
     strike.damageTarget = "NONE";
     strike.damageDealt = 0;
     strike.status = "RESOLVED";
-    strike.message = `${definition.name} destroyed ${strike.defender.creatureName} before attack damage was rolled.`;
+    strike.message = directDamageResult?.killed
+      ? `${definition.name} destroyed ${strike.defender.creatureName} before attack damage was rolled.`
+      : `${definition.name} destroyed ${strike.attacker.creatureName} after negating the attack.`;
     advanceManualBattleAfterResolvedStrike(nextState, session, strike);
   }
 
@@ -2516,6 +2576,8 @@ export function playBattleResponseFromHand(
     session,
     directDamageResult?.killed
       ? `${definition.name} was played from hand and destroyed ${strike.defender.creatureName}.`
+      : percentageDamageResult
+        ? `${definition.name} was played from hand. This strike's attack damage is negated and the attacker lost half its remaining HP.`
       : effectAppliesBattleDiceModifier(effect)
         ? `${definition.name} was played from hand. This strike's attack damage dice were modified.`
         : effectNegatesAttackDamage(effect)
@@ -2538,6 +2600,18 @@ export function playBattleResponseFromHand(
           damageAmount: directDamageResult.damageAmount,
           remainingHp: directDamageResult.remainingHp,
           killed: directDamageResult.killed
+        }
+      : undefined,
+    percentageDamage: percentageDamageResult
+      ? {
+          effectId: percentageDamageEffect?.id,
+          actionType: percentageDamageEffect?.actionType,
+          targetCreatureInstanceId: strike.attacker.creatureInstanceId,
+          targetCreatureName: strike.attacker.creatureName,
+          damageAmount: percentageDamageResult.damageAmount,
+          remainingHp: percentageDamageResult.remainingHp,
+          killed: percentageDamageResult.killed,
+          note: "Half remaining HP is rounded up."
         }
       : undefined,
     recurringEffect: recurring

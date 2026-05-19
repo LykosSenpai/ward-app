@@ -701,7 +701,8 @@ export function BoardPreview3D({
   onIntentCommand,
   onResolveEffectTarget
 }: BoardPreview3DProps) {
-  const focusedPlayerId: BoardPlayerId = controlledPlayerId ?? (match.turn.activePlayerId === "player_1" ? "player_1" : "player_2");
+  const activeBoardPlayerId: BoardPlayerId = match.turn.activePlayerId === "player_1" ? "player_1" : "player_2";
+  const focusedPlayerId: BoardPlayerId = spectatorMode ? activeBoardPlayerId : controlledPlayerId ?? activeBoardPlayerId;
   const [locallyRevealedHands, setLocallyRevealedHands] = useState<Partial<Record<BoardPlayerId, boolean>>>({});
   const revealedHandPlayerIds = match.setup.revealedHandPlayerIds ?? [];
   const handRevealMode = (() => {
@@ -2741,18 +2742,11 @@ export function BoardPreview3D({
                   Menu
                 </button>
                 <div className="board-preview-3d__deck-actions-panel">
-                  <div className="board-preview-3d__hud-tab">
-                    <button
-                      type="button"
-                      className="board-preview-3d__deck-actions-menu"
-                      onClick={() => setMenuSettingsExpanded(current => !current)}
-                      aria-expanded={menuSettingsExpanded}
-                      title="Board settings"
-                    >
+                  <details className="board-preview-3d__hud-tab">
+                    <summary aria-label="Board settings" title="Board settings">
                       <span aria-hidden="true">⚙</span>
                       <span>{presentation === "game" ? "Settings" : "Lab Settings"}</span>
-                    </button>
-                    {menuSettingsExpanded ? (
+                    </summary>
                     <div className="board-preview-3d__hud-tab-panel">
                       <button
                         type="button"
@@ -2784,8 +2778,7 @@ export function BoardPreview3D({
                       {intentLabel ? <p>Intent: {intentLabel}</p> : null}
                       {commandLabel ? <p>Command: {commandLabel}</p> : null}
                     </div>
-                    ) : null}
-                  </div>
+                  </details>
                   <button type="button" disabled={!action.canUndo} onClick={onUndoLastAction}>
                     Undo
                   </button>
