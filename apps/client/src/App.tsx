@@ -3081,7 +3081,18 @@ export default function App() {
                 <span className="label">Table View</span>
                 <strong>3D Board (Only)</strong>
               </div>
-
+              {activeLobby?.matchId === match.matchId && activeLobby.mode === "SOLO" && (
+                <div className="solo-control-switch" aria-label="Solo control side">
+                  <span className="label">Solo Control</span>
+                  <strong>{controlledPlayerId === "player_2" ? "Clone side" : "Player side"}</strong>
+                  <button
+                    type="button"
+                    onClick={() => switchSoloControlledPlayer(controlledPlayerId === "player_2" ? "player_1" : "player_2")}
+                  >
+                    Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                  </button>
+                </div>
+              )}
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
