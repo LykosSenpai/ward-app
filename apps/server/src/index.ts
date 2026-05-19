@@ -709,7 +709,6 @@ const matchUndoHistory = new Map<string, MatchState[]>();
 const matchLobbies = new Map<string, MatchLobbyRecord>();
 const matchPlayerOwners = new Map<string, Map<string, string>>();
 const matchSoloControllers = new Map<string, Set<string>>();
-const matchSpectatorSockets = new Map<string, Set<string>>();
 const matchPayloadCacheBySocketId = new Map<string, Map<string, CachedMatchSocketPayload>>();
 const TRANSACTION_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
 const marketplaceSettings = {
@@ -6485,7 +6484,6 @@ io.on("connection", async socket => {
       matchUndoHistory.delete(matchId);
       matchPlayerOwners.delete(matchId);
       matchSoloControllers.delete(matchId);
-      matchSpectatorSockets.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
       closeLobbyForMatch(matchId, "SAVED_AND_EXITED");
       io.to(SAVED_MATCHES_SOCKET_ROOM).emit("match:savedList", await listSavedMatchesForServer());
@@ -6517,7 +6515,6 @@ io.on("connection", async socket => {
       matchUndoHistory.delete(matchId);
       matchPlayerOwners.delete(matchId);
       matchSoloControllers.delete(matchId);
-      matchSpectatorSockets.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
       closeLobbyForMatch(matchId, "MATCH_COMPLETE");
       io.to(SAVED_MATCHES_SOCKET_ROOM).emit("match:savedList", await listSavedMatchesForServer());
@@ -6564,7 +6561,6 @@ io.on("connection", async socket => {
       matchUndoHistory.set(match.matchId, []);
       matchPlayerOwners.delete(match.matchId);
       matchSoloControllers.delete(match.matchId);
-      matchSpectatorSockets.delete(match.matchId);
       clearMatchPayloadCacheForMatch(match.matchId);
       socket.join(match.matchId);
 
@@ -6590,7 +6586,6 @@ io.on("connection", async socket => {
       matchUndoHistory.delete(matchId);
       matchPlayerOwners.delete(matchId);
       matchSoloControllers.delete(matchId);
-      matchSpectatorSockets.delete(matchId);
       clearMatchPayloadCacheForMatch(matchId);
 
       socket.emit("match:deleted", {

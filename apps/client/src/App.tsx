@@ -2692,22 +2692,13 @@ export default function App() {
     (!controlledPlayerId || controlledPlayerId === getPendingPromptControllerId(match.pendingPrompt))
   );
   const show3dBoardView = playViewMode === "board3d";
-  const matchLobbyForView = match
-    ? (activeLobby?.matchId === match.matchId
-      ? activeLobby
-      : matchLobbies.find(lobby => lobby.matchId === match.matchId))
-    : undefined;
   const isLiveMatchSpectator = Boolean(
-    match && (
-      matchViewModeByMatchId[match.matchId] === "spectator" ||
-      (
-        authUser &&
-        matchLobbyForView?.matchId === match.matchId &&
-        !matchLobbyForView.players.some(player =>
-          player.userId === authUser.id ||
-          (player.isClone && player.ownerUserId === authUser.id)
-        )
-      )
+    match &&
+    authUser &&
+    activeLobby?.matchId === match.matchId &&
+    !activeLobby.players.some(player =>
+      player.userId === authUser.id ||
+      (player.isClone && player.ownerUserId === authUser.id)
     )
   );
 
@@ -3118,38 +3109,18 @@ export default function App() {
                 <span className="label">Table View</span>
                 <strong>3D Board (Only)</strong>
               </div>
-              {canUseDevTools ? (
-                <label style={{ display: "grid", gap: 4 }}>
-                  <span className="label">Watch Policy</span>
-                  <select
-                    value={watchPolicy}
-                    onChange={event => {
-                      const policy = event.target.value as "PUBLIC" | "LOBBY_MEMBERS" | "PARTICIPANTS_ONLY";
-                      setWatchPolicy(policy);
-                      setWatchPolicySaveState("saving");
-                      socket.emit("admin:watchPolicy:set", { policy }, (response: { ok: boolean; policy?: string; error?: string }) => {
-                        if (!response?.ok) {
-                          setWatchPolicySaveState("error");
-                          if (response?.error) setError(response.error);
-                          return;
-                        }
-
-                        const nextPolicy = response.policy === "LOBBY_MEMBERS" || response.policy === "PARTICIPANTS_ONLY" ? response.policy : "PUBLIC";
-                        setWatchPolicy(nextPolicy);
-                        setWatchPolicySaveState("saved");
-                      });
-                    }}
+              {activeLobby?.matchId === match.matchId && activeLobby.mode === "SOLO" && (
+                <div className="solo-control-switch" aria-label="Solo control side">
+                  <span className="label">Solo Control</span>
+                  <strong>{controlledPlayerId === "player_2" ? "Clone side" : "Player side"}</strong>
+                  <button
+                    type="button"
+                    onClick={() => switchSoloControlledPlayer(controlledPlayerId === "player_2" ? "player_1" : "player_2")}
                   >
-                    <option value="PUBLIC">Public</option>
-                    <option value="LOBBY_MEMBERS">Lobby Members</option>
-                    <option value="PARTICIPANTS_ONLY">Participants Only</option>
-                  </select>
-                  <small>{watchPolicySaveState === "saving" ? "Saving..." : watchPolicySaveState === "saved" ? "Saved" : watchPolicySaveState === "error" ? "Save failed" : ""}</small>
-                </label>
-              ) : null}
-              {isLiveMatchSpectator ? (
-                <button type="button" onClick={() => { if (match) socket.emit("match:leaveView", match.matchId); setMatch(null); }}>Leave Watch View</button>
-              ) : null}
+                    Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                  </button>
+                </div>
+              )}
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
