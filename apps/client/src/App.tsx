@@ -1395,13 +1395,14 @@ export default function App() {
     });
   }
 
-  function createLobby(data: { name: string; format: DeckFormat }) {
+  function createLobby(data: { name: string; format: DeckFormat; solo?: boolean }) {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:create", {
       name: data.name,
       format: data.format,
-      selectedPackIds
+      selectedPackIds,
+      solo: data.solo === true
     });
   }
 
@@ -1413,6 +1414,11 @@ export default function App() {
   function selectLobbyDeck(lobbyId: string, deckId: string) {
     setError("");
     socket.emit("lobby:selectDeck", { lobbyId, deckId });
+  }
+
+  function selectLobbyCloneDeck(lobbyId: string, deckId: string) {
+    setError("");
+    socket.emit("lobby:selectCloneDeck", { lobbyId, deckId });
   }
 
   function viewLobby(lobbyId: string) {
@@ -1434,6 +1440,16 @@ export default function App() {
     setError("");
     setSaveMessage("");
     socket.emit("lobby:startMatch", lobbyId);
+  }
+
+  function switchSoloControlledPlayer(playerId: "player_1" | "player_2") {
+    if (!match) return;
+    setError("");
+    setControlledPlayersByMatchId(current => ({
+      ...current,
+      [match.matchId]: playerId
+    }));
+    socket.emit("match:switchControlledPlayer", { matchId: match.matchId, playerId });
   }
 
   function cleanupStaleLobbies() {
@@ -2610,13 +2626,19 @@ export default function App() {
 
   useEffect(() => {
     if (!activeLobby?.matchId || !authUser) return;
-    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+    const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id && !player.isClone);
     if (lobbyPlayer?.seat !== 1 && lobbyPlayer?.seat !== 2) return;
 
-    setControlledPlayersByMatchId(current => ({
-      ...current,
-      [activeLobby.matchId!]: lobbyPlayer.seat === 1 ? "player_1" : "player_2"
-    }));
+    setControlledPlayersByMatchId(current => {
+      if (activeLobby.mode === "SOLO" && current[activeLobby.matchId!]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [activeLobby.matchId!]: lobbyPlayer.seat === 1 ? "player_1" : "player_2"
+      };
+    });
   }, [activeLobby, authUser]);
 
   const controlledPlayerId = (() => {
@@ -2625,7 +2647,11 @@ export default function App() {
     }
 
     if (activeLobby?.matchId === match.matchId) {
-      const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id);
+      if (activeLobby.mode === "SOLO") {
+        return controlledPlayersByMatchId[match.matchId] ?? "player_1";
+      }
+
+      const lobbyPlayer = activeLobby.players.find(player => player.userId === authUser.id && !player.isClone);
       if (lobbyPlayer?.seat === 1 || lobbyPlayer?.seat === 2) {
         return lobbyPlayer.seat === 1 ? "player_1" : "player_2";
       }
@@ -2647,6 +2673,20 @@ export default function App() {
     (!controlledPlayerId || controlledPlayerId === getPendingPromptControllerId(match.pendingPrompt))
   );
   const show3dBoardView = playViewMode === "board3d";
+  const matchLobbyForView = match
+    ? (activeLobby?.matchId === match.matchId
+      ? activeLobby
+      : matchLobbies.find(lobby => lobby.matchId === match.matchId))
+    : undefined;
+  const isLiveMatchSpectator = Boolean(
+    match &&
+    authUser &&
+    matchLobbyForView?.matchId === match.matchId &&
+    !matchLobbyForView.players.some(player =>
+      player.userId === authUser.id ||
+      (player.isClone && player.ownerUserId === authUser.id)
+    )
+  );
 
   if (!authChecked) {
     return (
@@ -3031,6 +3071,7 @@ export default function App() {
                 onCreateLobby={createLobby}
                 onJoinLobby={joinLobby}
                 onSelectDeck={selectLobbyDeck}
+                onSelectCloneDeck={selectLobbyCloneDeck}
                 onViewLobby={viewLobby}
                 onLeaveLobby={leaveLobby}
                 onStartMatch={startLobbyMatch}
@@ -3054,6 +3095,9 @@ export default function App() {
                 <span className="label">Table View</span>
                 <strong>3D Board (Only)</strong>
               </div>
+              {isLiveMatchSpectator ? (
+                <button type="button" onClick={() => setMatch(null)}>Leave Watch View</button>
+              ) : null}
             </section>
 
             <section className={`match-workspace match-workspace-${playViewMode}`}>
@@ -3066,6 +3110,7 @@ export default function App() {
                       presentation="game"
                       defaultIntegrationMode
                       controlledPlayerId={controlledPlayerId === "player_1" || controlledPlayerId === "player_2" ? controlledPlayerId : null}
+                      spectatorMode={isLiveMatchSpectator}
                       onAdvancePhase={advancePhase}
                       onEndTurn={endTurn}
                       onUndoLastAction={undoLastAction}
@@ -3129,7 +3174,7 @@ export default function App() {
                       onSkipEffectRoll={skipEffectRoll}
                       onActivateCardEffect={activateCardEffect}
                       onOpenBoardReport={() => setDashboardModal("board-report")}
-                      onCloseMatch={closeActiveMatchWithoutSaving}
+                      onCloseMatch={isLiveMatchSpectator ? undefined : closeActiveMatchWithoutSaving}
                       intentLabel={lastBoardIntentLabel}
                       commandLabel={lastBoardCommandLabel}
                       onIntent={(intent: PointerGestureIntent) => {
@@ -3148,6 +3193,18 @@ export default function App() {
                             : `Command: focus piece ${command.cardInstanceId ?? command.pieceId}`;
                         setLastBoardCommandLabel(label);
                       }}
+                      soloControlOverlay={activeLobby?.matchId === match.matchId && activeLobby.mode === "SOLO" ? (
+                        <div className="solo-control-switch" aria-label="Solo control side">
+                          <span className="label">Solo Control</span>
+                          <strong>{controlledPlayerId === "player_2" ? "Clone side" : "Player side"}</strong>
+                          <button
+                            type="button"
+                            onClick={() => switchSoloControlledPlayer(controlledPlayerId === "player_2" ? "player_1" : "player_2")}
+                          >
+                            Switch to {controlledPlayerId === "player_2" ? "Player" : "Clone"}
+                          </button>
+                        </div>
+                      ) : null}
                       actionDock={(
                         <CompactMatchControlPanel
                           match={match}

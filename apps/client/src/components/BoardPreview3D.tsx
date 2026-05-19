@@ -470,6 +470,8 @@ type BoardPreview3DProps = {
   presentation?: "lab" | "game";
   defaultIntegrationMode?: boolean;
   actionDock?: ReactNode;
+  soloControlOverlay?: ReactNode;
+  spectatorMode?: boolean;
   onDeckSlotClick?: (slotId: string) => void;
   controlledPlayerId?: "player_1" | "player_2" | null;
   onAdvancePhase?: () => void;
@@ -672,6 +674,8 @@ export function BoardPreview3D({
   presentation = "lab",
   defaultIntegrationMode = false,
   actionDock,
+  soloControlOverlay,
+  spectatorMode = false,
   onDeckSlotClick,
   controlledPlayerId = null,
   onAdvancePhase,
@@ -2556,7 +2560,7 @@ export function BoardPreview3D({
             resolveBoardPoint={resolveBoardPoint}
             resolveZoneRect={resolveZoneRect}
             onSelectSlot={(slotId) => selectSlot(slotId, "table")}
-            onDeckSlotClick={onDeckSlotClick}
+            onDeckSlotClick={spectatorMode ? undefined : onDeckSlotClick}
             onPlayHandCardToSlot={(slotId) => {
               if (!selectedHandCardId) return;
               if (
@@ -2687,11 +2691,11 @@ export function BoardPreview3D({
             }}
             sacrificeCandidateCardIds={discardRequiredForFocusedPlayer ? [] : [...sacrificeCandidateIds]}
             selectedSacrificeCardIds={discardRequiredForFocusedPlayer ? [] : selectedSacrificeIds}
-            onDeckStackContextMenu={(owner) => {
+            onDeckStackContextMenu={spectatorMode ? undefined : (owner => {
               if (owner !== focusedPlayerId) return;
               setDeckActionsExpanded(true);
               setDeckHandControlsOwner(owner);
-            }}
+            })}
             draggableHandCardIds={[...draggableHandCardIds]}
             draggableBattleAttackerCardIds={[...legalBattleAttackerIds]}
             draggableEquipMagicCardIds={draggableEquipMagicCardIds}
@@ -2716,6 +2720,12 @@ export function BoardPreview3D({
             controlledPlayerId={controlledPlayerId}
             onOpeningRoll={onOpeningRoll}
           />
+          {!spectatorMode && soloControlOverlay ? (
+            <aside className="board-preview-3d__solo-controls" aria-label="Solo control swap">
+              {soloControlOverlay}
+            </aside>
+          ) : null}
+          {!spectatorMode && (
           <aside className="board-preview-3d__turn-controls" aria-label="Board turn and dice controls">
             <section className="board-phase-control" aria-label="Turn phase controls">
               <div className="board-phase-control__status">
@@ -2848,7 +2858,8 @@ export function BoardPreview3D({
               </div>
             ))}
           </aside>
-          {actionDock && !actionDockCollapsed ? (
+          )}
+          {actionDock && !actionDockCollapsed && !spectatorMode ? (
             <div className={`board-preview-3d__action-dock board-preview-3d__action-dock--${actionDockPosition}`}>
               <div className="board-preview-3d__floating-title">
                 <strong>Action Dock</strong>

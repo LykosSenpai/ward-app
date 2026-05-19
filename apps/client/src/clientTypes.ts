@@ -148,6 +148,8 @@ export type MatchLobbyPlayer = {
   seat: number;
   selectedDeckId?: string;
   ready: boolean;
+  isClone?: boolean;
+  ownerUserId?: string;
 };
 
 export type MatchLobby = {
@@ -155,6 +157,7 @@ export type MatchLobby = {
   name: string;
   status: MatchLobbyStatus;
   format?: "FREE_PLAY" | "TOURNAMENT";
+  mode?: "MULTIPLAYER" | "SOLO";
   hostUserId: string;
   selectedPackIds: string[];
   matchId?: string;
