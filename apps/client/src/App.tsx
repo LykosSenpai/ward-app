@@ -374,6 +374,9 @@ export default function App() {
   const [serverRestartNotice, setServerRestartNotice] = useState("");
   const [match, setMatch] = useState<AppMatchState | null>(null);
   const [controlledPlayersByMatchId, setControlledPlayersByMatchId] = useState<Record<string, "player_1" | "player_2">>({});
+  const [matchViewModeByMatchId, setMatchViewModeByMatchId] = useState<Record<string, "participant" | "spectator">>({});
+  const [watchPolicy, setWatchPolicy] = useState<"PUBLIC" | "LOBBY_MEMBERS" | "PARTICIPANTS_ONLY">("PUBLIC");
+  const [watchPolicySaveState, setWatchPolicySaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState("");
   const [savedMatches, setSavedMatches] = useState<SavedMatchSummary[]>([]);
   const [saveMessage, setSaveMessage] = useState("");
@@ -825,6 +828,11 @@ export default function App() {
       setSocketAuthenticated(null);
       socket.emit("collection:setCapabilities", { ownershipDeltaOnly: true });
       requestInitialData();
+      socket.emit("admin:watchPolicy:get", (response: { ok: boolean; policy?: string }) => {
+        if (!response?.ok) return;
+        const policy = response.policy === "LOBBY_MEMBERS" || response.policy === "PARTICIPANTS_ONLY" ? response.policy : "PUBLIC";
+        setWatchPolicy(policy);
+      });
     });
 
     socket.on("match:state", (data: AppMatchState) => {
@@ -980,6 +988,15 @@ export default function App() {
 
     socket.on("lobby:cleanupComplete", (data: { message: string; closedCount: number }) => {
       setSaveMessage(data.message);
+    });
+
+    socket.on("match:viewMode", (data: { matchId: string; mode: "participant" | "spectator" }) => {
+      setMatchViewModeByMatchId(current => ({ ...current, [data.matchId]: data.mode }));
+    });
+
+    socket.on("match:watchPolicy", (data: { policy?: string }) => {
+      const policy = data.policy === "LOBBY_MEMBERS" || data.policy === "PARTICIPANTS_ONLY" ? data.policy : "PUBLIC";
+      setWatchPolicy(policy);
     });
 
     socket.on("collection:ownership", (data: CardOwnershipMap) => {
@@ -1225,6 +1242,8 @@ export default function App() {
       socket.off("features:list");
       socket.off("features:visibilityChanged");
       socket.off("lobby:cleanupComplete");
+      socket.off("match:viewMode");
+      socket.off("match:watchPolicy");
       socket.off("collection:ownership");
       socket.off("collection:ownershipDelta");
       socket.off("collection:error");
