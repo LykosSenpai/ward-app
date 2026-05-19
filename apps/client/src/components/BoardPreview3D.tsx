@@ -471,7 +471,6 @@ type BoardPreview3DProps = {
   defaultIntegrationMode?: boolean;
   actionDock?: ReactNode;
   soloControlOverlay?: ReactNode;
-  spectatorMode?: boolean;
   onDeckSlotClick?: (slotId: string) => void;
   controlledPlayerId?: "player_1" | "player_2" | null;
   onAdvancePhase?: () => void;
@@ -675,7 +674,6 @@ export function BoardPreview3D({
   defaultIntegrationMode = false,
   actionDock,
   soloControlOverlay,
-  spectatorMode = false,
   onDeckSlotClick,
   controlledPlayerId = null,
   onAdvancePhase,
@@ -2720,12 +2718,11 @@ export function BoardPreview3D({
             controlledPlayerId={controlledPlayerId}
             onOpeningRoll={onOpeningRoll}
           />
-          {!spectatorMode && soloControlOverlay ? (
+          {soloControlOverlay ? (
             <aside className="board-preview-3d__solo-controls" aria-label="Solo control swap">
               {soloControlOverlay}
             </aside>
           ) : null}
-          {!spectatorMode ? (
           <aside className="board-preview-3d__turn-controls" aria-label="Board turn and dice controls">
             <section className="board-phase-control" aria-label="Turn phase controls">
               <div className="board-phase-control__status">
