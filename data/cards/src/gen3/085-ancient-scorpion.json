@@ -67,5 +67,36 @@
   "hp": 60,
   "attackName": "Vice Grip",
   "attackDice": 1,
-  "modifier": 2
+  "modifier": 2,
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.png/v1/fit/w_390,h_626,q_90,enc_avif,quality_auto/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.webp",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.png/v1/fit/w_960,h_1541,q_90,enc_avif,quality_auto/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.webp",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.png/v1/fit/w_480,h_770,q_90,enc_avif,quality_auto/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.webp",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.png/v1/fit/w_720,h_1156,q_90,enc_avif,quality_auto/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.webp",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.png/v1/fit/w_960,h_1541,q_90,enc_avif,quality_auto/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.webp",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.png/v1/fit/w_1440,h_2311,q_90,enc_avif,quality_auto/f87b85_f0ab0664825e46e3804755f1315b06e0~mv2.webp",
+        "width": 1440
+      }
+    ]
+  }
 }

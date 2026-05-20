@@ -639,6 +639,46 @@
   white-space: nowrap;
 }
 
+.admin-controls-note {
+  margin: 0 0 0.9rem;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+}
+.admin-image-source-actions {
+  margin: 0 0 0.75rem;
+}
+
+.admin-image-source-purpose {
+  padding: 0.8rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.7rem;
+  margin-bottom: 0.85rem;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.admin-image-source-purpose h4 {
+  margin: 0 0 0.55rem;
+}
+
+.admin-image-source-purpose input[type="range"] {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
+.admin-image-source-priority-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.admin-image-source-priority-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 @media (max-width: 860px) {
   .admin-ticket-layout {
     min-height: 0;

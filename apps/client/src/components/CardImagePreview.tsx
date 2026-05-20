@@ -3,7 +3,13 @@ import type { ReactNode } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { filterCardImageCandidates, useCardImageManifest } from "../cardImageManifest";
 import type { CardImageCandidate } from "../cardImageManifest";
-import { buildCardImageUrl, getCardImageGenerationDirectory } from "../cardImagePaths";
+import {
+  DEFAULT_IMAGE_SOURCE_CONTROLS,
+  loadImageSourceControls,
+  subscribeImageSourceControls
+} from "../imageSourceControls";
+import { buildRailwayObjectKeyFromFileName, fetchSignedRailwayImageUrls } from "../railwayImageSigning";
+import { getGithubCdnCandidates } from "../cardImageRemoteCandidates";
 import { HolographicCardImage } from "./HolographicCardImage";
 import { ModalPanel } from "./ui/ModalPanel";
 
@@ -183,6 +189,16 @@ function normalizeSpacedFileNamePart(value: string): string {
     .trim();
 }
 
+function normalizeHyphenFileNamePart(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/['']/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function getArtSuffixAliases(artKey: CardArtKey): string[] {
   return CARD_ART_OPTIONS.find(option => option.key === artKey)?.suffixAliases ?? [artKey];
 }
@@ -203,11 +219,28 @@ function getStemAliases(card: CardLibraryCardSummary): string[] {
     const prefix = `gen${card.generation}_${card.cardNumber}`;
     const slugName = normalizeFileNamePart(card.name);
     const spacedName = normalizeSpacedFileNamePart(card.name);
+    const hyphenName = normalizeHyphenFileNamePart(card.name);
+    const trimmedCardNumber = card.cardNumber.replace(/^0+/, "") || card.cardNumber;
+    const editionSlug = normalizeHyphenFileNamePart(card.edition ?? "");
 
     aliases.push(`${prefix}_${slugName}`);
     aliases.push(`${prefix}_${spacedName}`);
     aliases.push(`${prefix} ${slugName}`);
     aliases.push(`${prefix} ${spacedName}`);
+
+    // Support current source-file-style naming:
+    // - hyphen-separated stems (e.g., 001-blue-dragon.webp)
+    // - no generation prefix
+    aliases.push(`${card.cardNumber}-${hyphenName}`);
+    aliases.push(`${trimmedCardNumber}-${hyphenName}`);
+    aliases.push(hyphenName);
+
+    // Support edition-specific variants when card art differs between editions.
+    if (editionSlug) {
+      aliases.push(`${editionSlug}-${card.cardNumber}-${hyphenName}`);
+      aliases.push(`${editionSlug}-${trimmedCardNumber}-${hyphenName}`);
+      aliases.push(`${editionSlug}-${hyphenName}`);
+    }
   }
 
   return uniqueValues(aliases);
@@ -244,6 +277,79 @@ export function useTargetedCardImageCandidates(card: CardLibraryCardSummary, art
   return useMemo(() => filterCardImageCandidates(candidates, manifest), [candidates, manifest]);
 }
 
+function useCardLibraryImageControls() {
+  const [controls, setControls] = useState(() => loadImageSourceControls().cardLibrary);
+
+  useEffect(() => {
+    const refresh = () => setControls(loadImageSourceControls().cardLibrary);
+    return subscribeImageSourceControls(refresh);
+  }, []);
+
+  return controls ?? DEFAULT_IMAGE_SOURCE_CONTROLS.cardLibrary;
+}
+
+function useExpandedImageControls() {
+  const [controls, setControls] = useState(() => loadImageSourceControls().expandedView);
+
+  useEffect(() => {
+    const refresh = () => setControls(loadImageSourceControls().expandedView);
+    return subscribeImageSourceControls(refresh);
+  }, []);
+
+  return controls ?? DEFAULT_IMAGE_SOURCE_CONTROLS.expandedView;
+}
+
+function selectCandidatesByPriority(
+  candidates: CardImageCandidate[],
+  controls: { priority: string[] },
+  railwayCandidates: CardImageCandidate[]
+): CardImageCandidate[] {
+  const localCandidates = candidates;
+  const githubCdnCandidates = getGithubCdnCandidates(localCandidates);
+  const signedRailwayCandidates = railwayCandidates;
+  const hasLocal = localCandidates.length > 0;
+  const sourceAvailability: Record<string, boolean> = {
+    excelRemote: false,
+    githubCdn: githubCdnCandidates.length > 0,
+    railwayBucket: signedRailwayCandidates.length > 0,
+    localBundled: hasLocal,
+    placeholder: true
+  };
+
+  const firstAvailable = controls.priority.find(source => sourceAvailability[source]);
+  if (firstAvailable === "placeholder") return [];
+  if (firstAvailable === "githubCdn") return githubCdnCandidates;
+  if (firstAvailable === "railwayBucket") return signedRailwayCandidates;
+  return localCandidates;
+}
+
+function useRailwaySignedCandidates(baseCandidates: CardImageCandidate[]): CardImageCandidate[] {
+  const [signedCandidates, setSignedCandidates] = useState<CardImageCandidate[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    const keys = baseCandidates.map(candidate => buildRailwayObjectKeyFromFileName(candidate.fileName));
+    void fetchSignedRailwayImageUrls(keys).then(signedByKey => {
+      if (!active) return;
+      const signed = baseCandidates
+        .map(candidate => {
+          const key = buildRailwayObjectKeyFromFileName(candidate.fileName);
+          const signedItem = signedByKey.get(key);
+          return signedItem
+            ? { fileName: candidate.fileName, url: signedItem.url }
+            : null;
+        })
+        .filter((item): item is CardImageCandidate => item !== null);
+      setSignedCandidates(signed);
+    });
+    return () => {
+      active = false;
+    };
+  }, [baseCandidates]);
+
+  return signedCandidates;
+}
+
 export function getCardArtLabel(artKey: CardArtKey): string {
   return CARD_ART_OPTIONS.find(option => option.key === artKey)?.label ?? "Default";
 }
@@ -257,9 +363,15 @@ function ExpandedCardImage({
   onArtChange
 }: ExpandedCardImageProps) {
   const [expandedCandidateIndex, setExpandedCandidateIndex] = useState(0);
+  const expandedControls = useExpandedImageControls();
   const effectiveActiveArtKey = coerceCardArtKeyForCard(card, activeArtKey);
   const imageArtKey = getBaseArtKey(effectiveActiveArtKey);
-  const imageCandidates = useTargetedCardImageCandidates(card, imageArtKey);
+  const baseImageCandidates = useTargetedCardImageCandidates(card, imageArtKey);
+  const railwayCandidates = useRailwaySignedCandidates(baseImageCandidates);
+  const imageCandidates = useMemo(
+    () => selectCandidatesByPriority(baseImageCandidates, expandedControls, railwayCandidates),
+    [baseImageCandidates, expandedControls, railwayCandidates]
+  );
   const displayImageSrc = imageCandidates[expandedCandidateIndex]?.url;
 
   useEffect(() => {
@@ -318,10 +430,16 @@ function ExpandedCardImage({
 
 export function CardImageThumbnail({ card, className, artKey = "default", holoIntensity = 0.55 }: CardImageThumbnailProps) {
   const [candidateIndex, setCandidateIndex] = useState(0);
+  const cardLibraryControls = useCardLibraryImageControls();
   const effectiveArtKey = coerceCardArtKeyForCard(card, artKey);
   const imageArtKey = getBaseArtKey(effectiveArtKey);
   const holoEnabled = isHoloArtKey(effectiveArtKey);
-  const imageCandidates = useTargetedCardImageCandidates(card, imageArtKey);
+  const baseImageCandidates = useTargetedCardImageCandidates(card, imageArtKey);
+  const railwayCandidates = useRailwaySignedCandidates(baseImageCandidates);
+  const imageCandidates = useMemo(
+    () => selectCandidatesByPriority(baseImageCandidates, cardLibraryControls, railwayCandidates),
+    [baseImageCandidates, cardLibraryControls, railwayCandidates]
+  );
   const displayImageSrc = imageCandidates[candidateIndex]?.url;
 
   useEffect(() => {
@@ -364,8 +482,14 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, h
   const holoEnabled = isHoloArtKey(activeArtKey);
   const baseArtKey = getBaseArtKey(activeArtKey);
   const holoSeed = `${card.packId}:${card.id}:${card.name}`;
+  const expandedControls = useExpandedImageControls();
 
-  const imageCandidates = useTargetedCardImageCandidates(card, imageArtKey);
+  const baseImageCandidates = useTargetedCardImageCandidates(card, imageArtKey);
+  const railwayCandidates = useRailwaySignedCandidates(baseImageCandidates);
+  const imageCandidates = useMemo(
+    () => selectCandidatesByPriority(baseImageCandidates, expandedControls, railwayCandidates),
+    [baseImageCandidates, expandedControls, railwayCandidates]
+  );
 
   useEffect(() => {
     setCandidateIndex(0);

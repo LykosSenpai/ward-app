@@ -58,5 +58,36 @@
   "cardType": "MAGIC",
   "magicType": "LIGHTNING",
   "magicSubType": "NONE",
-  "isEquip": false
+  "isEquip": false,
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.jpg/v1/fit/w_1328,h_1165,q_90/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.webp",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.jpg/v1/fit/w_960,h_842,q_90/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.webp",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.jpg/v1/fit/w_480,h_421,q_90/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.webp",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.jpg/v1/fit/w_720,h_632,q_90/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.webp",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.jpg/v1/fit/w_960,h_842,q_90/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.webp",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.jpg/v1/fit/w_1440,h_1263,q_90/f87b85_a047eb6a6bf2405f93bd3daa37ff034e~mv2.webp",
+        "width": 1440
+      }
+    ]
+  }
 }
