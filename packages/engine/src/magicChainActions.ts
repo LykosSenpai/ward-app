@@ -1555,8 +1555,11 @@ export function playMagicFromHand(
 
   assertPlayerCanPlayMagicUnderActivePlayRestrictions(nextState, playerId);
 
-  if (definition.magicType === "INFINITE" && countInfiniteMagicOnField(nextState, player) >= MAX_INFINITE_MAGIC_ON_FIELD) {
-    throw new Error(`You already have ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards on your side of the field.`);
+  if (definition.magicType === "INFINITE") {
+    const infiniteOnField = countInfiniteMagicOnField(nextState, player);
+    if (infiniteOnField >= MAX_INFINITE_MAGIC_ON_FIELD) {
+      throw new Error(`You already have ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards on your side of the field.`);
+    }
   }
 
   if (isSilenceFromTheGraveDefinition(definition)) {
@@ -1996,105 +1999,51 @@ export function resolveMagicChain(state: MatchState): MatchState {
         : resolutionKind === "FIELD"
           ? "FIELD_MAGIC_TO_FIELD"
           : "TEMP_EQUIP_MAGIC_TO_FIELD";
-      const slotFullReason = resolutionKind === "INFINITE"
-        ? "INFINITE_MAGIC_SLOT_FULL"
-        : resolutionKind === "FIELD"
-          ? "FIELD_MAGIC_SLOT_FULL"
-          : "TEMP_EQUIP_MAGIC_SLOT_FULL";
-      const failedEventType = resolutionKind === "INFINITE"
-        ? "INFINITE_MAGIC_FAILED_SLOT_FULL"
-        : resolutionKind === "FIELD"
-          ? "FIELD_MAGIC_FAILED_SLOT_FULL"
-          : "TEMP_EQUIP_MAGIC_FAILED_SLOT_FULL";
       const resolvedEventType = resolutionKind === "INFINITE"
         ? "INFINITE_MAGIC_RESOLVED_TO_FIELD"
         : resolutionKind === "FIELD"
           ? "FIELD_MAGIC_RESOLVED_TO_FIELD"
           : "TEMP_EQUIP_MAGIC_RESOLVED_TO_FIELD";
+      assertCanAddMagicToField(nextState, fieldOwner, chainCard, {
+        message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards.`
+      });
+      chainCard.zone = "MAGIC_SLOT";
+      fieldOwner.field.magicSlots.push(chainCard);
 
-      try {
-        assertCanAddMagicToField(nextState, fieldOwner, chainCard, {
-          message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards.`
-        });
-      } catch {
-        chainCard.zone = "CEMETERY";
-        ownerPlayer.cemetery.push(chainCard);
-
-        addEvent(nextState, failedEventType, link.playerId, {
-          chainId: chain.id,
-          chainLinkId: link.id,
-          cardInstanceId: link.cardInstanceId,
-          cardName: link.cardName,
-          magicType: link.magicType,
-          magicSubType: link.magicSubType,
-          boardEvents: [
-            {
-              type: "CHAIN_LINK_RESOLVED",
-              playerId: link.playerId,
-              cardInstanceId: link.cardInstanceId,
-              sourceCardInstanceId: link.cardInstanceId,
-              sourceCardId: link.cardId,
-              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-              reason: slotFullReason,
-              fromZoneRef: chainBoardZoneRef(link.playerId),
-              toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
-              chainLinkId: link.id
-            },
-            {
-              type: "CARD_SENT_TO_CEMETERY",
-              playerId: link.playerId,
-              cardInstanceId: link.cardInstanceId,
-              sourceCardInstanceId: link.cardInstanceId,
-              sourceCardId: link.cardId,
-              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-              reason: slotFullReason,
-              fromZoneRef: chainBoardZoneRef(link.playerId),
-              toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
-              chainLinkId: link.id
-            }
-          ]
-        });
-      }
-
-      if (chainCard.zone !== "CEMETERY") {
-        chainCard.zone = "MAGIC_SLOT";
-        fieldOwner.field.magicSlots.push(chainCard);
-
-        addEvent(nextState, resolvedEventType, link.playerId, {
-          chainId: chain.id,
-          chainLinkId: link.id,
-          cardInstanceId: link.cardInstanceId,
-          cardName: link.cardName,
-          magicType: link.magicType,
-          magicSubType: link.magicSubType,
-          boardEvents: [
-            {
-              type: "CHAIN_LINK_RESOLVED",
-              playerId: link.playerId,
-              cardInstanceId: link.cardInstanceId,
-              sourceCardInstanceId: link.cardInstanceId,
-              sourceCardId: link.cardId,
-              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-              reason,
-              fromZoneRef: chainBoardZoneRef(link.playerId),
-              toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
-              chainLinkId: link.id
-            },
-            {
-              type: "MAGIC_RESOLVED",
-              playerId: link.playerId,
-              cardInstanceId: link.cardInstanceId,
-              sourceCardInstanceId: link.cardInstanceId,
-              sourceCardId: link.cardId,
-              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-              reason,
-              fromZoneRef: chainBoardZoneRef(link.playerId),
-              toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
-              chainLinkId: link.id
-            }
-          ]
-        });
-      }
+      addEvent(nextState, resolvedEventType, link.playerId, {
+        chainId: chain.id,
+        chainLinkId: link.id,
+        cardInstanceId: link.cardInstanceId,
+        cardName: link.cardName,
+        magicType: link.magicType,
+        magicSubType: link.magicSubType,
+        boardEvents: [
+          {
+            type: "CHAIN_LINK_RESOLVED",
+            playerId: link.playerId,
+            cardInstanceId: link.cardInstanceId,
+            sourceCardInstanceId: link.cardInstanceId,
+            sourceCardId: link.cardId,
+            actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+            reason,
+            fromZoneRef: chainBoardZoneRef(link.playerId),
+            toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
+            chainLinkId: link.id
+          },
+          {
+            type: "MAGIC_RESOLVED",
+            playerId: link.playerId,
+            cardInstanceId: link.cardInstanceId,
+            sourceCardInstanceId: link.cardInstanceId,
+            sourceCardId: link.cardId,
+            actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+            reason,
+            fromZoneRef: chainBoardZoneRef(link.playerId),
+            toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
+            chainLinkId: link.id
+          }
+        ]
+      });
 
       continue;
     }
