@@ -4,6 +4,7 @@ import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../../clientTypes";
 import type { BoardObject } from "../boardPreview3dAdapter";
 import { normalizeCardArtKey } from "../CardImagePreview";
+import { chooseCanvasConfig, createShardPolygons, drawHolographicCanvas } from "../HolographicCardImage";
 import { getBoardCardImageUrls, getMatchCardImageUrls } from "../MatchCardImage";
 import { getCardName } from "../../gameViewHelpers";
 import {
@@ -24,15 +25,11 @@ type BoardPreview3DWebGLCardsProps = {
 
 const CARD_WORLD_WIDTH = 128;
 const CARD_WORLD_HEIGHT = 179;
+const CARD_TEXTURE_WIDTH = 512;
+const CARD_TEXTURE_HEIGHT = Math.round((CARD_TEXTURE_WIDTH * CARD_WORLD_HEIGHT) / CARD_WORLD_WIDTH);
+const CARD_TEXTURE_CORNER_RADIUS = 18;
+const BOARD_HOLO_INTENSITY = 5.4;
 const cardTextureCache = new Map<string, Promise<THREE.Texture | null>>();
-const HOLO_COLORS = [
-  "rgba(125, 249, 255, 0.42)",
-  "rgba(168, 85, 247, 0.36)",
-  "rgba(244, 114, 182, 0.34)",
-  "rgba(250, 204, 21, 0.3)",
-  "rgba(74, 222, 128, 0.3)",
-  "rgba(96, 165, 250, 0.34)"
-];
 
 type ViewMetrics = {
   height: number;
@@ -106,37 +103,51 @@ async function loadCardTexture(urls: string[], loader: THREE.TextureLoader, rend
   return null;
 }
 
-function hashSeed(seed: string): number {
-  let hash = 2166136261;
+type CardTextureSource = CanvasImageSource & {
+  naturalHeight?: number;
+  naturalWidth?: number;
+  height?: number;
+  width?: number;
+};
 
-  for (let index = 0; index < seed.length; index += 1) {
-    hash ^= seed.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
+function traceRoundedRect(context: CanvasRenderingContext2D, width: number, height: number, radius: number) {
+  const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
 
-  return hash >>> 0;
+  context.beginPath();
+  context.moveTo(safeRadius, 0);
+  context.lineTo(width - safeRadius, 0);
+  context.quadraticCurveTo(width, 0, width, safeRadius);
+  context.lineTo(width, height - safeRadius);
+  context.quadraticCurveTo(width, height, width - safeRadius, height);
+  context.lineTo(safeRadius, height);
+  context.quadraticCurveTo(0, height, 0, height - safeRadius);
+  context.lineTo(0, safeRadius);
+  context.quadraticCurveTo(0, 0, safeRadius, 0);
+  context.closePath();
 }
 
-function createSeededRandom(seed: string): () => number {
-  let state = hashSeed(seed) || 1;
+function readSourceDimension(value: number | { baseVal?: { value?: number } } | undefined, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
+  const animatedValue = typeof value === "object" ? value.baseVal?.value : undefined;
+  return typeof animatedValue === "number" && Number.isFinite(animatedValue) && animatedValue > 0 ? animatedValue : fallback;
+}
 
-  return () => {
-    state ^= state << 13;
-    state ^= state >>> 17;
-    state ^= state << 5;
-    return ((state >>> 0) % 10000) / 10000;
-  };
+function drawSourceContained(context: CanvasRenderingContext2D, source: CardTextureSource, width: number, height: number) {
+  const sourceWidth = readSourceDimension(source.naturalWidth ?? source.width, width);
+  const sourceHeight = readSourceDimension(source.naturalHeight ?? source.height, height);
+  const scale = Math.min(width / sourceWidth, height / sourceHeight);
+  const drawWidth = sourceWidth * scale;
+  const drawHeight = sourceHeight * scale;
+  const drawX = (width - drawWidth) / 2;
+  const drawY = (height - drawHeight) / 2;
+
+  context.drawImage(source, drawX, drawY, drawWidth, drawHeight);
 }
 
 function createHolographicCardTexture(baseTexture: THREE.Texture, renderer: THREE.WebGLRenderer, seed: string): THREE.Texture {
-  const source = baseTexture.image as CanvasImageSource & {
-    naturalHeight?: number;
-    naturalWidth?: number;
-    height?: number;
-    width?: number;
-  };
-  const width = Math.max(1, Math.floor(source.naturalWidth ?? source.width ?? 512));
-  const height = Math.max(1, Math.floor(source.naturalHeight ?? source.height ?? 716));
+  const source = baseTexture.image as CardTextureSource;
+  const width = CARD_TEXTURE_WIDTH;
+  const height = CARD_TEXTURE_HEIGHT;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -147,58 +158,25 @@ function createHolographicCardTexture(baseTexture: THREE.Texture, renderer: THRE
     return baseTexture;
   }
 
-  const random = createSeededRandom(seed);
-  context.drawImage(source, 0, 0, width, height);
+  const config = chooseCanvasConfig(seed);
+  const shards = createShardPolygons(`${seed}:board:${config.id}`, config.columns, config.rows);
 
-  const sweep = context.createLinearGradient(0, height, width, 0);
-  sweep.addColorStop(0, "rgba(125, 249, 255, 0)");
-  sweep.addColorStop(0.22, "rgba(125, 249, 255, 0.28)");
-  sweep.addColorStop(0.42, "rgba(244, 114, 182, 0.22)");
-  sweep.addColorStop(0.62, "rgba(250, 204, 21, 0.2)");
-  sweep.addColorStop(0.82, "rgba(168, 85, 247, 0.26)");
-  sweep.addColorStop(1, "rgba(125, 249, 255, 0)");
-
-  context.globalCompositeOperation = "screen";
-  context.fillStyle = sweep;
+  context.clearRect(0, 0, width, height);
+  context.save();
+  traceRoundedRect(context, width, height, CARD_TEXTURE_CORNER_RADIUS);
+  context.clip();
+  context.fillStyle = "#020617";
   context.fillRect(0, 0, width, height);
+  drawSourceContained(context, source, width, height);
+  drawHolographicCanvas(context, shards, width, height, 2.4, BOARD_HOLO_INTENSITY, config, { clear: false });
+  context.restore();
 
-  for (let index = 0; index < 44; index += 1) {
-    const x = random() * width;
-    const y = random() * height;
-    const radius = (0.04 + random() * 0.13) * Math.min(width, height);
-    const sides = 3 + Math.floor(random() * 3);
-    const angleOffset = random() * Math.PI * 2;
-
-    context.beginPath();
-    for (let pointIndex = 0; pointIndex < sides; pointIndex += 1) {
-      const angle = angleOffset + (pointIndex / sides) * Math.PI * 2;
-      const px = x + Math.cos(angle) * radius * (0.45 + random() * 0.55);
-      const py = y + Math.sin(angle) * radius * (0.45 + random() * 0.55);
-
-      if (pointIndex === 0) {
-        context.moveTo(px, py);
-      } else {
-        context.lineTo(px, py);
-      }
-    }
-    context.closePath();
-    context.fillStyle = HOLO_COLORS[index % HOLO_COLORS.length] ?? HOLO_COLORS[0];
-    context.globalAlpha = 0.32 + random() * 0.22;
-    context.fill();
-  }
-
-  context.globalAlpha = 1;
-  context.globalCompositeOperation = "lighter";
-  for (let index = 0; index < 90; index += 1) {
-    const x = random() * width;
-    const y = random() * height;
-    const size = 0.75 + random() * 2.25;
-
-    context.fillStyle = `rgba(255, 255, 255, ${0.12 + random() * 0.24})`;
-    context.fillRect(x, y, size, size);
-  }
-
-  context.globalCompositeOperation = "source-over";
+  context.save();
+  traceRoundedRect(context, width, height, CARD_TEXTURE_CORNER_RADIUS);
+  context.strokeStyle = "rgba(255, 255, 255, 0.18)";
+  context.lineWidth = 2;
+  context.stroke();
+  context.restore();
 
   return configureTexture(new THREE.CanvasTexture(canvas), renderer);
 }
@@ -235,7 +213,7 @@ async function loadCardTextureForCard(
     return texture;
   }
 
-  const cacheKey = `holo:${match.matchId}:${card.instanceId}:${artKey}`;
+  const cacheKey = `holo-v2:${match.matchId}:${card.instanceId}:${artKey}`;
   let cached = cardTextureCache.get(cacheKey);
 
   if (!cached) {

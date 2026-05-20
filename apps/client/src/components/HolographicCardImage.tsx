@@ -13,7 +13,7 @@ type HolographicCardImageProps = {
   onError?: ImgHTMLAttributes<HTMLImageElement>["onError"];
 };
 
-type HoloShard = {
+export type HoloShard = {
   points: string;
   vertices: Array<[number, number]>;
   fill: string;
@@ -29,7 +29,7 @@ type HolographicCanvasLayerProps = {
   intensity: number;
 };
 
-type HoloCanvasConfig = {
+export type HoloCanvasConfig = {
   id: string;
   columns: number;
   rows: number;
@@ -176,7 +176,7 @@ function createSeededRandom(seed: string): () => number {
   };
 }
 
-function chooseCanvasConfig(seed: string): HoloCanvasConfig {
+export function chooseCanvasConfig(seed: string): HoloCanvasConfig {
   return HOLO_CANVAS_CONFIGS[hashSeed(seed) % HOLO_CANVAS_CONFIGS.length] ?? HOLO_CANVAS_CONFIGS[0]!;
 }
 
@@ -226,7 +226,7 @@ function createShard(points: Array<[number, number]>, random: () => number): Hol
   };
 }
 
-function createShardPolygons(seed: string, columns = STATIC_SHARD_COLUMNS, rows = STATIC_SHARD_ROWS): HoloShard[] {
+export function createShardPolygons(seed: string, columns = STATIC_SHARD_COLUMNS, rows = STATIC_SHARD_ROWS): HoloShard[] {
   const random = createSeededRandom(seed);
   const meshPoints: Array<Array<[number, number]>> = [];
   const shards: HoloShard[] = [];
@@ -291,16 +291,19 @@ function traceShard(context: CanvasRenderingContext2D, shard: HoloShard, width: 
   context.closePath();
 }
 
-function drawHolographicCanvas(
+export function drawHolographicCanvas(
   context: CanvasRenderingContext2D,
   shards: HoloShard[],
   width: number,
   height: number,
   timeSeconds: number,
   intensity: number,
-  config: HoloCanvasConfig
+  config: HoloCanvasConfig,
+  options: { clear?: boolean } = {}
 ) {
-  context.clearRect(0, 0, width, height);
+  if (options.clear !== false) {
+    context.clearRect(0, 0, width, height);
+  }
 
   if (width <= 0 || height <= 0) {
     return;
