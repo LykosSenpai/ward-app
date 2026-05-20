@@ -1555,8 +1555,17 @@ export function playMagicFromHand(
 
   assertPlayerCanPlayMagicUnderActivePlayRestrictions(nextState, playerId);
 
-  if (definition.magicType === "INFINITE" && countInfiniteMagicOnField(nextState, player) >= MAX_INFINITE_MAGIC_ON_FIELD) {
-    throw new Error(`You already have ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards on your side of the field.`);
+  if (definition.magicType === "INFINITE") {
+    const infiniteOnField = countInfiniteMagicOnField(nextState, player);
+    const pendingInfiniteFromPlayer = nextState.chainZone.filter(chainCard => {
+      if (chainCard.controllerPlayerId !== playerId) return false;
+      const chainDefinition = nextState.cardCatalog[chainCard.cardId];
+      return chainDefinition?.cardType === "MAGIC" && chainDefinition.magicType === "INFINITE";
+    }).length;
+
+    if (infiniteOnField + pendingInfiniteFromPlayer >= MAX_INFINITE_MAGIC_ON_FIELD) {
+      throw new Error(`You already have ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards active or pending on your side of the field.`);
+    }
   }
 
   if (isSilenceFromTheGraveDefinition(definition)) {
@@ -1996,29 +2005,21 @@ export function resolveMagicChain(state: MatchState): MatchState {
         : resolutionKind === "FIELD"
           ? "FIELD_MAGIC_TO_FIELD"
           : "TEMP_EQUIP_MAGIC_TO_FIELD";
-      const slotFullReason = resolutionKind === "INFINITE"
-        ? "INFINITE_MAGIC_SLOT_FULL"
-        : resolutionKind === "FIELD"
-          ? "FIELD_MAGIC_SLOT_FULL"
-          : "TEMP_EQUIP_MAGIC_SLOT_FULL";
-      const failedEventType = resolutionKind === "INFINITE"
-        ? "INFINITE_MAGIC_FAILED_SLOT_FULL"
-        : resolutionKind === "FIELD"
-          ? "FIELD_MAGIC_FAILED_SLOT_FULL"
-          : "TEMP_EQUIP_MAGIC_FAILED_SLOT_FULL";
+      const slotFullReason = "INFINITE_MAGIC_SLOT_FULL";
+      const failedEventType = "INFINITE_MAGIC_FAILED_SLOT_FULL";
       const resolvedEventType = resolutionKind === "INFINITE"
         ? "INFINITE_MAGIC_RESOLVED_TO_FIELD"
         : resolutionKind === "FIELD"
           ? "FIELD_MAGIC_RESOLVED_TO_FIELD"
           : "TEMP_EQUIP_MAGIC_RESOLVED_TO_FIELD";
 
-      try {
-        assertCanAddMagicToField(nextState, fieldOwner, chainCard, {
-          message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards.`
-        });
-      } catch {
-        chainCard.zone = "CEMETERY";
-        ownerPlayer.cemetery.push(chainCard);
+      const infiniteMagicSlotFull =
+        link.magicType === "INFINITE" &&
+        countInfiniteMagicOnField(nextState, fieldOwner) >= MAX_INFINITE_MAGIC_ON_FIELD;
+
+      if (infiniteMagicSlotFull) {
+        chainCard.zone = "HAND";
+        ownerPlayer.hand.push(chainCard);
 
         addEvent(nextState, failedEventType, link.playerId, {
           chainId: chain.id,
@@ -2027,6 +2028,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
           cardName: link.cardName,
           magicType: link.magicType,
           magicSubType: link.magicSubType,
+          message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards. You can't play that magic card.`,
           boardEvents: [
             {
               type: "CHAIN_LINK_RESOLVED",
@@ -2037,26 +2039,17 @@ export function resolveMagicChain(state: MatchState): MatchState {
               actionType: "RESOLVE_MAGIC_CHAIN_LINK",
               reason: slotFullReason,
               fromZoneRef: chainBoardZoneRef(link.playerId),
-              toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
-              chainLinkId: link.id
-            },
-            {
-              type: "CARD_SENT_TO_CEMETERY",
-              playerId: link.playerId,
-              cardInstanceId: link.cardInstanceId,
-              sourceCardInstanceId: link.cardInstanceId,
-              sourceCardId: link.cardId,
-              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-              reason: slotFullReason,
-              fromZoneRef: chainBoardZoneRef(link.playerId),
-              toZoneRef: cemeteryBoardZoneRef(ownerPlayer.id),
+              toZoneRef: handBoardZoneRef(ownerPlayer.id),
               chainLinkId: link.id
             }
           ]
         });
       }
 
-      if (chainCard.zone !== "CEMETERY") {
+      if (!infiniteMagicSlotFull) {
+        assertCanAddMagicToField(nextState, fieldOwner, chainCard, {
+          message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards.`
+        });
         chainCard.zone = "MAGIC_SLOT";
         fieldOwner.field.magicSlots.push(chainCard);
 
