@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { CardLibraryCardSummary } from "../clientTypes";
 import { filterCardImageCandidates, useCardImageManifest } from "../cardImageManifest";
 import type { CardImageCandidate } from "../cardImageManifest";
+import { buildCardImageUrl, getCardImageGenerationDirectory } from "../cardImagePaths";
 import {
   DEFAULT_IMAGE_SOURCE_CONTROLS,
   loadImageSourceControls,
