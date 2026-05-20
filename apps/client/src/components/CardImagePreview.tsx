@@ -246,27 +246,26 @@ function getStemAliases(card: CardLibraryCardSummary): string[] {
   return uniqueValues(aliases);
 }
 
-function getRemoteImageCandidates(card: CardLibraryCardSummary): CardImageCandidate[] {
-  const remoteCandidates = card.image?.remoteCandidates ?? [];
-  return remoteCandidates
-    .filter(candidate => typeof candidate.url === "string" && candidate.url.trim() !== "")
-    .map((candidate, index) => ({
-      fileName: candidate.fileName ?? `${card.id}__remote_${index}.webp`,
-      url: String(candidate.url)
-    }));
+function getCardImageFilePaths(card: CardLibraryCardSummary, fileName: string): string[] {
+  const generationDirectory = getCardImageGenerationDirectory(card.generation);
+
+  return uniqueValues([
+    fileName,
+    generationDirectory ? `${generationDirectory}/${fileName}` : ""
+  ]);
 }
 
 export function getImageCandidates(card: CardLibraryCardSummary, artKey: CardArtKey): CardImageCandidate[] {
   const stems = getStemAliases(card).flatMap(stem => getArtStems(stem, artKey));
 
   return uniqueValues(stems).flatMap(stem =>
-    IMAGE_EXTENSIONS.map(extension => {
+    IMAGE_EXTENSIONS.flatMap(extension => {
       const fileName = `${stem}.${extension}`;
 
-      return {
-        fileName,
-        url: `/card-images/${encodeURIComponent(fileName)}`
-      };
+      return getCardImageFilePaths(card, fileName).map(filePath => ({
+        fileName: filePath,
+        url: buildCardImageUrl(filePath)
+      }));
     })
   );
 }

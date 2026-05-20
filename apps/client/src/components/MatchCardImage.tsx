@@ -3,6 +3,7 @@ import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import { filterCardImageCandidates, useCardImageManifest } from "../cardImageManifest";
 import type { CardImageCandidate } from "../cardImageManifest";
+import { buildCardImageUrl, getCardImageGenerationDirectory } from "../cardImagePaths";
 import { getCardName } from "../gameViewHelpers";
 import type { CardArtKey } from "./CardImagePreview";
 import { getBaseArtKey, isHoloArtKey, normalizeCardArtKey } from "./CardImagePreview";
@@ -39,16 +40,13 @@ function getArtStems(stem: string, artKey: CardArtKey): string[] {
   return ZERO_ART_SUFFIX_ALIASES.map(suffix => `${stem}__${suffix}`);
 }
 
+function getMatchCardImageFilePaths(generation: string | number | undefined, fileName: string): string[] {
+  const generationDirectory = getCardImageGenerationDirectory(generation);
 
-function getRemoteMatchCardCandidates(match: AppMatchState, card: CardInstance): CardImageCandidate[] {
-  const definition = match.cardCatalog[card.cardId];
-  const remoteCandidates = definition?.image?.remoteCandidates ?? [];
-  return remoteCandidates
-    .filter(candidate => typeof candidate.url === "string" && candidate.url.trim() !== "")
-    .map((candidate, index) => ({
-      fileName: candidate.fileName ?? `${card.cardId}__remote_${index}.webp`,
-      url: String(candidate.url)
-    }));
+  return uniqueValues([
+    fileName,
+    generationDirectory ? `${generationDirectory}/${fileName}` : ""
+  ]);
 }
 
 function getMatchCardImageCandidates(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): CardImageCandidate[] {
@@ -63,13 +61,13 @@ function getMatchCardImageCandidates(match: AppMatchState, card: CardInstance, a
   const artStems = uniqueValues(stems).flatMap(stem => getArtStems(stem, artKey));
 
   return uniqueValues(artStems).flatMap(stem =>
-    IMAGE_EXTENSIONS.map(extension => {
+    IMAGE_EXTENSIONS.flatMap(extension => {
       const fileName = `${stem}.${extension}`;
 
-      return {
-        fileName,
-        url: `/card-images/${encodeURIComponent(fileName)}`
-      };
+      return getMatchCardImageFilePaths(definition?.generation, fileName).map(filePath => ({
+        fileName: filePath,
+        url: buildCardImageUrl(filePath)
+      }));
     })
   );
 }
