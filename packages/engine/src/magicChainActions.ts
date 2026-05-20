@@ -2012,6 +2012,11 @@ export function resolveMagicChain(state: MatchState): MatchState {
         : resolutionKind === "FIELD"
           ? "FIELD_MAGIC_RESOLVED_TO_FIELD"
           : "TEMP_EQUIP_MAGIC_RESOLVED_TO_FIELD";
+      assertCanAddMagicToField(nextState, fieldOwner, chainCard, {
+        message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards.`
+      });
+      chainCard.zone = "MAGIC_SLOT";
+      fieldOwner.field.magicSlots.push(chainCard);
 
       const infiniteMagicSlotFull =
         link.magicType === "INFINITE" &&
