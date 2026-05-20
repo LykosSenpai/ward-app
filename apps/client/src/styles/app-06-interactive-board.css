@@ -2401,6 +2401,127 @@
   font-size: 0.72rem;
 }
 
+.board-preview-3d__field-magic-trays {
+  display: grid;
+  gap: 8px;
+  left: 12px;
+  position: absolute;
+  top: 84px;
+  width: min(300px, calc(50% - 20px));
+  z-index: 30;
+}
+
+.board-preview-3d__field-magic-tray {
+  background: rgba(2, 6, 23, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.38);
+  color: #e2e8f0;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+}
+
+.board-preview-3d__field-magic-tray.is-drop-ready {
+  border-color: rgba(93, 225, 154, 0.76);
+}
+
+.board-preview-3d__field-magic-tray-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.board-preview-3d__field-magic-tray-head span,
+.board-preview-3d__field-magic-tray-head strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-preview-3d__field-magic-tray-head span {
+  color: #93c5fd;
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.board-preview-3d__field-magic-tray-head strong {
+  font-size: 0.68rem;
+}
+
+.board-preview-3d__field-magic-play,
+.board-preview-3d__field-magic-actions button {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(134, 239, 172, 0.48);
+  border-radius: 6px;
+  color: #dcfce7;
+  cursor: pointer;
+  font-size: 0.66rem;
+  font-weight: 800;
+  padding: 5px 7px;
+}
+
+.board-preview-3d__field-magic-list {
+  display: grid;
+  gap: 5px;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.board-preview-3d__field-magic-empty {
+  color: #94a3b8;
+  font-size: 0.66rem;
+}
+
+.board-preview-3d__field-magic-card {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.board-preview-3d__field-magic-card > button {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 7px;
+  color: #e2e8f0;
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 30px minmax(0, 1fr);
+  min-width: 0;
+  padding: 4px;
+  text-align: left;
+}
+
+.board-preview-3d__field-magic-card.is-selected > button,
+.board-preview-3d__field-magic-card.is-effect-target > button {
+  border-color: rgba(96, 165, 250, 0.72);
+}
+
+.board-preview-3d__field-magic-art {
+  aspect-ratio: 5 / 7;
+  border-radius: 4px;
+  overflow: hidden;
+  width: 30px;
+}
+
+.board-preview-3d__field-magic-card span {
+  font-size: 0.66rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-preview-3d__field-magic-actions {
+  display: grid;
+  gap: 4px;
+}
+
 .board-battle-hud {
   background: rgba(2, 6, 23, 0.86);
   border: 1px solid rgba(125, 211, 252, 0.4);
@@ -3997,6 +4118,47 @@
   border-color: rgba(125, 211, 252, 0.72);
 }
 
+.board-preview-3d__card-inspector.is-small-card {
+  gap: 7px 9px;
+  grid-template-columns: 126px minmax(0, 1fr);
+  width: min(318px, 31vw);
+}
+
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__card-inspector-header {
+  grid-column: 1 / -1;
+}
+
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__card-inspector-header strong {
+  font-size: 1rem;
+}
+
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__card-inspector-header span {
+  font-size: 0.72rem;
+}
+
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__card-inspector-art-wrap {
+  align-self: start;
+  grid-column: 1;
+  justify-self: start;
+  max-width: 125px;
+}
+
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__card-inspector-attachments,
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__card-inspector-detail-toggle,
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__card-inspector-copy,
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__sacrifice-tracker {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__card-inspector-copy {
+  max-height: 180px;
+}
+
+.board-preview-3d__card-inspector.is-small-card .board-preview-3d__sacrifice-candidates {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .board-preview-3d__card-inspector-close {
   background: rgba(15, 23, 42, 0.88);
   border: 1px solid rgba(148, 163, 184, 0.42);
@@ -4423,9 +4585,19 @@
     width: min(420px, calc(100% - 16px));
   }
 
+  .board-preview-3d__card-inspector.is-small-card {
+    grid-template-columns: 118px minmax(0, 1fr);
+    max-height: 52vh;
+    width: min(360px, calc(100% - 16px));
+  }
+
   .board-preview-3d__card-inspector-art-wrap {
     height: auto;
     max-width: 229px;
+  }
+
+  .board-preview-3d__card-inspector.is-small-card .board-preview-3d__card-inspector-art-wrap {
+    max-width: 118px;
   }
 
   .board-preview-3d__card-inspector-art {

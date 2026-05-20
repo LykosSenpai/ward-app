@@ -3,7 +3,7 @@ import type { BoardZoneKind, BoardZoneRef } from "@ward/shared";
 import { buildBoardObjects } from "./boardPreview3dAdapter";
 import type { BoardInteractionContext, BoardRenderCard, BoardRenderEvent, BoardRenderModel } from "./boardRenderContracts";
 import type { BoardPlayerId } from "./boardPreview3dTypes";
-import { getAdvanceBlockReason, getBattleBlockReason, getMatchStatus } from "../gameViewHelpers";
+import { getAdvanceBlockReason, getBattleBlockReason, getMatchStatus, isInfiniteMagic } from "../gameViewHelpers";
 
 function resolveOwner(playerId: string): BoardPlayerId {
   return playerId === "player_1" ? "player_1" : "player_2";
@@ -412,7 +412,7 @@ function buildRenderCards(match: AppMatchState): BoardRenderCard[] {
     }));
 
     const magic = player.field.magicSlots
-      .filter((card): card is NonNullable<typeof card> => Boolean(card))
+      .filter((card): card is NonNullable<typeof card> => isInfiniteMagic(match, card))
       .map((card, index) => ({
         cardInstanceId: card.instanceId,
         cardId: card.cardId,

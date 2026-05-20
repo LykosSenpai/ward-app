@@ -4,6 +4,7 @@ import {
   getAttachedCreatureLabel,
   getCardName,
   getCardText,
+  getFieldMagicSummary,
   getMagicLine,
   isEquipMagic
 } from "../../gameViewHelpers";
@@ -67,12 +68,15 @@ export function MagicSlotsZone({
   ) => void;
   onDestroyMagic: (cardInstanceId: string) => void;
 }) {
+  const summary = getFieldMagicSummary(match, player);
+
   return (
     <section className="zone-box">
-      <h3>Magic Slots</h3>
+      <h3>Field Magic</h3>
+      <p className="zone-summary">Infinite {summary.infiniteCount}/5 + {summary.otherCount} other</p>
 
       {player.field.magicSlots.length === 0 ? (
-        <p className="empty-zone">No Infinite Magic cards on field.</p>
+        <p className="empty-zone">No Field Magic cards on field.</p>
       ) : (
         <div className="magic-slot-list">
           {player.field.magicSlots.map(card => (

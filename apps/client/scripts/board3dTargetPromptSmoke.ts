@@ -34,7 +34,7 @@ function createMatch(): AppMatchState {
     ],
     cardCatalog: {
       "creature-1": { id: "creature-1", name: "Creature", cardType: "CREATURE", stats: { hp: 10, al: 1, spd: 1, atkDice: 1, mod: 0 } },
-      "magic-1": { id: "magic-1", name: "Magic", cardType: "MAGIC", magicType: "NORMAL", magicSubType: "NONE", effects: [] }
+      "magic-1": { id: "magic-1", name: "Magic", cardType: "MAGIC", magicType: "INFINITE", magicSubType: "FIELD", effects: [] }
     },
     setup: { handDiscardRequiredForPlayerId: null, primaryReplacementRequiredForPlayerId: null },
     settings: { cannotInflictAttackDamageBattlePolicy: "SKIP_BATTLE" },

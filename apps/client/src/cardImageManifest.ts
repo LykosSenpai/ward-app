@@ -64,19 +64,33 @@ export function useCardImageManifest(): CardImageManifest {
 
 export function filterCardImageCandidates(
   candidates: CardImageCandidate[],
-  manifest: CardImageManifest
+  manifest: CardImageManifest,
+  order: "remote-first" | "local-first" = "remote-first"
 ): CardImageCandidate[] {
   if (candidates.length <= 1) return candidates;
   const remoteCandidates = candidates.filter(candidate => candidate.fileName.startsWith("remote:"));
   const localCandidates = candidates.filter(candidate => !candidate.fileName.startsWith("remote:"));
+  const orderedCandidates = order === "local-first"
+    ? [...localCandidates, ...remoteCandidates]
+    : [...remoteCandidates, ...localCandidates];
 
   if (localCandidates.length === 0) return remoteCandidates;
-  if (manifest === undefined) return [...remoteCandidates, ...localCandidates.slice(0, 1)];
-  if (manifest === null) return candidates;
+  if (manifest === undefined) {
+    return order === "local-first"
+      ? [...localCandidates.slice(0, 1), ...remoteCandidates]
+      : [...remoteCandidates, ...localCandidates.slice(0, 1)];
+  }
+  if (manifest === null) return orderedCandidates;
 
   const knownCandidates = localCandidates.filter(candidate => manifest.has(candidate.fileName));
 
-  return knownCandidates.length > 0
-    ? [...remoteCandidates, ...knownCandidates]
+  if (knownCandidates.length > 0) {
+    return order === "local-first"
+      ? [...knownCandidates, ...remoteCandidates]
+      : [...remoteCandidates, ...knownCandidates];
+  }
+
+  return order === "local-first"
+    ? [...localCandidates.slice(0, 1), ...remoteCandidates]
     : [...remoteCandidates, ...localCandidates.slice(0, 1)];
 }

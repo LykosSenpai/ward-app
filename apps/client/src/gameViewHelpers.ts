@@ -47,6 +47,34 @@ export function isMagic(match: AppMatchState, card: CardInstance): boolean {
   return match.cardCatalog[card.cardId]?.cardType === "MAGIC";
 }
 
+export function isInfiniteMagic(match: AppMatchState, card: CardInstance | null | undefined): boolean {
+  if (!card) return false;
+  const definition = match.cardCatalog[card.cardId];
+  return definition?.cardType === "MAGIC" && definition.magicType === "INFINITE";
+}
+
+export function getInfiniteFieldMagicCards(match: AppMatchState, player: PlayerState): CardInstance[] {
+  return player.field.magicSlots.filter(card => isInfiniteMagic(match, card));
+}
+
+export function getOtherFieldMagicCards(match: AppMatchState, player: PlayerState): CardInstance[] {
+  return player.field.magicSlots.filter(card => !isInfiniteMagic(match, card));
+}
+
+export function getFieldMagicSummary(match: AppMatchState, player: PlayerState): {
+  infiniteCount: number;
+  otherCount: number;
+  totalCount: number;
+} {
+  const infiniteCount = getInfiniteFieldMagicCards(match, player).length;
+  const totalCount = player.field.magicSlots.length;
+  return {
+    infiniteCount,
+    otherCount: Math.max(0, totalCount - infiniteCount),
+    totalCount
+  };
+}
+
 export function getDisplayMagicType(magicType?: string): string {
   return magicType === "BATTLE_LIGHTNING" ? "LIGHTNING" : magicType ?? "";
 }

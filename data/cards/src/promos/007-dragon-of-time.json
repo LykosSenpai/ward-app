@@ -216,5 +216,36 @@
   "printedGeneration": "Boss Edition / Pre-Order Exclusive",
   "artworkTags": [
     "WINGS"
-  ]
+  ],
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_720,h_1275,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_1440,h_2550,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+        "width": 1440
+      }
+    ]
+  }
 }

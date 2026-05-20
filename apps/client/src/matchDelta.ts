@@ -79,15 +79,33 @@ function applyOperation(root: AppMatchState, operation: MatchDeltaOperation): vo
   record[key] = operation.value;
 }
 
+function getEventSequenceNumber(match: AppMatchState): number {
+  return match.eventLog[match.eventLog.length - 1]?.sequenceNumber ?? 0;
+}
+
 export function applyMatchDelta(current: AppMatchState, delta: MatchDeltaPayload): AppMatchState {
   if (current.matchId !== delta.matchId) {
     throw new Error("Delta does not belong to the current match.");
+  }
+
+  if (
+    typeof delta.baseEventSequenceNumber === "number" &&
+    getEventSequenceNumber(current) !== delta.baseEventSequenceNumber
+  ) {
+    throw new Error("Delta base sequence does not match the current match state.");
   }
 
   const next = cloneJsonValue(current);
 
   for (const operation of delta.operations) {
     applyOperation(next, operation);
+  }
+
+  if (
+    typeof delta.eventSequenceNumber === "number" &&
+    getEventSequenceNumber(next) !== delta.eventSequenceNumber
+  ) {
+    throw new Error("Delta result sequence did not match the server match state.");
   }
 
   return next;

@@ -24,7 +24,7 @@ Key adapter helpers in `apps/client/src/components/boardPreview3dAdapter.ts`:
 
 ### Guard parity notes
 - Summon requires focused primary slot owned by acting player + summonable card.
-- Magic requires focused magic slot owned by acting player + playable magic card.
+- Magic requires a playable magic card for the acting player; the five visible magic slots are only used for Infinite Magic placement.
 - Battle requires attacker id, defender id, valid attacker, defender primary, and valid battle phase.
 
 ## Request correlation + pending lifecycle
@@ -52,6 +52,6 @@ Run these before merge:
 ## QA checklist
 - 2D/3D toggle works.
 - Slot/piece focus updates bridge context.
-- Summon/magic/battle buttons show actionable disable reasons.
+- Summon/magic/battle buttons show actionable disable reasons, and non-Infinite field Magic is projected through the Field Magic tray.
 - Pending ack line updates on dispatch, ack, reject, and timeout.
 - No direct match-state mutation from preview UI handlers.

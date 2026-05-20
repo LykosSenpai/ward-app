@@ -5,8 +5,10 @@ import type { AppMatchState } from "../../clientTypes";
 import type { BoardObject } from "../boardPreview3dAdapter";
 import { normalizeCardArtKey } from "../CardImagePreview";
 import { chooseCanvasConfig, createShardPolygons, drawHolographicCanvas } from "../HolographicCardImage";
-import { getBoardCardImageUrls, getMatchCardImageUrls } from "../MatchCardImage";
+import { getBoardCardImageUrls } from "../MatchCardImage";
 import { getCardName } from "../../gameViewHelpers";
+import { loadCardImageManifest } from "../../cardImageManifest";
+import type { CardImageManifest } from "../../cardImageManifest";
 import {
   DEFAULT_IMAGE_SOURCE_CONTROLS,
   loadImageSourceControls,
@@ -18,6 +20,7 @@ type BoardPreview3DWebGLCardsProps = {
   filteredBoardObjects: BoardObject[];
   heightScale: number;
   zoneScale: number;
+  zoomScale: number;
   compactCardTextures: boolean;
   match: AppMatchState;
   resolveSlotPosition: (slotId: string, fallbackX: number, fallbackZ: number) => { xPercent: number; zPercent: number };
@@ -28,8 +31,24 @@ const CARD_WORLD_HEIGHT = 179;
 const CARD_TEXTURE_WIDTH = 512;
 const CARD_TEXTURE_HEIGHT = Math.round((CARD_TEXTURE_WIDTH * CARD_WORLD_HEIGHT) / CARD_WORLD_WIDTH);
 const CARD_TEXTURE_CORNER_RADIUS = 18;
-const BOARD_HOLO_INTENSITY = 5.4;
+const MIN_CARD_WORLD_SCALE = 0.35;
+const MAX_CARD_WORLD_SCALE = 2.5;
+const COMPACT_CARD_IMAGE_BOUNDS = {
+  x: 24,
+  y: 82,
+  width: CARD_TEXTURE_WIDTH - 48,
+  height: CARD_TEXTURE_HEIGHT - 180,
+  radius: 12
+};
+const BOARD_HOLO_FRAME_INTERVAL_MS = 1000 / 24;
+const BOARD_HOLO_INTENSITY = 7.2;
+const BOARD_HOLO_OPACITY = 1.78;
+const BOARD_HOLO_SHEEN_INTENSITY = 1.08;
+const MAX_PRELOADED_CARD_IMAGES = 240;
 const cardTextureCache = new Map<string, Promise<THREE.Texture | null>>();
+const animatedTextureRenderers = new WeakMap<THREE.Texture, (timeSeconds: number) => void>();
+const preloadedCardImageElements = new Map<string, HTMLImageElement>();
+const preloadedCardImagePromises = new Map<string, Promise<void>>();
 
 type ViewMetrics = {
   height: number;
@@ -85,6 +104,97 @@ function configureTexture(texture: THREE.Texture, renderer: THREE.WebGLRenderer)
   return texture;
 }
 
+function rememberPreloadedImage(url: string, image: HTMLImageElement) {
+  if (preloadedCardImageElements.has(url)) {
+    preloadedCardImageElements.delete(url);
+  }
+
+  preloadedCardImageElements.set(url, image);
+
+  while (preloadedCardImageElements.size > MAX_PRELOADED_CARD_IMAGES) {
+    const oldestUrl = preloadedCardImageElements.keys().next().value;
+    if (!oldestUrl) break;
+    preloadedCardImageElements.delete(oldestUrl);
+    preloadedCardImagePromises.delete(oldestUrl);
+  }
+}
+
+function preloadCardImageUrl(url: string) {
+  if (!url || preloadedCardImagePromises.has(url)) return;
+
+  const image = new Image();
+  image.decoding = "async";
+  image.loading = "eager";
+
+  const promise = new Promise<void>(resolve => {
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      image.onload = null;
+      image.onerror = null;
+      rememberPreloadedImage(url, image);
+      resolve();
+    };
+
+    image.onload = done;
+    image.onerror = done;
+    image.src = url;
+
+    if (image.decode) {
+      void image.decode().then(done).catch(() => undefined);
+    }
+  });
+
+  preloadedCardImagePromises.set(url, promise);
+}
+
+function collectNestedCardInstances(card: CardInstance | undefined, cards: CardInstance[]) {
+  if (!card) return;
+  cards.push(card);
+  for (const attachedCard of card.attachedUnder ?? []) {
+    collectNestedCardInstances(attachedCard, cards);
+  }
+}
+
+function collectMatchCardInstances(match: AppMatchState): CardInstance[] {
+  const cards: CardInstance[] = [];
+
+  for (const player of match.players) {
+    for (const card of player.deck) collectNestedCardInstances(card, cards);
+    for (const card of player.hand) collectNestedCardInstances(card, cards);
+    for (const card of player.cemetery) collectNestedCardInstances(card, cards);
+    for (const card of player.removedFromGame) collectNestedCardInstances(card, cards);
+    collectNestedCardInstances(player.field.primaryCreature, cards);
+    for (const card of player.field.limitedSummons) collectNestedCardInstances(card, cards);
+    for (const card of player.field.magicSlots) collectNestedCardInstances(card, cards);
+  }
+
+  for (const card of match.chainZone) collectNestedCardInstances(card, cards);
+
+  return cards;
+}
+
+function collectMatchCardImagePreloadUrls(match: AppMatchState, manifest: CardImageManifest): string[] {
+  const seenCards = new Set<string>();
+  const seenUrls = new Set<string>();
+  const urls: string[] = [];
+
+  for (const card of collectMatchCardInstances(match)) {
+    const artKey = normalizeCardArtKey(card.artKey);
+    const cardKey = `${card.cardId}:${artKey}`;
+    if (seenCards.has(cardKey)) continue;
+    seenCards.add(cardKey);
+
+    const url = getBoardCardImageUrls(match, card, undefined, manifest)[0];
+    if (!url || seenUrls.has(url)) continue;
+    seenUrls.add(url);
+    urls.push(url);
+  }
+
+  return urls;
+}
+
 async function loadCardTexture(urls: string[], loader: THREE.TextureLoader, renderer: THREE.WebGLRenderer): Promise<THREE.Texture | null> {
   for (const url of urls) {
     try {
@@ -110,6 +220,14 @@ type CardTextureSource = CanvasImageSource & {
   width?: number;
 };
 
+type TextureDrawBounds = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  radius: number;
+};
+
 function traceRoundedRect(context: CanvasRenderingContext2D, width: number, height: number, radius: number) {
   const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
 
@@ -132,19 +250,47 @@ function readSourceDimension(value: number | { baseVal?: { value?: number } } | 
   return typeof animatedValue === "number" && Number.isFinite(animatedValue) && animatedValue > 0 ? animatedValue : fallback;
 }
 
-function drawSourceContained(context: CanvasRenderingContext2D, source: CardTextureSource, width: number, height: number) {
+function drawSourceContainedWithin(
+  context: CanvasRenderingContext2D,
+  source: CardTextureSource,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
   const sourceWidth = readSourceDimension(source.naturalWidth ?? source.width, width);
   const sourceHeight = readSourceDimension(source.naturalHeight ?? source.height, height);
   const scale = Math.min(width / sourceWidth, height / sourceHeight);
   const drawWidth = sourceWidth * scale;
   const drawHeight = sourceHeight * scale;
-  const drawX = (width - drawWidth) / 2;
-  const drawY = (height - drawHeight) / 2;
+  const drawX = x + (width - drawWidth) / 2;
+  const drawY = y + (height - drawHeight) / 2;
 
   context.drawImage(source, drawX, drawY, drawWidth, drawHeight);
 }
 
-function createHolographicCardTexture(baseTexture: THREE.Texture, renderer: THREE.WebGLRenderer, seed: string): THREE.Texture {
+function drawSourceContained(context: CanvasRenderingContext2D, source: CardTextureSource, width: number, height: number) {
+  drawSourceContainedWithin(context, source, 0, 0, width, height);
+}
+
+function clipToTextureBounds(context: CanvasRenderingContext2D, bounds: TextureDrawBounds) {
+  context.translate(bounds.x, bounds.y);
+  traceRoundedRect(context, bounds.width, bounds.height, bounds.radius);
+  context.clip();
+}
+
+function createHolographicCardTexture(
+  baseTexture: THREE.Texture,
+  renderer: THREE.WebGLRenderer,
+  seed: string,
+  holoBounds: TextureDrawBounds = {
+    x: 0,
+    y: 0,
+    width: CARD_TEXTURE_WIDTH,
+    height: CARD_TEXTURE_HEIGHT,
+    radius: CARD_TEXTURE_CORNER_RADIUS
+  }
+): THREE.Texture {
   const source = baseTexture.image as CardTextureSource;
   const width = CARD_TEXTURE_WIDTH;
   const height = CARD_TEXTURE_HEIGHT;
@@ -160,25 +306,42 @@ function createHolographicCardTexture(baseTexture: THREE.Texture, renderer: THRE
 
   const config = chooseCanvasConfig(seed);
   const shards = createShardPolygons(`${seed}:board:${config.id}`, config.columns, config.rows);
+  let holoTexture: THREE.Texture | null = null;
 
-  context.clearRect(0, 0, width, height);
-  context.save();
-  traceRoundedRect(context, width, height, CARD_TEXTURE_CORNER_RADIUS);
-  context.clip();
-  context.fillStyle = "#020617";
-  context.fillRect(0, 0, width, height);
-  drawSourceContained(context, source, width, height);
-  drawHolographicCanvas(context, shards, width, height, 2.4, BOARD_HOLO_INTENSITY, config, { clear: false });
-  context.restore();
+  const renderFrame = (timeSeconds: number) => {
+    context.clearRect(0, 0, width, height);
+    context.save();
+    traceRoundedRect(context, width, height, CARD_TEXTURE_CORNER_RADIUS);
+    context.clip();
+    context.fillStyle = "#020617";
+    context.fillRect(0, 0, width, height);
+    drawSourceContained(context, source, width, height);
 
-  context.save();
-  traceRoundedRect(context, width, height, CARD_TEXTURE_CORNER_RADIUS);
-  context.strokeStyle = "rgba(255, 255, 255, 0.18)";
-  context.lineWidth = 2;
-  context.stroke();
-  context.restore();
+    context.save();
+    clipToTextureBounds(context, holoBounds);
+    drawHolographicCanvas(context, shards, holoBounds.width, holoBounds.height, timeSeconds, BOARD_HOLO_INTENSITY, config, {
+      clear: false,
+      holoOpacity: BOARD_HOLO_OPACITY,
+      sheenIntensity: BOARD_HOLO_SHEEN_INTENSITY
+    });
+    context.restore();
+    context.restore();
 
-  return configureTexture(new THREE.CanvasTexture(canvas), renderer);
+    context.save();
+    traceRoundedRect(context, width, height, CARD_TEXTURE_CORNER_RADIUS);
+    context.strokeStyle = "rgba(255, 255, 255, 0.18)";
+    context.lineWidth = 2;
+    context.stroke();
+    context.restore();
+
+    if (holoTexture) holoTexture.needsUpdate = true;
+  };
+
+  renderFrame(performance.now() / 1000);
+  holoTexture = configureTexture(new THREE.CanvasTexture(canvas), renderer);
+  animatedTextureRenderers.set(holoTexture, renderFrame);
+
+  return holoTexture;
 }
 
 async function loadCardTextureForCard(
@@ -198,8 +361,9 @@ async function loadCardTextureForCard(
   }
 
   let texture: THREE.Texture = baseTexture;
+  const imageSourceKey = imageUrls.join("|");
   if (compactCardTextures) {
-    const compactKey = `compact:${match.matchId}:${card.instanceId}:${artKey}`;
+    const compactKey = `compact-v2:${match.matchId}:${card.instanceId}:${artKey}:${imageSourceKey}`;
     let compactCached = cardTextureCache.get(compactKey);
     if (!compactCached) {
       compactCached = Promise.resolve(createCompactCardTexture(baseTexture, getCardName(match, card), renderer));
@@ -213,11 +377,17 @@ async function loadCardTextureForCard(
     return texture;
   }
 
-  const cacheKey = `holo-v2:${match.matchId}:${card.instanceId}:${artKey}`;
+  const holoMode = compactCardTextures ? "compact" : "full";
+  const cacheKey = `holo-v3:${match.matchId}:${card.instanceId}:${artKey}:${holoMode}:${imageSourceKey}`;
   let cached = cardTextureCache.get(cacheKey);
 
   if (!cached) {
-    cached = Promise.resolve(createHolographicCardTexture(texture, renderer, cacheKey));
+    cached = Promise.resolve(createHolographicCardTexture(
+      texture,
+      renderer,
+      cacheKey,
+      compactCardTextures ? COMPACT_CARD_IMAGE_BOUNDS : undefined
+    ));
     cardTextureCache.set(cacheKey, cached);
   }
 
@@ -232,9 +402,16 @@ function createCompactCardTexture(baseTexture: THREE.Texture, cardName: string, 
   const context = canvas.getContext("2d");
   if (!context) return baseTexture;
 
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.save();
+  traceRoundedRect(context, canvas.width, canvas.height, CARD_TEXTURE_CORNER_RADIUS);
+  context.clip();
   context.fillStyle = "#020617";
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.drawImage(source, 24, 82, canvas.width - 48, canvas.height - 180);
+  context.save();
+  clipToTextureBounds(context, COMPACT_CARD_IMAGE_BOUNDS);
+  drawSourceContainedWithin(context, source as CardTextureSource, 0, 0, COMPACT_CARD_IMAGE_BOUNDS.width, COMPACT_CARD_IMAGE_BOUNDS.height);
+  context.restore();
   context.fillStyle = "rgba(3, 7, 18, 0.95)";
   context.fillRect(16, 16, canvas.width - 32, 56);
   context.strokeStyle = "rgba(148, 163, 184, 0.9)";
@@ -250,6 +427,15 @@ function createCompactCardTexture(baseTexture: THREE.Texture, cardName: string, 
   context.fillStyle = "#e2e8f0";
   context.font = "600 22px system-ui, sans-serif";
   context.fillText("Tap to inspect", canvas.width / 2, canvas.height - 56);
+  context.restore();
+
+  context.save();
+  traceRoundedRect(context, canvas.width, canvas.height, CARD_TEXTURE_CORNER_RADIUS);
+  context.strokeStyle = "rgba(255, 255, 255, 0.18)";
+  context.lineWidth = 2;
+  context.stroke();
+  context.restore();
+
   return configureTexture(new THREE.CanvasTexture(canvas), renderer);
 }
 
@@ -265,16 +451,23 @@ function createPlane(texture: THREE.Texture, width: number, height: number): THR
   return mesh;
 }
 
+function clampCardWorldScale(scale: number): number {
+  if (!Number.isFinite(scale)) return 1;
+  return Math.max(MIN_CARD_WORLD_SCALE, Math.min(MAX_CARD_WORLD_SCALE, scale));
+}
+
 export function BoardPreview3DWebGLCards({
   cardByInstanceId,
   filteredBoardObjects,
   heightScale,
   zoneScale,
+  zoomScale,
   compactCardTextures,
   match,
   resolveSlotPosition
 }: BoardPreview3DWebGLCardsProps) {
   const [boardControls, setBoardControls] = useState(() => loadImageSourceControls().board3d);
+  const [cardImageManifest, setCardImageManifest] = useState<CardImageManifest>(undefined);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const latestRenderDataRef = useRef({
     cardByInstanceId,
@@ -294,12 +487,31 @@ export function BoardPreview3DWebGLCards({
     return subscribeImageSourceControls(refresh);
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    void loadCardImageManifest().then(nextManifest => {
+      if (active) {
+        setCardImageManifest(nextManifest);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const activeBoardControls = boardControls ?? DEFAULT_IMAGE_SOURCE_CONTROLS.board3d;
+  const cardImagePreloadUrls = useMemo(
+    () => cardImageManifest === undefined ? [] : collectMatchCardImagePreloadUrls(match, cardImageManifest),
+    [cardImageManifest, match]
+  );
+  const cardImagePreloadSignature = cardImagePreloadUrls.join("|");
   const renderSignature = useMemo(
     () => filteredBoardObjects
       .map(object => {
         const renderedCard = object.cardInstanceId ? cardByInstanceId.get(object.cardInstanceId) ?? null : null;
-        const urls = renderedCard ? getMatchCardImageUrls(match, renderedCard).join(",") : "";
+        const urls = renderedCard ? getBoardCardImageUrls(match, renderedCard, undefined, cardImageManifest).join(",") : "";
         return [
           object.id,
           object.slotId,
@@ -311,12 +523,29 @@ export function BoardPreview3DWebGLCards({
           object.yDepth.toFixed(3),
           urls,
           activeBoardControls.priority.join(">"),
-          activeBoardControls.scale.toString()
+          activeBoardControls.scale.toString(),
+          zoneScale.toFixed(3),
+          zoomScale.toFixed(3),
+          compactCardTextures ? "compact" : "full"
         ].join(":");
       })
       .join("|"),
-    [activeBoardControls.priority, activeBoardControls.scale, cardByInstanceId, filteredBoardObjects, match]
+    [activeBoardControls.priority, activeBoardControls.scale, cardByInstanceId, cardImageManifest, compactCardTextures, filteredBoardObjects, match, zoneScale, zoomScale]
   );
+
+  useEffect(() => {
+    if (cardImagePreloadUrls.length === 0) return undefined;
+
+    const preloadTimer = window.setTimeout(() => {
+      for (const url of cardImagePreloadUrls) {
+        preloadCardImageUrl(url);
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(preloadTimer);
+    };
+  }, [cardImagePreloadSignature]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -346,7 +575,51 @@ export function BoardPreview3DWebGLCards({
     const loader = new THREE.TextureLoader();
     let renderedMeshes: THREE.Mesh[] = [];
     let renderRequestId = 0;
+    let holoAnimationFrameId = 0;
+    let lastHoloRenderTime = 0;
+    let hasRenderedCurrentEffect = false;
     const backTexture = createCardBackTexture();
+
+    function getMeshTexture(mesh: THREE.Mesh): THREE.Texture | null {
+      const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      return material instanceof THREE.MeshBasicMaterial ? material.map : null;
+    }
+
+    function hasAnimatedTextureMeshes(): boolean {
+      return renderedMeshes.some(mesh => {
+        const texture = getMeshTexture(mesh);
+        return texture ? animatedTextureRenderers.has(texture) : false;
+      });
+    }
+
+    function renderAnimatedHoloTextures(timeMs: number) {
+      holoAnimationFrameId = 0;
+
+      if (isDisposed || !hasAnimatedTextureMeshes()) {
+        return;
+      }
+
+      if (timeMs - lastHoloRenderTime >= BOARD_HOLO_FRAME_INTERVAL_MS) {
+        for (const mesh of renderedMeshes) {
+          const texture = getMeshTexture(mesh);
+          const renderTexture = texture ? animatedTextureRenderers.get(texture) : undefined;
+          if (renderTexture) renderTexture(timeMs / 1000);
+        }
+
+        renderer.render(scene, camera);
+        lastHoloRenderTime = timeMs;
+      }
+
+      holoAnimationFrameId = window.requestAnimationFrame(renderAnimatedHoloTextures);
+    }
+
+    function syncAnimatedHoloLoop() {
+      if (holoAnimationFrameId !== 0 || !hasAnimatedTextureMeshes()) {
+        return;
+      }
+
+      holoAnimationFrameId = window.requestAnimationFrame(renderAnimatedHoloTextures);
+    }
 
     function clearRenderedMeshes() {
       for (const mesh of renderedMeshes) {
@@ -359,6 +632,12 @@ export function BoardPreview3DWebGLCards({
         }
       }
       renderedMeshes = [];
+    }
+
+    function paintEmptyFrame() {
+      clearRenderedMeshes();
+      renderer.clear(true, true, true);
+      renderer.render(scene, camera);
     }
 
     function resize(): ViewMetrics {
@@ -390,6 +669,9 @@ export function BoardPreview3DWebGLCards({
       const requestId = ++renderRequestId;
       const metrics = resize();
       placeCamera();
+      if (!hasRenderedCurrentEffect) {
+        paintEmptyFrame();
+      }
       const {
         cardByInstanceId: latestCardByInstanceId,
         filteredBoardObjects: latestFilteredBoardObjects,
@@ -413,14 +695,15 @@ export function BoardPreview3DWebGLCards({
             loader,
             renderer,
             compactCardTextures,
-            getBoardCardImageUrls(latestMatch, renderedCard)
+            getBoardCardImageUrls(latestMatch, renderedCard, undefined, cardImageManifest)
           )
           : backTexture;
         if (!texture || isDisposed) return null;
 
         const isSideways = isDeckBack || isCemetery;
-        const worldCardWidth = CARD_WORLD_WIDTH;
-        const worldCardHeight = CARD_WORLD_HEIGHT;
+        const cardWorldScale = clampCardWorldScale(zoomScale * zoneScale);
+        const worldCardWidth = CARD_WORLD_WIDTH * cardWorldScale;
+        const worldCardHeight = CARD_WORLD_HEIGHT * cardWorldScale;
         const mesh = createPlane(texture, worldCardWidth, worldCardHeight);
         const position = latestResolveSlotPosition(object.slotId, object.xPercent, object.zPercent);
         mesh.position.set(
@@ -453,6 +736,8 @@ export function BoardPreview3DWebGLCards({
         }
       }
       renderer.render(scene, camera);
+      hasRenderedCurrentEffect = true;
+      syncAnimatedHoloLoop();
     }
 
     const scheduleRender = () => {
@@ -477,11 +762,15 @@ export function BoardPreview3DWebGLCards({
       window.removeEventListener("resize", scheduleRender);
       document.removeEventListener("fullscreenchange", scheduleRender);
       window.visualViewport?.removeEventListener("resize", scheduleRender);
+      if (holoAnimationFrameId !== 0) {
+        window.cancelAnimationFrame(holoAnimationFrameId);
+      }
       clearRenderedMeshes();
+      renderer.clear(true, true, true);
       renderer.dispose();
       backTexture.dispose();
     };
-  }, [heightScale, renderSignature, resolveSlotPosition]);
+  }, [compactCardTextures, heightScale, renderSignature, resolveSlotPosition, zoneScale, zoomScale]);
 
   return <canvas ref={canvasRef} className="board-preview-3d__webgl-cards" aria-hidden="true" />;
 }

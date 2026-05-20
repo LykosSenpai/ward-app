@@ -2416,6 +2416,16 @@ function pushMatchDeltaOperation(operations: MatchDeltaOperation[], operation: M
   }
 }
 
+const OPAQUE_MATCH_DELTA_KEYS = new Set([
+  "pendingBattle",
+  "pendingEffectRoll",
+  "pendingEffectTargetPrompt"
+]);
+
+function jsonValuesEqual(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 function diffEventLogArray(previous: unknown[], next: unknown[], path: string, operations: MatchDeltaOperation[]): boolean {
   const previousIds = previous.map(item => isPlainJsonObject(item) && typeof item.id === "string" ? item.id : undefined);
   const nextIds = next.map(item => isPlainJsonObject(item) && typeof item.id === "string" ? item.id : undefined);
@@ -2513,6 +2523,10 @@ function createMatchDeltaOperations(previous: MatchState, next: MatchState): Mat
       pushMatchDeltaOperation(operations, { op: "remove", path });
     } else if (!(key in previousRecord)) {
       pushMatchDeltaOperation(operations, { op: "add", path, value: nextRecord[key] });
+    } else if (OPAQUE_MATCH_DELTA_KEYS.has(key)) {
+      if (!jsonValuesEqual(previousRecord[key], nextRecord[key])) {
+        pushMatchDeltaOperation(operations, { op: "replace", path, value: nextRecord[key] });
+      }
     } else {
       diffJsonValue(previousRecord[key], nextRecord[key], path, operations);
     }
@@ -2817,6 +2831,10 @@ function emitFullMatchStateToSocket(socket: Socket, match: MatchState, viewerPla
   socket.emit("match:state", payload);
 }
 
+function getMatchPayloadSequenceNumber(match: MatchState): number {
+  return match.eventLog[match.eventLog.length - 1]?.sequenceNumber ?? 0;
+}
+
 function emitMatchDeltaOrStateToSocket(socket: Socket, match: MatchState, viewerPlayerId?: string): void {
   const payload = cloneJsonValue(prepareMatchForSocketPayload(match, viewerPlayerId));
   const cache = getSocketMatchPayloadCache(socket.id);
@@ -2826,6 +2844,8 @@ function emitMatchDeltaOrStateToSocket(socket: Socket, match: MatchState, viewer
     const operations = createMatchDeltaOperations(previous, payload);
     const deltaPayload = {
       matchId: match.matchId,
+      baseEventSequenceNumber: getMatchPayloadSequenceNumber(previous),
+      eventSequenceNumber: getMatchPayloadSequenceNumber(payload),
       operations
     };
     const deltaBytes = byteLength(deltaPayload);
@@ -2859,7 +2879,7 @@ function emitMatchState(match: MatchState): void {
 
   if ((matchToEmit.status ?? "ACTIVE") === "COMPLETE") {
     saveMatchSnapshotEventually(matchToEmit);
-    closeLobbyForMatch(matchToEmit.matchId);
+    touchLobbyActivityForMatch(matchToEmit.matchId);
   } else {
     touchLobbyActivityForMatch(matchToEmit.matchId);
   }

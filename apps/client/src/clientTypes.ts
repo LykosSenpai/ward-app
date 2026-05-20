@@ -91,6 +91,8 @@ export type MatchDeltaOperation =
 
 export type MatchDeltaPayload = {
   matchId: string;
+  baseEventSequenceNumber?: number;
+  eventSequenceNumber?: number;
   operations: MatchDeltaOperation[];
 };
 

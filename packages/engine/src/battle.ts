@@ -49,6 +49,7 @@ import {
   normalizeRecurringTickTiming
 } from "./effectTiming.js";
 import { getCardEngineEffects, tryResolveAutomaticMagicEffect } from "./effectResolver.js";
+import { assertCanAddMagicToField, MAX_INFINITE_MAGIC_ON_FIELD } from "./magicField.js";
 
 type CreatureDefinition = Extract<CardDefinition, { cardType: "CREATURE" }>;
 const HOGGAN_CARD_ID = "gen3_009_hoggan";
@@ -1253,14 +1254,15 @@ function moveBattleResponseToCemetery(player: PlayerState, handIndex: number, ca
 }
 
 function moveBattleResponseToMagicSlot(
+  state: MatchState,
   player: PlayerState,
   handIndex: number,
   card: CardInstance,
   attachedToInstanceId: string
 ): void {
-  if (player.field.magicSlots.length >= 5) {
-    throw new Error(`${player.displayName} already has 5 Magic Slot cards.`);
-  }
+  assertCanAddMagicToField(state, player, card, {
+    message: `${player.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards.`
+  });
 
   player.hand.splice(handIndex, 1);
   card.zone = "MAGIC_SLOT";
@@ -2482,7 +2484,7 @@ export function playBattleResponseFromHand(
 
   if (shouldAttachToAttacker) {
     const attacker = findBattleCreatureRef(nextState, strike.attacker.playerId, strike.attacker.creatureInstanceId);
-    moveBattleResponseToMagicSlot(player, handIndex, card, attacker.card.instanceId);
+    moveBattleResponseToMagicSlot(nextState, player, handIndex, card, attacker.card.instanceId);
     destination = "MAGIC_SLOT";
     const recurringEffect = definition.effects?.find(candidate => {
       const actionType = normalizeEffectToken(candidate.actionType);

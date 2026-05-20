@@ -1,4 +1,5 @@
 import type { AppMatchState } from "../clientTypes";
+import { isInfiniteMagic } from "../gameViewHelpers";
 import { BOARD_SLOTS } from "./boardPreview3dLayout";
 import type { BoardLayoutSnapshot, BoardPieceFocusEvent, BoardPlayerId, BoardPreviewInteractionIntent, BoardSlotFocusEvent, BoardSlotId, BoardSlotOffsetMap } from "./boardPreview3dTypes";
 
@@ -86,7 +87,7 @@ export function buildBoardObjects(match: AppMatchState, options: BuildBoardObjec
 
     const magicOffsets = [40, 20, 0, -20, -40];
 
-    const magic = player.field.magicSlots.filter(Boolean).map((card, index) => {
+    const magic = player.field.magicSlots.filter((card): card is NonNullable<typeof card> => isInfiniteMagic(match, card)).map((card, index) => {
       const slotId = `${owner}-magic-${index + 1}` as BoardSlotId;
       const point = getSlotPoint(slotId, 50 + friendlyShift * (magicOffsets[index] ?? 0), ownerZ + friendlyShift * 4);
       return {
@@ -247,12 +248,9 @@ export function canDispatchMagic(params: {
   cardInstanceId: string;
   isPlayableMagicCard: boolean;
 }) {
-  const { focusedSlotId, focusedSlotOwner, summonPlayerId, cardInstanceId, isPlayableMagicCard } = params;
+  const { cardInstanceId, isPlayableMagicCard } = params;
   return Boolean(
-    focusedSlotId &&
-      focusedSlotId.includes("-magic-") &&
-      focusedSlotOwner === summonPlayerId &&
-      cardInstanceId.trim() &&
+    cardInstanceId.trim() &&
       isPlayableMagicCard
   );
 }

@@ -20,5 +20,36 @@
   "artworkTags": [
     "WEAPON",
     "AXE"
-  ]
+  ],
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+        "width": 1440
+      }
+    ]
+  }
 }

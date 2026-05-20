@@ -212,7 +212,38 @@
       "printedGeneration": "Generation I",
       "artworkTags": [
         "FIRE"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_148,h_264,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_960,h_1712,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_480,h_856,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_720,h_1284,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_960,h_1712,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_1440,h_2569,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_004_cosmic_storm",
@@ -278,7 +309,38 @@
       "artworkTags": [
         "LIGHTNING",
         "MOON"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_89c632bf4b994152b6ba989c15be914f~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_005_cryovore",
@@ -416,7 +478,38 @@
       "artworkTags": [
         "WEAPON",
         "AXE"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_d58b4ed588cd4cad8091ebf5b51c18f5~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_007_dragon_of_time",
@@ -636,7 +729,38 @@
       "printedGeneration": "Boss Edition / Pre-Order Exclusive",
       "artworkTags": [
         "WINGS"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_720,h_1275,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg/v1/fit/w_1440,h_2550,q_90,enc_avif,quality_auto/f87b85_a41640d3e5274f7c85be59754b00da11~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_008_ghul_vok",
@@ -811,7 +935,38 @@
       "printedGeneration": "Generation I",
       "artworkTags": [
         "ARMOR"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_d7568f839eed46359c718e0aec5de826~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_010_hell_walker",
@@ -942,7 +1097,38 @@
       "artworkTags": [
         "ARMOR",
         "WEAPON"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_9c197bd726f3446aaee47d3c9e44f106~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_011_lord_marshal_goroth",
@@ -965,7 +1151,38 @@
       "printedGeneration": "Generation I",
       "artworkTags": [
         "WEAPON"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg/v1/fit/w_720,h_1275,q_90,enc_avif,quality_auto/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg/v1/fit/w_1440,h_2550,q_90,enc_avif,quality_auto/f87b85_2feca86dd6ea4185b415170cdd14fcc3~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_012_luc_tiberius",
@@ -1026,7 +1243,38 @@
       "attackName": "Devious Draw",
       "attackDice": 3,
       "modifier": 2,
-      "printedGeneration": "Generation II"
+      "printedGeneration": "Generation II",
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_0d16122ed471424995eaf38de7dd621e~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_013_maximum_ward",
@@ -1093,7 +1341,38 @@
       "magicSubType": "FIELD",
       "isEquip": false,
       "isField": true,
-      "printedGeneration": "Pre-Order Exclusive"
+      "printedGeneration": "Pre-Order Exclusive",
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_1f425f857a96483e9fe00f1dbebe695f~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_014_moon_owl",
@@ -1243,7 +1522,38 @@
       "artworkTags": [
         "MOON",
         "BIRD"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_278689c01bae4f519fff99353da4160c~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_015_nadara",
@@ -1313,7 +1623,38 @@
       "artworkTags": [
         "WEAPON",
         "BOW"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_0da34db31e5040d09d77283fdd2244d8~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_016_omega_titan",
@@ -1455,7 +1796,38 @@
       "printedGeneration": "Pre-Order Exclusive",
       "artworkTags": [
         "SPACE"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_0b2b379a48714b31ab92c306f924e37f~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_017_perseus_valenthil",
@@ -1603,7 +1975,38 @@
       "printedGeneration": "Generation - I",
       "artworkTags": [
         "WEAPON"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_329dee5f33014109898696de3b5e9715~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_018_rampage_orc",
@@ -1624,7 +2027,38 @@
       "attackDice": 4,
       "modifier": 5,
       "printedGeneration": "G-III Pre-Order",
-      "artworkTags": []
+      "artworkTags": [],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+        "remotePrimaryUrl": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_019_scarlett",
@@ -1735,7 +2169,38 @@
       "printedGeneration": "Generation - II",
       "artworkTags": [
         "WEAPON"
-      ]
+      ],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_020_sweet_tooth",
@@ -1828,7 +2293,38 @@
       "magicSubType": "FIELD",
       "isEquip": false,
       "isField": true,
-      "printedGeneration": "Pre-Order Exclusive"
+      "printedGeneration": "Pre-Order Exclusive",
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg/v1/fit/w_148,h_264,q_90,enc_avif,quality_auto/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg/v1/fit/w_960,h_1712,q_90,enc_avif,quality_auto/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg/v1/fit/w_480,h_856,q_90,enc_avif,quality_auto/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg/v1/fit/w_720,h_1284,q_90,enc_avif,quality_auto/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg/v1/fit/w_960,h_1712,q_90,enc_avif,quality_auto/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg/v1/fit/w_1440,h_2569,q_90,enc_avif,quality_auto/f87b85_e28b20f087264fb998082fa7944c6b68~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     },
     {
       "id": "promo_022_zanj_the_hunter",
@@ -1943,7 +2439,38 @@
       "attackDice": 4,
       "modifier": 0,
       "printedGeneration": "Generation - I",
-      "artworkTags": []
+      "artworkTags": [],
+      "image": {
+        "provider": "excel-wix",
+        "originalUrl": "https://static.wixstatic.com/media/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg/v1/fit/w_148,h_264,q_90,enc_avif,quality_auto/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg",
+        "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg/v1/fit/w_960,h_1712,q_90,enc_avif,quality_auto/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg",
+        "remoteCandidates": [
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg/v1/fit/w_480,h_856,q_90,enc_avif,quality_auto/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg",
+            "width": 480
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg/v1/fit/w_720,h_1284,q_90,enc_avif,quality_auto/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg",
+            "width": 720
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg/v1/fit/w_960,h_1712,q_90,enc_avif,quality_auto/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg",
+            "width": 960
+          },
+          {
+            "kind": "remote",
+            "source": "WIX",
+            "url": "https://static.wixstatic.com/media/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg/v1/fit/w_1440,h_2569,q_90,enc_avif,quality_auto/f87b85_738810c27a4c40eaa25090791f620dca~mv2.jpg",
+            "width": 1440
+          }
+        ]
+      }
     }
   ]
 }

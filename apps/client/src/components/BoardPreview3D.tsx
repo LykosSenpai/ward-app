@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEventHandler, type PointerEventHandler, type ReactNode, type WheelEventHandler } from "react";
-import type { CardInstance, PendingBattleSession, PendingEffectRollSession, TurnPhase } from "@ward/shared";
+import type { CardInstance, PendingBattleSession, PendingEffectRollSession, PlayerState, TurnPhase } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import { BOARD_SLOTS, BOARD_ZONES, type BoardZone } from "./boardPreview3dLayout";
 import { BoardPreview3DControls } from "./boardPreview3d/BoardPreview3DControls";
@@ -17,7 +17,7 @@ import { createBoardAnimationQueueState, enqueueBoardRenderEvents, resetBoardAni
 import { getBoardAnimationProfile } from "./boardAnimationProfiles";
 import { decideBoardReconciliation } from "./boardRenderReconciliation";
 import { resolveBoardRuntimeMode } from "./boardRuntimeHealth";
-import { getAdvanceBlockReason, getBattleBlockReason, getCardName, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, isPendingEffectRollPhaseBlocking, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
+import { getAdvanceBlockReason, getBattleBlockReason, getCardName, getFieldMagicSummary, getOtherFieldMagicCards, getPrimarySummonSacrificeCandidates, getRequiredSacrificesForCard, isCreature, isEquipMagic, isPendingEffectRollPhaseBlocking, playerHasSummonableCreatureInHand } from "../gameViewHelpers";
 import { mapPointerGestureToIntent } from "./boardInteractionIntents";
 import type { PointerGestureIntent } from "./boardInteractionIntents";
 import type { BoardIntentCommand } from "./boardIntentCommands";
@@ -492,6 +492,7 @@ type BoardPreview3DProps = {
   onResolveMagicChain?: () => void;
   onPassMagicChainPriority?: (playerId: BoardPlayerId) => void;
   onDiscardHandCardToCemetery?: (playerId: BoardPlayerId, cardInstanceId: string) => void;
+  onDestroyMagic?: (fieldOwnerPlayerId: BoardPlayerId, cardInstanceId: string) => void;
   onCallCemeteryHpLoss?: (losingPlayerId: BoardPlayerId, callingPlayerId: BoardPlayerId) => void;
   onEndTurn?: () => void;
   onAttachEquipMagicToCreature?: (
@@ -671,6 +672,136 @@ function OpeningRollBoardControl({
   );
 }
 
+function getFieldMagicOwnerId(match: AppMatchState, cardInstanceId: string): BoardPlayerId | null {
+  const owner = match.players.find(player =>
+    player.field.magicSlots.some(card => card.instanceId === cardInstanceId)
+  )?.id;
+  return owner === "player_1" || owner === "player_2" ? owner : null;
+}
+
+function BoardFieldMagicTray({
+  match,
+  player,
+  owner,
+  canControl,
+  selectedHandCardId,
+  fieldMagicPlayableCardIds,
+  effectTargetOptionByCardId,
+  selectedTrayMagicCardId,
+  onPlaySelectedHandCard,
+  onDropHandCard,
+  onSelectTrayMagicCard,
+  onResolveEffectTarget,
+  onDestroyMagic,
+  onSelectEquipMagic,
+  onRelatedCreatureFocus
+}: {
+  match: AppMatchState;
+  player: PlayerState;
+  owner: BoardPlayerId;
+  canControl: boolean;
+  selectedHandCardId: string | null;
+  fieldMagicPlayableCardIds: Set<string>;
+  effectTargetOptionByCardId: Map<string, string>;
+  selectedTrayMagicCardId: string | null;
+  onPlaySelectedHandCard: (owner: BoardPlayerId) => void;
+  onDropHandCard: (owner: BoardPlayerId, cardInstanceId: string) => void;
+  onSelectTrayMagicCard: (cardInstanceId: string | null) => void;
+  onResolveEffectTarget: (optionId: string) => void;
+  onDestroyMagic?: (fieldOwnerPlayerId: BoardPlayerId, cardInstanceId: string) => void;
+  onSelectEquipMagic: (cardInstanceId: string) => void;
+  onRelatedCreatureFocus: (cardInstanceId: string) => void;
+}) {
+  const summary = getFieldMagicSummary(match, player);
+  const trayCards = getOtherFieldMagicCards(match, player);
+  const canPlaySelectedCard =
+    owner === player.id &&
+    Boolean(selectedHandCardId && fieldMagicPlayableCardIds.has(selectedHandCardId));
+
+  if (summary.otherCount === 0 && !canPlaySelectedCard) return null;
+
+  return (
+    <section
+      className={`board-preview-3d__field-magic-tray board-preview-3d__field-magic-tray--${owner}${canPlaySelectedCard ? " is-drop-ready" : ""}`}
+      aria-label={`${player.displayName} Field Magic tray`}
+      onDragOver={(event) => {
+        if (
+          fieldMagicPlayableCardIds.size === 0 ||
+          !Array.from(event.dataTransfer.types).includes("application/x-ward-board-hand-card")
+        ) {
+          return;
+        }
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }}
+      onDrop={(event) => {
+        const cardInstanceId = event.dataTransfer.getData("application/x-ward-board-hand-card");
+        if (!cardInstanceId || !fieldMagicPlayableCardIds.has(cardInstanceId)) return;
+        event.preventDefault();
+        onDropHandCard(owner, cardInstanceId);
+      }}
+    >
+      <div className="board-preview-3d__field-magic-tray-head">
+        <span>{player.displayName} Field Magic</span>
+        <strong>Infinite {summary.infiniteCount}/5 + {summary.otherCount} other</strong>
+      </div>
+
+      {canPlaySelectedCard ? (
+        <button type="button" className="board-preview-3d__field-magic-play" onClick={() => onPlaySelectedHandCard(owner)}>
+          Play selected Magic here
+        </button>
+      ) : null}
+
+      <div className="board-preview-3d__field-magic-list">
+        {trayCards.length === 0 ? (
+          <span className="board-preview-3d__field-magic-empty">No tray Magic</span>
+        ) : trayCards.map(card => {
+          const effectOptionId = effectTargetOptionByCardId.get(card.instanceId);
+          const isSelected = selectedTrayMagicCardId === card.instanceId;
+          const canAttach = canControl && isEquipMagic(match, card) && !card.attachedToInstanceId;
+          return (
+            <article
+              className={`board-preview-3d__field-magic-card${isSelected ? " is-selected" : ""}${effectOptionId ? " is-effect-target" : ""}`}
+              key={card.instanceId}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  if (effectOptionId) {
+                    onResolveEffectTarget(effectOptionId);
+                    return;
+                  }
+                  if (card.attachedToInstanceId) {
+                    onRelatedCreatureFocus(card.attachedToInstanceId);
+                    return;
+                  }
+                  onSelectTrayMagicCard(isSelected ? null : card.instanceId);
+                }}
+                title={effectOptionId ? `Select ${getCardName(match, card)} for the pending effect` : `Inspect ${getCardName(match, card)}`}
+              >
+                <MatchCardImage match={match} card={card} className="board-preview-3d__field-magic-art" />
+                <span>{getCardName(match, card)}</span>
+              </button>
+              <div className="board-preview-3d__field-magic-actions">
+                {canAttach ? (
+                  <button type="button" onClick={() => onSelectEquipMagic(card.instanceId)}>
+                    Attach
+                  </button>
+                ) : null}
+                {canControl && onDestroyMagic ? (
+                  <button type="button" onClick={() => onDestroyMagic(owner, card.instanceId)}>
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function BoardPreview3D({
   match,
   adminView = false,
@@ -697,6 +828,7 @@ export function BoardPreview3D({
   onResolveMagicChain,
   onPassMagicChainPriority,
   onDiscardHandCardToCemetery,
+  onDestroyMagic,
   onCallCemeteryHpLoss,
   onEndTurn,
   onAttachEquipMagicToCreature,
@@ -750,6 +882,7 @@ export function BoardPreview3D({
   const [cameraPanY, setCameraPanY] = useState(DEFAULT_CAMERA_SETTINGS.cameraPanY);
   const [zoneScale, setZoneScale] = useState(1);
   const [compactCardTextures, setCompactCardTextures] = useState(true);
+  const [smallCardInspector, setSmallCardInspector] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(() =>
     presentation === "game" ? false : (globalThis.innerHeight ? globalThis.innerHeight > 980 : true)
   );
@@ -778,6 +911,7 @@ export function BoardPreview3D({
   const [selectedEquipMagicCardId, setSelectedEquipMagicCardId] = useState<string | null>(null);
   const [pendingEquipMagicCardId, setPendingEquipMagicCardId] = useState<string | null>(null);
   const [selectedCreatureCardId, setSelectedCreatureCardId] = useState<string | null>(null);
+  const [selectedTrayMagicCardId, setSelectedTrayMagicCardId] = useState<string | null>(null);
   const [selectedBattleAttackerId, setSelectedBattleAttackerId] = useState<string | null>(null);
   const [selectedSacrificeIdsByCard, setSelectedSacrificeIdsByCard] = useState<Record<string, string[]>>({});
   const [hoveredHandCardId, setHoveredHandCardId] = useState<string | null>(null);
@@ -793,6 +927,7 @@ export function BoardPreview3D({
   const [deckHandControlsOwner, setDeckHandControlsOwner] = useState<BoardPlayerId | null>(null);
   const [deckActionsExpanded, setDeckActionsExpanded] = useState(false);
   const [menuSettingsExpanded, setMenuSettingsExpanded] = useState(false);
+  const [scrollWheelLocked, setScrollWheelLocked] = useState(false);
   const [cemeteryViewerOwner, setCemeteryViewerOwner] = useState<BoardPlayerId | null>(null);
   const [hoveredCemeteryCardId, setHoveredCemeteryCardId] = useState<string | null>(null);
   const [selectedCemeteryCardId, setSelectedCemeteryCardId] = useState<string | null>(null);
@@ -886,6 +1021,8 @@ export function BoardPreview3D({
         cameraPanX?: number;
         cameraPanY?: number;
         showDebugPanel?: boolean;
+        compactCardTextures?: boolean;
+        smallCardInspector?: boolean;
         selectedSlotId?: string | null;
         slotOffsets?: BoardSlotOffsetMap;
         selectedZoneId?: string;
@@ -900,6 +1037,7 @@ export function BoardPreview3D({
         controlsDockPosition?: FloatingDockPosition;
         actionDockPosition?: ActionDockPosition;
         actionDockCollapsed?: boolean;
+        scrollWheelLocked?: boolean;
       };
       if (parsed.cameraDefaultsVersion === BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION) {
         if (typeof parsed.tiltDegrees === "number") setTiltDegrees(parsed.tiltDegrees);
@@ -913,6 +1051,8 @@ export function BoardPreview3D({
         if (typeof parsed.cameraPanY === "number") setCameraPanY(parsed.cameraPanY);
       }
       if (typeof parsed.showDebugPanel === "boolean") setShowDebugPanel(parsed.showDebugPanel);
+      if (typeof parsed.compactCardTextures === "boolean") setCompactCardTextures(parsed.compactCardTextures);
+      if (typeof parsed.smallCardInspector === "boolean") setSmallCardInspector(parsed.smallCardInspector);
       if (typeof parsed.selectedSlotId === "string" || parsed.selectedSlotId === null) setSelectedSlotId(parsed.selectedSlotId);
       if (parsed.version >= BOARD_PREVIEW_LAYOUT_STORAGE_VERSION && parsed.slotOffsets) setSlotOffsets(parsed.slotOffsets);
       if (typeof parsed.selectedZoneId === "string" && BOARD_ZONES.some(zone => zone.id === parsed.selectedZoneId)) {
@@ -935,6 +1075,7 @@ export function BoardPreview3D({
         setActionDockPosition(parsed.actionDockPosition as ActionDockPosition);
       }
       if (typeof parsed.actionDockCollapsed === "boolean") setActionDockCollapsed(parsed.actionDockCollapsed);
+      if (typeof parsed.scrollWheelLocked === "boolean") setScrollWheelLocked(parsed.scrollWheelLocked);
 
       if (parsed.version < BOARD_PREVIEW_STORAGE_VERSION) {
         const migratedSettings = {
@@ -962,9 +1103,9 @@ export function BoardPreview3D({
     if (!hydrated) return;
     setBrowserStorageItem(
       storageKey,
-      JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, cameraDefaultsVersion: BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, selectedSlotId, slotOffsets, selectedZoneId, zoneAdjustments, nudgeStep, showAnchors, showZoneRects, visibleSlotLayers, ownerFilter, showDiagnostics, integrationMode, controlsDockPosition, actionDockPosition, actionDockCollapsed })
+      JSON.stringify({ version: BOARD_PREVIEW_STORAGE_VERSION, cameraDefaultsVersion: BOARD_PREVIEW_CAMERA_DEFAULTS_VERSION, tiltDegrees, zoomScale, heightScale, boardScaleX, boardScaleZ, boardOffsetX, boardOffsetZ, cameraPanX, cameraPanY, showDebugPanel, compactCardTextures, smallCardInspector, selectedSlotId, slotOffsets, selectedZoneId, zoneAdjustments, nudgeStep, showAnchors, showZoneRects, visibleSlotLayers, ownerFilter, showDiagnostics, integrationMode, controlsDockPosition, actionDockPosition, actionDockCollapsed, scrollWheelLocked })
     );
-  }, [actionDockCollapsed, actionDockPosition, boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, controlsDockPosition, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, selectedSlotId, selectedZoneId, showAnchors, showDebugPanel, showDiagnostics, showZoneRects, slotOffsets, storageKey, tiltDegrees, visibleSlotLayers, zoneAdjustments, zoomScale]);
+  }, [actionDockCollapsed, actionDockPosition, boardOffsetX, boardOffsetZ, boardScaleX, boardScaleZ, cameraPanX, cameraPanY, compactCardTextures, controlsDockPosition, heightScale, hydrated, integrationMode, nudgeStep, ownerFilter, scrollWheelLocked, selectedSlotId, selectedZoneId, showAnchors, showDebugPanel, showDiagnostics, showZoneRects, slotOffsets, smallCardInspector, storageKey, tiltDegrees, visibleSlotLayers, zoneAdjustments, zoomScale]);
 
   const slotById = useMemo(() => new Map(BOARD_SLOTS.map((slot) => [slot.id, slot])), []);
   const handCards = useMemo(() => {
@@ -1138,6 +1279,17 @@ export function BoardPreview3D({
     selectedSacrificeIdsByCard,
     occupiedMagicSlotIndexes
   }), [controlledPlayerId, focusedPlayerId, match, occupiedMagicSlotIndexes, selectedHandCardId, selectedSacrificeIdsByCard]);
+  const fieldMagicPlayableCardIds = useMemo(
+    () => new Set(handPlacementAffordances
+      .filter(affordance =>
+        affordance.kind === "VALID_DROP_ZONE" &&
+        affordance.targetZoneRef?.zone === "MAGIC_SLOT" &&
+        typeof affordance.targetZoneRef.slotIndex !== "number" &&
+        affordance.sourceCardInstanceId
+      )
+      .map(affordance => affordance.sourceCardInstanceId!)),
+    [handPlacementAffordances]
+  );
   const magicChainAffordances = useMemo(
     () => buildMagicChainAffordances(match, controlledPlayerId),
     [controlledPlayerId, match]
@@ -1276,14 +1428,16 @@ export function BoardPreview3D({
   const selectedEquipMagic = useMemo(() => {
     if (!selectedEquipMagicCardId) return null;
     const object = boardObjects.find(candidate => candidate.cardInstanceId === selectedEquipMagicCardId);
-    if (!object || object.lane !== "magic") return null;
     const card = cardByInstanceId.get(selectedEquipMagicCardId);
     if (!card || !isEquipMagic(match, card) || card.attachedToInstanceId) return null;
-    return { card, object };
+    if (object && object.lane !== "magic") return null;
+    const owner = object?.owner ?? getFieldMagicOwnerId(match, selectedEquipMagicCardId);
+    if (!owner) return null;
+    return { card, object, owner };
   }, [boardObjects, cardByInstanceId, match, selectedEquipMagicCardId]);
   const canAttachSelectedEquipMagic = Boolean(
     selectedEquipMagic &&
-    canControlPlayer(selectedEquipMagic.object.owner) &&
+    canControlPlayer(selectedEquipMagic.owner) &&
     !match.pendingPrompt &&
     !match.pendingChain &&
     !match.pendingEffectTargetPrompt &&
@@ -1309,7 +1463,7 @@ export function BoardPreview3D({
     () => equipAttachTargetOptions.map(option => option.pieceId),
     [equipAttachTargetOptions]
   );
-  const equipAttachSourcePieceIds = selectedEquipMagic ? [selectedEquipMagic.object.id] : [];
+  const equipAttachSourcePieceIds = selectedEquipMagic?.object ? [selectedEquipMagic.object.id] : [];
   const draggableEquipMagicCardIds = useMemo(() => {
     if (
       match.pendingPrompt ||
@@ -1422,6 +1576,30 @@ export function BoardPreview3D({
     resolveBoardEffectTarget(effectTarget.optionId);
     return true;
   };
+  const playHandCardToFieldMagicTray = (owner: BoardPlayerId, cardInstanceId: string) => {
+    if (!fieldMagicPlayableCardIds.has(cardInstanceId)) {
+      setStatusMessage("That Magic card cannot be played to Field Magic right now.");
+      return;
+    }
+    const card = cardByInstanceId.get(cardInstanceId);
+    const shouldChooseEquipTarget = Boolean(card && isEquipMagic(match, card));
+    onPlayHandCardToSlot?.(cardInstanceId, `${owner}-magic-tray`);
+    setSelectedHandCardId(null);
+    if (shouldChooseEquipTarget) {
+      setSelectedCreatureCardId(null);
+      setSelectedTrayMagicCardId(null);
+      setPendingEquipMagicCardId(cardInstanceId);
+      setSelectedEquipMagicCardId(cardInstanceId);
+      setStatusMessage("Choose a blue creature target to attach this Equip Magic.");
+    }
+  };
+  const playSelectedHandCardToFieldMagicTray = (owner: BoardPlayerId) => {
+    if (!selectedHandCardId) return;
+    playHandCardToFieldMagicTray(owner, selectedHandCardId);
+  };
+  const inspectedTrayMagicCard = selectedTrayMagicCardId
+    ? cardByInstanceId.get(selectedTrayMagicCardId) ?? null
+    : null;
 
   useEffect(() => {
     const prompt = match.pendingEffectTargetPrompt;
@@ -1471,10 +1649,18 @@ export function BoardPreview3D({
       if (pendingEquipMagicCardId === selectedEquipMagicCardId) setPendingEquipMagicCardId(null);
       return;
     }
-    if (!object || object.lane !== "magic") {
-      if (pendingEquipMagicCardId === selectedEquipMagicCardId && (!object || object.lane === "hand")) return;
+    if (object) {
+      if (object.lane === "magic") return;
+      if (pendingEquipMagicCardId === selectedEquipMagicCardId && object.lane === "hand") return;
       setSelectedEquipMagicCardId(null);
       if (pendingEquipMagicCardId === selectedEquipMagicCardId) setPendingEquipMagicCardId(null);
+      return;
+    }
+    if (getFieldMagicOwnerId(match, selectedEquipMagicCardId)) return;
+    if (pendingEquipMagicCardId === selectedEquipMagicCardId) return;
+    setSelectedEquipMagicCardId(null);
+    if (pendingEquipMagicCardId === selectedEquipMagicCardId) {
+      setPendingEquipMagicCardId(null);
     }
   }, [boardObjects, cardByInstanceId, match, pendingEquipMagicCardId, selectedEquipMagicCardId]);
 
@@ -1487,7 +1673,13 @@ export function BoardPreview3D({
       if (selectedEquipMagicCardId === pendingEquipMagicCardId) setSelectedEquipMagicCardId(null);
       return;
     }
-    if (!object || object.lane === "hand") return;
+    if (!object) {
+      if (!getFieldMagicOwnerId(match, pendingEquipMagicCardId)) return;
+      setSelectedEquipMagicCardId(pendingEquipMagicCardId);
+      setPendingEquipMagicCardId(null);
+      return;
+    }
+    if (object.lane === "hand") return;
     if (object.lane !== "magic") {
       setPendingEquipMagicCardId(null);
       if (selectedEquipMagicCardId === pendingEquipMagicCardId) setSelectedEquipMagicCardId(null);
@@ -1498,18 +1690,28 @@ export function BoardPreview3D({
   }, [boardObjects, cardByInstanceId, match, pendingEquipMagicCardId, selectedEquipMagicCardId]);
 
   useEffect(() => {
+    if (!selectedTrayMagicCardId) return;
+    const stillInTray = match.players.some(player =>
+      getOtherFieldMagicCards(match, player).some(card => card.instanceId === selectedTrayMagicCardId)
+    );
+    if (!stillInTray) setSelectedTrayMagicCardId(null);
+  }, [match, selectedTrayMagicCardId]);
+
+  useEffect(() => {
     const currentUnattachedEquipMagicIds = new Set<string>();
     const newlySeenEquipMagicIds: string[] = [];
     const previousUnattachedEquipMagicIds = seenUnattachedEquipMagicIdsRef.current;
 
-    for (const object of boardObjects) {
-      if (object.lane !== "magic" || !object.cardInstanceId || !canControlPlayer(object.owner)) continue;
-      const card = cardByInstanceId.get(object.cardInstanceId);
-      if (!card || card.attachedToInstanceId || !isEquipMagic(match, card)) continue;
+    for (const player of match.players) {
+      const owner = player.id === "player_1" || player.id === "player_2" ? player.id : null;
+      if (!owner || !canControlPlayer(owner)) continue;
+      for (const card of player.field.magicSlots) {
+        if (card.attachedToInstanceId || !isEquipMagic(match, card)) continue;
 
-      currentUnattachedEquipMagicIds.add(card.instanceId);
-      if (previousUnattachedEquipMagicIds && !previousUnattachedEquipMagicIds.has(card.instanceId)) {
-        newlySeenEquipMagicIds.push(card.instanceId);
+        currentUnattachedEquipMagicIds.add(card.instanceId);
+        if (previousUnattachedEquipMagicIds && !previousUnattachedEquipMagicIds.has(card.instanceId)) {
+          newlySeenEquipMagicIds.push(card.instanceId);
+        }
       }
     }
 
@@ -1521,7 +1723,7 @@ export function BoardPreview3D({
     setPendingEquipMagicCardId(null);
     setSelectedEquipMagicCardId(nextEquipMagicCardId);
     setStatusMessage("Select a creature on the 3D board to attach this Equip Magic.");
-  }, [boardObjects, cardByInstanceId, canControlPlayer, match, selectedEquipMagicCardId]);
+  }, [canControlPlayer, match, selectedEquipMagicCardId]);
 
   useEffect(() => {
     if (!selectedCreatureCardId) return;
@@ -1859,6 +2061,8 @@ export function BoardPreview3D({
     setZoneAdjustments({});
     setShowAnchors(true);
     setShowDebugPanel(true);
+    setCompactCardTextures(true);
+    setSmallCardInspector(false);
     setNudgeStep(1);
     setSelectedSlotId("player_1-primary");
     setStatusMessage("Editor state reset.");
@@ -1978,10 +2182,10 @@ export function BoardPreview3D({
       return;
     }
 
-    const attachedCount = boardObjects.filter(object => {
-      if (!object.cardInstanceId || object.lane !== "magic") return false;
-      return cardByInstanceId.get(object.cardInstanceId)?.attachedToInstanceId === nextCreatureCardId;
-    }).length;
+    const attachedCount = match.players
+      .flatMap(player => player.field.magicSlots)
+      .filter(card => card.attachedToInstanceId === nextCreatureCardId)
+      .length;
     setStatusMessage(
       attachedCount > 0
         ? `Showing ${attachedCount} equipped card${attachedCount === 1 ? "" : "s"}.`
@@ -2000,7 +2204,7 @@ export function BoardPreview3D({
           return;
         }
         onAttachEquipMagicToCreature?.(
-          selectedEquipMagic.object.owner,
+          selectedEquipMagic.owner,
           selectedEquipMagic.card.instanceId,
           attachTarget.playerId,
           attachTarget.creatureInstanceId,
@@ -2013,7 +2217,7 @@ export function BoardPreview3D({
         return;
       }
 
-      const clickedSource = selectedEquipMagic.object.id === pieceId;
+      const clickedSource = selectedEquipMagic.object?.id === pieceId;
       if (clickedSource) {
         setSelectedEquipMagicCardId(null);
         setPendingEquipMagicCardId(null);
@@ -2466,6 +2670,7 @@ export function BoardPreview3D({
   const handleBoardWheel: WheelEventHandler<HTMLElement> = (event) => {
     if (isCameraControlTarget(event.target)) return;
     event.preventDefault();
+    if (scrollWheelLocked) return;
     setClampedZoomScale(zoomScale + (event.deltaY < 0 ? 0.06 : -0.06));
   };
 
@@ -2500,6 +2705,8 @@ export function BoardPreview3D({
             setZoneScale={setZoneScale}
             compactCardTextures={compactCardTextures}
             setCompactCardTextures={setCompactCardTextures}
+            smallCardInspector={smallCardInspector}
+            setSmallCardInspector={setSmallCardInspector}
             ownerFilter={ownerFilter}
             setOwnerFilter={setOwnerFilter}
             showDebugPanel={showDebugPanel}
@@ -2511,6 +2718,7 @@ export function BoardPreview3D({
             setShowDiagnostics={setShowDiagnostics}
             integrationMode={integrationMode}
             setIntegrationMode={handleIntegrationModeChange}
+            scrollWheelLocked={scrollWheelLocked}
             onResetAll={resetAllEditorState}
           />
         </aside>
@@ -2549,6 +2757,7 @@ export function BoardPreview3D({
             heightScale={heightScale}
             zoneScale={zoneScale}
             compactCardTextures={compactCardTextures}
+            smallCardInspector={smallCardInspector}
             showAnchors={showAnchors}
             showZoneRects={showZoneRects}
             visibleSlotLayers={visibleSlotLayers}
@@ -2832,10 +3041,18 @@ export function BoardPreview3D({
                         >
                           {showDebugPanel ? "Hide Debug HUD" : "Show Debug HUD"}
                         </button>
+                        <button
+                          type="button"
+                          aria-pressed={scrollWheelLocked}
+                          onClick={() => setScrollWheelLocked(value => !value)}
+                          title="Ignore mouse wheel zoom while the pointer is over the 3D board."
+                        >
+                          {scrollWheelLocked ? "Wheel Lock On" : "Wheel Lock Off"}
+                        </button>
                         {presentation === "lab" ? <p>Left: placement map. Right: 3D board prototype.</p> : null}
                         <p>Occupied slots: {occupiedSlotCount} | Empty slots: {emptySlotCount} | Unresolved pieces: {unresolvedBoardObjects.length}</p>
                         <p>Event queue: {animationQueue.queue.length} | Active: {animationQueue.activeEvent?.type ?? "none"} ({animationQueue.activeEvent?.usesPlannerOutput ? "planner" : getBoardAnimationProfile(animationQueue.activeEvent?.type).label}) | Mode: {runtimeMode}</p>
-                        <p>Drag to pan | Wheel to zoom | Arrow keys pan | +/- zoom | 0 reset</p>
+                        <p>Drag to pan | {scrollWheelLocked ? "Wheel locked" : "Wheel to zoom"} | Arrow keys pan | +/- zoom | 0 reset</p>
                         {intentLabel ? <p>Intent: {intentLabel}</p> : null}
                         {commandLabel ? <p>Command: {commandLabel}</p> : null}
                       </div>
@@ -3055,6 +3272,7 @@ export function BoardPreview3D({
               detailsExpanded={cemeteryInspectorDetailsExpanded}
               match={match}
               onToggleDetails={() => setCemeteryInspectorDetailsExpanded(current => !current)}
+              smallCardView={smallCardInspector}
             />
           ) : null}
           {inspectedOpponentRevealCard ? (
@@ -3065,6 +3283,7 @@ export function BoardPreview3D({
               detailsExpanded={opponentRevealInspectorDetailsExpanded}
               match={match}
               onToggleDetails={() => setOpponentRevealInspectorDetailsExpanded(current => !current)}
+              smallCardView={smallCardInspector}
             />
           ) : null}
           {inspectedHandCard ? (
@@ -3080,6 +3299,7 @@ export function BoardPreview3D({
               ) : null}
               match={match}
               onToggleDetails={() => setHandInspectorDetailsExpanded(current => !current)}
+              smallCardView={smallCardInspector}
             >
               {selectedHandCardId === inspectedHandCard.instanceId && sacrificeSelectionActive ? (
                 <div className="board-preview-3d__sacrifice-tracker">
@@ -3113,6 +3333,50 @@ export function BoardPreview3D({
               ) : null}
             </BoardCardInspector>
           ) : null}
+          {inspectedTrayMagicCard ? (
+            <BoardCardInspector
+              ariaLabel="Field Magic tray card preview"
+              card={inspectedTrayMagicCard}
+              className="board-preview-3d__card-inspector--field-magic"
+              detailsExpanded={handInspectorDetailsExpanded}
+              match={match}
+              onToggleDetails={() => setHandInspectorDetailsExpanded(current => !current)}
+              onRelatedCardFocus={focusRelatedBoardCard}
+              smallCardView={smallCardInspector}
+            />
+          ) : null}
+          <div className="board-preview-3d__field-magic-trays" aria-label="Field Magic trays">
+            {match.players.map(player => {
+              const owner = player.id === "player_1" || player.id === "player_2" ? player.id : null;
+              if (!owner) return null;
+              return (
+                <BoardFieldMagicTray
+                  key={owner}
+                  match={match}
+                  player={player}
+                  owner={owner}
+                  canControl={canControlPlayer(owner)}
+                  selectedHandCardId={selectedHandCardId}
+                  fieldMagicPlayableCardIds={owner === focusedPlayerId ? fieldMagicPlayableCardIds : new Set<string>()}
+                  effectTargetOptionByCardId={effectTargetOptionByCardId}
+                  selectedTrayMagicCardId={selectedTrayMagicCardId}
+                  onPlaySelectedHandCard={playSelectedHandCardToFieldMagicTray}
+                  onDropHandCard={playHandCardToFieldMagicTray}
+                  onSelectTrayMagicCard={setSelectedTrayMagicCardId}
+                  onResolveEffectTarget={resolveBoardEffectTarget}
+                  onDestroyMagic={onDestroyMagic}
+                  onSelectEquipMagic={(cardInstanceId) => {
+                    setSelectedCreatureCardId(null);
+                    setPendingEquipMagicCardId(null);
+                    setSelectedTrayMagicCardId(cardInstanceId);
+                    setSelectedEquipMagicCardId(cardInstanceId);
+                    setStatusMessage("Select a creature on the 3D board to attach this Equip Magic.");
+                  }}
+                  onRelatedCreatureFocus={focusCreatureEquipment}
+                />
+              );
+            })}
+          </div>
           {opponentPlayer && opponentPlayer.hand.length > 0 ? (
             <section className={`board-preview-3d__hand-rail board-preview-3d__hand-rail--opponent${opponentHandHasPrompt ? " is-prompt-open" : ""}`} aria-label={`${opponentPlayer.displayName} ${visibleOpponentHandCards.length > 0 ? "revealed" : "hidden"} hand`}>
               <div className="board-preview-3d__hand-rail-tab">

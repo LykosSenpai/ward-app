@@ -19,5 +19,36 @@
   "printedGeneration": "Generation I",
   "artworkTags": [
     "FIRE"
-  ]
+  ],
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_148,h_264,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_960,h_1712,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_480,h_856,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_720,h_1284,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_960,h_1712,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg/v1/fit/w_1440,h_2569,q_90,enc_avif,quality_auto/f87b85_b4450c92482c42a0aa026b18a786c191~mv2.jpg",
+        "width": 1440
+      }
+    ]
+  }
 }

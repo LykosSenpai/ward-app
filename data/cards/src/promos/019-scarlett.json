@@ -107,5 +107,36 @@
   "printedGeneration": "Generation - II",
   "artworkTags": [
     "WEAPON"
-  ]
+  ],
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_ec3be52a3c4b478483e664e5585e74be~mv2.jpg",
+        "width": 1440
+      }
+    ]
+  }
 }

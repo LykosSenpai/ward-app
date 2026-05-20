@@ -50,6 +50,7 @@ import {
   collectBattleEffectSuggestions,
   getSuggestedSpeedModifiers
 } from "./battleEffectAdapter.js";
+import { assertCanAddMagicToField, MAX_INFINITE_MAGIC_ON_FIELD } from "./magicField.js";
 export { effectNeedsSingleMagicSlotTargetPrompt } from "./effectRegistry.js";
 
 const HOGGAN_CARD_ID = "gen3_009_hoggan";
@@ -624,6 +625,32 @@ function takeCardInstanceFromZones(
   return undefined;
 }
 
+function findCardInstanceInZones(
+  state: MatchState,
+  cardInstanceId: string
+): CardInstance | undefined {
+  const chainCard = state.chainZone.find(card => card.instanceId === cardInstanceId);
+  if (chainCard) return chainCard;
+
+  for (const player of state.players) {
+    const zones = [
+      player.hand,
+      player.deck,
+      player.cemetery,
+      player.removedFromGame,
+      player.field.magicSlots,
+      player.field.limitedSummons
+    ];
+
+    for (const zone of zones) {
+      const card = zone.find(item => item.instanceId === cardInstanceId);
+      if (card) return card;
+    }
+  }
+
+  return undefined;
+}
+
 function applyCreatureEffectNegationEquip(
   state: MatchState,
   prompt: PendingEffectTargetPrompt,
@@ -632,10 +659,18 @@ function applyCreatureEffectNegationEquip(
 ): void {
   const target = getCreatureFromTargetOption(state, selectedOption);
   const controller = getPlayer(state, prompt.controllerPlayerId);
+  const sourceBeforeMove = findCardInstanceInZones(state, prompt.sourceCardInstanceId);
 
-  if (controller.field.magicSlots.length >= 5) {
-    throw new Error(`${controller.displayName} already has 5 Magic Slot cards and cannot equip this card.`);
+  if (!sourceBeforeMove) {
+    throw new Error("The source Magic card for this creature effect negation was not found.");
   }
+
+  assertCanAddMagicToField(state, controller, sourceBeforeMove, {
+    excludeCardInstanceId: controller.field.magicSlots.some(card => card.instanceId === sourceBeforeMove.instanceId)
+      ? sourceBeforeMove.instanceId
+      : undefined,
+    message: `${controller.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards and cannot equip this card.`
+  });
 
   const source = takeCardInstanceFromZones(state, prompt.sourceCardInstanceId);
   if (!source) {

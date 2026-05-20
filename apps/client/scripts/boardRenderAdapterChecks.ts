@@ -466,7 +466,8 @@ const placementMatch = {
   cardCatalog: {
     "creature-low": { id: "creature-low", name: "Low Creature", cardType: "CREATURE", armorLevel: 4, speed: 3, attackDice: 1, modifier: 0, hp: 20 },
     "creature-high": { id: "creature-high", name: "High Creature", cardType: "CREATURE", armorLevel: 9, speed: 3, attackDice: 1, modifier: 0, hp: 30 },
-    "magic-standard": { id: "magic-standard", name: "Standard Magic", cardType: "MAGIC", magicType: "STANDARD", magicSubType: "SINGLE_USE" }
+    "magic-standard": { id: "magic-standard", name: "Standard Magic", cardType: "MAGIC", magicType: "STANDARD", magicSubType: "NONE" },
+    "magic-infinite": { id: "magic-infinite", name: "Infinite Magic", cardType: "MAGIC", magicType: "INFINITE", magicSubType: "FIELD" }
   }
 } as unknown as AppMatchState;
 
@@ -483,23 +484,49 @@ assert.deepEqual(
   placementAffordances
     .filter(affordance => affordance.kind === "VALID_DROP_ZONE" && affordance.sourceCardInstanceId === "magic-1")
     .map(affordance => affordance.targetZoneRef)
-    .sort((left, right) => (left?.slotIndex ?? 0) - (right?.slotIndex ?? 0)),
+    .sort((left, right) => (left?.slotIndex ?? -1) - (right?.slotIndex ?? -1)),
   [
-    { playerId: "player_1", zone: "MAGIC_SLOT", slotIndex: 1 },
-    { playerId: "player_1", zone: "MAGIC_SLOT", slotIndex: 3 },
-    { playerId: "player_1", zone: "MAGIC_SLOT", slotIndex: 4 }
+    { playerId: "player_1", zone: "MAGIC_SLOT" }
   ]
 );
 assert.equal(
-  placementAffordances.some(affordance =>
-    affordance.kind === "DISABLED_ACTION" &&
-    affordance.sourceCardInstanceId === "magic-1" &&
-    affordance.targetZoneRef?.zone === "MAGIC_SLOT" &&
-    affordance.targetZoneRef.slotIndex === 0 &&
-    affordance.disabledReason === "That Magic slot is already occupied."
-  ),
-  true
+  placementAffordances.some(affordance => affordance.sourceCardInstanceId === "magic-1" && affordance.disabledReason === "That Infinite Magic slot is already occupied."),
+  false
 );
+
+const infinitePlacementMatch = {
+  ...placementMatch,
+  players: [
+    {
+      ...placementMatch.players[0],
+      hand: [
+        { instanceId: "magic-infinite-hand", cardId: "magic-infinite", ownerPlayerId: "player_1", controllerPlayerId: "player_1", zone: "HAND" }
+      ],
+      field: {
+        ...placementMatch.players[0].field,
+        magicSlots: Array.from({ length: 5 }, (_, index) => ({
+          instanceId: `magic-infinite-field-${index}`,
+          cardId: "magic-infinite",
+          ownerPlayerId: "player_1",
+          controllerPlayerId: "player_1",
+          zone: "MAGIC_SLOT"
+        }))
+      }
+    },
+    placementMatch.players[1]
+  ]
+} as unknown as AppMatchState;
+const infinitePlacementAffordances = buildHandPlacementAffordances({
+  match: infinitePlacementMatch,
+  playerId: "player_1",
+  selectedHandCardId: "magic-infinite-hand",
+  occupiedMagicSlotIndexes: [0, 1, 2, 3, 4]
+});
+assert.equal(infinitePlacementAffordances.some(affordance =>
+  affordance.kind === "DISABLED_ACTION" &&
+  affordance.sourceCardInstanceId === "magic-infinite-hand" &&
+  affordance.disabledReason === "No open Infinite Magic slot is available."
+), true);
 
 const blockedPlacementAffordances = buildHandPlacementAffordances({
   match: {

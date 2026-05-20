@@ -7,6 +7,7 @@ import {
   getPlayerBattleCreatureOptions,
   getRequiredSacrificesForCard,
   isCreature,
+  isInfiniteMagic,
   isMagic
 } from "../gameViewHelpers";
 
@@ -383,7 +384,13 @@ function getCreaturePlayBlockedReason(match: AppMatchState, player: PlayerState,
   return null;
 }
 
-function getMagicPlayBlockedReason(match: AppMatchState, player: PlayerState, context: HandPlacementContext, hasOpenMagicSlot: boolean): string | null {
+const MAX_INFINITE_MAGIC_ON_FIELD = 5;
+
+function getInfiniteMagicCount(match: AppMatchState, player: PlayerState): number {
+  return player.field.magicSlots.filter(card => isInfiniteMagic(match, card)).length;
+}
+
+function getMagicPlayBlockedReason(match: AppMatchState, player: PlayerState, card: CardInstance, context: HandPlacementContext): string | null {
   const generalReason = getGeneralPlayBlockedReason(match, player, context);
   if (generalReason) return generalReason;
   if (!context.canPlayMagicNow) {
@@ -393,12 +400,18 @@ function getMagicPlayBlockedReason(match: AppMatchState, player: PlayerState, co
     }
     return "Magic cannot be played right now.";
   }
-  if (!hasOpenMagicSlot) return "No open Magic slot is available.";
+  if (isInfiniteMagic(match, card) && getInfiniteMagicCount(match, player) >= MAX_INFINITE_MAGIC_ON_FIELD) {
+    return `No open Infinite Magic slot is available.`;
+  }
   return null;
 }
 
 function magicSlotZoneRef(playerId: string, index: number): BoardZoneRef {
   return { playerId, zone: "MAGIC_SLOT", slotIndex: index };
+}
+
+function fieldMagicZoneRef(playerId: string): BoardZoneRef {
+  return { playerId, zone: "MAGIC_SLOT" };
 }
 
 function primaryZoneRef(playerId: string): BoardZoneRef {
@@ -812,9 +825,8 @@ export function buildHandPlacementAffordances({
 
   const context = buildHandPlacementContext(match, player, controlledPlayerId);
   const occupiedMagicSlots = new Set(occupiedMagicSlotIndexes);
-  const openMagicSlotIndexes = Array.from({ length: 5 }, (_, index) => index)
+  const openInfiniteMagicSlotIndexes = Array.from({ length: MAX_INFINITE_MAGIC_ON_FIELD }, (_, index) => index)
     .filter(index => !occupiedMagicSlots.has(index));
-  const hasOpenMagicSlot = openMagicSlotIndexes.length > 0;
   const selectedCard = selectedHandCardId
     ? player.hand.find(card => card.instanceId === selectedHandCardId) ?? null
     : null;
@@ -856,7 +868,7 @@ export function buildHandPlacementAffordances({
       !getCreaturePlayBlockedReason(match, player, card, context);
     const magicPlayable =
       isMagic(match, card) &&
-      !getMagicPlayBlockedReason(match, player, context, hasOpenMagicSlot);
+      !getMagicPlayBlockedReason(match, player, card, context);
 
     if (creaturePlayable || magicPlayable) {
       affordances.push({
@@ -885,16 +897,28 @@ export function buildHandPlacementAffordances({
       }
 
       if (magicPlayable) {
-        for (const index of openMagicSlotIndexes) {
+        if (!isInfiniteMagic(match, card)) {
           affordances.push({
-            id: `hand:${player.id}:${card.instanceId}:magic:${index}:drop`,
+            id: `hand:${player.id}:${card.instanceId}:field-magic:drop`,
             kind: "VALID_DROP_ZONE",
             playerId: player.id,
             sourceCardInstanceId: card.instanceId,
-            targetZoneRef: magicSlotZoneRef(player.id, index),
-            label: `Play ${cardName} to Magic ${index + 1}`,
+            targetZoneRef: fieldMagicZoneRef(player.id),
+            label: `Play ${cardName} to Field Magic`,
             highlightStyle: "VALID"
           });
+        } else {
+          for (const index of openInfiniteMagicSlotIndexes) {
+            affordances.push({
+              id: `hand:${player.id}:${card.instanceId}:magic:${index}:drop`,
+              kind: "VALID_DROP_ZONE",
+              playerId: player.id,
+              sourceCardInstanceId: card.instanceId,
+              targetZoneRef: magicSlotZoneRef(player.id, index),
+              label: `Play ${cardName} to Infinite Magic ${index + 1}`,
+              highlightStyle: "VALID"
+            });
+          }
         }
       }
       continue;
@@ -903,7 +927,7 @@ export function buildHandPlacementAffordances({
     const disabledReason = isCreature(match, card)
       ? getCreaturePlayBlockedReason(match, player, card, context)
       : isMagic(match, card)
-        ? getMagicPlayBlockedReason(match, player, context, hasOpenMagicSlot)
+        ? getMagicPlayBlockedReason(match, player, card, context)
         : "This card cannot be played from hand right now.";
 
     if (disabledReason) {
@@ -944,8 +968,24 @@ export function buildHandPlacementAffordances({
   }
 
   if (isMagic(match, selectedCard)) {
-    const magicBlockedReason = getMagicPlayBlockedReason(match, player, context, hasOpenMagicSlot);
-    for (const index of Array.from({ length: 5 }, (_, slotIndex) => slotIndex)) {
+    const magicBlockedReason = getMagicPlayBlockedReason(match, player, selectedCard, context);
+    if (!isInfiniteMagic(match, selectedCard)) {
+      if (magicBlockedReason) {
+        affordances.push({
+          id: `hand:${player.id}:${selectedCard.instanceId}:field-magic:disabled`,
+          kind: "DISABLED_ACTION",
+          playerId: player.id,
+          sourceCardInstanceId: selectedCard.instanceId,
+          targetZoneRef: fieldMagicZoneRef(player.id),
+          label: `Cannot play ${selectedCardName} to Field Magic`,
+          highlightStyle: "LOCKED",
+          disabledReason: magicBlockedReason
+        });
+      }
+      return affordances;
+    }
+
+    for (const index of Array.from({ length: MAX_INFINITE_MAGIC_ON_FIELD }, (_, slotIndex) => slotIndex)) {
       if (!magicBlockedReason && !occupiedMagicSlots.has(index)) continue;
       affordances.push({
         id: `hand:${player.id}:${selectedCard.instanceId}:magic:${index}:disabled`,
@@ -953,9 +993,9 @@ export function buildHandPlacementAffordances({
         playerId: player.id,
         sourceCardInstanceId: selectedCard.instanceId,
         targetZoneRef: magicSlotZoneRef(player.id, index),
-        label: `Cannot play ${selectedCardName} to Magic ${index + 1}`,
+        label: `Cannot play ${selectedCardName} to Infinite Magic ${index + 1}`,
         highlightStyle: "LOCKED",
-        disabledReason: magicBlockedReason ?? "That Magic slot is already occupied."
+        disabledReason: magicBlockedReason ?? "That Infinite Magic slot is already occupied."
       });
     }
   }

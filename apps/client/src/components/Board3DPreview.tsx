@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { CardInstance, PlayerState } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
-import { getCardName, getCreatureStatsLine } from "../gameViewHelpers";
+import { getCardName, getCreatureStatsLine, getFieldMagicSummary, getInfiniteFieldMagicCards } from "../gameViewHelpers";
 import { MatchCardImage } from "./MatchCardImage";
 
 type CameraMode = "table" | "near" | "far";
@@ -91,13 +91,9 @@ function Player3DField({
     undefined,
     undefined
   ];
-  const magicSlots = [
-    player.field.magicSlots[0],
-    player.field.magicSlots[1],
-    player.field.magicSlots[2],
-    player.field.magicSlots[3],
-    player.field.magicSlots[4]
-  ];
+  const infiniteMagic = getInfiniteFieldMagicCards(match, player);
+  const magicSummary = getFieldMagicSummary(match, player);
+  const magicSlots = Array.from({ length: 5 }, (_, index) => infiniteMagic[index]);
 
   return (
     <section className={`board3d-player board3d-player-${side}`} aria-label={`${player.displayName} 3D field`}>
@@ -111,6 +107,12 @@ function Player3DField({
         {magicSlots.map((card, index) => (
           <Mini3DCard key={`magic-${index}`} match={match} card={card} label={`Magic ${index + 1}`} />
         ))}
+        {magicSummary.otherCount > 0 && (
+          <div className="board3d-field-magic-tray">
+            <span>Field Magic</span>
+            <strong>{magicSummary.otherCount}</strong>
+          </div>
+        )}
       </div>
 
       <div className="board3d-row board3d-creature-row">

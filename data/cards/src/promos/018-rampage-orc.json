@@ -17,5 +17,36 @@
   "attackDice": 4,
   "modifier": 5,
   "printedGeneration": "G-III Pre-Order",
-  "artworkTags": []
+  "artworkTags": [],
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+    "remotePrimaryUrl": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://media.discordapp.net/attachments/1163140880488734890/1472374952702382133/SmartSelect_20260214_183208_Firefox.jpg?ex=699451c8&is=69930048&hm=6c827ff45ba8c66c7e2ca10ef24e6c7783b80f8ba9252b548d02e907f8df4236&=&format=webp&width=400&height=557",
+        "width": 1440
+      }
+    ]
+  }
 }

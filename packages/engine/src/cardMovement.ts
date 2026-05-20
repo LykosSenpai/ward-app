@@ -17,6 +17,7 @@ import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
 import { moveFieldCreatureToCemetery, type FieldCreatureRemovalResult } from "./fieldRemoval.js";
 import { runCardRemovedFromFieldTriggers } from "./triggers.js";
 import { advancePrimaryReplacementRequirement } from "./replacementRequirements.js";
+import { assertCanAddMagicToField, MAX_INFINITE_MAGIC_ON_FIELD } from "./magicField.js";
 
 export type MoveMagicSlotToCemeteryResult = {
   magicCard: CardInstance;
@@ -767,15 +768,10 @@ export function summonPrimaryFromCemeteryAndEquipSource(
   const sourceAlreadyUsesControllerMagicSlot =
     sourceLocation.zone === "MAGIC_SLOT" &&
     sourceLocation.player?.id === controllerPlayer.id;
-  const effectiveMagicSlotCount =
-    controllerPlayer.field.magicSlots.length -
-    (sourceAlreadyUsesControllerMagicSlot ? 1 : 0);
-
-  if (effectiveMagicSlotCount >= 5) {
-    throw new Error(
-      `${controllerPlayer.displayName} already has 5 Magic Slot cards and cannot anchor this summoned creature.`
-    );
-  }
+  assertCanAddMagicToField(state, controllerPlayer, sourceLocation.card, {
+    excludeCardInstanceId: sourceAlreadyUsesControllerMagicSlot ? sourceLocation.card.instanceId : undefined,
+    message: `${controllerPlayer.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards and cannot anchor this summoned creature.`
+  });
 
   let replacedPrimaryCardInstanceId: string | undefined;
   let replacedPrimaryCardName: string | undefined;
@@ -920,15 +916,10 @@ export function limitedSummonSelectedCreatureAndEquipSource(
   const sourceAlreadyUsesControllerMagicSlot =
     sourceLocation.zone === "MAGIC_SLOT" &&
     sourceLocation.player?.id === controllerPlayer.id;
-  const effectiveMagicSlotCount =
-    controllerPlayer.field.magicSlots.length -
-    (sourceAlreadyUsesControllerMagicSlot ? 1 : 0);
-
-  if (effectiveMagicSlotCount >= 5) {
-    throw new Error(
-      `${controllerPlayer.displayName} already has 5 Magic Slot cards and cannot equip this source card.`
-    );
-  }
+  assertCanAddMagicToField(state, controllerPlayer, sourceLocation.card, {
+    excludeCardInstanceId: sourceAlreadyUsesControllerMagicSlot ? sourceLocation.card.instanceId : undefined,
+    message: `${controllerPlayer.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards and cannot equip this source card.`
+  });
 
   const summonResult = limitedSummonSelectedCreature(
     state,

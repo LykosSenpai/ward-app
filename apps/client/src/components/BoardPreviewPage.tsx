@@ -126,7 +126,10 @@ function makePlayer({
     playerId,
     "PRIMARY_CREATURE",
     "primary",
-    Math.max(1, Math.floor((primaryCard.hp ?? 30) * 0.78))
+    Math.max(1, Math.floor((primaryCard.hp ?? 30) * 0.78)),
+    {
+      artKey: "holo"
+    }
   );
 
   const limitedOne = makeInstance(
@@ -136,6 +139,7 @@ function makePlayer({
     "limited_1",
     limitedOneCard.hp ?? 30,
     {
+      ...(playerId === "player_2" ? { artKey: "holo" as const } : {}),
       isLimitedSummon: true,
       effectsSuppressed: true
     }
@@ -165,7 +169,7 @@ function makePlayer({
     teamId: playerId,
     deck: makeDeck(creatures, playerId, playerId === "player_1" ? 22 : 24),
     hand: [
-      makeInstance(pickCreature(3), playerId, "HAND", "hand_1"),
+      makeInstance(pickCreature(3), playerId, "HAND", "hand_1", undefined, playerId === "player_1" ? { artKey: "holo" as const } : {}),
       makeInstance(pickMagic(2), playerId, "HAND", "hand_2"),
       makeInstance(pickMagic(3), playerId, "HAND", "hand_3"),
       makeInstance(pickCreature(4), playerId, "HAND", "hand_4")
@@ -527,11 +531,9 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
     : !summonDispatchAllowed
       ? "Summon guard denied for current slot/card/turn"
       : null;
-  const magicDisabledReason = !focusedSlot
-    ? "Focus a magic slot for the selected player"
-    : !magicDispatchAllowed
-      ? "Magic guard denied for current slot/card/turn"
-      : null;
+  const magicDisabledReason = !magicDispatchAllowed
+    ? "Magic guard denied for current card/turn"
+    : null;
   const battleDisabledReason = !battleDispatchAllowedStrict
     ? "Battle guard denied for attacker/defender/phase"
     : null;
@@ -584,7 +586,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
     if (!previewMatch) return;
 
     const preflight = ensureDispatchReady({
-      hasFocusedSlot: Boolean(focusedSlot),
+      hasFocusedSlot: true,
       allowedByGuard: magicDispatchAllowed,
       isSocketConnected: socket.connected,
       blockedReason: "magic guard denied"
@@ -595,7 +597,6 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
       pushDispatchHistory(`magic blocked: ${reason}`);
       return;
     }
-    if (!focusedSlot) return;
     const requestId = newDispatchRequestId();
     socket.emit("match:playMagic", {
       clientRequestId: requestId,
@@ -605,8 +606,8 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
     });
     recordBridgeDispatch({
       requestId,
-      label: `magic ${magicCardInstanceId.trim()} -> ${focusedSlot.id}`,
-      interactionLabel: `magic-dispatch:${magicCardInstanceId.trim()} -> ${focusedSlot.id}`
+      label: `magic ${magicCardInstanceId.trim()} -> field magic`,
+      interactionLabel: `magic-dispatch:${magicCardInstanceId.trim()} -> field magic`
     });
   };
 
@@ -747,7 +748,7 @@ export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = 
               </datalist>
             </label>
             <button type="button" onClick={dispatchMagicToFocusedSlot} disabled={!magicDispatchAllowed} title={magicDisabledReason ?? undefined}>
-              Dispatch Magic to Focused Slot
+              Dispatch Magic to Field Magic
             </button>
             {magicDisabledReason ? <p className="board-preview-3d__status">Magic disabled: {magicDisabledReason}</p> : null}
             <label>

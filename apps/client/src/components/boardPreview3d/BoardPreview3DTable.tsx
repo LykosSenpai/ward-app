@@ -33,6 +33,7 @@ type Props = {
   heightScale: number;
   zoneScale: number;
   compactCardTextures: boolean;
+  smallCardInspector: boolean;
   showAnchors: boolean;
   showZoneRects: boolean;
   visibleSlotLayers: {
@@ -284,7 +285,7 @@ function AttackStreamCanvas({
   return <canvas ref={canvasRef} className="board-preview-3d__attack-fx-canvas" aria-hidden="true" />;
 }
 
-export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, zoneScale, compactCardTextures, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onInspectRelatedCard, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onSelectBattleTargetPiece, onDropBattleAttackerToPiece, onDropEquipMagicToPiece, onDropEffectSourceToPiece, onDropEffectSourceToSlot, onCemeteryStackClick, draggableHandCardIds, draggableBattleAttackerCardIds, draggableEquipMagicCardIds, validBattleTargetPieceIds, validEquipTargetPieceIds, validEffectTargetPieceIds, validEffectTargetSlotIds, effectSourcePieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, equipAttachSourcePieceIds, battleSpeedBadges, diceRollVisual, attackAnimation, activeEventType, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
+export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDegrees, heightScale, zoneScale, compactCardTextures, smallCardInspector, showAnchors, showZoneRects, visibleSlotLayers, selectedSlotId, filteredBoardObjects, resolveSlotPosition, resolveBoardPoint, resolveZoneRect, onSelectSlot, onDeckSlotClick, onPlayHandCardToSlot, onDropHandCardToSlot, onSelectPiece, onInspectRelatedCard, onDeckStackContextMenu, onSelectHandCard, onHandCardDragStart, onToggleSacrificeCard, onSelectBattleTargetPiece, onDropBattleAttackerToPiece, onDropEquipMagicToPiece, onDropEffectSourceToPiece, onDropEffectSourceToSlot, onCemeteryStackClick, draggableHandCardIds, draggableBattleAttackerCardIds, draggableEquipMagicCardIds, validBattleTargetPieceIds, validEquipTargetPieceIds, validEffectTargetPieceIds, validEffectTargetSlotIds, effectSourcePieceIds, sacrificeCandidateCardIds, selectedSacrificeCardIds, highlightedSlotIds, highlightedPieceIds, equipAttachSourcePieceIds, battleSpeedBadges, diceRollVisual, attackAnimation, activeEventType, match, cardByInstanceId, blockedReasonsBySlotId }: Props) {
   const highlightedSet = new Set(highlightedSlotIds ?? []);
   const highlightedPieceSet = new Set(highlightedPieceIds ?? []);
   const draggableHandCardSet = new Set(draggableHandCardIds ?? []);
@@ -403,10 +404,12 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
         ) : null}
         <div className="board-preview-3d__grid" aria-hidden="true" />
         <BoardPreview3DWebGLCards
+          key={compactCardTextures ? "compact-card-textures" : "full-card-textures"}
           cardByInstanceId={cardByInstanceId}
           filteredBoardObjects={filteredBoardObjects}
           heightScale={heightScale}
           zoneScale={zoneScale}
+          zoomScale={zoomScale}
           compactCardTextures={compactCardTextures}
           match={match}
           resolveSlotPosition={resolveSlotPosition}
@@ -691,6 +694,7 @@ export function BoardPreview3DTable({ zoomScale, cameraPanX, cameraPanY, tiltDeg
           onRelatedCardFocus={focusRelatedCard}
           onToggleDetails={() => setInspectorDetailsExpanded(current => !current)}
           pinned={Boolean(pinnedFieldCardId)}
+          smallCardView={smallCardInspector}
         />
       ) : null}
     </>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../clientTypes";
 import { filterCardImageCandidates, useCardImageManifest } from "../cardImageManifest";
+import type { CardImageManifest } from "../cardImageManifest";
 import type { CardImageCandidate } from "../cardImageManifest";
 import { buildCardImageUrl, getCardImageGenerationDirectory } from "../cardImagePaths";
 import { getCardName } from "../gameViewHelpers";
@@ -13,10 +14,16 @@ type MatchCardImageProps = {
   match: AppMatchState;
   card: CardInstance;
   className?: string;
+  holoIntensity?: number;
+  holoOpacity?: number;
+  holoSheenIntensity?: number;
 };
 
 const IMAGE_EXTENSIONS = ["webp", "png", "jpg", "jpeg"];
 const ZERO_ART_SUFFIX_ALIASES = ["zero-art", "zero_art", "zeroart"];
+const DEFAULT_MATCH_HOLO_INTENSITY = 2.6;
+const DEFAULT_MATCH_HOLO_OPACITY = 1.45;
+const DEFAULT_MATCH_HOLO_SHEEN_INTENSITY = 0.78;
 
 function uniqueValues(values: string[]): string[] {
   return Array.from(new Set(values.filter(value => value.trim() !== "")));
@@ -32,6 +39,27 @@ function normalizeFileNamePart(value: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
+function normalizeSpacedFileNamePart(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/['']/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeHyphenFileNamePart(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/['']/g, "")
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function getArtStems(stem: string, artKey: CardArtKey): string[] {
   if (getBaseArtKey(artKey) !== "zero-art") {
     return [stem];
@@ -44,21 +72,85 @@ function getMatchCardImageFilePaths(generation: string | number | undefined, fil
   const generationDirectory = getCardImageGenerationDirectory(generation);
 
   return uniqueValues([
-    fileName,
-    generationDirectory ? `${generationDirectory}/${fileName}` : ""
+    generationDirectory ? `${generationDirectory}/${fileName}` : "",
+    fileName
   ]);
 }
 
-function getMatchCardImageCandidates(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): CardImageCandidate[] {
-  const definition = match.cardCatalog[card.cardId];
-  const stems = [card.cardId];
-  const artKey = artKeyOverride ?? normalizeCardArtKey(card.artKey);
+function normalizeStoredImagePath(value: string | undefined): string {
+  return (value ?? "")
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/^card-images\//i, "")
+    .replace(/^cards\//i, "");
+}
 
-  if (definition?.generation && definition.cardNumber && definition.name) {
-    stems.push(`gen${definition.generation}_${definition.cardNumber}_${normalizeFileNamePart(definition.name)}`);
+function getStoredBucketMatchCardCandidates(match: AppMatchState, card: CardInstance): CardImageCandidate[] {
+  const definition = match.cardCatalog[card.cardId];
+  const storedCandidates = [
+    ...(definition?.image?.bucketCandidates ?? []),
+    ...(definition?.image?.localCandidates ?? [])
+  ];
+
+  return uniqueCardImageCandidates(storedCandidates
+    .map((candidate, index) => {
+      const fileName = normalizeStoredImagePath(candidate.fileName ?? candidate.objectKey);
+      const url = candidate.url?.trim() || (fileName ? buildCardImageUrl(fileName) : "");
+
+      if (!url) return null;
+
+      return {
+        fileName: fileName || `bucket:${card.cardId}:${index}`,
+        url
+      };
+    })
+    .filter((candidate): candidate is CardImageCandidate => candidate !== null));
+}
+
+function getMatchCardImageStemAliases(match: AppMatchState, card: CardInstance): string[] {
+  const definition = match.cardCatalog[card.cardId];
+  const aliases: string[] = [];
+  const generation = String(definition?.generation ?? "").trim();
+  const cardNumber = String(definition?.cardNumber ?? "").trim();
+  const cardName = definition?.name?.trim() ?? "";
+
+  if (generation && cardNumber && cardName) {
+    const prefix = `gen${generation}_${cardNumber}`;
+    const slugName = normalizeFileNamePart(cardName);
+    const spacedName = normalizeSpacedFileNamePart(cardName);
+    const hyphenName = normalizeHyphenFileNamePart(cardName);
+    const trimmedCardNumber = cardNumber.replace(/^0+/, "") || cardNumber;
+    const editionSlug = normalizeHyphenFileNamePart(definition?.edition ?? "");
+
+    aliases.push(`${cardNumber}-${hyphenName}`);
+    aliases.push(`${trimmedCardNumber}-${hyphenName}`);
+    aliases.push(`${prefix}_${slugName}`);
+    aliases.push(`${prefix}_${spacedName}`);
+    aliases.push(`${prefix} ${slugName}`);
+    aliases.push(`${prefix} ${spacedName}`);
+
+    if (editionSlug) {
+      aliases.push(`${editionSlug}-${cardNumber}-${hyphenName}`);
+      aliases.push(`${editionSlug}-${trimmedCardNumber}-${hyphenName}`);
+      aliases.push(`${prefix}_${editionSlug}_${slugName}`);
+    }
   }
 
-  const artStems = uniqueValues(stems).flatMap(stem => getArtStems(stem, artKey));
+  aliases.push(card.cardId);
+
+  const idParts = card.cardId.split("_");
+  if (idParts.length > 3) {
+    aliases.push(`${idParts[0]}_${idParts[1]}_${idParts.slice(2).join(" ")}`);
+  }
+
+  return uniqueValues(aliases);
+}
+
+function getGeneratedBucketMatchCardImageCandidates(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): CardImageCandidate[] {
+  const definition = match.cardCatalog[card.cardId];
+  const artKey = artKeyOverride ?? normalizeCardArtKey(card.artKey);
+  const artStems = getMatchCardImageStemAliases(match, card).flatMap(stem => getArtStems(stem, artKey));
 
   return uniqueValues(artStems).flatMap(stem =>
     IMAGE_EXTENSIONS.flatMap(extension => {
@@ -103,24 +195,49 @@ function getRemoteMatchCardCandidates(match: AppMatchState, card: CardInstance):
 }
 
 export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
-  return [...getRemoteMatchCardCandidates(match, card), ...getMatchCardImageCandidates(match, card, artKeyOverride)].map(candidate => candidate.url);
+  return uniqueCardImageCandidates([
+    ...getStoredBucketMatchCardCandidates(match, card),
+    ...getGeneratedBucketMatchCardImageCandidates(match, card, artKeyOverride),
+    ...getRemoteMatchCardCandidates(match, card)
+  ]).map(candidate => candidate.url);
 }
 
-export function getBoardCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
-  return [...getRemoteMatchCardCandidates(match, card), ...getMatchCardImageCandidates(match, card, artKeyOverride)]
+function getBoardCardImageCandidates(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): CardImageCandidate[] {
+  return uniqueCardImageCandidates([
+    ...getStoredBucketMatchCardCandidates(match, card),
+    ...getGeneratedBucketMatchCardImageCandidates(match, card, artKeyOverride),
+    ...getRemoteMatchCardCandidates(match, card)
+  ]);
+}
+
+export function getBoardCardImageUrls(
+  match: AppMatchState,
+  card: CardInstance,
+  artKeyOverride?: CardArtKey,
+  manifest?: CardImageManifest
+): string[] {
+  return filterCardImageCandidates(getBoardCardImageCandidates(match, card, artKeyOverride), manifest, "local-first")
     .map(candidate => candidate.url);
 }
 
-export function MatchCardImage({ match, card, className }: MatchCardImageProps) {
+export function MatchCardImage({
+  match,
+  card,
+  className,
+  holoIntensity = DEFAULT_MATCH_HOLO_INTENSITY,
+  holoOpacity = DEFAULT_MATCH_HOLO_OPACITY,
+  holoSheenIntensity = DEFAULT_MATCH_HOLO_SHEEN_INTENSITY
+}: MatchCardImageProps) {
   const [candidateIndex, setCandidateIndex] = useState(0);
   const artKey = normalizeCardArtKey(card.artKey);
   const holoEnabled = isHoloArtKey(artKey);
   const manifest = useCardImageManifest();
   const imageCandidates = useMemo(
     () => filterCardImageCandidates([
-      ...getRemoteMatchCardCandidates(match, card),
-      ...getMatchCardImageCandidates(match, card)
-    ], manifest),
+      ...getStoredBucketMatchCardCandidates(match, card),
+      ...getGeneratedBucketMatchCardImageCandidates(match, card),
+      ...getRemoteMatchCardCandidates(match, card)
+    ], manifest, "local-first"),
     [match, card, manifest]
   );
   const displayImageSrc = imageCandidates[candidateIndex]?.url;
@@ -148,7 +265,10 @@ export function MatchCardImage({ match, card, className }: MatchCardImageProps) 
         draggable={false}
         seed={`match:${match.matchId}:${card.instanceId}:${artKey}`}
         enabled={holoEnabled}
-        intensity={0.55}
+        animated={holoEnabled}
+        intensity={holoIntensity}
+        holoOpacity={holoOpacity}
+        sheenIntensity={holoSheenIntensity}
         onError={() => {
           setCandidateIndex(current => current + 1);
         }}

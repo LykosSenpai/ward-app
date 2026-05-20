@@ -23,6 +23,8 @@ type BoardPreview3DControlsProps = {
   setZoneScale: (value: number) => void;
   compactCardTextures: boolean;
   setCompactCardTextures: (value: boolean) => void;
+  smallCardInspector: boolean;
+  setSmallCardInspector: (value: boolean) => void;
   ownerFilter: "all" | "player_1" | "player_2";
   setOwnerFilter: (value: "all" | "player_1" | "player_2") => void;
   showDebugPanel: boolean;
@@ -34,6 +36,7 @@ type BoardPreview3DControlsProps = {
   setShowDiagnostics: (value: boolean) => void;
   integrationMode: boolean;
   setIntegrationMode: (value: boolean) => void;
+  scrollWheelLocked: boolean;
   onResetAll: () => void;
 };
 
@@ -133,10 +136,14 @@ export function BoardPreview3DControls(props: BoardPreview3DControlsProps) {
           Compact Cards
           <input type="checkbox" checked={props.compactCardTextures} onChange={(event) => props.setCompactCardTextures(event.target.checked)} />
         </label>
+        <label className="board-preview-3d__toggle-inline">
+          Small Expanded Cards
+          <input type="checkbox" checked={props.smallCardInspector} onChange={(event) => props.setSmallCardInspector(event.target.checked)} />
+        </label>
 
       </div>
       <p className="board-preview-3d__status">
-        Shortcuts: drag pans camera | wheel zooms | Arrow keys move camera | Shift+Arrow nudges selected slot | +/- zoom | 0 resets camera
+        Shortcuts: drag pans camera | {props.scrollWheelLocked ? "wheel locked" : "wheel zooms"} | Arrow keys move camera | Shift+Arrow nudges selected slot | +/- zoom | 0 resets camera
 
       </p>
     </>

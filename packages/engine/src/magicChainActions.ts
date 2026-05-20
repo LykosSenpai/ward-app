@@ -25,6 +25,7 @@ import { removeActiveEffectInstancesFromSource } from "./activeEffectInstances.j
 import { removeStatModifiersFromSourceCard } from "./effectiveStats.js";
 import { moveAttachedMagicCardsToCemeteryForCreature } from "./attachments.js";
 import { advancePrimaryReplacementRequirement } from "./replacementRequirements.js";
+import { assertCanAddMagicToField, countInfiniteMagicOnField, MAX_INFINITE_MAGIC_ON_FIELD } from "./magicField.js";
 
 const FOOLISH_TRICKS_CARD_ID = "gen1_086_foolish_tricks";
 const JUDGEMENT_CARD_ID = "gen1_113_judgement";
@@ -1554,8 +1555,8 @@ export function playMagicFromHand(
 
   assertPlayerCanPlayMagicUnderActivePlayRestrictions(nextState, playerId);
 
-  if (definition.magicType === "INFINITE" && player.field.magicSlots.length >= 5) {
-    throw new Error("You already have 5 Infinite Magic cards on your side of the field.");
+  if (definition.magicType === "INFINITE" && countInfiniteMagicOnField(nextState, player) >= MAX_INFINITE_MAGIC_ON_FIELD) {
+    throw new Error(`You already have ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards on your side of the field.`);
   }
 
   if (isSilenceFromTheGraveDefinition(definition)) {
@@ -2011,7 +2012,11 @@ export function resolveMagicChain(state: MatchState): MatchState {
           ? "FIELD_MAGIC_RESOLVED_TO_FIELD"
           : "TEMP_EQUIP_MAGIC_RESOLVED_TO_FIELD";
 
-      if (fieldOwner.field.magicSlots.length >= 5) {
+      try {
+        assertCanAddMagicToField(nextState, fieldOwner, chainCard, {
+          message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards.`
+        });
+      } catch {
         chainCard.zone = "CEMETERY";
         ownerPlayer.cemetery.push(chainCard);
 
@@ -2049,7 +2054,9 @@ export function resolveMagicChain(state: MatchState): MatchState {
             }
           ]
         });
-      } else {
+      }
+
+      if (chainCard.zone !== "CEMETERY") {
         chainCard.zone = "MAGIC_SLOT";
         fieldOwner.field.magicSlots.push(chainCard);
 

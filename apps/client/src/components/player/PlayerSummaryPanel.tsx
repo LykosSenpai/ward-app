@@ -1,5 +1,6 @@
 import type { PlayerState } from "@ward/shared";
 import type { AppMatchState } from "../../clientTypes";
+import { getFieldMagicSummary } from "../../gameViewHelpers";
 
 export function PlayerSummaryPanel({
   match,
@@ -33,6 +34,7 @@ export function PlayerSummaryPanel({
   onRequestNoCreatureRedraw: () => void;
 }) {
   const deckValidation = match.setup.deckValidation[player.id];
+  const fieldMagicSummary = getFieldMagicSummary(match, player);
 
   return (
     <>
@@ -144,7 +146,7 @@ export function PlayerSummaryPanel({
         <div>Cemetery: {player.cemetery.length}</div>
         <div>Removed: {player.removedFromGame.length}</div>
         <div>Limited Summons: {player.field.limitedSummons.length}/4</div>
-        <div>Magic Slots: {player.field.magicSlots.length}/5</div>
+        <div>Field Magic: Infinite {fieldMagicSummary.infiniteCount}/5 + {fieldMagicSummary.otherCount} other</div>
       </div>
 
       {discardRequiredForThisPlayer && (

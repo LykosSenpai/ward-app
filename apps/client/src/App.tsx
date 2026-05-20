@@ -2032,7 +2032,7 @@ export default function App() {
   }
 
   function closeCompletedMatchWithoutSaving() {
-    void closeCurrentMatchWithoutSaving({ confirm: false, closeLocally: true });
+    void closeCurrentMatchWithoutSaving({ confirm: true, closeLocally: true });
   }
 
   async function saveCompletedMatchAndClose() {
@@ -3371,6 +3371,13 @@ export default function App() {
                       onDeckSlotClick={handleDeckClick}
                       onResolveEffectTarget={resolveEffectTarget}
                       onDiscardHandCardToCemetery={discardHandCardToCemetery}
+                      onDestroyMagic={(fieldOwnerPlayerId, cardInstanceId) => {
+                        socket.emit("match:destroyMagicSlotCard", {
+                          matchId: match.matchId,
+                          fieldOwnerPlayerId,
+                          cardInstanceId
+                        });
+                      }}
                       onCallCemeteryHpLoss={callCemeteryHpLoss}
                       onPlayHandCardToSlot={(cardInstanceId, slotId, sacrificeCardInstanceIds = []) => {
                         const slotOwnerId = slotId.startsWith("player_2-") ? "player_2" : "player_1";

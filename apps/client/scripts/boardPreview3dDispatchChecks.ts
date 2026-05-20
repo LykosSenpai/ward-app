@@ -36,13 +36,13 @@ assert.equal(
 
 assert.equal(
   canDispatchMagic({
-    focusedSlotId: "player_1-primary",
-    focusedSlotOwner: "player_1",
+    focusedSlotId: null,
+    focusedSlotOwner: undefined,
     summonPlayerId: "player_1",
     cardInstanceId: "m1",
     isPlayableMagicCard: true
   }),
-  false
+  true
 );
 
 assert.equal(

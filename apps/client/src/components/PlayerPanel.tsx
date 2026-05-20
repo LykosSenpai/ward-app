@@ -11,11 +11,14 @@ import {
   getAttachedCreatureLabel,
   getMagicLine,
   getMatchStatus,
+  getFieldMagicSummary,
+  getInfiniteFieldMagicCards,
   getRequiredSacrificesForCard,
   playerHasSummonableCreatureInHand,
   canSummonCreatureFromHand,
   creatureCannotBeSacrificed,
   isCreature,
+  isInfiniteMagic,
   isMagic
 } from "../gameViewHelpers";
 import { PlayerSummaryPanel } from "./player/PlayerSummaryPanel";
@@ -244,7 +247,8 @@ function PlayerPlaymat({
   onPlaymatDrop: (event: DragEvent<HTMLElement>, zone: "primary" | "magic" | "cemetery") => void;
 }) {
   const limitedSlots = Array.from({ length: 4 }, (_, index) => player.field.limitedSummons[index]);
-  const magicSlots = Array.from({ length: 5 }, (_, index) => player.field.magicSlots[index]);
+  const infiniteMagic = getInfiniteFieldMagicCards(match, player);
+  const magicSlots = Array.from({ length: 5 }, (_, index) => infiniteMagic[index]);
   const deckCount = player.deck.length;
   const cemeteryCount = player.cemetery.length;
   const battleBlockReason = getBattleBlockReason(match);
@@ -314,14 +318,14 @@ function PlayerPlaymat({
 
       <div
         className={`playmat-magic-row${dragClass("magic")}`}
-        aria-label="Magic slots"
+        aria-label="Infinite Magic slots"
         onDragOver={event => onPlaymatDragOver(event, "magic")}
         onDragLeave={onPlaymatDragLeave}
         onDrop={event => onPlaymatDrop(event, "magic")}
       >
         {magicSlots.map((card, index) => (
           <div className="playmat-zone playmat-magic-zone" key={card?.instanceId ?? `magic-${index}`}>
-            <span className="playmat-zone-label">Magic Slot</span>
+            <span className="playmat-zone-label">Infinite Magic</span>
             <PlaymatCard
               match={match}
               card={card}
@@ -391,6 +395,7 @@ export function PlayerPanel({
   const discardRequiredForThisPlayer =
     match.setup.handDiscardRequiredForPlayerId === player.id;
   const anyDiscardRequired = !!match.setup.handDiscardRequiredForPlayerId;
+  const fieldMagicSummary = getFieldMagicSummary(match, player);
 
   const canPlayPrimaryNow =
     !isMatchComplete &&
@@ -616,7 +621,9 @@ export function PlayerPanel({
     }
 
     if (zone === "magic") {
-      return canPlayMagicNow && isMagic(match, card);
+      return canPlayMagicNow &&
+        isMagic(match, card) &&
+        (!isInfiniteMagic(match, card) || fieldMagicSummary.infiniteCount < 5);
     }
 
     if (!canPlayPrimaryNow || !isCreature(match, card) || !canSummonCreatureFromHand(match, player, card)) {
@@ -853,8 +860,8 @@ export function PlayerPanel({
       </ZoneDetails>
 
       <ZoneDetails
-        title="Magic Slots"
-        badge={`${player.field.magicSlots.length}/5`}
+        title="Field Magic"
+        badge={`Infinite ${fieldMagicSummary.infiniteCount}/5 + ${fieldMagicSummary.otherCount} other`}
         defaultOpen={player.field.magicSlots.length > 0}
       >
         {magicSlotsPanel}
@@ -908,7 +915,7 @@ export function PlayerPanel({
           <summary>
             <span>{canControlThisPlayer ? "Your Options" : "Field Options"}</span>
             <strong>{player.hand.length} hand</strong>
-            <strong>{player.field.magicSlots.length}/5 magic</strong>
+            <strong>Infinite {fieldMagicSummary.infiniteCount}/5 + {fieldMagicSummary.otherCount} other</strong>
             <strong>{player.field.limitedSummons.length}/4 limited</strong>
           </summary>
 

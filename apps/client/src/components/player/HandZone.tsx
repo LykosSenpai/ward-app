@@ -8,11 +8,13 @@ import {
   getCardName,
   getCardText,
   getCreatureStatsLine,
+  getFieldMagicSummary,
   getMagicLine,
   getPrimarySummonSacrificeCandidates,
   getRequiredSacrificesForCard,
   isChainLightningMagic,
   isCreature,
+  isInfiniteMagic,
   isMagic
 } from "../../gameViewHelpers";
 
@@ -219,10 +221,13 @@ function HandCard({
   const isSilenceCard = isSilenceFromTheGraveCard(match, card);
   const isBattleResponseCard = isAutomatedBattleResponseCard(match, card);
   const silenceCanPayCost = !isSilenceCard || canPaySilenceFromTheGraveCost(match, player, card);
+  const fieldMagicSummary = getFieldMagicSummary(match, player);
+  const infiniteMagicFull = isInfiniteMagic(match, card) && fieldMagicSummary.infiniteCount >= 5;
+  const canPlayThisMagic = isMagic(match, card) && canPlayMagicNow && silenceCanPayCost && !infiniteMagicFull;
   const canPerformCardClick =
     discardRequiredForThisPlayer ||
     isPlayableCreature ||
-    (isMagic(match, card) && canPlayMagicNow && silenceCanPayCost) ||
+    canPlayThisMagic ||
     (isChainLightningMagic(match, card) && canPlayLightningResponse) ||
     (isBattleResponseCard && canPlayBattleResponse);
 
@@ -237,7 +242,7 @@ function HandCard({
       return;
     }
 
-    if (isMagic(match, card) && canPlayMagicNow && silenceCanPayCost) {
+    if (canPlayThisMagic) {
       onPlayMagic(card.instanceId);
       return;
     }
@@ -385,8 +390,13 @@ function HandCard({
                 Silence From The Grave requires 1 other Magic card in hand to discard before it can enter the Magic Chain.
               </div>
             )}
-            <span className={silenceCanPayCost ? "hand-card-action-note" : "hand-card-action-note blocked"}>
-              {silenceCanPayCost ? "Click or drag to Magic" : "Needs another Magic card"}
+            {infiniteMagicFull && (
+              <div className="warning-box compact-warning">
+                You already have 5 Infinite Magic cards on field.
+              </div>
+            )}
+            <span className={canPlayThisMagic ? "hand-card-action-note" : "hand-card-action-note blocked"}>
+              {canPlayThisMagic ? "Click or drag to Field Magic" : infiniteMagicFull ? "Infinite Magic full" : "Needs another Magic card"}
             </span>
           </>
         )}

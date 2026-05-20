@@ -33,6 +33,7 @@ import {
   normalizeRecurringTickTiming
 } from "./effectTiming.js";
 import { addRecurringEffectIfAbsent, findActiveRecurringEffect } from "./activeEffectInstances.js";
+import { assertCanAddMagicToField, MAX_INFINITE_MAGIC_ON_FIELD } from "./magicField.js";
 
 type CreatureTarget = {
   player: PlayerState;
@@ -587,12 +588,13 @@ function attachSourceToTarget(args: {
 
   const fieldOwner = getPlayer(args.state, args.prompt.controllerPlayerId);
 
-  if (
-    sourceLocation.zone !== "MAGIC_SLOT" &&
-    fieldOwner.field.magicSlots.length >= 5
-  ) {
-    throw new Error(`${fieldOwner.displayName} already has 5 Magic Slot cards.`);
-  }
+  const sourceAlreadyUsesFieldOwnerMagicSlot =
+    sourceLocation.zone === "MAGIC_SLOT" &&
+    sourceLocation.player?.id === fieldOwner.id;
+  assertCanAddMagicToField(args.state, fieldOwner, sourceLocation.card, {
+    excludeCardInstanceId: sourceAlreadyUsesFieldOwnerMagicSlot ? sourceLocation.card.instanceId : undefined,
+    message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards.`
+  });
 
   sourceLocation.remove();
 

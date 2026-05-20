@@ -13,6 +13,10 @@ import {
 } from "../../gameViewHelpers";
 import { MatchCardImage } from "../MatchCardImage";
 
+const INSPECTOR_HOLO_INTENSITY = 8.5;
+const INSPECTOR_HOLO_OPACITY = 1.72;
+const INSPECTOR_HOLO_SHEEN_INTENSITY = 1.12;
+
 function getCreatureOverlayStats(match: AppMatchState, card: CardInstance) {
   const definition = match.cardCatalog[card.cardId];
   if (definition?.cardType !== "CREATURE") return null;
@@ -67,6 +71,7 @@ type BoardCardInspectorProps = {
   onToggleDetails?: () => void;
   pinned?: boolean;
   showDetails?: boolean;
+  smallCardView?: boolean;
   children?: ReactNode;
 };
 
@@ -237,6 +242,7 @@ export function BoardCardInspector({
   onToggleDetails,
   pinned = false,
   showDetails = true,
+  smallCardView = false,
   children
 }: BoardCardInspectorProps) {
   const creatureStats = getCreatureOverlayStats(match, card);
@@ -246,6 +252,7 @@ export function BoardCardInspector({
   const classes = [
     "board-preview-3d__card-inspector",
     pinned ? "is-pinned" : "",
+    smallCardView ? "is-small-card" : "",
     className ?? ""
   ].filter(Boolean).join(" ");
 
@@ -263,7 +270,14 @@ export function BoardCardInspector({
         {extraHeader}
       </div>
       <div className="board-preview-3d__card-inspector-art-wrap">
-        <MatchCardImage match={match} card={card} className="board-preview-3d__card-inspector-art" />
+        <MatchCardImage
+          match={match}
+          card={card}
+          className="board-preview-3d__card-inspector-art"
+          holoIntensity={INSPECTOR_HOLO_INTENSITY}
+          holoOpacity={INSPECTOR_HOLO_OPACITY}
+          holoSheenIntensity={INSPECTOR_HOLO_SHEEN_INTENSITY}
+        />
       </div>
       {canShowAttachments ? (
         <BoardCardAttachmentSection card={card} match={match} onRelatedCardFocus={onRelatedCardFocus} />
