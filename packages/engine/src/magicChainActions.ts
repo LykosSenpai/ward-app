@@ -1555,8 +1555,17 @@ export function playMagicFromHand(
 
   assertPlayerCanPlayMagicUnderActivePlayRestrictions(nextState, playerId);
 
-  if (definition.magicType === "INFINITE" && countInfiniteMagicOnField(nextState, player) >= MAX_INFINITE_MAGIC_ON_FIELD) {
-    throw new Error(`You already have ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards on your side of the field.`);
+  if (definition.magicType === "INFINITE") {
+    const infiniteOnField = countInfiniteMagicOnField(nextState, player);
+    const pendingInfiniteFromPlayer = nextState.chainZone.filter(chainCard => {
+      if (chainCard.controllerPlayerId !== playerId) return false;
+      const chainDefinition = nextState.cardCatalog[chainCard.cardId];
+      return chainDefinition?.cardType === "MAGIC" && chainDefinition.magicType === "INFINITE";
+    }).length;
+
+    if (infiniteOnField + pendingInfiniteFromPlayer >= MAX_INFINITE_MAGIC_ON_FIELD) {
+      throw new Error(`You already have ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards active or pending on your side of the field.`);
+    }
   }
 
   if (isSilenceFromTheGraveDefinition(definition)) {
