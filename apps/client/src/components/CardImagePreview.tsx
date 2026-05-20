@@ -256,6 +256,39 @@ function getCardImageFilePaths(card: CardLibraryCardSummary, fileName: string): 
   ]);
 }
 
+function uniqueCardImageCandidates(candidates: CardImageCandidate[]): CardImageCandidate[] {
+  const seenUrls = new Set<string>();
+  return candidates.filter(candidate => {
+    if (seenUrls.has(candidate.url)) return false;
+    seenUrls.add(candidate.url);
+    return true;
+  });
+}
+
+function isRemoteImageCandidate(candidate: CardImageCandidate): boolean {
+  return /^https?:\/\//i.test(candidate.url);
+}
+
+function getRemoteImageCandidates(card: CardLibraryCardSummary): CardImageCandidate[] {
+  const primaryUrl = card.image?.remotePrimaryUrl?.trim();
+  const primaryCandidates = primaryUrl
+    ? [{ fileName: `remote:${card.id}:primary`, url: primaryUrl }]
+    : [];
+  const remoteCandidates = (card.image?.remoteCandidates ?? [])
+    .map((candidate, index) => {
+      const url = candidate.url?.trim();
+      if (!url) return null;
+
+      return {
+        fileName: candidate.fileName?.trim() || `remote:${card.id}:${index}`,
+        url
+      };
+    })
+    .filter((candidate): candidate is CardImageCandidate => candidate !== null);
+
+  return uniqueCardImageCandidates([...primaryCandidates, ...remoteCandidates]);
+}
+
 export function getImageCandidates(card: CardLibraryCardSummary, artKey: CardArtKey): CardImageCandidate[] {
   const stems = getStemAliases(card).flatMap(stem => getArtStems(stem, artKey));
 
@@ -309,12 +342,13 @@ function selectCandidatesByPriority(
   controls: { priority: string[] },
   railwayCandidates: CardImageCandidate[]
 ): CardImageCandidate[] {
-  const localCandidates = candidates;
+  const remoteCandidates = candidates.filter(isRemoteImageCandidate);
+  const localCandidates = candidates.filter(candidate => !isRemoteImageCandidate(candidate));
   const githubCdnCandidates = getGithubCdnCandidates(localCandidates);
   const signedRailwayCandidates = railwayCandidates;
   const hasLocal = localCandidates.length > 0;
   const sourceAvailability: Record<string, boolean> = {
-    excelRemote: candidates.some(candidate => /^https?:\/\//i.test(candidate.url)),
+    excelRemote: remoteCandidates.length > 0,
     githubCdn: githubCdnCandidates.length > 0,
     railwayBucket: signedRailwayCandidates.length > 0,
     localBundled: hasLocal,
@@ -323,6 +357,7 @@ function selectCandidatesByPriority(
 
   const firstAvailable = controls.priority.find(source => sourceAvailability[source]);
   if (firstAvailable === "placeholder") return [];
+  if (firstAvailable === "excelRemote") return remoteCandidates;
   if (firstAvailable === "githubCdn") return githubCdnCandidates;
   if (firstAvailable === "railwayBucket") return signedRailwayCandidates;
   return localCandidates;
@@ -333,10 +368,11 @@ function useRailwaySignedCandidates(baseCandidates: CardImageCandidate[]): CardI
 
   useEffect(() => {
     let active = true;
-    const keys = baseCandidates.map(candidate => buildRailwayObjectKeyFromFileName(candidate.fileName));
+    const localCandidates = baseCandidates.filter(candidate => !isRemoteImageCandidate(candidate));
+    const keys = localCandidates.map(candidate => buildRailwayObjectKeyFromFileName(candidate.fileName));
     void fetchSignedRailwayImageUrls(keys).then(signedByKey => {
       if (!active) return;
-      const signed = baseCandidates
+      const signed = localCandidates
         .map(candidate => {
           const key = buildRailwayObjectKeyFromFileName(candidate.fileName);
           const signedItem = signedByKey.get(key);

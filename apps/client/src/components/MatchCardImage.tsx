@@ -72,6 +72,36 @@ function getMatchCardImageCandidates(match: AppMatchState, card: CardInstance, a
   );
 }
 
+function uniqueCardImageCandidates(candidates: CardImageCandidate[]): CardImageCandidate[] {
+  const seenUrls = new Set<string>();
+  return candidates.filter(candidate => {
+    if (seenUrls.has(candidate.url)) return false;
+    seenUrls.add(candidate.url);
+    return true;
+  });
+}
+
+function getRemoteMatchCardCandidates(match: AppMatchState, card: CardInstance): CardImageCandidate[] {
+  const definition = match.cardCatalog[card.cardId];
+  const primaryUrl = definition?.image?.remotePrimaryUrl?.trim();
+  const primaryCandidates = primaryUrl
+    ? [{ fileName: `remote:${card.cardId}:primary`, url: primaryUrl }]
+    : [];
+  const remoteCandidates = (definition?.image?.remoteCandidates ?? [])
+    .map((candidate, index) => {
+      const url = candidate.url?.trim();
+      if (!url) return null;
+
+      return {
+        fileName: candidate.fileName?.trim() || `remote:${card.cardId}:${index}`,
+        url
+      };
+    })
+    .filter((candidate): candidate is CardImageCandidate => candidate !== null);
+
+  return uniqueCardImageCandidates([...primaryCandidates, ...remoteCandidates]);
+}
+
 export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
   return [...getRemoteMatchCardCandidates(match, card), ...getMatchCardImageCandidates(match, card, artKeyOverride)].map(candidate => candidate.url);
 }

@@ -61,10 +61,16 @@ export function filterCardImageCandidates(
   manifest: CardImageManifest
 ): CardImageCandidate[] {
   if (candidates.length <= 1) return candidates;
-  if (manifest === undefined) return candidates.slice(0, 1);
+  const remoteCandidates = candidates.filter(candidate => /^https?:\/\//i.test(candidate.url));
+  const localCandidates = candidates.filter(candidate => !/^https?:\/\//i.test(candidate.url));
+
+  if (localCandidates.length === 0) return remoteCandidates;
+  if (manifest === undefined) return [...remoteCandidates, ...localCandidates.slice(0, 1)];
   if (manifest === null) return candidates;
 
-  const knownCandidates = candidates.filter(candidate => manifest.has(candidate.fileName));
+  const knownCandidates = localCandidates.filter(candidate => manifest.has(candidate.fileName));
 
-  return knownCandidates.length > 0 ? knownCandidates : candidates.slice(0, 1);
+  return knownCandidates.length > 0
+    ? [...remoteCandidates, ...knownCandidates]
+    : [...remoteCandidates, ...localCandidates.slice(0, 1)];
 }
