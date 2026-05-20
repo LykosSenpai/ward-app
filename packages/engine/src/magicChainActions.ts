@@ -2018,9 +2018,6 @@ export function resolveMagicChain(state: MatchState): MatchState {
         countInfiniteMagicOnField(nextState, fieldOwner) >= MAX_INFINITE_MAGIC_ON_FIELD;
 
       if (infiniteMagicSlotFull) {
-        chainCard.zone = "HAND";
-        ownerPlayer.hand.push(chainCard);
-
         addEvent(nextState, failedEventType, link.playerId, {
           chainId: chain.id,
           chainLinkId: link.id,
@@ -2039,7 +2036,7 @@ export function resolveMagicChain(state: MatchState): MatchState {
               actionType: "RESOLVE_MAGIC_CHAIN_LINK",
               reason: slotFullReason,
               fromZoneRef: chainBoardZoneRef(link.playerId),
-              toZoneRef: handBoardZoneRef(ownerPlayer.id),
+              toZoneRef: chainBoardZoneRef(link.playerId),
               chainLinkId: link.id
             }
           ]
