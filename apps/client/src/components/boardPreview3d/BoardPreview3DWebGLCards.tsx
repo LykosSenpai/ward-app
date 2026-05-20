@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../../clientTypes";
@@ -6,6 +6,11 @@ import type { BoardObject } from "../boardPreview3dAdapter";
 import { normalizeCardArtKey } from "../CardImagePreview";
 import { getMatchCardImageUrls } from "../MatchCardImage";
 import { getCardName } from "../../gameViewHelpers";
+import {
+  DEFAULT_IMAGE_SOURCE_CONTROLS,
+  loadImageSourceControls,
+  subscribeImageSourceControls
+} from "../../imageSourceControls";
 
 type BoardPreview3DWebGLCardsProps = {
   cardByInstanceId: Map<string, CardInstance>;
@@ -203,11 +208,12 @@ async function loadCardTextureForCard(
   card: CardInstance,
   loader: THREE.TextureLoader,
   renderer: THREE.WebGLRenderer,
-  compactCardTextures: boolean
+  compactCardTextures: boolean,
+  imageUrls: string[]
 ): Promise<THREE.Texture | null> {
   const artKey = normalizeCardArtKey(card.artKey);
   const holoEnabled = artKey === "holo" || artKey === "zero-art-holo";
-  const baseTexture = await loadCardTexture(getMatchCardImageUrls(match, card), loader, renderer);
+  const baseTexture = await loadCardTexture(imageUrls, loader, renderer);
 
   if (!baseTexture) {
     return baseTexture;
@@ -290,6 +296,7 @@ export function BoardPreview3DWebGLCards({
   match,
   resolveSlotPosition
 }: BoardPreview3DWebGLCardsProps) {
+  const [boardControls, setBoardControls] = useState(() => loadImageSourceControls().board3d);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const latestRenderDataRef = useRef({
     cardByInstanceId,
@@ -303,6 +310,13 @@ export function BoardPreview3DWebGLCards({
     match,
     resolveSlotPosition
   };
+
+  useEffect(() => {
+    const refresh = () => setBoardControls(loadImageSourceControls().board3d);
+    return subscribeImageSourceControls(refresh);
+  }, []);
+
+  const activeBoardControls = boardControls ?? DEFAULT_IMAGE_SOURCE_CONTROLS.board3d;
   const renderSignature = useMemo(
     () => filteredBoardObjects
       .map(object => {
@@ -317,11 +331,13 @@ export function BoardPreview3DWebGLCards({
           object.xPercent.toFixed(3),
           object.zPercent.toFixed(3),
           object.yDepth.toFixed(3),
-          urls
+          urls,
+          activeBoardControls.priority.join(">"),
+          activeBoardControls.scale.toString()
         ].join(":");
       })
       .join("|"),
-    [cardByInstanceId, filteredBoardObjects, match]
+    [activeBoardControls.priority, activeBoardControls.scale, cardByInstanceId, filteredBoardObjects, match]
   );
 
   useEffect(() => {
@@ -413,7 +429,14 @@ export function BoardPreview3DWebGLCards({
         if (!shouldRender) return null;
 
         const texture = renderedCard
-          ? await loadCardTextureForCard(latestMatch, renderedCard, loader, renderer, compactCardTextures)
+          ? await loadCardTextureForCard(
+            latestMatch,
+            renderedCard,
+            loader,
+            renderer,
+            compactCardTextures,
+            getMatchCardImageUrls(latestMatch, renderedCard)
+          )
           : backTexture;
         if (!texture || isDisposed) return null;
 

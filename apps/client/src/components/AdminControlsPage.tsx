@@ -8,12 +8,22 @@ import type {
 } from "../clientTypes";
 import { API_BASE_URL } from "../config";
 import { ModalPanel } from "./ui/ModalPanel";
+import {
+  DEFAULT_IMAGE_SOURCE_CONTROLS,
+  IMAGE_SOURCE_OPTIONS,
+  loadImageSourceControls,
+  saveImageSourceControls,
+  type ImagePurposeKey,
+  type ImageSourceControls,
+  type ImageSourceKey
+} from "../imageSourceControls";
 
 type Props = {
   features: ServerFeatureFlag[];
   refreshKey?: number;
   onToggleFeature: (key: ServerFeatureFlag["key"], enabledForPlayers: boolean) => Promise<void>;
 };
+
 
 const SUPPORT_TICKET_STATUSES: SupportTicketStatus[] = ["OPEN", "TRIAGED", "RESOLVED", "DISMISSED"];
 
@@ -101,10 +111,68 @@ export function AdminControlsPage({ features, refreshKey = 0, onToggleFeature }:
   const [ticketError, setTicketError] = useState("");
   const [ticketsBusy, setTicketsBusy] = useState(false);
   const [supportTicketsCollapsed, setSupportTicketsCollapsed] = useState(false);
+  const [imageSourceControls, setImageSourceControls] = useState<ImageSourceControls>(DEFAULT_IMAGE_SOURCE_CONTROLS);
 
   useEffect(() => {
     void loadTickets();
   }, [ticketStatusFilter, refreshKey]);
+
+  useEffect(() => {
+    setImageSourceControls(loadImageSourceControls());
+    void (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/image-source-controls`, { credentials: "include" });
+        if (!response.ok) return;
+        const data = await response.json() as { controls?: ImageSourceControls };
+        if (data.controls) {
+          setImageSourceControls(data.controls);
+          saveImageSourceControls(data.controls);
+        }
+      } catch {
+        // Keep local fallback controls.
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    saveImageSourceControls(imageSourceControls);
+    void fetch(`${API_BASE_URL}/api/admin/image-source-controls`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ controls: imageSourceControls })
+    }).catch(() => {
+      // Keep local save path even if server persistence is unavailable.
+    });
+  }, [imageSourceControls]);
+
+  function updateImageScale(purpose: ImagePurposeKey, scale: number) {
+    setImageSourceControls(current => ({
+      ...current,
+      [purpose]: {
+        ...current[purpose],
+        scale
+      }
+    }));
+  }
+
+  function updateImagePriority(purpose: ImagePurposeKey, index: number, source: ImageSourceKey) {
+    setImageSourceControls(current => {
+      const nextPriority = [...current[purpose].priority];
+      nextPriority[index] = source;
+      const uniquePriority = Array.from(new Set(nextPriority));
+      for (const option of IMAGE_SOURCE_OPTIONS) {
+        if (!uniquePriority.includes(option.value)) uniquePriority.push(option.value);
+      }
+      return {
+        ...current,
+        [purpose]: {
+          ...current[purpose],
+          priority: uniquePriority.slice(0, IMAGE_SOURCE_OPTIONS.length)
+        }
+      };
+    });
+  }
 
   async function loadTickets() {
     setTicketsBusy(true);
@@ -202,6 +270,59 @@ export function AdminControlsPage({ features, refreshKey = 0, onToggleFeature }:
   return (
     <section className="panel admin-controls-page">
       <h2>Admin Controls</h2>
+
+      <section className="admin-controls-section">
+        <div className="admin-controls-section-header">
+          <div className="admin-controls-section-title">
+            <h3>Image Source Controls</h3>
+            <span>Live browser-side controls (no redeploy)</span>
+          </div>
+        </div>
+        <p className="admin-controls-note">
+          Configure source priority and target scale for card library, expanded view, and 3D board.
+          These settings are live in-browser and can be reset anytime.
+        </p>
+        <div className="admin-image-source-actions">
+          <button
+            type="button"
+            onClick={() => setImageSourceControls(DEFAULT_IMAGE_SOURCE_CONTROLS)}
+          >
+            Reset to defaults
+          </button>
+        </div>
+        {([
+          ["cardLibrary", "Card Library"],
+          ["expandedView", "Expanded View"],
+          ["board3d", "3D Board"]
+        ] as Array<[ImagePurposeKey, string]>).map(([purpose, label]) => (
+          <div key={purpose} className="admin-image-source-purpose">
+            <h4>{label}</h4>
+            <label>
+              Scale Target: {imageSourceControls[purpose].scale}px
+              <input
+                type="range"
+                min={320}
+                max={2048}
+                step={32}
+                value={imageSourceControls[purpose].scale}
+                onChange={event => updateImageScale(purpose, Number(event.target.value))}
+              />
+            </label>
+            <div className="admin-image-source-priority-grid">
+              {imageSourceControls[purpose].priority.map((selected, index) => (
+                <label key={`${purpose}-${index}`}>
+                  Priority {index + 1}
+                  <select value={selected} onChange={event => updateImagePriority(purpose, index, event.target.value as ImageSourceKey)}>
+                    {IMAGE_SOURCE_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
 
       <section className={supportTicketsCollapsed ? "admin-controls-section admin-support-section is-collapsed" : "admin-controls-section admin-support-section"}>
         <div className="admin-controls-section-header">

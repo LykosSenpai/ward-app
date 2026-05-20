@@ -94,5 +94,36 @@
   "hp": 120,
   "attackName": "Antler Slice",
   "attackDice": 6,
-  "modifier": 5
+  "modifier": 5,
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png/v1/fit/w_480,h_992,q_90,enc_avif,quality_auto/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png/v1/fit/w_960,h_1984,q_90,enc_avif,quality_auto/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png/v1/fit/w_480,h_992,q_90,enc_avif,quality_auto/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png/v1/fit/w_720,h_1488,q_90,enc_avif,quality_auto/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png/v1/fit/w_960,h_1984,q_90,enc_avif,quality_auto/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png/v1/fit/w_1440,h_2976,q_90,enc_avif,quality_auto/f87b85_223da40b33894274864f3c0ec18718ed~mv2.png",
+        "width": 1440
+      }
+    ]
+  }
 }
