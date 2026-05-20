@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import type {
   CardDefinition,
+  CardImageSet,
   CardPackDefinition,
   EffectQaStatus,
   WardEngineEffect,
@@ -744,6 +745,7 @@ export type CardLibraryCardSummary = {
   artworkEffect?: string;
   artworkTags?: string[];
   effects?: WardEngineEffect[];
+  image?: CardImageSet;
 
   deckLimit: number;
   deckLimitReason?: string;
@@ -876,7 +878,7 @@ function getCardEffectTypes(card: CardDefinition): string[] {
 
 function getCardLibraryMetadata(card: CardDefinition): Pick<
   CardLibraryCardSummary,
-  "generation" | "edition" | "rarity" | "cardNumber" | "artworkEffect" | "artworkTags" | "effectCount" | "effectTypes" | "effects"
+  "generation" | "edition" | "rarity" | "cardNumber" | "artworkEffect" | "artworkTags" | "effectCount" | "effectTypes" | "effects" | "image"
 > {
   const metadata = card as CardDefinitionMetadata;
 
@@ -889,7 +891,8 @@ function getCardLibraryMetadata(card: CardDefinition): Pick<
     artworkTags: Array.isArray(metadata.artworkTags) ? metadata.artworkTags : [],
     effectCount: Array.isArray(metadata.effects) ? metadata.effects.length : 0,
     effectTypes: getCardEffectTypes(card),
-    effects: Array.isArray(metadata.effects) ? metadata.effects : []
+    effects: Array.isArray(metadata.effects) ? metadata.effects : [],
+    image: card.image
   };
 }
 

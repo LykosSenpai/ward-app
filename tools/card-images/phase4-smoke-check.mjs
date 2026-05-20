@@ -22,8 +22,8 @@ async function main() {
   await ensureIncludes('apps/client/src/components/MatchCardImage.tsx', [
     'getRemoteMatchCardCandidates',
     'getBoardCardImageUrls',
-    'textureValidated === true',
-    'canvasValidated === true'
+    'remotePrimaryUrl',
+    'getMatchCardImageCandidates(match, card, artKeyOverride)'
   ]);
 
   await ensureIncludes('apps/client/src/components/boardPreview3d/BoardPreview3DWebGLCards.tsx', [

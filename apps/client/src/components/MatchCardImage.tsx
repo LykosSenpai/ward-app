@@ -107,18 +107,8 @@ export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance, 
 }
 
 export function getBoardCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
-  const definition = match.cardCatalog[card.cardId];
-  const safeRemote = (definition?.image?.remoteCandidates ?? [])
-    .filter(candidate =>
-      typeof candidate.url === "string"
-      && candidate.url.trim() !== ""
-      && candidate.textureValidated === true
-      && candidate.canvasValidated === true
-    )
-    .map(candidate => String(candidate.url));
-
-  const localFallback = getMatchCardImageCandidates(match, card, artKeyOverride).map(candidate => candidate.url);
-  return [...safeRemote, ...localFallback];
+  return [...getRemoteMatchCardCandidates(match, card), ...getMatchCardImageCandidates(match, card, artKeyOverride)]
+    .map(candidate => candidate.url);
 }
 
 export function MatchCardImage({ match, card, className }: MatchCardImageProps) {

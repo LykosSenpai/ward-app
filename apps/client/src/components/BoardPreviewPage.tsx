@@ -44,7 +44,8 @@ function toCardDefinition(card: CardLibraryCardSummary): CardDefinition {
       artworkEffect: card.artworkEffect,
       artworkTags: card.artworkTags,
       text: card.text,
-      effects: card.effects
+      effects: card.effects,
+      image: card.image
     };
   }
 
@@ -61,7 +62,8 @@ function toCardDefinition(card: CardLibraryCardSummary): CardDefinition {
     artworkEffect: card.artworkEffect,
     artworkTags: card.artworkTags,
     text: card.text,
-    effects: card.effects
+    effects: card.effects,
+    image: card.image
   };
 }
 
@@ -266,9 +268,42 @@ function buildPreviewMatch(cardLibrary: CardLibraryCardSummary[]): AppMatchState
   };
 }
 
+function hydrateMatchImageMetadataFromLibrary(match: AppMatchState, cardLibrary: CardLibraryCardSummary[]): AppMatchState {
+  const cardsById = new Map(cardLibrary.map(card => [card.id, card]));
+  let hasHydratedCards = false;
+
+  const cardCatalog = Object.fromEntries(
+    Object.entries(match.cardCatalog).map(([cardId, definition]) => {
+      const libraryCard = cardsById.get(cardId);
+
+      if (!libraryCard?.image) {
+        return [cardId, definition];
+      }
+
+      hasHydratedCards = true;
+
+      return [
+        cardId,
+        {
+          ...definition,
+          generation: libraryCard.generation ?? definition.generation,
+          edition: libraryCard.edition ?? definition.edition,
+          cardNumber: libraryCard.cardNumber ?? definition.cardNumber,
+          image: libraryCard.image
+        }
+      ];
+    })
+  );
+
+  return hasHydratedCards ? { ...match, cardCatalog } : match;
+}
+
 export function BoardPreviewPage({ cardLibrary, controlledPlayerId, liveMatch = null }: BoardPreviewPageProps) {
   const showLegacyBridge = new URLSearchParams(globalThis.location?.search ?? "").get("legacyBridge") === "1";
-  const previewMatch = useMemo(() => liveMatch ?? buildPreviewMatch(cardLibrary), [cardLibrary, liveMatch]);
+  const previewMatch = useMemo(
+    () => liveMatch ? hydrateMatchImageMetadataFromLibrary(liveMatch, cardLibrary) : buildPreviewMatch(cardLibrary),
+    [cardLibrary, liveMatch]
+  );
   const previewBoardObjects = useMemo(() => (previewMatch ? buildBoardObjects(previewMatch) : []), [previewMatch]);
 
   const [lastInteraction, setLastInteraction] = useState<string>("None");
