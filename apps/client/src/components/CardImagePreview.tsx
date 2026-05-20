@@ -246,6 +246,16 @@ function getStemAliases(card: CardLibraryCardSummary): string[] {
   return uniqueValues(aliases);
 }
 
+function getRemoteImageCandidates(card: CardLibraryCardSummary): CardImageCandidate[] {
+  const remoteCandidates = card.image?.remoteCandidates ?? [];
+  return remoteCandidates
+    .filter(candidate => typeof candidate.url === "string" && candidate.url.trim() !== "")
+    .map((candidate, index) => ({
+      fileName: candidate.fileName ?? `${card.id}__remote_${index}.webp`,
+      url: String(candidate.url)
+    }));
+}
+
 export function getImageCandidates(card: CardLibraryCardSummary, artKey: CardArtKey): CardImageCandidate[] {
   const stems = getStemAliases(card).flatMap(stem => getArtStems(stem, artKey));
 
@@ -263,7 +273,11 @@ export function getImageCandidates(card: CardLibraryCardSummary, artKey: CardArt
 
 export function useTargetedCardImageCandidates(card: CardLibraryCardSummary, artKey: CardArtKey): CardImageCandidate[] {
   const manifest = useCardImageManifest();
-  const candidates = useMemo(() => getImageCandidates(card, artKey), [card, artKey]);
+  const candidates = useMemo(() => {
+    const remote = getRemoteImageCandidates(card);
+    const local = getImageCandidates(card, artKey);
+    return [...remote, ...local];
+  }, [card, artKey]);
 
   return useMemo(() => filterCardImageCandidates(candidates, manifest), [candidates, manifest]);
 }
@@ -300,7 +314,7 @@ function selectCandidatesByPriority(
   const signedRailwayCandidates = railwayCandidates;
   const hasLocal = localCandidates.length > 0;
   const sourceAvailability: Record<string, boolean> = {
-    excelRemote: false,
+    excelRemote: candidates.some(candidate => /^https?:\/\//i.test(candidate.url)),
     githubCdn: githubCdnCandidates.length > 0,
     railwayBucket: signedRailwayCandidates.length > 0,
     localBundled: hasLocal,

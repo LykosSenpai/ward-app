@@ -1,4 +1,5 @@
-﻿import type {
+import type {
+  CardImageSet,
   MatchState as BaseMatchState,
   MarketplaceMatch,
   WardEngineEffect,
@@ -195,6 +196,7 @@ export type CardLibraryCardSummary = {
   artworkEffect?: string;
   artworkTags?: string[];
   effects?: WardEngineEffect[];
+  image?: CardImageSet;
 
   deckLimit: number;
   deckLimitReason?: string;

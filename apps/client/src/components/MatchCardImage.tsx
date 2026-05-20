@@ -39,6 +39,18 @@ function getArtStems(stem: string, artKey: CardArtKey): string[] {
   return ZERO_ART_SUFFIX_ALIASES.map(suffix => `${stem}__${suffix}`);
 }
 
+
+function getRemoteMatchCardCandidates(match: AppMatchState, card: CardInstance): CardImageCandidate[] {
+  const definition = match.cardCatalog[card.cardId];
+  const remoteCandidates = definition?.image?.remoteCandidates ?? [];
+  return remoteCandidates
+    .filter(candidate => typeof candidate.url === "string" && candidate.url.trim() !== "")
+    .map((candidate, index) => ({
+      fileName: candidate.fileName ?? `${card.cardId}__remote_${index}.webp`,
+      url: String(candidate.url)
+    }));
+}
+
 function getMatchCardImageCandidates(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): CardImageCandidate[] {
   const definition = match.cardCatalog[card.cardId];
   const stems = [card.cardId];
@@ -63,7 +75,22 @@ function getMatchCardImageCandidates(match: AppMatchState, card: CardInstance, a
 }
 
 export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
-  return getMatchCardImageCandidates(match, card, artKeyOverride).map(candidate => candidate.url);
+  return [...getRemoteMatchCardCandidates(match, card), ...getMatchCardImageCandidates(match, card, artKeyOverride)].map(candidate => candidate.url);
+}
+
+export function getBoardCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
+  const definition = match.cardCatalog[card.cardId];
+  const safeRemote = (definition?.image?.remoteCandidates ?? [])
+    .filter(candidate =>
+      typeof candidate.url === "string"
+      && candidate.url.trim() !== ""
+      && candidate.textureValidated === true
+      && candidate.canvasValidated === true
+    )
+    .map(candidate => String(candidate.url));
+
+  const localFallback = getMatchCardImageCandidates(match, card, artKeyOverride).map(candidate => candidate.url);
+  return [...safeRemote, ...localFallback];
 }
 
 export function MatchCardImage({ match, card, className }: MatchCardImageProps) {
@@ -72,7 +99,10 @@ export function MatchCardImage({ match, card, className }: MatchCardImageProps) 
   const holoEnabled = isHoloArtKey(artKey);
   const manifest = useCardImageManifest();
   const imageCandidates = useMemo(
-    () => filterCardImageCandidates(getMatchCardImageCandidates(match, card), manifest),
+    () => filterCardImageCandidates([
+      ...getRemoteMatchCardCandidates(match, card),
+      ...getMatchCardImageCandidates(match, card)
+    ], manifest),
     [match, card, manifest]
   );
   const displayImageSrc = imageCandidates[candidateIndex]?.url;
