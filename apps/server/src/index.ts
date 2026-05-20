@@ -158,6 +158,13 @@ import {
 } from "./auth/securityStore.js";
 import { sendSecurityEmail } from "./email/brevoEmail.js";
 import { checkDbConnection } from "./db/pool.js";
+import {
+  createCardImageBucketPresignedGetUrl,
+  describeCardImageBucketRoutingConfig,
+  getCardImageBucketRoutingConfigFromEnv,
+  normalizeCardImageObjectPath,
+  resolveCardImageBucketObject
+} from "./storage/cardImageBucket.js";
 import { isFeatureEnabledForPlayers, listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
 import type { FeatureKey } from "./admin/adminFeatureFlags.js";
 import { createDisabledCommerceRouter } from "./marketplace/api/commerceDisabledRoutes.js";
@@ -203,6 +210,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "../../..");
 const CLIENT_DIST_DIR = path.join(ROOT_DIR, "apps", "client", "dist");
 const CLIENT_CARD_IMAGES_DIR = path.join(CLIENT_DIST_DIR, "card-images");
+const CARD_IMAGE_BUCKET_ROUTING_CONFIG = getCardImageBucketRoutingConfigFromEnv();
 const isProduction = process.env.NODE_ENV === "production";
 const ENABLE_DEV_TOOLS = process.env.ENABLE_DEV_TOOLS === "true" || (!isProduction && process.env.ENABLE_DEV_TOOLS !== "false");
 const SKIP_LOCAL_EMAIL_VERIFICATION = !isProduction && !isDisabledEnvFlag(process.env.SKIP_LOCAL_EMAIL_VERIFICATION);
@@ -4296,17 +4304,52 @@ app.use(
   })
 );
 
+function redirectCardImageBucketRequest(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  if (!CARD_IMAGE_BUCKET_ROUTING_CONFIG) {
+    next();
+    return;
+  }
+
+  const requestPath = normalizeCardImageObjectPath(String(req.params[0] ?? ""));
+
+  if (!requestPath) {
+    res.status(400).send("Invalid card image path.");
+    return;
+  }
+
+  try {
+    const bucketObject = resolveCardImageBucketObject(CARD_IMAGE_BUCKET_ROUTING_CONFIG, requestPath);
+
+    if (!bucketObject) {
+      res.status(404).send("Card image bucket route not found.");
+      return;
+    }
+
+    const signedUrl = createCardImageBucketPresignedGetUrl(bucketObject.bucket, bucketObject.objectKey);
+
+    res.setHeader("Cache-Control", `public, max-age=${bucketObject.bucket.redirectCacheSeconds}`);
+    res.redirect(302, signedUrl);
+  } catch (error) {
+    next(error);
+  }
+}
+
 if (isProduction) {
-  app.get("/card-images/manifest.json", (_req, res, next) => {
-    res.setHeader("Cache-Control", "public, max-age=300");
-    res.sendFile(path.join(CLIENT_CARD_IMAGES_DIR, "manifest.json"), error => {
-      if (error) next(error);
+  if (CARD_IMAGE_BUCKET_ROUTING_CONFIG) {
+    console.log(`[card-images] Serving /card-images from bucket routes: ${describeCardImageBucketRoutingConfig(CARD_IMAGE_BUCKET_ROUTING_CONFIG)}.`);
+    app.get("/card-images/*", redirectCardImageBucketRequest);
+  } else {
+    app.get("/card-images/manifest.json", (_req, res, next) => {
+      res.setHeader("Cache-Control", "public, max-age=300");
+      res.sendFile(path.join(CLIENT_CARD_IMAGES_DIR, "manifest.json"), error => {
+        if (error) next(error);
+      });
     });
-  });
-  app.use("/card-images", express.static(CLIENT_CARD_IMAGES_DIR, {
-    immutable: true,
-    maxAge: "30d"
-  }));
+    app.use("/card-images", express.static(CLIENT_CARD_IMAGES_DIR, {
+      immutable: true,
+      maxAge: "30d"
+    }));
+  }
   app.use(express.static(CLIENT_DIST_DIR));
 
   app.get("*", (req, res, next) => {

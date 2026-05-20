@@ -7,11 +7,28 @@ const cardImagesDir = path.resolve(scriptDir, "../public/card-images");
 const manifestPath = path.join(cardImagesDir, "manifest.json");
 const imageExtensions = new Set([".png", ".webp", ".jpg", ".jpeg"]);
 
-const entries = await readdir(cardImagesDir, { withFileTypes: true });
-const files = entries
-  .filter(entry => entry.isFile())
-  .map(entry => entry.name)
-  .filter(fileName => imageExtensions.has(path.extname(fileName).toLowerCase()))
+async function listImageFiles(directory, relativeDirectory = "") {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const relativePath = path.posix.join(relativeDirectory, entry.name);
+    const absolutePath = path.join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      files.push(...await listImageFiles(absolutePath, relativePath));
+      continue;
+    }
+
+    if (entry.isFile() && imageExtensions.has(path.extname(entry.name).toLowerCase())) {
+      files.push(relativePath);
+    }
+  }
+
+  return files;
+}
+
+const files = (await listImageFiles(cardImagesDir))
   .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
 
 await writeFile(
