@@ -160,6 +160,10 @@ import { sendSecurityEmail } from "./email/brevoEmail.js";
 import { checkDbConnection } from "./db/pool.js";
 import { isFeatureEnabledForPlayers, listFeatureFlagsForUser, updateFeatureFlagForPlayers } from "./admin/adminFeatureFlags.js";
 import type { FeatureKey } from "./admin/adminFeatureFlags.js";
+import {
+  loadImageSourceControls as loadAdminImageSourceControls,
+  saveImageSourceControls as saveAdminImageSourceControls
+} from "./admin/imageSourceControlsStore.js";
 import { createDisabledCommerceRouter } from "./marketplace/api/commerceDisabledRoutes.js";
 import { createMarketplaceListingsRouter } from "./marketplace/api/listingsRoutes.js";
 import { createWantsRouter } from "./marketplace/api/wantsRoutes.js";
@@ -3549,6 +3553,59 @@ app.patch("/api/support-tickets/:ticketId", async (req, res) => {
     res.status(400).json({
       message: error instanceof Error ? error.message : "Unable to update support ticket."
     });
+  }
+});
+
+app.get("/api/admin/image-source-controls", async (req, res) => {
+  try {
+    if (!canUserUseAdminTools(req.session.user)) {
+      res.status(req.session.user ? 403 : 401).json({ message: req.session.user ? "Admin access required." : "Login required." });
+      return;
+    }
+    const controls = await loadAdminImageSourceControls();
+    res.json({ controls });
+  } catch (error) {
+    res.status(500).json({ message: error instanceof Error ? error.message : "Unable to load image source controls." });
+  }
+});
+
+app.put("/api/admin/image-source-controls", async (req, res) => {
+  try {
+    if (!canUserUseAdminTools(req.session.user)) {
+      res.status(req.session.user ? 403 : 401).json({ message: req.session.user ? "Admin access required." : "Login required." });
+      return;
+    }
+    const controls = await saveAdminImageSourceControls(req.body?.controls);
+    res.json({ controls });
+  } catch (error) {
+    res.status(400).json({ message: error instanceof Error ? error.message : "Unable to save image source controls." });
+  }
+});
+
+app.post("/api/card-images/sign", async (req, res) => {
+  try {
+    const parsedKeys: unknown[] = Array.isArray(req.body?.keys) ? req.body.keys : [];
+    const keys = parsedKeys
+      .filter((value: unknown): value is string => typeof value === "string")
+      .map((value: string) => value.trim())
+      .filter((value: string) => value.length > 0)
+      .slice(0, 200);
+    const baseUrl = process.env.RAILWAY_BUCKET_PUBLIC_BASE_URL?.trim();
+    const expiresInSeconds = Number(process.env.RAILWAY_BUCKET_SIGNED_URL_TTL_SECONDS ?? "1800");
+    if (!baseUrl) {
+      res.json({ items: [] });
+      return;
+    }
+
+    const expiresAt = new Date(Date.now() + Math.max(60, expiresInSeconds) * 1000).toISOString();
+    const items = keys.map((key: string) => ({
+      key,
+      url: `${baseUrl.replace(/\/+$/, "")}/${key}`,
+      expiresAt
+    }));
+    res.json({ items });
+  } catch (error) {
+    res.status(400).json({ message: error instanceof Error ? error.message : "Unable to sign card image URLs." });
   }
 });
 

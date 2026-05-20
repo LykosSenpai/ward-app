@@ -55,5 +55,36 @@
   "hp": 50,
   "attackName": "Shell Shock",
   "attackDice": 1,
-  "modifier": 0
+  "modifier": 0,
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png/v1/fit/w_720,h_1275,q_90,enc_avif,quality_auto/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png/v1/fit/w_1440,h_2550,q_90,enc_avif,quality_auto/f87b85_bfd5d5d8b4cb48b7bf6f9e56ef882821~mv2.png",
+        "width": 1440
+      }
+    ]
+  }
 }

@@ -172,5 +172,36 @@
   "hp": 100,
   "attackName": "Stone Fist",
   "attackDice": 5,
-  "modifier": 5
+  "modifier": 5,
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_a338d96630c0450c8b8411a571015404~mv2.png/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_a338d96630c0450c8b8411a571015404~mv2.png",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_a338d96630c0450c8b8411a571015404~mv2.png/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_a338d96630c0450c8b8411a571015404~mv2.png",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a338d96630c0450c8b8411a571015404~mv2.png/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_a338d96630c0450c8b8411a571015404~mv2.png",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a338d96630c0450c8b8411a571015404~mv2.png/v1/fit/w_720,h_1275,q_90,enc_avif,quality_auto/f87b85_a338d96630c0450c8b8411a571015404~mv2.png",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a338d96630c0450c8b8411a571015404~mv2.png/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_a338d96630c0450c8b8411a571015404~mv2.png",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_a338d96630c0450c8b8411a571015404~mv2.png/v1/fit/w_1440,h_2550,q_90,enc_avif,quality_auto/f87b85_a338d96630c0450c8b8411a571015404~mv2.png",
+        "width": 1440
+      }
+    ]
+  }
 }
