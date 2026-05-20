@@ -3598,19 +3598,41 @@ app.post("/api/card-images/sign", async (req, res) => {
       .map((value: string) => value.trim())
       .filter((value: string) => value.length > 0)
       .slice(0, 200);
-    const baseUrl = process.env.RAILWAY_BUCKET_PUBLIC_BASE_URL?.trim();
+    const bucketBaseUrls: Record<string, string | undefined> = {
+      gen1: process.env.RAILWAY_BUCKET_PUBLIC_BASE_URL_GEN1E3?.trim(),
+      gen2: process.env.RAILWAY_BUCKET_PUBLIC_BASE_URL_GEN2E2?.trim(),
+      gen3: process.env.RAILWAY_BUCKET_PUBLIC_BASE_URL_GEN3E1?.trim(),
+      promo: process.env.RAILWAY_BUCKET_PUBLIC_BASE_URL_PROMO?.trim(),
+      default: process.env.RAILWAY_BUCKET_PUBLIC_BASE_URL?.trim()
+    };
     const expiresInSeconds = Number(process.env.RAILWAY_BUCKET_SIGNED_URL_TTL_SECONDS ?? "1800");
-    if (!baseUrl) {
+    if (!bucketBaseUrls.default && !bucketBaseUrls.gen1 && !bucketBaseUrls.gen2 && !bucketBaseUrls.gen3 && !bucketBaseUrls.promo) {
       res.json({ items: [] });
       return;
     }
 
     const expiresAt = new Date(Date.now() + Math.max(60, expiresInSeconds) * 1000).toISOString();
+    const resolveBaseUrlForKey = (key: string): string | undefined => {
+      const normalized = key.toLowerCase();
+      if (normalized.startsWith("cards/gen1/")) return bucketBaseUrls.gen1 ?? bucketBaseUrls.default;
+      if (normalized.startsWith("cards/gen2/")) return bucketBaseUrls.gen2 ?? bucketBaseUrls.default;
+      if (normalized.startsWith("cards/gen3/")) return bucketBaseUrls.gen3 ?? bucketBaseUrls.default;
+      if (normalized.startsWith("cards/promo/") || normalized.startsWith("cards/promos/")) {
+        return bucketBaseUrls.promo ?? bucketBaseUrls.default;
+      }
+      return bucketBaseUrls.default;
+    };
+
     const items = keys.map((key: string) => ({
       key,
-      url: `${baseUrl.replace(/\/+$/, "")}/${key}`,
-      expiresAt
-    }));
+      baseUrl: resolveBaseUrlForKey(key)
+    }))
+      .filter((item): item is { key: string; baseUrl: string } => typeof item.baseUrl === "string" && item.baseUrl.length > 0)
+      .map(item => ({
+        key: item.key,
+        url: `${item.baseUrl.replace(/\/+$/, "")}/${item.key}`,
+        expiresAt
+      }));
     res.json({ items });
   } catch (error) {
     res.status(400).json({ message: error instanceof Error ? error.message : "Unable to sign card image URLs." });

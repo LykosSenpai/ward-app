@@ -84,6 +84,49 @@ export type EffectQaStatus =
 
 export type CannotInflictAttackDamageBattlePolicy = "DAMAGE_ONLY" | "SKIP_BATTLE";
 
+
+export type CardImageSourceKind = "WIX" | "RAILWAY_BUCKET" | "LOCAL_PUBLIC" | "PLACEHOLDER";
+
+export type CardImageCandidateKind = "remote" | "bucket" | "local" | "placeholder";
+
+export type CardImageCandidate = {
+  kind: CardImageCandidateKind;
+  source: CardImageSourceKind;
+  url?: string;
+  objectKey?: string;
+  fileName?: string;
+  width?: number;
+  height?: number;
+  contentType?: string;
+  corsRequired?: boolean;
+  imageValidated?: boolean;
+  textureValidated?: boolean;
+  canvasValidated?: boolean;
+  expiresAt?: string;
+  cacheKey?: string;
+};
+
+export type CardImageSet = {
+  provider?: "excel-wix" | "railway-bucket" | "local";
+  originalUrl?: string;
+  remotePrimaryUrl?: string;
+  remoteCandidates?: CardImageCandidate[];
+  bucketObjectKey?: string;
+  bucketCandidates?: CardImageCandidate[];
+  localBackupUrl?: string;
+  localCandidates?: CardImageCandidate[];
+  validation?: {
+    remoteImageOk?: boolean;
+    remoteTextureOk?: boolean;
+    remoteCanvasOk?: boolean;
+    bucketImageOk?: boolean;
+    bucketTextureOk?: boolean;
+    bucketCanvasOk?: boolean;
+    checkedAt?: string;
+    notes?: string[];
+  };
+};
+
 export type CreatureCardDefinition = {
   id: string;
   name: string;
@@ -114,6 +157,7 @@ export type CreatureCardDefinition = {
 
   text?: string;
   effects?: WardEngineEffect[];
+  image?: CardImageSet;
 };
 
 export type MagicCardDefinition = {
@@ -143,6 +187,7 @@ export type MagicCardDefinition = {
 
   text?: string;
   effects?: WardEngineEffect[];
+  image?: CardImageSet;
 };
 
 export type CardDefinition = CreatureCardDefinition | MagicCardDefinition;
