@@ -645,6 +645,7 @@ function LoginShowcaseCard({ className, selection }: { className: string; select
   const imageCandidates = useTargetedCardImageCandidates(selection.card, "default");
   const imageCandidate = imageCandidates[candidateIndex] ?? imageCandidates[0];
   const holoEnabled = selection.artVariant === "holo";
+  const isBackgroundCard = className.includes("login-background-card");
 
   useEffect(() => {
     setCandidateIndex(0);
@@ -659,7 +660,8 @@ function LoginShowcaseCard({ className, selection }: { className: string; select
       alt=""
       className={holoEnabled ? `${className} login-holo-card` : className}
       enabled={holoEnabled}
-      intensity={className.includes("login-background-card") ? 3.4 : 5.4}
+      animated={holoEnabled && !isBackgroundCard}
+      intensity={isBackgroundCard ? 3.4 : 5.4}
       key={`${selection.card.id}:${selection.artVariant}:${imageCandidate.url}`}
       seed={`login:${selection.card.packId}:${selection.card.id}:${selection.artVariant}`}
       src={imageCandidate.url}

@@ -9082,15 +9082,14 @@ button.playmat-stack-zone:disabled {
 }
 
 .login-holo-card .holo-rainbow-layer,
+.login-holo-card .holo-canvas-layer,
 .login-holo-card .holo-shard-layer,
-.login-holo-card .holo-facet-shine-layer,
 .login-holo-card .holo-soft-band-layer,
 .login-holo-card .holo-speckle-layer {
   z-index: 2;
 }
 
 .login-holo-card .holo-rainbow-layer {
-  animation: login-holo-color-flow 7s linear infinite;
   background:
     linear-gradient(115deg, rgba(45, 212, 191, 0.34), transparent 22%, rgba(244, 114, 182, 0.38) 42%, transparent 60%, rgba(250, 204, 21, 0.34) 78%, rgba(96, 165, 250, 0.32)),
     linear-gradient(38deg, rgba(255, 255, 255, 0.3), transparent 18%, rgba(74, 222, 128, 0.3) 36%, transparent 58%, rgba(168, 85, 247, 0.34) 82%);
@@ -9100,46 +9099,18 @@ button.playmat-stack-zone:disabled {
 }
 
 .login-holo-card .holo-shard-layer,
-.login-holo-card .holo-facet-shine-layer {
+.login-holo-card .holo-canvas-layer {
   opacity: 0.72;
 }
 
 .login-holo-card .holo-soft-band-layer {
-  animation: login-holo-band-drift 4.8s ease-in-out infinite;
   background-size: 160% 160%;
   mix-blend-mode: screen;
   opacity: 0.26;
 }
 
 .login-holo-card .holo-speckle-layer {
-  animation: login-holo-sparkle 3.6s steps(6) infinite;
   opacity: 0.32;
-}
-
-.login-holo-card::before {
-  animation: login-holo-prism-sweep 3.2s linear infinite;
-  background:
-    linear-gradient(105deg, transparent 15%, rgba(255, 255, 255, 0.2) 31%, rgba(125, 249, 255, 0.28) 37%, rgba(244, 114, 182, 0.24) 43%, rgba(250, 204, 21, 0.22) 49%, transparent 66%),
-    repeating-linear-gradient(82deg, transparent 0 11px, rgba(255, 255, 255, 0.18) 12px, transparent 15px);
-  border-radius: inherit;
-  content: "";
-  inset: 0;
-  opacity: 0.58;
-  pointer-events: none;
-  position: absolute;
-  z-index: 3;
-}
-
-.login-holo-card::after {
-  animation: login-holo-glint 4.2s ease-in-out infinite;
-  background: linear-gradient(115deg, transparent 34%, rgba(255, 255, 255, 0.72) 47%, rgba(125, 249, 255, 0.52) 50%, transparent 63%);
-  border-radius: inherit;
-  content: "";
-  inset: -28% -74%;
-  pointer-events: none;
-  position: absolute;
-  transform: translateX(-34%) rotate(8deg);
-  z-index: 4;
 }
 
 .login-card-image.card-1 {
@@ -9199,72 +9170,6 @@ button.playmat-stack-zone:disabled {
   z-index: 0;
 }
 
-@keyframes login-holo-color-flow {
-  0% {
-    background-position: 0% 35%;
-  }
-
-  50% {
-    background-position: 100% 65%;
-  }
-
-  100% {
-    background-position: 0% 35%;
-  }
-}
-
-@keyframes login-holo-band-drift {
-  0% {
-    background-position: 0 0, 30% 25%, 76% 70%;
-  }
-
-  50% {
-    background-position: 24px 18px, 38% 16%, 66% 78%;
-  }
-
-  100% {
-    background-position: 0 0, 30% 25%, 76% 70%;
-  }
-}
-
-@keyframes login-holo-sparkle {
-  0% {
-    background-position: 0 0, 7px 11px, 17px 5px;
-  }
-
-  100% {
-    background-position: 19px 23px, 36px 42px, 54px 46px;
-  }
-}
-
-@keyframes login-holo-prism-sweep {
-  0% {
-    background-position: -130% 0, 0 0;
-  }
-
-  100% {
-    background-position: 130% 0, 48px 24px;
-  }
-}
-
-@keyframes login-holo-glint {
-  0%,
-  18% {
-    opacity: 0;
-    transform: translateX(-46%) rotate(8deg);
-  }
-
-  42% {
-    opacity: 0.46;
-  }
-
-  68%,
-  100% {
-    opacity: 0;
-    transform: translateX(46%) rotate(8deg);
-  }
-}
-
 .login-entry .login-panel {
   justify-self: stretch;
   max-width: none;
@@ -9307,16 +9212,6 @@ button.playmat-stack-zone:disabled {
   .login-background-card.background-2,
   .login-background-card.background-3 {
     display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .login-holo-card .holo-rainbow-layer,
-  .login-holo-card .holo-soft-band-layer,
-  .login-holo-card .holo-speckle-layer,
-  .login-holo-card::before,
-  .login-holo-card::after {
-    animation: none;
   }
 }
 

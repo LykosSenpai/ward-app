@@ -422,6 +422,7 @@ function ExpandedCardImage({
           alt={`${card.name} expanded ${selectedArtLabel} card`}
           seed={holoSeed}
           enabled={isHoloArtKey(effectiveActiveArtKey)}
+          animated={isHoloArtKey(effectiveActiveArtKey)}
           intensity={holoIntensity}
           className="expanded-card-holo-image"
           onError={() => {
@@ -576,6 +577,7 @@ export function CardImagePreview({ card, selectedArtKey, holoIntensity = 0.55, h
               alt={`${card.name} ${selectedArtLabel} card art`}
               seed={holoSeed}
               enabled={holoEnabled}
+              animated={holoEnabled}
               intensity={holoIntensity}
               onError={() => {
                 setCandidateIndex(current => current + 1);

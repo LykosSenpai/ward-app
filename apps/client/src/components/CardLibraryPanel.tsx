@@ -408,6 +408,11 @@ export function CardLibraryPanel({
     };
   }, [cardLibrary, ownershipCounts, selectedArtKeysByCardId]);
 
+  const ownedHoloCardCount = useMemo(
+    () => cardLibrary.filter(card => getOwnedHoloArtKeysForCard(card).length > 0).length,
+    [cardLibrary, ownershipCounts]
+  );
+
   const deckWarnings = useMemo(() => {
     const warnings: string[] = [];
 
@@ -671,6 +676,36 @@ export function CardLibraryPanel({
     setMissingFocusCardIds(null);
   }
 
+  function showOwnedHoloCards() {
+    setSearchText("");
+    setTypeFilter("ALL");
+    setGenerationFilter("ALL");
+    setRarityFilter("ALL");
+    setCreatureTypeFilter("ALL");
+    setMagicTypeFilter("ALL");
+    setEffectTypeFilter("ALL");
+    setDeckMembershipFilter("ALL");
+    setOwnershipFilter("OWNED");
+    setArtVariantFilter("HOLO");
+    setSortMode("ownedCount");
+    setMissingFocusCardIds(null);
+    setUnloadedCardCount(0);
+    setVisibleCardCount(INITIAL_VISIBLE_CARD_COUNT);
+    setSelectedArtKeysByCardId(current => {
+      const next = { ...current };
+
+      for (const card of cardLibrary) {
+        const ownedHoloArtKey = getPreferredOwnedHoloArtKey(card, current[card.id]);
+
+        if (ownedHoloArtKey) {
+          next[card.id] = ownedHoloArtKey;
+        }
+      }
+
+      return next;
+    });
+  }
+
   function clearFloatingControlsCloseTimer() {
     if (!closeFloatingControlsTimerRef.current) return;
     clearTimeout(closeFloatingControlsTimerRef.current);
@@ -781,6 +816,22 @@ export function CardLibraryPanel({
 
   function getOwnedCopiesForArt(cardId: string, artKey: CardArtKey): number {
     return ownershipCounts[getCardArtOwnershipKey(cardId, artKey)] ?? 0;
+  }
+
+  function getOwnedHoloArtKeysForCard(card: CardLibraryCardSummary): CardArtKey[] {
+    const holoArtKeys: CardArtKey[] = cardSupportsZeroArt(card) ? ["holo", "zero-art-holo"] : ["holo"];
+    return holoArtKeys.filter(artKey => getOwnedCopiesForArt(card.id, artKey) > 0);
+  }
+
+  function getPreferredOwnedHoloArtKey(card: CardLibraryCardSummary, currentArtKey?: CardArtKey): CardArtKey | null {
+    const ownedHoloArtKeys = getOwnedHoloArtKeysForCard(card);
+    const safeCurrentArtKey = currentArtKey ? coerceCardArtKeyForCard(card, currentArtKey) : undefined;
+
+    if (safeCurrentArtKey && ownedHoloArtKeys.includes(safeCurrentArtKey)) {
+      return safeCurrentArtKey;
+    }
+
+    return ownedHoloArtKeys[0] ?? null;
   }
 
   function getArtVariantFilterKeys(card: CardLibraryCardSummary): CardArtKey[] {
@@ -1188,6 +1239,14 @@ export function CardLibraryPanel({
         <div className="library-option-a-actions">
           <button onClick={onRefreshCardLibrary}>Refresh</button>
           <button onClick={clearFilters}>Clear Filters</button>
+          <button
+            type="button"
+            onClick={showOwnedHoloCards}
+            disabled={ownedHoloCardCount === 0}
+            title={ownedHoloCardCount === 0 ? "No owned holo cards in the selected packs." : "Show owned holo cards and render their holo finish."}
+          >
+            Owned Holos ({ownedHoloCardCount})
+          </button>
           <button onClick={onNewDeck}>New Deck</button>
           <button onClick={onClearDeckBuilder} disabled={deckBuilderCardIds.length === 0}>Clear Deck</button>
           <button

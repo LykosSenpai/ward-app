@@ -1416,6 +1416,7 @@
   height: 100%;
   overflow: hidden;
   isolation: isolate;
+  contain: paint;
   pointer-events: none;
 }
 
@@ -1427,16 +1428,22 @@
 }
 
 .holo-rainbow-layer,
+.holo-canvas-layer,
 .holo-shard-layer,
-.holo-facet-shine-layer,
 .holo-soft-band-layer,
-.holo-speckle-layer {
+.holo-speckle-layer,
+.holo-glint-layer {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
   border-radius: inherit;
+}
+
+.holo-canvas-layer {
+  mix-blend-mode: screen;
+  opacity: min(calc(var(--holo-intensity) * 0.14), 0.88);
 }
 
 .holo-rainbow-layer {
@@ -1451,20 +1458,6 @@
   opacity: min(calc(var(--holo-intensity) * 0.095), 0.92);
   mix-blend-mode: screen;
   filter: saturate(1.2);
-}
-
-.holo-facet-shine-layer {
-  opacity: min(calc(var(--holo-intensity) * 0.08), 0.85);
-  mix-blend-mode: color-dodge;
-  filter: brightness(1.55) saturate(1.85);
-}
-
-.holo-facet-shine {
-  --holo-facet-delay: 0s;
-  --holo-facet-duration: 6s;
-  --holo-facet-peak: 0.4;
-  opacity: 0;
-  animation: holo-facet-shimmer var(--holo-facet-duration) ease-in-out var(--holo-facet-delay) infinite;
 }
 
 .holo-soft-band-layer {
@@ -1487,30 +1480,41 @@
   background-size: 19px 23px, 29px 31px, 37px 41px;
 }
 
-@keyframes holo-facet-shimmer {
-  0% {
+.holo-glint-layer {
+  background: linear-gradient(112deg, transparent 35%, rgba(255, 255, 255, 0.42) 46%, rgba(125, 249, 255, 0.3) 50%, transparent 64%);
+  height: auto;
+  inset: -18% -55%;
+  mix-blend-mode: screen;
+  opacity: 0;
+  transform: translateX(-38%) rotate(8deg);
+  width: auto;
+}
+
+.holo-card-wrap.is-holo-animated .holo-glint-layer {
+  animation: holo-glint-sweep 5.4s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+@keyframes holo-glint-sweep {
+  0%,
+  22% {
     opacity: 0;
+    transform: translateX(-42%) rotate(8deg);
   }
 
-  42% {
-    opacity: 0;
+  44% {
+    opacity: min(calc(var(--holo-intensity) * 0.1), 0.54);
   }
 
-  50% {
-    opacity: var(--holo-facet-peak);
-  }
-
-  58% {
-    opacity: 0;
-  }
-
+  70%,
   100% {
     opacity: 0;
+    transform: translateX(42%) rotate(8deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .holo-facet-shine {
+  .holo-card-wrap.is-holo-animated .holo-glint-layer {
     animation: none;
     opacity: 0;
   }
