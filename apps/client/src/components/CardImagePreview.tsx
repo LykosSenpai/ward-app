@@ -273,7 +273,11 @@ export function getImageCandidates(card: CardLibraryCardSummary, artKey: CardArt
 
 export function useTargetedCardImageCandidates(card: CardLibraryCardSummary, artKey: CardArtKey): CardImageCandidate[] {
   const manifest = useCardImageManifest();
-  const candidates = useMemo(() => getImageCandidates(card, artKey), [card, artKey]);
+  const candidates = useMemo(() => {
+    const remote = getRemoteImageCandidates(card);
+    const local = getImageCandidates(card, artKey);
+    return [...remote, ...local];
+  }, [card, artKey]);
 
   return useMemo(() => filterCardImageCandidates(candidates, manifest), [candidates, manifest]);
 }
@@ -310,7 +314,7 @@ function selectCandidatesByPriority(
   const signedRailwayCandidates = railwayCandidates;
   const hasLocal = localCandidates.length > 0;
   const sourceAvailability: Record<string, boolean> = {
-    excelRemote: false,
+    excelRemote: candidates.some(candidate => /^https?:\/\//i.test(candidate.url)),
     githubCdn: githubCdnCandidates.length > 0,
     railwayBucket: signedRailwayCandidates.length > 0,
     localBundled: hasLocal,

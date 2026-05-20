@@ -73,7 +73,22 @@ function getMatchCardImageCandidates(match: AppMatchState, card: CardInstance, a
 }
 
 export function getMatchCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
-  return getMatchCardImageCandidates(match, card, artKeyOverride).map(candidate => candidate.url);
+  return [...getRemoteMatchCardCandidates(match, card), ...getMatchCardImageCandidates(match, card, artKeyOverride)].map(candidate => candidate.url);
+}
+
+export function getBoardCardImageUrls(match: AppMatchState, card: CardInstance, artKeyOverride?: CardArtKey): string[] {
+  const definition = match.cardCatalog[card.cardId];
+  const safeRemote = (definition?.image?.remoteCandidates ?? [])
+    .filter(candidate =>
+      typeof candidate.url === "string"
+      && candidate.url.trim() !== ""
+      && candidate.textureValidated === true
+      && candidate.canvasValidated === true
+    )
+    .map(candidate => String(candidate.url));
+
+  const localFallback = getMatchCardImageCandidates(match, card, artKeyOverride).map(candidate => candidate.url);
+  return [...safeRemote, ...localFallback];
 }
 
 export function MatchCardImage({ match, card, className }: MatchCardImageProps) {
@@ -82,7 +97,10 @@ export function MatchCardImage({ match, card, className }: MatchCardImageProps) 
   const holoEnabled = isHoloArtKey(artKey);
   const manifest = useCardImageManifest();
   const imageCandidates = useMemo(
-    () => filterCardImageCandidates(getMatchCardImageCandidates(match, card), manifest),
+    () => filterCardImageCandidates([
+      ...getRemoteMatchCardCandidates(match, card),
+      ...getMatchCardImageCandidates(match, card)
+    ], manifest),
     [match, card, manifest]
   );
   const displayImageSrc = imageCandidates[candidateIndex]?.url;

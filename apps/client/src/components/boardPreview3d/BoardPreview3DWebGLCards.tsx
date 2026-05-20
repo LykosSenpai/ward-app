@@ -4,7 +4,7 @@ import type { CardInstance } from "@ward/shared";
 import type { AppMatchState } from "../../clientTypes";
 import type { BoardObject } from "../boardPreview3dAdapter";
 import { normalizeCardArtKey } from "../CardImagePreview";
-import { getMatchCardImageUrls } from "../MatchCardImage";
+import { getBoardCardImageUrls, getMatchCardImageUrls } from "../MatchCardImage";
 import { getCardName } from "../../gameViewHelpers";
 import {
   DEFAULT_IMAGE_SOURCE_CONTROLS,
@@ -435,7 +435,7 @@ export function BoardPreview3DWebGLCards({
             loader,
             renderer,
             compactCardTextures,
-            getMatchCardImageUrls(latestMatch, renderedCard)
+            getBoardCardImageUrls(latestMatch, renderedCard)
           )
           : backTexture;
         if (!texture || isDisposed) return null;
