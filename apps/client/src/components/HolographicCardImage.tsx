@@ -7,7 +7,9 @@ type HolographicCardImageProps = {
   seed: string;
   enabled?: boolean;
   animated?: boolean;
+  holoOpacity?: number;
   intensity?: number;
+  sheenIntensity?: number;
   className?: string;
   draggable?: ImgHTMLAttributes<HTMLImageElement>["draggable"];
   onError?: ImgHTMLAttributes<HTMLImageElement>["onError"];
@@ -25,7 +27,9 @@ export type HoloShard = {
 };
 
 type HolographicCanvasLayerProps = {
+  holoOpacity: number;
   seed: string;
+  sheenIntensity: number;
   intensity: number;
 };
 
@@ -62,6 +66,8 @@ const STATIC_SHARD_COLUMNS = 8;
 const STATIC_SHARD_ROWS = 12;
 const CANVAS_FRAME_INTERVAL_MS = 1000 / 24;
 const MAX_CANVAS_DEVICE_PIXEL_RATIO = 1.35;
+const DEFAULT_HOLO_OPACITY = 1.24;
+const DEFAULT_HOLO_SHEEN_INTENSITY = 0.42;
 const HOLO_CANVAS_CONFIGS: HoloCanvasConfig[] = [
   {
     id: "fractured-prism",
@@ -174,6 +180,14 @@ function createSeededRandom(seed: string): () => number {
     state ^= state << 5;
     return ((state >>> 0) % 10000) / 10000;
   };
+}
+
+function clampTuningValue(value: number | undefined, fallback: number): number {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return fallback;
+  }
+
+  return Math.min(2, Math.max(0, value));
 }
 
 export function chooseCanvasConfig(seed: string): HoloCanvasConfig {
@@ -299,7 +313,7 @@ export function drawHolographicCanvas(
   timeSeconds: number,
   intensity: number,
   config: HoloCanvasConfig,
-  options: { clear?: boolean } = {}
+  options: { clear?: boolean; holoOpacity?: number; sheenIntensity?: number } = {}
 ) {
   if (options.clear !== false) {
     context.clearRect(0, 0, width, height);
@@ -310,6 +324,8 @@ export function drawHolographicCanvas(
   }
 
   const intensityScale = Math.min(1.18, Math.max(0.18, intensity / 5.4));
+  const holoOpacity = clampTuningValue(options.holoOpacity, DEFAULT_HOLO_OPACITY);
+  const sheenIntensity = clampTuningValue(options.sheenIntensity, DEFAULT_HOLO_SHEEN_INTENSITY);
   const strokeWidth = Math.max(0.45, Math.min(width, height) * 0.0012);
 
   context.save();
@@ -323,14 +339,14 @@ export function drawHolographicCanvas(
 
     traceShard(context, shard, width, height);
     context.fillStyle = shard.fill;
-    context.globalAlpha = Math.min(0.78, (shard.opacity * config.fillStrength + shimmer * shard.shimmerPeak * config.shimmerStrength) * intensityScale);
+    context.globalAlpha = Math.min(0.86, (shard.opacity * config.fillStrength * holoOpacity + shimmer * shard.shimmerPeak * config.shimmerStrength * sheenIntensity) * intensityScale);
     context.fill();
 
     if (shimmer > config.strokeThreshold) {
       traceShard(context, shard, width, height);
       context.strokeStyle = "rgba(255, 255, 255, 0.72)";
       context.lineWidth = strokeWidth;
-      context.globalAlpha = Math.min(0.42, (shard.strokeOpacity + shimmer * config.strokeStrength) * intensityScale);
+      context.globalAlpha = Math.min(0.42, (shard.strokeOpacity * holoOpacity * 0.72 + shimmer * config.strokeStrength * sheenIntensity) * intensityScale);
       context.stroke();
     }
   }
@@ -346,7 +362,7 @@ export function drawHolographicCanvas(
   }
 
   context.fillStyle = sweepGradient;
-  context.globalAlpha = Math.min(0.48, config.sweepAlpha * intensityScale);
+  context.globalAlpha = Math.min(0.48, config.sweepAlpha * intensityScale * sheenIntensity);
   context.fillRect(0, 0, width, height);
 
   context.restore();
@@ -402,7 +418,7 @@ function registerHoloCanvasRuntime(runtime: HoloCanvasRuntime): () => void {
   };
 }
 
-function HolographicCanvasLayer({ seed, intensity }: HolographicCanvasLayerProps) {
+function HolographicCanvasLayer({ holoOpacity, seed, sheenIntensity, intensity }: HolographicCanvasLayerProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const config = useMemo(() => chooseCanvasConfig(seed), [seed]);
   const shards = useMemo(
@@ -429,7 +445,7 @@ function HolographicCanvasLayer({ seed, intensity }: HolographicCanvasLayerProps
     let reducedMotion = motionQuery.matches;
 
     function renderAt(timeMs: number) {
-      drawHolographicCanvas(context, shards, canvas.width, canvas.height, timeMs / 1000, intensity, config);
+      drawHolographicCanvas(context, shards, canvas.width, canvas.height, timeMs / 1000, intensity, config, { holoOpacity, sheenIntensity });
     }
 
     const runtime: HoloCanvasRuntime = {
@@ -501,7 +517,7 @@ function HolographicCanvasLayer({ seed, intensity }: HolographicCanvasLayerProps
       motionQuery.removeEventListener("change", handleMotionPreferenceChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [config, intensity, shards]);
+  }, [config, holoOpacity, intensity, sheenIntensity, shards]);
 
   return <canvas className="holo-canvas-layer" data-holo-config={config.id} ref={canvasRef} aria-hidden="true" />;
 }
@@ -512,15 +528,23 @@ export function HolographicCardImage({
   seed,
   enabled = false,
   animated = false,
+  holoOpacity,
   intensity,
+  sheenIntensity,
   className,
   draggable,
   onError
 }: HolographicCardImageProps) {
   const clampedIntensity = clampIntensity(intensity);
+  const clampedHoloOpacity = clampTuningValue(holoOpacity, DEFAULT_HOLO_OPACITY);
+  const clampedSheenIntensity = clampTuningValue(sheenIntensity, DEFAULT_HOLO_SHEEN_INTENSITY);
   const showHolo = enabled && clampedIntensity > 0;
   const shards = useMemo(() => showHolo ? createShardPolygons(seed) : [], [seed, showHolo]);
-  const style = { "--holo-intensity": clampedIntensity } as CSSProperties;
+  const style = {
+    "--holo-intensity": clampedIntensity,
+    "--holo-opacity": clampedHoloOpacity,
+    "--holo-sheen": clampedSheenIntensity
+  } as CSSProperties;
   const wrapClassName = [
     "holo-card-wrap",
     showHolo && animated ? "is-holo-animated" : "is-holo-static",
@@ -534,7 +558,12 @@ export function HolographicCardImage({
         <>
           <span className="holo-rainbow-layer" aria-hidden="true" />
           {animated ? (
-            <HolographicCanvasLayer seed={seed} intensity={clampedIntensity} />
+            <HolographicCanvasLayer
+              holoOpacity={clampedHoloOpacity}
+              seed={seed}
+              sheenIntensity={clampedSheenIntensity}
+              intensity={clampedIntensity}
+            />
           ) : (
             <svg className="holo-shard-layer" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true">
               {shards.map((shard, index) => (
