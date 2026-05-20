@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "./config";
 
 export type CardImageCandidate = {
   fileName: string;
@@ -14,9 +15,14 @@ type CardImageManifestFile = {
 
 let cardImageManifestPromise: Promise<ReadonlySet<string> | null> | undefined;
 
+function getCardImageManifestUrl(): string {
+  const manifestPath = "/card-images/manifest.json";
+  return API_BASE_URL ? `${API_BASE_URL.replace(/\/+$/, "")}${manifestPath}` : manifestPath;
+}
+
 export function loadCardImageManifest(): Promise<ReadonlySet<string> | null> {
   if (!cardImageManifestPromise) {
-    cardImageManifestPromise = fetch("/card-images/manifest.json", { cache: "force-cache" })
+    cardImageManifestPromise = fetch(getCardImageManifestUrl(), { cache: "force-cache" })
       .then(async response => {
         if (!response.ok) return null;
         return await response.json() as CardImageManifestFile;
@@ -61,8 +67,8 @@ export function filterCardImageCandidates(
   manifest: CardImageManifest
 ): CardImageCandidate[] {
   if (candidates.length <= 1) return candidates;
-  const remoteCandidates = candidates.filter(candidate => /^https?:\/\//i.test(candidate.url));
-  const localCandidates = candidates.filter(candidate => !/^https?:\/\//i.test(candidate.url));
+  const remoteCandidates = candidates.filter(candidate => candidate.fileName.startsWith("remote:"));
+  const localCandidates = candidates.filter(candidate => !candidate.fileName.startsWith("remote:"));
 
   if (localCandidates.length === 0) return remoteCandidates;
   if (manifest === undefined) return [...remoteCandidates, ...localCandidates.slice(0, 1)];

@@ -266,7 +266,7 @@ function uniqueCardImageCandidates(candidates: CardImageCandidate[]): CardImageC
 }
 
 function isRemoteImageCandidate(candidate: CardImageCandidate): boolean {
-  return /^https?:\/\//i.test(candidate.url);
+  return candidate.fileName.startsWith("remote:");
 }
 
 function getRemoteImageCandidates(card: CardLibraryCardSummary): CardImageCandidate[] {

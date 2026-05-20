@@ -1,3 +1,9 @@
+import { API_BASE_URL } from "./config";
+
+function trimTrailingSlash(value: string): string {
+  return value.replace(/\/+$/, "");
+}
+
 export function encodeCardImagePath(path: string): string {
   return path
     .split("/")
@@ -6,7 +12,8 @@ export function encodeCardImagePath(path: string): string {
 }
 
 export function buildCardImageUrl(path: string): string {
-  return `/card-images/${encodeCardImagePath(path)}`;
+  const imagePath = `/card-images/${encodeCardImagePath(path)}`;
+  return API_BASE_URL ? `${trimTrailingSlash(API_BASE_URL)}${imagePath}` : imagePath;
 }
 
 export function getCardImageGenerationDirectory(generation: string | number | undefined): string | undefined {
