@@ -1557,8 +1557,14 @@ export function playMagicFromHand(
 
   if (definition.magicType === "INFINITE") {
     const infiniteOnField = countInfiniteMagicOnField(nextState, player);
-    if (infiniteOnField >= MAX_INFINITE_MAGIC_ON_FIELD) {
-      throw new Error(`You already have ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards on your side of the field.`);
+    const pendingInfiniteFromPlayer = nextState.chainZone.filter(chainCard => {
+      if (chainCard.controllerPlayerId !== playerId) return false;
+      const chainDefinition = nextState.cardCatalog[chainCard.cardId];
+      return chainDefinition?.cardType === "MAGIC" && chainDefinition.magicType === "INFINITE";
+    }).length;
+
+    if (infiniteOnField + pendingInfiniteFromPlayer >= MAX_INFINITE_MAGIC_ON_FIELD) {
+      throw new Error(`You already have ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards active or pending on your side of the field.`);
     }
   }
 
@@ -1999,6 +2005,8 @@ export function resolveMagicChain(state: MatchState): MatchState {
         : resolutionKind === "FIELD"
           ? "FIELD_MAGIC_TO_FIELD"
           : "TEMP_EQUIP_MAGIC_TO_FIELD";
+      const slotFullReason = "INFINITE_MAGIC_SLOT_FULL";
+      const failedEventType = "INFINITE_MAGIC_FAILED_SLOT_FULL";
       const resolvedEventType = resolutionKind === "INFINITE"
         ? "INFINITE_MAGIC_RESOLVED_TO_FIELD"
         : resolutionKind === "FIELD"
@@ -2010,40 +2018,78 @@ export function resolveMagicChain(state: MatchState): MatchState {
       chainCard.zone = "MAGIC_SLOT";
       fieldOwner.field.magicSlots.push(chainCard);
 
-      addEvent(nextState, resolvedEventType, link.playerId, {
-        chainId: chain.id,
-        chainLinkId: link.id,
-        cardInstanceId: link.cardInstanceId,
-        cardName: link.cardName,
-        magicType: link.magicType,
-        magicSubType: link.magicSubType,
-        boardEvents: [
-          {
-            type: "CHAIN_LINK_RESOLVED",
-            playerId: link.playerId,
-            cardInstanceId: link.cardInstanceId,
-            sourceCardInstanceId: link.cardInstanceId,
-            sourceCardId: link.cardId,
-            actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-            reason,
-            fromZoneRef: chainBoardZoneRef(link.playerId),
-            toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
-            chainLinkId: link.id
-          },
-          {
-            type: "MAGIC_RESOLVED",
-            playerId: link.playerId,
-            cardInstanceId: link.cardInstanceId,
-            sourceCardInstanceId: link.cardInstanceId,
-            sourceCardId: link.cardId,
-            actionType: "RESOLVE_MAGIC_CHAIN_LINK",
-            reason,
-            fromZoneRef: chainBoardZoneRef(link.playerId),
-            toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
-            chainLinkId: link.id
-          }
-        ]
-      });
+      const infiniteMagicSlotFull =
+        link.magicType === "INFINITE" &&
+        countInfiniteMagicOnField(nextState, fieldOwner) >= MAX_INFINITE_MAGIC_ON_FIELD;
+
+      if (infiniteMagicSlotFull) {
+        addEvent(nextState, failedEventType, link.playerId, {
+          chainId: chain.id,
+          chainLinkId: link.id,
+          cardInstanceId: link.cardInstanceId,
+          cardName: link.cardName,
+          magicType: link.magicType,
+          magicSubType: link.magicSubType,
+          message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards. You can't play that magic card.`,
+          boardEvents: [
+            {
+              type: "CHAIN_LINK_RESOLVED",
+              playerId: link.playerId,
+              cardInstanceId: link.cardInstanceId,
+              sourceCardInstanceId: link.cardInstanceId,
+              sourceCardId: link.cardId,
+              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+              reason: slotFullReason,
+              fromZoneRef: chainBoardZoneRef(link.playerId),
+              toZoneRef: chainBoardZoneRef(link.playerId),
+              chainLinkId: link.id
+            }
+          ]
+        });
+      }
+
+      if (!infiniteMagicSlotFull) {
+        assertCanAddMagicToField(nextState, fieldOwner, chainCard, {
+          message: `${fieldOwner.displayName} already has ${MAX_INFINITE_MAGIC_ON_FIELD} Infinite Magic cards.`
+        });
+        chainCard.zone = "MAGIC_SLOT";
+        fieldOwner.field.magicSlots.push(chainCard);
+
+        addEvent(nextState, resolvedEventType, link.playerId, {
+          chainId: chain.id,
+          chainLinkId: link.id,
+          cardInstanceId: link.cardInstanceId,
+          cardName: link.cardName,
+          magicType: link.magicType,
+          magicSubType: link.magicSubType,
+          boardEvents: [
+            {
+              type: "CHAIN_LINK_RESOLVED",
+              playerId: link.playerId,
+              cardInstanceId: link.cardInstanceId,
+              sourceCardInstanceId: link.cardInstanceId,
+              sourceCardId: link.cardId,
+              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+              reason,
+              fromZoneRef: chainBoardZoneRef(link.playerId),
+              toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
+              chainLinkId: link.id
+            },
+            {
+              type: "MAGIC_RESOLVED",
+              playerId: link.playerId,
+              cardInstanceId: link.cardInstanceId,
+              sourceCardInstanceId: link.cardInstanceId,
+              sourceCardId: link.cardId,
+              actionType: "RESOLVE_MAGIC_CHAIN_LINK",
+              reason,
+              fromZoneRef: chainBoardZoneRef(link.playerId),
+              toZoneRef: { playerId: fieldOwner.id, zone: "MAGIC_SLOT" as const },
+              chainLinkId: link.id
+            }
+          ]
+        });
+      }
 
       continue;
     }
