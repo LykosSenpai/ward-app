@@ -99,5 +99,36 @@
   "hp": 110,
   "attackName": "Iron Chomp",
   "attackDice": 1,
-  "modifier": 10
+  "modifier": 10,
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png/v1/fit/w_720,h_1275,q_90,enc_avif,quality_auto/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png/v1/fit/w_1440,h_2550,q_90,enc_avif,quality_auto/f87b85_f7b590bee16b42a2bc4042d9e28dad98~mv2.png",
+        "width": 1440
+      }
+    ]
+  }
 }

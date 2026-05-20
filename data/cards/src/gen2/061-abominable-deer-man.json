@@ -46,7 +46,7 @@
         "summonSelf": true,
         "summonType": "LIMITED_SUMMON"
       },
-            "notes": "Card is typed as Magic but effect turns it into a Limited Summon. Printed combat stats are 2D6 with +3 modifier.",
+      "notes": "Card is typed as Magic but effect turns it into a Limited Summon. Printed combat stats are 2D6 with +3 modifier.",
       "needsReview": true
     },
     {

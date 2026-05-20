@@ -55,7 +55,9 @@
     "test:marketplace": "pnpm --filter @ward/server run test:marketplace"
   },
   "devDependencies": {
+    "fast-glob": "^3.3.3",
     "tsx": "^4.21.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "xlsx": "^0.18.5"
   }
 }

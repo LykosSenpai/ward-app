@@ -15,5 +15,36 @@
   "hp": 70,
   "attackName": "Rend Flesh",
   "attackDice": 3,
-  "modifier": 2
+  "modifier": 2,
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png/v1/fit/w_480,h_850,q_90,enc_avif,quality_auto/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png/v1/fit/w_720,h_1275,q_90,enc_avif,quality_auto/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png/v1/fit/w_960,h_1700,q_90,enc_avif,quality_auto/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png/v1/fit/w_1440,h_2550,q_90,enc_avif,quality_auto/f87b85_94e3bf51432047c0b6467e3e9b1ec083~mv2.png",
+        "width": 1440
+      }
+    ]
+  }
 }

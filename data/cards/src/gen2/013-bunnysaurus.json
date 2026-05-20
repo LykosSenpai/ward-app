@@ -96,5 +96,36 @@
   "hp": 40,
   "attackName": "Hop Strike",
   "attackDice": 1,
-  "modifier": 3
+  "modifier": 3,
+  "image": {
+    "provider": "excel-wix",
+    "originalUrl": "https://static.wixstatic.com/media/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png",
+    "remotePrimaryUrl": "https://static.wixstatic.com/media/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png",
+    "remoteCandidates": [
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png/v1/fit/w_480,h_855,q_90,enc_avif,quality_auto/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png",
+        "width": 480
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png/v1/fit/w_720,h_1283,q_90,enc_avif,quality_auto/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png",
+        "width": 720
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png/v1/fit/w_960,h_1710,q_90,enc_avif,quality_auto/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png",
+        "width": 960
+      },
+      {
+        "kind": "remote",
+        "source": "WIX",
+        "url": "https://static.wixstatic.com/media/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png/v1/fit/w_1440,h_2565,q_90,enc_avif,quality_auto/f87b85_9db5c85eea434d2aa52de5a95d941cf9~mv2.png",
+        "width": 1440
+      }
+    ]
+  }
 }
