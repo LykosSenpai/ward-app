@@ -3598,6 +3598,29 @@ app.post("/api/card-images/sign", async (req, res) => {
       .map((value: string) => value.trim())
       .filter((value: string) => value.length > 0)
       .slice(0, 200);
+
+    if (CARD_IMAGE_BUCKET_ROUTING_CONFIG) {
+      const now = new Date();
+      const items = keys
+        .map((key: string) => {
+          const requestPath = normalizeCardImageObjectPath(key);
+          if (!requestPath) return null;
+
+          const bucketObject = resolveCardImageBucketObject(CARD_IMAGE_BUCKET_ROUTING_CONFIG, requestPath);
+          if (!bucketObject) return null;
+
+          return {
+            key,
+            url: createCardImageBucketPresignedGetUrl(bucketObject.bucket, bucketObject.objectKey, now),
+            expiresAt: new Date(now.getTime() + bucketObject.bucket.presignedUrlTtlSeconds * 1000).toISOString()
+          };
+        })
+        .filter((item): item is { key: string; url: string; expiresAt: string } => item !== null);
+
+      res.json({ items });
+      return;
+    }
+
     const bucketBaseUrls: Record<string, string | undefined> = {
       gen1: process.env.RAILWAY_BUCKET_PUBLIC_BASE_URL_GEN1E3?.trim(),
       gen2: process.env.RAILWAY_BUCKET_PUBLIC_BASE_URL_GEN2E2?.trim(),

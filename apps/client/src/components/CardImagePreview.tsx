@@ -346,21 +346,15 @@ function selectCandidatesByPriority(
   const localCandidates = candidates.filter(candidate => !isRemoteImageCandidate(candidate));
   const githubCdnCandidates = getGithubCdnCandidates(localCandidates);
   const signedRailwayCandidates = railwayCandidates;
-  const hasLocal = localCandidates.length > 0;
-  const sourceAvailability: Record<string, boolean> = {
-    excelRemote: remoteCandidates.length > 0,
-    githubCdn: githubCdnCandidates.length > 0,
-    railwayBucket: signedRailwayCandidates.length > 0,
-    localBundled: hasLocal,
-    placeholder: true
+  const candidatesBySource: Record<string, CardImageCandidate[]> = {
+    excelRemote: remoteCandidates,
+    githubCdn: githubCdnCandidates,
+    railwayBucket: signedRailwayCandidates,
+    localBundled: localCandidates
   };
 
-  const firstAvailable = controls.priority.find(source => sourceAvailability[source]);
-  if (firstAvailable === "placeholder") return [];
-  if (firstAvailable === "excelRemote") return remoteCandidates;
-  if (firstAvailable === "githubCdn") return githubCdnCandidates;
-  if (firstAvailable === "railwayBucket") return signedRailwayCandidates;
-  return localCandidates;
+  const orderedCandidates = controls.priority.flatMap(source => candidatesBySource[source] ?? []);
+  return uniqueCardImageCandidates(orderedCandidates);
 }
 
 function useRailwaySignedCandidates(baseCandidates: CardImageCandidate[]): CardImageCandidate[] {

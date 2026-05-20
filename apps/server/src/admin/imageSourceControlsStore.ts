@@ -16,10 +16,16 @@ export type ImageSourceControls = {
 const IMAGE_SOURCE_OPTIONS: ImageSourceKey[] = ["excelRemote", "githubCdn", "railwayBucket", "localBundled", "placeholder"];
 
 export const DEFAULT_IMAGE_SOURCE_CONTROLS: ImageSourceControls = {
-  cardLibrary: { scale: 960, priority: ["excelRemote", "githubCdn", "railwayBucket", "localBundled", "placeholder"] },
-  expandedView: { scale: 1440, priority: ["excelRemote", "githubCdn", "railwayBucket", "localBundled", "placeholder"] },
-  board3d: { scale: 720, priority: ["excelRemote", "githubCdn", "railwayBucket", "localBundled", "placeholder"] }
+  cardLibrary: { scale: 960, priority: ["localBundled", "railwayBucket", "excelRemote", "githubCdn", "placeholder"] },
+  expandedView: { scale: 1440, priority: ["localBundled", "railwayBucket", "excelRemote", "githubCdn", "placeholder"] },
+  board3d: { scale: 720, priority: ["localBundled", "railwayBucket", "excelRemote", "githubCdn", "placeholder"] }
 };
+
+const LEGACY_REMOTE_FIRST_PRIORITY: ImageSourceKey[] = ["excelRemote", "githubCdn", "railwayBucket", "localBundled", "placeholder"];
+
+function isLegacyRemoteFirstPriority(priority: ImageSourceKey[]): boolean {
+  return priority.join("|") === LEGACY_REMOTE_FIRST_PRIORITY.join("|");
+}
 
 function normalizePurpose(value: { scale?: unknown; priority?: unknown } | undefined, fallback: ImageSourceControls[ImagePurposeKey]) {
   const scale = typeof value?.scale === "number" && Number.isFinite(value.scale) ? Math.max(320, Math.min(2048, Math.round(value.scale))) : fallback.scale;
@@ -28,7 +34,8 @@ function normalizePurpose(value: { scale?: unknown; priority?: unknown } | undef
   for (const option of IMAGE_SOURCE_OPTIONS) {
     if (!cleaned.includes(option)) cleaned.push(option);
   }
-  return { scale, priority: cleaned.slice(0, IMAGE_SOURCE_OPTIONS.length) };
+  const priority = cleaned.slice(0, IMAGE_SOURCE_OPTIONS.length);
+  return { scale, priority: isLegacyRemoteFirstPriority(priority) ? fallback.priority : priority };
 }
 
 export function normalizeImageSourceControls(value: Partial<ImageSourceControls> | null | undefined): ImageSourceControls {

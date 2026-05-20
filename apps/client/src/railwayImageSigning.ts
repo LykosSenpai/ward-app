@@ -25,7 +25,8 @@ export async function fetchSignedRailwayImageUrls(keys: string[]): Promise<Map<s
 }
 
 export function buildRailwayObjectKeyFromFileName(fileName: string): string {
-  const generationMatch = fileName.match(/^(gen\d+)_/i);
-  const generation = generationMatch?.[1]?.toLowerCase() ?? "misc";
-  return `cards/${generation}/${fileName}`;
+  return fileName
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/^card-images\//i, "");
 }

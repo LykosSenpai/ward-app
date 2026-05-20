@@ -13,15 +13,34 @@ export const IMAGE_SOURCE_OPTIONS: Array<{ value: ImageSourceKey; label: string 
   { value: "excelRemote", label: "Excel/Wix Remote" },
   { value: "githubCdn", label: "GitHub CDN" },
   { value: "railwayBucket", label: "Railway Bucket (Signed URL)" },
-  { value: "localBundled", label: "Local Bundled (/card-images)" },
+  { value: "localBundled", label: "App /card-images Route" },
   { value: "placeholder", label: "Placeholder" }
 ];
 
 export const DEFAULT_IMAGE_SOURCE_CONTROLS: ImageSourceControls = {
-  cardLibrary: { scale: 960, priority: ["excelRemote", "githubCdn", "railwayBucket", "localBundled", "placeholder"] },
-  expandedView: { scale: 1440, priority: ["excelRemote", "githubCdn", "railwayBucket", "localBundled", "placeholder"] },
-  board3d: { scale: 720, priority: ["excelRemote", "githubCdn", "railwayBucket", "localBundled", "placeholder"] }
+  cardLibrary: { scale: 960, priority: ["localBundled", "railwayBucket", "excelRemote", "githubCdn", "placeholder"] },
+  expandedView: { scale: 1440, priority: ["localBundled", "railwayBucket", "excelRemote", "githubCdn", "placeholder"] },
+  board3d: { scale: 720, priority: ["localBundled", "railwayBucket", "excelRemote", "githubCdn", "placeholder"] }
 };
+
+const LEGACY_REMOTE_FIRST_PRIORITY: ImageSourceKey[] = ["excelRemote", "githubCdn", "railwayBucket", "localBundled", "placeholder"];
+
+function isLegacyRemoteFirstPriority(priority: ImageSourceKey[] | undefined): boolean {
+  return Array.isArray(priority) && priority.join("|") === LEGACY_REMOTE_FIRST_PRIORITY.join("|");
+}
+
+function migrateLegacyPurposeControls(
+  value: ImageSourceControls[ImagePurposeKey] | undefined,
+  fallback: ImageSourceControls[ImagePurposeKey]
+): ImageSourceControls[ImagePurposeKey] {
+  const purpose = value ?? fallback;
+
+  if (isLegacyRemoteFirstPriority(purpose.priority)) {
+    return { ...purpose, priority: fallback.priority };
+  }
+
+  return purpose;
+}
 
 export function areRemoteCardImagesEnabled(): boolean {
   const envValue = (import.meta.env.VITE_ENABLE_REMOTE_CARD_IMAGES as string | undefined)?.trim().toLowerCase();
@@ -59,9 +78,9 @@ export function loadImageSourceControls(): ImageSourceControls {
     if (!stored) return DEFAULT_IMAGE_SOURCE_CONTROLS;
     const parsed = JSON.parse(stored) as Partial<ImageSourceControls>;
     return enforceRemoteToggle({
-      cardLibrary: parsed.cardLibrary ?? DEFAULT_IMAGE_SOURCE_CONTROLS.cardLibrary,
-      expandedView: parsed.expandedView ?? DEFAULT_IMAGE_SOURCE_CONTROLS.expandedView,
-      board3d: parsed.board3d ?? DEFAULT_IMAGE_SOURCE_CONTROLS.board3d
+      cardLibrary: migrateLegacyPurposeControls(parsed.cardLibrary, DEFAULT_IMAGE_SOURCE_CONTROLS.cardLibrary),
+      expandedView: migrateLegacyPurposeControls(parsed.expandedView, DEFAULT_IMAGE_SOURCE_CONTROLS.expandedView),
+      board3d: migrateLegacyPurposeControls(parsed.board3d, DEFAULT_IMAGE_SOURCE_CONTROLS.board3d)
     });
   } catch {
     return enforceRemoteToggle(DEFAULT_IMAGE_SOURCE_CONTROLS);
