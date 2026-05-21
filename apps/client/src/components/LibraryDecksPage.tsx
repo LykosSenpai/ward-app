@@ -37,6 +37,8 @@ type LibraryDecksPageProps = {
   canManageZeroArtVariants?: boolean;
   onSaveCardLimit?: (cardId: string, status: "LEGAL" | "LIMITED" | "BANNED") => void;
   onSaveCardZeroArtVariant?: (cardId: string, hasZeroArtVariant: boolean) => void;
+  onReportCardBroken?: (cardId: string) => void;
+  onSetCardWorking?: (cardId: string) => void;
 };
 
 export function LibraryDecksPage({
@@ -67,7 +69,9 @@ export function LibraryDecksPage({
   canUseDevTools = false,
   canManageZeroArtVariants = false,
   onSaveCardLimit,
-  onSaveCardZeroArtVariant
+  onSaveCardZeroArtVariant,
+  onReportCardBroken,
+  onSetCardWorking
 }: LibraryDecksPageProps) {
   return (
     <section className="library-decks-page library-decks-page-compact">
@@ -100,6 +104,8 @@ export function LibraryDecksPage({
         canManageZeroArtVariants={canManageZeroArtVariants}
         onSaveCardLimit={onSaveCardLimit}
         onSaveCardZeroArtVariant={onSaveCardZeroArtVariant}
+        onReportCardBroken={onReportCardBroken}
+        onSetCardWorking={onSetCardWorking}
       />
     </section>
   );
