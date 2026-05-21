@@ -13547,3 +13547,67 @@ button:disabled:hover {
   font-weight: 700;
   padding: 0.45rem 0.75rem;
 }
+
+.qa-ticket-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.qa-ticket-compose-form,
+.qa-ticket-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.qa-ticket-context-toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.qa-ticket-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.qa-ticket-toolbar {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.qa-ticket-suggestion-backlog ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+}
+
+.qa-ticket-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+.qa-ticket-card .board-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.qa-ticket-meta {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.qa-ticket-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  background: #e5e7eb;
+}
+
+.qa-ticket-status.ready_for_retest { background: #dbeafe; color: #1e40af; }
+.qa-ticket-status.verified { background: #dcfce7; color: #166534; }
+.qa-ticket-status.reopened { background: #fee2e2; color: #991b1b; }
+.qa-ticket-status.in_progress { background: #fef3c7; color: #92400e; }

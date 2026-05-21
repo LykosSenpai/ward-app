@@ -251,6 +251,23 @@ export async function updateSupportTicketStatus(
   return getSupportTicket(result.rows[0].id);
 }
 
+export async function updateSupportTicketClientContext(
+  ticketId: string,
+  clientContext: Record<string, unknown>
+): Promise<SupportTicketDetailRecord | undefined> {
+  const result = await getDbPool().query<SupportTicketRow>(
+    `update support_tickets
+        set client_context = $2,
+            updated_at = now()
+      where id = $1
+      returning id`,
+    [ticketId, clientContext]
+  );
+
+  if (!result.rows[0]) return undefined;
+  return getSupportTicket(result.rows[0].id);
+}
+
 export async function listSupportTicketsByMatchId(matchId: string): Promise<SupportTicketRecord[]> {
   const result = await getDbPool().query<SupportTicketRow>(
     `select t.id,

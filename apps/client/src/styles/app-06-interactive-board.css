@@ -3101,6 +3101,13 @@
   color: #fee2e2;
 }
 
+.board-preview-3d__deck-actions button.is-report.is-report-attention {
+  background: rgba(161, 98, 7, 0.95);
+  border-color: rgba(250, 204, 21, 0.88);
+  color: #fef9c3;
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.35), 0 0 14px rgba(250, 204, 21, 0.45);
+}
+
 .board-preview-3d__deck-actions button.is-save-exit {
   background: rgba(21, 94, 117, 0.95);
   border-color: rgba(103, 232, 249, 0.76);

@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 
 import type { AppMatchState } from "../clientTypes";
+import type { QATicketRecord } from "./QATicketsPage";
 
 type BoardReportSeverity = "LOW" | "NORMAL" | "HIGH" | "BLOCKING";
+type BoardReportIntent = "BUG" | "SUGGESTION";
 
 export type QueuedBoardReport = {
   matchId: string;
@@ -12,11 +14,15 @@ export type QueuedBoardReport = {
   subject: string;
   description: string;
   severity: BoardReportSeverity;
+  intent: BoardReportIntent;
   clientContext: Record<string, unknown>;
 };
 
 type BoardReportPanelProps = {
   match: AppMatchState;
+  qaTickets?: QATicketRecord[];
+  onOpenQaTickets?: () => void;
+  onAddendumToTicket?: (ticketId: string) => void;
   onQueued?: (report: QueuedBoardReport) => void;
   onSubmitted?: () => void;
 };
@@ -39,7 +45,14 @@ function getViewportContext(): Record<string, unknown> {
   };
 }
 
-export function BoardReportPanel({ match, onQueued, onSubmitted }: BoardReportPanelProps) {
+export function BoardReportPanel({
+  match,
+  qaTickets = [],
+  onOpenQaTickets,
+  onAddendumToTicket,
+  onQueued,
+  onSubmitted
+}: BoardReportPanelProps) {
   const defaultSubject = useMemo(
     () => `3D board report: turn ${match.turn.turnNumber} ${match.turn.phase}`,
     [match.turn.phase, match.turn.turnNumber]
@@ -47,9 +60,27 @@ export function BoardReportPanel({ match, onQueued, onSubmitted }: BoardReportPa
   const [subject, setSubject] = useState(defaultSubject);
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<BoardReportSeverity>("NORMAL");
+  const [intent, setIntent] = useState<BoardReportIntent>("BUG");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const cardIdsInMatch = useMemo(() => {
+    const ids = new Set<string>();
+    const add = (card?: { cardId?: string }) => {
+      if (card?.cardId) ids.add(card.cardId);
+    };
+    match.players.forEach(player => {
+      [...player.deck, ...player.hand, ...player.cemetery, ...player.removedFromGame, ...player.field.limitedSummons, ...player.field.magicSlots].forEach(add);
+      add(player.field.primaryCreature);
+    });
+    return ids;
+  }, [match]);
+  const needsRetestTickets = useMemo(
+    () => qaTickets
+      .filter(ticket => ticket.status === "READY_FOR_RETEST" && ticket.relatedCardId && cardIdsInMatch.has(ticket.relatedCardId))
+      .slice(0, 5),
+    [cardIdsInMatch, qaTickets]
+  );
 
   function submitReport() {
     if (isSubmitted) return;
@@ -70,6 +101,7 @@ export function BoardReportPanel({ match, onQueued, onSubmitted }: BoardReportPa
       subject: trimmedSubject,
       description: trimmedDescription,
       severity,
+      intent,
       clientContext: getViewportContext()
     });
 
@@ -110,6 +142,23 @@ export function BoardReportPanel({ match, onQueued, onSubmitted }: BoardReportPa
         </label>
 
         <label>
+          Report type
+          <select
+            value={intent}
+            onChange={event => {
+              const nextIntent = event.target.value as BoardReportIntent;
+              setIntent(nextIntent);
+              if (nextIntent === "SUGGESTION") {
+                setSeverity("LOW");
+              }
+            }}
+          >
+            <option value="BUG">Bug / Defect</option>
+            <option value="SUGGESTION">Suggestion (Low Priority)</option>
+          </select>
+        </label>
+
+        <label>
           Severity
           <select value={severity} onChange={event => setSeverity(event.target.value as BoardReportSeverity)}>
             <option value="LOW">Low</option>
@@ -131,6 +180,26 @@ export function BoardReportPanel({ match, onQueued, onSubmitted }: BoardReportPa
           <button type="submit" disabled={isSubmitted}>{isSubmitted ? "Queued" : "Queue Report"}</button>
         </div>
       </form>
+      {needsRetestTickets.length > 0 ? (
+        <section className="warning-box">
+          <strong>Needs Retest In This Match</strong>
+          <ul>
+            {needsRetestTickets.map(ticket => (
+              <li key={ticket.id}>
+                #{ticket.id} — {ticket.title}
+                <div className="board-report-actions">
+                  {onAddendumToTicket ? (
+                    <button type="button" onClick={() => onAddendumToTicket(ticket.id)}>Add Addendum</button>
+                  ) : null}
+                  {onOpenQaTickets ? (
+                    <button type="button" onClick={onOpenQaTickets}>Open Reports Tab</button>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </section>
   );
 }

@@ -204,7 +204,7 @@ import {
   type MarketplaceTradeLine,
   type MarketplaceTransaction
 } from "./marketplace/legacySocketStore.js";
-import { createSupportTicket, getSupportTicket, listSupportTickets, listSupportTicketsByMatchId, saveSupportTicketMatchSnapshot, updateSupportTicketStatus } from "./supportTickets/supportTicketStore.js";
+import { createSupportTicket, getSupportTicket, listSupportTickets, listSupportTicketsByMatchId, saveSupportTicketMatchSnapshot, updateSupportTicketClientContext, updateSupportTicketStatus } from "./supportTickets/supportTicketStore.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const SERVER_BOOT_ID = randomUUID();
@@ -936,6 +936,37 @@ const supportTicketListQuerySchema = z.object({
 });
 const supportTicketUpdateSchema = z.object({
   status: supportTicketStatusSchema
+});
+const reportStatusSchema = z.enum(["OPEN", "IN_PROGRESS", "READY_FOR_RETEST", "VERIFIED", "REOPENED"]);
+const reportIntentSchema = z.enum(["BUG", "SUGGESTION"]);
+const reportAddendumSchema = z.object({
+  id: z.string().trim().min(1).max(80).optional(),
+  createdAt: z.string().trim().min(1).max(80).optional(),
+  createdBy: z.string().trim().min(1).max(120).optional(),
+  details: z.string().trim().min(1).max(2400),
+  matchId: z.string().trim().min(1).max(160).optional(),
+  turnLabel: z.string().trim().min(1).max(120).optional()
+});
+const reportCreateSchema = z.object({
+  matchId: z.string().trim().min(1).max(160).optional(),
+  title: z.string().trim().min(1).max(140),
+  details: z.string().trim().min(1).max(2400),
+  severity: z.enum(["LOW", "NORMAL", "HIGH", "BLOCKING"]).default("NORMAL"),
+  status: reportStatusSchema.default("OPEN"),
+  intent: reportIntentSchema.default("BUG"),
+  relatedCardId: z.string().trim().min(1).max(160).optional(),
+  relatedCardName: z.string().trim().min(1).max(200).optional(),
+  relatedMatchIds: z.array(z.string().trim().min(1).max(160)).max(64).optional().default([]),
+  resolutionNotes: z.string().max(16_000).optional().default(""),
+  addendums: z.array(reportAddendumSchema).max(500).optional().default([]),
+  clientContext: z.record(z.unknown()).optional().default({})
+});
+const reportUpdateSchema = z.object({
+  status: reportStatusSchema.optional(),
+  severity: z.enum(["LOW", "NORMAL", "HIGH", "BLOCKING"]).optional(),
+  resolutionNotes: z.string().max(16_000).optional(),
+  relatedMatchIds: z.array(z.string().trim().min(1).max(160)).max(64).optional(),
+  addendums: z.array(reportAddendumSchema).max(500).optional()
 });
 
 const SUPPORT_TICKET_SEVERITY_RANK = {
@@ -3500,6 +3531,129 @@ app.get("/api/support-tickets", async (req, res) => {
     res.status(400).json({
       message: error instanceof Error ? error.message : "Unable to list support tickets."
     });
+  }
+});
+
+app.get("/api/reports", async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+    const parsed = supportTicketListQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid report query." });
+      return;
+    }
+    const tickets = await listSupportTickets({ ...parsed.data, limit: Math.min(parsed.data.limit, 100) });
+    const filtered = tickets.filter(ticket => ticket.category === "BOARD_REPORT");
+    const reports = (await Promise.all(filtered.map(ticket => getSupportTicket(ticket.id)))).filter((ticket): ticket is NonNullable<typeof ticket> => Boolean(ticket));
+    res.json({ reports });
+  } catch (error) {
+    res.status(400).json({ message: error instanceof Error ? error.message : "Unable to list reports." });
+  }
+});
+
+app.post("/api/reports", async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+    const parsed = reportCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid report." });
+      return;
+    }
+    const matchId = parsed.data.matchId ?? "site-report";
+    if (matchId !== "site-report") {
+      validateDataFileId(matchId);
+      if (!canUserReportMatch(user, matchId)) {
+        res.status(403).json({ message: "You can only attach matches you are part of." });
+        return;
+      }
+    }
+    const ticket = await createSupportTicket({
+      reporterUserId: user.id,
+      matchId,
+      category: "BOARD_REPORT",
+      subject: parsed.data.title,
+      description: parsed.data.details,
+      severity: parsed.data.severity,
+      clientContext: {
+        reportSystem: "reports-tab-v1",
+        reportStatus: parsed.data.status,
+        intent: parsed.data.intent,
+        relatedCardId: parsed.data.relatedCardId ?? null,
+        relatedCardName: parsed.data.relatedCardName ?? null,
+        relatedMatchIds: parsed.data.relatedMatchIds,
+        resolutionNotes: parsed.data.resolutionNotes,
+        addendums: parsed.data.addendums,
+        ...parsed.data.clientContext
+      }
+    });
+    res.status(201).json({ report: ticket });
+  } catch (error) {
+    res.status(400).json({ message: error instanceof Error ? error.message : "Unable to create report." });
+  }
+});
+
+app.patch("/api/reports/:ticketId", async (req, res) => {
+  try {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ message: "Login required." });
+      return;
+    }
+    const ticketId = z.string().uuid().safeParse(req.params.ticketId);
+    if (!ticketId.success) {
+      res.status(400).json({ message: "Invalid report ID." });
+      return;
+    }
+    const parsed = reportUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid report update." });
+      return;
+    }
+    const existing = await getSupportTicket(ticketId.data);
+    if (!existing) {
+      res.status(404).json({ message: "Report not found." });
+      return;
+    }
+    if (existing.reporterUserId !== user.id && !canUserUseAdminTools(user)) {
+      res.status(403).json({ message: "Not allowed to update this report." });
+      return;
+    }
+    if (parsed.data.status === "READY_FOR_RETEST" && !canUserUseAdminTools(user)) {
+      res.status(403).json({ message: "Only admins can mark reports ready for retest." });
+      return;
+    }
+    const statusMap: Record<z.infer<typeof reportStatusSchema>, z.infer<typeof supportTicketStatusSchema>> = {
+      OPEN: "OPEN",
+      IN_PROGRESS: "TRIAGED",
+      READY_FOR_RETEST: "TRIAGED",
+      VERIFIED: "RESOLVED",
+      REOPENED: "OPEN"
+    };
+    const nextStatus = parsed.data.status ? statusMap[parsed.data.status] : existing.status;
+    const context = existing.clientContext ?? {};
+    const nextContext = {
+      ...context,
+      reportStatus: parsed.data.status ?? context.reportStatus,
+      severity: parsed.data.severity ?? context.severity,
+      resolutionNotes: parsed.data.resolutionNotes ?? context.resolutionNotes,
+      relatedMatchIds: parsed.data.relatedMatchIds ?? context.relatedMatchIds,
+      addendums: parsed.data.addendums ?? context.addendums
+    };
+    const withStatus = await updateSupportTicketStatus(ticketId.data, nextStatus);
+    const updated = await updateSupportTicketClientContext(ticketId.data, nextContext);
+    res.json({
+      report: updated ?? withStatus
+    });
+  } catch (error) {
+    res.status(400).json({ message: error instanceof Error ? error.message : "Unable to update report." });
   }
 });
 

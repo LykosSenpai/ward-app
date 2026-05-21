@@ -513,6 +513,7 @@ type BoardPreview3DProps = {
   onSkipEffectRoll?: (effectRollSessionId: string) => void;
   onActivateCardEffect?: (sourceInstanceId: string, effectId: string) => void;
   onOpenBoardReport?: () => void;
+  highlightReport?: boolean;
   onCloseMatch?: () => void;
   intentLabel?: string;
   commandLabel?: string;
@@ -843,6 +844,7 @@ export function BoardPreview3D({
   onSkipEffectRoll,
   onActivateCardEffect,
   onOpenBoardReport,
+  highlightReport = false,
   onCloseMatch,
   intentLabel = "",
   commandLabel = "",
@@ -3064,7 +3066,7 @@ export function BoardPreview3D({
                     </GameplayKeybindingLabel>
                   </button>
                   {onOpenBoardReport ? (
-                    <button type="button" className="is-report" onClick={onOpenBoardReport}>
+                    <button type="button" className={highlightReport ? "is-report is-report-attention" : "is-report"} onClick={onOpenBoardReport}>
                       Report
                     </button>
                   ) : null}
