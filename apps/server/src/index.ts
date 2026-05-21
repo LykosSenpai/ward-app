@@ -3596,6 +3596,15 @@ app.post("/api/reports", async (req, res) => {
         ...parsed.data.clientContext
       }
     });
+
+    if (parsed.data.intent === "BUG" && parsed.data.relatedCardId) {
+      try {
+        reportCardBroken(parsed.data.relatedCardId);
+      } catch {
+        // Keep report creation successful even when a related card ID is not a valid card data ID.
+      }
+    }
+
     res.status(201).json({ report: ticket });
   } catch (error) {
     res.status(400).json({ message: error instanceof Error ? error.message : "Unable to create report." });
@@ -3651,6 +3660,24 @@ app.patch("/api/reports/:ticketId", async (req, res) => {
     };
     const withStatus = await updateSupportTicketStatus(ticketId.data, nextStatus);
     const updated = await updateSupportTicketClientContext(ticketId.data, nextContext);
+
+    const relatedCardId = typeof context.relatedCardId === "string" ? context.relatedCardId : null;
+    if (relatedCardId) {
+      if (parsed.data.status === "VERIFIED") {
+        try {
+          setCardHealthWorking(relatedCardId);
+        } catch {
+          // Ignore invalid related card IDs attached to historical reports.
+        }
+      } else if (parsed.data.status === "REOPENED") {
+        try {
+          reportCardBroken(relatedCardId);
+        } catch {
+          // Ignore invalid related card IDs attached to historical reports.
+        }
+      }
+    }
+
     res.json({
       report: updated ?? withStatus
     });
