@@ -27,6 +27,7 @@ import { MarketplacePage } from "./components/MarketplacePage";
 import { BoardPreviewPage } from "./components/BoardPreviewPage";
 import { BoardPreview3D } from "./components/BoardPreview3D";
 import { BoardReportPanel, type QueuedBoardReport } from "./components/BoardReportPanel";
+import { QATicketsPage, type QATicketRecord } from "./components/QATicketsPage";
 import type { PointerGestureIntent } from "./components/boardInteractionIntents";
 import type { BoardIntentCommand } from "./components/boardIntentCommands";
 import { ProfilePage } from "./components/ProfilePage";
@@ -75,6 +76,8 @@ import type {
   ManualEffectStatKey,
   SavedMatchSummary,
   ServerWelcome,
+  SupportTicketSummary,
+  SupportTicketDetail,
   SetupOptions
   ,ServerFeatureFlag
 } from "./clientTypes";
@@ -89,7 +92,7 @@ import {
 } from "./keybindings";
 import "./App.css";
 
-type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
+type AppPage = "play" | "card-library" | "deck-library" | "marketplace" | "saved-matches" | "profile" | "qa-tickets" | "effect-dev" | "effect-coverage" | "llm-tests" | "board-preview" | "admin-controls";
 const DEFAULT_APP_PAGE: AppPage = "card-library";
 const SOCKET_SESSION_ERROR_PREFIX = "The live server connection did not receive your login session.";
 const SERVER_BOOT_STORAGE_KEY = "ward-nexus-server-boot-id";
@@ -155,6 +158,8 @@ function removeClientStorage(key: string): void {
 
 const BOARD_REPORT_QUEUE_STORAGE_KEY = "ward-board-report-queue";
 const BOARD_REPORT_BACKGROUND_FLUSH_MS = 90_000;
+const QA_TICKET_STORAGE_KEY = "ward-qa-tickets-local";
+const QA_MATCH_SNAPSHOT_STORAGE_KEY = "ward-qa-match-snapshots-local";
 
 function readQueuedBoardReports(): Record<string, QueuedBoardReport[]> {
   const raw = readClientStorage(BOARD_REPORT_QUEUE_STORAGE_KEY);
@@ -210,12 +215,67 @@ async function flushQueuedBoardReports(matchId: string, matchSnapshot?: AppMatch
 function getBoardReportFlushErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unable to send queued board reports.";
 }
+
+function readLocalQaTickets(): QATicketRecord[] {
+  const raw = readClientStorage(QA_TICKET_STORAGE_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as QATicketRecord[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalQaTickets(tickets: QATicketRecord[]): void {
+  writeClientStorage(QA_TICKET_STORAGE_KEY, JSON.stringify(tickets));
+}
+
+function readLocalQaMatchSnapshots(): Record<string, AppMatchState> {
+  const raw = readClientStorage(QA_MATCH_SNAPSHOT_STORAGE_KEY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, AppMatchState>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalQaMatchSnapshots(snapshots: Record<string, AppMatchState>): void {
+  writeClientStorage(QA_MATCH_SNAPSHOT_STORAGE_KEY, JSON.stringify(snapshots));
+}
+
+function mapSupportTicketToReport(ticket: SupportTicketSummary | SupportTicketDetail): QATicketRecord {
+  const context = "clientContext" in ticket ? ticket.clientContext : {};
+  const reportStatus = typeof context.reportStatus === "string" ? context.reportStatus : undefined;
+  return {
+    id: ticket.id,
+    title: ticket.subject,
+    details: ticket.description,
+    severity: ticket.severity,
+    status: reportStatus === "IN_PROGRESS" || reportStatus === "READY_FOR_RETEST" || reportStatus === "VERIFIED" || reportStatus === "REOPENED"
+      ? reportStatus
+      : "OPEN",
+    createdBy: ticket.reporterDisplayName ?? ticket.reporterUsername ?? ticket.reporterUserId ?? "Unknown",
+    createdAt: ticket.createdAt,
+    updatedAt: ticket.updatedAt,
+    matchId: ticket.matchId,
+    resolutionNotes: typeof context.resolutionNotes === "string" ? context.resolutionNotes : "",
+    relatedCardId: typeof context.relatedCardId === "string" ? context.relatedCardId : undefined,
+    relatedCardName: typeof context.relatedCardName === "string" ? context.relatedCardName : undefined,
+    relatedMatchIds: Array.isArray(context.relatedMatchIds) ? context.relatedMatchIds.filter(item => typeof item === "string") : [],
+    addendums: Array.isArray(context.addendums) ? context.addendums as QATicketRecord["addendums"] : [],
+    intent: context.intent === "SUGGESTION" ? "SUGGESTION" : "BUG"
+  };
+}
 const APP_PAGES = new Set<AppPage>([
   "play",
   "card-library",
   "deck-library",
   "marketplace",
   "saved-matches",
+  "qa-tickets",
   "profile",
   "effect-dev",
   "effect-coverage",
@@ -436,6 +496,8 @@ export default function App() {
   >({});
   const [dashboardModal, setDashboardModal] = useState<DashboardModal>(null);
   const [activePage, setActivePage] = useState<AppPage>(() => parseRequestedPage(window.location.search) ?? DEFAULT_APP_PAGE);
+  const [qaTickets, setQaTickets] = useState<QATicketRecord[]>(() => readLocalQaTickets());
+  const [qaMatchSnapshots, setQaMatchSnapshots] = useState<Record<string, AppMatchState>>(() => readLocalQaMatchSnapshots());
   const [playViewMode, setPlayViewMode] = useState<PlayViewMode>("board3d");
   const [lastBoardIntentLabel, setLastBoardIntentLabel] = useState("");
   const [lastBoardCommandLabel, setLastBoardCommandLabel] = useState("");
@@ -449,6 +511,8 @@ export default function App() {
   const [llmDirectTestResults, setLlmDirectTestResults] = useState<Record<string, LlmDirectEffectSmokeTestResult>>({});
   const [llmBusy, setLlmBusy] = useState(false);
   const [featureFlags, setFeatureFlags] = useState<ServerFeatureFlag[]>([]);
+  const [dismissedRetestToastMatchId, setDismissedRetestToastMatchId] = useState("");
+  const [qaInitialAddendumTicketId, setQaInitialAddendumTicketId] = useState<string | null>(null);
   const lastRequestedCardLibraryKeyRef = useMemo(() => ({ current: "" }), []);
   const socketAuthRefreshAttemptedRef = useRef(false);
   const socketAuthRefreshInFlightRef = useRef(false);
@@ -457,6 +521,177 @@ export default function App() {
   const socketAuthUserIdRef = useRef<string | null>(null);
   const boardReportFlushInFlightRef = useRef(false);
   const canUseDevTools = !!authUser?.devToolsEnabled;
+  useEffect(() => {
+    if (!authUser) return;
+    void (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/reports?limit=100`, { credentials: "include" });
+        const payload = await response.json().catch(() => ({})) as { reports?: SupportTicketDetail[] };
+        if (!response.ok || !Array.isArray(payload.reports)) return;
+        const reports = payload.reports.map(mapSupportTicketToReport);
+        setQaTickets(reports);
+        writeLocalQaTickets(reports);
+      } catch {
+        // Keep local fallback.
+      }
+    })();
+  }, [authUser, supportTicketRefreshKey]);
+  const createQaTicket = (ticket: Omit<QATicketRecord, "id" | "createdAt" | "updatedAt">): void => {
+    void (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/reports`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            matchId: ticket.matchId,
+            title: ticket.title,
+            details: ticket.details,
+            severity: ticket.severity,
+            status: ticket.status,
+            intent: ticket.intent ?? "BUG",
+            relatedCardId: ticket.relatedCardId,
+            relatedCardName: ticket.relatedCardName,
+            relatedMatchIds: ticket.relatedMatchIds ?? [],
+            resolutionNotes: ticket.resolutionNotes ?? "",
+            addendums: ticket.addendums ?? []
+          })
+        });
+        const payload = await response.json().catch(() => ({})) as { report?: SupportTicketDetail; message?: string };
+        if (!response.ok || !payload.report) {
+          throw new Error(payload.message ?? "Unable to create report.");
+        }
+        const serverTicket = mapSupportTicketToReport(payload.report);
+        setQaTickets(previous => {
+          const withoutLocalDuplicate = previous.filter(item => item.id !== serverTicket.id);
+          const updated = [serverTicket, ...withoutLocalDuplicate].slice(0, 200);
+          writeLocalQaTickets(updated);
+          return updated;
+        });
+      } catch {
+        const now = new Date().toISOString();
+        const fallbackTicket: QATicketRecord = {
+          ...ticket,
+          id: `LOCAL-${Date.now().toString(36).toUpperCase()}`,
+          createdAt: now,
+          updatedAt: now
+        };
+        setQaTickets(previous => {
+          const updated = [fallbackTicket, ...previous].slice(0, 200);
+          writeLocalQaTickets(updated);
+          return updated;
+        });
+      }
+    })();
+    if (match?.matchId && ticket.relatedMatchIds?.includes(match.matchId)) {
+      setQaMatchSnapshots(previous => {
+        const updated = { ...previous, [match.matchId]: match };
+        writeLocalQaMatchSnapshots(updated);
+        return updated;
+      });
+    }
+  };
+  const updateQaTicket = (ticketId: string, changes: Partial<QATicketRecord>): void => {
+    const existingTicket = qaTickets.find(ticket => ticket.id === ticketId);
+    if (!existingTicket) return;
+    if (match?.matchId) {
+      setQaMatchSnapshots(previous => {
+        const updated = { ...previous, [match.matchId]: match };
+        writeLocalQaMatchSnapshots(updated);
+        return updated;
+      });
+    }
+    void (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/reports/${encodeURIComponent(ticketId)}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: changes.status,
+            severity: changes.severity,
+            resolutionNotes: changes.resolutionNotes,
+            relatedMatchIds: changes.relatedMatchIds,
+            addendums: changes.addendums
+          })
+        });
+        const payload = await response.json().catch(() => ({})) as { report?: SupportTicketDetail; message?: string };
+        if (!response.ok || !payload.report) {
+          throw new Error(payload.message ?? "Unable to update report.");
+        }
+        const serverTicket = mapSupportTicketToReport(payload.report);
+        setQaTickets(previous => {
+          const updated = previous.map(ticket => ticket.id === ticketId ? serverTicket : ticket);
+          writeLocalQaTickets(updated);
+          return updated;
+        });
+      } catch {
+        setQaTickets(previous => {
+          const updated = previous.map(ticket => ticket.id === ticketId
+            ? { ...ticket, ...changes, updatedAt: new Date().toISOString() }
+            : ticket);
+          writeLocalQaTickets(updated);
+          return updated;
+        });
+      }
+    })();
+  };
+  const downloadQaTicketJson = (ticket: QATicketRecord): void => {
+    const linkedMatchIds = Array.from(new Set([...(ticket.relatedMatchIds ?? []), ...(ticket.matchId ? [ticket.matchId] : [])]));
+    const matchSnapshots = Object.fromEntries(linkedMatchIds.map(id => [id, qaMatchSnapshots[id] ?? null]));
+    const missingMatchIds = linkedMatchIds.filter(id => !qaMatchSnapshots[id]);
+    const payload = { exportedAt: new Date().toISOString(), ticket, linkedMatchIds, missingMatchIds, matchSnapshots };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${ticket.id}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+  const downloadAllQaTicketsJson = (): void => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      ticketCount: qaTickets.length,
+      tickets: qaTickets,
+      matchSnapshots: qaMatchSnapshots
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "reports-export.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+  const cardsNeedingRetest = useMemo(() => {
+    const ids = new Set<string>();
+    qaTickets.forEach(ticket => {
+      if (ticket.status === "READY_FOR_RETEST" && ticket.relatedCardId) ids.add(ticket.relatedCardId);
+    });
+    return ids;
+  }, [qaTickets]);
+  const matchHasRetestCards = useMemo(() => {
+    if (!match) return false;
+    return match.players.some(player => {
+      const pool = [...player.deck, ...player.hand, ...player.cemetery, ...player.removedFromGame, ...player.field.limitedSummons, ...player.field.magicSlots, ...(player.field.primaryCreature ? [player.field.primaryCreature] : [])];
+      return pool.some(card => cardsNeedingRetest.has(card.cardId));
+    });
+  }, [cardsNeedingRetest, match]);
+  const retestCardNamesInMatch = useMemo(() => {
+    if (!match || cardsNeedingRetest.size === 0) return [];
+    const presentIds = new Set<string>();
+    match.players.forEach(player => {
+      [...player.deck, ...player.hand, ...player.cemetery, ...player.removedFromGame, ...player.field.limitedSummons, ...player.field.magicSlots].forEach(card => presentIds.add(card.cardId));
+      if (player.field.primaryCreature?.cardId) presentIds.add(player.field.primaryCreature.cardId);
+    });
+    return qaTickets
+      .filter(ticket => ticket.status === "READY_FOR_RETEST" && ticket.relatedCardId && presentIds.has(ticket.relatedCardId))
+      .map(ticket => ticket.relatedCardName ?? ticket.relatedCardId ?? "")
+      .filter(Boolean)
+      .filter((value, index, array) => array.indexOf(value) === index)
+      .slice(0, 3);
+  }, [cardsNeedingRetest.size, match, qaTickets]);
   const updateFeatureRollout = async (key: ServerFeatureFlag["key"], enabledForPlayers: boolean): Promise<void> => {
     await new Promise<void>((resolve, reject) => {
       socket.emit("admin:features:update", { key, enabledForPlayers }, (response: { ok: boolean; error?: string }) => {
@@ -467,6 +702,15 @@ export default function App() {
         reject(new Error(response.error ?? "Failed to update feature flag."));
       });
     });
+  };
+  const openQaTab = (): void => {
+    setQaInitialAddendumTicketId(null);
+    navigateToPage("qa-tickets");
+  };
+  const openQaTabForAddendum = (ticketId: string): void => {
+    setQaInitialAddendumTicketId(ticketId);
+    navigateToPage("qa-tickets");
+    setDashboardModal(null);
   };
 
   useEffect(() => {
@@ -519,6 +763,7 @@ export default function App() {
     if (page === "deck-library") return featureFlagsByKey["deck-builder"]?.enabledForPlayers === true;
     if (page === "marketplace") return featureFlagsByKey.marketplace?.enabledForPlayers === true;
     if (page === "saved-matches") return featureFlagsByKey["saved-matches"]?.enabledForPlayers === true;
+    if (page === "qa-tickets") return true;
     return canUseDevTools;
   }
 
@@ -3058,6 +3303,12 @@ export default function App() {
           >
             Saved Matches
           </button>}
+          <button
+            className={activePage === "qa-tickets" ? "app-page-nav-button active" : "app-page-nav-button"}
+            onClick={() => navigateToPage("qa-tickets")}
+          >
+            Reports
+          </button>
           {canSeePage("marketplace") && <button
             className={activePage === "marketplace" ? "app-page-nav-button active" : "app-page-nav-button"}
             onClick={() => navigateToPage("marketplace")}
@@ -3133,6 +3384,12 @@ export default function App() {
             ) : null}
           </div>
         )}
+        {match && matchHasRetestCards && dismissedRetestToastMatchId !== match.matchId ? (
+          <div className="warning-box">
+            <span>Existing report found for card {retestCardNamesInMatch.join(", ")} — please retest and add an addendum instead of creating a duplicate.</span>
+            <button type="button" onClick={() => setDismissedRetestToastMatchId(match.matchId)}>Dismiss</button>
+          </div>
+        ) : null}
         {saveMessage && <div className="success-box">{saveMessage}</div>}
         {activePage === "card-library" && ownershipSaveStatus !== "idle" && (
           <div className={`ownership-save-status ${ownershipSaveStatus}`}>
@@ -3229,6 +3486,20 @@ export default function App() {
             onLoad={loadSavedMatch}
             onDelete={deleteSavedMatch}
             onDeleteSelected={deleteSelectedSavedMatches}
+          />
+        ) : activePage === "qa-tickets" ? (
+          <QATicketsPage
+            tickets={qaTickets}
+            authDisplayName={authUser.displayName}
+            liveMatch={match}
+            cardLibrary={cardLibrary}
+            preferredPlayerId={controlledPlayerId}
+            onCreateTicket={createQaTicket}
+            onUpdateTicket={updateQaTicket}
+            onDownloadTicketJson={downloadQaTicketJson}
+            onDownloadAllTicketsJson={downloadAllQaTicketsJson}
+            initialAddendumTicketId={qaInitialAddendumTicketId}
+            canMarkReadyForRetest={authUser.role === "ADMIN"}
           />
         ) : activePage === "profile" ? (
           <ProfilePage key={profileRefreshKey} onUserUpdated={user => {
@@ -3429,6 +3700,7 @@ export default function App() {
                       onSkipEffectRoll={skipEffectRoll}
                       onActivateCardEffect={activateCardEffect}
                       onOpenBoardReport={() => setDashboardModal("board-report")}
+                      highlightReport={matchHasRetestCards}
                       onCloseMatch={isLiveMatchSpectator ? undefined : closeActiveMatchWithoutSaving}
                       intentLabel={lastBoardIntentLabel}
                       commandLabel={lastBoardCommandLabel}
@@ -3672,7 +3944,14 @@ export default function App() {
                 onClose={() => setDashboardModal(null)}
                 wide
               >
-                <BoardReportPanel match={match} onQueued={queueBoardReport} onSubmitted={() => setDashboardModal(null)} />
+                <BoardReportPanel
+                  match={match}
+                  qaTickets={qaTickets}
+                  onOpenQaTickets={openQaTab}
+                  onAddendumToTicket={openQaTabForAddendum}
+                  onQueued={queueBoardReport}
+                  onSubmitted={() => setDashboardModal(null)}
+                />
               </ModalPanel>
             )}
             {dashboardModal === "match-details" && (
