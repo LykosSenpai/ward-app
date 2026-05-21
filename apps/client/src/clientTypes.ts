@@ -187,6 +187,8 @@ export type CardLibraryCardSummary = {
   packId: string;
   cardType: "CREATURE" | "MAGIC";
   hasZeroArtVariant?: boolean;
+  healthStatus?: "WORKING" | "BROKEN_REPORTED";
+  healthConfirmedAt?: string;
 
   generation?: string;
   edition?: string;

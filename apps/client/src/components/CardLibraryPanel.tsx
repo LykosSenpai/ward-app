@@ -86,6 +86,8 @@ type CardLibraryPanelProps = {
   canManageZeroArtVariants?: boolean;
   onSaveCardLimit?: (cardId: string, status: TournamentLimitStatus) => void;
   onSaveCardZeroArtVariant?: (cardId: string, hasZeroArtVariant: boolean) => void;
+  onReportCardBroken?: (cardId: string) => void;
+  onSetCardWorking?: (cardId: string) => void;
   onOpenMarketplaceOverride?: (cardId: string) => void;
 };
 
@@ -187,6 +189,8 @@ export function CardLibraryPanel({
   canManageZeroArtVariants = false,
   onSaveCardLimit,
   onSaveCardZeroArtVariant,
+  onReportCardBroken,
+  onSetCardWorking,
   onOpenMarketplaceOverride
 }: CardLibraryPanelProps) {
   const [searchText, setSearchText] = useState("");
@@ -1033,6 +1037,10 @@ export function CardLibraryPanel({
       : "FREE PLAY";
     const tournamentLimitStatus = getTournamentLimitStatus(card);
     const canEditZeroArtVariant = canManageZeroArtVariants && !!onSaveCardZeroArtVariant;
+    const canSetWorking = canManageZeroArtVariants && !!onSetCardWorking;
+    const isBrokenReported = card.healthStatus === "BROKEN_REPORTED";
+    const isWorkingConfirmed = card.healthStatus === "WORKING";
+    const healthDateLabel = card.healthConfirmedAt ? new Date(card.healthConfirmedAt).toLocaleDateString() : "";
 
     return (
       <div className="library-option-a-expanded-controls-grid">
@@ -1094,6 +1102,17 @@ export function CardLibraryPanel({
             </label>
           ) : null}
           <span className={`limit-badge ${deckLimit === 0 ? "banned" : deckLimit < 3 ? "limited" : "normal"}`}>{deckLimitLabel}</span>
+          <span className={`limit-badge ${isBrokenReported ? "limited" : isWorkingConfirmed ? "normal" : ""}`}>
+            {isBrokenReported ? "🟡 ? Reported broken" : isWorkingConfirmed ? `✅ Working${healthDateLabel ? ` ${healthDateLabel}` : ""}` : "—"}
+          </span>
+          <button type="button" className="library-option-a-marketplace-action" onClick={() => onReportCardBroken?.(card.id)}>
+            Report broken
+          </button>
+          {canSetWorking ? (
+            <button type="button" className="library-option-a-marketplace-action" onClick={() => onSetCardWorking?.(card.id)}>
+              Mark working
+            </button>
+          ) : null}
         </div>
 
         <div className="library-option-a-expanded-cell library-option-a-expanded-cell-marketplace">

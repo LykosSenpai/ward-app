@@ -96,6 +96,8 @@ import {
   updateCardEffectsInPack,
   updateCardLimitRule,
   setCardZeroArtVariantFlag,
+  setCardHealthWorking,
+  reportCardBroken,
   saveMatchToDisk,
   validateDataFileId
 } from "./dataStore.js";
@@ -3594,6 +3596,15 @@ app.post("/api/reports", async (req, res) => {
         ...parsed.data.clientContext
       }
     });
+
+    if (parsed.data.intent === "BUG" && parsed.data.relatedCardId) {
+      try {
+        reportCardBroken(parsed.data.relatedCardId);
+      } catch {
+        // Keep report creation successful even when a related card ID is not a valid card data ID.
+      }
+    }
+
     res.status(201).json({ report: ticket });
   } catch (error) {
     res.status(400).json({ message: error instanceof Error ? error.message : "Unable to create report." });
@@ -3649,6 +3660,24 @@ app.patch("/api/reports/:ticketId", async (req, res) => {
     };
     const withStatus = await updateSupportTicketStatus(ticketId.data, nextStatus);
     const updated = await updateSupportTicketClientContext(ticketId.data, nextContext);
+
+    const relatedCardId = typeof context.relatedCardId === "string" ? context.relatedCardId : null;
+    if (relatedCardId) {
+      if (parsed.data.status === "VERIFIED") {
+        try {
+          setCardHealthWorking(relatedCardId);
+        } catch {
+          // Ignore invalid related card IDs attached to historical reports.
+        }
+      } else if (parsed.data.status === "REOPENED") {
+        try {
+          reportCardBroken(relatedCardId);
+        } catch {
+          // Ignore invalid related card IDs attached to historical reports.
+        }
+      }
+    }
+
     res.json({
       report: updated ?? withStatus
     });
@@ -6662,6 +6691,38 @@ io.on("connection", async socket => {
           cardId: data.cardId,
           hasZeroArtVariant: data.hasZeroArtVariant === true
         });
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "cards:reportBroken",
+    (data: { packIds?: string[]; cardId: string }) => {
+      try {
+        reportCardBroken(data.cardId);
+        const requestedPackIds = data.packIds?.length ? data.packIds : listSetupOptions().cardPacks.map(pack => pack.id);
+        socket.emit("cards:library", listCardLibraryForPacks(requestedPackIds, loadCardLimitMap()));
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "admin:setCardWorking",
+    (data: { packIds?: string[]; cardId: string }) => {
+      try {
+        const user = requireSocketUser(socket);
+        if (!canUserUseAdminTools(user)) throw new Error("Admin access required.");
+        setCardHealthWorking(data.cardId);
+        const requestedPackIds = data.packIds?.length ? data.packIds : listSetupOptions().cardPacks.map(pack => pack.id);
+        socket.emit("cards:library", listCardLibraryForPacks(requestedPackIds, loadCardLimitMap()));
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
