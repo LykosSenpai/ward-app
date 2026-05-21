@@ -1705,6 +1705,16 @@ export default function App() {
     });
   }
 
+  function reportCardBroken(cardId: string) {
+    const packIds = selectedPackIds.length > 0 ? selectedPackIds : cardPacks.map(pack => pack.id);
+    socket.emit("cards:reportBroken", { packIds, cardId });
+  }
+
+  function setCardWorking(cardId: string) {
+    const packIds = selectedPackIds.length > 0 ? selectedPackIds : cardPacks.map(pack => pack.id);
+    socket.emit("admin:setCardWorking", { packIds, cardId });
+  }
+
   function refreshSetupOptions() {
     socket.emit("setup:listOptions");
     socket.emit("deck:listDetails");
@@ -3575,6 +3585,8 @@ export default function App() {
             canManageZeroArtVariants={isAdminUser}
             onSaveCardLimit={saveCardTournamentLimit}
             onSaveCardZeroArtVariant={saveCardZeroArtVariant}
+            onReportCardBroken={reportCardBroken}
+            onSetCardWorking={setCardWorking}
           />
         ) : !match ? (
           <>

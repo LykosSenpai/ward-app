@@ -25,6 +25,7 @@ const DATA_DIR = path.join(ROOT_DIR, "data");
 
 const CARD_DATA_DIR = path.join(DATA_DIR, "cards");
 const CARD_ART_VARIANTS_FILE = path.join(CARD_DATA_DIR, "art-variants.json");
+const CARD_HEALTH_FILE = path.join(CARD_DATA_DIR, "health-status.json");
 const MATCHES_DIR = path.join(DATA_DIR, "matches");
 const USER_DATA_DIR = path.join(DATA_DIR, "users");
 const CARD_LIMITS_DIR = path.join(DATA_DIR, "rules", "card-limits");
@@ -734,6 +735,8 @@ export type CardLibraryCardSummary = {
   packId: string;
   cardType: "CREATURE" | "MAGIC";
   hasZeroArtVariant: boolean;
+  healthStatus?: "WORKING" | "BROKEN_REPORTED";
+  healthConfirmedAt?: string;
 
   generation?: string;
   edition?: string;
@@ -765,6 +768,12 @@ export type CardLibraryCardSummary = {
 type CardArtVariantsFile = {
   version: 1;
   zeroArtCardIds: string[];
+  updatedAt?: string;
+};
+
+type CardHealthStatusFile = {
+  version: 1;
+  cards: Record<string, { status: "WORKING" | "BROKEN_REPORTED"; confirmedAt?: string }>;
   updatedAt?: string;
 };
 
@@ -842,6 +851,45 @@ export function setCardZeroArtVariantFlag(args: {
 
   saveZeroArtCardIdSet(zeroArtCardIds);
   return zeroArtCardIds;
+}
+
+function loadCardHealthStatusMap(): Record<string, { status: "WORKING" | "BROKEN_REPORTED"; confirmedAt?: string }> {
+  ensureDirectoryExists(CARD_DATA_DIR);
+  if (!fs.existsSync(CARD_HEALTH_FILE)) return {};
+  try {
+    const fileData = readJsonFile<Partial<CardHealthStatusFile> | Record<string, unknown>>(CARD_HEALTH_FILE);
+    const cards = (fileData as Partial<CardHealthStatusFile>).cards;
+    if (!cards || typeof cards !== "object") return {};
+    const entries = Object.entries(cards).filter(([cardId, value]) => isDataFileId(cardId) && typeof value === "object" && value !== null);
+    return Object.fromEntries(entries.map(([cardId, value]) => {
+      const typedValue = value as { status?: unknown; confirmedAt?: unknown };
+      const status = typedValue.status === "BROKEN_REPORTED" ? "BROKEN_REPORTED" : "WORKING";
+      const confirmedAt = typeof typedValue.confirmedAt === "string" && typedValue.confirmedAt.trim() ? typedValue.confirmedAt : undefined;
+      return [cardId, { status, confirmedAt }];
+    }));
+  } catch {
+    return {};
+  }
+}
+
+function saveCardHealthStatusMap(cards: Record<string, { status: "WORKING" | "BROKEN_REPORTED"; confirmedAt?: string }>): void {
+  ensureDirectoryExists(CARD_DATA_DIR);
+  const fileData: CardHealthStatusFile = { version: 1, cards, updatedAt: new Date().toISOString() };
+  writeJsonFileAtomic(CARD_HEALTH_FILE, fileData);
+}
+
+export function setCardHealthWorking(cardId: string): void {
+  validateDataFileId(cardId);
+  const healthMap = loadCardHealthStatusMap();
+  healthMap[cardId] = { status: "WORKING", confirmedAt: new Date().toISOString() };
+  saveCardHealthStatusMap(healthMap);
+}
+
+export function reportCardBroken(cardId: string): void {
+  validateDataFileId(cardId);
+  const healthMap = loadCardHealthStatusMap();
+  healthMap[cardId] = { status: "BROKEN_REPORTED" };
+  saveCardHealthStatusMap(healthMap);
 }
 
 function getCardEffectTypes(card: CardDefinition): string[] {
@@ -1016,6 +1064,7 @@ export function listCardLibraryForPacks(
 ): CardLibraryCardSummary[] {
   const results: CardLibraryCardSummary[] = [];
   const zeroArtCardIds = loadZeroArtCardIdSet();
+  const cardHealthMap = loadCardHealthStatusMap();
 
   for (const packId of packIds) {
     validateDataFileId(packId);
@@ -1041,6 +1090,8 @@ export function listCardLibraryForPacks(
           packId: pack.id,
           cardType: card.cardType,
           hasZeroArtVariant: zeroArtCardIds.has(card.id),
+          healthStatus: cardHealthMap[card.id]?.status,
+          healthConfirmedAt: cardHealthMap[card.id]?.confirmedAt,
           ...metadata,
           deckLimit,
           deckLimitReason: limitRule?.reason,
@@ -1062,6 +1113,8 @@ export function listCardLibraryForPacks(
         packId: pack.id,
         cardType: card.cardType,
         hasZeroArtVariant: zeroArtCardIds.has(card.id),
+        healthStatus: cardHealthMap[card.id]?.status,
+        healthConfirmedAt: cardHealthMap[card.id]?.confirmedAt,
         ...metadata,
         deckLimit,
         deckLimitReason: limitRule?.reason,
@@ -1364,5 +1417,4 @@ export function deleteUserDeckFromDisk(userId: string, deckId: string): void {
 
   fs.unlinkSync(filePath);
 }
-
 

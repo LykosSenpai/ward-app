@@ -96,6 +96,8 @@ import {
   updateCardEffectsInPack,
   updateCardLimitRule,
   setCardZeroArtVariantFlag,
+  setCardHealthWorking,
+  reportCardBroken,
   saveMatchToDisk,
   validateDataFileId
 } from "./dataStore.js";
@@ -6662,6 +6664,38 @@ io.on("connection", async socket => {
           cardId: data.cardId,
           hasZeroArtVariant: data.hasZeroArtVariant === true
         });
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "cards:reportBroken",
+    (data: { packIds?: string[]; cardId: string }) => {
+      try {
+        reportCardBroken(data.cardId);
+        const requestedPackIds = data.packIds?.length ? data.packIds : listSetupOptions().cardPacks.map(pack => pack.id);
+        socket.emit("cards:library", listCardLibraryForPacks(requestedPackIds, loadCardLimitMap()));
+      } catch (error) {
+        socket.emit("match:error", {
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+  );
+
+  socket.on(
+    "admin:setCardWorking",
+    (data: { packIds?: string[]; cardId: string }) => {
+      try {
+        const user = requireSocketUser(socket);
+        if (!canUserUseAdminTools(user)) throw new Error("Admin access required.");
+        setCardHealthWorking(data.cardId);
+        const requestedPackIds = data.packIds?.length ? data.packIds : listSetupOptions().cardPacks.map(pack => pack.id);
+        socket.emit("cards:library", listCardLibraryForPacks(requestedPackIds, loadCardLimitMap()));
       } catch (error) {
         socket.emit("match:error", {
           message: error instanceof Error ? error.message : "Unknown error"
